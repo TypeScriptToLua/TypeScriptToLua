@@ -42,4 +42,20 @@ function Activate(a) {
     for (let i = 0; i< 10; i++) {
         print(i);
     }
+
+    let i = 0;
+    i++;
+    i--;
+    !true;
+    ++i;
+    i+=1;
+    i-=1;
+
+    /*for (let i of [1,2,3]) {
+
+    }
+
+    for (let i in [1,2,3]) {
+
+    }*/
 }

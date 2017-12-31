@@ -43,11 +43,44 @@ export class LuaTranspiler {
                 return indent + this.transpileExpression(<ts.Expression>tsEx.getChildren(node)[0]) + "\n";
             case ts.SyntaxKind.ReturnStatement:
                 return indent + this.transpileReturn(<ts.ReturnStatement>node) + "\n";
+            case ts.SyntaxKind.ForStatement:
+                return this.transpileFor(<ts.ForStatement>node, indent) + "\n";
             case ts.SyntaxKind.EndOfFileToken:
                 return "";
             default:
                 throw new TranspileError("Unsupported node kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
+    }
+
+    static transpileFor(node: ts.ForStatement, indent: string): string {
+        const children = tsEx.getChildren(node);
+
+        // Get identifier
+        const identifier = tsEx.getFirstChildOfType<ts.Identifier>(tsEx.getChildren(children[0])[0], ts.isIdentifier);
+
+        let min = 0;
+        let max = 0;
+        let step = 1;
+
+        // Get increment step
+        const increment = children[2];
+        switch (increment.kind) {
+            case ts.SyntaxKind.PostfixUnaryExpression:
+                //console.log(increment);
+                break;
+            case ts.SyntaxKind.PrefixUnaryExpression:
+                //console.log(increment);
+                break;
+        }
+
+        // Add header
+        let result = indent + `for ${identifier.escapedText}=${min},${max},${step} do\n`;
+
+        // Add body
+        const block = tsEx.getFirstChildOfType<ts.Block>(node, ts.isBlock);
+        result += this.transpileBlock(block, indent + "    ");
+
+        return result + indent + "end\n";
     }
 
     static transpileReturn(node: ts.ReturnStatement): string {
@@ -74,18 +107,62 @@ export class LuaTranspiler {
                 return "true";
             case ts.SyntaxKind.FalseKeyword:
                 return "false";
+            case ts.SyntaxKind.PostfixUnaryExpression:
+                return this.transpilePostfixUnaryExpression(<ts.PostfixUnaryExpression>node);
+            case ts.SyntaxKind.PrefixUnaryExpression:
+                return this.transpilePrefixUnaryExpression(<ts.PrefixUnaryExpression>node);
             case ts.SyntaxKind.ArrayLiteralExpression:
                 return this.transpileArrayLiteral(node);
             case ts.SyntaxKind.ObjectLiteralExpression:
-                return this.transpileObjectLiteral(node)
+                return this.transpileObjectLiteral(node);
+            case ts.SyntaxKind.FunctionExpression:
+                return this.transpileFunctionExpression(node);
             default:
                 throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
     }
 
     static transpileBinaryExpression(node: ts.BinaryExpression): string {
-        let [lhs, operator, rhs] = tsEx.getChildren(node);
-        return this.transpileExpression(lhs) + ts.tokenToString(operator.kind) + this.transpileExpression(rhs);
+        return this.transpileExpression(node.left) + this.transpileOperator(node.operatorToken) + this.transpileExpression(node.right);
+    }
+
+    // Replace some missmatching operators
+    static transpileOperator<T extends ts.SyntaxKind>(operator: ts.Token<T>): string {
+        switch (operator.kind) {
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                return "==";
+            case ts.SyntaxKind.ExclamationEqualsToken:
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                return "~=";
+            default:
+                return ts.tokenToString(operator.kind);
+        }
+    }
+
+    static transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
+        const operand = this.transpileExpression(node.operand);
+        switch (node.operator) {
+            case ts.SyntaxKind.PlusPlusToken:
+                return `${operand} = ${operand} + 1`;
+            case ts.SyntaxKind.MinusMinusToken:
+                return `${operand} = ${operand} - 1`;
+            default:
+                throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+        }
+    }
+
+    static transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
+        const operand = this.transpileExpression(node.operand);
+        switch (node.operator) {
+            case ts.SyntaxKind.PlusPlusToken:
+                return `${operand} = ${operand} + 1`;
+            case ts.SyntaxKind.MinusMinusToken:
+                return `${operand} = ${operand} - 1`;
+            case ts.SyntaxKind.ExclamationToken:
+                return `not ${operand}`;
+            default:
+                throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+        }
     }
 
     static transpileCallExpression(node: ts.CallExpression): string {
@@ -293,5 +370,18 @@ export class LuaTranspiler {
         });
 
         return "{" + properties.join(",") + "}";
+    }
+
+    static transpileFunctionExpression(node: ts.Node): string {
+        let params = tsEx.getChildrenOfType<ts.ParameterDeclaration>(node, ts.isParameter);
+        // Build parameter string
+        let paramNames = [];
+        params.forEach(param => {
+            paramNames.push(tsEx.getFirstChildOfType<ts.Identifier>(param, ts.isIdentifier).escapedText);
+        });
+
+        let block = tsEx.getFirstChildOfType<ts.Block>(node, ts.isBlock);
+
+        return `function(${paramNames.join(",")})\n` + this.transpileBlock(block, "        ")+ "    end\n";
     }
 }

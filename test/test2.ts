@@ -43,6 +43,14 @@ function Activate(a) {
         print(i);
     }
 
+    for (let i=40; i > 10; i--) {
+
+    }
+
+    for (let i=2; i <= 20;i += 2) {
+        
+    }
+
     let i = 0;
     i++;
     i--;

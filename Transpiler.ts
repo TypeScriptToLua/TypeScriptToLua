@@ -53,28 +53,93 @@ export class LuaTranspiler {
     }
 
     static transpileFor(node: ts.ForStatement, indent: string): string {
-        const children = tsEx.getChildren(node);
 
         // Get identifier
-        const identifier = tsEx.getFirstChildOfType<ts.Identifier>(tsEx.getChildren(children[0])[0], ts.isIdentifier);
+        const identifier = tsEx.getFirstChildOfType<ts.Identifier>(tsEx.getChildren(node.initializer)[0], ts.isIdentifier);
 
-        let min = 0;
-        let max = 0;
-        let step = 1;
+        let start = "0";
+        let end = "0";
+        let step = "1";
+
+        // Get initial value
+        const varDec = tsEx.getFirstChildOfType<ts.VariableDeclaration>(node.initializer, ts.isVariableDeclaration);
+        start = this.transpileExpression(tsEx.getChildren(varDec)[1]);
+
+        if (ts.isBinaryExpression(node.condition)) {
+            if (ts.isIdentifier(node.condition.left)) {
+                // Account for lua 1 indexing
+                switch (node.condition.operatorToken.kind) {
+                    case ts.SyntaxKind.LessThanEqualsToken:
+                    case ts.SyntaxKind.GreaterThanEqualsToken:
+                        end = this.transpileExpression(node.condition.right);
+                        break;
+                    case ts.SyntaxKind.LessThanToken:
+                        end = this.transpileExpression(node.condition.right) + "-1";
+                        break;
+                    case ts.SyntaxKind.GreaterThanToken:
+                        end = this.transpileExpression(node.condition.right) + "+1";
+                        break;
+                    default:
+                        throw new TranspileError("Unsupported for-loop condition operator: " + tsEx.enumName(node.condition.operatorToken, ts.SyntaxKind), node);
+                }
+            } else {
+                this.transpileExpression(node.condition.left);
+                // Account for lua 1 indexing
+                switch (node.condition.operatorToken.kind) {
+                    case ts.SyntaxKind.LessThanEqualsToken:
+                    case ts.SyntaxKind.GreaterThanEqualsToken:
+                        end = this.transpileExpression(node.condition.right);
+                        break;
+                    case ts.SyntaxKind.LessThanToken:
+                        end = this.transpileExpression(node.condition.right) + "+1";
+                        break;
+                    case ts.SyntaxKind.GreaterThanToken:
+                        end = this.transpileExpression(node.condition.right) + "-1";
+                        break;
+                    default:
+                        throw new TranspileError("Unsupported for-loop condition operator: " + tsEx.enumName(node.condition.operatorToken, ts.SyntaxKind), node);
+                }
+            }
+        } else {
+            throw new TranspileError("Unsupported for-loop condition type: " + tsEx.enumName(node.condition.kind, ts.SyntaxKind), node);
+        }
 
         // Get increment step
-        const increment = children[2];
-        switch (increment.kind) {
+        switch (node.incrementor.kind) {
             case ts.SyntaxKind.PostfixUnaryExpression:
-                //console.log(increment);
-                break;
             case ts.SyntaxKind.PrefixUnaryExpression:
-                //console.log(increment);
+                switch ((<ts.PostfixUnaryExpression|ts.PrefixUnaryExpression>node.incrementor).operator) {
+                    case ts.SyntaxKind.PlusPlusToken:
+                        step = "1";
+                        break;
+                    case ts.SyntaxKind.MinusMinusToken:
+                        step = "-1";
+                        break;
+                    default:
+                        throw new TranspileError("Unsupported for-loop increment step: " + tsEx.enumName(node.incrementor.kind, ts.SyntaxKind), node);
+                }
                 break;
+            case ts.SyntaxKind.BinaryExpression:
+                let value = ts.isIdentifier((<ts.BinaryExpression>node.incrementor).left) ? 
+                    this.transpileExpression((<ts.BinaryExpression>node.incrementor).right) :
+                    this.transpileExpression((<ts.BinaryExpression>node.incrementor).left);
+                switch((<ts.BinaryExpression>node.incrementor).operatorToken.kind) {
+                    case ts.SyntaxKind.PlusEqualsToken:
+                        step = value;
+                        break;
+                    case ts.SyntaxKind.MinusEqualsToken:
+                        step = "-" + value;
+                        break;
+                    default:
+                        throw new TranspileError("Unsupported for-loop increment step: " + tsEx.enumName(node.incrementor.kind, ts.SyntaxKind), node);
+                }
+                break;
+            default:
+                throw new TranspileError("Unsupported for-loop increment step: " + tsEx.enumName(node.incrementor.kind, ts.SyntaxKind), node);
         }
 
         // Add header
-        let result = indent + `for ${identifier.escapedText}=${min},${max},${step} do\n`;
+        let result = indent + `for ${identifier.escapedText}=${start},${end},${step} do\n`;
 
         // Add body
         const block = tsEx.getFirstChildOfType<ts.Block>(node, ts.isBlock);
@@ -210,7 +275,7 @@ export class LuaTranspiler {
         let result = "";
 
         let list = tsEx.getFirstChildOfType<ts.VariableDeclarationList>(node, ts.isVariableDeclarationList);
-        list.forEachChild(declaration => {
+        list.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(<ts.VariableDeclaration>declaration);
         });
 

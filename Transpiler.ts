@@ -225,7 +225,26 @@ export class LuaTranspiler {
     }
 
     static transpileBinaryExpression(node: ts.BinaryExpression): string {
-        return this.transpileExpression(node.left) + this.transpileOperator(node.operatorToken) + this.transpileExpression(node.right);
+        // Transpile operands
+        const lhs = this.transpileExpression(node.left);
+        const rhs = this.transpileExpression(node.right);
+        // Rewrite some non-existant binary operators
+        switch (node.operatorToken.kind) {
+            case ts.SyntaxKind.PlusEqualsToken:
+                return `${lhs}=${lhs}+${rhs}`;
+            case ts.SyntaxKind.MinusEqualsToken:
+                return `${lhs}=${lhs}-${rhs}`;
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+                return `${lhs} and ${rhs}`;
+            case ts.SyntaxKind.BarBarToken:
+                return `${lhs} or ${rhs}`;
+            case ts.SyntaxKind.AmpersandToken:
+                return `bit.band(${lhs},${rhs})`;
+            case ts.SyntaxKind.BarToken:
+                return `bit.bor(${lhs},${rhs})`;
+            default:
+                return lhs + this.transpileOperator(node.operatorToken) + rhs;
+        }
     }
 
     // Replace some missmatching operators

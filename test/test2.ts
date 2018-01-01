@@ -58,6 +58,7 @@ function Activate() {
     ++i;
     i+=1;
     i-=1;
+    let a = 24 & 4;
 
     let list = [1,2,3];
 

@@ -44,7 +44,11 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ReturnStatement:
                 return indent + this.transpileReturn(<ts.ReturnStatement>node) + "\n";
             case ts.SyntaxKind.ForStatement:
-                return this.transpileFor(<ts.ForStatement>node, indent) + "\n";
+                return this.transpileFor(<ts.ForStatement>node, indent);
+            case ts.SyntaxKind.ForOfStatement:
+                return this.transpileForOf(<ts.ForOfStatement>node, indent);
+            case ts.SyntaxKind.ForInStatement:
+                return this.transpileForIn(<ts.ForInStatement>node, indent);
             case ts.SyntaxKind.EndOfFileToken:
                 return "";
             default:
@@ -142,14 +146,47 @@ export class LuaTranspiler {
         let result = indent + `for ${identifier.escapedText}=${start},${end},${step} do\n`;
 
         // Add body
-        const block = tsEx.getFirstChildOfType<ts.Block>(node, ts.isBlock);
-        result += this.transpileBlock(block, indent + "    ");
+        result += this.transpileBlock(node.statement, indent + "    ");
+
+        return result + indent + "end\n";
+    }
+
+    static transpileForOf(node: ts.ForOfStatement, indent: string): string {
+        // Get variable identifier
+        const variable = <ts.VariableDeclaration>(<ts.VariableDeclarationList>node.initializer).declarations[0];
+        const identifier = <ts.Identifier>variable.name;
+
+        // Transpile expression
+        const expression = this.transpileExpression(node.expression);
+
+        // Make header
+        let result = indent + `for _, ${identifier.escapedText} in pairs(${expression}) do\n`;
+
+        // For body
+        result += this.transpileBlock(node.statement, indent + "    ");
+
+        return result + indent + "end\n";
+    }
+
+    static transpileForIn(node: ts.ForInStatement, indent: string): string {
+        // Get variable identifier
+        const variable = <ts.VariableDeclaration>(<ts.VariableDeclarationList>node.initializer).declarations[0];
+        const identifier = <ts.Identifier>variable.name;
+
+        // Transpile expression
+        const expression = this.transpileExpression(node.expression);
+
+        // Make header
+        let result = indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
+
+        // For body
+        result += this.transpileBlock(node.statement, indent + "    ");
 
         return result + indent + "end\n";
     }
 
     static transpileReturn(node: ts.ReturnStatement): string {
-        return "return " + this.transpileExpression(tsEx.getChildren(node)[0]);
+        return "return " + this.transpileExpression(node.expression);
     }
 
     static transpileExpression(node: ts.Node): string {

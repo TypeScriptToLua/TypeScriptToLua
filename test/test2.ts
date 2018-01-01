@@ -37,7 +37,7 @@ class TestClass {
     }
 }
 
-function Activate(a) {
+function Activate() {
     let test = function() { return ""; }
     for (let i = 0; i< 10; i++) {
         print(i);
@@ -59,11 +59,18 @@ function Activate(a) {
     i+=1;
     i-=1;
 
-    /*for (let i of [1,2,3]) {
+    let list = [1,2,3];
 
+    for (let i of list) {
+        print(i);
+    }
+
+    for (let i of [1,2,3]) {
+        print(i);
+        print(i+1);
     }
 
     for (let i in [1,2,3]) {
 
-    }*/
+    }
 }

@@ -13,48 +13,63 @@ class TranspileError extends Error {
 export class LuaTranspiler {
     // Transpile a source file
     static transpileSourceFile(node: ts.SourceFile): string {
-        return this.transpileBlock(node, "");
+        let transpiler = new LuaTranspiler();
+        return transpiler.transpileBlock(node);
+    }
+
+    indent: string;
+
+    constructor() {
+        this.indent = "";
+    }
+
+    pushIndent(): void {
+        this.indent = this.indent + "    ";
+    }
+
+    popIndent(): void {
+        this.indent = this.indent.slice(4);
     }
 
     // Transpile a block
-    static transpileBlock(node: ts.Node, indent: string): string {
+     transpileBlock(node: ts.Node): string {
         let result = "";
 
         node.forEachChild(child => {
-            result += this.transpileNode(child, indent);
+            result += this.transpileNode(child);
         })
 
         return result;
     }
 
     // Transpile a node of unknown kind.
-    static transpileNode(node: ts.Node, indent: string): string {
+    transpileNode(node: ts.Node): string {
         //Ignore declarations
         if (tsEx.getChildrenOfType(node, child => child.kind == ts.SyntaxKind.DeclareKeyword).length > 0) return "";
 
         switch (node.kind) {
             case ts.SyntaxKind.ClassDeclaration:
-                return this.transpileClass(<ts.ClassDeclaration>node, indent);
+                return this.transpileClass(<ts.ClassDeclaration>node);
             case ts.SyntaxKind.FunctionDeclaration:
-                return this.transpileFunctionDeclaration(<ts.FunctionDeclaration>node, "", indent);
+                return this.transpileFunctionDeclaration(<ts.FunctionDeclaration>node, "");
             case ts.SyntaxKind.VariableStatement:
-                return indent + this.transpileVariableStatement(<ts.VariableStatement>node) + "\n";
+                return this.indent + this.transpileVariableStatement(<ts.VariableStatement>node) + "\n";
             case ts.SyntaxKind.ExpressionStatement:
-                return indent + this.transpileExpression(<ts.Expression>tsEx.getChildren(node)[0]) + "\n";
+                return this.indent + this.transpileExpression(<ts.Expression>tsEx.getChildren(node)[0]) + "\n";
             case ts.SyntaxKind.ReturnStatement:
-                return indent + this.transpileReturn(<ts.ReturnStatement>node) + "\n";
+                return this.indent + this.transpileReturn(<ts.ReturnStatement>node) + "\n";
             case ts.SyntaxKind.IfStatement:
-                return this.transpileIf(<ts.IfStatement>node, indent);
+                return this.transpileIf(<ts.IfStatement>node);
             case ts.SyntaxKind.WhileStatement:
-                return this.transpileWhile(<ts.WhileStatement>node, indent);
+                return this.transpileWhile(<ts.WhileStatement>node);
             case ts.SyntaxKind.ForStatement:
-                return this.transpileFor(<ts.ForStatement>node, indent);
+                return this.transpileFor(<ts.ForStatement>node);
             case ts.SyntaxKind.ForOfStatement:
-                return this.transpileForOf(<ts.ForOfStatement>node, indent);
+                return this.transpileForOf(<ts.ForOfStatement>node);
             case ts.SyntaxKind.ForInStatement:
-                return this.transpileForIn(<ts.ForInStatement>node, indent);
+                return this.transpileForIn(<ts.ForInStatement>node);
             case ts.SyntaxKind.BreakStatement:
-                return indent + "break\n";
+                return this.indent + "break\n";
             case ts.SyntaxKind.ContinueKeyword:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
@@ -65,29 +80,35 @@ export class LuaTranspiler {
         }
     }
 
-    static transpileIf(node: ts.IfStatement, indent: string): string {
+    transpileIf(node: ts.IfStatement): string {
         const condition = this.transpileExpression(node.expression);
 
-        let result = indent + `if ${condition} then\n`;
-        result += this.transpileBlock(node.thenStatement, indent + "    ");
+        let result = this.indent + `if ${condition} then\n`;
+        this.pushIndent();
+        result += this.transpileBlock(node.thenStatement);
+        this.popIndent();
 
         if (node.elseStatement) {
-            result += indent + "else\n";
-            result += this.transpileBlock(node.elseStatement, indent + "    ");
+            result += this.indent + "else\n";
+            this.pushIndent();
+            result += this.transpileBlock(node.elseStatement);
+            this.popIndent();
         }
 
-        return result + indent + "end\n";
+        return result + this.indent + "end\n";
     }
 
-    static transpileWhile(node: ts.WhileStatement, indent: string): string {
+    transpileWhile(node: ts.WhileStatement): string {
         const condition = this.transpileExpression(node.expression);
 
-        let result = indent + `while ${condition} do\n`;
-        result += this.transpileBlock(node.statement, indent + "    ");
-        return result + indent + "end\n";
+        let result = this.indent + `while ${condition} do\n`;
+        this.pushIndent();
+        result += this.transpileBlock(node.statement);
+        this.popIndent();
+        return result + this.indent + "end\n";
     }
 
-    static transpileFor(node: ts.ForStatement, indent: string): string {
+    transpileFor(node: ts.ForStatement): string {
         // Goal: Populate three for components:
         let start = "0";
         let end = "0";
@@ -175,15 +196,17 @@ export class LuaTranspiler {
         }
 
         // Add header
-        let result = indent + `for ${identifier.escapedText}=${start},${end},${step} do\n`;
+        let result = this.indent + `for ${identifier.escapedText}=${start},${end},${step} do\n`;
 
         // Add body
-        result += this.transpileBlock(node.statement, indent + "    ");
+        this.pushIndent();
+        result += this.transpileBlock(node.statement);
+        this.popIndent();
 
-        return result + indent + "end\n";
+        return result + this.indent + "end\n";
     }
 
-    static transpileForOf(node: ts.ForOfStatement, indent: string): string {
+    transpileForOf(node: ts.ForOfStatement): string {
         // Get variable identifier
         const variable =  (<ts.VariableDeclarationList>node.initializer).declarations[0];
         const identifier = <ts.Identifier>variable.name;
@@ -192,15 +215,17 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Make header
-        let result = indent + `for _, ${identifier.escapedText} in pairs(${expression}) do\n`;
+        let result = this.indent + `for _, ${identifier.escapedText} in pairs(${expression}) do\n`;
 
         // For body
-        result += this.transpileBlock(node.statement, indent + "    ");
+        this.pushIndent();
+        result += this.transpileBlock(node.statement);
+        this.popIndent();
 
-        return result + indent + "end\n";
+        return result + this.indent + "end\n";
     }
 
-    static transpileForIn(node: ts.ForInStatement, indent: string): string {
+    transpileForIn(node: ts.ForInStatement): string {
         // Get variable identifier
         const variable = <ts.VariableDeclaration>(<ts.VariableDeclarationList>node.initializer).declarations[0];
         const identifier = <ts.Identifier>variable.name;
@@ -209,22 +234,25 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Make header
-        let result = indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
+        let result = this.indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
 
         // For body
-        result += this.transpileBlock(node.statement, indent + "    ");
+        this.pushIndent();
+        result += this.transpileBlock(node.statement);
+        this.popIndent();
 
-        return result + indent + "end\n";
+        return result + this.indent + "end\n";
     }
 
-    static transpileReturn(node: ts.ReturnStatement): string {
+    transpileReturn(node: ts.ReturnStatement): string {
         return "return " + this.transpileExpression(node.expression);
     }
 
-    static transpileExpression(node: ts.Node): string {
+    transpileExpression(node: ts.Node, brackets?: boolean): string {
         switch (node.kind) {
             case ts.SyntaxKind.BinaryExpression:
-                return this.transpileBinaryExpression(<ts.BinaryExpression>node);
+                // Add brackets to preserve ordering
+                return this.transpileBinaryExpression(<ts.BinaryExpression>node, brackets);
             case ts.SyntaxKind.CallExpression:
                 return this.transpileCallExpression(<ts.CallExpression>node);
             case ts.SyntaxKind.PropertyAccessExpression:
@@ -258,31 +286,45 @@ export class LuaTranspiler {
         }
     }
 
-    static transpileBinaryExpression(node: ts.BinaryExpression): string {
+    transpileBinaryExpression(node: ts.BinaryExpression, brackets?: boolean): string {
         // Transpile operands
-        const lhs = this.transpileExpression(node.left);
-        const rhs = this.transpileExpression(node.right);
+        const lhs = this.transpileExpression(node.left, true);
+        const rhs = this.transpileExpression(node.right, true);
         // Rewrite some non-existant binary operators
+
+        let result = "";
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.PlusEqualsToken:
-                return `${lhs}=${lhs}+${rhs}`;
+                result = `${lhs}=${lhs}+${rhs}`;
+                break;
             case ts.SyntaxKind.MinusEqualsToken:
-                return `${lhs}=${lhs}-${rhs}`;
+                result = `${lhs}=${lhs}-${rhs}`;
+                break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
-                return `${lhs} and ${rhs}`;
+                result = `${lhs} and ${rhs}`;
+                break;
             case ts.SyntaxKind.BarBarToken:
-                return `${lhs} or ${rhs}`;
+                result = `${lhs} or ${rhs}`;
+                break;
             case ts.SyntaxKind.AmpersandToken:
-                return `bit.band(${lhs},${rhs})`;
+                result = `bit.band(${lhs},${rhs})`;
+                break;
             case ts.SyntaxKind.BarToken:
-                return `bit.bor(${lhs},${rhs})`;
+                result = `bit.bor(${lhs},${rhs})`;
+                break;
             default:
-                return lhs + this.transpileOperator(node.operatorToken) + rhs;
+                result = lhs + this.transpileOperator(node.operatorToken) + rhs;
+        }
+
+        if (brackets) {
+            return `(${result})`;
+        } else {
+            return result;
         }
     }
 
     // Replace some missmatching operators
-    static transpileOperator<T extends ts.SyntaxKind>(operator: ts.Token<T>): string {
+    transpileOperator<T extends ts.SyntaxKind>(operator: ts.Token<T>): string {
         switch (operator.kind) {
             case ts.SyntaxKind.EqualsEqualsEqualsToken:
                 return "==";
@@ -294,7 +336,7 @@ export class LuaTranspiler {
         }
     }
 
-    static transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
+    transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
@@ -306,7 +348,7 @@ export class LuaTranspiler {
         }
     }
 
-    static transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
+    transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
@@ -320,7 +362,7 @@ export class LuaTranspiler {
         }
     }
 
-    static transpileCallExpression(node: ts.CallExpression): string {
+    transpileCallExpression(node: ts.CallExpression): string {
         let callPath = this.transpileExpression(node.expression);
         // Remove last . with :
         if (callPath.indexOf(".") > -1) {
@@ -335,7 +377,7 @@ export class LuaTranspiler {
         return `${callPath}(${parameters.join(",")})`;
     }
 
-    static transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
+    transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
         let parts = [];
         node.forEachChild(child => {
             switch(child.kind) {
@@ -358,7 +400,7 @@ export class LuaTranspiler {
         return parts.join(".");
     }
 
-    static transpileElementAccessExpression(node: ts.ElementAccessExpression): string {
+    transpileElementAccessExpression(node: ts.ElementAccessExpression): string {
         const element = this.transpileExpression(node.expression);
         const index = this.transpileExpression(node.argumentExpression);
 
@@ -366,7 +408,7 @@ export class LuaTranspiler {
     }
 
     // Transpile a variable statement
-    static transpileVariableStatement(node: ts.VariableStatement): string {
+    transpileVariableStatement(node: ts.VariableStatement): string {
         let result = "";
 
         node.declarationList.declarations.forEach(declaration => {
@@ -376,7 +418,7 @@ export class LuaTranspiler {
         return result;
     }
 
-    static transpileVariableDeclaration(node: ts.VariableDeclaration): string {
+    transpileVariableDeclaration(node: ts.VariableDeclaration): string {
         // Find variable identifier
         const identifier = <ts.Identifier>node.name;
         const value = this.transpileExpression(node.initializer);
@@ -384,7 +426,7 @@ export class LuaTranspiler {
         return `local ${identifier.escapedText} = ${value}`;
     }
 
-    static transpileFunctionDeclaration(node: ts.Declaration, path: string, indent: string): string {
+    transpileFunctionDeclaration(node: ts.Declaration, path: string): string {
         let result = "";
         const identifier = tsEx.getFirstChildOfType<ts.Identifier>(node, ts.isIdentifier);
         const methodName = identifier.escapedText;
@@ -398,21 +440,23 @@ export class LuaTranspiler {
         });
 
         // Build function header
-        result += indent + `function ${path}${methodName}(${paramNames.join(",")})\n`;
+        result += this.indent + `function ${path}${methodName}(${paramNames.join(",")})\n`;
 
-        result += this.transpileBlock(block, indent + "    ");
+        this.pushIndent();
+        result += this.transpileBlock(block);
+        this.popIndent();
 
         // Close function block
-        result += indent + "end\n";
+        result += this.indent + "end\n";
 
         return result;
     }
 
     // Transpile a class declaration
-    static transpileClass(node: ts.ClassDeclaration, indent: string): string {
+    transpileClass(node: ts.ClassDeclaration): string {
         // Write class declaration
         const className = <string>node.name.escapedText;
-        let result = indent + `${className} = ${className} or {}\n`;
+        let result = this.indent + `${className} = ${className} or {}\n`;
 
         // Get all properties
         const properties = tsEx.getChildrenOfType<ts.PropertyDeclaration>(node, ts.isPropertyDeclaration);
@@ -450,33 +494,33 @@ export class LuaTranspiler {
             let value = this.transpileExpression(valueNode);            
             
             // Build lua assignment string
-            result += indent + `${className}.${fieldName} = ${value}\n`;
+            result += this.indent + `${className}.${fieldName} = ${value}\n`;
         }
 
         // Try to find constructor
         const constructor = tsEx.getFirstChildOfType<ts.ConstructorDeclaration>(node, ts.isConstructorDeclaration);
         if (constructor) {
             // Add constructor plus initialisation of instance fields
-            result += indent + this.transpileConstructor(constructor, className, instanceFields, indent);
+            result += this.transpileConstructor(constructor, className, instanceFields);
         } else {
             // No constructor, make one to set all instance fields if there are any
             if (instanceFields.length > 0) {
                 // Create empty constructor and add instance fields
-                result += indent + this.transpileConstructor(ts.createConstructor([],[],[], ts.createBlock([],true)), className, instanceFields, indent);
+                result += this.transpileConstructor(ts.createConstructor([],[],[], ts.createBlock([],true)), className, instanceFields);
             }
         }
 
         // Find all methods
         const methods = tsEx.getChildrenOfType<ts.MethodDeclaration>(node, ts.isMethodDeclaration);
         methods.forEach(method => {
-            result += this.transpileFunctionDeclaration(method, `${className}:`, indent);
+            result += this.transpileFunctionDeclaration(method, `${className}:`);
         });
 
         return result;
     }
 
-    static transpileConstructor(node: ts.ConstructorDeclaration, className: string, instanceFields: ts.PropertyDeclaration[], indent: string): string {
-        let result = indent + `function ${className}:constructor()\n`;
+    transpileConstructor(node: ts.ConstructorDeclaration, className: string, instanceFields: ts.PropertyDeclaration[]): string {
+        let result = this.indent + `function ${className}:constructor()\n`;
 
         // Add in instance field declarations
         for (const f of instanceFields) {
@@ -486,16 +530,18 @@ export class LuaTranspiler {
 
             let value = this.transpileExpression(f.initializer);
 
-            result += indent + `    self.${fieldName} = ${value}\n`;
+            result += this.indent + `    self.${fieldName} = ${value}\n`;
         }
 
         // Transpile constructor body
-        result += this.transpileBlock(node.body, indent + "    ");
+        this.pushIndent();
+        result += this.transpileBlock(node.body);
+        this.popIndent();
 
-        return result + `${indent}end\n`;
+        return result + this.indent + "end\n";
     }
 
-    static transpileArrayLiteral(node: ts.ArrayLiteralExpression): string {
+    transpileArrayLiteral(node: ts.ArrayLiteralExpression): string {
         let values = [];
 
         node.elements.forEach(child => {
@@ -505,7 +551,7 @@ export class LuaTranspiler {
         return "{" + values.join(",") + "}";
     }
 
-    static transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
+    transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
         let properties = [];
         // Add all property assignments
         node.properties.forEach(assignment => {
@@ -521,13 +567,17 @@ export class LuaTranspiler {
         return "{" + properties.join(",") + "}";
     }
 
-    static transpileFunctionExpression(node: ts.FunctionExpression): string {
+    transpileFunctionExpression(node: ts.FunctionExpression): string {
         // Build parameter string
         let paramNames = [];
         node.parameters.forEach(param => {
             paramNames.push(tsEx.getFirstChildOfType<ts.Identifier>(param, ts.isIdentifier).escapedText);
         });
 
-        return `function(${paramNames.join(",")})\n` + this.transpileBlock(node.body, "        ")+ "    end\n";
+        let result = `function(${paramNames.join(",")})\n`;
+        this.pushIndent();
+        result += this.transpileBlock(node.body);
+        this.popIndent();
+        return result + this.indent + "end\n";
     }
 }

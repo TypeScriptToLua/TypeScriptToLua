@@ -13,15 +13,17 @@ export class TranspileError extends Error {
 
 export class LuaTranspiler {
     // Transpile a source file
-    static transpileSourceFile(node: ts.SourceFile): string {
-        let transpiler = new LuaTranspiler();
+    static transpileSourceFile(node: ts.SourceFile, checker: ts.TypeChecker): string {
+        let transpiler = new LuaTranspiler(checker);
         return transpiler.transpileBlock(node);
     }
 
     indent: string;
+    checker: ts.TypeChecker;
 
-    constructor() {
+    constructor(checker: ts.TypeChecker) {
         this.indent = "";
+        this.checker = checker;
     }
 
     pushIndent(): void {
@@ -138,8 +140,12 @@ export class LuaTranspiler {
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
 
+        // Use ipairs for array types, pairs otherwise
+        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        const pairs = isArray ? "ipairs" : "pairs";
+
         // Make header
-        let result = this.indent + `for _, ${identifier.escapedText} in pairs(${expression}) do\n`;
+        let result = this.indent + `for _, ${identifier.escapedText} in ${pairs}(${expression}) do\n`;
 
         // For body
         this.pushIndent();
@@ -157,8 +163,12 @@ export class LuaTranspiler {
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
 
+        // Use ipairs for array types, pairs otherwise
+        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        const pairs = isArray ? "ipairs" : "pairs";
+
         // Make header
-        let result = this.indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
+        let result = this.indent + `for ${identifier.escapedText}, _ in ${pairs}(${expression}) do\n`;
 
         // For body
         this.pushIndent();
@@ -329,7 +339,13 @@ export class LuaTranspiler {
         const element = this.transpileExpression(node.expression);
         const index = this.transpileExpression(node.argumentExpression);
 
-        return `${element}[${index}]`;
+        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+
+        if (isArray) {
+            return `${element}[${index}+1]`;
+        } else {
+            return `${element}[${index}]`;
+        }
     }
 
     // Transpile a variable statement
@@ -503,6 +519,6 @@ export class LuaTranspiler {
         this.pushIndent();
         result += this.transpileBlock(node.body);
         this.popIndent();
-        return result + this.indent + "end\n";
+        return result + this.indent + "end ";
     }
 }

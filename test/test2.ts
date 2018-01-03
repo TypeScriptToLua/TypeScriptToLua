@@ -61,8 +61,21 @@ function Activate() {
     let a = 24 & 4;
 
     let list = [1,2,3];
+    let obj = {a: 3};
     for (let i = 0; i < list.length; i++) {
         print(list[i]);
+    }
+
+    for (var b of [1,2,3]) {
+
+    }
+
+    for (var c of list) {
+
+    }
+
+    for (var d in obj) {
+
     }
 
     if (i == 3 && i < 3) {

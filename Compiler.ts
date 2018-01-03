@@ -5,14 +5,18 @@ import {LuaTranspiler} from "./Transpiler";
 import {TSHelper as tsEx} from "./TSHelper";
 
 function compile(fileNames: string[], options: ts.CompilerOptions): void {
-    fileNames.forEach(fileName => {
-        const sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2017);
-        
-        // Print AST for debugging
-        printAST(sourceFile, 0);
+    let program = ts.createProgram(fileNames, options);
+    let checker = program.getTypeChecker();
 
-        // Transpile AST
-        console.log(LuaTranspiler.transpileSourceFile(sourceFile));
+    program.getSourceFiles().forEach(sourceFile => {
+        if (!sourceFile.isDeclarationFile) {       
+            // Print AST for debugging
+            //printAST(sourceFile, 0);
+
+            // Transpile AST
+            let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker);
+            console.log(lua);
+        }
     });
 
     process.exit();

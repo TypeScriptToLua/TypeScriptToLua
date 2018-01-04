@@ -51,7 +51,7 @@ function Activate() {
         
     }
 
-    let i = 0;
+    let i = false == false ? 0 : 4;
     i++;
     i--;
     !true;
@@ -88,5 +88,29 @@ function Activate() {
         while (true) {
             break;
         }
-    }   
+    } 
+
+    switch (a) {
+        case 1:
+            2+2
+        case 3:
+            return 5;
+        case 4:
+            1+1
+            break;
+        default:
+            let b = 3
+    }
+
+    switch (a) {
+        case 1:
+            2+2
+        case 3:
+            return 5;
+        case 4:
+            1+1
+            break;
+        default:
+            let b = 3
+    }
 }

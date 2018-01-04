@@ -20,10 +20,14 @@ export class LuaTranspiler {
 
     indent: string;
     checker: ts.TypeChecker;
+    switchCounter: number;
+    transpilingSwitch: boolean;
 
     constructor(checker: ts.TypeChecker) {
         this.indent = "";
         this.checker = checker;
+        this.switchCounter = 0;
+        this.transpilingSwitch = false;
     }
 
     pushIndent(): void {
@@ -71,8 +75,10 @@ export class LuaTranspiler {
                 return this.transpileForOf(<ts.ForOfStatement>node);
             case ts.SyntaxKind.ForInStatement:
                 return this.transpileForIn(<ts.ForInStatement>node);
+            case ts.SyntaxKind.SwitchStatement:
+                return this.transpileSwitch(<ts.SwitchStatement>node);
             case ts.SyntaxKind.BreakStatement:
-                return this.indent + "break\n";
+                return this.transpileBreak();
             case ts.SyntaxKind.ContinueKeyword:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
@@ -80,6 +86,14 @@ export class LuaTranspiler {
                 return "";
             default:
                 throw new TranspileError("Unsupported node kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+        }
+    }
+
+    transpileBreak(): string {
+        if (this.transpilingSwitch) {
+            return this.indent + `goto switchDone${this.switchCounter}\n`;
+        } else {
+            return this.indent + "break\n";
         }
     }
 
@@ -178,6 +192,50 @@ export class LuaTranspiler {
         return result + this.indent + "end\n";
     }
 
+    transpileSwitch(node: ts.SwitchStatement): string {
+        const expression = this.transpileExpression(node.expression, true);
+        const clauses = node.caseBlock.clauses;
+
+        let result = this.indent + "-------Switch statement start-------\n";
+
+        // If statement to go to right entry label
+        clauses.forEach((clause, index) => {
+            if (ts.isCaseClause(clause)) {
+                let keyword = index == 0 ? "if" : "elseif";
+                let condition = this.transpileExpression(clause.expression, true);
+                result += this.indent + `${keyword} ${expression}==${condition} then\n`;
+            } else {
+                // Default
+                result += this.indent + `else\n`;
+            }
+
+            this.pushIndent();
+
+            // Labels for fallthrough
+            result += this.indent + `::switchCase${this.switchCounter+index}::\n`;
+
+            this.transpilingSwitch = true;
+            clause.statements.forEach(statement => {
+                result += this.transpileNode(statement);
+            });
+            this.transpilingSwitch = false;
+
+            // If this goto is reached, fall through to the next case
+            if (index < clauses.length - 1) {
+                result += this.indent + `goto switchCase${this.switchCounter + index + 1}\n`;
+            }
+
+            this.popIndent();
+        });
+        result += this.indent + "end\n";
+        result += this.indent + `::switchDone${this.switchCounter}::\n`;
+        result += this.indent + "--------Switch statement end--------\n";
+
+        //Increment counter for next switch statement
+        this.switchCounter += clauses.length;
+        return result;
+    }
+
     transpileReturn(node: ts.ReturnStatement): string {
         return "return " + this.transpileExpression(node.expression);
     }
@@ -187,6 +245,9 @@ export class LuaTranspiler {
             case ts.SyntaxKind.BinaryExpression:
                 // Add brackets to preserve ordering
                 return this.transpileBinaryExpression(<ts.BinaryExpression>node, brackets);
+            case ts.SyntaxKind.ConditionalExpression:
+                // Add brackets to preserve ordering
+                return this.transpileConditionalExpression(<ts.ConditionalExpression>node, brackets);
             case ts.SyntaxKind.CallExpression:
                 return this.transpileCallExpression(<ts.CallExpression>node);
             case ts.SyntaxKind.PropertyAccessExpression:
@@ -256,6 +317,14 @@ export class LuaTranspiler {
         } else {
             return result;
         }
+    }
+
+    transpileConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): string {
+        let condition = this.transpileExpression(node.condition);
+        let val1 = this.transpileExpression(node.whenTrue);
+        let val2 = this.transpileExpression(node.whenFalse);
+
+        return `ITE(${condition},function() return ${val1} end, function() return ${val2} end)`;
     }
 
     // Replace some missmatching operators

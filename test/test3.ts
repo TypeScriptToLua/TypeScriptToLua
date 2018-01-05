@@ -1,0 +1,10 @@
+let a = "";
+let b = [1,2,3];
+let c = {d: a, e: b};
+let d = b.length;
+let e = a.length;
+let f = c.d.length;
+let g = c.e.length;
+let h = "abc".length;
+b.push(3);
+//let d = a.indexOf("b");

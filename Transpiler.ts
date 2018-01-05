@@ -257,7 +257,7 @@ export class LuaTranspiler {
             case ts.SyntaxKind.Identifier:
                 // For identifiers simply return their name
                 return (<ts.Identifier>node).text;
-             case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.StringLiteral:
                 const text = (<ts.StringLiteral>node).text;
                 return `"${text}"`;
             case ts.SyntaxKind.NumericLiteral:
@@ -376,39 +376,76 @@ export class LuaTranspiler {
         const parameters = [];
         node.arguments.forEach(param => {
             parameters.push(this.transpileExpression(param));
-        })
+        });
 
         return `${callPath}(${parameters.join(",")})`;
     }
 
     transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
-        let parts = [];
-        node.forEachChild(child => {
-            switch(child.kind) {
-                case ts.SyntaxKind.ThisKeyword:
-                    parts.push("self");
-                    break;
-                case ts.SyntaxKind.Identifier:
-                    parts.push((<ts.Identifier>child).escapedText);
-                    break;
-                case ts.SyntaxKind.CallExpression:
-                    parts.push(this.transpileCallExpression(<ts.CallExpression>child));
-                    break;
-                case ts.SyntaxKind.PropertyAccessExpression:
-                    parts.push(this.transpilePropertyAccessExpression(<ts.PropertyAccessExpression>child));
-                    break;
-                default:
-                    throw new TranspileError("Unsupported access kind: " + tsEx.enumName(child.kind, ts.SyntaxKind), node);
-            }
-        });
-        return parts.join(".");
+        const property = node.name.text;
+        
+        // Check for primitive types to override
+        const type = this.checker.getTypeAtLocation(node.expression);
+        console.log(type.flags);
+        switch (type.flags) {
+            case ts.TypeFlags.String:
+            case ts.TypeFlags.StringLiteral:
+                return this.transpileStringProperty(node);
+            case ts.TypeFlags.Object:
+                if (tsEx.isArrayType(type))
+                    return this.transpileArrayProperty(node);
+        }
+
+        // Do regular handling
+        switch(node.expression.kind) {
+            case ts.SyntaxKind.ThisKeyword:
+                return `self.${property}`;
+            case ts.SyntaxKind.Identifier:
+                let path = (<ts.Identifier>node.expression).text;
+                return `${path}.${property}`;
+            case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.NumericLiteral:
+            case ts.SyntaxKind.ArrayLiteralExpression:
+                path = this.transpileExpression(node.expression);
+                return `${path}.${property}`;
+            case ts.SyntaxKind.CallExpression:
+                path = this.transpileCallExpression(<ts.CallExpression>node.expression);
+                return `${path}.${property}`;
+            case ts.SyntaxKind.PropertyAccessExpression:
+                path = this.transpilePropertyAccessExpression(<ts.PropertyAccessExpression>node.expression);
+                return `${path}.${property}`;
+            default:
+                throw new TranspileError("Unsupported access kind: " + tsEx.enumName(node.expression.kind, ts.SyntaxKind), node);
+        }
+    }
+
+    // Transpile access of string properties, only supported properties are allowed
+    transpileStringProperty(node: ts.PropertyAccessExpression): string {
+        const property = node.name;
+        switch (property.escapedText) {
+            case "length":
+                return "#" + this.transpileExpression(node.expression);
+            default:
+                throw new TranspileError("Unsupported string property: " + property.escapedText, node);
+        }
+    }
+
+    // Transpile access of array properties, only supported properties are allowed
+    transpileArrayProperty(node: ts.PropertyAccessExpression): string {
+        const property = node.name;
+        switch (property.escapedText) {
+            case "length":
+                return "#" + this.transpileExpression(node.expression);
+            default:
+                throw new TranspileError("Unsupported array property: " + property.escapedText, node);
+        }
     }
 
     transpileElementAccessExpression(node: ts.ElementAccessExpression): string {
         const element = this.transpileExpression(node.expression);
         const index = this.transpileExpression(node.argumentExpression);
 
-        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
 
         if (isArray) {
             return `${element}[${index}+1]`;

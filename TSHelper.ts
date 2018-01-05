@@ -32,4 +32,8 @@ export class TSHelper {
     static isValueType(node: ts.Node): boolean {
         return ts.isIdentifier(node) || ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node);
     }
+
+    static isArrayType(type: ts.Type): boolean {
+        return type.flags == ts.TypeFlags.Object && (<ts.ObjectType>type).symbol.escapedName == "Array";
+    }
 }

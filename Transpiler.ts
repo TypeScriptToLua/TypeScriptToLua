@@ -367,18 +367,59 @@ export class LuaTranspiler {
     }
 
     transpileCallExpression(node: ts.CallExpression): string {
+        // Check for calls on primitives to override
+        if (ts.isPropertyAccessExpression(node.expression)) {
+            const type = this.checker.getTypeAtLocation(node.expression.expression);
+            switch (type.flags) {
+                case ts.TypeFlags.String:
+                case ts.TypeFlags.StringLiteral:
+                    return this.transpileStringCallExpression(node);
+                case ts.TypeFlags.Object:
+                    if (tsEx.isArrayType(type))
+                        return this.transpileArrayCallExpression(node);
+            }
+        }
+
         let callPath = this.transpileExpression(node.expression);
         // Remove last . with :
         if (callPath.indexOf(".") > -1) {
             callPath = callPath.substr(0, callPath.lastIndexOf(".")) + ":" + callPath.substr(callPath.lastIndexOf(".") + 1);
         }
 
+        const params = this.transpileArguments(node.arguments);
+        return `${callPath}(${params})`;
+    }
+
+    transpileStringCallExpression(node: ts.CallExpression): string {
+        const expression = <ts.PropertyAccessExpression>node.expression;
+        const params = this.transpileArguments(node.arguments);
+        const caller = this.transpileExpression(expression.expression);
+        switch (expression.name.escapedText) {
+            case "replace":
+                return `${caller}:sub(${params})`;
+            default:
+                throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
+        }
+    }
+
+    transpileArrayCallExpression(node: ts.CallExpression): string {
+        const expression = <ts.PropertyAccessExpression>node.expression;
+        const params = this.transpileArguments(node.arguments);
+        const caller = this.transpileExpression(expression.expression);
+        switch (expression.name.escapedText) {
+            case "push":
+                return `table.insert(${caller}, ${params})`;
+            default:
+                throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
+        }
+    }
+
+    transpileArguments(params: ts.NodeArray<ts.Expression>): string {
         const parameters = [];
-        node.arguments.forEach(param => {
+        params.forEach(param => {
             parameters.push(this.transpileExpression(param));
         });
-
-        return `${callPath}(${parameters.join(",")})`;
+        return parameters.join(",");
     }
 
     transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
@@ -386,7 +427,6 @@ export class LuaTranspiler {
         
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
-        console.log(type.flags);
         switch (type.flags) {
             case ts.TypeFlags.String:
             case ts.TypeFlags.StringLiteral:

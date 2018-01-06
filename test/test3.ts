@@ -7,4 +7,5 @@ let f = c.d.length;
 let g = c.e.length;
 let h = "abc".length;
 b.push(3);
+a.replace("a", "b");
 //let d = a.indexOf("b");

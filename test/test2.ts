@@ -13,13 +13,13 @@ declare interface unit {
 
 declare function GetUnit(): unit;
 
-class TestClass {
+export class TestClass {
     static field2: number;
     field: string;
     field3: string = globalString; // Abc
     unit: unit;
 
-    constructor() {
+    constructor(tf: number) {
         let localString = "abc";
         globalString = "abc";
         this.field = "";
@@ -114,3 +114,5 @@ function Activate() {
             let b = 3
     }
 }
+
+const a = new TestClass(3);

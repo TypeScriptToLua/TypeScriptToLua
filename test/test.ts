@@ -1,11 +1,16 @@
+import {TestClass} from "./test2";
+import * as tns from "./test2";
+
+var a = new TestClass(0);
+
 // definitions file
 type GameRulesState = number;
 declare const DOTA_GAMERULES_STATE_CUSTOM_GAME_SETUP: GameRulesState;
 
 interface ICustomGameEventManager {
-    RegisterListener(event_name: string, callback: (user_id: number, event_data: any) => void);
-    Send_ServerToPlayer(player: object, event: string, data: object);
-    Send_ServerToAllClients(event: string, data: object);
+    RegisterListener(event_name: string, callback: (user_id: number, event_data: any) => void): void;
+    Send_ServerToPlayer(player: object, event: string, data: object): void;
+    Send_ServerToAllClients(event: string, data: object): void;
 }
 declare const CustomGameEventManager: ICustomGameEventManager;
 
@@ -47,11 +52,12 @@ class GameState{
         });
     }
 
-    OnStateRequest(userid: number, event: object) {
-        const player = PlayerResource.GetPlayer(event['PlayerID']);
+    OnStateRequest(userid: number, event: {PlayerID: number}) {
+        const player = PlayerResource.GetPlayer(event.PlayerID);
         CustomGameEventManager.Send_ServerToPlayer(player, "game_state_response", {state : this.state});
     }
 }
+
 
 /*
 GameState = GameState or {}

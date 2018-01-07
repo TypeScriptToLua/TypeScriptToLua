@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "noImplicitAny" : true,
+        "noImplicitThis" : true,
+        "alwaysStrict" : true,
+        "strictNullChecks" : true,
+        "target": "lua"
+    }
+}

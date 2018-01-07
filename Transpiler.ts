@@ -55,6 +55,8 @@ export class LuaTranspiler {
         if (tsEx.getChildrenOfType(node, child => child.kind == ts.SyntaxKind.DeclareKeyword).length > 0) return "";
 
         switch (node.kind) {
+            case ts.SyntaxKind.ImportDeclaration:
+                return this.transpileImport(<ts.ImportDeclaration>node);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(<ts.ClassDeclaration>node);
             case ts.SyntaxKind.FunctionDeclaration:
@@ -82,10 +84,31 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ContinueKeyword:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
+            case ts.SyntaxKind.TypeAliasDeclaration:
+            case ts.SyntaxKind.InterfaceDeclaration:
             case ts.SyntaxKind.EndOfFileToken:
+                // Ignore these
                 return "";
             default:
                 throw new TranspileError("Unsupported node kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+        }
+    }
+
+    transpileImport(node: ts.ImportDeclaration): string {
+        const name = this.transpileExpression(node.moduleSpecifier);
+        const imports = node.importClause.namedBindings;
+        if (ts.isNamespaceImport(imports)) {
+            return `{$imports.name.escapedText} = require(${name})`;
+        } else if (ts.isNamedImports(imports)) {
+            // Forbid renaming
+            imports.elements.forEach(element => {
+                if(element.propertyName) {
+                    throw new TranspileError("Renaming of individual imported objects is not allowed", node);
+                }
+            });
+            return `require(${name})`;
+        } else {
+            throw new TranspileError("Unsupported import type.", node);
         }
     }
 
@@ -276,6 +299,11 @@ export class LuaTranspiler {
                 return this.transpileObjectLiteral(<ts.ObjectLiteralExpression>node);
             case ts.SyntaxKind.FunctionExpression:
                 return this.transpileFunctionExpression(<ts.FunctionExpression>node);
+            case ts.SyntaxKind.NewExpression:
+                return this.transpileNewExpression(<ts.NewExpression>node);
+            case ts.SyntaxKind.TypeAssertionExpression:
+                // Simply ignore the type assertion
+                return this.transpileExpression((<ts.TypeAssertion>node).expression);
             default:
                 throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -364,6 +392,13 @@ export class LuaTranspiler {
             default:
                 throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
+    }
+
+    transpileNewExpression(node: ts.NewExpression): string {
+        const name = this.transpileExpression(node.expression);
+        const params = this.transpileArguments(node.arguments);
+
+        return `${name}(${params})`;
     }
 
     transpileCallExpression(node: ts.CallExpression): string {

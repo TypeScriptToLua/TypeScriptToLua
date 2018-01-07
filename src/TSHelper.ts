@@ -3,7 +3,7 @@ import * as ts from "typescript";
 export class TSHelper {
     // Get all children of a node, required until microsoft fixes node.getChildren()
     static getChildren(node: ts.Node): ts.Node[] {
-        const children = [];
+        const children: ts.Node[] = [];
         node.forEachChild(child => {
             children.push(child);
         });

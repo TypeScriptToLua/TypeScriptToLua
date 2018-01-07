@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "noImplicitThis" : true,
+        "alwaysStrict" : true,
+        "outDir": "./dist/",
+        "rootDir": "./src/"
+    },
+    "exclude": ["test/**/*"],
+}

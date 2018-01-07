@@ -450,7 +450,7 @@ export class LuaTranspiler {
     }
 
     transpileArguments(params: ts.NodeArray<ts.Expression>): string {
-        const parameters = [];
+        const parameters: string[] = [];
         params.forEach(param => {
             parameters.push(this.transpileExpression(param));
         });
@@ -476,12 +476,17 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ThisKeyword:
                 return `self.${property}`;
             case ts.SyntaxKind.Identifier:
-                let path = (<ts.Identifier>node.expression).text;
-                return `${path}.${property}`;
+                // If identifier is enum translate to raw member
+                if ((type.symbol.flags & ts.SymbolFlags.Enum) != 0) {
+                    return property;
+                } else {
+                    let path = (<ts.Identifier>node.expression).text;
+                    return `${path}.${property}`;
+                }
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NumericLiteral:
             case ts.SyntaxKind.ArrayLiteralExpression:
-                path = this.transpileExpression(node.expression);
+                let path = this.transpileExpression(node.expression);
                 return `${path}.${property}`;
             case ts.SyntaxKind.CallExpression:
                 path = this.transpileCallExpression(<ts.CallExpression>node.expression);
@@ -556,9 +561,9 @@ export class LuaTranspiler {
         const block = tsEx.getFirstChildOfType<ts.Block>(node, ts.isBlock);
 
         // Build parameter string
-        let paramNames = [];
+        let paramNames: string[] = [];
         parameters.forEach(param => {
-            paramNames.push((<ts.Identifier>param.name).escapedText);
+            paramNames.push(<string>(<ts.Identifier>param.name).escapedText);
         });
 
         // Build function header
@@ -664,7 +669,7 @@ export class LuaTranspiler {
     }
 
     transpileArrayLiteral(node: ts.ArrayLiteralExpression): string {
-        let values = [];
+        let values: string[] = [];
 
         node.elements.forEach(child => {
             values.push(this.transpileExpression(child));
@@ -674,7 +679,7 @@ export class LuaTranspiler {
     }
 
     transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
-        let properties = [];
+        let properties: string[] = [];
         // Add all property assignments
         node.properties.forEach(assignment => {
             const [key, value] = tsEx.getChildren(assignment);
@@ -691,9 +696,9 @@ export class LuaTranspiler {
 
     transpileFunctionExpression(node: ts.FunctionExpression): string {
         // Build parameter string
-        let paramNames = [];
+        let paramNames: string[] = [];
         node.parameters.forEach(param => {
-            paramNames.push(tsEx.getFirstChildOfType<ts.Identifier>(param, ts.isIdentifier).escapedText);
+            paramNames.push(<string>tsEx.getFirstChildOfType<ts.Identifier>(param, ts.isIdentifier).escapedText);
         });
 
         let result = `function(${paramNames.join(",")})\n`;

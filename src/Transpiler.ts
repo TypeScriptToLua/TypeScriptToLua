@@ -59,6 +59,8 @@ export class LuaTranspiler {
                 return this.transpileImport(<ts.ImportDeclaration>node);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(<ts.ClassDeclaration>node);
+            case ts.SyntaxKind.EnumDeclaration:
+                return this.transpileEnum(<ts.EnumDeclaration>node);
             case ts.SyntaxKind.FunctionDeclaration:
                 return this.transpileFunctionDeclaration(<ts.FunctionDeclaration>node, "");
             case ts.SyntaxKind.VariableStatement:
@@ -110,6 +112,26 @@ export class LuaTranspiler {
         } else {
             throw new TranspileError("Unsupported import type.", node);
         }
+    }
+
+    transpileEnum(node: ts.EnumDeclaration): string {
+        let val = 0;
+        let result = "";
+        node.members.forEach(member => {
+            if (member.initializer) {
+                if (ts.isNumericLiteral(member.initializer)) {
+                    val = parseInt(member.initializer.text);
+                } else {
+                    throw new TranspileError("Only numeric initializers allowed for enums.", node);
+                }
+            }
+
+            const name = (<ts.Identifier>member.name).escapedText;
+            result += this.indent + `${name}=${val}\n`;
+
+            val++;
+        });
+        return result;
     }
 
     transpileBreak(): string {

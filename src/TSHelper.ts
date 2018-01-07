@@ -36,4 +36,11 @@ export class TSHelper {
     static isArrayType(type: ts.Type): boolean {
         return type.flags == ts.TypeFlags.Object && (<ts.ObjectType>type).symbol.escapedName == "Array";
     }
+
+    static isCompileMembersOnlyEnum(type: ts.Type) {
+        return type.symbol 
+            && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
+            && type.symbol.getDocumentationComment()[0] != undefined
+            && (type.symbol.getDocumentationComment()[0].text.trim() == "CompileMembersOnly");
+    }
 }

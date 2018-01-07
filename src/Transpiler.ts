@@ -117,6 +117,14 @@ export class LuaTranspiler {
     transpileEnum(node: ts.EnumDeclaration): string {
         let val = 0;
         let result = "";
+
+        const type = this.checker.getTypeAtLocation(node);
+        const membersOnly = tsEx.isCompileMembersOnlyEnum(type);
+
+        if (!membersOnly) {
+            result += this.indent + `${node.name.escapedText}={}\n`;
+        }
+
         node.members.forEach(member => {
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
@@ -127,7 +135,11 @@ export class LuaTranspiler {
             }
 
             const name = (<ts.Identifier>member.name).escapedText;
-            result += this.indent + `${name}=${val}\n`;
+            if (membersOnly) {
+                result += this.indent + `${name}=${val}\n`;
+            } else {
+                result += this.indent + `${node.name.escapedText}.${name}=${val}\n`;
+            }
 
             val++;
         });
@@ -499,7 +511,7 @@ export class LuaTranspiler {
                 return `self.${property}`;
             case ts.SyntaxKind.Identifier:
                 // If identifier is enum translate to raw member
-                if ((type.symbol.flags & ts.SymbolFlags.Enum) != 0) {
+                if (tsEx.isCompileMembersOnlyEnum(type)) {
                     return property;
                 } else {
                     let path = (<ts.Identifier>node.expression).text;

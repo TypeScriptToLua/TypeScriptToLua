@@ -346,6 +346,8 @@ export class LuaTranspiler {
                 return this.transpileFunctionExpression(<ts.FunctionExpression>node);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(<ts.NewExpression>node);
+            case ts.SyntaxKind.SuperKeyword:
+                return "self.__base.constructor";
             case ts.SyntaxKind.TypeAssertionExpression:
                 // Simply ignore the type assertion
                 return this.transpileExpression((<ts.TypeAssertion>node).expression);
@@ -445,7 +447,7 @@ export class LuaTranspiler {
         const name = this.transpileExpression(node.expression);
         const params = this.transpileArguments(node.arguments);
 
-        return `${name}(${params})`;
+        return `${name}.new(${params})`;
     }
 
     transpileCallExpression(node: ts.CallExpression): string {
@@ -464,6 +466,13 @@ export class LuaTranspiler {
             // Include context parameter if present
             let callPath = this.transpileExpression(node.expression);
             const params = this.transpileArguments(node.arguments, node.expression.expression);
+            return `${callPath}(${params})`;
+        }
+
+        // Handle super calls properly
+        if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
+            let callPath = this.transpileExpression(node.expression);
+            const params = this.transpileArguments(node.arguments, <ts.Expression>ts.createNode(ts.SyntaxKind.ThisKeyword));
             return `${callPath}(${params})`;
         }
 
@@ -642,51 +651,42 @@ export class LuaTranspiler {
 
     // Transpile a class declaration
     transpileClass(node: ts.ClassDeclaration): string {
+        // Figure out inheritance
+        const isExtension = node.heritageClauses && node.heritageClauses.length > 0;
+        let baseName = "";
+
+        if (isExtension)
+            baseName = <string>(<ts.Identifier>node.heritageClauses[0].types[0].expression).escapedText;
+
         // Write class declaration
         const className = <string>node.name.escapedText;
-        let result = this.indent + `${className} = ${className} or class({})\n`;
+        let result = this.indent + `${className} = ${className} or {}\n`;
+        result += this.indent + `${className}.__index = ${className}\n`;
+        if (isExtension) result += this.indent + `${className}.__base = ${baseName}\n`
+        result += this.indent + `function ${className}.new(...)\n`;
+        result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
+        result += this.indent + `    if ${className}.constructor then ${className}.constructor(instance, ...) end\n`;
+        result += this.indent + `    return instance\n`;
+        result += this.indent + `end\n`;
 
-        // Get all properties
-        const properties = tsEx.getChildrenOfType<ts.PropertyDeclaration>(node, ts.isPropertyDeclaration);
+        // Get all properties with value
+        const properties = node.members.filter(ts.isPropertyDeclaration)
+            .filter(_ => _.initializer);
 
-        let staticFields: ts.PropertyDeclaration[] = [];
-        let instanceFields: ts.PropertyDeclaration[] = [];
-
-        // Divide properties in static and instance fields
-        for (const p of properties) {
-            // Check if property is static
-            const isStatic = tsEx.getChildrenOfType(p, child => child.kind == ts.SyntaxKind.StaticKeyword).length > 0;
-
-            // Find value assignment
-            const assignments = tsEx.getChildrenOfType(p, tsEx.isValueType);
-            
-            // Ignore fields with no assigned value
-            if (!p.initializer)
-                continue;
-
-            if (isStatic) {
-                staticFields.push(p);
-            } else {
-                instanceFields.push(p);
-            }
-        }
+        // Divide properties into static and non-static
+        const isStatic = _ => _.modifiers && _.modifiers.some(_ => _.kind == ts.SyntaxKind.StaticKeyword);
+        const staticFields = properties.filter(isStatic);
+        const instanceFields = properties.filter(_ => !isStatic(_));
 
         // Add static declarations
-        for (const f of staticFields) {
-            // Get identifier
-            const fieldIdentifier = tsEx.getFirstChildOfType<ts.Identifier>(f, ts.isIdentifier);
-            const fieldName = fieldIdentifier.escapedText;
-
-            // Get value at index 1 (index 0 is field name)
-            const valueNode = tsEx.getChildrenOfType<ts.Node>(f, tsEx.isValueType)[1];
-            let value = this.transpileExpression(valueNode);            
-            
-            // Build lua assignment string
+        for (const field of staticFields) {
+            const fieldName = (<ts.Identifier>field.name).escapedText;
+            let value = this.transpileExpression(field.initializer);            
             result += this.indent + `${className}.${fieldName} = ${value}\n`;
         }
 
         // Try to find constructor
-        const constructor = tsEx.getFirstChildOfType<ts.ConstructorDeclaration>(node, ts.isConstructorDeclaration);
+        const constructor = node.members.filter(ts.isConstructorDeclaration)[0];
         if (constructor) {
             // Add constructor plus initialisation of instance fields
             result += this.transpileConstructor(constructor, className, instanceFields);
@@ -698,9 +698,8 @@ export class LuaTranspiler {
             }
         }
 
-        // Find all methods
-        const methods = tsEx.getChildrenOfType<ts.MethodDeclaration>(node, ts.isMethodDeclaration);
-        methods.forEach(method => {
+        // Transpile methods
+        node.members.filter(ts.isMethodDeclaration).forEach(method => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
 
@@ -708,7 +707,10 @@ export class LuaTranspiler {
     }
 
     transpileConstructor(node: ts.ConstructorDeclaration, className: string, instanceFields: ts.PropertyDeclaration[]): string {
-        let result = this.indent + `function ${className}:constructor()\n`;
+        let parameters = ["self"];
+        node.parameters.forEach(param => parameters.push(<string>(<ts.Identifier>param.name).escapedText));
+
+        let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n` ;
 
         // Add in instance field declarations
         for (const f of instanceFields) {
@@ -764,7 +766,7 @@ export class LuaTranspiler {
 
         let result = `function(${paramNames.join(",")})\n`;
         this.pushIndent();
-        result += this.transpileNode(node.body);
+        result += this.transpileBlock(node.body);
         this.popIndent();
         return result + this.indent + "end ";
     }

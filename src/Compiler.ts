@@ -51,6 +51,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character);
+                    console.error(exception.stack);
                 } else {
                     throw exception;
                 }

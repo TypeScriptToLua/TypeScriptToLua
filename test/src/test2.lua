@@ -2,19 +2,25 @@ local globalString = "glob"
 local input = {1,2}
 local objTest = {["a"]=3,["B"]=true}
 TestClass = TestClass or {}
-function TestClass:constructor()
+TestClass.__index = TestClass
+function TestClass.new(...)
+    local instance = setmetatable({}, TestClass)
+    if TestClass.constructor then TestClass.constructor(instance, ...) end
+    return instance
+end
+function TestClass.constructor(self,tf)
     self.field3 = globalString
     local localString = "abc"
     globalString="abc"
     self.field=""
     self.unit=GetUnit()
 end
-function TestClass:Test()
+function TestClass.Test(self)
     print("sup")
-    self:Test3(3,"")
-    self.unit:GetParent():GetParent():GetAbsOrigin()
+    self.Test3(self,3,"")
+    self.unit.GetParent(self.unit).GetParent(self.unit.GetParent(self.unit)).GetAbsOrigin(self.unit.GetParent(self.unit).GetParent(self.unit.GetParent(self.unit)))
 end
-function TestClass:Test3(a,b)
+function TestClass.Test3(self,a,b)
     return ""
 end
 function Activate()
@@ -98,4 +104,4 @@ function Activate()
     ::switchDone4::
     --------Switch statement end--------
 end
-local a = TestClass(3)
+local a = TestClass.new(3)

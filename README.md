@@ -14,6 +14,8 @@ To run the transpiler, download all files from [dist](https://github.com/Perryvw
 - Transpiler.js
 - TSHelper.js
 
+After copying these files to a locaton on your machine, run command `npm link typescript` in the directory the javascript files are in.
+
 ### Transpiling an individual TypeScript file to Lua
 To transpile a typescript file to lua, run Compiler.js in node with the path to the file you want to compile, eg:
 

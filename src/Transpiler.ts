@@ -447,7 +447,7 @@ export class LuaTranspiler {
 
     transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
-        const params = this.transpileArguments(node.arguments);
+        const params = this.transpileArguments(node.arguments, ts.createTrue());
 
         return `${name}.new(${params})`;
     }
@@ -475,7 +475,7 @@ export class LuaTranspiler {
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             let callPath = this.transpileExpression(node.expression);
             const params = this.transpileArguments(node.arguments, <ts.Expression>ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return `$self.__base.constructor(${params})`;
+            return `self.__base.constructor(${params})`;
         }
 
         let callPath = this.transpileExpression(node.expression);
@@ -653,21 +653,35 @@ export class LuaTranspiler {
 
     // Transpile a class declaration
     transpileClass(node: ts.ClassDeclaration): string {
-        // Figure out inheritance
-        const isExtension = node.heritageClauses && node.heritageClauses.length > 0;
-        let baseName = "";
-
-        if (isExtension)
-            baseName = <string>(<ts.Identifier>node.heritageClauses[0].types[0].expression).escapedText;
+        // Find extends class, ignore implements
+        let extendsType;
+        if (node.heritageClauses) node.heritageClauses.forEach(clause => {
+            if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
+                const superType = clause.types[0];
+                // Ignore purely abstract types (decorated with /** @PureAbstract */)
+                if (!tsEx.isPureAbstractClass(this.checker.getTypeAtLocation(superType))) {
+                    extendsType = clause.types[0];
+                }
+            }
+        });
 
         // Write class declaration
         const className = <string>node.name.escapedText;
-        let result = this.indent + `${className} = ${className} or {}\n`;
+        let result = "";
+        if (!extendsType) {
+            result += this.indent + `${className} = ${className} or {}\n`;
+        } else {
+            const baseName = (<ts.Identifier>extendsType.expression).escapedText;
+            result += this.indent + `${className} = ${className} or ${baseName}.new()\n`
+        }
         result += this.indent + `${className}.__index = ${className}\n`;
-        if (isExtension) result += this.indent + `${className}.__base = ${baseName}\n`
-        result += this.indent + `function ${className}.new(...)\n`;
+        if (extendsType) {
+                const baseName = (<ts.Identifier>extendsType.expression).escapedText;
+                result += this.indent + `${className}.__base = ${baseName}\n`;
+        }
+        result += this.indent + `function ${className}.new(construct, ...)\n`;
         result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
-        result += this.indent + `    if ${className}.constructor then ${className}.constructor(instance, ...) end\n`;
+        result += this.indent + `    if construct and ${className}.constructor then ${className}.constructor(instance, ...) end\n`;
         result += this.indent + `    return instance\n`;
         result += this.indent + `end\n`;
 

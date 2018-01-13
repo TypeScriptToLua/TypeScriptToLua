@@ -407,7 +407,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileNewExpression = function (node) {
         var name = this.transpileExpression(node.expression);
-        var params = this.transpileArguments(node.arguments);
+        var params = this.transpileArguments(node.arguments, ts.createTrue());
         return name + ".new(" + params + ")";
     };
     LuaTranspiler.prototype.transpileCallExpression = function (node) {
@@ -431,7 +431,7 @@ var LuaTranspiler = /** @class */ (function () {
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             var callPath_2 = this.transpileExpression(node.expression);
             var params_2 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return "$self.__base.constructor(" + params_2 + ")";
+            return "self.__base.constructor(" + params_2 + ")";
         }
         var callPath = this.transpileExpression(node.expression);
         var params = this.transpileArguments(node.arguments);
@@ -579,20 +579,36 @@ var LuaTranspiler = /** @class */ (function () {
     // Transpile a class declaration
     LuaTranspiler.prototype.transpileClass = function (node) {
         var _this = this;
-        // Figure out inheritance
-        var isExtension = node.heritageClauses && node.heritageClauses.length > 0;
-        var baseName = "";
-        if (isExtension)
-            baseName = node.heritageClauses[0].types[0].expression.escapedText;
+        // Find extends class, ignore implements
+        var extendsType;
+        if (node.heritageClauses)
+            node.heritageClauses.forEach(function (clause) {
+                if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
+                    var superType = clause.types[0];
+                    // Ignore purely abstract types (decorated with /** @PureAbstract */)
+                    if (!TSHelper_1.TSHelper.isPureAbstractClass(_this.checker.getTypeAtLocation(superType))) {
+                        extendsType = clause.types[0];
+                    }
+                }
+            });
         // Write class declaration
         var className = node.name.escapedText;
-        var result = this.indent + (className + " = " + className + " or {}\n");
+        var result = "";
+        if (!extendsType) {
+            result += this.indent + (className + " = " + className + " or {}\n");
+        }
+        else {
+            var baseName = extendsType.expression.escapedText;
+            result += this.indent + (className + " = " + className + " or " + baseName + ".new()\n");
+        }
         result += this.indent + (className + ".__index = " + className + "\n");
-        if (isExtension)
+        if (extendsType) {
+            var baseName = extendsType.expression.escapedText;
             result += this.indent + (className + ".__base = " + baseName + "\n");
-        result += this.indent + ("function " + className + ".new(...)\n");
+        }
+        result += this.indent + ("function " + className + ".new(construct, ...)\n");
         result += this.indent + ("    local instance = setmetatable({}, " + className + ")\n");
-        result += this.indent + ("    if " + className + ".constructor then " + className + ".constructor(instance, ...) end\n");
+        result += this.indent + ("    if construct and " + className + ".constructor then " + className + ".constructor(instance, ...) end\n");
         result += this.indent + "    return instance\n";
         result += this.indent + "end\n";
         // Get all properties with value

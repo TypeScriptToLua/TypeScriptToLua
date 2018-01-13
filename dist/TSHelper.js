@@ -38,7 +38,13 @@ var TSHelper = /** @class */ (function () {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
             && type.symbol.getDocumentationComment()[0] != undefined
-            && (type.symbol.getDocumentationComment()[0].text.trim() == "CompileMembersOnly");
+            && (type.symbol.getDocumentationComment()[0].text.trim() == "!CompileMembersOnly");
+    };
+    TSHelper.isPureAbstractClass = function (type) {
+        return type.symbol
+            && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
+            && type.symbol.getDocumentationComment()[0] != undefined
+            && (type.symbol.getDocumentationComment()[0].text.trim() == "!PureAbstract");
     };
     return TSHelper;
 }());

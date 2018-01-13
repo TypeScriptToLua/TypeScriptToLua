@@ -346,8 +346,10 @@ export class LuaTranspiler {
                 return this.transpileFunctionExpression(<ts.FunctionExpression>node);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(<ts.NewExpression>node);
+            case ts.SyntaxKind.ComputedPropertyName:
+                return "[" + this.transpileExpression((<ts.ComputedPropertyName>node).expression) + "]";
             case ts.SyntaxKind.SuperKeyword:
-                return "self.__base.constructor";
+                return "self.__base";
             case ts.SyntaxKind.TypeAssertionExpression:
                 // Simply ignore the type assertion
                 return this.transpileExpression((<ts.TypeAssertion>node).expression);
@@ -473,7 +475,7 @@ export class LuaTranspiler {
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             let callPath = this.transpileExpression(node.expression);
             const params = this.transpileArguments(node.arguments, <ts.Expression>ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return `${callPath}(${params})`;
+            return `$self.__base.constructor(${params})`;
         }
 
         let callPath = this.transpileExpression(node.expression);
@@ -750,7 +752,7 @@ export class LuaTranspiler {
                 properties.push(`["${key.escapedText}"]=`+this.transpileExpression(value));
             } else {
                 const index = this.transpileExpression(<ts.Expression>key);
-                properties.push(`[${index}]=`+this.transpileExpression(value));
+                properties.push(`${index}=`+this.transpileExpression(value));
             }
         });
 

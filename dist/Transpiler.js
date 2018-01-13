@@ -314,8 +314,10 @@ var LuaTranspiler = /** @class */ (function () {
                 return this.transpileFunctionExpression(node);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(node);
+            case ts.SyntaxKind.ComputedPropertyName:
+                return "[" + this.transpileExpression(node.expression) + "]";
             case ts.SyntaxKind.SuperKeyword:
-                return "self.__base.constructor";
+                return "self.__base";
             case ts.SyntaxKind.TypeAssertionExpression:
                 // Simply ignore the type assertion
                 return this.transpileExpression(node.expression);
@@ -429,7 +431,7 @@ var LuaTranspiler = /** @class */ (function () {
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             var callPath_2 = this.transpileExpression(node.expression);
             var params_2 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return callPath_2 + "(" + params_2 + ")";
+            return "$self.__base.constructor(" + params_2 + ")";
         }
         var callPath = this.transpileExpression(node.expression);
         var params = this.transpileArguments(node.arguments);
@@ -664,7 +666,7 @@ var LuaTranspiler = /** @class */ (function () {
             }
             else {
                 var index = _this.transpileExpression(key);
-                properties.push("[" + index + "]=" + _this.transpileExpression(value));
+                properties.push(index + "=" + _this.transpileExpression(value));
             }
         });
         return "{" + properties.join(",") + "}";

@@ -33,7 +33,7 @@ var LuaTranspiler = /** @class */ (function () {
     // Transpile a source file
     LuaTranspiler.transpileSourceFile = function (node, checker) {
         var transpiler = new LuaTranspiler(checker);
-        return transpiler.transpileBlock(node);
+        return "require(\"lib.typescript\")\n" + transpiler.transpileBlock(node);
     };
     LuaTranspiler.prototype.pushIndent = function () {
         this.indent = this.indent + "    ";
@@ -311,7 +311,7 @@ var LuaTranspiler = /** @class */ (function () {
                 return this.transpileObjectLiteral(node);
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
-                return this.transpileFunctionExpression(node);
+                return this.transpileArrowFunction(node);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(node);
             case ts.SyntaxKind.ComputedPropertyName:
@@ -365,7 +365,7 @@ var LuaTranspiler = /** @class */ (function () {
         var condition = this.transpileExpression(node.condition);
         var val1 = this.transpileExpression(node.whenTrue);
         var val2 = this.transpileExpression(node.whenFalse);
-        return "ITE(" + condition + ",function() return " + val1 + " end, function() return " + val2 + " end)";
+        return "TS_ITE(" + condition + ",function() return " + val1 + " end, function() return " + val2 + " end)";
     };
     // Replace some missmatching operators
     LuaTranspiler.prototype.transpileOperator = function (operator) {
@@ -698,6 +698,23 @@ var LuaTranspiler = /** @class */ (function () {
         result += this.transpileBlock(node.body);
         this.popIndent();
         return result + this.indent + "end ";
+    };
+    LuaTranspiler.prototype.transpileArrowFunction = function (node) {
+        // Build parameter string
+        var paramNames = [];
+        node.parameters.forEach(function (param) {
+            paramNames.push(param.name.escapedText);
+        });
+        if (ts.isBlock(node.body)) {
+            var result = "function(" + paramNames.join(",") + ")\n";
+            this.pushIndent();
+            result += this.transpileBlock(node.body);
+            this.popIndent();
+            return result + this.indent + "end ";
+        }
+        else {
+            return "function(" + paramNames.join(",") + ") return " + this.transpileExpression(node.body) + " end";
+        }
     };
     return LuaTranspiler;
 }());

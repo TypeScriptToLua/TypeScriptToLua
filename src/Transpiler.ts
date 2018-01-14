@@ -15,7 +15,7 @@ export class LuaTranspiler {
     // Transpile a source file
     static transpileSourceFile(node: ts.SourceFile, checker: ts.TypeChecker): string {
         let transpiler = new LuaTranspiler(checker);
-        return transpiler.transpileBlock(node);
+        return "require(\"lib.typescript\")\n" + transpiler.transpileBlock(node);
     }
 
     indent: string;
@@ -343,7 +343,7 @@ export class LuaTranspiler {
                 return this.transpileObjectLiteral(<ts.ObjectLiteralExpression>node);
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
-                return this.transpileFunctionExpression(<ts.FunctionExpression>node);
+                return this.transpileArrowFunction(<ts.ArrowFunction>node);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(<ts.NewExpression>node);
             case ts.SyntaxKind.ComputedPropertyName:
@@ -401,7 +401,7 @@ export class LuaTranspiler {
         let val1 = this.transpileExpression(node.whenTrue);
         let val2 = this.transpileExpression(node.whenFalse);
 
-        return `ITE(${condition},function() return ${val1} end, function() return ${val2} end)`;
+        return `TS_ITE(${condition},function() return ${val1} end, function() return ${val2} end)`;
     }
 
     // Replace some missmatching operators
@@ -785,5 +785,23 @@ export class LuaTranspiler {
         result += this.transpileBlock(node.body);
         this.popIndent();
         return result + this.indent + "end ";
+    }
+
+    transpileArrowFunction(node: ts.ArrowFunction): string {
+        // Build parameter string
+        let paramNames: string[] = [];
+        node.parameters.forEach(param => {
+            paramNames.push(<string>(<ts.Identifier>param.name).escapedText);
+        });
+
+        if (ts.isBlock(node.body)) {
+            let result = `function(${paramNames.join(",")})\n`;
+            this.pushIndent();
+            result += this.transpileBlock(node.body);
+            this.popIndent();
+            return result + this.indent + "end ";
+        } else {
+            return `function(${paramNames.join(",")}) return ` + this.transpileExpression(node.body) + " end";
+        }
     }
 }

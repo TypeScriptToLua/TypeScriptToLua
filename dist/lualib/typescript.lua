@@ -7,6 +7,30 @@ function TS_ITE(condition, v1f, v2f)
     end
 end
 
+function TS_forEach(list, func)
+    for k, v in ipairs(list) do
+        func(v, k, list)
+    end
+end
+
+function TS_map(list, func)
+    local out = {}
+    for _, v in ipairs(list) do
+        table.insert(out, func(v))
+    end
+    return out
+end
+
+function TS_filter(list, func)
+    local out = {}
+    for _, v in ipairs(list) do
+        if func(v) then
+            table.insert(out, v)
+        end
+    end
+    return out
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set

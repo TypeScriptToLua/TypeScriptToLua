@@ -510,6 +510,16 @@ export class LuaTranspiler {
         switch (expression.name.escapedText) {
             case "push":
                 return `table.insert(${caller}, ${params})`;
+            case "forEach":
+                return `TS_forEach(${caller}, ${params})`;
+            case "map":
+                return `TS_map(${caller}, ${params})`;
+            case "filter":
+                return `TS_filter(${caller}, ${params})`;
+            case "some":
+                return `TS_some(${caller}, ${params})`;
+            case "every":
+                return `TS_every(${caller}, ${params})`;
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }

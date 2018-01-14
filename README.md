@@ -21,6 +21,7 @@ Add the lualib files to your project. This helper library unlocks additional typ
 - Ternary operator
 - Functional-style list operations (forEach/map/filter/every/some)
 - Includes lua Map<S,T> and Set<T> implementations
+Add `require("typescript")` in your code code if you want to use the lualib functionality.
 
 ### Transpiling an individual TypeScript file to Lua
 To transpile a typescript file to lua, run Compiler.js in node with the path to the file you want to compile, eg:

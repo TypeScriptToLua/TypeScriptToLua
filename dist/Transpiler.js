@@ -33,7 +33,7 @@ var LuaTranspiler = /** @class */ (function () {
     // Transpile a source file
     LuaTranspiler.transpileSourceFile = function (node, checker) {
         var transpiler = new LuaTranspiler(checker);
-        return "require(\"lib.typescript\")\n" + transpiler.transpileBlock(node);
+        return transpiler.transpileBlock(node);
     };
     LuaTranspiler.prototype.pushIndent = function () {
         this.indent = this.indent + "    ";

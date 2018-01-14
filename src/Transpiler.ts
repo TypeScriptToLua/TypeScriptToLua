@@ -15,7 +15,7 @@ export class LuaTranspiler {
     // Transpile a source file
     static transpileSourceFile(node: ts.SourceFile, checker: ts.TypeChecker): string {
         let transpiler = new LuaTranspiler(checker);
-        return "require(\"lib.typescript\")\n" + transpiler.transpileBlock(node);
+        return transpiler.transpileBlock(node);
     }
 
     indent: string;

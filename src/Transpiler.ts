@@ -165,13 +165,13 @@ export class LuaTranspiler {
 
         let result = this.indent + `if ${condition} then\n`;
         this.pushIndent();
-        result += this.transpileBlock(node.thenStatement);
+        result += this.transpileStatement(node.thenStatement);
         this.popIndent();
 
         if (node.elseStatement) {
             result += this.indent + "else\n";
             this.pushIndent();
-            result += this.transpileBlock(node.elseStatement);
+            result += this.transpileStatement(node.elseStatement);
             this.popIndent();
         }
 
@@ -183,7 +183,7 @@ export class LuaTranspiler {
 
         let result = this.indent + `while ${condition} do\n`;
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
     }
@@ -203,7 +203,7 @@ export class LuaTranspiler {
 
         // Add body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
 
         return result + this.indent + "end\n";
@@ -218,7 +218,7 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Use ipairs for array types, pairs otherwise
-        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
@@ -226,7 +226,7 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
 
         return result + this.indent + "end\n";
@@ -241,7 +241,7 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Use ipairs for array types, pairs otherwise
-        const isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
@@ -249,10 +249,18 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
 
         return result + this.indent + "end\n";
+    }
+
+    transpileStatement(node: ts.Statement): string {
+        if (ts.isBlock(node)) {
+            return this.transpileBlock(node);
+        } else {
+            return this.transpileNode(node);
+        }
     }
 
     transpileSwitch(node: ts.SwitchStatement): string {
@@ -784,7 +792,7 @@ export class LuaTranspiler {
         this.pushIndent();
         result += this.transpileBlock(node.body);
         this.popIndent();
-        return result + this.indent + "end ";
+        return result + this.indent + "end\n";
     }
 
     transpileArrowFunction(node: ts.ArrowFunction): string {
@@ -799,7 +807,7 @@ export class LuaTranspiler {
             this.pushIndent();
             result += this.transpileBlock(node.body);
             this.popIndent();
-            return result + this.indent + "end ";
+            return result + this.indent + "end\n";
         } else {
             return `function(${paramNames.join(",")}) return ` + this.transpileExpression(node.body) + " end";
         }

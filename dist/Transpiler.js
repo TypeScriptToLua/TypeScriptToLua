@@ -163,12 +163,12 @@ var LuaTranspiler = /** @class */ (function () {
         var condition = this.transpileExpression(node.expression);
         var result = this.indent + ("if " + condition + " then\n");
         this.pushIndent();
-        result += this.transpileBlock(node.thenStatement);
+        result += this.transpileStatement(node.thenStatement);
         this.popIndent();
         if (node.elseStatement) {
             result += this.indent + "else\n";
             this.pushIndent();
-            result += this.transpileBlock(node.elseStatement);
+            result += this.transpileStatement(node.elseStatement);
             this.popIndent();
         }
         return result + this.indent + "end\n";
@@ -177,7 +177,7 @@ var LuaTranspiler = /** @class */ (function () {
         var condition = this.transpileExpression(node.expression);
         var result = this.indent + ("while " + condition + " do\n");
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
     };
@@ -193,7 +193,7 @@ var LuaTranspiler = /** @class */ (function () {
         var result = this.indent + ("for " + identifier.escapedText + "=" + start + "," + end + "," + step + " do\n");
         // Add body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
     };
@@ -204,13 +204,13 @@ var LuaTranspiler = /** @class */ (function () {
         // Transpile expression
         var expression = this.transpileExpression(node.expression);
         // Use ipairs for array types, pairs otherwise
-        var isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        var isArray = TSHelper_1.TSHelper.isArrayType(this.checker.getTypeAtLocation(node.expression));
         var pairs = isArray ? "ipairs" : "pairs";
         // Make header
         var result = this.indent + ("for _, " + identifier.escapedText + " in " + pairs + "(" + expression + ") do\n");
         // For body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
     };
@@ -221,15 +221,23 @@ var LuaTranspiler = /** @class */ (function () {
         // Transpile expression
         var expression = this.transpileExpression(node.expression);
         // Use ipairs for array types, pairs otherwise
-        var isArray = this.checker.getTypeAtLocation(node.expression).symbol.escapedName == "Array";
+        var isArray = TSHelper_1.TSHelper.isArrayType(this.checker.getTypeAtLocation(node.expression));
         var pairs = isArray ? "ipairs" : "pairs";
         // Make header
         var result = this.indent + ("for " + identifier.escapedText + ", _ in " + pairs + "(" + expression + ") do\n");
         // For body
         this.pushIndent();
-        result += this.transpileBlock(node.statement);
+        result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
+    };
+    LuaTranspiler.prototype.transpileStatement = function (node) {
+        if (ts.isBlock(node)) {
+            return this.transpileBlock(node);
+        }
+        else {
+            return this.transpileNode(node);
+        }
     };
     LuaTranspiler.prototype.transpileSwitch = function (node) {
         var _this = this;
@@ -697,7 +705,7 @@ var LuaTranspiler = /** @class */ (function () {
         this.pushIndent();
         result += this.transpileBlock(node.body);
         this.popIndent();
-        return result + this.indent + "end ";
+        return result + this.indent + "end\n";
     };
     LuaTranspiler.prototype.transpileArrowFunction = function (node) {
         // Build parameter string
@@ -710,7 +718,7 @@ var LuaTranspiler = /** @class */ (function () {
             this.pushIndent();
             result += this.transpileBlock(node.body);
             this.popIndent();
-            return result + this.indent + "end ";
+            return result + this.indent + "end\n";
         }
         else {
             return "function(" + paramNames.join(",") + ") return " + this.transpileExpression(node.body) + " end";

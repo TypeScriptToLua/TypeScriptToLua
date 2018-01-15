@@ -299,6 +299,8 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.StringLiteral:
                 var text = node.text;
                 return "\"" + text + "\"";
+            case ts.SyntaxKind.TemplateExpression:
+                return this.transpileTemplateExpression(node);
             case ts.SyntaxKind.NumericLiteral:
                 return node.text;
             case ts.SyntaxKind.TrueKeyword:
@@ -329,6 +331,9 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.TypeAssertionExpression:
                 // Simply ignore the type assertion
                 return this.transpileExpression(node.expression);
+            case ts.SyntaxKind.AsExpression:
+                // Also ignore as casts
+                return this.transpileExpression(node.expression);
             default:
                 throw new TranspileError("Unsupported expression kind: " + TSHelper_1.TSHelper.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -358,6 +363,11 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.BarToken:
                 result = "bit.bor(" + lhs + "," + rhs + ")";
                 break;
+            case ts.SyntaxKind.PlusToken:
+                // Replace string + with ..
+                var typeLeft = this.checker.getTypeAtLocation(node.left);
+                if (typeLeft.flags & ts.TypeFlags.String || ts.isStringLiteral(node.left))
+                    return lhs + ".." + rhs;
             default:
                 result = lhs + this.transpileOperator(node.operatorToken) + rhs;
         }
@@ -368,6 +378,20 @@ var LuaTranspiler = /** @class */ (function () {
         else {
             return result;
         }
+    };
+    LuaTranspiler.prototype.transpileTemplateExpression = function (node) {
+        var _this = this;
+        var parts = ["\"" + node.head.text + "\""];
+        node.templateSpans.forEach(function (span) {
+            var expr = _this.transpileExpression(span.expression, true);
+            if (ts.isTemplateTail(span.literal)) {
+                parts.push(expr + ("..\"" + span.literal.text + "\""));
+            }
+            else {
+                parts.push(expr + ("..\"" + span.literal.text + "\""));
+            }
+        });
+        return parts.join("..");
     };
     LuaTranspiler.prototype.transpileConditionalExpression = function (node, brackets) {
         var condition = this.transpileExpression(node.condition);

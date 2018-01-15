@@ -331,6 +331,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.StringLiteral:
                 const text = (<ts.StringLiteral>node).text;
                 return `"${text}"`;
+            case ts.SyntaxKind.TemplateExpression:
+                return this.transpileTemplateExpression(<ts.TemplateExpression>node);
             case ts.SyntaxKind.NumericLiteral:
                 return (<ts.NumericLiteral>node).text;
             case ts.SyntaxKind.TrueKeyword:
@@ -361,6 +363,9 @@ export class LuaTranspiler {
             case ts.SyntaxKind.TypeAssertionExpression:
                 // Simply ignore the type assertion
                 return this.transpileExpression((<ts.TypeAssertion>node).expression);
+            case ts.SyntaxKind.AsExpression:
+                // Also ignore as casts
+                return this.transpileExpression((<ts.AsExpression>node).expression);
             default:
                 throw new TranspileError("Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -392,6 +397,11 @@ export class LuaTranspiler {
             case ts.SyntaxKind.BarToken:
                 result = `bit.bor(${lhs},${rhs})`;
                 break;
+            case ts.SyntaxKind.PlusToken:
+                // Replace string + with ..
+                const typeLeft = this.checker.getTypeAtLocation(node.left);
+                if (typeLeft.flags & ts.TypeFlags.String || ts.isStringLiteral(node.left))
+                    return lhs + ".." + rhs;
             default:
                 result = lhs + this.transpileOperator(node.operatorToken) + rhs;
         }
@@ -402,6 +412,19 @@ export class LuaTranspiler {
         } else {
             return result;
         }
+    }
+
+    transpileTemplateExpression(node: ts.TemplateExpression) {
+        let parts = [`"${node.head.text}"`];
+        node.templateSpans.forEach(span => {
+            const expr = this.transpileExpression(span.expression, true);
+            if (ts.isTemplateTail(span.literal)) {
+                parts.push(expr + `.."${span.literal.text}"`);
+            } else {
+                parts.push(expr + `.."${span.literal.text}"`);
+            }
+        });
+        return parts.join("..");
     }
 
     transpileConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): string {

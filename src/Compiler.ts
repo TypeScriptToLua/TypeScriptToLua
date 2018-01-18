@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync} from "fs";
 import {LuaTranspiler, TranspileError} from "./Transpiler";
 import {TSHelper as tsEx} from "./TSHelper";
 
-function compile(fileNames: string[], options: ts.CompilerOptions): void {
+function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: string): void {
     // Verify target
     if ((<string><any>options.target) != "lua") {
         console.error("Wrong compilation target! Add \"target\": \"lua\" to your tsconfig.json!");
@@ -41,8 +41,15 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
             try {
                 // Transpile AST
                 let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker);
-                const outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
-                //console.log(outPath);
+                let outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
+                
+                if (options.outDir) {
+                    var extension = options.outDir;
+                    if (extension[extension.length - 1] != "/") extension = extension + "/";
+                    outPath = outPath.replace(projectRoot + "/", projectRoot + "/" + extension);
+                    console.log(outPath);
+                }
+
                 // Write output
                 ts.sys.writeFile(outPath, lua);
             } catch (exception) {
@@ -88,7 +95,7 @@ if (configPath) {
         console.error("Error occured:");
         console.error(configFile.error);
     } else {
-        compile(files, configFile.config.compilerOptions);
+        compile(files, configFile.config.compilerOptions, projectRoot);
     }
 } else {
     console.error("Could not find tsconfig.json, place one in your project root!");

@@ -3,7 +3,7 @@ exports.__esModule = true;
 var ts = require("typescript");
 var Transpiler_1 = require("./Transpiler");
 var TSHelper_1 = require("./TSHelper");
-function compile(fileNames, options) {
+function compile(fileNames, options, projectRoot) {
     // Verify target
     if (options.target != "lua") {
         console.error("Wrong compilation target! Add \"target\": \"lua\" to your tsconfig.json!");
@@ -36,7 +36,13 @@ function compile(fileNames, options) {
                 // Transpile AST
                 var lua = Transpiler_1.LuaTranspiler.transpileSourceFile(sourceFile, checker);
                 var outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
-                //console.log(outPath);
+                if (options.outDir) {
+                    var extension = options.outDir;
+                    if (extension[extension.length - 1] != "/")
+                        extension = extension + "/";
+                    outPath = outPath.replace(projectRoot + "/", projectRoot + "/" + extension);
+                    console.log(outPath);
+                }
                 // Write output
                 ts.sys.writeFile(outPath, lua);
             }
@@ -79,7 +85,7 @@ if (configPath) {
         console.error(configFile.error);
     }
     else {
-        compile(files, configFile.config.compilerOptions);
+        compile(files, configFile.config.compilerOptions, projectRoot);
     }
 }
 else {

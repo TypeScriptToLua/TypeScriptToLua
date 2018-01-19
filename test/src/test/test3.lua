@@ -1,6 +1,6 @@
 local a = ""
 local b = {1,2,3}
-local c = {["d"]=a,["e"]=b}
+local c = {d=a,e=b}
 local d = #b
 local e = #a
 local f = #c.d

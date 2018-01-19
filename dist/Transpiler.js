@@ -725,11 +725,15 @@ var LuaTranspiler = /** @class */ (function () {
         node.properties.forEach(function (assignment) {
             var _a = TSHelper_1.TSHelper.getChildren(assignment), key = _a[0], value = _a[1];
             if (ts.isIdentifier(key)) {
-                properties.push("[\"" + key.escapedText + "\"]=" + _this.transpileExpression(value));
+                properties.push(key.escapedText + "=" + _this.transpileExpression(value));
+            }
+            else if (ts.isComputedPropertyName(key)) {
+                var index = _this.transpileExpression(key);
+                properties.push(index + "=" + _this.transpileExpression(value));
             }
             else {
                 var index = _this.transpileExpression(key);
-                properties.push(index + "=" + _this.transpileExpression(value));
+                properties.push("[" + index + "]=" + _this.transpileExpression(value));
             }
         });
         return "{" + properties.join(",") + "}";

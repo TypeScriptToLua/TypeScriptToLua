@@ -14,7 +14,7 @@ end
 function GameState.SetState(self,state)
     local testNil = nil
     self.state=state
-    CustomGameEventManager.Send_ServerToAllClients(CustomGameEventManager,"game_state_update",{["state"]=self.state})
+    CustomGameEventManager.Send_ServerToAllClients(CustomGameEventManager,"game_state_update",{state=self.state})
     for _, callback in ipairs(self.callbacks) do
         callback(self.state)
     end
@@ -30,5 +30,5 @@ function GameState.RegisterListenerWithContext(self,callback,context)
 end
 function GameState.OnStateRequest(self,userid,event)
     local player = PlayerResource.GetPlayer(PlayerResource,event.PlayerID)
-    CustomGameEventManager.Send_ServerToPlayer(CustomGameEventManager,player,"game_state_response",{["state"]=self.state})
+    CustomGameEventManager.Send_ServerToPlayer(CustomGameEventManager,player,"game_state_response",{state=self.state})
 end

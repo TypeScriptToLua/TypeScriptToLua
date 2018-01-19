@@ -807,10 +807,13 @@ export class LuaTranspiler {
         node.properties.forEach(assignment => {
             const [key, value] = tsEx.getChildren(assignment);
             if (ts.isIdentifier(key)) {
-                properties.push(`["${key.escapedText}"]=`+this.transpileExpression(value));
+                properties.push(`${key.escapedText}=`+this.transpileExpression(value));
+            } else if (ts.isComputedPropertyName(key)) {
+                const index = this.transpileExpression(key);
+                properties.push(`${index}=`+this.transpileExpression(value));
             } else {
                 const index = this.transpileExpression(<ts.Expression>key);
-                properties.push(`${index}=`+this.transpileExpression(value));
+                properties.push(`[${index}]=`+this.transpileExpression(value));
             }
         });
 

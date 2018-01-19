@@ -1,11 +1,11 @@
 local globalString = "glob"
 local input = {1,2}
-local objTest = {["a"]=3,["B"]=true}
+local objTest = {a=3,["B"]=true,[input[0+1]]=5}
 TestClass = TestClass or {}
 TestClass.__index = TestClass
-function TestClass.new(...)
+function TestClass.new(construct, ...)
     local instance = setmetatable({}, TestClass)
-    if TestClass.constructor then TestClass.constructor(instance, ...) end
+    if construct and TestClass.constructor then TestClass.constructor(instance, ...) end
     return instance
 end
 function TestClass.constructor(self,tf)
@@ -26,7 +26,8 @@ end
 function Activate()
     local test = function()
         return ""
-    end 
+    end
+
     for i=0,10-1,1 do
         print(i)
     end
@@ -34,7 +35,7 @@ function Activate()
     end
     for i=2,20,2 do
     end
-    local i = ITE(false==false,function() return 0 end, function() return 4 end)
+    local i = TS_ITE(false==false,function() return 0 end, function() return 4 end)
     i = i + 1
     i = i - 1
     not true
@@ -43,7 +44,7 @@ function Activate()
     i=i-1
     local a = bit.band(24,4)
     local list = {1,2,3}
-    local obj = {["a"]=3}
+    local obj = {a=3}
     for i=0,#list-1,1 do
         print(list[i+1])
     end
@@ -104,4 +105,4 @@ function Activate()
     ::switchDone4::
     --------Switch statement end--------
 end
-local a = TestClass.new(3)
+local a = TestClass.new(true,3)

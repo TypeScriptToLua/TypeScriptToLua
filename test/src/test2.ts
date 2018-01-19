@@ -4,7 +4,7 @@ var globalString = "glob";
 
 let input = [1,2];
 
-let objTest = {a: 3, "B": true}
+let objTest = {a: 3, "B": true, [input[0]]: 5}
 
 declare interface unit {
     GetParent(): unit;

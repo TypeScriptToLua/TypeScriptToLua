@@ -635,9 +635,12 @@ export class LuaTranspiler {
     transpileVariableDeclaration(node: ts.VariableDeclaration): string {
         // Find variable identifier
         const identifier = <ts.Identifier>node.name;
-        const value = this.transpileExpression(node.initializer);
-
-        return `local ${identifier.escapedText} = ${value}`;
+        if (node.initializer) {
+            const value = this.transpileExpression(node.initializer);
+            return `local ${identifier.escapedText} = ${value}`;
+        } else {
+            return `local ${identifier.escapedText} = nil`;
+        }
     }
 
     transpileFunctionDeclaration(node: ts.FunctionDeclaration): string {

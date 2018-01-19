@@ -575,8 +575,13 @@ var LuaTranspiler = /** @class */ (function () {
     LuaTranspiler.prototype.transpileVariableDeclaration = function (node) {
         // Find variable identifier
         var identifier = node.name;
-        var value = this.transpileExpression(node.initializer);
-        return "local " + identifier.escapedText + " = " + value;
+        if (node.initializer) {
+            var value = this.transpileExpression(node.initializer);
+            return "local " + identifier.escapedText + " = " + value;
+        }
+        else {
+            return "local " + identifier.escapedText + " = nil";
+        }
     };
     LuaTranspiler.prototype.transpileFunctionDeclaration = function (node) {
         var result = "";

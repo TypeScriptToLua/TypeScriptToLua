@@ -33,6 +33,8 @@ class GameState{
     }
 
     SetState(state: GameRulesState) {
+        let testNil;
+
         this.state = state;
 
         CustomGameEventManager.Send_ServerToAllClients("game_state_update", {state : this.state});

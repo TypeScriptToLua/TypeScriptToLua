@@ -1,9 +1,9 @@
-require("./test2"){$imports.name.escapedText} = require("./test2")local a = TestClass.new(0)
+require("./test2"){$imports.name.escapedText} = require("./test2")local a = TestClass.new(true,0)
 GameState = GameState or {}
 GameState.__index = GameState
-function GameState.new(...)
+function GameState.new(construct, ...)
     local instance = setmetatable({}, GameState)
-    if GameState.constructor then GameState.constructor(instance, ...) end
+    if construct and GameState.constructor then GameState.constructor(instance, ...) end
     return instance
 end
 function GameState.Init(self)
@@ -12,6 +12,7 @@ function GameState.Init(self)
     CustomGameEventManager.RegisterListener(CustomGameEventManager,"game_state_request",self.OnStateRequest)
 end
 function GameState.SetState(self,state)
+    local testNil = nil
     self.state=state
     CustomGameEventManager.Send_ServerToAllClients(CustomGameEventManager,"game_state_update",{["state"]=self.state})
     for _, callback in ipairs(self.callbacks) do
@@ -24,7 +25,8 @@ end
 function GameState.RegisterListenerWithContext(self,callback,context)
     table.insert(self.callbacks, function(state)
         callback(context,state)
-    end )
+    end
+)
 end
 function GameState.OnStateRequest(self,userid,event)
     local player = PlayerResource.GetPlayer(PlayerResource,event.PlayerID)

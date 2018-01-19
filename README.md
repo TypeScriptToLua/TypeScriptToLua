@@ -20,7 +20,7 @@ After copying these files to a locaton on your machine, run command `npm link ty
 Add the lualib files to your project. This helper library unlocks additional typescript functions:
 - Ternary operator
 - Functional-style list operations (forEach/map/filter/every/some)
-- Includes lua Map<S,T> and Set<T> implementations
+- Includes lua `Map<S,T>` and `Set<T>` implementations
 Add `require("typescript")` in your code code if you want to use the lualib functionality.
 
 ### Transpiling an individual TypeScript file to Lua

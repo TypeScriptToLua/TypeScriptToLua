@@ -767,12 +767,23 @@ export class LuaTranspiler {
     }
 
     transpileConstructor(node: ts.ConstructorDeclaration, className: string, instanceFields: ts.PropertyDeclaration[]): string {
+        const extraInstanceFields = [];
+
         let parameters = ["self"];
-        node.parameters.forEach(param => parameters.push(<string>(<ts.Identifier>param.name).escapedText));
+        node.parameters.forEach(param => {
+            // If param has decorators, add extra instance field
+            if (param.modifiers != undefined) extraInstanceFields.push(<string>(<ts.Identifier>param.name).escapedText);
+            // Add to parameter list
+            parameters.push(<string>(<ts.Identifier>param.name).escapedText);
+        });
 
         let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n` ;
 
         // Add in instance field declarations
+        for (const f of extraInstanceFields) {
+            result += this.indent + `    self.${f} = ${f}\n`;
+        }
+
         for (const f of instanceFields) {
             // Get identifier
             const fieldIdentifier = <ts.Identifier>f.name;

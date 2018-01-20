@@ -9,11 +9,8 @@ function TestClass.new(construct, ...)
     return instance
 end
 function TestClass.constructor(self,tf)
+    self.tf = tf
     self.field3 = globalString
-    local localString = "abc"
-    globalString="abc"
-    self.field=""
-    self.unit=GetUnit()
 end
 function TestClass.Test(self)
     print("sup")

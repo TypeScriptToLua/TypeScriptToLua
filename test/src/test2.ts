@@ -19,12 +19,14 @@ export class TestClass {
     field3: string = globalString; // Abc
     unit: unit;
 
-    constructor(tf: number) {
+    constructor(readonly tf: number) {}
+
+    /*constructor(tf: number) {
         let localString = "abc";
         globalString = "abc";
         this.field = "";
         this.unit = GetUnit();
-    }
+    }*/
 
     Test(): void {
         print("sup");

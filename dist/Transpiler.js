@@ -692,12 +692,23 @@ var LuaTranspiler = /** @class */ (function () {
         return result;
     };
     LuaTranspiler.prototype.transpileConstructor = function (node, className, instanceFields) {
+        var extraInstanceFields = [];
         var parameters = ["self"];
-        node.parameters.forEach(function (param) { return parameters.push(param.name.escapedText); });
+        node.parameters.forEach(function (param) {
+            // If param has decorators, add extra instance field
+            if (param.modifiers != undefined)
+                extraInstanceFields.push(param.name.escapedText);
+            // Add to parameter list
+            parameters.push(param.name.escapedText);
+        });
         var result = this.indent + ("function " + className + ".constructor(" + parameters.join(",") + ")\n");
         // Add in instance field declarations
-        for (var _i = 0, instanceFields_1 = instanceFields; _i < instanceFields_1.length; _i++) {
-            var f = instanceFields_1[_i];
+        for (var _i = 0, extraInstanceFields_1 = extraInstanceFields; _i < extraInstanceFields_1.length; _i++) {
+            var f = extraInstanceFields_1[_i];
+            result += this.indent + ("    self." + f + " = " + f + "\n");
+        }
+        for (var _a = 0, instanceFields_1 = instanceFields; _a < instanceFields_1.length; _a++) {
+            var f = instanceFields_1[_a];
             // Get identifier
             var fieldIdentifier = f.name;
             var fieldName = fieldIdentifier.escapedText;

@@ -7,7 +7,7 @@ function compile(fileNames, options, projectRoot) {
     // Verify target
     if (options.target != "lua") {
         console.error("Wrong compilation target! Add \"target\": \"lua\" to your tsconfig.json!");
-        process.exit();
+        process.exit(1);
     }
     var program = ts.createProgram(fileNames, options);
     var checker = program.getTypeChecker();
@@ -26,7 +26,7 @@ function compile(fileNames, options, projectRoot) {
     // If there are errors dont emit
     if (diagnostics.filter(function (diag) { return diag.category == ts.DiagnosticCategory.Error; }).length > 0) {
         console.log("Stopping compilation process because of errors.");
-        process.exit();
+        process.exit(1);
     }
     program.getSourceFiles().forEach(function (sourceFile) {
         if (!sourceFile.isDeclarationFile) {
@@ -53,6 +53,7 @@ function compile(fileNames, options, projectRoot) {
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character);
                     console.error(exception.stack);
+                    process.exit(1);
                 }
                 else {
                     throw exception;
@@ -60,7 +61,7 @@ function compile(fileNames, options, projectRoot) {
             }
         }
     });
-    process.exit();
+    process.exit(0);
 }
 function printAST(node, indent) {
     var indentStr = "";

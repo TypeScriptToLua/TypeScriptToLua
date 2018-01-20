@@ -8,7 +8,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
     // Verify target
     if ((<string><any>options.target) != "lua") {
         console.error("Wrong compilation target! Add \"target\": \"lua\" to your tsconfig.json!");
-        process.exit();
+        process.exit(1);
     }
 
     let program = ts.createProgram(fileNames, options);
@@ -30,7 +30,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
     // If there are errors dont emit
     if (diagnostics.filter(diag => diag.category == ts.DiagnosticCategory.Error).length > 0) {
         console.log("Stopping compilation process because of errors.");
-        process.exit();
+        process.exit(1);
     }
 
     program.getSourceFiles().forEach(sourceFile => {
@@ -59,6 +59,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character);
                     console.error(exception.stack);
+                    process.exit(1);
                 } else {
                     throw exception;
                 }
@@ -66,7 +67,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
         }
     });
 
-    process.exit();
+    process.exit(0);
 }
 
 function printAST(node: ts.Node, indent: number) {

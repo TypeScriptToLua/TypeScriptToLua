@@ -1,10 +1,15 @@
 declare function print(msg: any): void;
 
-var globalString = "glob";
+declare var myGlobalVar: any;
+myGlobalVar = {a: 3, b: "hello"};
+
+const globalString = "3";
 
 let input = [1,2];
 
-let objTest = {a: 3, "B": true, [input[0]]: 5}
+let objTest = {a: 3, "B": true, [input[0]]: 5};
+
+let [p, q, ...rest] = input;
 
 declare interface unit {
     GetParent(): unit;

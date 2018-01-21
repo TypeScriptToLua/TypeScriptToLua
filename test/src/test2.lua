@@ -1,6 +1,12 @@
-local globalString = "glob"
+myGlobalVar={a=3,b="hello"}
+local globalString = "3"
 local input = {1,2}
 local objTest = {a=3,["B"]=true,[input[0+1]]=5}
+local __destr0 = input
+local p = __destr0[1]
+local q = __destr0[2]
+local rest = TS_slice(__destr0, 2)
+
 TestClass = TestClass or {}
 TestClass.__index = TestClass
 function TestClass.new(construct, ...)
@@ -63,43 +69,43 @@ function Activate()
     end
     -------Switch statement start-------
     if a==1 then
-        ::switchCase0::
-        2+2
-        goto switchCase1
-    elseif a==3 then
         ::switchCase1::
-        return 5
+        2+2
         goto switchCase2
-    elseif a==4 then
+    elseif a==3 then
         ::switchCase2::
-        1+1
-        goto switchDone0
+        return 5
         goto switchCase3
-    else
+    elseif a==4 then
         ::switchCase3::
+        1+1
+        goto switchDone1
+        goto switchCase4
+    else
+        ::switchCase4::
         local b = 3
     end
-    ::switchDone0::
+    ::switchDone1::
     --------Switch statement end--------
     -------Switch statement start-------
     if a==1 then
-        ::switchCase4::
-        2+2
-        goto switchCase5
-    elseif a==3 then
         ::switchCase5::
-        return 5
+        2+2
         goto switchCase6
-    elseif a==4 then
+    elseif a==3 then
         ::switchCase6::
-        1+1
-        goto switchDone4
+        return 5
         goto switchCase7
-    else
+    elseif a==4 then
         ::switchCase7::
+        1+1
+        goto switchDone5
+        goto switchCase8
+    else
+        ::switchCase8::
         local b = 3
     end
-    ::switchDone4::
+    ::switchDone5::
     --------Switch statement end--------
 end
 local a = TestClass.new(true,3)

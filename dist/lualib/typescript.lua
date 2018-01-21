@@ -31,6 +31,23 @@ function TS_filter(list, func)
     return out
 end
 
+function TS_slice(list, startI, endI)
+    endI = endI or (#list-1)
+    local out = {}
+    for i = startI + 1, endI + 1 do
+        table.insert(out, list[i])
+    end
+    return out
+end
+
+function TS_some(list, func)
+    return #TS_filter(list, func) > 0
+end
+
+function TS_every(list, func)
+    return #list == #TS_filter(list, func)
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set

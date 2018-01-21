@@ -20,13 +20,13 @@ export class LuaTranspiler {
 
     indent: string;
     checker: ts.TypeChecker;
-    switchCounter: number;
+    genVarCounter: number;
     transpilingSwitch: boolean;
 
     constructor(checker: ts.TypeChecker) {
         this.indent = "";
         this.checker = checker;
-        this.switchCounter = 0;
+        this.genVarCounter = 0;
         this.transpilingSwitch = false;
     }
 
@@ -154,7 +154,7 @@ export class LuaTranspiler {
 
     transpileBreak(): string {
         if (this.transpilingSwitch) {
-            return this.indent + `goto switchDone${this.switchCounter}\n`;
+            return this.indent + `goto switchDone${this.genVarCounter}\n`;
         } else {
             return this.indent + "break\n";
         }
@@ -283,7 +283,7 @@ export class LuaTranspiler {
             this.pushIndent();
 
             // Labels for fallthrough
-            result += this.indent + `::switchCase${this.switchCounter+index}::\n`;
+            result += this.indent + `::switchCase${this.genVarCounter+index}::\n`;
 
             this.transpilingSwitch = true;
             clause.statements.forEach(statement => {
@@ -293,17 +293,17 @@ export class LuaTranspiler {
 
             // If this goto is reached, fall through to the next case
             if (index < clauses.length - 1) {
-                result += this.indent + `goto switchCase${this.switchCounter + index + 1}\n`;
+                result += this.indent + `goto switchCase${this.genVarCounter + index + 1}\n`;
             }
 
             this.popIndent();
         });
         result += this.indent + "end\n";
-        result += this.indent + `::switchDone${this.switchCounter}::\n`;
+        result += this.indent + `::switchDone${this.genVarCounter}::\n`;
         result += this.indent + "--------Switch statement end--------\n";
 
         //Increment counter for next switch statement
-        this.switchCounter += clauses.length;
+        this.genVarCounter += clauses.length;
         return result;
     }
 
@@ -543,6 +543,8 @@ export class LuaTranspiler {
                 return `TS_some(${caller}, ${params})`;
             case "every":
                 return `TS_every(${caller}, ${params})`;
+            case "slice":
+                return `TS_slice(${caller}, ${params})`
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }
@@ -633,13 +635,31 @@ export class LuaTranspiler {
     }
 
     transpileVariableDeclaration(node: ts.VariableDeclaration): string {
-        // Find variable identifier
-        const identifier = <ts.Identifier>node.name;
-        if (node.initializer) {
+        if (ts.isIdentifier(node.name)) {
+            // Find variable identifier
+            const identifier = node.name;
+            if (node.initializer) {
+                const value = this.transpileExpression(node.initializer);
+                return `local ${identifier.escapedText} = ${value}`;
+            } else {
+                return `local ${identifier.escapedText} = nil`;
+            }
+        } else if (ts.isArrayBindingPattern(node.name)) {
+            // Destructuring type
             const value = this.transpileExpression(node.initializer);
-            return `local ${identifier.escapedText} = ${value}`;
+            let parentName = `__destr${this.genVarCounter}`;
+            this.genVarCounter++;
+            let result = `local ${parentName} = ${value}\n`;
+            node.name.elements.forEach((elem: ts.BindingElement, index: number) => {
+                if (!elem.dotDotDotToken) {
+                    result += this.indent + `local ${(<ts.Identifier>elem.name).escapedText} = ${parentName}[${index + 1}]\n`;
+                } else {
+                    result += this.indent + `local ${(<ts.Identifier>elem.name).escapedText} = TS_slice(${parentName}, ${index})\n`;
+                }
+            });
+            return result;
         } else {
-            return `local ${identifier.escapedText} = nil`;
+            throw new TranspileError("Unsupported variable declaration type " + tsEx.enumName(node.name.kind, ts.SyntaxKind), node);
         }
     }
 

@@ -27,7 +27,7 @@ var LuaTranspiler = /** @class */ (function () {
     function LuaTranspiler(checker) {
         this.indent = "";
         this.checker = checker;
-        this.switchCounter = 0;
+        this.genVarCounter = 0;
         this.transpilingSwitch = false;
     }
     // Transpile a source file
@@ -153,7 +153,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileBreak = function () {
         if (this.transpilingSwitch) {
-            return this.indent + ("goto switchDone" + this.switchCounter + "\n");
+            return this.indent + ("goto switchDone" + this.genVarCounter + "\n");
         }
         else {
             return this.indent + "break\n";
@@ -257,7 +257,7 @@ var LuaTranspiler = /** @class */ (function () {
             }
             _this.pushIndent();
             // Labels for fallthrough
-            result += _this.indent + ("::switchCase" + (_this.switchCounter + index) + "::\n");
+            result += _this.indent + ("::switchCase" + (_this.genVarCounter + index) + "::\n");
             _this.transpilingSwitch = true;
             clause.statements.forEach(function (statement) {
                 result += _this.transpileNode(statement);
@@ -265,15 +265,15 @@ var LuaTranspiler = /** @class */ (function () {
             _this.transpilingSwitch = false;
             // If this goto is reached, fall through to the next case
             if (index < clauses.length - 1) {
-                result += _this.indent + ("goto switchCase" + (_this.switchCounter + index + 1) + "\n");
+                result += _this.indent + ("goto switchCase" + (_this.genVarCounter + index + 1) + "\n");
             }
             _this.popIndent();
         });
         result += this.indent + "end\n";
-        result += this.indent + ("::switchDone" + this.switchCounter + "::\n");
+        result += this.indent + ("::switchDone" + this.genVarCounter + "::\n");
         result += this.indent + "--------Switch statement end--------\n";
         //Increment counter for next switch statement
-        this.switchCounter += clauses.length;
+        this.genVarCounter += clauses.length;
         return result;
     };
     LuaTranspiler.prototype.transpileReturn = function (node) {
@@ -497,6 +497,8 @@ var LuaTranspiler = /** @class */ (function () {
                 return "TS_some(" + caller + ", " + params + ")";
             case "every":
                 return "TS_every(" + caller + ", " + params + ")";
+            case "slice":
+                return "TS_slice(" + caller + ", " + params + ")";
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }
@@ -573,14 +575,36 @@ var LuaTranspiler = /** @class */ (function () {
         return result;
     };
     LuaTranspiler.prototype.transpileVariableDeclaration = function (node) {
-        // Find variable identifier
-        var identifier = node.name;
-        if (node.initializer) {
+        var _this = this;
+        if (ts.isIdentifier(node.name)) {
+            // Find variable identifier
+            var identifier = node.name;
+            if (node.initializer) {
+                var value = this.transpileExpression(node.initializer);
+                return "local " + identifier.escapedText + " = " + value;
+            }
+            else {
+                return "local " + identifier.escapedText + " = nil";
+            }
+        }
+        else if (ts.isArrayBindingPattern(node.name)) {
+            // Destructuring type
             var value = this.transpileExpression(node.initializer);
-            return "local " + identifier.escapedText + " = " + value;
+            var parentName_1 = "__destr" + this.genVarCounter;
+            this.genVarCounter++;
+            var result_1 = "local " + parentName_1 + " = " + value + "\n";
+            node.name.elements.forEach(function (elem, index) {
+                if (!elem.dotDotDotToken) {
+                    result_1 += _this.indent + ("local " + elem.name.escapedText + " = " + parentName_1 + "[" + (index + 1) + "]\n");
+                }
+                else {
+                    result_1 += _this.indent + ("local " + elem.name.escapedText + " = TS_slice(" + parentName_1 + ", " + index + ")\n");
+                }
+            });
+            return result_1;
         }
         else {
-            return "local " + identifier.escapedText + " = nil";
+            throw new TranspileError("Unsupported variable declaration type " + TSHelper_1.TSHelper.enumName(node.name.kind, ts.SyntaxKind), node);
         }
     };
     LuaTranspiler.prototype.transpileFunctionDeclaration = function (node) {

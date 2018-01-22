@@ -34,7 +34,14 @@ export class TSHelper {
     }
 
     static isArrayType(type: ts.Type): boolean {
-        return type.flags == ts.TypeFlags.Object && (<ts.ObjectType>type).symbol.escapedName == "Array";
+        return (type.flags & ts.TypeFlags.Object) != 0 
+            && (<ts.ObjectType>type).symbol 
+            && (<ts.ObjectType>type).symbol.escapedName == "Array";
+    }
+
+    static isTupleType(type: ts.Type): boolean {
+        return (type.flags & ts.TypeFlags.Object) != 0
+            && (<ts.TypeReference>type).typeArguments != undefined;
     }
 
     static isCompileMembersOnlyEnum(type: ts.Type) {

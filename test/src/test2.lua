@@ -7,6 +7,10 @@ local p = __destr0[1]
 local q = __destr0[2]
 local rest = TS_slice(__destr0, 2)
 
+local tobl = {}
+tobl["n"]=3
+local ertes = {1,"abc"}
+local b = ertes[0+1]
 TestClass = TestClass or {}
 TestClass.__index = TestClass
 function TestClass.new(construct, ...)

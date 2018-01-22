@@ -32,7 +32,13 @@ var TSHelper = /** @class */ (function () {
         return ts.isIdentifier(node) || ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node);
     };
     TSHelper.isArrayType = function (type) {
-        return type.flags == ts.TypeFlags.Object && type.symbol.escapedName == "Array";
+        return (type.flags & ts.TypeFlags.Object) != 0
+            && type.symbol
+            && type.symbol.escapedName == "Array";
+    };
+    TSHelper.isTupleType = function (type) {
+        return (type.flags & ts.TypeFlags.Object) != 0
+            && type.typeArguments != undefined;
     };
     TSHelper.isCompileMembersOnlyEnum = function (type) {
         return type.symbol

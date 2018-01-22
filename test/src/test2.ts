@@ -11,6 +11,12 @@ let objTest = {a: 3, "B": true, [input[0]]: 5};
 
 let [p, q, ...rest] = input;
 
+let tobl: {[index: string]: number} = {};
+tobl["n"] = 3;
+
+let ertes: [number, string] = [1, "abc"];
+let b = ertes[0];
+
 declare interface unit {
     GetParent(): unit;
     GetAbsOrigin(): number;

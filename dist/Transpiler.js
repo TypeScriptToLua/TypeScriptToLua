@@ -557,8 +557,8 @@ var LuaTranspiler = /** @class */ (function () {
     LuaTranspiler.prototype.transpileElementAccessExpression = function (node) {
         var element = this.transpileExpression(node.expression);
         var index = this.transpileExpression(node.argumentExpression);
-        var isArray = TSHelper_1.TSHelper.isArrayType(this.checker.getTypeAtLocation(node.expression));
-        if (isArray) {
+        var type = this.checker.getTypeAtLocation(node.expression);
+        if (TSHelper_1.TSHelper.isArrayType(type) || TSHelper_1.TSHelper.isTupleType(type)) {
             return element + "[" + index + "+1]";
         }
         else {

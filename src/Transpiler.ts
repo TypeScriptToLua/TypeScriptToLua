@@ -614,9 +614,8 @@ export class LuaTranspiler {
         const element = this.transpileExpression(node.expression);
         const index = this.transpileExpression(node.argumentExpression);
 
-        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
-
-        if (isArray) {
+        const type = this.checker.getTypeAtLocation(node.expression);
+        if (tsEx.isArrayType(type) || tsEx.isTupleType(type)) {
             return `${element}[${index}+1]`;
         } else {
             return `${element}[${index}]`;

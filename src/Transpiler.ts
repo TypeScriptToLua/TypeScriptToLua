@@ -718,24 +718,27 @@ export class LuaTranspiler {
     transpileClass(node: ts.ClassDeclaration): string {
         // Find extends class, ignore implements
         let extendsType;
+        let noClassOr = false;
         if (node.heritageClauses) node.heritageClauses.forEach(clause => {
             if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
-                const superType = clause.types[0];
+                const superType = this.checker.getTypeAtLocation(clause.types[0]);
                 // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                if (!tsEx.isPureAbstractClass(this.checker.getTypeAtLocation(superType))) {
+                if (!tsEx.isPureAbstractClass(superType)) {
                     extendsType = clause.types[0];
                 }
+                noClassOr = tsEx.hasCustomDecorator(superType, "!NoClassOr");
             }
         });
 
         // Write class declaration
         const className = <string>node.name.escapedText;
+        const classOr = noClassOr ? "" : `${className} or `;
         let result = "";
         if (!extendsType) {
-            result += this.indent + `${className} = ${className} or {}\n`;
+            result += this.indent + `${className} = ${classOr}{}\n`;
         } else {
             const baseName = (<ts.Identifier>extendsType.expression).escapedText;
-            result += this.indent + `${className} = ${className} or ${baseName}.new()\n`
+            result += this.indent + `${className} = ${classOr}${baseName}.new()\n`
         }
         result += this.indent + `${className}.__index = ${className}\n`;
         if (extendsType) {

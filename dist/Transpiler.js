@@ -652,25 +652,28 @@ var LuaTranspiler = /** @class */ (function () {
         var _this = this;
         // Find extends class, ignore implements
         var extendsType;
+        var noClassOr = false;
         if (node.heritageClauses)
             node.heritageClauses.forEach(function (clause) {
                 if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
-                    var superType = clause.types[0];
+                    var superType = _this.checker.getTypeAtLocation(clause.types[0]);
                     // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                    if (!TSHelper_1.TSHelper.isPureAbstractClass(_this.checker.getTypeAtLocation(superType))) {
+                    if (!TSHelper_1.TSHelper.isPureAbstractClass(superType)) {
                         extendsType = clause.types[0];
                     }
+                    noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, "!NoClassOr");
                 }
             });
         // Write class declaration
         var className = node.name.escapedText;
+        var classOr = noClassOr ? "" : className + " or ";
         var result = "";
         if (!extendsType) {
-            result += this.indent + (className + " = " + className + " or {}\n");
+            result += this.indent + (className + " = " + classOr + "{}\n");
         }
         else {
             var baseName = extendsType.expression.escapedText;
-            result += this.indent + (className + " = " + className + " or " + baseName + ".new()\n");
+            result += this.indent + (className + " = " + classOr + baseName + ".new()\n");
         }
         result += this.indent + (className + ".__index = " + className + "\n");
         if (extendsType) {

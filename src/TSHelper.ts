@@ -44,17 +44,25 @@ export class TSHelper {
             && (<ts.TypeReference>type).typeArguments != undefined;
     }
 
-    static isCompileMembersOnlyEnum(type: ts.Type) {
+    static isCompileMembersOnlyEnum(type: ts.Type): boolean {
         return type.symbol 
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
             && type.symbol.getDocumentationComment()[0] != undefined
-            && (type.symbol.getDocumentationComment()[0].text.trim() == "!CompileMembersOnly");
+            && this.hasCustomDecorator(type, "!CompileMembersOnly");
     }
 
-    static isPureAbstractClass(type: ts.Type) {
+    static isPureAbstractClass(type: ts.Type): boolean {
         return type.symbol 
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && type.symbol.getDocumentationComment()[0] != undefined
-            && (type.symbol.getDocumentationComment()[0].text.trim() == "!PureAbstract");
+            && this.hasCustomDecorator(type, "!PureAbstract");
+    }
+
+    static hasCustomDecorator(type: ts.Type, decorator: string): boolean {
+        if (type.symbol) {
+            var comment = type.symbol.getDocumentationComment();
+            var decorators = comment.filter(_ => _.kind == "text").map(_ => _.text.trim()).filter(_ => _[0] == "!");
+            return decorators.indexOf(decorator) > -1;
+        }
+        return false;
     }
 }

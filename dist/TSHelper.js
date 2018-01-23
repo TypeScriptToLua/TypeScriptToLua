@@ -44,13 +44,20 @@ var TSHelper = /** @class */ (function () {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
             && type.symbol.getDocumentationComment()[0] != undefined
-            && (type.symbol.getDocumentationComment()[0].text.trim() == "!CompileMembersOnly");
+            && this.hasCustomDecorator(type, "!CompileMembersOnly");
     };
     TSHelper.isPureAbstractClass = function (type) {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && type.symbol.getDocumentationComment()[0] != undefined
-            && (type.symbol.getDocumentationComment()[0].text.trim() == "!PureAbstract");
+            && this.hasCustomDecorator(type, "!PureAbstract");
+    };
+    TSHelper.hasCustomDecorator = function (type, decorator) {
+        if (type.symbol) {
+            var comment = type.symbol.getDocumentationComment();
+            var decorators = comment.filter(function (_) { return _.kind == "text"; }).map(function (_) { return _.text.trim(); }).filter(function (_) { return _[0] == "!"; });
+            return decorators.indexOf(decorator) > -1;
+        }
+        return false;
     };
     return TSHelper;
 }());

@@ -326,6 +326,8 @@ var LuaTranspiler = /** @class */ (function () {
                 return this.transpileNewExpression(node);
             case ts.SyntaxKind.ComputedPropertyName:
                 return "[" + this.transpileExpression(node.expression) + "]";
+            case ts.SyntaxKind.ParenthesizedExpression:
+                return "(" + this.transpileExpression(node.expression) + ")";
             case ts.SyntaxKind.SuperKeyword:
                 return "self.__base";
             case ts.SyntaxKind.TypeAssertionExpression:

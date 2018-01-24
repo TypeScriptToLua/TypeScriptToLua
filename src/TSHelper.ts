@@ -57,6 +57,12 @@ export class TSHelper {
             && this.hasCustomDecorator(type, "!PureAbstract");
     }
 
+    static isExtensionClass(type: ts.Type): boolean {
+        return type.symbol
+            && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
+            && this.hasCustomDecorator(type, "!Extension");
+    }
+
     static hasCustomDecorator(type: ts.Type, decorator: string): boolean {
         if (type.symbol) {
             var comment = type.symbol.getDocumentationComment();

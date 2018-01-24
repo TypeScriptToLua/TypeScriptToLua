@@ -666,27 +666,37 @@ var LuaTranspiler = /** @class */ (function () {
                     noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, "!NoClassOr");
                 }
             });
-        // Write class declaration
         var className = node.name.escapedText;
-        var classOr = noClassOr ? "" : className + " or ";
         var result = "";
-        if (!extendsType) {
-            result += this.indent + (className + " = " + classOr + "{}\n");
+        // Skip header if this is an extension class
+        var isExtension = TSHelper_1.TSHelper.isExtensionClass(this.checker.getTypeAtLocation(node));
+        if (!isExtension) {
+            // Write class declaration
+            var classOr = noClassOr ? "" : className + " or ";
+            if (!extendsType) {
+                result += this.indent + (className + " = " + classOr + "{}\n");
+            }
+            else {
+                var baseName = extendsType.expression.escapedText;
+                result += this.indent + (className + " = " + classOr + baseName + ".new()\n");
+            }
+            result += this.indent + (className + ".__index = " + className + "\n");
+            if (extendsType) {
+                var baseName = extendsType.expression.escapedText;
+                result += this.indent + (className + ".__base = " + baseName + "\n");
+            }
+            result += this.indent + ("function " + className + ".new(construct, ...)\n");
+            result += this.indent + ("    local instance = setmetatable({}, " + className + ")\n");
+            result += this.indent + ("    if construct and " + className + ".constructor then " + className + ".constructor(instance, ...) end\n");
+            result += this.indent + "    return instance\n";
+            result += this.indent + "end\n";
         }
         else {
-            var baseName = extendsType.expression.escapedText;
-            result += this.indent + (className + " = " + classOr + baseName + ".new()\n");
+            // Overwrite the original className with the class we are overriding for extensions
+            if (extendsType) {
+                className = extendsType.expression.escapedText;
+            }
         }
-        result += this.indent + (className + ".__index = " + className + "\n");
-        if (extendsType) {
-            var baseName = extendsType.expression.escapedText;
-            result += this.indent + (className + ".__base = " + baseName + "\n");
-        }
-        result += this.indent + ("function " + className + ".new(construct, ...)\n");
-        result += this.indent + ("    local instance = setmetatable({}, " + className + ")\n");
-        result += this.indent + ("    if construct and " + className + ".constructor then " + className + ".constructor(instance, ...) end\n");
-        result += this.indent + "    return instance\n";
-        result += this.indent + "end\n";
         // Get all properties with value
         var properties = node.members.filter(ts.isPropertyDeclaration)
             .filter(function (_) { return _.initializer; });

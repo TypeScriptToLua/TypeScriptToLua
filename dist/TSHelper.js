@@ -51,6 +51,11 @@ var TSHelper = /** @class */ (function () {
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
             && this.hasCustomDecorator(type, "!PureAbstract");
     };
+    TSHelper.isExtensionClass = function (type) {
+        return type.symbol
+            && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
+            && this.hasCustomDecorator(type, "!Extension");
+    };
     TSHelper.hasCustomDecorator = function (type, decorator) {
         if (type.symbol) {
             var comment = type.symbol.getDocumentationComment();

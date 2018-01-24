@@ -732,26 +732,36 @@ export class LuaTranspiler {
             }
         });
 
-        // Write class declaration
-        const className = <string>node.name.escapedText;
-        const classOr = noClassOr ? "" : `${className} or `;
+        let className = <string>node.name.escapedText;
         let result = "";
-        if (!extendsType) {
-            result += this.indent + `${className} = ${classOr}{}\n`;
-        } else {
-            const baseName = (<ts.Identifier>extendsType.expression).escapedText;
-            result += this.indent + `${className} = ${classOr}${baseName}.new()\n`
-        }
-        result += this.indent + `${className}.__index = ${className}\n`;
-        if (extendsType) {
+
+        // Skip header if this is an extension class
+        var isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node));
+        if (!isExtension) {
+            // Write class declaration
+            const classOr = noClassOr ? "" : `${className} or `;
+            if (!extendsType) {
+                result += this.indent + `${className} = ${classOr}{}\n`;
+            } else {
                 const baseName = (<ts.Identifier>extendsType.expression).escapedText;
-                result += this.indent + `${className}.__base = ${baseName}\n`;
+                result += this.indent + `${className} = ${classOr}${baseName}.new()\n`
+            }
+            result += this.indent + `${className}.__index = ${className}\n`;
+            if (extendsType) {
+                    const baseName = (<ts.Identifier>extendsType.expression).escapedText;
+                    result += this.indent + `${className}.__base = ${baseName}\n`;
+            }
+            result += this.indent + `function ${className}.new(construct, ...)\n`;
+            result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
+            result += this.indent + `    if construct and ${className}.constructor then ${className}.constructor(instance, ...) end\n`;
+            result += this.indent + `    return instance\n`;
+            result += this.indent + `end\n`;
+        } else {
+            // Overwrite the original className with the class we are overriding for extensions
+            if (extendsType) {
+                className = <string>(<ts.Identifier>extendsType.expression).escapedText;
+            }
         }
-        result += this.indent + `function ${className}.new(construct, ...)\n`;
-        result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
-        result += this.indent + `    if construct and ${className}.constructor then ${className}.constructor(instance, ...) end\n`;
-        result += this.indent + `    return instance\n`;
-        result += this.indent + `end\n`;
 
         // Get all properties with value
         const properties = node.members.filter(ts.isPropertyDeclaration)

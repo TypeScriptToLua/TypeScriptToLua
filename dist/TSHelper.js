@@ -28,6 +28,11 @@ var TSHelper = /** @class */ (function () {
         }
         return "unknown";
     };
+    TSHelper.isStringType = function (type) {
+        return (type.flags & ts.TypeFlags.String) != 0
+            || (type.flags & ts.TypeFlags.StringLike) != 0
+            || (type.flags & ts.TypeFlags.StringLiteral) != 0;
+    };
     TSHelper.isValueType = function (node) {
         return ts.isIdentifier(node) || ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node);
     };

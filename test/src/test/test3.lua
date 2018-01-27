@@ -7,4 +7,4 @@ local f = #c.d
 local g = #c.e
 local h = #"abc"
 table.insert(b, 3)
-a:sub("a","b")
+string.sub(a,"a","b")

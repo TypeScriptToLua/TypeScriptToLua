@@ -477,7 +477,14 @@ var LuaTranspiler = /** @class */ (function () {
         var caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "replace":
-                return caller + ":sub(" + params + ")";
+                return "string.sub(" + caller + "," + params + ")";
+            case "indexOf":
+                if (node.arguments.length == 1) {
+                    return "(string.find(" + caller + "," + params + ",1,true) or 0)-1";
+                }
+                else {
+                    return "(string.find(" + caller + "," + params + "+1,true) or 0)-1";
+                }
             default:
                 throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
         }
@@ -562,6 +569,9 @@ var LuaTranspiler = /** @class */ (function () {
         var type = this.checker.getTypeAtLocation(node.expression);
         if (TSHelper_1.TSHelper.isArrayType(type) || TSHelper_1.TSHelper.isTupleType(type)) {
             return element + "[" + index + "+1]";
+        }
+        else if (TSHelper_1.TSHelper.isStringType(type)) {
+            return "string.sub(" + element + "," + index + "+1," + index + "+1)";
         }
         else {
             return element + "[" + index + "]";

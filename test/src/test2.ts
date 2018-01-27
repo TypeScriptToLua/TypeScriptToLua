@@ -43,6 +43,11 @@ export class TestClass {
         print("sup");
         this.Test3(3, "");
         this.unit.GetParent().GetParent().GetAbsOrigin();
+        let str="abcbc";
+        print(str[str.indexOf("b")]);
+        print(str.indexOf("b", 2));
+        print("abc".indexOf("c"));
+        print(str.indexOf("b"))
     }
 
     Test3(a: number, b: string): string {

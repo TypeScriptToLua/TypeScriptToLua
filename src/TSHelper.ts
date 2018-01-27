@@ -29,6 +29,12 @@ export class TSHelper {
         return "unknown"
     }
 
+    static isStringType(type: ts.Type): boolean {
+        return (type.flags & ts.TypeFlags.String) != 0
+            || (type.flags & ts.TypeFlags.StringLike) != 0
+            || (type.flags & ts.TypeFlags.StringLiteral) != 0
+    }
+
     static isValueType(node: ts.Node): boolean {
         return ts.isIdentifier(node) || ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node);
     }

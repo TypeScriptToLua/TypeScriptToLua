@@ -26,6 +26,11 @@ function TestClass.Test(self)
     print("sup")
     self.Test3(self,3,"")
     self.unit.GetParent(self.unit).GetParent(self.unit.GetParent(self.unit)).GetAbsOrigin(self.unit.GetParent(self.unit).GetParent(self.unit.GetParent(self.unit)))
+    local str = "abcbc"
+    print(string.sub(str,(string.find(str,"b",1,true) or 0)-1+1,(string.find(str,"b",1,true) or 0)-1+1))
+    print((string.find(str,"b",2+1,true) or 0)-1)
+    print((string.find("abc","c",1,true) or 0)-1)
+    print((string.find(str,"b",1,true) or 0)-1)
 end
 function TestClass.Test3(self,a,b)
     return ""

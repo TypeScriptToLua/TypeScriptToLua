@@ -31,6 +31,8 @@ function TestClass.Test(self)
     print((string.find(str,"b",2+1,true) or 0)-1)
     print((string.find("abc","c",1,true) or 0)-1)
     print((string.find(str,"b",1,true) or 0)-1)
+    print(string.sub("abcde",2+1))
+    print(string.sub("abcde",1+1,3+1))
 end
 function TestClass.Test3(self,a,b)
     return ""

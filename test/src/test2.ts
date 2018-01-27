@@ -47,7 +47,9 @@ export class TestClass {
         print(str[str.indexOf("b")]);
         print(str.indexOf("b", 2));
         print("abc".indexOf("c"));
-        print(str.indexOf("b"))
+        print(str.indexOf("b"));
+        print("abcde".substring(2))
+        print("abcde".substring(1, 3))
     }
 
     Test3(a: number, b: string): string {

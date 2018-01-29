@@ -47,6 +47,9 @@ var LuaTranspiler = /** @class */ (function () {
     LuaTranspiler.prototype.popIndent = function () {
         this.indent = this.indent.slice(4);
     };
+    LuaTranspiler.prototype.definitionName = function (name) {
+        return this.namespace.concat(name).join(".");
+    };
     // Transpile a block
     LuaTranspiler.prototype.transpileBlock = function (node) {
         var _this = this;
@@ -73,6 +76,10 @@ var LuaTranspiler = /** @class */ (function () {
                 return this.transpileImport(node);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(node);
+            case ts.SyntaxKind.ModuleDeclaration:
+                return this.transpileNamespace(node);
+            case ts.SyntaxKind.ModuleBlock:
+                return this.transpileBlock(node);
             case ts.SyntaxKind.EnumDeclaration:
                 return this.transpileEnum(node);
             case ts.SyntaxKind.FunctionDeclaration:
@@ -128,6 +135,17 @@ var LuaTranspiler = /** @class */ (function () {
             throw new TranspileError("Unsupported import type.", node);
         }
     };
+    LuaTranspiler.prototype.transpileNamespace = function (node) {
+        // If phantom namespace just transpile the body as normal
+        if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node)))
+            return this.transpileNode(node.body);
+        var defName = this.definitionName(node.name.text);
+        var result = this.indent + (defName + " = {}\n");
+        this.namespace.push(node.name.text);
+        result += this.transpileNode(node.body);
+        this.namespace.pop();
+        return result;
+    };
     LuaTranspiler.prototype.transpileEnum = function (node) {
         var _this = this;
         var val = 0;
@@ -135,7 +153,8 @@ var LuaTranspiler = /** @class */ (function () {
         var type = this.checker.getTypeAtLocation(node);
         var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type);
         if (!membersOnly) {
-            result += this.indent + (node.name.escapedText + "={}\n");
+            var defName = this.definitionName(node.name.escapedText);
+            result += this.indent + (defName + "={}\n");
         }
         node.members.forEach(function (member) {
             if (member.initializer) {
@@ -146,12 +165,13 @@ var LuaTranspiler = /** @class */ (function () {
                     throw new TranspileError("Only numeric initializers allowed for enums.", node);
                 }
             }
-            var name = member.name.escapedText;
             if (membersOnly) {
-                result += _this.indent + (name + "=" + val + "\n");
+                var defName = _this.definitionName(name);
+                result += _this.indent + (defName + "=" + val + "\n");
             }
             else {
-                result += _this.indent + (node.name.escapedText + "." + name + "=" + val + "\n");
+                var defName = _this.definitionName(node.name.escapedText + "." + member.name.escapedText);
+                result += _this.indent + (defName + "=" + val + "\n");
             }
             val++;
         });
@@ -646,7 +666,7 @@ var LuaTranspiler = /** @class */ (function () {
             paramNames.push(param.name.escapedText);
         });
         // Build function header
-        result += this.indent + ("function " + methodName + "(" + paramNames.join(",") + ")\n");
+        result += this.indent + ("function " + this.definitionName(methodName) + "(" + paramNames.join(",") + ")\n");
         this.pushIndent();
         result += this.transpileBlock(body);
         this.popIndent();

@@ -27,12 +27,14 @@ export class LuaTranspiler {
     checker: ts.TypeChecker;
     genVarCounter: number;
     transpilingSwitch: boolean;
+    namespace: string[];
 
     constructor(checker: ts.TypeChecker) {
         this.indent = "";
         this.checker = checker;
         this.genVarCounter = 0;
         this.transpilingSwitch = false;
+        this.namespace = [];
     }
 
     pushIndent(): void {
@@ -41,6 +43,10 @@ export class LuaTranspiler {
 
     popIndent(): void {
         this.indent = this.indent.slice(4);
+    }
+
+    definitionName(name: string|ts.__String): string {
+        return this.namespace.concat(<string>name).join(".");
     }
 
     // Transpile a block
@@ -70,6 +76,10 @@ export class LuaTranspiler {
                 return this.transpileImport(<ts.ImportDeclaration>node);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(<ts.ClassDeclaration>node);
+            case ts.SyntaxKind.ModuleDeclaration:
+                return this.transpileNamespace(<ts.ModuleDeclaration>node);
+            case ts.SyntaxKind.ModuleBlock:
+                return this.transpileBlock(<ts.Block>node);
             case ts.SyntaxKind.EnumDeclaration:
                 return this.transpileEnum(<ts.EnumDeclaration>node);
             case ts.SyntaxKind.FunctionDeclaration:
@@ -125,6 +135,18 @@ export class LuaTranspiler {
         }
     }
 
+    transpileNamespace(node: ts.ModuleDeclaration): string {
+        // If phantom namespace just transpile the body as normal
+        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node))) return this.transpileNode(node.body);
+
+        const defName = this.definitionName(node.name.text);
+        let result = this.indent + `${defName} = {}\n`;
+        this.namespace.push(node.name.text);
+        result += this.transpileNode(node.body);
+        this.namespace.pop();
+        return result;
+    }
+
     transpileEnum(node: ts.EnumDeclaration): string {
         let val = 0;
         let result = "";
@@ -133,7 +155,8 @@ export class LuaTranspiler {
         const membersOnly = tsEx.isCompileMembersOnlyEnum(type);
 
         if (!membersOnly) {
-            result += this.indent + `${node.name.escapedText}={}\n`;
+            const defName = this.definitionName(node.name.escapedText)
+            result += this.indent + `${defName}={}\n`;
         }
 
         node.members.forEach(member => {
@@ -145,11 +168,12 @@ export class LuaTranspiler {
                 }
             }
 
-            const name = (<ts.Identifier>member.name).escapedText;
             if (membersOnly) {
-                result += this.indent + `${name}=${val}\n`;
+                const defName = this.definitionName(name);
+                result += this.indent + `${defName}=${val}\n`;
             } else {
-                result += this.indent + `${node.name.escapedText}.${name}=${val}\n`;
+                const defName = this.definitionName(`${node.name.escapedText}.${(<ts.Identifier>member.name).escapedText}`);
+                result += this.indent + `${defName}=${val}\n`;
             }
 
             val++;
@@ -699,7 +723,7 @@ export class LuaTranspiler {
         });
 
         // Build function header
-        result += this.indent + `function ${methodName}(${paramNames.join(",")})\n`;
+        result += this.indent + `function ${this.definitionName(methodName)}(${paramNames.join(",")})\n`;
 
         this.pushIndent();
         result += this.transpileBlock(body);

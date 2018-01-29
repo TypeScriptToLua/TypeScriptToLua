@@ -69,6 +69,12 @@ export class TSHelper {
             && this.hasCustomDecorator(type, "!Extension");
     }
 
+    static isPhantom(type: ts.Type): boolean {
+        return type.symbol
+            && ((type.symbol.flags & ts.SymbolFlags.Namespace) != 0)
+            && this.hasCustomDecorator(type, "!Phantom");
+    }
+
     static hasCustomDecorator(type: ts.Type, decorator: string): boolean {
         if (type.symbol) {
             var comment = type.symbol.getDocumentationComment();

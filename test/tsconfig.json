@@ -4,6 +4,6 @@
         "noImplicitThis" : true,
         "alwaysStrict" : true,
         "strictNullChecks" : true,
-        "target": "lua"
+        "target": "lua",
     }
 }

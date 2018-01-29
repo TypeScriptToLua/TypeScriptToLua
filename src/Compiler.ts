@@ -40,7 +40,8 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
 
             try {
                 // Transpile AST
-                let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker);
+                const addHeader = options.noHeader === true ? false : true;
+                let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker, addHeader);
                 let outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
                 
                 if (options.outDir) {

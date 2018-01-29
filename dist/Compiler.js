@@ -34,7 +34,8 @@ function compile(fileNames, options, projectRoot) {
             //printAST(sourceFile, 0);
             try {
                 // Transpile AST
-                var lua = Transpiler_1.LuaTranspiler.transpileSourceFile(sourceFile, checker);
+                var addHeader = options.noHeader === true ? false : true;
+                var lua = Transpiler_1.LuaTranspiler.transpileSourceFile(sourceFile, checker, addHeader);
                 var outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
                 if (options.outDir) {
                     var extension = options.outDir;

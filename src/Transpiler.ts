@@ -337,7 +337,11 @@ export class LuaTranspiler {
     }
 
     transpileReturn(node: ts.ReturnStatement): string {
-        return "return " + this.transpileExpression(node.expression);
+        if (node.expression) {
+            return "return " + this.transpileExpression(node.expression);
+        } else {
+            return "return"
+        }
     }
 
     transpileExpression(node: ts.Node, brackets?: boolean): string {

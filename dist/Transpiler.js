@@ -303,7 +303,12 @@ var LuaTranspiler = /** @class */ (function () {
         return result;
     };
     LuaTranspiler.prototype.transpileReturn = function (node) {
-        return "return " + this.transpileExpression(node.expression);
+        if (node.expression) {
+            return "return " + this.transpileExpression(node.expression);
+        }
+        else {
+            return "return";
+        }
     };
     LuaTranspiler.prototype.transpileExpression = function (node, brackets) {
         switch (node.kind) {
@@ -379,6 +384,12 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.MinusEqualsToken:
                 result = lhs + "=" + lhs + "-" + rhs;
                 break;
+            case ts.SyntaxKind.AsteriskEqualsToken:
+                result = lhs + "=" + lhs + "*" + rhs;
+                break;
+            case ts.SyntaxKind.SlashEqualsToken:
+                result = lhs + "=" + lhs + "/" + rhs;
+                break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 result = lhs + " and " + rhs;
                 break;
@@ -425,7 +436,7 @@ var LuaTranspiler = /** @class */ (function () {
         var condition = this.transpileExpression(node.condition);
         var val1 = this.transpileExpression(node.whenTrue);
         var val2 = this.transpileExpression(node.whenFalse);
-        return "TS_ITE(" + condition + ",function() return " + val1 + " end, function() return " + val2 + " end)";
+        return "TS_ITE(" + condition + ",function() return " + val1 + " end,function() return " + val2 + " end)";
     };
     // Replace some missmatching operators
     LuaTranspiler.prototype.transpileOperator = function (operator) {
@@ -443,9 +454,9 @@ var LuaTranspiler = /** @class */ (function () {
         var operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return operand + " = " + operand + " + 1";
+                return operand + "=" + operand + "+1";
             case ts.SyntaxKind.MinusMinusToken:
-                return operand + " = " + operand + " - 1";
+                return operand + "=" + operand + "-1";
             default:
                 throw new TranspileError("Unsupported unary postfix: " + TSHelper_1.TSHelper.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -454,9 +465,9 @@ var LuaTranspiler = /** @class */ (function () {
         var operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return operand + " = " + operand + " + 1";
+                return operand + "=" + operand + "+1";
             case ts.SyntaxKind.MinusMinusToken:
-                return operand + " = " + operand + " - 1";
+                return operand + "=" + operand + "-1";
             case ts.SyntaxKind.ExclamationToken:
                 return "not " + operand;
             case ts.SyntaxKind.MinusToken:

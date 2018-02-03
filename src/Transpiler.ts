@@ -420,6 +420,12 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusEqualsToken:
                 result = `${lhs}=${lhs}-${rhs}`;
                 break;
+            case ts.SyntaxKind.AsteriskEqualsToken:
+                result = `${lhs}=${lhs}*${rhs}`;
+                break;
+            case ts.SyntaxKind.SlashEqualsToken:
+                result = `${lhs}=${lhs}/${rhs}`;
+                break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 result = `${lhs} and ${rhs}`;
                 break;
@@ -467,7 +473,7 @@ export class LuaTranspiler {
         let val1 = this.transpileExpression(node.whenTrue);
         let val2 = this.transpileExpression(node.whenFalse);
 
-        return `TS_ITE(${condition},function() return ${val1} end, function() return ${val2} end)`;
+        return `TS_ITE(${condition},function() return ${val1} end,function() return ${val2} end)`;
     }
 
     // Replace some missmatching operators
@@ -487,9 +493,9 @@ export class LuaTranspiler {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand} = ${operand} + 1`;
+                return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand} = ${operand} - 1`;
+                return `${operand}=${operand}-1`;
             default:
                 throw new TranspileError("Unsupported unary postfix: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -499,9 +505,9 @@ export class LuaTranspiler {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand} = ${operand} + 1`;
+                return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand} = ${operand} - 1`;
+                return `${operand}=${operand}-1`;
             case ts.SyntaxKind.ExclamationToken:
                 return `not ${operand}`;
             case ts.SyntaxKind.MinusToken:

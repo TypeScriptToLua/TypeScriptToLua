@@ -1,7 +1,6 @@
 {
     "dependencies": {
         "alsatian": "^2.1.0",
-        "ts-node": "^4.1.0",
         "typescript": "^2.7.1"
     }
 }

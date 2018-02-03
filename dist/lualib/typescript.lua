@@ -40,6 +40,22 @@ function TS_slice(list, startI, endI)
     return out
 end
 
+function TS_splice(list, startI, deleteCount, ...)
+    if not deleteCount then
+        deleteCount = #list - startI
+    else if deleteCount > #list - startI then
+        deleteCount = #list - startI
+    end
+    local out = {}
+    for i = startI, deleteCount do
+        table.insert(out, table.remove(list, i))
+    end
+    for _, value in ipairs({...}) do
+        table.insert(list, value)
+    end
+    return out
+end
+
 function TS_some(list, func)
     return #TS_filter(list, func) > 0
 end

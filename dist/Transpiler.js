@@ -137,7 +137,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileNamespace = function (node) {
         // If phantom namespace just transpile the body as normal
-        if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node)))
+        if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker))
             return this.transpileNode(node.body);
         var defName = this.definitionName(node.name.text);
         var result = this.indent + (defName + " = {}\n");
@@ -151,7 +151,7 @@ var LuaTranspiler = /** @class */ (function () {
         var val = 0;
         var result = "";
         var type = this.checker.getTypeAtLocation(node);
-        var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type);
+        var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker);
         if (!membersOnly) {
             var defName = this.definitionName(node.name.escapedText);
             result += this.indent + (defName + "={}\n");
@@ -572,7 +572,7 @@ var LuaTranspiler = /** @class */ (function () {
                     return this.transpileArrayProperty(node);
         }
         // Do not output path for member only enums
-        if (TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type)) {
+        if (TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
         var path = this.transpileExpression(node.expression);
@@ -705,16 +705,16 @@ var LuaTranspiler = /** @class */ (function () {
                 if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
                     var superType = _this.checker.getTypeAtLocation(clause.types[0]);
                     // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                    if (!TSHelper_1.TSHelper.isPureAbstractClass(superType)) {
+                    if (!TSHelper_1.TSHelper.isPureAbstractClass(superType, _this.checker)) {
                         extendsType = clause.types[0];
                     }
-                    noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, "!NoClassOr");
+                    noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, _this.checker, "!NoClassOr");
                 }
             });
         var className = node.name.escapedText;
         var result = "";
         // Skip header if this is an extension class
-        var isExtension = TSHelper_1.TSHelper.isExtensionClass(this.checker.getTypeAtLocation(node));
+        var isExtension = TSHelper_1.TSHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
         if (!isExtension) {
             // Write class declaration
             var classOr = noClassOr ? "" : className + " or ";

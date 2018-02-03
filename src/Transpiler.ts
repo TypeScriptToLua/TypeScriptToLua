@@ -137,7 +137,7 @@ export class LuaTranspiler {
 
     transpileNamespace(node: ts.ModuleDeclaration): string {
         // If phantom namespace just transpile the body as normal
-        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node))) return this.transpileNode(node.body);
+        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker)) return this.transpileNode(node.body);
 
         const defName = this.definitionName(node.name.text);
         let result = this.indent + `${defName} = {}\n`;
@@ -152,7 +152,7 @@ export class LuaTranspiler {
         let result = "";
 
         const type = this.checker.getTypeAtLocation(node);
-        const membersOnly = tsEx.isCompileMembersOnlyEnum(type);
+        const membersOnly = tsEx.isCompileMembersOnlyEnum(type, this.checker);
 
         if (!membersOnly) {
             const defName = this.definitionName(node.name.escapedText)
@@ -629,7 +629,7 @@ export class LuaTranspiler {
         }
 
         // Do not output path for member only enums
-        if (tsEx.isCompileMembersOnlyEnum(type)) {
+        if (tsEx.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
 
@@ -774,10 +774,10 @@ export class LuaTranspiler {
             if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
                 const superType = this.checker.getTypeAtLocation(clause.types[0]);
                 // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                if (!tsEx.isPureAbstractClass(superType)) {
+                if (!tsEx.isPureAbstractClass(superType, this.checker)) {
                     extendsType = clause.types[0];
                 }
-                noClassOr = tsEx.hasCustomDecorator(superType, "!NoClassOr");
+                noClassOr = tsEx.hasCustomDecorator(superType, this.checker, "!NoClassOr");
             }
         });
 
@@ -785,7 +785,7 @@ export class LuaTranspiler {
         let result = "";
 
         // Skip header if this is an extension class
-        var isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node));
+        var isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
         if (!isExtension) {
             // Write class declaration
             const classOr = noClassOr ? "" : `${className} or `;

@@ -47,7 +47,7 @@ function TS_splice(list, startI, deleteCount, ...)
         deleteCount = #list - startI
     end
     local out = {}
-    for i = startI, deleteCount do
+    for i = startI + deleteCount, startI, -1 do
         table.insert(out, table.remove(list, i))
     end
     for _, value in ipairs({...}) do

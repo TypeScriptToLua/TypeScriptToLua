@@ -32,9 +32,11 @@ function TS_filter(list, func)
 end
 
 function TS_slice(list, startI, endI)
-    endI = endI or (#list-1)
+    endI = endI or #list
+    if startI < 0 then startI = #list + startI end
+    if endI < 0 then endI = #list + endI end
     local out = {}
-    for i = startI + 1, endI + 1 do
+    for i = startI + 1, endI do
         table.insert(out, list[i])
     end
     return out

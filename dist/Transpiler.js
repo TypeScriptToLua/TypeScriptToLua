@@ -784,6 +784,12 @@ var LuaTranspiler = /** @class */ (function () {
         node.members.filter(ts.isMethodDeclaration).forEach(function (method) {
             result += _this.transpileMethodDeclaration(method, className + ".");
         });
+        // Check if the class should be returned
+        var isExport = node.modifiers && node.modifiers.some(function (_) { return _.kind == ts.SyntaxKind.ExportKeyword; });
+        var isDefault = node.modifiers && node.modifiers.some(function (_) { return _.kind == ts.SyntaxKind.DefaultKeyword; });
+        if (isExport && isDefault) {
+            result += this.indent + ("return " + className + "\n");
+        }
         return result;
     };
     LuaTranspiler.prototype.transpileConstructor = function (node, className, instanceFields) {

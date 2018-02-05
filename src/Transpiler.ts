@@ -384,6 +384,8 @@ export class LuaTranspiler {
                 return this.transpileArrayLiteral(<ts.ArrayLiteralExpression>node);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transpileObjectLiteral(<ts.ObjectLiteralExpression>node);
+            case ts.SyntaxKind.DeleteExpression:
+                return this.transpileExpression((<ts.DeleteExpression>node).expression) + "=nil";
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
                 return this.transpileArrowFunction(<ts.ArrowFunction>node);
@@ -410,7 +412,7 @@ export class LuaTranspiler {
         // Transpile operands
         const lhs = this.transpileExpression(node.left, true);
         const rhs = this.transpileExpression(node.right, true);
-        
+
         // Rewrite some non-existant binary operators
         let result = "";
         switch (node.operatorToken.kind) {
@@ -587,6 +589,9 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
+                if (node.arguments.length > 1) {
+                    throw new TranspileError("Unsupported array function: " + expression.name.escapedText + " with more than one argument", node);
+                }
                 return `table.insert(${caller}, ${params})`;
             case "forEach":
                 return `TS_forEach(${caller}, ${params})`;
@@ -599,7 +604,11 @@ export class LuaTranspiler {
             case "every":
                 return `TS_every(${caller}, ${params})`;
             case "slice":
-                return `TS_slice(${caller}, ${params})`
+                return `TS_slice(${caller}, ${params})`;
+            case "splice":
+                return `TS_splice(${caller}, ${params})`;
+            case "join":
+                return `table.concat(${caller}, ${params})`;
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }
@@ -622,7 +631,7 @@ export class LuaTranspiler {
 
     transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
         const property = node.name.text;
-        
+
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
         switch (type.flags) {
@@ -830,7 +839,7 @@ export class LuaTranspiler {
         // Add static declarations
         for (const field of staticFields) {
             const fieldName = (<ts.Identifier>field.name).escapedText;
-            let value = this.transpileExpression(field.initializer);            
+            let value = this.transpileExpression(field.initializer);
             result += this.indent + `${className}.${fieldName} = ${value}\n`;
         }
 

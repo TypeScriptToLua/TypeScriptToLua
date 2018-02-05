@@ -350,6 +350,8 @@ var LuaTranspiler = /** @class */ (function () {
                 return this.transpileArrayLiteral(node);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transpileObjectLiteral(node);
+            case ts.SyntaxKind.DeleteExpression:
+                return this.transpileExpression(node.expression) + "=nil";
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
                 return this.transpileArrowFunction(node);
@@ -541,6 +543,9 @@ var LuaTranspiler = /** @class */ (function () {
         var caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
+                if (node.arguments.length > 1) {
+                    throw new TranspileError("Unsupported array function: " + expression.name.escapedText + " with more than one argument", node);
+                }
                 return "table.insert(" + caller + ", " + params + ")";
             case "forEach":
                 return "TS_forEach(" + caller + ", " + params + ")";
@@ -554,6 +559,8 @@ var LuaTranspiler = /** @class */ (function () {
                 return "TS_every(" + caller + ", " + params + ")";
             case "slice":
                 return "TS_slice(" + caller + ", " + params + ")";
+            case "splice":
+                return "TS_splice(" + caller + ", " + params + ")";
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }

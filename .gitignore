@@ -3,3 +3,6 @@ node_modules/
 *.lua
 !dist/*.js
 !dist/lualib/*.lua
+
+# OSX 
+.DS_Store

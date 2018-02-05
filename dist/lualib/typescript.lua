@@ -42,6 +42,32 @@ function TS_slice(list, startI, endI)
     return out
 end
 
+function TS_splice(list, startI, deleteCount, ...)
+    if not deleteCount or deleteCount > #list - startI then
+        deleteCount = #list - startI
+    end
+    startI = startI + 1
+    local newElements = {...}
+    local out = {}
+    local outPtr = deleteCount
+    local newElementsCount = #newElements
+    for i = startI + deleteCount - 1, startI, -1 do
+        out[outPtr] = list[i]
+        outPtr = outPtr -1
+        if newElements[k] then
+            list[i] = newElements[k]
+            newElementsCount = newElementsCount - 1
+        else
+            table.remove(list, i)
+        end
+    end
+    while newElements[newElementsCount] do
+        table.insert(list, startI, newElements[newElementsCount])
+        newElementsCount = newElementsCount - 1
+    end
+    return out
+end
+
 function TS_some(list, func)
     return #TS_filter(list, func) > 0
 end

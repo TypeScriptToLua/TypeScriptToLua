@@ -50,34 +50,34 @@ export class TSHelper {
             && (<ts.TypeReference>type).typeArguments != undefined;
     }
 
-    static isCompileMembersOnlyEnum(type: ts.Type): boolean {
+    static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol 
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
-            && type.symbol.getDocumentationComment()[0] != undefined
-            && this.hasCustomDecorator(type, "!CompileMembersOnly");
+            && type.symbol.getDocumentationComment(checker)[0] != undefined
+            && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
     }
 
-    static isPureAbstractClass(type: ts.Type): boolean {
+    static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol 
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && this.hasCustomDecorator(type, "!PureAbstract");
+            && this.hasCustomDecorator(type, checker, "!PureAbstract");
     }
 
-    static isExtensionClass(type: ts.Type): boolean {
+    static isExtensionClass(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && this.hasCustomDecorator(type, "!Extension");
+            && this.hasCustomDecorator(type, checker, "!Extension");
     }
 
-    static isPhantom(type: ts.Type): boolean {
+    static isPhantom(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Namespace) != 0)
-            && this.hasCustomDecorator(type, "!Phantom");
+            && this.hasCustomDecorator(type, checker, "!Phantom");
     }
 
-    static hasCustomDecorator(type: ts.Type, decorator: string): boolean {
+    static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
         if (type.symbol) {
-            var comment = type.symbol.getDocumentationComment();
+            var comment = type.symbol.getDocumentationComment(checker);
             var decorators = comment.filter(_ => _.kind == "text").map(_ => _.text.trim()).filter(_ => _[0] == "!");
             return decorators.indexOf(decorator) > -1;
         }

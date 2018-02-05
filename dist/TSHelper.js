@@ -45,30 +45,30 @@ var TSHelper = /** @class */ (function () {
         return (type.flags & ts.TypeFlags.Object) != 0
             && type.typeArguments != undefined;
     };
-    TSHelper.isCompileMembersOnlyEnum = function (type) {
+    TSHelper.isCompileMembersOnlyEnum = function (type, checker) {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
-            && type.symbol.getDocumentationComment()[0] != undefined
-            && this.hasCustomDecorator(type, "!CompileMembersOnly");
+            && type.symbol.getDocumentationComment(checker)[0] != undefined
+            && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
     };
-    TSHelper.isPureAbstractClass = function (type) {
+    TSHelper.isPureAbstractClass = function (type, checker) {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && this.hasCustomDecorator(type, "!PureAbstract");
+            && this.hasCustomDecorator(type, checker, "!PureAbstract");
     };
-    TSHelper.isExtensionClass = function (type) {
+    TSHelper.isExtensionClass = function (type, checker) {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
-            && this.hasCustomDecorator(type, "!Extension");
+            && this.hasCustomDecorator(type, checker, "!Extension");
     };
-    TSHelper.isPhantom = function (type) {
+    TSHelper.isPhantom = function (type, checker) {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Namespace) != 0)
-            && this.hasCustomDecorator(type, "!Phantom");
+            && this.hasCustomDecorator(type, checker, "!Phantom");
     };
-    TSHelper.hasCustomDecorator = function (type, decorator) {
+    TSHelper.hasCustomDecorator = function (type, checker, decorator) {
         if (type.symbol) {
-            var comment = type.symbol.getDocumentationComment();
+            var comment = type.symbol.getDocumentationComment(checker);
             var decorators = comment.filter(function (_) { return _.kind == "text"; }).map(function (_) { return _.text.trim(); }).filter(function (_) { return _[0] == "!"; });
             return decorators.indexOf(decorator) > -1;
         }

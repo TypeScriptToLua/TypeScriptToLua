@@ -1,0 +1,11 @@
+language: node_js
+
+node_js:
+  - 'stable'
+
+install:
+  - npm install
+
+script:
+  - tsc -p ./test
+  - node ./test/runner.js

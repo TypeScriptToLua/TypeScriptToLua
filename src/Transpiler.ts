@@ -137,7 +137,7 @@ export class LuaTranspiler {
 
     transpileNamespace(node: ts.ModuleDeclaration): string {
         // If phantom namespace just transpile the body as normal
-        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node))) return this.transpileNode(node.body);
+        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker)) return this.transpileNode(node.body);
 
         const defName = this.definitionName(node.name.text);
         let result = this.indent + `${defName} = {}\n`;
@@ -152,7 +152,7 @@ export class LuaTranspiler {
         let result = "";
 
         const type = this.checker.getTypeAtLocation(node);
-        const membersOnly = tsEx.isCompileMembersOnlyEnum(type);
+        const membersOnly = tsEx.isCompileMembersOnlyEnum(type, this.checker);
 
         if (!membersOnly) {
             const defName = this.definitionName(node.name.escapedText)
@@ -422,6 +422,12 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusEqualsToken:
                 result = `${lhs}=${lhs}-${rhs}`;
                 break;
+            case ts.SyntaxKind.AsteriskEqualsToken:
+                result = `${lhs}=${lhs}*${rhs}`;
+                break;
+            case ts.SyntaxKind.SlashEqualsToken:
+                result = `${lhs}=${lhs}/${rhs}`;
+                break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 result = `${lhs} and ${rhs}`;
                 break;
@@ -469,7 +475,7 @@ export class LuaTranspiler {
         let val1 = this.transpileExpression(node.whenTrue);
         let val2 = this.transpileExpression(node.whenFalse);
 
-        return `TS_ITE(${condition},function() return ${val1} end, function() return ${val2} end)`;
+        return `TS_ITE(${condition},function() return ${val1} end,function() return ${val2} end)`;
     }
 
     // Replace some missmatching operators
@@ -489,9 +495,9 @@ export class LuaTranspiler {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand} = ${operand} + 1`;
+                return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand} = ${operand} - 1`;
+                return `${operand}=${operand}-1`;
             default:
                 throw new TranspileError("Unsupported unary postfix: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -501,9 +507,9 @@ export class LuaTranspiler {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand} = ${operand} + 1`;
+                return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand} = ${operand} - 1`;
+                return `${operand}=${operand}-1`;
             case ts.SyntaxKind.ExclamationToken:
                 return `not ${operand}`;
             case ts.SyntaxKind.MinusToken:
@@ -638,7 +644,7 @@ export class LuaTranspiler {
         }
 
         // Do not output path for member only enums
-        if (tsEx.isCompileMembersOnlyEnum(type)) {
+        if (tsEx.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
 
@@ -783,10 +789,10 @@ export class LuaTranspiler {
             if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
                 const superType = this.checker.getTypeAtLocation(clause.types[0]);
                 // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                if (!tsEx.isPureAbstractClass(superType)) {
+                if (!tsEx.isPureAbstractClass(superType, this.checker)) {
                     extendsType = clause.types[0];
                 }
-                noClassOr = tsEx.hasCustomDecorator(superType, "!NoClassOr");
+                noClassOr = tsEx.hasCustomDecorator(superType, this.checker, "!NoClassOr");
             }
         });
 
@@ -794,7 +800,7 @@ export class LuaTranspiler {
         let result = "";
 
         // Skip header if this is an extension class
-        var isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node));
+        var isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
         if (!isExtension) {
             // Write class declaration
             const classOr = noClassOr ? "" : `${className} or `;
@@ -854,6 +860,13 @@ export class LuaTranspiler {
         node.members.filter(ts.isMethodDeclaration).forEach(method => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
+
+        // Check if the class should be returned
+        const isExport = node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.ExportKeyword);
+        const isDefault = node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.DefaultKeyword);
+        if (isExport && isDefault) {
+            result += this.indent + `return ${className}\n`;
+        }
 
         return result;
     }

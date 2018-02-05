@@ -1,0 +1,7 @@
+{
+    "dependencies": {
+        "alsatian": "^2.1.0",
+        "lua.vm.js": "0.0.1",
+        "typescript": "^2.7.1"
+    }
+}

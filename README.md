@@ -1,6 +1,8 @@
 # TypescriptToLua
 Typescript to lua transpiler.
 
+[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
+
 ## Usage Guide
 
 #### Prerequisites

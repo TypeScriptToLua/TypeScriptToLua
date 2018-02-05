@@ -137,7 +137,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileNamespace = function (node) {
         // If phantom namespace just transpile the body as normal
-        if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node)))
+        if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker))
             return this.transpileNode(node.body);
         var defName = this.definitionName(node.name.text);
         var result = this.indent + (defName + " = {}\n");
@@ -151,7 +151,7 @@ var LuaTranspiler = /** @class */ (function () {
         var val = 0;
         var result = "";
         var type = this.checker.getTypeAtLocation(node);
-        var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type);
+        var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker);
         if (!membersOnly) {
             var defName = this.definitionName(node.name.escapedText);
             result += this.indent + (defName + "={}\n");
@@ -386,6 +386,12 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.MinusEqualsToken:
                 result = lhs + "=" + lhs + "-" + rhs;
                 break;
+            case ts.SyntaxKind.AsteriskEqualsToken:
+                result = lhs + "=" + lhs + "*" + rhs;
+                break;
+            case ts.SyntaxKind.SlashEqualsToken:
+                result = lhs + "=" + lhs + "/" + rhs;
+                break;
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 result = lhs + " and " + rhs;
                 break;
@@ -432,7 +438,7 @@ var LuaTranspiler = /** @class */ (function () {
         var condition = this.transpileExpression(node.condition);
         var val1 = this.transpileExpression(node.whenTrue);
         var val2 = this.transpileExpression(node.whenFalse);
-        return "TS_ITE(" + condition + ",function() return " + val1 + " end, function() return " + val2 + " end)";
+        return "TS_ITE(" + condition + ",function() return " + val1 + " end,function() return " + val2 + " end)";
     };
     // Replace some missmatching operators
     LuaTranspiler.prototype.transpileOperator = function (operator) {
@@ -450,9 +456,9 @@ var LuaTranspiler = /** @class */ (function () {
         var operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return operand + " = " + operand + " + 1";
+                return operand + "=" + operand + "+1";
             case ts.SyntaxKind.MinusMinusToken:
-                return operand + " = " + operand + " - 1";
+                return operand + "=" + operand + "-1";
             default:
                 throw new TranspileError("Unsupported unary postfix: " + TSHelper_1.TSHelper.enumName(node.kind, ts.SyntaxKind), node);
         }
@@ -461,9 +467,9 @@ var LuaTranspiler = /** @class */ (function () {
         var operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return operand + " = " + operand + " + 1";
+                return operand + "=" + operand + "+1";
             case ts.SyntaxKind.MinusMinusToken:
-                return operand + " = " + operand + " - 1";
+                return operand + "=" + operand + "-1";
             case ts.SyntaxKind.ExclamationToken:
                 return "not " + operand;
             case ts.SyntaxKind.MinusToken:
@@ -584,7 +590,7 @@ var LuaTranspiler = /** @class */ (function () {
                     return this.transpileArrayProperty(node);
         }
         // Do not output path for member only enums
-        if (TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type)) {
+        if (TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
         var path = this.transpileExpression(node.expression);
@@ -717,16 +723,16 @@ var LuaTranspiler = /** @class */ (function () {
                 if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
                     var superType = _this.checker.getTypeAtLocation(clause.types[0]);
                     // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                    if (!TSHelper_1.TSHelper.isPureAbstractClass(superType)) {
+                    if (!TSHelper_1.TSHelper.isPureAbstractClass(superType, _this.checker)) {
                         extendsType = clause.types[0];
                     }
-                    noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, "!NoClassOr");
+                    noClassOr = TSHelper_1.TSHelper.hasCustomDecorator(superType, _this.checker, "!NoClassOr");
                 }
             });
         var className = node.name.escapedText;
         var result = "";
         // Skip header if this is an extension class
-        var isExtension = TSHelper_1.TSHelper.isExtensionClass(this.checker.getTypeAtLocation(node));
+        var isExtension = TSHelper_1.TSHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
         if (!isExtension) {
             // Write class declaration
             var classOr = noClassOr ? "" : className + " or ";
@@ -785,6 +791,12 @@ var LuaTranspiler = /** @class */ (function () {
         node.members.filter(ts.isMethodDeclaration).forEach(function (method) {
             result += _this.transpileMethodDeclaration(method, className + ".");
         });
+        // Check if the class should be returned
+        var isExport = node.modifiers && node.modifiers.some(function (_) { return _.kind == ts.SyntaxKind.ExportKeyword; });
+        var isDefault = node.modifiers && node.modifiers.some(function (_) { return _.kind == ts.SyntaxKind.DefaultKeyword; });
+        if (isExport && isDefault) {
+            result += this.indent + ("return " + className + "\n");
+        }
         return result;
     };
     LuaTranspiler.prototype.transpileConstructor = function (node, className, instanceFields) {

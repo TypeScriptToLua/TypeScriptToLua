@@ -598,9 +598,11 @@ export class LuaTranspiler {
             case "every":
                 return `TS_every(${caller}, ${params})`;
             case "slice":
-                return `TS_slice(${caller}, ${params})`
+                return `TS_slice(${caller}, ${params})`;
             case "splice":
-                return `TS_splice(${caller}, ${params})`
+                return `TS_splice(${caller}, ${params})`;
+            case "join":
+                return `table.concat(${caller}, ${params})`;
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }

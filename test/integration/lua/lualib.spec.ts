@@ -51,4 +51,59 @@ export class LuaTests {
         // Assert
         Expect(result).toBe(inp.slice(start, end).toString());
     }
+
+    @TestCase([0,1,2,3], 1, 0, 9, 10, 11)
+    @TestCase([0,1,2,3], 2, 2, 9, 10, 11)
+    @TestCase([0,1,2,3], 4, 1, 8, 9)
+    @TestCase([0,1,2,3], 4, 0, 8, 9)
+    @TestCase([0,1,2,3,4,5], 5, 9, 10, 11)
+    @TestCase([0,1,2,3,4,5], 3, 2, 3, 4, 5)
+    @Test("array.splice[Insert]")
+    public spliceInsert<T>(inp: T[], start: number, deleteCount: number, ...newElements: any[]) {
+        // Make typechecker return array type
+        dummyType = dummyArrayType;
+        // Transpile
+        let lua = transpileString(
+            `let spliceTestTable = [${inp.toString()}]
+            spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
+            return ToString(spliceTestTable);`
+        );
+
+        // Add library
+        lua = toStringDef + lualib + lua;
+
+        // Execute
+        let result = executeLua(lua);
+
+        // Assert
+        inp.splice(start, deleteCount, ...newElements)
+        Expect(result).toBe(inp.toString());
+    }
+
+    @TestCase([0,1,2,3], 1, 1)
+    @TestCase([0,1,2,3], 10, 1)
+    @TestCase([0,1,2,3], 4)
+    @TestCase([0,1,2,3,4,5], 3)
+    @TestCase([0,1,2,3,4,5], 2, 2)
+    @TestCase([0,1,2,3,4,5,6,7,8], 5, 9, 10, 11)
+    @Test("array.splice[Remove]")
+    public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
+        // Make typechecker return array type
+        dummyType = dummyArrayType;
+        // Transpile
+        let lua = transpileString(`return ToString([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`);
+
+        // Add library
+        lua = toStringDef + lualib + lua;
+
+        // Execute
+        let result = executeLua(lua);
+
+        // Assert
+        if (deleteCount) {
+            Expect(result).toBe(inp.splice(start, deleteCount, ...newElements).toString());
+        } else {
+            Expect(result).toBe(inp.splice(start).toString());
+        }
+    }
 }

@@ -49,19 +49,21 @@ function TS_splice(list, startI, deleteCount, ...)
     startI = startI + 1
     local newElements = {...}
     local out = {}
-    local k = #newElements
+    local outPtr = deleteCount
+    local newElementsCount = #newElements
     for i = startI + deleteCount - 1, startI, -1 do
-        table.insert(out, list[i])
+        out[outPtr] = list[i]
+        outPtr = outPtr -1
         if newElements[k] then
             list[i] = newElements[k]
-            k = k - 1
+            newElementsCount = newElementsCount - 1
         else
             table.remove(list, i)
         end
     end
-    while newElements[k] do
-        table.insert(list, startI, newElements[k])
-        k = k - 1
+    while newElements[newElementsCount] do
+        table.insert(list, startI, newElements[newElementsCount])
+        newElementsCount = newElementsCount - 1
     end
     return out
 end

@@ -3,5 +3,12 @@
         "alsatian": "^2.1.0",
         "lua.vm.js": "0.0.1",
         "typescript": "^2.7.1"
+    },
+    "scripts": {
+        "test": "tsc -p ./test && node ./test/runner.js",
+        "coverage": "nyc --reporter=lcov npm test && nyc report"
+    },
+    "devDependencies": {
+        "nyc": "^11.4.1"
     }
 }

@@ -7,5 +7,4 @@ install:
   - npm install
 
 script:
-  - tsc -p ./test
-  - node ./test/runner.js
+  - npm test

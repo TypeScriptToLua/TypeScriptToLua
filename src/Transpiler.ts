@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 
-import {TSHelper as tsEx} from "./TSHelper";
-import {ForHelper} from "./ForHelper";
+import { TSHelper as tsEx } from "./TSHelper";
+import { ForHelper } from "./ForHelper";
 
 export class TranspileError extends Error {
     node: ts.Node;
@@ -45,12 +45,12 @@ export class LuaTranspiler {
         this.indent = this.indent.slice(4);
     }
 
-    definitionName(name: string|ts.__String): string {
+    definitionName(name: string | ts.__String): string {
         return this.namespace.concat(<string>name).join(".");
     }
 
     // Transpile a block
-     transpileBlock(node: ts.Node): string {
+    transpileBlock(node: ts.Node): string {
         let result = "";
 
         if (ts.isBlock(node)) {
@@ -125,7 +125,7 @@ export class LuaTranspiler {
         } else if (ts.isNamedImports(imports)) {
             // Forbid renaming
             imports.elements.forEach(element => {
-                if(element.propertyName) {
+                if (element.propertyName) {
                     throw new TranspileError("Renaming of individual imported objects is not allowed", node);
                 }
             });
@@ -240,7 +240,7 @@ export class LuaTranspiler {
 
     transpileForOf(node: ts.ForOfStatement): string {
         // Get variable identifier
-        const variable =  (<ts.VariableDeclarationList>node.initializer).declarations[0];
+        const variable = (<ts.VariableDeclarationList>node.initializer).declarations[0];
         const identifier = <ts.Identifier>variable.name;
 
         // Transpile expression
@@ -269,12 +269,12 @@ export class LuaTranspiler {
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
 
-        // Use ipairs for array types, pairs otherwise
-        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
-        const pairs = isArray ? "ipairs" : "pairs";
+        if (tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression))) {
+            throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
+        }
 
         // Make header
-        let result = this.indent + `for ${identifier.escapedText}, _ in ${pairs}(${expression}) do\n`;
+        let result = this.indent + `for ${identifier.escapedText}, _ in "pairs"(${expression}) do\n`;
 
         // For body
         this.pushIndent();
@@ -312,7 +312,7 @@ export class LuaTranspiler {
             this.pushIndent();
 
             // Labels for fallthrough
-            result += this.indent + `::switchCase${this.genVarCounter+index}::\n`;
+            result += this.indent + `::switchCase${this.genVarCounter + index}::\n`;
 
             this.transpilingSwitch = true;
             clause.statements.forEach(statement => {
@@ -812,8 +812,8 @@ export class LuaTranspiler {
             }
             result += this.indent + `${className}.__index = ${className}\n`;
             if (extendsType) {
-                    const baseName = (<ts.Identifier>extendsType.expression).escapedText;
-                    result += this.indent + `${className}.__base = ${baseName}\n`;
+                const baseName = (<ts.Identifier>extendsType.expression).escapedText;
+                result += this.indent + `${className}.__base = ${baseName}\n`;
             }
             result += this.indent + `function ${className}.new(construct, ...)\n`;
             result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
@@ -852,7 +852,7 @@ export class LuaTranspiler {
             // No constructor, make one to set all instance fields if there are any
             if (instanceFields.length > 0) {
                 // Create empty constructor and add instance fields
-                result += this.transpileConstructor(ts.createConstructor([],[],[], ts.createBlock([],true)), className, instanceFields);
+                result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)), className, instanceFields);
             }
         }
 
@@ -882,7 +882,7 @@ export class LuaTranspiler {
             parameters.push(<string>(<ts.Identifier>param.name).escapedText);
         });
 
-        let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n` ;
+        let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n`;
 
         // Add in instance field declarations
         for (const f of extraInstanceFields) {
@@ -923,13 +923,13 @@ export class LuaTranspiler {
         node.properties.forEach(assignment => {
             const [key, value] = tsEx.getChildren(assignment);
             if (ts.isIdentifier(key)) {
-                properties.push(`${key.escapedText}=`+this.transpileExpression(value));
+                properties.push(`${key.escapedText}=` + this.transpileExpression(value));
             } else if (ts.isComputedPropertyName(key)) {
                 const index = this.transpileExpression(key);
-                properties.push(`${index}=`+this.transpileExpression(value));
+                properties.push(`${index}=` + this.transpileExpression(value));
             } else {
                 const index = this.transpileExpression(<ts.Expression>key);
-                properties.push(`[${index}]=`+this.transpileExpression(value));
+                properties.push(`[${index}]=` + this.transpileExpression(value));
             }
         });
 

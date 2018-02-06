@@ -539,7 +539,7 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            // Include context parameter if present and caller is not namespace / module
+            // Include context parameter if present
             let callPath = this.transpileExpression(node.expression);
             const params = this.transpileArguments(node.arguments, node.expression.expression);
             return `${callPath}(${params})`;

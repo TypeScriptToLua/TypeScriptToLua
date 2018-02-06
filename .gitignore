@@ -4,5 +4,8 @@ node_modules/
 !dist/*.js
 !dist/lualib/*.lua
 
-# OSX 
+coverage/
+.nyc*
+
+# OSX
 .DS_Store

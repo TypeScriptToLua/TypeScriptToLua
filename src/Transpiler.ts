@@ -544,12 +544,7 @@ export class LuaTranspiler {
 
             // Include context parameter if present and caller is not namespace / module
             let callPath = this.transpileExpression(node.expression);
-            let params: string;
-            if (type.symbol.flags === ts.SymbolFlags.ValueModule) {
-                params = this.transpileArguments(node.arguments);
-            } else {
-                params = this.transpileArguments(node.arguments, node.expression.expression);
-            }
+            const params = this.transpileArguments(node.arguments, node.expression.expression);
             return `${callPath}(${params})`;
         }
 

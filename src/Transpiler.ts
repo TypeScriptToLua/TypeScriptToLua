@@ -539,9 +539,6 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            console.log(type.symbol.flags, this.transpileExpression(node.expression))
-
-
             // Include context parameter if present and caller is not namespace / module
             let callPath = this.transpileExpression(node.expression);
             const params = this.transpileArguments(node.arguments, node.expression.expression);

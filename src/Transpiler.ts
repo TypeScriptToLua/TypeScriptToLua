@@ -540,8 +540,10 @@ export class LuaTranspiler {
             }
 
             // Include context parameter if present
-            let callPath = this.transpileExpression(node.expression);
-            const params = this.transpileArguments(node.arguments, node.expression.expression);
+            const expType = this.checker.getTypeAtLocation(node.expression.expression);
+            let callPath = (expType && expType.symbol) ? `${expType.symbol.name}.${node.expression.name.escapedText}` : this.transpileExpression(node.expression);
+            let params = this.transpileArguments(node.arguments, node.expression.expression);
+            
             return `${callPath}(${params})`;
         }
 

@@ -246,11 +246,11 @@ var LuaTranspiler = /** @class */ (function () {
         var identifier = variable.name;
         // Transpile expression
         var expression = this.transpileExpression(node.expression);
-        // Use ipairs for array types, pairs otherwise
-        var isArray = TSHelper_1.TSHelper.isArrayType(this.checker.getTypeAtLocation(node.expression));
-        var pairs = isArray ? "ipairs" : "pairs";
+        if (TSHelper_1.TSHelper.isArrayType(this.checker.getTypeAtLocation(node.expression))) {
+            throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
+        }
         // Make header
-        var result = this.indent + ("for " + identifier.escapedText + ", _ in " + pairs + "(" + expression + ") do\n");
+        var result = this.indent + ("for " + identifier.escapedText + ", _ in pairs(" + expression + ") do\n");
         // For body
         this.pushIndent();
         result += this.transpileStatement(node.statement);
@@ -561,6 +561,8 @@ var LuaTranspiler = /** @class */ (function () {
                 return "TS_slice(" + caller + ", " + params + ")";
             case "splice":
                 return "TS_splice(" + caller + ", " + params + ")";
+            case "join":
+                return "table.concat(" + caller + ", " + params + ")";
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }

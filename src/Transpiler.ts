@@ -274,7 +274,7 @@ export class LuaTranspiler {
         }
 
         // Make header
-        let result = this.indent + `for ${identifier.escapedText}, _ in "pairs"(${expression}) do\n`;
+        let result = this.indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
 
         // For body
         this.pushIndent();

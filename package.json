@@ -9,6 +9,7 @@
         "coverage": "nyc --reporter=lcov npm test && nyc report"
     },
     "devDependencies": {
+        "deep-equal": "^1.0.1",
         "nyc": "^11.4.1"
     }
 }

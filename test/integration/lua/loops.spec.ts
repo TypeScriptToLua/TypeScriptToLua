@@ -26,8 +26,8 @@ export class LuaLoopTests {
     }
 
     @TestCase({ ['test1']: 0, ['test2']: 1, ['test3']: 2 }, { ['test1']: 1, ['test2']: 2, ['test3']: 3 })
-    @Test("forin")
-    public forin<T>(inp: any, expected: any) {
+    @Test("forin[Object]")
+    public forinObject<T>(inp: any, expected: any) {
         // Transpile
         let lua = util.transpileString(
             `let objTest = ${JSON.stringify(inp)};
@@ -43,6 +43,21 @@ export class LuaLoopTests {
 
         // Assert
         Expect(deepEqual(JSON.parse(result), expected)).toBe(true);
+    }
+
+    @TestCase([1,2,3])
+    @Test("forin[Array]")
+    public forinArray<T>(inp: T[]) {
+        // Transpile & Assert
+        Expect(() => {
+            let lua = util.transpileString(
+                `let arrTest = [${inp.toString()}];
+                for (let key in arrTest) {
+                    arrTest[key]++;
+                }`
+                , util.dummyTypes.Array
+            );
+        }).toThrowError(Error, "Iterating over arrays with 'for in' is not allowed.");
     }
 
     @TestCase([0,1,2], [1,2,3])

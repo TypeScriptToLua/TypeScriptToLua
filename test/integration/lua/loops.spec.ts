@@ -10,11 +10,11 @@ export class LuaLoopTests {
     public for<T>(inp: T[], expected: T[]) {
         // Transpile
         let lua = util.transpileString(
-            `let arrTest = [${inp.toString()}];
+            `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return ArrayToString(arrTest);`
+            return JSONStringify(arrTest);`
             , util.dummyTypes.Array
         );
 
@@ -22,7 +22,7 @@ export class LuaLoopTests {
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(expected.toString());
+        Expect(result).toBe(JSON.stringify(expected));
     }
 
     @TestCase({ ['test1']: 0, ['test2']: 1, ['test3']: 2 }, { ['test1']: 1, ['test2']: 2, ['test3']: 3 })
@@ -51,7 +51,7 @@ export class LuaLoopTests {
         // Transpile & Assert
         Expect(() => {
             let lua = util.transpileString(
-                `let arrTest = [${inp.toString()}];
+                `let arrTest = ${JSON.stringify(inp)};
                 for (let key in arrTest) {
                     arrTest[key]++;
                 }`
@@ -65,12 +65,12 @@ export class LuaLoopTests {
     public forof<T>(inp: any, expected: any) {
         // Transpile
         let lua = util.transpileString(
-            `let objTest = [${inp.toString()}];
+            `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = {};
             for (let value of objTest) {
                 arrResultTest.push(value + 1)
             }
-            return ArrayToString(arrResultTest);`
+            return JSONStringify(arrResultTest);`
             , util.dummyTypes.Array
         );
 
@@ -78,6 +78,6 @@ export class LuaLoopTests {
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(expected.toString());
+        Expect(result).toBe(JSON.stringify(expected));
     }
 }

@@ -12,13 +12,13 @@ export class LuaLibArrayTests {
     @Test("array.map")
     public map<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return ArrayToString([${inp.toString()}].map(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`, util.dummyTypes.Array);
 
         // Execute
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(inp.map(eval(func)).toString());
+        Expect(result).toBe(JSON.stringify(inp.map(eval(func))));
     }
 
     @TestCase([], "x => x > 1")
@@ -31,13 +31,13 @@ export class LuaLibArrayTests {
     @Test("array.filter")
     public filter<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return ArrayToString([${inp.toString()}].filter(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`, util.dummyTypes.Array);
 
         // Execute
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(inp.filter(eval(func)).toString());
+        Expect(result).toBe(JSON.stringify(inp.filter(eval(func))));
     }
 
     @TestCase([], "x => x > 1")
@@ -53,7 +53,7 @@ export class LuaLibArrayTests {
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result.toString()).toBe(inp.every(eval(func)).toString());
+        Expect(JSON.stringify(result)).toBe(JSON.stringify(inp.every(eval(func))));
     }
 
     @TestCase([], "x => x > 1")
@@ -69,7 +69,7 @@ export class LuaLibArrayTests {
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result.toString()).toBe(inp.some(eval(func)).toString());
+        Expect(JSON.stringify(result)).toBe(JSON.stringify(inp.some(eval(func))));
     }
 
     @TestCase([], 1, 2)
@@ -82,13 +82,13 @@ export class LuaLibArrayTests {
     @Test("array.slice")
     public slice<T>(inp: T[], start: number, end?: number) {
         // Transpile
-        let lua = util.transpileString(`return ArrayToString([${inp.toString()}].slice(${start}, ${end}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`, util.dummyTypes.Array);
 
         // Execute
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(inp.slice(start, end).toString());
+        Expect(result).toBe(JSON.stringify(inp.slice(start, end)));
     }
 
     @TestCase([], 0, 0, 9, 10, 11)
@@ -104,7 +104,7 @@ export class LuaLibArrayTests {
         let lua = util.transpileString(
             `let spliceTestTable = [${inp.toString()}];
             spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
-            return ArrayToString(spliceTestTable);`,
+            return JSONStringify(spliceTestTable);`,
             util.dummyTypes.Array
         );
 
@@ -113,7 +113,7 @@ export class LuaLibArrayTests {
 
         // Assert
         inp.splice(start, deleteCount, ...newElements)
-        Expect(result).toBe(inp.toString());
+        Expect(result).toBe(JSON.stringify(inp));
     }
 
     @TestCase([], 1, 1)
@@ -126,16 +126,16 @@ export class LuaLibArrayTests {
     @Test("array.splice[Remove]")
     public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
         // Transpile
-        let lua = util.transpileString(`return ArrayToString([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`, util.dummyTypes.Array);
 
         // Execute
         let result = util.executeLua(lua);
 
         // Assert
         if (deleteCount) {
-            Expect(result).toBe(inp.splice(start, deleteCount, ...newElements).toString());
+            Expect(result).toBe(JSON.stringify(inp.splice(start, deleteCount, ...newElements)));
         } else {
-            Expect(result).toBe(inp.splice(start).toString());
+            Expect(result).toBe(JSON.stringify(inp.splice(start)));
         }
     }
 }

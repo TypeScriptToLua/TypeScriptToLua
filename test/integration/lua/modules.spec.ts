@@ -1,33 +1,24 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, IgnoreTest } from "alsatian";
 import * as util from "../../src/util"
 
 export class LuaLoopTests {
 
-    @TestCase(`
-        namespace testOuter {
-            function outerFunc() {
-                
-            }
-            namespace testInner {
-                export function publicTestFunc() {
+    @TestCase(
+        "export function publicFunc() {}",
 
-                }
-                function privateTestFunc() {
-
-                }
-            }
-        }
-
-        export class TestClass {
-
-        }
-    `)
-    @Test("namespace")
-    public namespace<T>(inp: string) {
+        "local exports = exports or {}\n" +
+        "local function publicFunc()\n" +
+        "end\n" +
+        "exports.publicFunc = publicFunc\n" +
+        "return exports"
+    )
+    @Test("export")
+    @IgnoreTest()
+    public export<T>(inp: string, expected: string) {
         // Transpile
         let lua = util.transpileString(inp, util.dummyTypes.Object);
 
         // Assert
-        Expect(lua).toBe("");
+        Expect(lua).toBe(expected);
     }
 }

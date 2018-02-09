@@ -29,7 +29,21 @@ var TSHelper = /** @class */ (function () {
         return "unknown";
     };
     TSHelper.isCurrentFileModule = function (node) {
-        return node.getSourceFile() && ts.isExternalModule(node.getSourceFile());
+        var sourceFile = ts.isSourceFile(node) ? node : node.getSourceFile();
+        if (sourceFile) {
+            // Vanilla ts flags files as external module if they have an import or
+            // export statement, we only check for export statements
+            var hasExport_1 = false;
+            sourceFile.statements.forEach(function (statement) {
+                if (!!(ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export)
+                    || statement.kind === ts.SyntaxKind.ExportAssignment
+                    || statement.kind === ts.SyntaxKind.ExportDeclaration) {
+                    hasExport_1 = true;
+                }
+            });
+            return hasExport_1;
+        }
+        return false;
     };
     TSHelper.isStringType = function (type) {
         return (type.flags & ts.TypeFlags.String) != 0

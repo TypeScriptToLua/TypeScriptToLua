@@ -23,10 +23,14 @@ export class LuaTranspiler {
             + "--=======================================================================================\n"
             : "";
         let result = header
-        if (ts.isExternalModule(node)) {
+        if (tsEx.isCurrentFileModule(node)) {
+            // Shadow exports if it already exists
             result += "local exports = exports or {}\n";
         }
         result += transpiler.transpileBlock(node);
+        if (tsEx.isCurrentFileModule(node)) {
+            result += "return exports\n"
+        }
         return result;
     }
 
@@ -145,7 +149,7 @@ export class LuaTranspiler {
     }
 
     transpileImport(node: ts.ImportDeclaration): string {
-        const importFile = this.transpileExpression(node.moduleSpecifier).replace(new RegExp("\"", "g"), "");
+        const importFile = this.transpileExpression(node.moduleSpecifier);
         if (!node.importClause) {
             throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
@@ -153,7 +157,7 @@ export class LuaTranspiler {
         const imports = node.importClause.namedBindings;
 
         if (ts.isNamedImports(imports)) {
-            let fileImportTable = path.basename(importFile) + this.importCount
+            let fileImportTable = path.basename(importFile.replace(new RegExp("\"", "g"), "")) + this.importCount
             let patchedRequire = `
                 function requireTS(fileName)
                     local chunk = loadfile(fileName)
@@ -175,7 +179,7 @@ export class LuaTranspiler {
             this.importCount++;
             imports.elements.forEach(element => {
                 if (element.propertyName) {
-                    result += `local ${element.propertyName.escapedText} = ${fileImportTable}.${element.name.escapedText}\n`;
+                    result += `local ${element.name.escapedText} = ${fileImportTable}.${element.propertyName.escapedText}\n`;
                 } else {
                     result += `local ${element.name.escapedText} = ${fileImportTable}.${element.name.escapedText}\n`;
                 }
@@ -193,7 +197,7 @@ export class LuaTranspiler {
         const defName = this.definitionName(node.name.text);
         let result = this.indent + `-- namespace ${node.name.text} start --\n`
         result += this.indent + this.accessPrefix(node) + `${defName} = ${defName} or {}\n`;
-        // namespaces are exported by default
+        // Namespaces are exported by default
         result += this.indent + `exports.${defName} = exports.${defName} or {}\n`;
         // Create closure
         result += this.indent + "do\n"

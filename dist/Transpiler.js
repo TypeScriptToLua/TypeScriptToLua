@@ -42,12 +42,13 @@ var LuaTranspiler = /** @class */ (function () {
             + "--=======================================================================================\n"
             : "";
         var result = header;
-        if (ts.isExternalModule(node)) {
+        if (TSHelper_1.TSHelper.isCurrentFileModule(node)) {
+            // Shadow exports if it already exists
             result += "local exports = exports or {}\n";
         }
         result += transpiler.transpileBlock(node);
-        if (ts.isExternalModule(node)) {
-            result += "return exports";
+        if (TSHelper_1.TSHelper.isCurrentFileModule(node)) {
+            result += "return exports\n";
         }
         return result;
     };
@@ -61,6 +62,7 @@ var LuaTranspiler = /** @class */ (function () {
         return this.namespace.concat(name).join(".");
     };
     LuaTranspiler.prototype.accessPrefix = function (node) {
+        console.log(TSHelper_1.TSHelper.isCurrentFileModule(node));
         return node && TSHelper_1.TSHelper.isCurrentFileModule(node) ?
             "local " : "";
     };
@@ -144,18 +146,19 @@ var LuaTranspiler = /** @class */ (function () {
         }
     };
     LuaTranspiler.prototype.transpileImport = function (node) {
-        var importFile = this.transpileExpression(node.moduleSpecifier).replace(new RegExp("\"", "g"), "");
+        var importFile = this.transpileExpression(node.moduleSpecifier);
         if (!node.importClause) {
             throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
         var imports = node.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
-            var fileImportTable_1 = path.basename(importFile) + this.importCount;
+            var fileImportTable_1 = path.basename(importFile.replace(new RegExp("\"", "g"), "")) + this.importCount;
+            var patchedRequire = "\n                function requireTS(fileName)\n                    local chunk = loadfile(fileName)\n                    local env = {}\n                    -- TODO replace with _ENV for lua 5.2 and 5.3\n                    setfenv(chunk, env)\n                    chunk()\n                    return env\n                end\n                function namedImport(importContents, name)\n                    local import = importContents[name]\n                    if type(import) == \"function\" then\n                        setfenv(import, _G)\n                    end\n                    return import\n                end\n            ";
             var result_1 = "local " + fileImportTable_1 + " = require(" + importFile + ")\n";
             this.importCount++;
             imports.elements.forEach(function (element) {
                 if (element.propertyName) {
-                    result_1 += "local " + element.propertyName.escapedText + " = " + fileImportTable_1 + "." + element.name.escapedText + "\n";
+                    result_1 += "local " + element.name.escapedText + " = " + fileImportTable_1 + "." + element.propertyName.escapedText + "\n";
                 }
                 else {
                     result_1 += "local " + element.name.escapedText + " = " + fileImportTable_1 + "." + element.name.escapedText + "\n";
@@ -174,7 +177,7 @@ var LuaTranspiler = /** @class */ (function () {
         var defName = this.definitionName(node.name.text);
         var result = this.indent + ("-- namespace " + node.name.text + " start --\n");
         result += this.indent + this.accessPrefix(node) + (defName + " = " + defName + " or {}\n");
-        // namespaces are exported by default
+        // Namespaces are exported by default
         result += this.indent + ("exports." + defName + " = exports." + defName + " or {}\n");
         // Create closure
         result += this.indent + "do\n";

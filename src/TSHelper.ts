@@ -30,7 +30,21 @@ export class TSHelper {
     }
 
     static isCurrentFileModule(node: ts.Node) {
-        return node.getSourceFile() && ts.isExternalModule(node.getSourceFile());
+        let sourceFile = ts.isSourceFile(node) ? node : node.getSourceFile();
+        if (sourceFile) {
+            // Vanilla ts flags files as external module if they have an import or
+            // export statement, we only check for export statements
+            let hasExport = false;
+            sourceFile.statements.forEach(statement => {
+                if (!!(ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export)
+                    || statement.kind === ts.SyntaxKind.ExportAssignment
+                    || statement.kind === ts.SyntaxKind.ExportDeclaration) {
+                    hasExport = true;
+                }
+            });
+            return hasExport;
+        }
+        return false;
     }
 
     static isStringType(type: ts.Type): boolean {

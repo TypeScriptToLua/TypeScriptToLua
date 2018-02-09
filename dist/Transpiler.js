@@ -62,7 +62,6 @@ var LuaTranspiler = /** @class */ (function () {
         return this.namespace.concat(name).join(".");
     };
     LuaTranspiler.prototype.accessPrefix = function (node) {
-        console.log(TSHelper_1.TSHelper.isCurrentFileModule(node));
         return node && TSHelper_1.TSHelper.isCurrentFileModule(node) ?
             "local " : "";
     };
@@ -176,7 +175,10 @@ var LuaTranspiler = /** @class */ (function () {
             return this.transpileNode(node.body);
         var defName = this.definitionName(node.name.text);
         var result = this.indent + ("-- namespace " + node.name.text + " start --\n");
-        result += this.indent + this.accessPrefix(node) + (defName + " = " + defName + " or {}\n");
+        result += this.indent + this.accessPrefix(node) + (node.name.text + " = " + node.name.text + " or {}\n");
+        if (this.namespace.length > 0) {
+            result += this.indent + (defName + " = " + node.name.text + " or {}\n");
+        }
         // Namespaces are exported by default
         result += this.indent + ("exports." + defName + " = exports." + defName + " or {}\n");
         // Create closure

@@ -28,6 +28,9 @@ var TSHelper = /** @class */ (function () {
         }
         return "unknown";
     };
+    TSHelper.isCurrentFileModule = function (node) {
+        return node.getSourceFile() && ts.isExternalModule(node.getSourceFile());
+    };
     TSHelper.isStringType = function (type) {
         return (type.flags & ts.TypeFlags.String) != 0
             || (type.flags & ts.TypeFlags.StringLike) != 0

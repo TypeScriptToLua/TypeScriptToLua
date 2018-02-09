@@ -26,7 +26,11 @@ export class TSHelper {
                 return name;
             }
         }
-        return "unknown"
+        return "unknown";
+    }
+
+    static isCurrentFileModule(node: ts.Node) {
+        return node.getSourceFile() && ts.isExternalModule(node.getSourceFile());
     }
 
     static isStringType(type: ts.Type): boolean {
@@ -40,8 +44,8 @@ export class TSHelper {
     }
 
     static isArrayType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) != 0 
-            && (<ts.ObjectType>type).symbol 
+        return (type.flags & ts.TypeFlags.Object) != 0
+            && (<ts.ObjectType>type).symbol
             && (<ts.ObjectType>type).symbol.escapedName == "Array";
     }
 
@@ -51,14 +55,14 @@ export class TSHelper {
     }
 
     static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol 
+        return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
             && type.symbol.getDocumentationComment(checker)[0] != undefined
             && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
     }
 
     static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol 
+        return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
             && this.hasCustomDecorator(type, checker, "!PureAbstract");
     }

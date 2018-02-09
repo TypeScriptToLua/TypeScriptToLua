@@ -3,6 +3,8 @@ import * as ts from "typescript";
 import { TSHelper as tsEx } from "./TSHelper";
 import { ForHelper } from "./ForHelper";
 
+import * as path from "path";
+
 export class TranspileError extends Error {
     node: ts.Node;
     constructor(message: string, node: ts.Node) {
@@ -20,7 +22,12 @@ export class LuaTranspiler {
             + "-- Date: " + new Date().toDateString() + "\n"
             + "--=======================================================================================\n"
             : "";
-        return header + transpiler.transpileBlock(node);
+        let result = header
+        if (ts.isExternalModule(node)) {
+            result += "local exports = exports or {}\n";
+        }
+        result += transpiler.transpileBlock(node);
+        return result;
     }
 
     indent: string;
@@ -28,6 +35,7 @@ export class LuaTranspiler {
     genVarCounter: number;
     transpilingSwitch: boolean;
     namespace: string[];
+    importCount: number;
 
     constructor(checker: ts.TypeChecker) {
         this.indent = "";
@@ -35,6 +43,7 @@ export class LuaTranspiler {
         this.genVarCounter = 0;
         this.transpilingSwitch = false;
         this.namespace = [];
+        this.importCount = 0;
     }
 
     pushIndent(): void {
@@ -47,6 +56,24 @@ export class LuaTranspiler {
 
     definitionName(name: string | ts.__String): string {
         return this.namespace.concat(<string>name).join(".");
+    }
+
+    accessPrefix(node?: ts.Node): string {
+        return node && tsEx.isCurrentFileModule(node) ?
+            "local " : ""
+    }
+
+    makeExport(name: string | ts.__String, node?: ts.Node): string {
+        let result: string = "";
+        if (node && node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.ExportKeyword)) {
+            result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+        } else if (!node) {
+            result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+        }
+        if (this.namespace.length !== 0) {
+            result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+        }
+        return result;
     }
 
     // Transpile a block
@@ -118,18 +145,42 @@ export class LuaTranspiler {
     }
 
     transpileImport(node: ts.ImportDeclaration): string {
-        const name = this.transpileExpression(node.moduleSpecifier);
+        const importFile = this.transpileExpression(node.moduleSpecifier).replace(new RegExp("\"", "g"), "");
+        if (!node.importClause) {
+            throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
+        }
+
         const imports = node.importClause.namedBindings;
-        if (ts.isNamespaceImport(imports)) {
-            return `{$imports.name.escapedText} = require(${name})`;
-        } else if (ts.isNamedImports(imports)) {
-            // Forbid renaming
+
+        if (ts.isNamedImports(imports)) {
+            let fileImportTable = path.basename(importFile) + this.importCount
+            let patchedRequire = `
+                function requireTS(fileName)
+                    local chunk = loadfile(fileName)
+                    local env = {}
+                    -- TODO replace with _ENV for lua 5.2 and 5.3
+                    setfenv(chunk, env)
+                    chunk()
+                    return env
+                end
+                function namedImport(importContents, name)
+                    local import = importContents[name]
+                    if type(import) == "function" then
+                        setfenv(import, _G)
+                    end
+                    return import
+                end
+            `
+            let result = `local ${fileImportTable} = require(${importFile})\n`
+            this.importCount++;
             imports.elements.forEach(element => {
                 if (element.propertyName) {
-                    throw new TranspileError("Renaming of individual imported objects is not allowed", node);
+                    result += `local ${element.propertyName.escapedText} = ${fileImportTable}.${element.name.escapedText}\n`;
+                } else {
+                    result += `local ${element.name.escapedText} = ${fileImportTable}.${element.name.escapedText}\n`;
                 }
             });
-            return `require(${name})`;
+            return result;
         } else {
             throw new TranspileError("Unsupported import type.", node);
         }
@@ -140,10 +191,19 @@ export class LuaTranspiler {
         if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker)) return this.transpileNode(node.body);
 
         const defName = this.definitionName(node.name.text);
-        let result = this.indent + `${defName} = {}\n`;
+        let result = this.indent + `-- namespace ${node.name.text} start --\n`
+        result += this.indent + this.accessPrefix(node) + `${defName} = ${defName} or {}\n`;
+        // namespaces are exported by default
+        result += this.indent + `exports.${defName} = exports.${defName} or {}\n`;
+        // Create closure
+        result += this.indent + "do\n"
+        this.pushIndent();
         this.namespace.push(node.name.text);
         result += this.transpileNode(node.body);
         this.namespace.pop();
+        this.popIndent();
+        result += this.indent + "end\n"
+        result += this.indent + `-- namespace ${node.name.text} end --\n`
         return result;
     }
 
@@ -155,8 +215,9 @@ export class LuaTranspiler {
         const membersOnly = tsEx.isCompileMembersOnlyEnum(type, this.checker);
 
         if (!membersOnly) {
-            const defName = this.definitionName(node.name.escapedText)
-            result += this.indent + `${defName}={}\n`;
+            const name = node.name.escapedText;
+            result += this.indent + this.accessPrefix(node) + `${name}={}\n`;
+            result += this.makeExport(name, node);
         }
 
         node.members.forEach(member => {
@@ -169,7 +230,7 @@ export class LuaTranspiler {
             }
 
             if (membersOnly) {
-                const defName = this.definitionName(name);
+                const defName = this.definitionName((<ts.Identifier>member.name).escapedText);
                 result += this.indent + `${defName}=${val}\n`;
             } else {
                 const defName = this.definitionName(`${node.name.escapedText}.${(<ts.Identifier>member.name).escapedText}`);
@@ -742,7 +803,7 @@ export class LuaTranspiler {
         });
 
         // Build function header
-        result += this.indent + `function ${this.definitionName(methodName)}(${paramNames.join(",")})\n`;
+        result += this.indent + this.accessPrefix(node) + `function ${methodName}(${paramNames.join(",")})\n`;
 
         this.pushIndent();
         result += this.transpileBlock(body);
@@ -750,6 +811,9 @@ export class LuaTranspiler {
 
         // Close function block
         result += this.indent + "end\n";
+
+        result += this.makeExport(methodName, node);
+
 
         return result;
     }
@@ -805,10 +869,12 @@ export class LuaTranspiler {
             // Write class declaration
             const classOr = noClassOr ? "" : `${className} or `;
             if (!extendsType) {
-                result += this.indent + `${className} = ${classOr}{}\n`;
+                result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
+                result += this.makeExport(className, node);
             } else {
                 const baseName = (<ts.Identifier>extendsType.expression).escapedText;
-                result += this.indent + `${className} = ${classOr}${baseName}.new()\n`
+                result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`
+                result += this.makeExport(className, node);
             }
             result += this.indent + `${className}.__index = ${className}\n`;
             if (extendsType) {

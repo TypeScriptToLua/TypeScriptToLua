@@ -23,12 +23,13 @@ export class LuaTranspiler {
             + "--=======================================================================================\n"
             : "";
         let result = header
-        if (tsEx.isCurrentFileModule(node)) {
+        transpiler.isModule = tsEx.isFileModule(node);
+        if (transpiler.isModule) {
             // Shadow exports if it already exists
             result += "local exports = exports or {}\n";
         }
         result += transpiler.transpileBlock(node);
-        if (tsEx.isCurrentFileModule(node)) {
+        if (transpiler.isModule) {
             result += "return exports\n"
         }
         return result;
@@ -40,6 +41,7 @@ export class LuaTranspiler {
     transpilingSwitch: boolean;
     namespace: string[];
     importCount: number;
+    isModule: boolean;
 
     constructor(checker: ts.TypeChecker) {
         this.indent = "";
@@ -48,6 +50,7 @@ export class LuaTranspiler {
         this.transpilingSwitch = false;
         this.namespace = [];
         this.importCount = 0;
+        this.isModule = false;
     }
 
     pushIndent(): void {
@@ -63,15 +66,13 @@ export class LuaTranspiler {
     }
 
     accessPrefix(node?: ts.Node): string {
-        return node && tsEx.isCurrentFileModule(node) ?
+        return node && this.isModule ?
             "local " : ""
     }
 
-    makeExport(name: string | ts.__String, node?: ts.Node): string {
+    makeExport(name: string | ts.__String, node: ts.Node): string {
         let result: string = "";
-        if (node && node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.ExportKeyword)) {
-            result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
-        } else if (!node) {
+        if (node && node.modifiers && !!(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
         }
         if (this.namespace.length !== 0) {
@@ -158,23 +159,6 @@ export class LuaTranspiler {
 
         if (ts.isNamedImports(imports)) {
             let fileImportTable = path.basename(importFile.replace(new RegExp("\"", "g"), "")) + this.importCount
-            let patchedRequire = `
-                function requireTS(fileName)
-                    local chunk = loadfile(fileName)
-                    local env = {}
-                    -- TODO replace with _ENV for lua 5.2 and 5.3
-                    setfenv(chunk, env)
-                    chunk()
-                    return env
-                end
-                function namedImport(importContents, name)
-                    local import = importContents[name]
-                    if type(import) == "function" then
-                        setfenv(import, _G)
-                    end
-                    return import
-                end
-            `
             let result = `local ${fileImportTable} = require(${importFile})\n`
             this.importCount++;
             imports.elements.forEach(element => {
@@ -195,8 +179,7 @@ export class LuaTranspiler {
         if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker)) return this.transpileNode(node.body);
 
         const defName = this.definitionName(node.name.text);
-        let result = this.indent + `-- namespace ${node.name.text} start --\n`
-        result += this.indent + this.accessPrefix(node) + `${node.name.text} = ${node.name.text} or {}\n`
+        let result = this.indent + this.accessPrefix(node) + `${node.name.text} = ${node.name.text} or {}\n`
         if (this.namespace.length > 0) {
             result += this.indent + `${defName} = ${node.name.text} or {}\n`;
         }
@@ -210,7 +193,6 @@ export class LuaTranspiler {
         this.namespace.pop();
         this.popIndent();
         result += this.indent + "end\n"
-        result += this.indent + `-- namespace ${node.name.text} end --\n`
         return result;
     }
 
@@ -762,6 +744,7 @@ export class LuaTranspiler {
 
         node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(<ts.VariableDeclaration>declaration);
+            result += this.makeExport((<ts.Identifier>declaration.name).escapedText, node);
         });
 
         return result;
@@ -773,9 +756,9 @@ export class LuaTranspiler {
             const identifier = node.name;
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-                return `local ${identifier.escapedText} = ${value}`;
+                return `local ${identifier.escapedText} = ${value}\n`;
             } else {
-                return `local ${identifier.escapedText} = nil`;
+                return `local ${identifier.escapedText} = nil\n`;
             }
         } else if (ts.isArrayBindingPattern(node.name)) {
             // Destructuring type

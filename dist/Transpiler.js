@@ -32,6 +32,7 @@ var LuaTranspiler = /** @class */ (function () {
         this.transpilingSwitch = false;
         this.namespace = [];
         this.importCount = 0;
+        this.isModule = false;
     }
     // Transpile a source file
     LuaTranspiler.transpileSourceFile = function (node, checker, addHeader) {
@@ -42,12 +43,13 @@ var LuaTranspiler = /** @class */ (function () {
             + "--=======================================================================================\n"
             : "";
         var result = header;
-        if (TSHelper_1.TSHelper.isCurrentFileModule(node)) {
+        transpiler.isModule = TSHelper_1.TSHelper.isFileModule(node);
+        if (transpiler.isModule) {
             // Shadow exports if it already exists
             result += "local exports = exports or {}\n";
         }
         result += transpiler.transpileBlock(node);
-        if (TSHelper_1.TSHelper.isCurrentFileModule(node)) {
+        if (transpiler.isModule) {
             result += "return exports\n";
         }
         return result;
@@ -62,15 +64,12 @@ var LuaTranspiler = /** @class */ (function () {
         return this.namespace.concat(name).join(".");
     };
     LuaTranspiler.prototype.accessPrefix = function (node) {
-        return node && TSHelper_1.TSHelper.isCurrentFileModule(node) ?
+        return node && this.isModule ?
             "local " : "";
     };
     LuaTranspiler.prototype.makeExport = function (name, node) {
         var result = "";
-        if (node && node.modifiers && node.modifiers.some(function (_) { return _.kind == ts.SyntaxKind.ExportKeyword; })) {
-            result = this.indent + ("exports." + this.definitionName(name) + " = " + name + "\n");
-        }
-        else if (!node) {
+        if (node && node.modifiers && !!(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             result = this.indent + ("exports." + this.definitionName(name) + " = " + name + "\n");
         }
         if (this.namespace.length !== 0) {
@@ -152,7 +151,6 @@ var LuaTranspiler = /** @class */ (function () {
         var imports = node.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
             var fileImportTable_1 = path.basename(importFile.replace(new RegExp("\"", "g"), "")) + this.importCount;
-            var patchedRequire = "\n                function requireTS(fileName)\n                    local chunk = loadfile(fileName)\n                    local env = {}\n                    -- TODO replace with _ENV for lua 5.2 and 5.3\n                    setfenv(chunk, env)\n                    chunk()\n                    return env\n                end\n                function namedImport(importContents, name)\n                    local import = importContents[name]\n                    if type(import) == \"function\" then\n                        setfenv(import, _G)\n                    end\n                    return import\n                end\n            ";
             var result_1 = "local " + fileImportTable_1 + " = require(" + importFile + ")\n";
             this.importCount++;
             imports.elements.forEach(function (element) {
@@ -174,8 +172,7 @@ var LuaTranspiler = /** @class */ (function () {
         if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker))
             return this.transpileNode(node.body);
         var defName = this.definitionName(node.name.text);
-        var result = this.indent + ("-- namespace " + node.name.text + " start --\n");
-        result += this.indent + this.accessPrefix(node) + (node.name.text + " = " + node.name.text + " or {}\n");
+        var result = this.indent + this.accessPrefix(node) + (node.name.text + " = " + node.name.text + " or {}\n");
         if (this.namespace.length > 0) {
             result += this.indent + (defName + " = " + node.name.text + " or {}\n");
         }
@@ -189,7 +186,6 @@ var LuaTranspiler = /** @class */ (function () {
         this.namespace.pop();
         this.popIndent();
         result += this.indent + "end\n";
-        result += this.indent + ("-- namespace " + node.name.text + " end --\n");
         return result;
     };
     LuaTranspiler.prototype.transpileEnum = function (node) {
@@ -685,6 +681,7 @@ var LuaTranspiler = /** @class */ (function () {
         var result = "";
         node.declarationList.declarations.forEach(function (declaration) {
             result += _this.transpileVariableDeclaration(declaration);
+            result += _this.makeExport(declaration.name.escapedText, node);
         });
         return result;
     };
@@ -695,10 +692,10 @@ var LuaTranspiler = /** @class */ (function () {
             var identifier = node.name;
             if (node.initializer) {
                 var value = this.transpileExpression(node.initializer);
-                return "local " + identifier.escapedText + " = " + value;
+                return "local " + identifier.escapedText + " = " + value + "\n";
             }
             else {
-                return "local " + identifier.escapedText + " = nil";
+                return "local " + identifier.escapedText + " = nil\n";
             }
         }
         else if (ts.isArrayBindingPattern(node.name)) {

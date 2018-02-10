@@ -29,8 +29,7 @@ export class TSHelper {
         return "unknown";
     }
 
-    static isCurrentFileModule(node: ts.Node) {
-        let sourceFile = ts.isSourceFile(node) ? node : node.getSourceFile();
+    static isFileModule(sourceFile: ts.SourceFile) {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements

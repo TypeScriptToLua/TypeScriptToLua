@@ -32,20 +32,11 @@ var TSHelper = /** @class */ (function () {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements
-            var hasExport_1 = false;
-            sourceFile.statements.forEach(function (statement) {
-                if ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
-                    || statement.kind === ts.SyntaxKind.ExportAssignment
-                    || statement.kind === ts.SyntaxKind.ExportDeclaration) {
-                    hasExport_1 = true;
-                }
-            });
-            sourceFile.statements.some(function (statement) {
+            return sourceFile.statements.some(function (statement) {
                 return (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
                     || statement.kind === ts.SyntaxKind.ExportAssignment
                     || statement.kind === ts.SyntaxKind.ExportDeclaration;
             });
-            return hasExport_1;
         }
         return false;
     };

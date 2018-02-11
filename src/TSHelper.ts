@@ -33,19 +33,10 @@ export class TSHelper {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements
-            let hasExport = false;
-            sourceFile.statements.forEach(statement => {
-                if ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
-                    || statement.kind === ts.SyntaxKind.ExportAssignment
-                    || statement.kind === ts.SyntaxKind.ExportDeclaration) {
-                    hasExport = true;
-                }
-            });
-            sourceFile.statements.some(statement =>
+            return sourceFile.statements.some(statement =>
                 (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
                 || statement.kind === ts.SyntaxKind.ExportAssignment
                 || statement.kind === ts.SyntaxKind.ExportDeclaration)
-            return hasExport;
         }
         return false;
     }

@@ -537,17 +537,21 @@ var LuaTranspiler = /** @class */ (function () {
                     if (TSHelper_1.TSHelper.isArrayType(type))
                         return this.transpileArrayCallExpression(node);
             }
-            // Include context parameter if present
             var expType = this.checker.getTypeAtLocation(node.expression.expression);
+            if (expType.symbol && expType.symbol.escapedName == "Math") {
+                var params_1 = this.transpileArguments(node.arguments);
+                return this.transpileMathExpression(node.expression.name) + ("(" + params_1 + ")");
+            }
+            // Include context parameter if present
             var callPath_1 = (expType && expType.symbol) ? expType.symbol.name + "." + node.expression.name.escapedText : this.transpileExpression(node.expression);
-            var params_1 = this.transpileArguments(node.arguments, node.expression.expression);
-            return callPath_1 + "(" + params_1 + ")";
+            var params_2 = this.transpileArguments(node.arguments, node.expression.expression);
+            return callPath_1 + "(" + params_2 + ")";
         }
         // Handle super calls properly
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             var callPath_2 = this.transpileExpression(node.expression);
-            var params_2 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return "self.__base.constructor(" + params_2 + ")";
+            var params_3 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
+            return "self.__base.constructor(" + params_3 + ")";
         }
         var callPath = this.transpileExpression(node.expression);
         var params = this.transpileArguments(node.arguments);
@@ -638,8 +642,41 @@ var LuaTranspiler = /** @class */ (function () {
         if (TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
+        // Catch math expressions
+        if (ts.isIdentifier(node.expression) && node.expression.escapedText == "Math") {
+            return this.transpileMathExpression(node.name);
+        }
         var path = this.transpileExpression(node.expression);
         return path + "." + property;
+    };
+    // Transpile a Math._ property
+    LuaTranspiler.prototype.transpileMathExpression = function (identifier) {
+        var translation = {
+            abs: "abs",
+            acos: "acos",
+            asin: "asin",
+            atan: "atan",
+            ceil: "ceil",
+            cos: "cos",
+            exp: "exp",
+            floor: "floor",
+            log: "log",
+            max: "max",
+            min: "min",
+            PI: "pi",
+            pow: "pow",
+            random: "random",
+            round: "round",
+            sin: "sin",
+            sqrt: "sqrt",
+            tan: "tan"
+        };
+        if (translation[identifier.escapedText]) {
+            return "math." + translation[identifier.escapedText];
+        }
+        else {
+            throw new TranspileError("Unsupported math property " + identifier.escapedText + ".", identifier);
+        }
     };
     // Transpile access of string properties, only supported properties are allowed
     LuaTranspiler.prototype.transpileStringProperty = function (node) {

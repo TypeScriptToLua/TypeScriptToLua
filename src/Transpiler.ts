@@ -588,8 +588,14 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            // Include context parameter if present
             const expType = this.checker.getTypeAtLocation(node.expression.expression);
+
+            if (expType.symbol && expType.symbol.escapedName == "Math") {
+                const params = this.transpileArguments(node.arguments);
+                return this.transpileMathExpression(node.expression.name) + `(${params})`;
+            }
+
+            // Include context parameter if present
             let callPath = (expType && expType.symbol) ? `${expType.symbol.name}.${node.expression.name.escapedText}` : this.transpileExpression(node.expression);
             let params = this.transpileArguments(node.arguments, node.expression.expression);
             
@@ -699,8 +705,43 @@ export class LuaTranspiler {
             return property;
         }
 
+        // Catch math expressions
+        if (ts.isIdentifier(node.expression) && node.expression.escapedText == "Math") {
+            return this.transpileMathExpression(node.name);
+        }
+
         let path = this.transpileExpression(node.expression);
         return `${path}.${property}`;
+    }
+
+    // Transpile a Math._ property
+    transpileMathExpression(identifier: ts.Identifier): string {
+        const translation = {
+            abs: "abs",
+            acos: "acos",
+            asin: "asin",
+            atan: "atan",
+            ceil: "ceil",
+            cos: "cos",
+            exp: "exp",
+            floor: "floor",
+            log: "log",
+            max: "max",
+            min: "min",
+            PI: "pi",
+            pow: "pow",
+            random: "random",
+            round: "round",
+            sin: "sin",
+            sqrt: "sqrt",
+            tan: "tan"
+        };
+
+        if (translation[<string>identifier.escapedText]) {
+            return `math.${translation[<string>identifier.escapedText]}`;
+        } else {
+            throw new TranspileError(`Unsupported math property ${identifier.escapedText}.`, identifier);
+        }
     }
 
     // Transpile access of string properties, only supported properties are allowed

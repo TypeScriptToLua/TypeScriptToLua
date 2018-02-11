@@ -7,6 +7,12 @@ function TS_ITE(condition, v1f, v2f)
     end
 end
 
+function TS_forEach(list, func)
+    for i, v in ipairs(list) do
+        func(v, i-1, list)
+    end
+end    
+
 function TS_map(list, func)
     local out = {}
     for _, v in ipairs(list) do

@@ -28,6 +28,18 @@ var TSHelper = /** @class */ (function () {
         }
         return "unknown";
     };
+    TSHelper.isFileModule = function (sourceFile) {
+        if (sourceFile) {
+            // Vanilla ts flags files as external module if they have an import or
+            // export statement, we only check for export statements
+            return sourceFile.statements.some(function (statement) {
+                return (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+                    || statement.kind === ts.SyntaxKind.ExportAssignment
+                    || statement.kind === ts.SyntaxKind.ExportDeclaration;
+            });
+        }
+        return false;
+    };
     TSHelper.isStringType = function (type) {
         return (type.flags & ts.TypeFlags.String) != 0
             || (type.flags & ts.TypeFlags.StringLike) != 0

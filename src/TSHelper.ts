@@ -26,7 +26,19 @@ export class TSHelper {
                 return name;
             }
         }
-        return "unknown"
+        return "unknown";
+    }
+
+    static isFileModule(sourceFile: ts.SourceFile) {
+        if (sourceFile) {
+            // Vanilla ts flags files as external module if they have an import or
+            // export statement, we only check for export statements
+            return sourceFile.statements.some(statement =>
+                (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+                || statement.kind === ts.SyntaxKind.ExportAssignment
+                || statement.kind === ts.SyntaxKind.ExportDeclaration)
+        }
+        return false;
     }
 
     static isStringType(type: ts.Type): boolean {
@@ -40,8 +52,8 @@ export class TSHelper {
     }
 
     static isArrayType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) != 0 
-            && (<ts.ObjectType>type).symbol 
+        return (type.flags & ts.TypeFlags.Object) != 0
+            && (<ts.ObjectType>type).symbol
             && (<ts.ObjectType>type).symbol.escapedName == "Array";
     }
 
@@ -51,14 +63,14 @@ export class TSHelper {
     }
 
     static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol 
+        return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
             && type.symbol.getDocumentationComment(checker)[0] != undefined
             && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
     }
 
     static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol 
+        return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
             && this.hasCustomDecorator(type, checker, "!PureAbstract");
     }

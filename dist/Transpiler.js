@@ -13,6 +13,7 @@ exports.__esModule = true;
 var ts = require("typescript");
 var TSHelper_1 = require("./TSHelper");
 var ForHelper_1 = require("./ForHelper");
+var path = require("path");
 var TranspileError = /** @class */ (function (_super) {
     __extends(TranspileError, _super);
     function TranspileError(message, node) {
@@ -30,6 +31,8 @@ var LuaTranspiler = /** @class */ (function () {
         this.genVarCounter = 0;
         this.transpilingSwitch = false;
         this.namespace = [];
+        this.importCount = 0;
+        this.isModule = false;
     }
     // Transpile a source file
     LuaTranspiler.transpileSourceFile = function (node, checker, addHeader) {
@@ -39,7 +42,17 @@ var LuaTranspiler = /** @class */ (function () {
             + "-- Date: " + new Date().toDateString() + "\n"
             + "--=======================================================================================\n"
             : "";
-        return header + transpiler.transpileBlock(node);
+        var result = header;
+        transpiler.isModule = TSHelper_1.TSHelper.isFileModule(node);
+        if (transpiler.isModule) {
+            // Shadow exports if it already exists
+            result += "local exports = exports or {}\n";
+        }
+        result += transpiler.transpileBlock(node);
+        if (transpiler.isModule) {
+            result += "return exports\n";
+        }
+        return result;
     };
     LuaTranspiler.prototype.pushIndent = function () {
         this.indent = this.indent + "    ";
@@ -49,6 +62,20 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.definitionName = function (name) {
         return this.namespace.concat(name).join(".");
+    };
+    LuaTranspiler.prototype.accessPrefix = function (node) {
+        return node && this.isModule ?
+            "local " : "";
+    };
+    LuaTranspiler.prototype.makeExport = function (name, node) {
+        var result = "";
+        if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
+            result = this.indent + ("exports." + this.definitionName(name) + " = " + name + "\n");
+        }
+        if (this.namespace.length !== 0) {
+            result += this.indent + (this.definitionName(name) + " = " + name + "\n");
+        }
+        return result;
     };
     // Transpile a block
     LuaTranspiler.prototype.transpileBlock = function (node) {
@@ -117,19 +144,24 @@ var LuaTranspiler = /** @class */ (function () {
         }
     };
     LuaTranspiler.prototype.transpileImport = function (node) {
-        var name = this.transpileExpression(node.moduleSpecifier);
-        var imports = node.importClause.namedBindings;
-        if (ts.isNamespaceImport(imports)) {
-            return "{$imports.name.escapedText} = require(" + name + ")";
+        var importFile = this.transpileExpression(node.moduleSpecifier);
+        if (!node.importClause) {
+            throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
-        else if (ts.isNamedImports(imports)) {
-            // Forbid renaming
+        var imports = node.importClause.namedBindings;
+        if (ts.isNamedImports(imports)) {
+            var fileImportTable_1 = path.basename(importFile.replace(new RegExp("\"", "g"), "")) + this.importCount;
+            var result_1 = "local " + fileImportTable_1 + " = require(" + importFile + ")\n";
+            this.importCount++;
             imports.elements.forEach(function (element) {
                 if (element.propertyName) {
-                    throw new TranspileError("Renaming of individual imported objects is not allowed", node);
+                    result_1 += "local " + element.name.escapedText + " = " + fileImportTable_1 + "." + element.propertyName.escapedText + "\n";
+                }
+                else {
+                    result_1 += "local " + element.name.escapedText + " = " + fileImportTable_1 + "." + element.name.escapedText + "\n";
                 }
             });
-            return "require(" + name + ")";
+            return result_1;
         }
         else {
             throw new TranspileError("Unsupported import type.", node);
@@ -140,10 +172,19 @@ var LuaTranspiler = /** @class */ (function () {
         if (TSHelper_1.TSHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker))
             return this.transpileNode(node.body);
         var defName = this.definitionName(node.name.text);
-        var result = this.indent + (defName + " = {}\n");
+        var result = this.indent + this.accessPrefix(node) + (node.name.text + " = " + node.name.text + " or {}\n");
+        if (this.namespace.length > 0) {
+            result += this.indent + (defName + " = " + node.name.text + " or {}\n");
+        }
+        result += this.makeExport(defName, node);
+        // Create closure
+        result += this.indent + "do\n";
+        this.pushIndent();
         this.namespace.push(node.name.text);
         result += this.transpileNode(node.body);
         this.namespace.pop();
+        this.popIndent();
+        result += this.indent + "end\n";
         return result;
     };
     LuaTranspiler.prototype.transpileEnum = function (node) {
@@ -153,8 +194,9 @@ var LuaTranspiler = /** @class */ (function () {
         var type = this.checker.getTypeAtLocation(node);
         var membersOnly = TSHelper_1.TSHelper.isCompileMembersOnlyEnum(type, this.checker);
         if (!membersOnly) {
-            var defName = this.definitionName(node.name.escapedText);
-            result += this.indent + (defName + "={}\n");
+            var name_1 = node.name.escapedText;
+            result += this.indent + this.accessPrefix(node) + (name_1 + "={}\n");
+            result += this.makeExport(name_1, node);
         }
         node.members.forEach(function (member) {
             if (member.initializer) {
@@ -166,7 +208,7 @@ var LuaTranspiler = /** @class */ (function () {
                 }
             }
             if (membersOnly) {
-                var defName = _this.definitionName(name);
+                var defName = _this.definitionName(member.name.escapedText);
                 result += _this.indent + (defName + "=" + val + "\n");
             }
             else {
@@ -638,6 +680,7 @@ var LuaTranspiler = /** @class */ (function () {
         var result = "";
         node.declarationList.declarations.forEach(function (declaration) {
             result += _this.transpileVariableDeclaration(declaration);
+            result += _this.makeExport(declaration.name.escapedText, node);
         });
         return result;
     };
@@ -648,10 +691,10 @@ var LuaTranspiler = /** @class */ (function () {
             var identifier = node.name;
             if (node.initializer) {
                 var value = this.transpileExpression(node.initializer);
-                return "local " + identifier.escapedText + " = " + value;
+                return "local " + identifier.escapedText + " = " + value + "\n";
             }
             else {
-                return "local " + identifier.escapedText + " = nil";
+                return "local " + identifier.escapedText + " = nil\n";
             }
         }
         else if (ts.isArrayBindingPattern(node.name)) {
@@ -659,16 +702,16 @@ var LuaTranspiler = /** @class */ (function () {
             var value = this.transpileExpression(node.initializer);
             var parentName_1 = "__destr" + this.genVarCounter;
             this.genVarCounter++;
-            var result_1 = "local " + parentName_1 + " = " + value + "\n";
+            var result_2 = "local " + parentName_1 + " = " + value + "\n";
             node.name.elements.forEach(function (elem, index) {
                 if (!elem.dotDotDotToken) {
-                    result_1 += _this.indent + ("local " + elem.name.escapedText + " = " + parentName_1 + "[" + (index + 1) + "]\n");
+                    result_2 += _this.indent + ("local " + elem.name.escapedText + " = " + parentName_1 + "[" + (index + 1) + "]\n");
                 }
                 else {
-                    result_1 += _this.indent + ("local " + elem.name.escapedText + " = TS_slice(" + parentName_1 + ", " + index + ")\n");
+                    result_2 += _this.indent + ("local " + elem.name.escapedText + " = TS_slice(" + parentName_1 + ", " + index + ")\n");
                 }
             });
-            return result_1;
+            return result_2;
         }
         else {
             throw new TranspileError("Unsupported variable declaration type " + TSHelper_1.TSHelper.enumName(node.name.kind, ts.SyntaxKind), node);
@@ -686,12 +729,13 @@ var LuaTranspiler = /** @class */ (function () {
             paramNames.push(param.name.escapedText);
         });
         // Build function header
-        result += this.indent + ("function " + this.definitionName(methodName) + "(" + paramNames.join(",") + ")\n");
+        result += this.indent + this.accessPrefix(node) + ("function " + methodName + "(" + paramNames.join(",") + ")\n");
         this.pushIndent();
         result += this.transpileBlock(body);
         this.popIndent();
         // Close function block
         result += this.indent + "end\n";
+        result += this.makeExport(methodName, node);
         return result;
     };
     LuaTranspiler.prototype.transpileMethodDeclaration = function (node, path) {
@@ -739,11 +783,13 @@ var LuaTranspiler = /** @class */ (function () {
             // Write class declaration
             var classOr = noClassOr ? "" : className + " or ";
             if (!extendsType) {
-                result += this.indent + (className + " = " + classOr + "{}\n");
+                result += this.indent + this.accessPrefix(node) + (className + " = " + classOr + "{}\n");
+                result += this.makeExport(className, node);
             }
             else {
                 var baseName = extendsType.expression.escapedText;
-                result += this.indent + (className + " = " + classOr + baseName + ".new()\n");
+                result += this.indent + this.accessPrefix(node) + (className + " = " + classOr + baseName + ".new()\n");
+                result += this.makeExport(className, node);
             }
             result += this.indent + (className + ".__index = " + className + "\n");
             if (extendsType) {

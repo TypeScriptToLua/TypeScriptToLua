@@ -11,7 +11,7 @@ export namespace dummyTypes {
 
 export function transpileString(str: string, dummyType: any): string {
     const dummyChecker = { getTypeAtLocation: function() { return dummyType; } }
-    const file = ts.createSourceFile("", str, ts.ScriptTarget.Latest);
+    const file = ts.createSourceFile("temp.ts", str, ts.ScriptTarget.Latest);
     const result = LuaTranspiler.transpileSourceFile(file, dummyChecker, false);
     return result.trim();
 }

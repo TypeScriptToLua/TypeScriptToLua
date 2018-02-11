@@ -69,7 +69,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.makeExport = function (name, node) {
         var result = "";
-        if (node && node.modifiers && !!(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
+        if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             result = this.indent + ("exports." + this.definitionName(name) + " = " + name + "\n");
         }
         if (this.namespace.length !== 0) {
@@ -176,8 +176,7 @@ var LuaTranspiler = /** @class */ (function () {
         if (this.namespace.length > 0) {
             result += this.indent + (defName + " = " + node.name.text + " or {}\n");
         }
-        // Namespaces are exported by default
-        result += this.indent + ("exports." + defName + " = exports." + defName + " or {}\n");
+        result += this.makeExport(defName, node);
         // Create closure
         result += this.indent + "do\n";
         this.pushIndent();

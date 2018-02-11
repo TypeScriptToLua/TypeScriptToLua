@@ -35,12 +35,16 @@ export class TSHelper {
             // export statement, we only check for export statements
             let hasExport = false;
             sourceFile.statements.forEach(statement => {
-                if (!!(ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export)
+                if ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
                     || statement.kind === ts.SyntaxKind.ExportAssignment
                     || statement.kind === ts.SyntaxKind.ExportDeclaration) {
                     hasExport = true;
                 }
             });
+            sourceFile.statements.some(statement =>
+                (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+                || statement.kind === ts.SyntaxKind.ExportAssignment
+                || statement.kind === ts.SyntaxKind.ExportDeclaration)
             return hasExport;
         }
         return false;

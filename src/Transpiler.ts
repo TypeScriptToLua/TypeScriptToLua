@@ -72,7 +72,7 @@ export class LuaTranspiler {
 
     makeExport(name: string | ts.__String, node: ts.Node): string {
         let result: string = "";
-        if (node && node.modifiers && !!(ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
+        if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
         }
         if (this.namespace.length !== 0) {
@@ -183,8 +183,7 @@ export class LuaTranspiler {
         if (this.namespace.length > 0) {
             result += this.indent + `${defName} = ${node.name.text} or {}\n`;
         }
-        // Namespaces are exported by default
-        result += this.indent + `exports.${defName} = exports.${defName} or {}\n`;
+        result += this.makeExport(defName, node)
         // Create closure
         result += this.indent + "do\n"
         this.pushIndent();
@@ -803,7 +802,6 @@ export class LuaTranspiler {
         result += this.indent + "end\n";
 
         result += this.makeExport(methodName, node);
-
 
         return result;
     }

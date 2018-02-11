@@ -538,7 +538,8 @@ var LuaTranspiler = /** @class */ (function () {
                         return this.transpileArrayCallExpression(node);
             }
             // Include context parameter if present
-            var callPath_1 = this.transpileExpression(node.expression);
+            var expType = this.checker.getTypeAtLocation(node.expression.expression);
+            var callPath_1 = (expType && expType.symbol) ? expType.symbol.name + "." + node.expression.name.escapedText : this.transpileExpression(node.expression);
             var params_1 = this.transpileArguments(node.arguments, node.expression.expression);
             return callPath_1 + "(" + params_1 + ")";
         }

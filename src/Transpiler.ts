@@ -645,7 +645,7 @@ export class LuaTranspiler {
         }
     }
 
-    // Transpile a Math._ property
+    // Transpile a String._ property
     transpileStringExpression(identifier: ts.Identifier): string {
         const translation = {
             fromCharCode: "string.char",

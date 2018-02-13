@@ -151,7 +151,7 @@ export class LuaTranspiler {
 
     transpileImport(node: ts.ImportDeclaration): string {
         const importFile = this.transpileExpression(node.moduleSpecifier);
-        if (!node.importClause) {
+        if (!node.importClause || !node.importClause.namedBindings) {
             throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
 
@@ -595,10 +595,15 @@ export class LuaTranspiler {
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
             }
 
+            if (ts.isIdentifier(node.expression) && node.expression.escapedText == "String") {
+                const params = this.transpileArguments(node.arguments);
+                return this.transpileStringExpression(node.expression.name) + `(${params})`;
+            }
+
             // Include context parameter if present
             let callPath = (expType && expType.symbol) ? `${expType.symbol.name}.${node.expression.name.escapedText}` : this.transpileExpression(node.expression);
             let params = this.transpileArguments(node.arguments, node.expression.expression);
-            
+
             return `${callPath}(${params})`;
         }
 
@@ -637,6 +642,23 @@ export class LuaTranspiler {
                 }
             default:
                 throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
+        }
+    }
+
+    // Transpile a String._ property
+    transpileStringExpression(identifier: ts.Identifier): string {
+        const translation = {
+            fromCharCode: "string.char",
+            fromCodePoint: "utf8.char"
+        };
+
+        // TODO at check if compiler options is LUA 5.3
+        // should throw an exception if codepoint is used sub 5.3
+
+        if (translation[<string>identifier.escapedText]) {
+            return `${translation[<string>identifier.escapedText]}`;
+        } else {
+            throw new TranspileError(`Unsupported string property ${identifier.escapedText}.`, identifier);
         }
     }
 

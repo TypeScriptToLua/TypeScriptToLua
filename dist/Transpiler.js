@@ -145,7 +145,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileImport = function (node) {
         var importFile = this.transpileExpression(node.moduleSpecifier);
-        if (!node.importClause) {
+        if (!node.importClause || !node.importClause.namedBindings) {
             throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
         var imports = node.importClause.namedBindings;
@@ -542,16 +542,20 @@ var LuaTranspiler = /** @class */ (function () {
                 var params_1 = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + ("(" + params_1 + ")");
             }
+            if (ts.isIdentifier(node.expression) && node.expression.escapedText == "String") {
+                var params_2 = this.transpileArguments(node.arguments);
+                return this.transpileStringExpression(node.expression.name) + ("(" + params_2 + ")");
+            }
             // Include context parameter if present
             var callPath_1 = (expType && expType.symbol) ? expType.symbol.name + "." + node.expression.name.escapedText : this.transpileExpression(node.expression);
-            var params_2 = this.transpileArguments(node.arguments, node.expression.expression);
-            return callPath_1 + "(" + params_2 + ")";
+            var params_3 = this.transpileArguments(node.arguments, node.expression.expression);
+            return callPath_1 + "(" + params_3 + ")";
         }
         // Handle super calls properly
         if (node.expression.kind == ts.SyntaxKind.SuperKeyword) {
             var callPath_2 = this.transpileExpression(node.expression);
-            var params_3 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
-            return "self.__base.constructor(" + params_3 + ")";
+            var params_4 = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword));
+            return "self.__base.constructor(" + params_4 + ")";
         }
         var callPath = this.transpileExpression(node.expression);
         var params = this.transpileArguments(node.arguments);
@@ -582,6 +586,21 @@ var LuaTranspiler = /** @class */ (function () {
                 }
             default:
                 throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
+        }
+    };
+    // Transpile a String._ property
+    LuaTranspiler.prototype.transpileStringExpression = function (identifier) {
+        var translation = {
+            fromCharCode: "string.char",
+            fromCodePoint: "utf8.char"
+        };
+        // TODO at check if compiler options is LUA 5.3
+        // should throw an exception if codepoint is used sub 5.3
+        if (translation[identifier.escapedText]) {
+            return "" + translation[identifier.escapedText];
+        }
+        else {
+            throw new TranspileError("Unsupported string property " + identifier.escapedText + ".", identifier);
         }
     };
     LuaTranspiler.prototype.transpileArrayCallExpression = function (node) {

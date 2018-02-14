@@ -349,6 +349,11 @@ export class LuaTranspiler {
 
         // If statement to go to right entry label
         clauses.forEach((clause, index) => {
+            if (index !== clauses.length - 1
+                    && clause.statements.length !== 0
+                    && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+                throw new TranspileError("Missing break, fall through is not allowed.", clause);
+            }
             if (ts.isCaseClause(clause)) {
                 let keyword = index == 0 ? "if" : "elseif";
                 let condition = this.transpileExpression(clause.expression, true);
@@ -360,19 +365,11 @@ export class LuaTranspiler {
 
             this.pushIndent();
 
-            // Labels for fallthrough
-            result += this.indent + `::switchCase${this.genVarCounter + index}::\n`;
-
             this.transpilingSwitch = true;
             clause.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
             this.transpilingSwitch = false;
-
-            // If this goto is reached, fall through to the next case
-            if (index < clauses.length - 1) {
-                result += this.indent + `goto switchCase${this.genVarCounter + index + 1}\n`;
-            }
 
             this.popIndent();
         });

@@ -34,7 +34,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
     }
 
     program.getSourceFiles().forEach(sourceFile => {
-        if (!sourceFile.isDeclarationFile) {       
+        if (!sourceFile.isDeclarationFile) {
             // Print AST for debugging
             //printAST(sourceFile, 0);
 
@@ -43,7 +43,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions, projectRoot: 
                 const addHeader = options.noHeader === true ? false : true;
                 let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker, addHeader);
                 let outPath = sourceFile.fileName.substring(0, sourceFile.fileName.lastIndexOf(".")) + ".lua";
-                
+
                 if (options.outDir) {
                     var extension = options.outDir;
                     if (extension[extension.length - 1] != "/") extension = extension + "/";
@@ -83,7 +83,7 @@ function printAST(node: ts.Node, indent: number) {
 const filename = process.argv[2].split("\\").join("/");
 const filepath = filename.substring(0, filename.lastIndexOf("/"));
 let configPath = ts.findConfigFile(filepath, ts.sys.fileExists);
- 
+
 if (configPath) {
     configPath = configPath.split("\\").join("/");
     const projectRoot = configPath.substring(0, configPath.lastIndexOf("/"));

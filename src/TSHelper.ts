@@ -29,6 +29,10 @@ export class TSHelper {
         return "unknown";
     }
 
+    static containsStatement(statements: ts.NodeArray<ts.Statement>, kind: ts.SyntaxKind): boolean {
+        return statements.some(statement => statement.kind === kind);
+    }
+
     static isFileModule(sourceFile: ts.SourceFile) {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or

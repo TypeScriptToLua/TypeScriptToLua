@@ -5,8 +5,10 @@ const LuaVM = require("lua.vm.js");
 const fs = require("fs");
 
 export namespace dummyTypes {
+    export const None = {};
     export const Array = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Array" } };
-    export const Object = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Object" } }
+    export const Object = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Object" } };
+    export const Number = { flags: ts.TypeFlags.Number, symbol: { escapedName: "Number" } };
 }
 
 export function transpileString(str: string, dummyType: any): string {
@@ -16,7 +18,7 @@ export function transpileString(str: string, dummyType: any): string {
     return result.trim();
 }
 
-export function executeLua(lua: string, withLib = true): string {
+export function executeLua(lua: string, withLib = true): any {
     if (withLib) {
         lua = minimalTestLib + lua
     }

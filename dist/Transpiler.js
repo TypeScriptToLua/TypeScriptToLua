@@ -314,6 +314,11 @@ var LuaTranspiler = /** @class */ (function () {
         var result = this.indent + "-------Switch statement start-------\n";
         // If statement to go to right entry label
         clauses.forEach(function (clause, index) {
+            if (index !== clauses.length - 1
+                && clause.statements.length !== 0
+                && !TSHelper_1.TSHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+                throw new TranspileError("Missing break, fall through is not allowed.", clause);
+            }
             if (ts.isCaseClause(clause)) {
                 var keyword = index == 0 ? "if" : "elseif";
                 var condition = _this.transpileExpression(clause.expression, true);
@@ -324,17 +329,11 @@ var LuaTranspiler = /** @class */ (function () {
                 result += _this.indent + "else\n";
             }
             _this.pushIndent();
-            // Labels for fallthrough
-            result += _this.indent + ("::switchCase" + (_this.genVarCounter + index) + "::\n");
             _this.transpilingSwitch = true;
             clause.statements.forEach(function (statement) {
                 result += _this.transpileNode(statement);
             });
             _this.transpilingSwitch = false;
-            // If this goto is reached, fall through to the next case
-            if (index < clauses.length - 1) {
-                result += _this.indent + ("goto switchCase" + (_this.genVarCounter + index + 1) + "\n");
-            }
             _this.popIndent();
         });
         result += this.indent + "end\n";

@@ -28,6 +28,9 @@ var TSHelper = /** @class */ (function () {
         }
         return "unknown";
     };
+    TSHelper.containsStatement = function (statements, kind) {
+        return statements.some(function (statement) { return statement.kind === kind; });
+    };
     TSHelper.isFileModule = function (sourceFile) {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or

@@ -168,11 +168,16 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
-    @TestCase(0, 0)
+    @TestCase(0, 1)
+    @TestCase(0, 1)
+    @TestCase(2, 4)
+    @TestCase(3, 4)
+    @TestCase(4, 4)
+    @TestCase(5, -2)
     @Test("switchfallthrough")
     public switchfallthrough(inp: number, expected: number) {
-        // Transpile & Assert
-        Expect(() => util.transpileString(
+        /// Transpile
+        let lua = util.transpileString(
             `let result = -1;
 
             switch (${inp}) {
@@ -181,10 +186,27 @@ export class LuaConditionalsTests {
                 case 1:
                     result = 1;
                     break;
+                case 2:
+                    result = 2;
+                case 3:
+                case 4:
+                    result = 4;
+                    break;
+                case 5:
+                    result = 5;
+                default:
+                    result = -2;
+                    break;
             }
             return result;`
             , util.dummyTypes.Number
-        )).toThrowError(Error, "Missing break, fall through is not allowed.")
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
     }
 
 

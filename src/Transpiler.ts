@@ -232,7 +232,7 @@ export class LuaTranspiler {
 
     transpileBreak(): string {
         if (this.transpilingSwitch) {
-            return this.indent + `goto switchDone${this.genVarCounter}\n`;
+            return '';
         } else {
             return this.indent + "break\n";
         }
@@ -347,22 +347,22 @@ export class LuaTranspiler {
 
         let result = this.indent + "-------Switch statement start-------\n";
 
+        let jumpTableName = "____switch" + ++this.genVarCounter
+
+        result += this.indent + `local ${jumpTableName} = {\n`;
+
+        this.pushIndent();
+
         // If statement to go to right entry label
         clauses.forEach((clause, index) => {
-            if (index !== clauses.length - 1
-                    && clause.statements.length !== 0
-                    && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
-                throw new TranspileError("Missing break, fall through is not allowed.", clause);
-            }
             if (ts.isCaseClause(clause)) {
-                let keyword = index == 0 ? "if" : "elseif";
-                let condition = this.transpileExpression(clause.expression, true);
-                result += this.indent + `${keyword} ${expression}==${condition} then\n`;
-            } else {
-                // Default
-                result += this.indent + `else\n`;
+                result += this.indent + `-- case:\n`;
+                result += this.indent + `[${this.transpileExpression(clause.expression, true)}] = function(self)\n`;
             }
-
+            if (ts.isDefaultClause(clause)) {
+                result += this.indent + `-- default:\n`;
+                result += this.indent + `["____default${this.genVarCounter}"] = function(self)\n`;
+            }
             this.pushIndent();
 
             this.transpilingSwitch = true;
@@ -371,10 +371,35 @@ export class LuaTranspiler {
             });
             this.transpilingSwitch = false;
 
+            let i = index + 1;
+            if (i < clauses.length && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+                let nextClause = clauses[i];
+                while(i < clauses.length
+                    && ts.isCaseClause(nextClause)
+                    && nextClause.statements.length === 0
+                ) {
+                    nextClause = clauses[++i];
+                }
+
+                if (i !== index && nextClause) {
+                    if (ts.isCaseClause(nextClause)) {
+                        result += this.indent + `self[${this.transpileExpression(nextClause.expression, true)}]()\n`;
+                    } else {
+                        result += this.indent + `self["____default${this.genVarCounter}"]()\n`;
+                    }
+                }
+            } else {
+                result += this.indent + `-- break;\n`;
+            }
+
             this.popIndent();
+
+            result += this.indent + `end,\n`;
         });
-        result += this.indent + "end\n";
-        result += this.indent + `::switchDone${this.genVarCounter}::\n`;
+        this.popIndent();
+        result += this.indent + "}\n";
+        result += this.indent + `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}](${jumpTableName})\n`;
+        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then ${jumpTableName}["____default${this.genVarCounter}"](${jumpTableName}) end\n`;
         result += this.indent + "--------Switch statement end--------\n";
 
         //Increment counter for next switch statement

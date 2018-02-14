@@ -312,7 +312,8 @@ var LuaTranspiler = /** @class */ (function () {
         var expression = this.transpileExpression(node.expression, true);
         var clauses = node.caseBlock.clauses;
         var result = this.indent + "-------Switch statement start-------\n";
-        var jumpTableName = "____switch" + ++this.genVarCounter;
+        var jumpTableName = "____switch" + this.genVarCounter;
+        this.genVarCounter++;
         result += this.indent + ("local " + jumpTableName + " = {\n");
         this.pushIndent();
         // If statement to go to right entry label
@@ -337,7 +338,8 @@ var LuaTranspiler = /** @class */ (function () {
                 while (i < clauses.length
                     && ts.isCaseClause(nextClause)
                     && nextClause.statements.length === 0) {
-                    nextClause = clauses[++i];
+                    i++;
+                    nextClause = clauses[i];
                 }
                 if (i !== index && nextClause) {
                     if (ts.isCaseClause(nextClause)) {

@@ -347,7 +347,8 @@ export class LuaTranspiler {
 
         let result = this.indent + "-------Switch statement start-------\n";
 
-        let jumpTableName = "____switch" + ++this.genVarCounter
+        let jumpTableName = "____switch" + this.genVarCounter;
+        this.genVarCounter++;
 
         result += this.indent + `local ${jumpTableName} = {\n`;
 
@@ -378,7 +379,8 @@ export class LuaTranspiler {
                     && ts.isCaseClause(nextClause)
                     && nextClause.statements.length === 0
                 ) {
-                    nextClause = clauses[++i];
+                    i++;
+                    nextClause = clauses[i];
                 }
 
                 if (i !== index && nextClause) {

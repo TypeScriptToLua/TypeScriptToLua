@@ -173,7 +173,8 @@ export class LuaConditionalsTests {
     @TestCase(2, 4)
     @TestCase(3, 4)
     @TestCase(4, 4)
-    @TestCase(5, -2)
+    @TestCase(5, 15)
+    @TestCase(7, -2)
     @Test("switchfallthrough")
     public switchfallthrough(inp: number, expected: number) {
         /// Transpile
@@ -194,6 +195,11 @@ export class LuaConditionalsTests {
                     break;
                 case 5:
                     result = 5;
+                case 6:
+                    result += 10;
+                    break;
+                case 7:
+                    result = 7;
                 default:
                     result = -2;
                     break;

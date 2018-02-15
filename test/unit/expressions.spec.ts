@@ -39,7 +39,15 @@ export class ExpressionTests {
     @TestCase("a*=b", "a=a*b")
     @TestCase("a/=b", "a=a/b")
     @TestCase("a&b", "bit.band(a,b)")
+    @TestCase("a&=b", "a=bit.band(a,b)")
     @TestCase("a|b", "bit.bor(a,b)")
+    @TestCase("a|=b", "a=bit.bor(a,b)")
+    @TestCase("a<<b", "bit.lshift(a,b)")
+    @TestCase("a<<=b", "a=bit.lshift(a,b)")
+    @TestCase("a>>b", "bit.arshift(a,b)")
+    @TestCase("a>>=b", "a=bit.arshift(a,b)")
+    @TestCase("a>>>b", "bit.rshift(a,b)")
+    @TestCase("a>>>=b", "a=bit.rshift(a,b)")
     @Test("Binary expressions overridden operators")
     public binaryOperatorOverride(input: string, lua: string) {
         Expect(transpileString(input)).toBe(lua);

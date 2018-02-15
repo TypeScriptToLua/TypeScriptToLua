@@ -443,8 +443,32 @@ var LuaTranspiler = /** @class */ (function () {
             case ts.SyntaxKind.AmpersandToken:
                 result = "bit.band(" + lhs + "," + rhs + ")";
                 break;
+            case ts.SyntaxKind.AmpersandEqualsToken:
+                result = lhs + "=bit.band(" + lhs + "," + rhs + ")";
+                break;
             case ts.SyntaxKind.BarToken:
                 result = "bit.bor(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.BarEqualsToken:
+                result = lhs + "=bit.bor(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.LessThanLessThanToken:
+                result = "bit.lshift(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.LessThanLessThanEqualsToken:
+                result = lhs + "=bit.lshift(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                result = "bit.rshift(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                result = lhs + "=bit.rshift(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+                result = "bit.arshift(" + lhs + "," + rhs + ")";
+                break;
+            case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+                result = lhs + "=bit.arshift(" + lhs + "," + rhs + ")";
                 break;
             case ts.SyntaxKind.PlusToken:
                 // Replace string + with ..

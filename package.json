@@ -1,5 +1,6 @@
 {
     "name": "typescript-to-lua",
+    "license": "MIT",
     "version": "0.0.0",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
@@ -16,13 +17,14 @@
     "bin": {
         "tstl": "dist/Compiler.js"
     },
-    "dependencies": {},
+    "dependencies": {
+        "typescript": "^2.7.2"
+    },
     "devDependencies": {
         "alsatian": "^2.2.1",
         "dedent": "^0.7.0",
         "deep-equal": "^1.0.1",
         "lua.vm.js": "0.0.1",
-        "nyc": "^11.5.0",
-        "typescript": "^2.7.2"
+        "nyc": "^11.5.0"
     }
 }

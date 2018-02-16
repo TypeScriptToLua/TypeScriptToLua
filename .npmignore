@@ -1,3 +1,5 @@
 *
 !dist/**/*.js
+!dist/**/*.lua
+!dist/**/*.ts
 dist/**/*.map.js

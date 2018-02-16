@@ -15,7 +15,7 @@
         "postversion": "git push && git push --tags"
     },
     "bin": {
-        "tstl": "dist/Compiler.js"
+        "tstl": "./dist/Compiler.js"
     },
     "dependencies": {
         "typescript": "^2.7.2"

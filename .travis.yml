@@ -11,7 +11,7 @@ after_success:
 - npm run coverage
 deploy:
 - provider: npm
-  email: ''
+  email: 'lorenz.junglas@student.kit.edu'
   api_key:
     secure: FQoclPvgZwwA0aiGT1Hmh8BxcgzqyGyqyhIz/wcL1wGh1/9v0XA93W8lmnpWw4eT/sWd3CJt26aCzZd+9GbhRRUt4YaR/JS/kLseq6ahI4xSLrXbHRJuXQKsuAaVRnddIR0CTZh5Qy4X9MtKvm74fPLTYaMYDrGYWxtawO/s1PsqyDeZrwZt7MhbxBTGk5nkiqI03/kKTCoXPpvYncFlSGlJAlSXyx3G7gkbplIr3JL5eqNYmv2KdclU7Q8R9j2NGV2DCJbE6E6SUdwWPXWs5UaKP2HHzXinIqh4HRA8GVb9x08BW6PFVbXmNCCfVtZf748cizLpT+SFWKRXL8DSPnJihI2QH9xiwMqDTNeZhBVtzsxe2aomKdwqrlFIUMGe85s+cEnEM9pncLHqwEXIUB/TrDtjObd+UOvp/4GopF5ZQ1iOi0pt7RFRrR/uZq49R3yU9FlcIh8SOR8J8w8MQjsf/C2DfMAVYc46iQS0yKFLkOOcG4su7V7n/kw8e5vQBVnzLngFJ4YcvXp24VHWZ9A8hxIoMLwaYbxrMHu3NKTt/nJn1z//Lr+MYpkliOWDmyHJ8JektcuySpJ0xpIRK5043P7p4/LBL2yMh9cVvHiumxhekJ4y/G/x3guSC/lmDu+/X3K+zMhm04Aky1OLiniaamB4XnyeUZrcY8dGijY=
   on:

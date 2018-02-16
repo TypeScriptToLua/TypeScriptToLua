@@ -1,7 +1,7 @@
 {
     "name": "typescript-to-lua",
     "license": "MIT",
-    "version": "0.0.0",
+    "version": "0.0.1",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
         "build": "tsc -p tsconfig.json",

@@ -3,7 +3,8 @@
         "noImplicitThis" : true,
         "alwaysStrict" : true,
         "outDir": "./dist/",
-        "rootDir": "./src/"
+        "rootDir": "./src/",
+        "sourceMap": true
     },
     "exclude": ["test/**/*"]
 }

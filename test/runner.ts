@@ -14,7 +14,7 @@ const testRunner = new TestRunner();
 testRunner.outputStream
           // this will use alsatian's default output if you remove this
           // you'll get TAP or you can add your favourite TAP reporter in it's place
-          .pipe(TapBark.create().getPipeable()) 
+          .pipe(TapBark.create().getPipeable())
           // pipe to the console
           .pipe(process.stdout);
 

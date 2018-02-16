@@ -2,11 +2,14 @@
 node_modules/
 *.lua
 !json.lua
-!dist/*.js
 !dist/lualib/*.lua
 
 coverage/
 .nyc*
+*.js.map
+
+# Release
+*.tgz
 
 # OSX
 .DS_Store

@@ -132,7 +132,7 @@ export class LuaModuleTests {
         let lua = util.transpileString(inp, util.dummyTypes.Object);
 
         // Assert
-        // Dont test for correct indention this allows easier tes case definition
+        // Dont test for correct indention this allows easier test case definition
         Expect(dedent(lua)).toBe(dedent(expected));
     }
 }

@@ -221,7 +221,7 @@ var LuaTranspiler = /** @class */ (function () {
     };
     LuaTranspiler.prototype.transpileBreak = function () {
         if (this.transpilingSwitch) {
-            return this.indent + ("goto switchDone" + this.genVarCounter + "\n");
+            return '';
         }
         else {
             return this.indent + "break\n";
@@ -312,33 +312,54 @@ var LuaTranspiler = /** @class */ (function () {
         var expression = this.transpileExpression(node.expression, true);
         var clauses = node.caseBlock.clauses;
         var result = this.indent + "-------Switch statement start-------\n";
+        var jumpTableName = "____switch" + this.genVarCounter;
+        this.genVarCounter++;
+        result += this.indent + ("local " + jumpTableName + " = {\n");
+        this.pushIndent();
         // If statement to go to right entry label
         clauses.forEach(function (clause, index) {
             if (ts.isCaseClause(clause)) {
-                var keyword = index == 0 ? "if" : "elseif";
-                var condition = _this.transpileExpression(clause.expression, true);
-                result += _this.indent + (keyword + " " + expression + "==" + condition + " then\n");
+                result += _this.indent + "-- case:\n";
+                result += _this.indent + ("[" + _this.transpileExpression(clause.expression, true) + "] = function(self)\n");
             }
-            else {
-                // Default
-                result += _this.indent + "else\n";
+            if (ts.isDefaultClause(clause)) {
+                result += _this.indent + "-- default:\n";
+                result += _this.indent + ("[\"____default" + _this.genVarCounter + "\"] = function(self)\n");
             }
             _this.pushIndent();
-            // Labels for fallthrough
-            result += _this.indent + ("::switchCase" + (_this.genVarCounter + index) + "::\n");
             _this.transpilingSwitch = true;
             clause.statements.forEach(function (statement) {
                 result += _this.transpileNode(statement);
             });
             _this.transpilingSwitch = false;
-            // If this goto is reached, fall through to the next case
-            if (index < clauses.length - 1) {
-                result += _this.indent + ("goto switchCase" + (_this.genVarCounter + index + 1) + "\n");
+            var i = index + 1;
+            if (i < clauses.length && !TSHelper_1.TSHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+                var nextClause = clauses[i];
+                while (i < clauses.length
+                    && ts.isCaseClause(nextClause)
+                    && nextClause.statements.length === 0) {
+                    i++;
+                    nextClause = clauses[i];
+                }
+                if (i !== index && nextClause) {
+                    if (ts.isCaseClause(nextClause)) {
+                        result += _this.indent + ("self[" + _this.transpileExpression(nextClause.expression, true) + "]()\n");
+                    }
+                    else {
+                        result += _this.indent + ("self[\"____default" + _this.genVarCounter + "\"]()\n");
+                    }
+                }
+            }
+            else {
+                result += _this.indent + "-- break;\n";
             }
             _this.popIndent();
+            result += _this.indent + "end,\n";
         });
-        result += this.indent + "end\n";
-        result += this.indent + ("::switchDone" + this.genVarCounter + "::\n");
+        this.popIndent();
+        result += this.indent + "}\n";
+        result += this.indent + ("if " + jumpTableName + "[" + expression + "] then " + jumpTableName + "[" + expression + "](" + jumpTableName + ")\n");
+        result += this.indent + ("elseif " + jumpTableName + "[\"____default" + this.genVarCounter + "\"] then " + jumpTableName + "[\"____default" + this.genVarCounter + "\"](" + jumpTableName + ") end\n");
         result += this.indent + "--------Switch statement end--------\n";
         //Increment counter for next switch statement
         this.genVarCounter += clauses.length;

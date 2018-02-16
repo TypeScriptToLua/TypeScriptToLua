@@ -1,16 +1,28 @@
 {
-    "dependencies": {
-        "alsatian": "^2.1.0",
-        "lua.vm.js": "0.0.1",
-        "typescript": "^2.7.1"
-    },
+    "name": "typescript-to-lua",
+    "version": "0.0.0",
+    "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
+        "build": "tsc -p tsconfig.json",
         "test": "tsc -p ./test && node ./test/runner.js",
-        "coverage": "nyc --reporter=lcov npm test && nyc report"
+        "coverage": "nyc npm test && nyc report --reporter=lcov",
+        "coverage-html": "nyc npm test && nyc report --reporter=html",
+        "release-patch": "npm version patch",
+        "release-minor": "npm version minor",
+        "release-major": "npm version major",
+        "preversion": "npm run build && npm test",
+        "postversion": "git push && git push --tags"
     },
+    "bin": {
+        "tstl": "dist/Compiler.js"
+    },
+    "dependencies": {},
     "devDependencies": {
+        "alsatian": "^2.2.1",
         "dedent": "^0.7.0",
         "deep-equal": "^1.0.1",
-        "nyc": "^11.4.1"
+        "lua.vm.js": "0.0.1",
+        "nyc": "^11.5.0",
+        "typescript": "^2.7.2"
     }
 }

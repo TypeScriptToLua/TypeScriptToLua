@@ -93,3 +93,4 @@ if (configPath) {
 else {
     console.error("Could not find tsconfig.json, place one in your project root!");
 }
+//# sourceMappingURL=Compiler.js.map

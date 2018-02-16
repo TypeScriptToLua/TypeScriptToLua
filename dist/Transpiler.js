@@ -1039,3 +1039,4 @@ var LuaTranspiler = /** @class */ (function () {
     return LuaTranspiler;
 }());
 exports.LuaTranspiler = LuaTranspiler;
+//# sourceMappingURL=Transpiler.js.map

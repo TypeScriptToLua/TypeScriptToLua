@@ -6,7 +6,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.json",
         "test": "tsc -p ./test && node ./test/runner.js",
-        "coverage": "nyc npm test && nyc report --reporter=lcov",
+        "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov && codecov",
         "coverage-html": "nyc npm test && nyc report --reporter=html",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
@@ -22,6 +22,7 @@
     },
     "devDependencies": {
         "alsatian": "^2.2.1",
+        "codecov": "^3.0.0",
         "dedent": "^0.7.0",
         "deep-equal": "^1.0.1",
         "lua.vm.js": "0.0.1",

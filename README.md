@@ -1,15 +1,29 @@
 # TypescriptToLua
+[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua) [![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
+
 Typescript to lua transpiler.
-
-[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
-[![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
-
 
 ## Usage Guide
 
 `npm install -g typescript-to-lua`
 
 `tstl path/to-my-file.ts`
+
+```
+Syntax:  tstl [options] [files...]
+
+In addtion to the options listed below you can also pass options for the
+typescript compiler (For a list of options use tsc -h). NOTE: The tsc options
+might have no effect.
+
+Options:
+  --version        Show version number
+  --luaTarget, -l  Specify Lua target version: 'JIT' (Default), '5.1', '5.2',
+                   '5.3'
+  --project, -p    Compile the project given the path to its configuration file,
+                   or to a folder with a 'tsconfig.json'
+  --help           Show this message
+```
 
 **Optionally:**
 Add the lualib files from dist/ to your project. This helper library unlocks additional typescript functions:

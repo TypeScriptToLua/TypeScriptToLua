@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
 import * as ts from "typescript";
-import { readFileSync, writeFileSync } from "fs";
-import dedent from "dedent";
+import * as fs from "fs";
+import * as path from "path";
+
 // ES6 syntax broken
 import minimist = require("minimist")
-import * as path from "path";
+import dedent = require("dedent")
 
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
@@ -37,9 +38,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         if (!sourceFile.isDeclarationFile) {
             try {
                 let rootDir = options.rootDir;
-                if (!rootDir && options.project) {
-                    rootDir = path.join(process.cwd(), path.dirname(options.project));
-                } else {
+                if (!rootDir) {
                     rootDir = process.cwd();
                 }
 
@@ -161,9 +160,13 @@ function executeCommandLine(args: ReadonlyArray<string>) {
     logError(commandLine);
 
     commandLine.options.luaTarget = argv.luaTarget;
+    let configPath;
     if (commandLine.options.project) {
-        let configPath = path.isAbsolute(commandLine.options.project) ? commandLine.options.project : path.join(process.cwd(), commandLine.options.project);
-        let configContents = readFileSync(configPath).toString();
+        configPath = path.isAbsolute(commandLine.options.project) ? commandLine.options.project : path.join(process.cwd(), commandLine.options.project);
+        if (fs.statSync(configPath).isDirectory()) {
+            configPath = path.join(configPath, 'tsconfig.json');
+        }
+        let configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
         commandLine = ts.parseJsonConfigFileContent(configJson.config, ts.sys, path.dirname(configPath), commandLine.options);
 
@@ -172,6 +175,10 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         if (argv.luaTarget === "JIT" && commandLine.raw.luaTarget !== argv.luaTarget) {
             commandLine.options.luaTarget = commandLine.raw.luaTarget;
         }
+    }
+
+    if (configPath && !commandLine.options.rootDir) {
+        commandLine.options.rootDir = path.dirname(configPath);
     }
 
     logError(commandLine);

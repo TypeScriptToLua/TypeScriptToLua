@@ -165,7 +165,11 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         configPath = path.isAbsolute(commandLine.options.project) ? commandLine.options.project : path.join(process.cwd(), commandLine.options.project);
         if (fs.statSync(configPath).isDirectory()) {
             configPath = path.join(configPath, 'tsconfig.json');
+        } else if (fs.statSync(configPath).isFile() && path.extname(configPath) === ".ts") {
+            // if supplied project points to a .ts fiel we try to find the config
+            configPath = ts.findConfigFile(configPath, ts.sys.fileExists);
         }
+        commandLine.options.project = configPath;
         let configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
         commandLine = ts.parseJsonConfigFileContent(configJson.config, ts.sys, path.dirname(configPath), commandLine.options);

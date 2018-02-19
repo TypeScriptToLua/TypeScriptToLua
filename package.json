@@ -18,6 +18,7 @@
         "tstl": "./dist/Compiler.js"
     },
     "dependencies": {
+        "minimist": "^1.2.0",
         "typescript": "^2.7.2"
     },
     "devDependencies": {

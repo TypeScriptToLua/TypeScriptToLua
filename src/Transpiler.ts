@@ -705,7 +705,7 @@ export class LuaTranspiler {
         // TODO at check if compiler options is LUA 5.3
         // should throw an exception if codepoint is used sub 5.3
 
-        if (<string>identifier.escapedText === "fromCharCode" && this.options.luaTarget !== '5.3') {
+        if (<string>identifier.escapedText === "fromCodePoint" && this.options.luaTarget !== '5.3') {
             throw new TranspileError(`Unsupported string property ${identifier.escapedText} is only supported for lua 5.3.`, identifier);
         }
 

@@ -18,6 +18,18 @@ export function transpileString(str: string, dummyType: any): string {
     return result.trim();
 }
 
+export function transpileFile(path: string): string {
+    const program = ts.createProgram([path], {});
+    const checker = program.getTypeChecker();
+
+    // Output errors
+    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code != 6054);
+    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`));
+
+    const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, true);
+    return lua.trim();
+}
+
 export function executeLua(lua: string, withLib = true): any {
     if (withLib) {
         lua = minimalTestLib + lua

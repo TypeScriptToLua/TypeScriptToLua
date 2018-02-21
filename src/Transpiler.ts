@@ -93,9 +93,9 @@ export class LuaTranspiler {
         let absolutePathToImport = path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
         if (this.options.rootDir) {
             // Calculate path realtive to project root and replace path.sep with dots (lua doesn't know paths)
-            return `"${absolutePathToImport.replace(this.options.rootDir, "").replace(new RegExp(path.sep, "g"), ".").slice(1)}"`;
+            return `"${absolutePathToImport.replace(this.options.rootDir, "").replace(new RegExp("\\\\|\/", "g"), ".").slice(1)}"`;
         }
-        return `"${relativePath.replace(new RegExp(path.sep, "g"), ".")}"`;
+        return `"${relativePath.replace(new RegExp("\\\\|\/", "g"), ".")}"`;
     }
 
     // Transpile a block

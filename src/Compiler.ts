@@ -60,7 +60,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
 
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
-                    outPath = path.join(options.outDir, sourceFile.fileName.replace(rootDir, ""));
+                    outPath = path.join(options.outDir, path.resolve(sourceFile.fileName).replace(rootDir, ""));
                 }
 
                 // change extension

@@ -757,7 +757,12 @@ export class LuaTranspiler {
             case "splice":
                 return `TS_splice(${caller}, ${params})`;
             case "join":
-                return `table.concat(${caller}, ${params})`;
+                if (node.arguments.length === 0) {
+                    // if seperator is omitted default seperator is ","
+                    return `table.concat(${caller}, ",")`;
+                } else {
+                    return `table.concat(${caller}, ${params})`;
+                }
             default:
                 throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
         }

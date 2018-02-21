@@ -741,7 +741,7 @@ export class LuaTranspiler {
             case "splice":
                 return `TS_splice(${caller}, ${params})`;
             case "join":
-                if (!params) {
+                if (node.arguments.length === 0) {
                     // if seperator is omitted default seperator is ","
                     return `table.concat(${caller}, ",")`;
                 } else {

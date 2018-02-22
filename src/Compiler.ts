@@ -179,8 +179,24 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         if (fs.statSync(configPath).isDirectory()) {
             configPath = path.join(configPath, 'tsconfig.json');
         } else if (fs.statSync(configPath).isFile() && path.extname(configPath) === ".ts") {
-            // if supplied project points to a .ts fiel we try to find the config
-            configPath = ts.findConfigFile(path.dirname(configPath), ts.sys.fileExists);
+            // Search for tsconfig upwards in directory hierarchy starting from the file path
+            let dir = path.dirname(configPath).split(path.sep);
+            let found = false;
+            for (let i = dir.length; i > 0; i--) {
+                const searchPath = dir.slice(0, i).join("/") + path.sep + "tsconfig.json";
+                
+                // If tsconfig.json was found, stop searching
+                if (ts.sys.fileExists(searchPath)) {
+                    configPath = searchPath;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                console.error("Tried to build project but could not find tsconfig.json!");
+                process.exit(1);
+            }
         }
         commandLine.options.project = configPath;
         let configContents = fs.readFileSync(configPath).toString();

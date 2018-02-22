@@ -168,6 +168,8 @@ export class LuaTranspiler {
 
     transpileImport(node: ts.ImportDeclaration): string {
         const importPath = this.transpileExpression(node.moduleSpecifier);
+        let importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
+
         if (!node.importClause || !node.importClause.namedBindings) {
             throw new TranspileError("Default Imports are not supported, please use named imports instead!", node);
         }
@@ -175,7 +177,6 @@ export class LuaTranspiler {
         const imports = node.importClause.namedBindings;
 
         if (ts.isNamedImports(imports)) {
-            let importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
             let fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount
             let result = `local ${fileImportTable} = require(${this.getImportPath(importPathWithoutQuotes)})\n`
             this.importCount++;
@@ -187,6 +188,8 @@ export class LuaTranspiler {
                 }
             });
             return result;
+        } else if (ts.isNamespaceImport(imports)) {
+            return `local ${imports.name.escapedText} = require(${this.getImportPath(importPathWithoutQuotes)})\n`;
         } else {
             throw new TranspileError("Unsupported import type.", node);
         }

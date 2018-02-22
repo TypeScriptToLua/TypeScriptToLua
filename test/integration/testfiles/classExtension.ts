@@ -1,0 +1,4 @@
+/** !Extension */
+class MyClass {
+    myFunction() {}
+}

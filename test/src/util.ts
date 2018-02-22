@@ -27,7 +27,8 @@ export function transpileFile(path: string): string {
     const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code != 6054);
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`));
 
-    const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, true);
+    const options: ts.CompilerOptions = { dontRequireLualib: true };
+    const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
     return lua.trim();
 }
 
@@ -43,4 +44,4 @@ const lualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
 
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 
-export const minimalTestLib = lualib + jsonlib
+export const minimalTestLib = lualib + jsonlib;

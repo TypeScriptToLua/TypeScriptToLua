@@ -42,10 +42,30 @@ export class StringTests {
         Expect(result).toBe(inp.replace(searchValue, replaceValue));
     }
 
+    @TestCase(["", ""], "")
+    @TestCase(["hello", "test"], "hellotest")
+    @TestCase(["hello", "test", "bye"], "hellotestbye")
+    @TestCase(["hello", 42], "hello42")
+    @TestCase([42, "hello"], "42hello")
+    @Test("string.concat[+]")
+    public concat(inp: any[], expected: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `return '${inp.join("' + '")}'`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("hello test", new RegExp("123", "g"), "")
     @IgnoreTest()
     @Test("string.replace[Regex]")
-    public replaceRegex<T>(inp: string, searchValue: string, replaceValue: string) {
+    public replaceRegex(inp: string, searchValue: string, replaceValue: string) {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".replace("${searchValue}", "${replaceValue}")`,
@@ -63,7 +83,7 @@ export class StringTests {
     @TestCase("hello test", "t")
     @TestCase("hello test", "h")
     @Test("string.indexOf")
-    public indexOf<T>(inp: string, searchValue: string) {
+    public indexOf(inp: string, searchValue: string) {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".indexOf("${searchValue}")`,
@@ -82,7 +102,7 @@ export class StringTests {
     @TestCase("hello test", 1, 2)
     @TestCase("hello test", 1, 5)
     @Test("string.substring")
-    public substring<T>(inp: string, start: number, end?: number) {
+    public substring(inp: string, start: number, end?: number) {
         // Transpile
         let paramStr = end ? `${start}, ${end}` : `${start}`;
         let lua = util.transpileString(

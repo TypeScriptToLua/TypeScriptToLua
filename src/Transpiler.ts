@@ -558,7 +558,10 @@ export class LuaTranspiler {
             case ts.SyntaxKind.PlusToken:
                 // Replace string + with ..
                 const typeLeft = this.checker.getTypeAtLocation(node.left);
+                const typeRight = this.checker.getTypeAtLocation(node.right);
                 if (typeLeft.flags & ts.TypeFlags.String || ts.isStringLiteral(node.left))
+                    return lhs + ".." + rhs;
+                if (typeRight.flags & ts.TypeFlags.String || ts.isStringLiteral(node.right))
                     return lhs + ".." + rhs;
             default:
                 result = lhs + this.transpileOperator(node.operatorToken) + rhs;

@@ -41,6 +41,11 @@ export class LuaModuleTests {
         local TestClass = test0.TestClass`
     )
     @TestCase(
+        `import * as Test from "test"`,
+
+        `local Test = require("test")`
+    )
+    @TestCase(
         `import {TestClass as RenamedClass} from "test"`,
 
         `local test0 = require("test")
@@ -127,12 +132,19 @@ export class LuaModuleTests {
         return exports`
     )
     @Test("modules")
-    public modules<T>(inp: string, expected: string) {
+    public modules(inp: string, expected: string) {
         // Transpile
         let lua = util.transpileString(inp, util.dummyTypes.Object);
 
         // Assert
         // Dont test for correct indention this allows easier test case definition
         Expect(dedent(lua)).toBe(dedent(expected));
+    }
+
+    @Test("defaultImport")
+    public defaultImport() {
+        Expect(() => {
+            let lua = util.transpileString(`import TestClass from "test"`, util.dummyTypes.Object);
+        }).toThrowError(Error, "Default Imports are not supported, please use named imports instead!");
     }
 }

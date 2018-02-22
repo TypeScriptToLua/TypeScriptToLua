@@ -1,8 +1,5 @@
 *.js
 node_modules/
-*.lua
-!json.lua
-!dist/lualib/*.lua
 
 coverage/
 .nyc*

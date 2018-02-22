@@ -34,20 +34,33 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         process.exit(1);
     }
 
+    if (!options.rootDir) {
+        options.rootDir = process.cwd();
+    }
+
+    if (!options.outDir) {
+        options.outDir = options.rootDir;
+    }
+
+    // Copy lualib to target dir
+    // This isnt run in sync because copyFileSync wont report errors.
+    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
+        if (err) {
+            console.log("ERROR: copying lualib to output.");
+        }
+    });
+
     program.getSourceFiles().forEach(sourceFile => {
         if (!sourceFile.isDeclarationFile) {
             try {
                 let rootDir = options.rootDir;
-                if (!rootDir) {
-                    rootDir = process.cwd();
-                }
 
                 // Transpile AST
                 let lua = LuaTranspiler.transpileSourceFile(sourceFile, checker, options);
 
                 let outPath = sourceFile.fileName;
-                if (options.outDir) {
-                    outPath = path.join(options.outDir, sourceFile.fileName.replace(rootDir, ""));
+                if (options.outDir !== options.rootDir) {
+                    outPath = path.join(options.outDir, path.resolve(sourceFile.fileName).replace(rootDir, ""));
                 }
 
                 // change extension

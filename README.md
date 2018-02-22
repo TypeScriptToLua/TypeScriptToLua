@@ -54,7 +54,8 @@ To add the option to build with the Lua transpiler instead of the regular typesc
 
 ```
 {
-    "cmd": ["tstl", "-p", "$file"]
+    "cmd": ["tstl", "-p", "$file"],
+    "shell": true
 }
 ```
 Save this in your Sublime settings as a `TypeScriptToLua.sublime-build`. You can now select the TypeScriptToLua build system in `Tools > Build System` to build using the normal hotkey (`ctrl+B`), or if you have multiple TypeScript projects open, you can choose your compiler before building by pressing `ctrl+shift+B`.

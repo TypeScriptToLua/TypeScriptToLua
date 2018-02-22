@@ -561,7 +561,10 @@ export class LuaTranspiler {
             case ts.SyntaxKind.PlusToken:
                 // Replace string + with ..
                 const typeLeft = this.checker.getTypeAtLocation(node.left);
+                const typeRight = this.checker.getTypeAtLocation(node.right);
                 if (typeLeft.flags & ts.TypeFlags.String || ts.isStringLiteral(node.left))
+                    return lhs + ".." + rhs;
+                if (typeRight.flags & ts.TypeFlags.String || ts.isStringLiteral(node.right))
                     return lhs + ".." + rhs;
             default:
                 result = lhs + this.transpileOperator(node.operatorToken) + rhs;
@@ -647,16 +650,6 @@ export class LuaTranspiler {
     transpileCallExpression(node: ts.CallExpression): string {
         // Check for calls on primitives to override
         if (ts.isPropertyAccessExpression(node.expression)) {
-            const type = this.checker.getTypeAtLocation(node.expression.expression);
-            switch (type.flags) {
-                case ts.TypeFlags.String:
-                case ts.TypeFlags.StringLiteral:
-                    return this.transpileStringCallExpression(node);
-                case ts.TypeFlags.Object:
-                    if (tsEx.isArrayType(type))
-                        return this.transpileArrayCallExpression(node);
-            }
-
             const expType = this.checker.getTypeAtLocation(node.expression.expression);
 
             if (expType.symbol && expType.symbol.escapedName == "Math") {
@@ -664,9 +657,18 @@ export class LuaTranspiler {
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
             }
 
-            if (ts.isIdentifier(node.expression) && node.expression.escapedText == "String") {
+            if (this.transpileExpression((node.expression as ts.PropertyAccessExpression).expression) === "String") {
                 const params = this.transpileArguments(node.arguments);
                 return this.transpileStringExpression(node.expression.name) + `(${params})`;
+            }
+
+            switch (expType.flags) {
+                case ts.TypeFlags.String:
+                case ts.TypeFlags.StringLiteral:
+                    return this.transpileStringCallExpression(node);
+                case ts.TypeFlags.Object:
+                    if (tsEx.isArrayType(expType))
+                        return this.transpileArrayCallExpression(node);
             }
 
             // Include context parameter if present
@@ -694,7 +696,7 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "replace":
-                return `string.sub(${caller},${params})`;
+                return `string.gsub(${caller},${params})`;
             case "indexOf":
                 if (node.arguments.length == 1) {
                     return `(string.find(${caller},${params},1,true) or 0)-1`;
@@ -707,7 +709,7 @@ export class LuaTranspiler {
                 } else {
                     const arg1 = this.transpileExpression(node.arguments[0]);
                     const arg2 = this.transpileExpression(node.arguments[1]);
-                    return `string.sub(${caller},${arg1}+1,${arg2}+1)`;
+                    return `string.sub(${caller},${arg1}+1,${arg2})`;
                 }
             default:
                 throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);

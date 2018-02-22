@@ -9,6 +9,7 @@ export namespace dummyTypes {
     export const Array = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Array" } };
     export const Object = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Object" } };
     export const Number = { flags: ts.TypeFlags.Number, symbol: { escapedName: "Number" } };
+    export const String = { flags: ts.TypeFlags.String, symbol: { escapedName: "String" } };
 }
 
 export function transpileString(str: string, dummyType: any = dummyTypes.None): string {

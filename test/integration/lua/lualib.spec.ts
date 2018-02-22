@@ -168,5 +168,4 @@ export class LuaLibArrayTests {
         let joinedInp = inp.join(seperator);
         Expect(result).toBe(joinedInp);
     }
-
 }

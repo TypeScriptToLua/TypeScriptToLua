@@ -99,4 +99,16 @@ export class TSHelper {
         }
         return false;
     }
+
+    // Depth-First-Search up the inheritance tree for the name of the symbol containing the member
+    static findMemberHolder(type: ts.Type, memberName: ts.__String): string {
+        if (type.symbol.members.has(memberName)) {
+            return type.symbol.name;
+        } else {
+            for (let parent of type.getBaseTypes()) {
+                var parentMember = this.findMemberHolder(parent, memberName);
+                if (parentMember) return parentMember;
+            }
+        }
+    }
 }

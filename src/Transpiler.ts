@@ -672,10 +672,18 @@ export class LuaTranspiler {
             }
 
             // Include context parameter if present
-            let callPath = (expType && expType.symbol) ? `${expType.symbol.name}.${node.expression.name.escapedText}` : this.transpileExpression(node.expression);
-            let params = this.transpileArguments(node.arguments, node.expression.expression);
+            if (expType && expType.symbol) {
+                const funcName = node.expression.name.escapedText;
+                const funcHolder = tsEx.findMemberHolder(expType, funcName);
 
-            return `${callPath}(${params})`;
+                const callPath = `${funcHolder}.${funcName}`;
+                const params = this.transpileArguments(node.arguments, node.expression.expression);
+                return `${callPath}(${params})`;
+            } else {
+                const callPath = this.transpileExpression(node.expression);
+                const params = this.transpileArguments(node.arguments, node.expression.expression);
+                return `${callPath}(${params})`;
+            }
         }
 
         // Handle super calls properly

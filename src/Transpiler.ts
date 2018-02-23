@@ -402,7 +402,7 @@ export class LuaTranspiler {
             this.transpilingSwitch = false;
 
             let i = index + 1;
-            if (i < clauses.length && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement))  {
+            if (i < clauses.length && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
                 let nextClause = clauses[i];
                 while (i < clauses.length
                     && ts.isCaseClause(nextClause)
@@ -518,6 +518,7 @@ export class LuaTranspiler {
         // Rewrite some non-existant binary operators
         let result = "";
 
+        // Transpile Bitops
         if (this.options.luaTarget === Target.LuaJIT) {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.AmpersandToken:
@@ -551,8 +552,27 @@ export class LuaTranspiler {
                     result = `${lhs}=bit.rshift(${lhs},${rhs})`;
                     break;
             }
+        } else {
+            switch (node.operatorToken.kind) {
+                case ts.SyntaxKind.AmpersandEqualsToken:
+                    result = `${lhs}=${lhs}&${rhs}`;
+                    break;
+                case ts.SyntaxKind.BarEqualsToken:
+                    result = `${lhs}=${lhs}|${rhs}`;
+                    break;
+                case ts.SyntaxKind.LessThanLessThanEqualsToken:
+                    result = `${lhs}=${lhs}<<${rhs}`;
+                    break;
+                case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+                    result = `${lhs}=${lhs}>>${rhs}`;
+                    break;
+                case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                    result = `${lhs}=${lhs}>>>${rhs}`;
+                    break;
+            }
         }
 
+        // Transpile operators
         if (result === "") {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.PlusEqualsToken:

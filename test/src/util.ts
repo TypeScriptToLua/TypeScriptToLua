@@ -12,10 +12,9 @@ export namespace dummyTypes {
     export const String = { flags: ts.TypeFlags.String, symbol: { escapedName: "String" } };
 }
 
-export function transpileString(str: string, dummyType: any = dummyTypes.None): string {
+export function transpileString(str: string, dummyType: any = dummyTypes.None, options: ts.CompilerOptions = { dontRequireLualib: true }): string {
     const dummyChecker = { getTypeAtLocation: function() { return dummyType; } }
     const file = ts.createSourceFile("____internal_test_file.tstl", str, ts.ScriptTarget.Latest);
-    const options: ts.CompilerOptions = { dontRequireLualib: true };
     const result = LuaTranspiler.transpileSourceFile(file, dummyChecker, options);
     return result.trim();
 }

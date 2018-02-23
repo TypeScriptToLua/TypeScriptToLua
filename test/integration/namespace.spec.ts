@@ -14,12 +14,12 @@ export class NamespaceTests {
     @Test("RegularNamespace")
     public regularNamespace() {
         const lua = util.transpileFile("test/integration/testfiles/namespace.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespace-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespace.lua");
     }
 
     @Test("NamespaceCall")
     public namespaceCall() {
         const lua = util.transpileFile("test/integration/testfiles/callNamespace.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/callNamespace-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/callNamespace.lua");
     }
 }

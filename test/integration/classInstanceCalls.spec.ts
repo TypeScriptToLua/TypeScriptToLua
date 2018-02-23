@@ -14,18 +14,18 @@ export class ClassInstanceCallTests {
     @Test("emptyMemberCall1")
     public emptyMemberCall1() {
         const lua = util.transpileFile("test/integration/testfiles/classInstanceCall1.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall.lua");
     }
 
     @Test("emptyMemberCall2")
     public emptyMemberCall2() {
         const lua = util.transpileFile("test/integration/testfiles/classInstanceCall2.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall.lua");
     }
 
     @Test("emptyMemberCall3")
     public emptyMemberCall3() {
         const lua = util.transpileFile("test/integration/testfiles/classInstanceCall3.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall.lua");
     }
 }

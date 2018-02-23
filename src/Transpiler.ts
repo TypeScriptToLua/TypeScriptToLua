@@ -652,6 +652,13 @@ export class LuaTranspiler {
         if (ts.isPropertyAccessExpression(node.expression)) {
             const expType = this.checker.getTypeAtLocation(node.expression.expression);
 
+            // Don't include instance if the type is a namespace
+            if (expType.symbol && expType.symbol.flags & ts.SymbolFlags.Namespace) {
+                const callPath = this.transpileExpression(node.expression);
+                const params = this.transpileArguments(node.arguments);
+                return `${callPath}(${params})`;
+            }
+
             if (expType.symbol && expType.symbol.escapedName == "Math") {
                 const params = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;

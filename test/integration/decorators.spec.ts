@@ -41,12 +41,6 @@ export class DecoratorTests {
         this.ExpectEqualToFile(lua, "test/integration/testfiles/classExtension-expected.lua");
     }
 
-    @Test("RegularNamespace")
-    public regularNamespace() {
-        const lua = util.transpileFile("test/integration/testfiles/namespace.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespace-expected.lua");
-    }
-
     @Test("PhantomNamespace")
     public phantomNamespace() {
         const lua = util.transpileFile("test/integration/testfiles/namespacePhantom.ts");

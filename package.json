@@ -17,6 +17,9 @@
     "bin": {
         "tstl": "./dist/Compiler.js"
     },
+    "engines": {
+        "node": ">=8.5.0"
+    },
     "dependencies": {
         "dedent": "^0.7.0",
         "minimist": "^1.2.0",

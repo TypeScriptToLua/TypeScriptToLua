@@ -169,11 +169,11 @@ export class LuaLibArrayTests {
         Expect(result).toBe(joinedInp);
     }
 
-    @TestCase([], "test1", -1)
-    @TestCase(["test1"], "test1", 1)
-    @TestCase(["test1", "test2"], "test2", 2)
+    @TestCase([], "test1")
+    @TestCase(["test1"], "test1")
+    @TestCase(["test1", "test2"], "test2")
     @Test("array.indexOf")
-    public indexOf(inp: string[], element: string, expected: number) {
+    public indexOf(inp: string[], element: string) {
         // Transpile
         let lua = util.transpileString(
             `return ${JSON.stringify(inp)}.indexOf("${element}"))`
@@ -185,7 +185,7 @@ export class LuaLibArrayTests {
 
         // Assert
         // Acount for lua indexing (-1)
-        Expect(result).toBe(expected);
+        Expect(result).toBe(inp.indexOf(element));
     }
 
     @TestCase([1, 2, 3], 3)

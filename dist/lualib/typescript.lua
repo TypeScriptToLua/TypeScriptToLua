@@ -11,7 +11,7 @@ function TS_forEach(list, func)
     for i, v in ipairs(list) do
         func(v, i-1, list)
     end
-end    
+end
 
 function TS_map(list, func)
     local out = {}
@@ -79,7 +79,7 @@ end
 function TS_indexOf(list, object )
     for i = 1, #list do
         if object == list[i] then
-            return i
+            return i - 1
         end
     end
     return -1

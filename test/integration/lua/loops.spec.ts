@@ -47,6 +47,61 @@ export class LuaLoopTests {
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i < arrTest.length; i++")
+    @TestCase([0, 1, 2, 3], [1, 1, 3, 3], "let i = 0; i < arrTest.length; i += 2")
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = arrTest.length - 1; i <= 0; i--")
+    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i <= 0; i -= 2")
+    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i >= 0; i -= 2")
+    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i > 0; i -= 2")
+    @Test("forheader")
+    public forheader(inp: number[], expected: number[], header: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (${header}) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+            , util.dummyTypes.Array
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @Test("forstepThrow")
+    public forstepThrow(inp: number[], expected: number[], header: string) {
+        // Transpile & Assert
+        Expect(() => {
+            let lua = util.transpileString(
+                `for (let i = 0; i < 30; i = i + 10) {
+                }`
+                , util.dummyTypes.None
+            );
+
+            // Execute
+            let result = util.executeLua(lua);
+        }).toThrowError(Error, "Unsupported for-loop increment step: BinaryExpression")
+    }
+
+    @Test("forconditionThrow")
+    public forconditionThrow(inp: number[], expected: number[], header: string) {
+        // Transpile & Assert
+        Expect(() => {
+            let lua = util.transpileString(
+                `for (let i = arrTest.length - 1; i; i-- {
+                }`
+                , util.dummyTypes.None
+            );
+
+            // Execute
+            let result = util.executeLua(lua);
+        }).toThrowError(Error, "Unsupported for-loop condition type: Identifier")
+    }
+
     @TestCase({ ['test1']: 0, ['test2']: 1, ['test3']: 2 }, { ['test1']: 1, ['test2']: 2, ['test3']: 3 })
     @Test("forin[Object]")
     public forinObject(inp: any, expected: any) {

@@ -201,6 +201,6 @@ export class LuaLibArrayTests {
         let result = util.executeLua(lua);
 
         // Assert
-        Expect(result).toBe(JSON.stringify(inp.indexOf(eval(func))));
+        Expect(result).toBe(JSON.stringify(inp.indexOf(eval(expected))));
     }
 }

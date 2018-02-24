@@ -169,6 +169,25 @@ export class LuaLibArrayTests {
         Expect(result).toBe(joinedInp);
     }
 
+    @TestCase([], "test1")
+    @TestCase(["test1"], "test1")
+    @TestCase(["test1", "test2"], "test2")
+    @Test("array.indexOf")
+    public indexOf(inp: string[], element: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `return ${JSON.stringify(inp)}.indexOf("${element}"))`
+            , util.dummyTypes.Array
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        // Acount for lua indexing (-1)
+        Expect(result).toBe(inp.indexOf(element));
+    }
+
     @TestCase([1, 2, 3], 3)
     @TestCase([1, 2, 3, 4, 5], 3)
     @Test("array.destructuring.simple")

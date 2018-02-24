@@ -82,7 +82,7 @@ function TS_indexOf(list, object )
             return i
         end
     end
-    return nil
+    return -1
 end
 
 -- Set data structure implementation

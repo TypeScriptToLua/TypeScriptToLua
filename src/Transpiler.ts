@@ -163,6 +163,8 @@ export class LuaTranspiler {
                 return this.transpileBreak();
             case ts.SyntaxKind.TryStatement:
                 return this.transpileTry(<ts.TryStatement>node);
+            case ts.SyntaxKind.ThrowStatement:
+                return this.tranpileThrow(<ts.ThrowStatement> node);
             case ts.SyntaxKind.ContinueKeyword:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
@@ -460,6 +462,14 @@ export class LuaTranspiler {
             result += this.transpileBlock(node.finallyBlock);
         }
         return result;
+    }
+
+    tranpileThrow(node: ts.ThrowStatement): string {
+        if (ts.isStringLiteral(node.expression)) {
+            return `error("${node.expression.text}")`;
+        } else {
+            throw new TranspileError("Unsupported throw expression, only string literals are supported", node.expression)
+        }
     }
 
     transpileReturn(node: ts.ReturnStatement): string {

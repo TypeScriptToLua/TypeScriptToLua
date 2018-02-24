@@ -28,4 +28,10 @@ export class ClassInstanceCallTests {
         const lua = util.transpileFile("test/integration/testfiles/classInstanceCall3.ts");
         this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall.lua");
     }
+
+    @Test("userClassMemberCall")
+    public userClassMemberCall() {
+        const lua = util.transpileFile("test/integration/testfiles/classInstanceCall4.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall4.lua");
+    }
 }

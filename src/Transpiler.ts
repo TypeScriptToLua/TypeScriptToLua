@@ -717,7 +717,11 @@ export class LuaTranspiler {
             // Include context parameter if present
             if (expType && expType.symbol) {
                 const funcName = node.expression.name.escapedText;
-                const funcHolder = tsEx.findMemberHolder(expType, funcName);
+                const funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
+
+                if (funcHolder === undefined) {
+                    throw new TranspileError(`Could not find func ${funcName} on ${expType.symbol.name}`, node);
+                }
 
                 const callPath = `${funcHolder}.${funcName}`;
                 const params = this.transpileArguments(node.arguments, node.expression.expression);

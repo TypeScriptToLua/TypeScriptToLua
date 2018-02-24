@@ -97,12 +97,12 @@ export class TSHelper {
     }
 
     // Depth-First-Search up the inheritance tree for the name of the symbol containing the member
-    static findMemberHolder(type: ts.Type, memberName: ts.__String): string {
-        if (type.symbol.members.has(memberName)) {
+    static findMemberHolder(type: ts.Type, memberName: ts.__String, typeChecker: ts.TypeChecker): string {
+        if (type.symbol.members.has(memberName) || (type.symbol.exports && type.symbol.exports.has(memberName))) {
             return type.symbol.name;
         } else {
-            for (let parent of type.getBaseTypes()) {
-                var parentMember = this.findMemberHolder(parent, memberName);
+            for (let parent of typeChecker.getBaseTypes(<ts.InterfaceType>type)) {
+                var parentMember = this.findMemberHolder(parent, memberName, typeChecker);
                 if (parentMember) return parentMember;
             }
         }

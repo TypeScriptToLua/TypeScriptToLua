@@ -195,7 +195,7 @@ export class LuaLibArrayTests {
     @Test("array.indexOf")
     public indexOf<T>(inp: T[], expected: any): number {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].indexOf(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].indexOf(${expected}))`, util.dummyTypes.Array);
 
         // Execute
         let result = util.executeLua(lua);

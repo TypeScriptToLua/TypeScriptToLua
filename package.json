@@ -1,7 +1,7 @@
 {
     "name": "typescript-to-lua",
     "license": "MIT",
-    "version": "0.0.11",
+    "version": "0.0.12",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
         "build": "tsc -p tsconfig.json",
@@ -16,6 +16,9 @@
     },
     "bin": {
         "tstl": "./dist/Compiler.js"
+    },
+    "engines": {
+        "node": ">=8.5.0"
     },
     "dependencies": {
         "dedent": "^0.7.0",

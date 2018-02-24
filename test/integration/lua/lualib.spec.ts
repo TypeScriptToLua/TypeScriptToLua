@@ -146,7 +146,14 @@ export class LuaLibArrayTests {
     @TestCase(["test1", "test2"], "test1test2", "")
     @Test("array.join")
     public join<T>(inp: T[], expected: string, seperator?: string) {
-        
+        let seperatorLua;
+        if (seperator === "") {
+            seperatorLua = "\"\"";
+        } else if (seperator) {
+            seperatorLua = "\"" + seperator + "\"";
+        } else {
+            seperatorLua = "";
+        }
         // Transpile
         let lua = util.transpileString(
             `let joinTestTable = ${JSON.stringify(inp)};
@@ -161,8 +168,26 @@ export class LuaLibArrayTests {
         let joinedInp = inp.join(seperator);
         Expect(result).toBe(joinedInp);
     }
-    
-    @TestCase([], "")
+
+    @TestCase([1, 2, 3], 3)
+    @TestCase([1, 2, 3, 4, 5], 3)
+    @Test("array.destructuring.simple")
+    public arrayDestructuringSimple(inp: number[], expected: number) {
+        // Transpile
+        let lua = util.transpileString(
+            `let [x, y, z] = ${JSON.stringify(inp)}
+            return z;
+            `
+            , util.dummyTypes.Number);
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+  
+  @TestCase([], "")
     @TestCase(["test1"], "test1")
     @TestCase(["test1", "test2"], "test1,test2")
     @TestCase(["test1", "test2"], "test1;test2", ";")

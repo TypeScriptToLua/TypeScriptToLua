@@ -160,9 +160,8 @@ function executeCommandLine(args: ReadonlyArray<string>) {
     if (argv.version) {
         console.log("Version: " + require('../package').version);
     }
-    let validLuaTargets = ['JIT', '5.3', '5.2', '5.1'];
-    if (!validLuaTargets.some(val => val === argv.luaTarget)) {
-        console.error(`Invalid lua target valid targets are: ${validLuaTargets.toString()}`);
+    if (!LuaTranspiler.AvailableLuaTargets.some(val => val === argv.luaTarget)) {
+        console.error(`Invalid lua target valid targets are: ${LuaTranspiler.AvailableLuaTargets.toString()}`);
     }
 
     // Remove tstl options otherwise ts will emit an error
@@ -184,7 +183,7 @@ function executeCommandLine(args: ReadonlyArray<string>) {
             let found = false;
             for (let i = dir.length; i > 0; i--) {
                 const searchPath = dir.slice(0, i).join("/") + path.sep + "tsconfig.json";
-                
+
                 // If tsconfig.json was found, stop searching
                 if (ts.sys.fileExists(searchPath)) {
                     configPath = searchPath;

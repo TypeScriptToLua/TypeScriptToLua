@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
-import {LuaTranspiler, TranspileError} from "../../dist/Transpiler";
+import { LuaTranspiler, TranspileError } from "../../dist/Transpiler";
 
 import * as util from "../src/util";
 
@@ -33,6 +33,11 @@ export class ExpressionTests {
     @TestCase("a-=b", "a=a-b")
     @TestCase("a*=b", "a=a*b")
     @TestCase("a/=b", "a=a/b")
+    @Test("Binary expressions overridden operators")
+    public binaryOperatorOverride(input: string, lua: string) {
+        Expect(util.transpileString(input)).toBe(lua);
+    }
+
     @TestCase("a&b", "bit.band(a,b)")
     @TestCase("a&=b", "a=bit.band(a,b)")
     @TestCase("a|b", "bit.bor(a,b)")
@@ -43,10 +48,26 @@ export class ExpressionTests {
     @TestCase("a>>=b", "a=bit.arshift(a,b)")
     @TestCase("a>>>b", "bit.rshift(a,b)")
     @TestCase("a>>>=b", "a=bit.rshift(a,b)")
-    @Test("Binary expressions overridden operators")
-    public binaryOperatorOverride(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
+    @Test("Bitop [JIT]")
+    public bitOperatorOverrideJIT(input: string, lua: string) {
+        Expect(util.transpileString(input, util.dummyTypes.None, { luaTarget: 'JIT', dontRequireLualib: true })).toBe(lua);
     }
+
+    @TestCase("a&b", "a&b")
+    @TestCase("a&=b", "a=a&b")
+    @TestCase("a|b", "a|b")
+    @TestCase("a|=b", "a=a|b")
+    @TestCase("a<<b", "a<<b")
+    @TestCase("a<<=b", "a=a<<b")
+    @TestCase("a>>b", "a>>b")
+    @TestCase("a>>=b", "a=a>>b")
+    @TestCase("a>>>b", "a>>>b")
+    @TestCase("a>>>=b", "a=a>>>b")
+    @Test("Bitop [5.3]")
+    public bitOperatorOverride53(input: string, lua: string) {
+        Expect(util.transpileString(input, util.dummyTypes.None, { luaTarget: '5.3', dontRequireLualib: true })).toBe(lua);
+    }
+
 
     @TestCase("1+1", "1+1")
     @TestCase("-1+1", "-1+1")

@@ -14,42 +14,36 @@ export class DecoratorTests {
     @Test("RegularEnum")
     public regularEnum() {
         const lua = util.transpileFile("test/integration/testfiles/enum.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/enum-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/enum.lua");
     }
 
     @Test("MembersOnlyEnumDecorator")
     public membersOnly() {
         const lua = util.transpileFile("test/integration/testfiles/enumMembersOnly.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/enumMembersOnly-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/enumMembersOnly.lua");
     }
 
     @Test("RegularClassExtend")
     public regularClassExtend() {
         const lua = util.transpileFile("test/integration/testfiles/class.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/class-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/class.lua");
     }
 
     @Test("PureAbstractClassExtend")
     public pureAbstractClassExtend() {
         const lua = util.transpileFile("test/integration/testfiles/classPureAbstract.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/classPureAbstract-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classPureAbstract.lua");
     }
 
     @Test("ExtensionClass")
     public extensionClass() {
         const lua = util.transpileFile("test/integration/testfiles/classExtension.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/classExtension-expected.lua");
-    }
-
-    @Test("RegularNamespace")
-    public regularNamespace() {
-        const lua = util.transpileFile("test/integration/testfiles/namespace.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespace-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/classExtension.lua");
     }
 
     @Test("PhantomNamespace")
     public phantomNamespace() {
         const lua = util.transpileFile("test/integration/testfiles/namespacePhantom.ts");
-        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespacePhantom-expected.lua");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespacePhantom.lua");
     }
 }

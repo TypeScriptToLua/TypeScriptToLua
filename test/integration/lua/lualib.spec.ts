@@ -168,4 +168,22 @@ export class LuaLibArrayTests {
         let joinedInp = inp.join(seperator);
         Expect(result).toBe(joinedInp);
     }
+
+    @TestCase([1, 2, 3], 3)
+    @TestCase([1, 2, 3, 4, 5], 3)
+    @Test("array.destructuring.simple")
+    public arrayDestructuringSimple(inp: number[], expected: number) {
+        // Transpile
+        let lua = util.transpileString(
+            `let [x, y, z] = ${JSON.stringify(inp)}
+            return z;
+            `
+            , util.dummyTypes.Number);
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
 }

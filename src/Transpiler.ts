@@ -749,6 +749,8 @@ export class LuaTranspiler {
                 return `table.insert(${caller}, ${params})`;
             case "forEach":
                 return `TS_forEach(${caller}, ${params})`;
+            case "indexOf":
+                return `TS_indexOf(${caller}, ${params})`;
             case "map":
                 return `TS_map(${caller}, ${params})`;
             case "filter":

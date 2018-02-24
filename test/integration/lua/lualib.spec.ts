@@ -193,7 +193,7 @@ export class LuaLibArrayTests {
     @TestCase(["test1", "test2"], "test1;test2", ";")
     @TestCase(["test1", "test2"], "test1test2", "")
     @Test("array.indexOf")
-    public indexOf<T>(inp: T[], expected: any): number {
+    public indexOf<T>(inp: T[], expected: string): number {
         // Transpile
         let lua = util.transpileString(`return JSONStringify([${inp.toString()}].indexOf(${expected}))`, util.dummyTypes.Array);
 

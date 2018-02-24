@@ -76,6 +76,15 @@ function TS_every(list, func)
     return #list == #TS_filter(list, func)
 end
 
+function TS_indexOf(list, object )
+    for i = 1, #list do
+        if object == list[i] then
+            return i
+        end
+    end
+    return -1
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set

@@ -161,6 +161,10 @@ export class LuaTranspiler {
                 return this.transpileSwitch(<ts.SwitchStatement>node);
             case ts.SyntaxKind.BreakStatement:
                 return this.transpileBreak();
+            case ts.SyntaxKind.TryStatement:
+                return this.transpileTry(<ts.TryStatement>node);
+            case ts.SyntaxKind.ThrowStatement:
+                return this.transpileThrow(<ts.ThrowStatement> node);
             case ts.SyntaxKind.ContinueKeyword:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
@@ -436,6 +440,36 @@ export class LuaTranspiler {
         //Increment counter for next switch statement
         this.genVarCounter += clauses.length;
         return result;
+    }
+
+    transpileTry(node: ts.TryStatement): string {
+        let tryFunc = "function()\n"
+        this.pushIndent();
+        tryFunc += this.transpileBlock(node.tryBlock);
+        this.popIndent();
+        tryFunc += "end";
+        let catchFunc = "function(e)\nend";
+        if (node.catchClause) {
+            let variableName = (<ts.Identifier>node.catchClause.variableDeclaration.name).escapedText;
+            catchFunc = this.indent + `function(${variableName})\n`
+            this.pushIndent();
+            catchFunc += this.transpileBlock(node.catchClause.block);
+            this.popIndent();
+            catchFunc += "end";
+        }
+        let result = this.indent + `xpcall(${tryFunc},\n${catchFunc})\n`;
+        if (node.finallyBlock) {
+            result += this.transpileBlock(node.finallyBlock);
+        }
+        return result;
+    }
+
+    transpileThrow(node: ts.ThrowStatement): string {
+        if (ts.isStringLiteral(node.expression)) {
+            return `error("${node.expression.text}")`;
+        } else {
+            throw new TranspileError("Unsupported throw expression, only string literals are supported", node.expression)
+        }
     }
 
     transpileReturn(node: ts.ReturnStatement): string {

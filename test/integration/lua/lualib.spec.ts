@@ -186,21 +186,4 @@ export class LuaLibArrayTests {
         // Assert
         Expect(result).toBe(expected);
     }
-  
-  @TestCase([], "")
-    @TestCase(["test1"], "test1")
-    @TestCase(["test1", "test2"], "test1,test2")
-    @TestCase(["test1", "test2"], "test1;test2", ";")
-    @TestCase(["test1", "test2"], "test1test2", "")
-    @Test("array.indexOf")
-    public indexOf<T>(inp: T[], expected: string): number {
-        // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].indexOf(${expected}))`, util.dummyTypes.Array);
-
-        // Execute
-        let result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(JSON.stringify(inp.indexOf(eval(expected))));
-    }
 }

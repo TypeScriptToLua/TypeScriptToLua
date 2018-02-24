@@ -177,7 +177,8 @@ export class LuaLibArrayTests {
         // Transpile
         let lua = util.transpileString(
             `return ${JSON.stringify(inp)}.indexOf("${element}"))`
-            , util.dummyTypes.Array);
+            , util.dummyTypes.Array
+        );
 
         // Execute
         let result = util.executeLua(lua);

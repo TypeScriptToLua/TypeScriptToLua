@@ -116,4 +116,22 @@ export class StringTests {
         // Assert
         Expect(result).toBe(inp.substring(start, end));
     }
+
+    @TestCase("", 0)
+    @TestCase("h", 1)
+    @TestCase("hello", 5)
+    @Test("string.length")
+    public length(inp: string, expected: number) {
+        // Transpile
+        let lua = util.transpileString(
+            `return "${inp}".length`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.length);
+    }
 }

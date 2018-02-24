@@ -1108,13 +1108,6 @@ export class LuaTranspiler {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
 
-        // Check if the class should be returned
-        const isExport = node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.ExportKeyword);
-        const isDefault = node.modifiers && node.modifiers.some(_ => _.kind == ts.SyntaxKind.DefaultKeyword);
-        if (isExport && isDefault) {
-            result += this.indent + `return ${className}\n`;
-        }
-
         return result;
     }
 

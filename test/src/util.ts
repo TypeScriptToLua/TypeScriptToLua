@@ -10,6 +10,7 @@ export namespace dummyTypes {
     export const Object = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Object" } };
     export const Number = { flags: ts.TypeFlags.Number, symbol: { escapedName: "Number" } };
     export const String = { flags: ts.TypeFlags.String, symbol: { escapedName: "String" } };
+    export const Math = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Math" } };
 }
 
 export function transpileString(str: string, dummyType: any = dummyTypes.None, options: ts.CompilerOptions = { dontRequireLualib: true }): string {

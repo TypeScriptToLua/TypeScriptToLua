@@ -51,10 +51,6 @@ export class TSHelper {
             || (type.flags & ts.TypeFlags.StringLiteral) != 0
     }
 
-    static isValueType(node: ts.Node): boolean {
-        return ts.isIdentifier(node) || ts.isLiteralExpression(node) || ts.isArrayLiteralExpression(node) || ts.isObjectLiteralExpression(node);
-    }
-
     static isArrayType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.Object) != 0
             && (<ts.ObjectType>type).symbol

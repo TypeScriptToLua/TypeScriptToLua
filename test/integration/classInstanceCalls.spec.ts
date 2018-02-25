@@ -34,4 +34,16 @@ export class ClassInstanceCallTests {
         const lua = util.transpileFile("test/integration/testfiles/classInstanceCall4.ts");
         this.ExpectEqualToFile(lua, "test/integration/testfiles/classInstanceCall4.lua");
     }
+
+    @Test("aliasCastCall")
+    public aliasCastCall() {
+        const lua = util.transpileFile("test/integration/testfiles/aliasCastCall.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/aliasCall.lua");
+    }
+
+    @Test("aliasAsCall")
+    public aliasAsCall() {
+        const lua = util.transpileFile("test/integration/testfiles/aliasAsCall.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/aliasCall.lua");
+    }
 }

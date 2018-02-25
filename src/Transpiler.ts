@@ -790,7 +790,19 @@ export class LuaTranspiler {
             // Include context parameter if present
             if (expType && expType.symbol) {
                 const funcName = node.expression.name.escapedText;
-                const funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
+                let funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
+
+                // ===== EXPERIMENTAL https://github.com/Perryvw/TypescriptToLua/issues/56
+                if (ts.isParenthesizedExpression(node.expression.expression) 
+                    && (ts.isAsExpression(node.expression.expression.expression) 
+                     || ts.isTypeAssertion(node.expression.expression.expression))
+                    && ts.isTypeReferenceNode(node.expression.expression.expression.type)) {
+                    const castTypeNode = node.expression.expression.expression.type;
+                    if (this.checker.getTypeFromTypeNode(castTypeNode).symbol.name == funcHolder) {
+                        funcHolder = castTypeNode.getText();
+                    }
+                }
+                // ===== END EXPERIMENTAL
 
                 if (funcHolder === undefined) {
                     throw new TranspileError(`Could not find func ${funcName} on ${expType.symbol.name}`, node);

@@ -26,11 +26,11 @@ export class ForHelper {
                 switch (condition.operatorToken.kind) {
                     case ts.SyntaxKind.LessThanEqualsToken:
                     case ts.SyntaxKind.GreaterThanEqualsToken:
-                        return transpiler.transpileExpression(condition.right);
+                        return transpiler.transpileExpression(condition.left);
                     case ts.SyntaxKind.LessThanToken:
-                        return transpiler.transpileExpression(condition.right) + "+1";
+                        return transpiler.transpileExpression(condition.left) + "+1";
                     case ts.SyntaxKind.GreaterThanToken:
-                        return transpiler.transpileExpression(condition.right) + "-1";
+                        return transpiler.transpileExpression(condition.left) + "-1";
                     default:
                         throw new TranspileError("Unsupported for-loop condition operator: " + tsEx.enumName(condition.operatorToken, ts.SyntaxKind), condition);
                 }

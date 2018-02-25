@@ -15,10 +15,6 @@ export class TSHelper {
         return <T[]><any>this.getChildren(node).filter(typeFilter);
     }
 
-    static getFirstChildOfType<T>(node: ts.Node, typeFilter: (node: ts.Node) => boolean): T {
-        return this.getChildrenOfType<T>(node, typeFilter)[0];
-    }
-
     // Reverse lookup of enum key by value
     static enumName(needle, haystack) {
         for (var name in haystack) {

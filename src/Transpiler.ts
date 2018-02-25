@@ -90,7 +90,7 @@ export class LuaTranspiler {
         if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
         }
-        if (this.namespace.length !== 0) {
+        if (this.namespace.length !== 0 && !ts.isModuleDeclaration(node)) {
             result += this.indent + `${this.definitionName(name)} = ${name}\n`;
         }
         return result;
@@ -164,8 +164,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.TryStatement:
                 return this.transpileTry(<ts.TryStatement>node);
             case ts.SyntaxKind.ThrowStatement:
-                return this.transpileThrow(<ts.ThrowStatement> node);
-            case ts.SyntaxKind.ContinueKeyword:
+                return this.transpileThrow(<ts.ThrowStatement>node);
+            case ts.SyntaxKind.ContinueStatement:
                 // Disallow continue
                 throw new TranspileError("Continue is not supported in Lua", node);
             case ts.SyntaxKind.TypeAliasDeclaration:
@@ -465,7 +465,7 @@ export class LuaTranspiler {
     }
 
     transpileThrow(node: ts.ThrowStatement): string {
-        if (ts.isStringLiteral(node.expression)) {
+        if (ts.isStringLiteral(node.expression)) {
             return `error("${node.expression.text}")`;
         } else {
             throw new TranspileError("Unsupported throw expression, only string literals are supported", node.expression)
@@ -588,17 +588,32 @@ export class LuaTranspiler {
             }
         } else {
             switch (node.operatorToken.kind) {
+                case ts.SyntaxKind.AmpersandToken:
+                    result = `${lhs}&${rhs}`;
+                    break;
                 case ts.SyntaxKind.AmpersandEqualsToken:
                     result = `${lhs}=${lhs}&${rhs}`;
+                    break;
+                case ts.SyntaxKind.BarToken:
+                    result = `${lhs}|${rhs}`;
                     break;
                 case ts.SyntaxKind.BarEqualsToken:
                     result = `${lhs}=${lhs}|${rhs}`;
                     break;
+                case ts.SyntaxKind.LessThanLessThanToken:
+                    result = `${lhs}<<${rhs}`;
+                    break;
                 case ts.SyntaxKind.LessThanLessThanEqualsToken:
                     result = `${lhs}=${lhs}<<${rhs}`;
                     break;
+                case ts.SyntaxKind.GreaterThanGreaterThanToken:
+                    result = `${lhs}>>${rhs}`;
+                    break;
                 case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
                     result = `${lhs}=${lhs}>>${rhs}`;
+                    break;
+                case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                    result = `${lhs}>>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
                     result = `${lhs}=${lhs}>>>${rhs}`;
@@ -631,12 +646,49 @@ export class LuaTranspiler {
                     // Replace string + with ..
                     const typeLeft = this.checker.getTypeAtLocation(node.left);
                     const typeRight = this.checker.getTypeAtLocation(node.right);
-                    if (typeLeft.flags & ts.TypeFlags.String || ts.isStringLiteral(node.left))
-                        return lhs + ".." + rhs;
-                    if (typeRight.flags & ts.TypeFlags.String || ts.isStringLiteral(node.right))
-                        return lhs + ".." + rhs;
+                    if ((typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
+                        ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.right)) {
+                        return lhs + " .. " + rhs;
+                    }
+                    result = `${lhs}+${rhs}`;
+                    break;
+                case ts.SyntaxKind.MinusToken:
+                    result = `${lhs}-${rhs}`;
+                    break;
+                case ts.SyntaxKind.AsteriskToken:
+                    result = `${lhs}*${rhs}`;
+                    break;
+                case ts.SyntaxKind.SlashToken:
+                    result = `${lhs}/${rhs}`;
+                    break;
+                case ts.SyntaxKind.PercentToken:
+                    result = `${lhs}%${rhs}`;
+                    break;
+                case ts.SyntaxKind.GreaterThanToken:
+                    result = `${lhs}>${rhs}`;
+                    break;
+                case ts.SyntaxKind.GreaterThanEqualsToken:
+                    result = `${lhs}>=${rhs}`;
+                    break;
+                case ts.SyntaxKind.LessThanToken:
+                    result = `${lhs}<${rhs}`;
+                    break;
+                case ts.SyntaxKind.LessThanEqualsToken:
+                    result = `${lhs}<=${rhs}`;
+                    break;
+                case ts.SyntaxKind.EqualsToken:
+                    result = `${lhs}=${rhs}`;
+                    break;
+                case ts.SyntaxKind.EqualsEqualsToken:
+                case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                    result = `${lhs}==${rhs}`;
+                    break;
+                case ts.SyntaxKind.ExclamationEqualsToken:
+                case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                    result = `${lhs}~=${rhs}`;
+                    break;
                 default:
-                    result = lhs + this.transpileOperator(node.operatorToken) + rhs;
+                    throw new TranspileError("Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind), node);
             }
         }
 
@@ -667,19 +719,6 @@ export class LuaTranspiler {
         let val2 = this.transpileExpression(node.whenFalse);
 
         return `TS_ITE(${condition},function() return ${val1} end,function() return ${val2} end)`;
-    }
-
-    // Replace some missmatching operators
-    transpileOperator<T extends ts.SyntaxKind>(operator: ts.Token<T>): string {
-        switch (operator.kind) {
-            case ts.SyntaxKind.EqualsEqualsEqualsToken:
-                return "==";
-            case ts.SyntaxKind.ExclamationEqualsToken:
-            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
-                return "~=";
-            default:
-                return ts.tokenToString(operator.kind);
-        }
     }
 
     transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {

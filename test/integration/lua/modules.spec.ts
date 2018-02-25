@@ -147,4 +147,13 @@ export class LuaModuleTests {
             let lua = util.transpileString(`import TestClass from "test"`, util.dummyTypes.Object);
         }).toThrowError(Error, "Default Imports are not supported, please use named imports instead!");
     }
+
+    @Test("lualibRequire")
+    public lualibRequire() {
+        // Transpile
+        let lua = util.transpileString(``, util.dummyTypes.None, {dontRequireLualib: false, luaTarget: "JIT"});
+
+        // Assert
+        Expect(dedent(lua)).toBe(`require("typescript_lualib")`);
+    }
 }

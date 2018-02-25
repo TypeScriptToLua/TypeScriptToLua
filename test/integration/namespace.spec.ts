@@ -17,6 +17,13 @@ export class NamespaceTests {
         this.ExpectEqualToFile(lua, "test/integration/testfiles/namespace.lua");
     }
 
+    @Test("NestedNamespace")
+    public nestedNamespace() {
+        const lua = util.transpileFile("test/integration/testfiles/namespaceNested.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/namespaceNested.lua");
+    }
+
+
     @Test("NamespaceCall")
     public namespaceCall() {
         const lua = util.transpileFile("test/integration/testfiles/callNamespace.ts");

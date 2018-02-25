@@ -49,9 +49,11 @@ export class StringTests {
     @TestCase([42, "hello"], "42hello")
     @Test("string.concat[+]")
     public concat(inp: any[], expected: string) {
+        let concatStr = inp.map(elem => typeof(elem) === "string" ? `"${elem}"` : elem).join(" + ");
+
         // Transpile
         let lua = util.transpileString(
-            `return '${inp.join("' + '")}'`,
+            `return ${concatStr}`,
             util.dummyTypes.String
         );
 

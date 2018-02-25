@@ -13,10 +13,23 @@ export class ExpressionTests {
     @TestCase("--i", "i=i-1")
     @TestCase("!a", "not a")
     @TestCase("-a", "-a")
+    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil")
+    @TestCase("delete tbl.test", "tbl.test=nil")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string) {
         Expect(util.transpileString(input)).toBe(lua);
     }
+
+    @TestCase("obj instanceof someClass", "Unsupported binary operator kind: instanceof")
+    @TestCase("typeof obj", "Unsupported expression kind: TypeOfExpression")
+    @TestCase("2 in obj", "Unsupported binary operator kind: in")
+    @Test("Prohibted Expressions")
+    public prohibtedExpressions(input: string, expectedError: string) {
+        Expect(() => {
+            util.transpileString(input);
+        }).toThrowError(Error, expectedError);
+    }
+
 
     @TestCase("1+1", "1+1")
     @TestCase("1-1", "1-1")
@@ -24,6 +37,15 @@ export class ExpressionTests {
     @TestCase("1/1", "1/1")
     @TestCase("1%1", "1%1")
     @TestCase("1==1", "1==1")
+    @TestCase("1===1", "1==1")
+    @TestCase("1!=1", "1~=1")
+    @TestCase("1!==1", "1~=1")
+    @TestCase("1>1", "1>1")
+    @TestCase("1>=1", "1>=1")
+    @TestCase("1<1", "1<1")
+    @TestCase("1<=1", "1<=1")
+    @TestCase("1&&1", "1 and 1")
+    @TestCase("1||1", "1 or 1")
     @Test("Binary expressions basic")
     public binary(input: string, lua: string) {
         Expect(util.transpileString(input)).toBe(lua);

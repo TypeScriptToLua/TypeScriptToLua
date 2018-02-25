@@ -3,6 +3,26 @@ import * as util from "../../src/util"
 
 export class LuaLibArrayTests {
 
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("forEach")
+    public forEach(inp: number[], expected: number[]) {
+        // Transpile
+        let lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            arrTest.forEach((elem, index) => {
+                arrTest[index] = arrTest[index] + 1;
+            })
+            return JSONStringify(arrTest);`
+            , util.dummyTypes.Array
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([], "x => x")
     @TestCase([0, 1, 2, 3], "x => x")
     @TestCase([0, 1, 2, 3], "x => x*2")

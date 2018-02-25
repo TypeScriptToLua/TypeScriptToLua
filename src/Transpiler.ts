@@ -465,7 +465,7 @@ export class LuaTranspiler {
     }
 
     transpileThrow(node: ts.ThrowStatement): string {
-        if (ts.isStringLiteral(node.expression))  {
+        if (ts.isStringLiteral(node.expression)) {
             return `error("${node.expression.text}")`;
         } else {
             throw new TranspileError("Unsupported throw expression, only string literals are supported", node.expression)

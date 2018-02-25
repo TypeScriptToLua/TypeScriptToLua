@@ -5,6 +5,20 @@ const deepEqual = require('deep-equal')
 
 export class LuaLoopTests {
 
+    @Test("continue")
+    public continue(inp: number[], expected: number[]) {
+        // Transpile & Assert
+        Expect(() => {
+            let lua = util.transpileString(
+                `while (i < arrTest.length) {
+                    continue;
+                }`
+                , util.dummyTypes.Array
+            );
+        }).toThrowError(Error, "Continue is not supported in Lua")
+    }
+
+
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("while")
     public while(inp: number[], expected: number[]) {
@@ -34,6 +48,27 @@ export class LuaLoopTests {
         let lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+            , util.dummyTypes.Array
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [0, 1, 2, 3])
+    @Test("forBreak")
+    public forBreak(inp: number[], expected: number[]) {
+        // Transpile
+        let lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (let i = 0; i < arrTest.length; ++i) {
+                break;
                 arrTest[i] = arrTest[i] + 1;
             }
             return JSONStringify(arrTest);`

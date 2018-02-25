@@ -95,6 +95,9 @@ export class TSHelper {
     // Depth-First-Search up the inheritance tree for the name of the symbol containing the member
     static findMemberHolder(type: ts.Type, memberName: ts.__String, typeChecker: ts.TypeChecker): string {
         if (type.symbol.members.has(memberName) || (type.symbol.exports && type.symbol.exports.has(memberName))) {
+            while (this.isExtensionClass(type, typeChecker)) {
+                type = typeChecker.getBaseTypes(<ts.InterfaceType>type)[0];
+            }
             return type.symbol.name;
         } else {
             for (let parent of typeChecker.getBaseTypes(<ts.InterfaceType>type)) {

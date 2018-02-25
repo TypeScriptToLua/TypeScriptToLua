@@ -61,6 +61,26 @@ export class LuaLoopTests {
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("forMirror")
+    public forMirror(inp: number[], expected: number[]) {
+        // Transpile
+        let lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (let i = 0; arrTest.length > i; i++) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+            , util.dummyTypes.Array
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([0, 1, 2, 3], [0, 1, 2, 3])
     @Test("forBreak")
     public forBreak(inp: number[], expected: number[]) {

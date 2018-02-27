@@ -793,8 +793,8 @@ export class LuaTranspiler {
                 let funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
 
                 // ===== EXPERIMENTAL https://github.com/Perryvw/TypescriptToLua/issues/56
-                if (ts.isParenthesizedExpression(node.expression.expression) 
-                    && (ts.isAsExpression(node.expression.expression.expression) 
+                if (ts.isParenthesizedExpression(node.expression.expression)
+                    && (ts.isAsExpression(node.expression.expression.expression)
                      || ts.isTypeAssertion(node.expression.expression.expression))
                     && ts.isTypeReferenceNode(node.expression.expression.expression.type)) {
                     const castTypeNode = node.expression.expression.expression.type;
@@ -851,6 +851,14 @@ export class LuaTranspiler {
                     const arg2 = this.transpileExpression(node.arguments[1]);
                     return `string.sub(${caller},${arg1}+1,${arg2})`;
                 }
+            case "toLowerCase":
+                return `string.lower(${caller})`;
+            case "toUpperCase":
+                return `string.upper(${caller})`;
+            case "split":
+                return `TS_split(${caller},${params})`;
+            case "charAt":
+                return `string.sub(${caller},${params}+1,${params}+1)`;
             default:
                 throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
         }

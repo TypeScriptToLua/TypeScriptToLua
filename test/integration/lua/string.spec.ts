@@ -84,6 +84,7 @@ export class StringTests {
     @TestCase("hello test", "")
     @TestCase("hello test", "t")
     @TestCase("hello test", "h")
+    @TestCase("hello test", "invalid")
     @Test("string.indexOf")
     public indexOf(inp: string, searchValue: string) {
         // Transpile
@@ -136,4 +137,78 @@ export class StringTests {
         // Assert
         Expect(result).toBe(inp.length);
     }
+
+    @TestCase("hello TEST")
+    @Test("string.toLowerCase")
+    public toLowerCase(inp: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `return "${inp}".toLowerCase()`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.toLowerCase());
+    }
+
+    @TestCase("hello test")
+    @Test("string.toUpperCase")
+    public toUpperCase(inp: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `return "${inp}".toUpperCase()`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.toUpperCase());
+    }
+
+    @TestCase("hello test", "")
+    @TestCase("hello test", " ")
+    @TestCase("hello test", "h")
+    @TestCase("hello test", "t")
+    @TestCase("hello test", "l")
+    @TestCase("hello test", "invalid")
+    @TestCase("hello test", "hello test")
+    @Test("string.split")
+    public split(inp: string, separator: string) {
+        // Transpile
+        let lua = util.transpileString(
+            `return JSONStringify("${inp}".split("${separator}"))`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(inp.split(separator)));
+    }
+
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 2)
+    @TestCase("hello test", 3)
+    @TestCase("hello test", 99)
+    @Test("string.charAt")
+    public charAt(inp: string, index: number) {
+        // Transpile
+        let lua = util.transpileString(
+            `return "${inp}".charAt(${index})`,
+            util.dummyTypes.String
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.charAt(index));
+    }
+
 }

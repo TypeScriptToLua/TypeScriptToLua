@@ -11,3 +11,6 @@ coverage/
 # OSX
 .DS_Store
 *.lcov
+
+# IDEA IDEs
+.idea/

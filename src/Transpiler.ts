@@ -705,9 +705,9 @@ export class LuaTranspiler {
         node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
             if (ts.isTemplateTail(span.literal)) {
-                parts.push(expr + `.."${span.literal.text}"`);
+                parts.push(`tostring(${expr}).."${span.literal.text}"`);
             } else {
-                parts.push(expr + `.."${span.literal.text}"`);
+                parts.push(`tostring(${expr}).."${span.literal.text}"`);
             }
         });
         return parts.join("..");

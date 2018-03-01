@@ -11,7 +11,12 @@ import dedent = require("dedent")
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
 
-function compile(fileNames: string[], options: ts.CompilerOptions): void {
+interface CompilerOptions extends ts.CompilerOptions {
+    addHeader?: boolean;
+    luaLibDir?: string;
+}
+
+function compile(fileNames: string[], options: CompilerOptions): void {
     let program = ts.createProgram(fileNames, options);
     let checker = program.getTypeChecker();
 
@@ -42,9 +47,20 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         options.outDir = options.rootDir;
     }
 
+    if (!('addHeader' in options)) {
+        options.addHeader = true;
+    }
+
+    if (!options.luaLibDir) {
+        options.luaLibDir = options.outDir;
+    }
+    else {
+        options.luaLibDir = path.join(options.outDir, options.luaLibDir);
+    }
+
     // Copy lualib to target dir
     // This isnt run in sync because copyFileSync wont report errors.
-    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
+    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.luaLibDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
         if (err) {
             console.log("ERROR: copying lualib to output.");
         }
@@ -64,7 +80,7 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
                 }
 
                 // change extension
-                var fileNameLua = path.basename(outPath, path.extname(outPath)) + '.lua';
+                const fileNameLua = path.basename(outPath, path.extname(outPath)) + '.lua';
                 outPath = path.join(path.dirname(outPath), fileNameLua);
 
                 // Write output
@@ -97,7 +113,7 @@ function printAST(node: ts.Node, indent: number) {
 
 // Removes the option and value form argv
 function removeInvalidOptionsFromArgv(commandLine: ReadonlyArray<string>, invalidOptions: ReadonlyArray<string>): ReadonlyArray<string> {
-    let result = commandLine.slice()
+    let result = commandLine.slice();
     for (let opt of invalidOptions) {
         let index = result.indexOf('--' + opt);
         if (index === -1) {
@@ -113,17 +129,26 @@ function removeInvalidOptionsFromArgv(commandLine: ReadonlyArray<string>, invali
 // Polyfill for report diagnostics
 function logError(commandLine: ts.ParsedCommandLine) {
     if (commandLine.errors.length !== 0) {
+        let invalidErrorCount = 0;
         commandLine.errors.forEach((err) => {
-            console.log(err.messageText);
+            // Allow all compiler options
+            if (err.code == 5023) {
+                invalidErrorCount += 1;
+            }
+            else {
+                console.log(err.messageText);
+            }
         });
-        process.exit(1);
+        if (invalidErrorCount != commandLine.errors.length) {
+            process.exit(1);
+        }
     }
 }
 
 function executeCommandLine(args: ReadonlyArray<string>) {
     // Right now luaTarget, version and help are the only cli options, if more are added we should
     // add a more advanced custom parser
-    var argv = minimist(args, {
+    const argv = minimist(args, {
         string: ['l'],
         alias: { h: 'help', v: 'version', l: 'luaTarget' },
         default: { luaTarget: 'JIT' },
@@ -131,14 +156,14 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         stopEarly: true,
     });
 
-    let tstlVersion
+    let tstlVersion;
     try {
         tstlVersion = require('../package').version;
     } catch (e) {
         tstlVersion = "0.0.0";
     }
 
-    var helpString = dedent(`Version: ${tstlVersion}
+    const helpString = dedent(`Version: ${tstlVersion}
     Syntax:  tstl [options] [files...]
 
     In addtion to the options listed below you can also pass options for the
@@ -165,7 +190,7 @@ function executeCommandLine(args: ReadonlyArray<string>) {
     }
 
     // Remove tstl options otherwise ts will emit an error
-    let sanitizedArgs = removeInvalidOptionsFromArgv(args, ['l', 'luaTarget'])
+    let sanitizedArgs = removeInvalidOptionsFromArgv(args, ['l', 'luaTarget']);
 
     let commandLine = ts.parseCommandLine(sanitizedArgs);
 
@@ -206,6 +231,13 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         // option supplied on CLI is prioritized
         if (argv.luaTarget === "JIT" && commandLine.raw.luaTarget !== argv.luaTarget) {
             commandLine.options.luaTarget = commandLine.raw.luaTarget;
+        }
+
+        // Add ignored compiler options
+        for (const compilerOption in commandLine.raw.compilerOptions) {
+            if (!(compilerOption in commandLine.options)) {
+                commandLine.options[compilerOption] = commandLine.raw.compilerOptions[compilerOption];
+            }
         }
     }
 

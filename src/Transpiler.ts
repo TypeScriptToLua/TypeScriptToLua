@@ -687,6 +687,9 @@ export class LuaTranspiler {
                 case ts.SyntaxKind.ExclamationEqualsEqualsToken:
                     result = `${lhs}~=${rhs}`;
                     break;
+                case ts.SyntaxKind.InKeyword:
+                    result = `${rhs}[${lhs}]~=nil`;
+                    break;
                 default:
                     throw new TranspileError("Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind), node);
             }

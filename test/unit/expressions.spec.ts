@@ -22,7 +22,6 @@ export class ExpressionTests {
 
     @TestCase("obj instanceof someClass", "Unsupported binary operator kind: instanceof")
     @TestCase("typeof obj", "Unsupported expression kind: TypeOfExpression")
-    @TestCase("2 in obj", "Unsupported binary operator kind: in")
     @Test("Prohibted Expressions")
     public prohibtedExpressions(input: string, expectedError: string) {
         Expect(() => {
@@ -47,8 +46,32 @@ export class ExpressionTests {
     @TestCase("1&&1", "1 and 1")
     @TestCase("1||1", "1 or 1")
     @Test("Binary expressions basic")
-    public binary(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
+    public binary(input: string, output: string) {
+        // Transpile
+        const lua = util.transpileString(input);
+
+        // Execute
+        const result = util.executeLua(`return ${lua}`);
+
+        // Assert
+        Expect(lua).toBe(output);
+        Expect(result).toBe(eval(input));
+    }
+
+    @TestCase("'key' in obj")
+    @TestCase("'existingKey' in obj")
+    @TestCase("0 in obj")
+    @TestCase("9 in obj")
+    @Test("Binary expression in")
+    public binaryIn(input: string) {
+        // Transpile
+        const lua = util.transpileString(input);
+
+        // Execute
+        const result = util.executeLua(`obj = { existingKey = 1 }\nreturn ${lua}`);
+
+        // Assert
+        Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
     }
 
     @TestCase("a+=b", "a=a+b")

@@ -57,6 +57,9 @@ function compile(fileNames: string[], options: CompilerOptions): void {
     else {
         options.luaLibDir = path.join(options.outDir, options.luaLibDir);
     }
+    if (!fs.existsSync(options.luaLibDir)){
+        fs.mkdirSync(options.luaLibDir);
+    }
 
     // Copy lualib to target dir
     // This isnt run in sync because copyFileSync wont report errors.

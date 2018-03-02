@@ -474,6 +474,14 @@ export class LuaTranspiler {
 
     transpileReturn(node: ts.ReturnStatement): string {
         if (node.expression) {
+            // If parent function is a TupleReturn function and return expression is an array literal, leave out brackets.
+            var declaration = tsEx.findFirstNodeAbove(node, ts.isFunctionDeclaration);
+            if (declaration && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(declaration), this.checker)
+                && ts.isArrayLiteralExpression(node.expression)) {
+                return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
+            }
+
+            // Otherwise just do a normal return
             return "return " + this.transpileExpression(node.expression);
         } else {
             return "return"
@@ -1046,17 +1054,21 @@ export class LuaTranspiler {
         } else if (ts.isArrayBindingPattern(node.name)) {
             // Destructuring type
             const value = this.transpileExpression(node.initializer);
-            let parentName = `__destr${this.genVarCounter}`;
-            this.genVarCounter++;
-            let result = `local ${parentName} = ${value}\n`;
-            node.name.elements.forEach((elem: ts.BindingElement, index: number) => {
-                if (!elem.dotDotDotToken) {
-                    result += this.indent + `local ${(<ts.Identifier>elem.name).escapedText} = ${parentName}[${index + 1}]\n`;
-                } else {
-                    result += this.indent + `local ${(<ts.Identifier>elem.name).escapedText} = TS_slice(${parentName}, ${index})\n`;
-                }
-            });
-            return result;
+
+            // Disallow ellipsis destruction
+            if (node.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
+                throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
+            }
+
+            const vars = node.name.elements.map(element => (<ts.Identifier>(<ts.BindingElement>element).name).escapedText).join(",");
+
+            // Don't unpack TupleReturn decorated functions
+            if (ts.isCallExpression(node.initializer) 
+                && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression), this.checker)) {
+                return `local ${vars}=${value}`;
+            } else {
+                return `local ${vars}=unpack(${value})`;
+            }
         } else {
             throw new TranspileError("Unsupported variable declaration type " + tsEx.enumName(node.name.kind, ts.SyntaxKind), node);
         }

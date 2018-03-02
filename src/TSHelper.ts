@@ -83,6 +83,12 @@ export class TSHelper {
             && this.hasCustomDecorator(type, checker, "!Phantom");
     }
 
+    static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
+        return type.symbol
+            && ((type.symbol.flags & ts.SymbolFlags.Function) != 0)
+            &&  this.hasCustomDecorator(type, checker, "!TupleReturn");
+    }
+
     static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
         if (type.symbol) {
             var comment = type.symbol.getDocumentationComment(checker);
@@ -105,5 +111,18 @@ export class TSHelper {
                 if (parentMember) return parentMember;
             }
         }
+    }
+
+    // Search up until finding a node satisfying the callback
+    static findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (n: ts.Node) => n is T): T {
+        let current = node;
+        while (current.parent) {
+            if (callback(current.parent)) {
+                return current.parent;
+            } else {
+                current = current.parent;
+            }
+        }
+        return null;
     }
 }

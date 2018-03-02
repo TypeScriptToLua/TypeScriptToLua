@@ -1,1 +1,1 @@
-local a, b = myFunc()
+local a,b=myFunc()

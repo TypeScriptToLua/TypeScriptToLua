@@ -47,14 +47,12 @@ export class DecoratorTests {
         this.ExpectEqualToFile(lua, "test/integration/testfiles/namespacePhantom.lua");
     }
 
-    @IgnoreTest() // TDD - tested functionality should be implemented
     @Test("TupleReturnDefinition")
     public tupleReturnDefinition() {
         const lua = util.transpileFile("test/integration/testfiles/tupleReturnDefinition.ts");
         this.ExpectEqualToFile(lua, "test/integration/testfiles/tupleReturnDefinition.lua");
     }
 
-    @IgnoreTest() // TDD - tested functionality should be implemented
     @Test("TupleReturnAssignment")
     public tupleReturnAssignment() {
         const lua = util.transpileFile("test/integration/testfiles/tupleReturnAssignment.ts");

@@ -7,15 +7,13 @@ import * as yargs from 'yargs'
 
 // ES6 syntax broken
 import dedent = require("dedent")
-import mkdirp = require("mkdirp")
 
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
 
 interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
-    luaTarget?: string
-    luaLibDir?: string;
+    luaTarget?: string;
 }
 
 function compile(fileNames: string[], options: CompilerOptions): void {
@@ -49,17 +47,6 @@ function compile(fileNames: string[], options: CompilerOptions): void {
         options.outDir = options.rootDir;
     }
 
-    options.luaLibDir = path.resolve(options.outDir, options.luaLibDir);
-    mkdirp.sync(options.luaLibDir);
-
-    // Copy lualib to target dir
-    // This isnt run in sync because copyFileSync wont report errors.
-    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.luaLibDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
-        if (err) {
-            console.log("ERROR: copying lualib to output.");
-        }
-    });
-
     program.getSourceFiles().forEach(sourceFile => {
         if (!sourceFile.isDeclarationFile) {
             try {
@@ -70,7 +57,8 @@ function compile(fileNames: string[], options: CompilerOptions): void {
 
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
-                    outPath = path.join(options.outDir, path.resolve(sourceFile.fileName).replace(rootDir, ""));
+                    const relativeSourcePath = path.resolve(sourceFile.fileName).replace(path.resolve(rootDir), "");
+                    outPath = path.join(options.outDir, relativeSourcePath);
                 }
 
                 // change extension
@@ -94,7 +82,17 @@ function compile(fileNames: string[], options: CompilerOptions): void {
         }
     });
 
-    process.exit(0);
+    // Copy lualib to target dir
+    // This isnt run in sync because copyFileSync wont report errors.
+    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
+        if (err) {
+            console.log("ERROR: copying lualib to output.");
+            process.exit(1);
+        }
+        else {
+            process.exit(0);
+        }
+    });
 }
 
 function printAST(node: ts.Node, indent: number) {
@@ -137,12 +135,6 @@ function executeCommandLine(args: ReadonlyArray<string>) {
             choices: ['JIT', '5.1', '5.2', '5.3'],
             default: 'JIT',
             describe: 'Specify Lua target version.',
-            type: 'string'
-        },
-        'lld': {
-            alias: 'luaLibDir',
-            describe: 'Specify typescript_lualib.lua location relative to outDir.',
-            default: './',
             type: 'string'
         },
         'ah': {

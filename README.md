@@ -37,13 +37,6 @@ Options:
   --help           Show this message
 ```
 
-**Optionally:**
-Add the lualib files from dist/ to your project. This helper library unlocks additional typescript functions:
-- Ternary operator
-- Functional-style list operations (forEach/map/filter/every/some)
-- Includes lua `Map<S,T>` and `Set<T>` implementations
-Add `require("typescript")` in your code code if you want to use the lualib functionality.
-
 ## Sublime Text integration
 This compiler works great in combination with the [Sublime Text Typescript plugin](https://github.com/Microsoft/TypeScript-Sublime-Plugin) (available through the package manager as `TypeScript`).
 

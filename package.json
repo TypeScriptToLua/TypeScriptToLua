@@ -22,10 +22,13 @@
     },
     "dependencies": {
         "dedent": "^0.7.0",
-        "minimist": "^1.2.0",
-        "typescript": "^2.7.2"
+        "mkdirp": "^0.5.1",
+        "typescript": "^2.7.2",
+        "yargs": "^11.0.0"
     },
     "devDependencies": {
+        "@types/mkdirp": "^0.5.2",
+        "@types/yargs": "^11.0.0",
         "alsatian": "^2.2.1",
         "codecov": "^3.0.0",
         "deep-equal": "^1.0.1",

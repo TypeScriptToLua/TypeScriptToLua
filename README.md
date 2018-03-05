@@ -14,35 +14,50 @@ More detailed documentation and info on writing declarations can be found [on th
 
 **Compile Files**
 
-`tstl path/to-my-file.ts path/to-my-other-file.ts`
+`tstl path/to/file.ts path/to/other-file.ts`
 
 **Compile Projects**
 
-`tstl -p path/to-my/tsconfig.json`
+`tstl -p path/to/tsconfig.json`
 
 **Options**
 ```
-Syntax:  tstl [options] [files...]
+tstl [options] [files...]
 
-In addtion to the options listed below you can also pass options for the
-typescript compiler (For a list of options use tsc -h). NOTE: The tsc options
-might have no effect.
+In addition to the options listed below you can also pass options for the
+typescript compiler (For a list of options use tsc -h).
+
+NOTES:
+- The tsc options might have no effect.
+- Options in tsconfig.json are prioritized.
 
 Options:
-  --version        Show version number
-  --luaTarget, -l  Specify Lua target version: 'JIT' (Default), '5.1', '5.2',
-                   '5.3'
-  --project, -p    Compile the project given the path to its configuration file,
-                   or to a folder with a 'tsconfig.json'
-  --help           Show this message
+  --help              Show help                                        [boolean]
+  --version           Show version number                              [boolean]
+  --lt, --luaTarget   Specify Lua target version.
+                 [string] [choices: "JIT", "5.1", "5.2", "5.3"] [default: "JIT"]
+  --lld, --luaLibDir  Specify typescript_lualib.lua location relative to outDir.
+                                                        [string] [default: "./"]
+  --ah, --addHeader   Specify if a header will be added to compiled files.
+                                                       [boolean] [default: true]
+
+Examples:
+  tstl path/to/file.ts [...]     Compile files
+  tstl -p path/to/tsconfig.json  Compile project
 ```
 
-**Optionally:**
-Add the lualib files from dist/ to your project. This helper library unlocks additional typescript functions:
-- Ternary operator
-- Functional-style list operations (forEach/map/filter/every/some)
-- Includes lua `Map<S,T>` and `Set<T>` implementations
-Add `require("typescript")` in your code code if you want to use the lualib functionality.
+**Example tsconfig.json**
+```
+{
+    "compilerOptions": {
+        "noImplicitAny" : true,
+        "noImplicitThis" : true,
+        "alwaysStrict" : true,
+        "strictNullChecks": true,
+        "luaTarget": "JIT"
+    }
+}
+```
 
 ## Sublime Text integration
 This compiler works great in combination with the [Sublime Text Typescript plugin](https://github.com/Microsoft/TypeScript-Sublime-Plugin) (available through the package manager as `TypeScript`).

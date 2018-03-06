@@ -3,15 +3,20 @@
 import * as ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
+import * as yargs from 'yargs'
 
 // ES6 syntax broken
-import minimist = require("minimist")
 import dedent = require("dedent")
 
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
 
-function compile(fileNames: string[], options: ts.CompilerOptions): void {
+interface CompilerOptions extends ts.CompilerOptions {
+    addHeader?: boolean;
+    luaTarget?: string;
+}
+
+function compile(fileNames: string[], options: CompilerOptions): void {
     let program = ts.createProgram(fileNames, options);
     let checker = program.getTypeChecker();
 
@@ -42,14 +47,6 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         options.outDir = options.rootDir;
     }
 
-    // Copy lualib to target dir
-    // This isnt run in sync because copyFileSync wont report errors.
-    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
-        if (err) {
-            console.log("ERROR: copying lualib to output.");
-        }
-    });
-
     program.getSourceFiles().forEach(sourceFile => {
         if (!sourceFile.isDeclarationFile) {
             try {
@@ -60,11 +57,12 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
 
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
-                    outPath = path.join(options.outDir, path.resolve(sourceFile.fileName).replace(rootDir, ""));
+                    const relativeSourcePath = path.resolve(sourceFile.fileName).replace(path.resolve(rootDir), "");
+                    outPath = path.join(options.outDir, relativeSourcePath);
                 }
 
                 // change extension
-                var fileNameLua = path.basename(outPath, path.extname(outPath)) + '.lua';
+                const fileNameLua = path.basename(outPath, path.extname(outPath)) + '.lua';
                 outPath = path.join(path.dirname(outPath), fileNameLua);
 
                 // Write output
@@ -84,7 +82,17 @@ function compile(fileNames: string[], options: ts.CompilerOptions): void {
         }
     });
 
-    process.exit(0);
+    // Copy lualib to target dir
+    // This isnt run in sync because copyFileSync wont report errors.
+    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
+        if (err) {
+            console.log("ERROR: copying lualib to output.");
+            process.exit(1);
+        }
+        else {
+            process.exit(0);
+        }
+    });
 }
 
 function printAST(node: ts.Node, indent: number) {
@@ -95,83 +103,80 @@ function printAST(node: ts.Node, indent: number) {
     node.forEachChild(child => printAST(child, indent + 1));
 }
 
-// Removes the option and value form argv
-function removeInvalidOptionsFromArgv(commandLine: ReadonlyArray<string>, invalidOptions: ReadonlyArray<string>): ReadonlyArray<string> {
-    let result = commandLine.slice()
-    for (let opt of invalidOptions) {
-        let index = result.indexOf('--' + opt);
-        if (index === -1) {
-            index = result.indexOf('-' + opt)
-        }
-        if (index !== -1) {
-            result.splice(index, 2);
-        }
-    }
-    return result;
-}
-
 // Polyfill for report diagnostics
-function logError(commandLine: ts.ParsedCommandLine) {
+function logError(commandLine: ts.ParsedCommandLine, tstlOptionKeys: ReadonlyArray<string>) {
+    const tsInvalidCompilerOptionErrorCode = 5023;
+    let ignoredErrorCount = 0;
+
     if (commandLine.errors.length !== 0) {
         commandLine.errors.forEach((err) => {
-            console.log(err.messageText);
+            // Ignore errors caused by tstl specific compiler options
+            if (err.code == tsInvalidCompilerOptionErrorCode) {
+                for (const key of tstlOptionKeys) {
+                    if (err.messageText.toString().indexOf(key) != -1) {
+                        ignoredErrorCount += 1;
+                    }
+                }
+            }
+            else {
+                console.log(err.messageText);
+            }
         });
-        process.exit(1);
+        if (commandLine.errors.length > ignoredErrorCount) {
+            process.exit(1);
+        }
     }
 }
 
 function executeCommandLine(args: ReadonlyArray<string>) {
-    // Right now luaTarget, version and help are the only cli options, if more are added we should
-    // add a more advanced custom parser
-    var argv = minimist(args, {
-        string: ['l'],
-        alias: { h: 'help', v: 'version', l: 'luaTarget' },
-        default: { luaTarget: 'JIT' },
-        '--': true,
-        stopEarly: true,
-    });
+    const tstlOptions: {[key: string]: yargs.Options} = {
+        'lt': {
+            alias: 'luaTarget',
+            choices: ['JIT', '5.1', '5.2', '5.3'],
+            default: 'JIT',
+            describe: 'Specify Lua target version.',
+            type: 'string'
+        },
+        'ah': {
+            alias: 'addHeader',
+            describe: 'Specify if a header will be added to compiled files.',
+            default: true,
+            type: 'boolean'
+        }
+    };
 
-    let tstlVersion
-    try {
-        tstlVersion = require('../package').version;
-    } catch (e) {
-        tstlVersion = "0.0.0";
+    const tstlOptionKeys = [];
+    for (let key in tstlOptions) {
+        let optionName = key;
+        if (tstlOptions[key].alias) {
+            optionName = tstlOptions[key].alias as string;
+        }
+
+        tstlOptionKeys.push(optionName);
     }
 
-    var helpString = dedent(`Version: ${tstlVersion}
-    Syntax:  tstl [options] [files...]
+    const argv = yargs
+        .usage(dedent(`tstl [options] [files...]
+        
+            In addition to the options listed below you can also pass options for the typescript compiler (For a list of options use tsc -h).
+            
+            NOTES:
+            - The tsc options might have no effect.
+            - Options in tsconfig.json are prioritized.`))
+        .example('tstl path/to/file.ts [...]', 'Compile files')
+        .example('tstl -p path/to/tsconfig.json', 'Compile project')
+        .options(tstlOptions)
+        .argv;
 
-    In addtion to the options listed below you can also pass options for the
-    typescript compiler (For a list of options use tsc -h). NOTE: The tsc options
-    might have no effect.
+    let commandLine = ts.parseCommandLine(args);
 
-    Options:
-      --version        Show version number
-      --luaTarget, -l  Specify Lua target version: 'JIT' (Default), '5.1', '5.2',
-                       '5.3'
-      --project, -p    Compile the project given the path to its configuration file,
-                       or to a folder with a 'tsconfig.json'
-      --help           Show this message
-    `);
-    if (argv.help) {
-        console.log(helpString);
-        process.exit(0);
-    }
-    if (argv.version) {
-        console.log("Version: " + require('../package').version);
-    }
-    if (!LuaTranspiler.AvailableLuaTargets.some(val => val === argv.luaTarget)) {
-        console.error(`Invalid lua target valid targets are: ${LuaTranspiler.AvailableLuaTargets.toString()}`);
+    logError(commandLine, tstlOptionKeys);
+
+    // Add tstl CLI options
+    for (const key of tstlOptionKeys) {
+        commandLine.options[key] = argv[key];
     }
 
-    // Remove tstl options otherwise ts will emit an error
-    let sanitizedArgs = removeInvalidOptionsFromArgv(args, ['l', 'luaTarget'])
-
-    let commandLine = ts.parseCommandLine(sanitizedArgs);
-
-    logError(commandLine);
-
-    commandLine.options.luaTarget = argv.luaTarget;
     let configPath;
     if (commandLine.options.project) {
         configPath = path.isAbsolute(commandLine.options.project) ? commandLine.options.project : path.join(process.cwd(), commandLine.options.project);
@@ -202,10 +207,12 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
         commandLine = ts.parseJsonConfigFileContent(configJson.config, ts.sys, path.dirname(configPath), commandLine.options);
 
-        // Append lua target to options array since its ignored by TS parsers
-        // option supplied on CLI is prioritized
-        if (argv.luaTarget === "JIT" && commandLine.raw.luaTarget !== argv.luaTarget) {
-            commandLine.options.luaTarget = commandLine.raw.luaTarget;
+        // Add compiler options that are ignored by TS parsers
+        // Options supplied in tsconfig are prioritized to allow for CLI defaults
+        for (const compilerOption in commandLine.raw.compilerOptions) {
+            if (tstlOptionKeys.indexOf(compilerOption) != -1) {
+                commandLine.options[compilerOption] = commandLine.raw.compilerOptions[compilerOption];
+            }
         }
     }
 
@@ -213,7 +220,7 @@ function executeCommandLine(args: ReadonlyArray<string>) {
         commandLine.options.rootDir = path.dirname(configPath);
     }
 
-    logError(commandLine);
+    logError(commandLine, tstlOptionKeys);
 
     compile(commandLine.fileNames, commandLine.options);
 }

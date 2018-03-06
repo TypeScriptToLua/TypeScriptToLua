@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, IgnoreTest } from "alsatian";
 
 import * as util from "../src/util";
 const fs = require("fs");
@@ -45,5 +45,17 @@ export class DecoratorTests {
     public phantomNamespace() {
         const lua = util.transpileFile("test/integration/testfiles/namespacePhantom.ts");
         this.ExpectEqualToFile(lua, "test/integration/testfiles/namespacePhantom.lua");
+    }
+
+    @Test("TupleReturnDefinition")
+    public tupleReturnDefinition() {
+        const lua = util.transpileFile("test/integration/testfiles/tupleReturnDefinition.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/tupleReturnDefinition.lua");
+    }
+
+    @Test("TupleReturnAssignment")
+    public tupleReturnAssignment() {
+        const lua = util.transpileFile("test/integration/testfiles/tupleReturnAssignment.ts");
+        this.ExpectEqualToFile(lua, "test/integration/testfiles/tupleReturnAssignment.lua");
     }
 }

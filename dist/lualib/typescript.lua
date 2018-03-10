@@ -117,7 +117,7 @@ end
 
 function TS_push(list, ...)
     for _, v in pairs({...}) do
-        table.insert(list, v)
+        list[#list + 1] = v
     end
 end
 

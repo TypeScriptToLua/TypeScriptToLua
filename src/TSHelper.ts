@@ -25,6 +25,17 @@ export class TSHelper {
         return "unknown";
     }
 
+    // Breaks down a mask into all flag names.
+    static enumNames(mask, haystack) {
+        let result = [mask];
+        for (var name in haystack) {
+            if ((mask & haystack[name]) != 0 && mask >= haystack[name]) {
+                result.push(name);
+            }
+        }
+        return result;
+    }
+
     static containsStatement(statements: ts.NodeArray<ts.Statement>, kind: ts.SyntaxKind): boolean {
         return statements.some(statement => statement.kind === kind);
     }

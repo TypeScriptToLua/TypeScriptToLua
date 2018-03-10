@@ -1,1 +1,1 @@
-local x = ClassA.myFunc(ClassB.new(true))
+local x = ClassB.new(true):myFunc()

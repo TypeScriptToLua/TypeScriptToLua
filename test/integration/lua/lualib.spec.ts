@@ -229,7 +229,7 @@ export class LuaLibArrayTests {
     @TestCase([1], [0, 1])
     @TestCase([1, 2, 3], [0, 1, 2, 3])
     @Test("array.push")
-    public arrayPush(inp: number[], expected: number) {
+    public arrayPush(inp: number[], expected: number[]) {
         // Transpile
         let lua = util.transpileString(
             `let testArray = [0];

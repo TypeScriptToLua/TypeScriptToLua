@@ -899,17 +899,7 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
-                if (node.arguments.length > 1) {
-                    const insertArray: string[] = [];
-                    for (const arg of node.arguments) {
-                        const singleParam = this.transpileExpression(arg);
-                        insertArray.push(`table.insert(${caller}, ${singleParam})`);
-                    }
-                    return insertArray.join('; ');
-                }
-                else {
-                    return `table.insert(${caller}, ${params})`;
-                }
+                return `TS_push(${caller}, ${params})`;
             case "forEach":
                 return `TS_forEach(${caller}, ${params})`;
             case "indexOf":

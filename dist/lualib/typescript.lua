@@ -115,6 +115,12 @@ function TS_split(str, separator)
     return out
 end
 
+function TS_push(list, ...)
+    for _, v in pairs({...}) do
+        table.insert(list, v)
+    end
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set

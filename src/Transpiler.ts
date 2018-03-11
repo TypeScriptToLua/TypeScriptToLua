@@ -791,18 +791,17 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && ((expType.symbol.flags & ts.SymbolFlags.Interface) || (expType.symbol.flags & ts.SymbolFlags.Class))) {
-                // Replace . with : here
-                const callPath = `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
-                const params = this.transpileArguments(node.arguments);
-                return `${callPath}(${params})`;
-            } else {
+            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
+                // Don't replace . with : for namespaces
                 const callPath = this.transpileExpression(node.expression);
                 const params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
+            } else {
+                 // Replace last . with : here
+                const callPath = `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
+                const params = this.transpileArguments(node.arguments);
+                return `${callPath}(${params})`;
             }
-
-
         }
 
         // Handle super calls properly

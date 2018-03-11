@@ -768,13 +768,6 @@ export class LuaTranspiler {
         if (ts.isPropertyAccessExpression(node.expression)) {
             const expType = this.checker.getTypeAtLocation(node.expression.expression);
 
-            // Don't include instance if the type is a namespace
-            if (expType.symbol && expType.symbol.flags & ts.SymbolFlags.Namespace) {
-                const callPath = this.transpileExpression(node.expression);
-                const params = this.transpileArguments(node.arguments);
-                return `${callPath}(${params})`;
-            }
-
             if (expType.symbol && expType.symbol.escapedName == "Math") {
                 const params = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
@@ -794,33 +787,15 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            // Include context parameter if present
-            if (expType && expType.symbol) {
-                const funcName = node.expression.name.escapedText;
-                let funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
-
-                // ===== EXPERIMENTAL https://github.com/Perryvw/TypescriptToLua/issues/56
-                if (ts.isParenthesizedExpression(node.expression.expression)
-                    && (ts.isAsExpression(node.expression.expression.expression)
-                     || ts.isTypeAssertion(node.expression.expression.expression))
-                    && ts.isTypeReferenceNode(node.expression.expression.expression.type)) {
-                    const castTypeNode = node.expression.expression.expression.type;
-                    if (this.checker.getTypeFromTypeNode(castTypeNode).symbol.name == funcHolder) {
-                        funcHolder = castTypeNode.getText();
-                    }
-                }
-                // ===== END EXPERIMENTAL
-
-                if (funcHolder === undefined) {
-                    throw new TranspileError(`Could not find func ${funcName} on ${expType.symbol.name}`, node);
-                }
-
-                const callPath = `${funcHolder}.${funcName}`;
-                const params = this.transpileArguments(node.arguments, node.expression.expression);
+            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
+                // Don't replace . with : for namespaces
+                const callPath = this.transpileExpression(node.expression);
+                const params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
             } else {
-                const callPath = this.transpileExpression(node.expression);
-                const params = this.transpileArguments(node.arguments, node.expression.expression);
+                 // Replace last . with : here
+                const callPath = `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
+                const params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
             }
         }

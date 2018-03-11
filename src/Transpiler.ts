@@ -383,19 +383,17 @@ export class LuaTranspiler {
         let jumpTableName = "____switch" + this.genVarCounter;
         this.genVarCounter++;
 
-        result += this.indent + `local ${jumpTableName} = {\n`;
-
-        this.pushIndent();
+        result += this.indent + `local ${jumpTableName} = {}\n`;
 
         // If statement to go to right entry label
         clauses.forEach((clause, index) => {
             if (ts.isCaseClause(clause)) {
                 result += this.indent + `-- case:\n`;
-                result += this.indent + `[${this.transpileExpression(clause.expression, true)}] = function(self)\n`;
+                result += this.indent + `${jumpTableName}[${this.transpileExpression(clause.expression, true)}] = function()\n`;
             }
             if (ts.isDefaultClause(clause)) {
                 result += this.indent + `-- default:\n`;
-                result += this.indent + `["____default${this.genVarCounter}"] = function(self)\n`;
+                result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"] = function()\n`;
             }
             this.pushIndent();
 
@@ -418,9 +416,9 @@ export class LuaTranspiler {
 
                 if (i !== index && nextClause) {
                     if (ts.isCaseClause(nextClause)) {
-                        result += this.indent + `self[${this.transpileExpression(nextClause.expression, true)}]()\n`;
+                        result += this.indent + `${jumpTableName}[${this.transpileExpression(nextClause.expression, true)}]()\n`;
                     } else {
-                        result += this.indent + `self["____default${this.genVarCounter}"]()\n`;
+                        result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"]()\n`;
                     }
                 }
             } else {
@@ -429,12 +427,10 @@ export class LuaTranspiler {
 
             this.popIndent();
 
-            result += this.indent + `end,\n`;
+            result += this.indent + `end\n`;
         });
-        this.popIndent();
-        result += this.indent + "}\n";
-        result += this.indent + `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}](${jumpTableName})\n`;
-        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then ${jumpTableName}["____default${this.genVarCounter}"](${jumpTableName}) end\n`;
+        result += this.indent + `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}]()\n`;
+        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then ${jumpTableName}["____default${this.genVarCounter}"]() end\n`;
         result += this.indent + "--------Switch statement end--------\n";
 
         //Increment counter for next switch statement
@@ -874,10 +870,7 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
-                if (node.arguments.length > 1) {
-                    throw new TranspileError("Unsupported array function: " + expression.name.escapedText + " with more than one argument", node);
-                }
-                return `table.insert(${caller}, ${params})`;
+                return `TS_push(${caller}, ${params})`;
             case "forEach":
                 return `TS_forEach(${caller}, ${params})`;
             case "indexOf":
@@ -1049,7 +1042,7 @@ export class LuaTranspiler {
             const vars = node.name.elements.map(element => (<ts.Identifier>(<ts.BindingElement>element).name).escapedText).join(",");
 
             // Don't unpack TupleReturn decorated functions
-            if (ts.isCallExpression(node.initializer) 
+            if (ts.isCallExpression(node.initializer)
                 && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression), this.checker)) {
                 return `local ${vars}=${value}`;
             } else {

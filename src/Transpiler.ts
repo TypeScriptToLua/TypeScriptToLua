@@ -899,10 +899,7 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
-                if (node.arguments.length > 1) {
-                    throw new TranspileError("Unsupported array function: " + expression.name.escapedText + " with more than one argument", node);
-                }
-                return `table.insert(${caller}, ${params})`;
+                return `TS_push(${caller}, ${params})`;
             case "forEach":
                 return `TS_forEach(${caller}, ${params})`;
             case "indexOf":
@@ -1074,7 +1071,7 @@ export class LuaTranspiler {
             const vars = node.name.elements.map(element => (<ts.Identifier>(<ts.BindingElement>element).name).escapedText).join(",");
 
             // Don't unpack TupleReturn decorated functions
-            if (ts.isCallExpression(node.initializer) 
+            if (ts.isCallExpression(node.initializer)
                 && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression), this.checker)) {
                 return `local ${vars}=${value}`;
             } else {

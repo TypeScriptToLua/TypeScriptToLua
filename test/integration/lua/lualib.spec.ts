@@ -225,4 +225,23 @@ export class LuaLibArrayTests {
         // Assert
         Expect(result).toBe(expected);
     }
+
+    @TestCase([1])
+    @TestCase([1, 2, 3])
+    @Test("array.push")
+    public arrayPush(inp: number[]) {
+        // Transpile
+        let lua = util.transpileString(
+            `let testArray = [0];
+            testArray.push(${inp.join(', ')});
+            return JSONStringify(testArray);
+            `
+            , util.dummyTypes.Array);
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify([0].concat(inp)));
+    }
 }

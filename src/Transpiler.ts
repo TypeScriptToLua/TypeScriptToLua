@@ -85,13 +85,21 @@ export class LuaTranspiler {
             "local " : ""
     }
 
-    makeExport(name: string | ts.__String, node: ts.Node): string {
+    makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
         let result: string = "";
         if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
-            result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+            if (dummy) {
+                result = this.indent + `exports.${this.definitionName(name)} = {}\n`;
+            } else {
+                result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+            }
         }
         if (this.namespace.length !== 0 && !ts.isModuleDeclaration(node)) {
-            result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+            if (dummy) {
+                result += this.indent + `${this.definitionName(name)} = {}\n`;
+            } else {
+                result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+            }
         }
         return result;
     }
@@ -1150,6 +1158,8 @@ export class LuaTranspiler {
             result += this.indent + `    return instance\n`;
             result += this.indent + `end\n`;
         } else {
+            // export empty table
+            result += this.makeExport(className, node, true);
             // Overwrite the original className with the class we are overriding for extensions
             if (extendsType) {
                 className = <string>(<ts.Identifier>extendsType.expression).escapedText;

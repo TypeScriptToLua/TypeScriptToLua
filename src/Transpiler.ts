@@ -85,13 +85,21 @@ export class LuaTranspiler {
             "local " : ""
     }
 
-    makeExport(name: string | ts.__String, node: ts.Node): string {
+    makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
         let result: string = "";
         if (node && node.modifiers && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
-            result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+            if (dummy) {
+                result = this.indent + `exports.${this.definitionName(name)} = {}\n`;
+            } else {
+                result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
+            }
         }
         if (this.namespace.length !== 0 && !ts.isModuleDeclaration(node)) {
-            result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+            if (dummy) {
+                result += this.indent + `${this.definitionName(name)} = {}\n`;
+            } else {
+                result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+            }
         }
         return result;
     }
@@ -383,19 +391,17 @@ export class LuaTranspiler {
         let jumpTableName = "____switch" + this.genVarCounter;
         this.genVarCounter++;
 
-        result += this.indent + `local ${jumpTableName} = {\n`;
-
-        this.pushIndent();
+        result += this.indent + `local ${jumpTableName} = {}\n`;
 
         // If statement to go to right entry label
         clauses.forEach((clause, index) => {
             if (ts.isCaseClause(clause)) {
                 result += this.indent + `-- case:\n`;
-                result += this.indent + `[${this.transpileExpression(clause.expression, true)}] = function(self)\n`;
+                result += this.indent + `${jumpTableName}[${this.transpileExpression(clause.expression, true)}] = function()\n`;
             }
             if (ts.isDefaultClause(clause)) {
                 result += this.indent + `-- default:\n`;
-                result += this.indent + `["____default${this.genVarCounter}"] = function(self)\n`;
+                result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"] = function()\n`;
             }
             this.pushIndent();
 
@@ -418,9 +424,9 @@ export class LuaTranspiler {
 
                 if (i !== index && nextClause) {
                     if (ts.isCaseClause(nextClause)) {
-                        result += this.indent + `self[${this.transpileExpression(nextClause.expression, true)}]()\n`;
+                        result += this.indent + `${jumpTableName}[${this.transpileExpression(nextClause.expression, true)}]()\n`;
                     } else {
-                        result += this.indent + `self["____default${this.genVarCounter}"]()\n`;
+                        result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"]()\n`;
                     }
                 }
             } else {
@@ -429,12 +435,10 @@ export class LuaTranspiler {
 
             this.popIndent();
 
-            result += this.indent + `end,\n`;
+            result += this.indent + `end\n`;
         });
-        this.popIndent();
-        result += this.indent + "}\n";
-        result += this.indent + `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}](${jumpTableName})\n`;
-        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then ${jumpTableName}["____default${this.genVarCounter}"](${jumpTableName}) end\n`;
+        result += this.indent + `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}]()\n`;
+        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then ${jumpTableName}["____default${this.genVarCounter}"]() end\n`;
         result += this.indent + "--------Switch statement end--------\n";
 
         //Increment counter for next switch statement
@@ -772,13 +776,6 @@ export class LuaTranspiler {
         if (ts.isPropertyAccessExpression(node.expression)) {
             const expType = this.checker.getTypeAtLocation(node.expression.expression);
 
-            // Don't include instance if the type is a namespace
-            if (expType.symbol && expType.symbol.flags & ts.SymbolFlags.Namespace) {
-                const callPath = this.transpileExpression(node.expression);
-                const params = this.transpileArguments(node.arguments);
-                return `${callPath}(${params})`;
-            }
-
             if (expType.symbol && expType.symbol.escapedName == "Math") {
                 const params = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
@@ -798,33 +795,15 @@ export class LuaTranspiler {
                         return this.transpileArrayCallExpression(node);
             }
 
-            // Include context parameter if present
-            if (expType && expType.symbol) {
-                const funcName = node.expression.name.escapedText;
-                let funcHolder = tsEx.findMemberHolder(expType, funcName, this.checker);
-
-                // ===== EXPERIMENTAL https://github.com/Perryvw/TypescriptToLua/issues/56
-                if (ts.isParenthesizedExpression(node.expression.expression)
-                    && (ts.isAsExpression(node.expression.expression.expression)
-                     || ts.isTypeAssertion(node.expression.expression.expression))
-                    && ts.isTypeReferenceNode(node.expression.expression.expression.type)) {
-                    const castTypeNode = node.expression.expression.expression.type;
-                    if (this.checker.getTypeFromTypeNode(castTypeNode).symbol.name == funcHolder) {
-                        funcHolder = castTypeNode.getText();
-                    }
-                }
-                // ===== END EXPERIMENTAL
-
-                if (funcHolder === undefined) {
-                    throw new TranspileError(`Could not find func ${funcName} on ${expType.symbol.name}`, node);
-                }
-
-                const callPath = `${funcHolder}.${funcName}`;
-                const params = this.transpileArguments(node.arguments, node.expression.expression);
+            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
+                // Don't replace . with : for namespaces
+                const callPath = this.transpileExpression(node.expression);
+                const params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
             } else {
-                const callPath = this.transpileExpression(node.expression);
-                const params = this.transpileArguments(node.arguments, node.expression.expression);
+                 // Replace last . with : here
+                const callPath = `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
+                const params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
             }
         }
@@ -1179,6 +1158,8 @@ export class LuaTranspiler {
             result += this.indent + `    return instance\n`;
             result += this.indent + `end\n`;
         } else {
+            // export empty table
+            result += this.makeExport(className, node, true);
             // Overwrite the original className with the class we are overriding for extensions
             if (extendsType) {
                 className = <string>(<ts.Identifier>extendsType.expression).escapedText;

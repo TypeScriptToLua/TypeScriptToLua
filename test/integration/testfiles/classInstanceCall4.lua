@@ -6,4 +6,4 @@ function ClassB.new(construct, ...)
     if construct and ClassB.constructor then ClassB.constructor(instance, ...) end
     return instance
 end
-local x = ClassA.myFunc(ClassB.new(true))
+local x = ClassB.new(true):myFunc()

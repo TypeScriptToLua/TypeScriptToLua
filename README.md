@@ -36,8 +36,6 @@ Options:
   --version           Show version number                              [boolean]
   --lt, --luaTarget   Specify Lua target version.
                  [string] [choices: "JIT", "5.1", "5.2", "5.3"] [default: "JIT"]
-  --lld, --luaLibDir  Specify typescript_lualib.lua location relative to outDir.
-                                                        [string] [default: "./"]
   --ah, --addHeader   Specify if a header will be added to compiled files.
                                                        [boolean] [default: true]
 
@@ -53,9 +51,9 @@ Examples:
         "noImplicitAny" : true,
         "noImplicitThis" : true,
         "alwaysStrict" : true,
-        "strictNullChecks": true,
-        "luaTarget": "JIT"
-    }
+        "strictNullChecks": true
+    },
+    "luaTarget": "JIT"
 }
 ```
 

@@ -1,0 +1,6 @@
+{
+    "extends": "./tsconfig.default.json",
+    "compilerOptions": {
+        "rootDir": "../project/nested"
+    }
+}

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Teardown, Test, TestCase } from "alsatian";
 import { execSync } from "child_process"
 import { existsSync, removeSync, unlink } from "fs-extra"
 import { resolve } from "path"
@@ -28,7 +28,10 @@ export class CompilerTests {
                 throw error;
             });
         });
+    }
 
+    @Teardown
+    public teardown() {
         // Delete outDir folder
         removeSync('test/integration/project/outDir');
     }

@@ -51,9 +51,9 @@ Examples:
         "noImplicitAny" : true,
         "noImplicitThis" : true,
         "alwaysStrict" : true,
-        "strictNullChecks": true,
-        "luaTarget": "JIT"
-    }
+        "strictNullChecks": true
+    },
+    "luaTarget": "JIT"
 }
 ```
 

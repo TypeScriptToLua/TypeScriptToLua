@@ -9,7 +9,7 @@ export class CompilerTests {
     @TestCase('tsconfig.outDir.json', ['outDir/typescript_lualib.lua', 'outDir/nested/folder/file.lua'])
     @TestCase('tsconfig.rootDir.json', ['nested/typescript_lualib.lua', 'nested/folder/file.lua'])
     @TestCase('tsconfig.bothDirOptions.json', ['outDir/typescript_lualib.lua', 'outDir/folder/file.lua'])
-    @Test("Compile project")
+    @Test("Compile options: outDir and rootDir")
     public compileProject(tsconfig: string, expectedFiles: string[]) {
         const compilerPath = resolve('dist/Compiler.js');
         const tsconfigPath = resolve('test/integration/project', tsconfig);

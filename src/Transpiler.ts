@@ -2,6 +2,7 @@ import * as ts from "typescript";
 
 import { TSHelper as tsEx } from "./TSHelper";
 import { ForHelper } from "./ForHelper";
+import { CompilerOptions } from "./CommandLineParser";
 
 import * as path from "path";
 
@@ -22,7 +23,7 @@ export class LuaTranspiler {
     public static AvailableLuaTargets = [Target.LuaJIT, Target.Lua53];
 
     // Transpile a source file
-    static transpileSourceFile(node: ts.SourceFile, checker: ts.TypeChecker, options: ts.CompilerOptions): string {
+    static transpileSourceFile(node: ts.SourceFile, checker: ts.TypeChecker, options: CompilerOptions): string {
         let transpiler = new LuaTranspiler(checker, options, node);
 
         const header = options.addHeader ? "--=======================================================================================\n"

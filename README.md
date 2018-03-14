@@ -20,7 +20,7 @@ More detailed documentation and info on writing declarations can be found [on th
 
 `tstl -p path/to/tsconfig.json`
 
-**Options**
+**Usage**
 ```
 tstl [options] [files...]
 
@@ -32,12 +32,12 @@ NOTES:
 - Options in tsconfig.json are prioritized.
 
 Options:
-  --help              Show help                                        [boolean]
-  --version           Show version number                              [boolean]
-  --lt, --luaTarget   Specify Lua target version.
-                 [string] [choices: "JIT", "5.1", "5.2", "5.3"] [default: "JIT"]
-  --ah, --addHeader   Specify if a header will be added to compiled files.
-                                                       [boolean] [default: true]
+  --lt, --luaTarget  Specify Lua target version.
+                               [string] [choices: "JIT", "5.3"] [default: "JIT"]
+  --ah, --addHeader  Specify if a header will be added to compiled files.
+                                                      [boolean] [default: false]
+  -h, --help         Show help                                         [boolean]
+  -v, --version      Show version number                               [boolean]
 
 Examples:
   tstl path/to/file.ts [...]     Compile files

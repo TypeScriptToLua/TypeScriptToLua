@@ -9,6 +9,7 @@ import dedent = require("dedent");
 export interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
     luaTarget?: string;
+    dontRequireLuaLib?: boolean;
 }
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {

@@ -95,12 +95,6 @@ export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine
     return commandLine;
 }
 
-interface OptionNameMap {
-    [key: string]: boolean
-}
-
-let optionNameMapCache: OptionNameMap;
-
 function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments) {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw
     // Add compiler options that are ignored by TS parsers

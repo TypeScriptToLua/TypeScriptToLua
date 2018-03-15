@@ -95,12 +95,12 @@ export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine
     return commandLine;
 }
 
-function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments) {
+function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments, forceOverride?: boolean) {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw
     // Add compiler options that are ignored by TS parsers
     for (const arg in additionalArgs) {
-        // we dont have to check if the options is vlaid becuase we already validated at this point.
-        if (optionDeclarations[arg]) {
+        // dont override, this will prioritize CLI over tsconfig.
+        if (optionDeclarations[arg] && (!commandLine.options[arg] || forceOverride)) {
             commandLine.options[arg] = additionalArgs[arg];
         }
     }

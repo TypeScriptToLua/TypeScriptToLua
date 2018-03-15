@@ -47,10 +47,7 @@ export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine
         .usage(dedent(`Syntax: tstl [options] [files...]
 
             In addition to the options listed below you can also pass options for the typescript compiler (For a list of options use tsc -h).
-
-            Notes:
-              - The tsc options might have no effect.
-              - Options in tsconfig.json are prioritized.`))
+            Some tsc options might have no effect.`))
         .example('tstl path/to/file.ts [...]', 'Compile files')
         .example('tstl -p path/to/tsconfig.json', 'Compile project')
         .wrap(yargs.terminalWidth())

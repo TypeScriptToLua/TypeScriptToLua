@@ -32,7 +32,7 @@ export class LuaTranspiler {
             + "--=======================================================================================\n"
             : "";
         let result = header;
-        if (!options.dontRequireLualib) {
+        if (!options.dontRequireLuaLib) {
             // require helper functions
             result += `require("typescript_lualib")\n`;
         }
@@ -218,7 +218,9 @@ export class LuaTranspiler {
 
     transpileNamespace(node: ts.ModuleDeclaration): string {
         // If phantom namespace just transpile the body as normal
-        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker)) return this.transpileNode(node.body);
+        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker) && node.body) {
+            return this.transpileNode(node.body);
+        }
 
         const defName = this.definitionName(node.name.text);
         let result = this.indent + this.accessPrefix(node) + `${node.name.text} = ${node.name.text} or {}\n`;
@@ -230,7 +232,9 @@ export class LuaTranspiler {
         result += this.indent + "do\n";
         this.pushIndent();
         this.namespace.push(node.name.text);
-        result += this.transpileNode(node.body);
+        if (node.body) {
+            result += this.transpileNode(node.body);
+        }
         this.namespace.pop();
         this.popIndent();
         result += this.indent + "end\n";
@@ -454,7 +458,7 @@ export class LuaTranspiler {
         this.popIndent();
         tryFunc += "end";
         let catchFunc = "function(e)\nend";
-        if (node.catchClause) {
+        if (node.catchClause && node.catchClause.variableDeclaration) {
             let variableName = (<ts.Identifier>node.catchClause.variableDeclaration.name).escapedText;
             catchFunc = this.indent + `function(${variableName})\n`;
             this.pushIndent();
@@ -1119,7 +1123,7 @@ export class LuaTranspiler {
     // Transpile a class declaration
     transpileClass(node: ts.ClassDeclaration): string {
         // Find extends class, ignore implements
-        let extendsType;
+        let extendsType: ts.ExpressionWithTypeArguments | undefined;
         let noClassOr = false;
         if (node.heritageClauses) node.heritageClauses.forEach(clause => {
             if (clause.token == ts.SyntaxKind.ExtendsKeyword) {
@@ -1131,6 +1135,10 @@ export class LuaTranspiler {
                 noClassOr = tsEx.hasCustomDecorator(superType, this.checker, "!NoClassOr");
             }
         });
+
+        if (!node.name) {
+            throw new TranspileError("Unexpected Error: Node has no Name", node)
+        }
 
         let className = <string>node.name.escapedText;
         let result = "";

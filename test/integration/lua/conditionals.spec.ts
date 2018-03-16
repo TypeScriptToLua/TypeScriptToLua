@@ -14,7 +14,6 @@ export class LuaConditionalsTests {
                 return 0;
             }
             return 1;`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -36,7 +35,6 @@ export class LuaConditionalsTests {
             } else {
                 return 1;
             }`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -63,7 +61,6 @@ export class LuaConditionalsTests {
                 return 2;
             }
             return 3;`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -91,7 +88,6 @@ export class LuaConditionalsTests {
             } else {
                 return 3;
             }`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -123,7 +119,6 @@ export class LuaConditionalsTests {
                     break;
             }
             return result;`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -158,7 +153,6 @@ export class LuaConditionalsTests {
                     break;
             }
             return result;`
-            , util.dummyTypes.Number
         );
 
         // Execute
@@ -205,7 +199,6 @@ export class LuaConditionalsTests {
                     break;
             }
             return result;`
-            , util.dummyTypes.Number
         );
 
         // Execute

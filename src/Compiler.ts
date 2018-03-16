@@ -3,10 +3,6 @@
 import * as ts from "typescript";
 import * as fs from "fs";
 import * as path from "path";
-import * as yargs from 'yargs'
-
-// ES6 syntax broken
-import dedent = require("dedent")
 
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
@@ -71,17 +67,13 @@ function compile(fileNames: string[], options: CompilerOptions): void {
     });
 
     // Copy lualib to target dir
-    // This isnt run in sync because copyFileSync wont report errors.
-    fs.copyFile(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"), (err: NodeJS.ErrnoException) => {
-        if (err) {
-            console.log("ERROR: copying lualib to output.");
-            process.exit(1);
-        }
-        else {
-            process.exit(0);
-        }
-    });
+    fs.copyFileSync(path.resolve(__dirname, "../dist/lualib/typescript.lua"), path.join(options.outDir, "typescript_lualib.lua"));
 }
 
-let commandLine = parseCommandLine(process.argv.slice(2));
-compile(commandLine.fileNames, commandLine.options)
+export function execCommandLine(argv?: string[]) {
+    argv = argv ? argv : process.argv.slice(2);
+    let commandLine = parseCommandLine(argv);
+    compile(commandLine.fileNames, commandLine.options)
+}
+
+execCommandLine();

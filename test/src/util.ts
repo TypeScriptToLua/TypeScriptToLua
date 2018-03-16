@@ -1,23 +1,50 @@
 import * as ts from "typescript";
-import { LuaTranspiler, TranspileError } from "../../dist/Transpiler";
+import * as path from "path";
+
+import { LuaTranspiler, TranspileError } from "../../src/Transpiler";
+import { CompilerOptions } from "../../src/CommandLineParser";
 
 const LuaVM = require("lua.vm.js");
 const fs = require("fs");
 
-export namespace dummyTypes {
-    export const None = {};
-    export const Array = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Array" } };
-    export const Object = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Object" } };
-    export const Number = { flags: ts.TypeFlags.Number, symbol: { escapedName: "Number" } };
-    export const String = { flags: ts.TypeFlags.String, symbol: { escapedName: "String" } };
-    export const Math = { flags: ts.TypeFlags.Object, symbol: { escapedName: "Math" } };
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
+
+export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true }): string {
+    let compilerHost = {
+        getSourceFile: (filename, languageVersion) => {
+            if (filename === "file.ts") {
+                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
+            }
+            if (filename === "lib.d.ts") {
+                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            }
+            return undefined;
+        },
+        writeFile: (name, text, writeByteOrderMark) => {
+            // we dont care about the js output
+        },
+        getDefaultLibFileName: () => "lib.d.ts",
+        useCaseSensitiveFileNames: () => false,
+        getCanonicalFileName: fileName => fileName,
+        getCurrentDirectory: () => "",
+        getNewLine: () => "\n",
+        fileExists: (fileName): boolean => true,
+        readFile: () => "",
+        directoryExists: () => true,
+        getDirectories: () => []
+    };
+    let program = ts.createProgram(["file.ts"], options, compilerHost);
+
+    const result = LuaTranspiler.transpileSourceFile(program.getSourceFile("file.ts"), program.getTypeChecker(), options);
+    return result.trim();
 }
 
-export function transpileString(str: string, dummyType: any = dummyTypes.None, options: ts.CompilerOptions = { dontRequireLualib: true }): string {
-    const dummyChecker = { getTypeAtLocation: function() { return dummyType; } }
-    const file = ts.createSourceFile("____internal_test_file.tstl", str, ts.ScriptTarget.Latest);
-    const result = LuaTranspiler.transpileSourceFile(file, dummyChecker, options);
-    return result.trim();
+function printAST(node: ts.Node, indent: number) {
+    let indentStr = "";
+    for (let i = 0; i < indent; i++) indentStr += "    ";
+
+    console.log(indentStr + tsEx.enumName(node.kind, ts.SyntaxKind));
+    node.forEachChild(child => printAST(child, indent + 1));
 }
 
 export function transpileFile(path: string): string {
@@ -28,7 +55,7 @@ export function transpileFile(path: string): string {
     const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code != 6054);
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`));
 
-    const options: ts.CompilerOptions = { dontRequireLualib: true };
+    const options: ts.CompilerOptions = { dontRequireLuaLib: true };
     const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
     return lua.trim();
 }

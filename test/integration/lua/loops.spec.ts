@@ -13,7 +13,6 @@ export class LuaLoopTests {
                 `while (i < arrTest.length) {
                     continue;
                 }`
-                , util.dummyTypes.Array
             );
         }).toThrowError(Error, "Continue is not supported in Lua")
     }
@@ -31,7 +30,6 @@ export class LuaLoopTests {
                 i++;
             }
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -51,7 +49,6 @@ export class LuaLoopTests {
                 arrTest[i] = arrTest[i] + 1;
             }
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -71,7 +68,6 @@ export class LuaLoopTests {
                 arrTest[i] = arrTest[i] + 1;
             }
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -92,7 +88,6 @@ export class LuaLoopTests {
                 arrTest[i] = arrTest[i] + 1;
             }
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -117,7 +112,6 @@ export class LuaLoopTests {
                 arrTest[i] = arrTest[i] + 1;
             }
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -134,7 +128,6 @@ export class LuaLoopTests {
             let lua = util.transpileString(
                 `for (let i = 0; i < 30; i = i + 10) {
                 }`
-                , util.dummyTypes.None
             );
 
             // Execute
@@ -149,7 +142,6 @@ export class LuaLoopTests {
             let lua = util.transpileString(
                 `for (let i = arrTest.length - 1; i; i-- {
                 }`
-                , util.dummyTypes.None
             );
 
             // Execute
@@ -167,7 +159,6 @@ export class LuaLoopTests {
                 objTest[key] = objTest[key] + 1;
             }
             return JSONStringify(objTest);`
-            , util.dummyTypes.Object
         );
 
         // Execute
@@ -187,7 +178,6 @@ export class LuaLoopTests {
                 for (let key in arrTest) {
                     arrTest[key]++;
                 }`
-                , util.dummyTypes.Array
             );
         }).toThrowError(Error, "Iterating over arrays with 'for in' is not allowed.");
     }
@@ -203,7 +193,6 @@ export class LuaLoopTests {
                 arrResultTest.push(value + 1)
             }
             return JSONStringify(arrResultTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute

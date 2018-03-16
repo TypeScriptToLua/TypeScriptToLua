@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 // ES6 syntax broken
-import dedent = require("dedent");
+const dedent = require("dedent");
 
 export interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
@@ -14,6 +14,10 @@ export interface CompilerOptions extends ts.CompilerOptions {
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
+}
+
+export class CLIError extends Error {
+
 }
 
 const optionDeclarations: { [key: string]: yargs.Options } = {
@@ -42,7 +46,7 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
  * Pares the supplied arguments.
  * The result will include arguments supplied via CLI and arguments from tsconfig.
  */
-export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine {
+export function parseCommandLine(args: string[]): ParsedCommandLine {
     const parsedArgs = yargs
         .usage(dedent(`Syntax: tstl [options] [files...]
 
@@ -52,7 +56,10 @@ export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine
         .example('tstl -p path/to/tsconfig.json', 'Compile project')
         .wrap(yargs.terminalWidth())
         .options(optionDeclarations)
-        .argv;
+        .fail((msg, err) => {
+            throw new CLIError(msg);
+        })
+        .parse(args)
 
     let commandLine = ts.parseCommandLine(args);
 
@@ -89,16 +96,18 @@ export function parseCommandLine(args: ReadonlyArray<string>): ParsedCommandLine
         commandLine.options.outDir = commandLine.options.rootDir;
     }
 
-    return commandLine;
+    return <ParsedCommandLine>commandLine;
 }
 
 function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments, forceOverride?: boolean) {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw
     // Add compiler options that are ignored by TS parsers
-    for (const arg in additionalArgs) {
-        // dont override, this will prioritize CLI over tsconfig.
-        if (optionDeclarations[arg] && (!commandLine.options[arg] || forceOverride)) {
-            commandLine.options[arg] = additionalArgs[arg];
+    if (additionalArgs) {
+        for (const arg in additionalArgs) {
+            // dont override, this will prioritize CLI over tsconfig.
+            if (optionDeclarations[arg] && (!commandLine.options[arg] || forceOverride)) {
+                commandLine.options[arg] = additionalArgs[arg];
+            }
         }
     }
 }
@@ -109,7 +118,7 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 
     if (commandLine.errors.length !== 0) {
         // Generate a list of valid option names and aliases
-        let optionNames = [];
+        let optionNames: string[] = [];
         for (let key in optionDeclarations) {
             optionNames.push(key);
             let alias = optionDeclarations[key].alias;
@@ -132,8 +141,7 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
                     }
                 }
                 if (!ignore) {
-                    console.log(`error TS${err.code}: ${err.messageText}`);
-                    process.exit(1);
+                    throw new CLIError(`error TS${err.code}: ${err.messageText}`);
                 }
             }
         });
@@ -142,6 +150,9 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 
 /** Find configFile, function from ts api seems to be broken? */
 function findConfigFile(commandLine: ts.ParsedCommandLine) {
+    if (!commandLine.options.project) {
+        return;
+    }
     let configPath = path.isAbsolute(commandLine.options.project) ? commandLine.options.project : path.join(process.cwd(), commandLine.options.project);
     if (fs.statSync(configPath).isDirectory()) {
         configPath = path.join(configPath, 'tsconfig.json');

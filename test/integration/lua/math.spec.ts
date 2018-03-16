@@ -14,7 +14,6 @@ export class MathTests {
         // Transpile
         let lua = util.transpileString(
             inp,
-            util.dummyTypes.Math
         );
 
         // Assert

@@ -795,9 +795,10 @@ export class LuaTranspiler {
                 case ts.TypeFlags.String:
                 case ts.TypeFlags.StringLiteral:
                     return this.transpileStringCallExpression(node);
-                case ts.TypeFlags.Object:
-                    if (tsEx.isArrayType(expType))
-                        return this.transpileArrayCallExpression(node);
+
+            }
+            if (tsEx.isArrayType(expType)) {
+                return this.transpileArrayCallExpression(node);
             }
 
             if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {

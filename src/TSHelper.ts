@@ -53,32 +53,32 @@ export class TSHelper {
     }
 
     static isStringType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.String) != 0
-            || (type.flags & ts.TypeFlags.StringLike) != 0
-            || (type.flags & ts.TypeFlags.StringLiteral) != 0
+        return (type.flags & ts.TypeFlags.String) !== 0
+            || (type.flags & ts.TypeFlags.StringLike) !== 0
+            || (type.flags & ts.TypeFlags.StringLiteral) !== 0
     }
 
     static isArrayType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) != 0
+        return (type.flags & ts.TypeFlags.Object) !== 0
             && (<ts.ObjectType>type).symbol
             && (<ts.ObjectType>type).symbol.escapedName == "Array";
     }
 
     static isTupleType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) != 0
-            && (<ts.TypeReference>type).typeArguments != undefined;
+        return (type.flags & ts.TypeFlags.Object) !== 0
+            && (<ts.TypeReference>type).typeArguments !== undefined;
     }
 
     static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Enum) != 0)
-            && type.symbol.getDocumentationComment(checker)[0] != undefined
+            && ((type.symbol.flags & ts.SymbolFlags.Enum) !== 0)
+            && type.symbol.getDocumentationComment(checker)[0] !== undefined
             && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
     }
 
     static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Class) != 0)
+            && ((type.symbol.flags & ts.SymbolFlags.Class) !== 0)
             && this.hasCustomDecorator(type, checker, "!PureAbstract");
     }
 
@@ -90,13 +90,13 @@ export class TSHelper {
 
     static isPhantom(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Namespace) != 0)
+            && ((type.symbol.flags & ts.SymbolFlags.Namespace) !== 0)
             && this.hasCustomDecorator(type, checker, "!Phantom");
     }
 
     static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Function) != 0)
+            && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0)
             &&  this.hasCustomDecorator(type, checker, "!TupleReturn");
     }
 

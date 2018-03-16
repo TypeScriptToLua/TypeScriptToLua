@@ -39,14 +39,6 @@ export function transpileString(str: string, options: CompilerOptions = { dontRe
     return result.trim();
 }
 
-function printAST(node: ts.Node, indent: number) {
-    let indentStr = "";
-    for (let i = 0; i < indent; i++) indentStr += "    ";
-
-    console.log(indentStr + tsEx.enumName(node.kind, ts.SyntaxKind));
-    node.forEachChild(child => printAST(child, indent + 1));
-}
-
 export function transpileFile(path: string): string {
     const program = ts.createProgram([path], {});
     const checker = program.getTypeChecker();

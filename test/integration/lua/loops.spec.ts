@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import * as util from "../../src/util"
 
 const deepEqual = require('deep-equal')
@@ -184,6 +184,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2], [1, 2, 3])
     @Test("forof")
+    @FocusTest
     public forof(inp: any, expected: any) {
         // Transpile
         let lua = util.transpileString(
@@ -194,6 +195,7 @@ export class LuaLoopTests {
             }
             return JSONStringify(arrResultTest);`
         );
+        console.log(lua);
 
         // Execute
         let result = util.executeLua(lua);

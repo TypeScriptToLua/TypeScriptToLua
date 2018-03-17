@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import * as util from "../../src/util"
 
 export class LuaConditionalsTests {
@@ -208,5 +208,47 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase(0, 0)
+    @TestCase(1, 1)
+    @TestCase(2, 2)
+    @TestCase(3, -2)
+    @Test("nestedSwitch")
+    public nestedSwitch(inp: number, expected: number) {
+        // Transpile
+        let lua = util.transpileString(
+            `let result = -1;
 
+            switch (${inp}) {
+                case 0:
+                    result = 0;
+                    break;
+                case 1:
+                    switch(${inp}) {
+                        case 0:
+                            result = 0;
+                            break;
+                        case 1:
+                            result = 1;
+                            break;
+                        default:
+                            result = -3;
+                            break;
+                    }
+                    break;
+                case 2:
+                    result = 2;
+                    break;
+                default:
+                    result = -2;
+                    break;
+            }
+            return result;`
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
 }

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase, Teardown } from "alsatian";
 
 import { CompilerOptions, parseCommandLine, ParsedCommandLine } from "../../src/CommandLineParser";
 

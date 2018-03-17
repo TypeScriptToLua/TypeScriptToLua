@@ -61,22 +61,6 @@ export class StringTests {
         Expect(result).toBe(expected);
     }
 
-    @TestCase("hello test", new RegExp("123", "g"), "")
-    @IgnoreTest()
-    @Test("string.replace[Regex]")
-    public replaceRegex(inp: string, searchValue: string, replaceValue: string) {
-        // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".replace("${searchValue}", "${replaceValue}")`,
-        );
-
-        // Execute
-        let result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(inp.replace(searchValue, replaceValue));
-    }
-
     @TestCase("hello test", "")
     @TestCase("hello test", "t")
     @TestCase("hello test", "h")

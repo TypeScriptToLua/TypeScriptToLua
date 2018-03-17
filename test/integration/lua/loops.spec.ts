@@ -184,18 +184,16 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2], [1, 2, 3])
     @Test("forof")
-    @FocusTest
     public forof(inp: any, expected: any) {
         // Transpile
         let lua = util.transpileString(
             `let objTest = ${JSON.stringify(inp)};
-            let arrResultTest = {};
+            let arrResultTest = [];
             for (let value of objTest) {
                 arrResultTest.push(value + 1)
             }
             return JSONStringify(arrResultTest);`
         );
-        console.log(lua);
 
         // Execute
         let result = util.executeLua(lua);

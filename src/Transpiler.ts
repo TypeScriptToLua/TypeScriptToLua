@@ -51,7 +51,7 @@ export class LuaTranspiler {
     checker: ts.TypeChecker;
     options: ts.CompilerOptions;
     genVarCounter: number;
-    transpilingSwitch: boolean;
+    transpilingSwitch: number;
     namespace: string[];
     importCount: number;
     isModule: boolean;
@@ -62,7 +62,7 @@ export class LuaTranspiler {
         this.checker = checker;
         this.options = options;
         this.genVarCounter = 0;
-        this.transpilingSwitch = false;
+        this.transpilingSwitch = 0;
         this.namespace = [];
         this.importCount = 0;
         this.sourceFile = sourceFile;
@@ -277,7 +277,7 @@ export class LuaTranspiler {
     }
 
     transpileBreak(): string {
-        if (this.transpilingSwitch) {
+        if (this.transpilingSwitch > 0) {
             return '';
         } else {
             return this.indent + "break\n";
@@ -410,11 +410,11 @@ export class LuaTranspiler {
             }
             this.pushIndent();
 
-            this.transpilingSwitch = true;
+            this.transpilingSwitch++;
             clause.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
-            this.transpilingSwitch = false;
+            this.transpilingSwitch--;
 
             let i = index + 1;
             if (i < clauses.length && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {

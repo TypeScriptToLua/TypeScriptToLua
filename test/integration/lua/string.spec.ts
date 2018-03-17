@@ -12,7 +12,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return String.fromCharCode(${inp.toString()})`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -32,7 +31,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".replace("${searchValue}", "${replaceValue}")`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -54,7 +52,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return ${concatStr}`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -62,23 +59,6 @@ export class StringTests {
 
         // Assert
         Expect(result).toBe(expected);
-    }
-
-    @TestCase("hello test", new RegExp("123", "g"), "")
-    @IgnoreTest()
-    @Test("string.replace[Regex]")
-    public replaceRegex(inp: string, searchValue: string, replaceValue: string) {
-        // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".replace("${searchValue}", "${replaceValue}")`,
-            util.dummyTypes.String
-        );
-
-        // Execute
-        let result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(inp.replace(searchValue, replaceValue));
     }
 
     @TestCase("hello test", "")
@@ -90,7 +70,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".indexOf("${searchValue}")`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -110,7 +89,6 @@ export class StringTests {
         let paramStr = end ? `${start}, ${end}` : `${start}`;
         let lua = util.transpileString(
             `return "${inp}".substring(${paramStr})`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -128,7 +106,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".length`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -144,7 +121,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".toLowerCase()`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -160,7 +136,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".toUpperCase()`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -182,7 +157,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return JSONStringify("${inp}".split("${separator}"))`,
-            util.dummyTypes.String
         );
 
         // Execute
@@ -201,7 +175,6 @@ export class StringTests {
         // Transpile
         let lua = util.transpileString(
             `return "${inp}".charAt(${index})`,
-            util.dummyTypes.String
         );
 
         // Execute

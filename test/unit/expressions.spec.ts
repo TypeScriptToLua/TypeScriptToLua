@@ -95,7 +95,7 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a=bit.rshift(a,b)")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string) {
-        Expect(util.transpileString(input, util.dummyTypes.None, { luaTarget: 'JIT', dontRequireLualib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: 'JIT', dontRequireLuaLib: true })).toBe(lua);
     }
 
     @TestCase("a&b", "a&b")
@@ -110,7 +110,7 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a=a>>>b")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string) {
-        Expect(util.transpileString(input, util.dummyTypes.None, { luaTarget: '5.3', dontRequireLualib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: '5.3', dontRequireLuaLib: true })).toBe(lua);
     }
 
 

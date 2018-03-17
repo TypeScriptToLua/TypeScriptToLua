@@ -13,7 +13,6 @@ export class LuaLibArrayTests {
                 arrTest[index] = arrTest[index] + 1;
             })
             return JSONStringify(arrTest);`
-            , util.dummyTypes.Array
         );
 
         // Execute
@@ -32,7 +31,7 @@ export class LuaLibArrayTests {
     @Test("array.map")
     public map<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -51,7 +50,7 @@ export class LuaLibArrayTests {
     @Test("array.filter")
     public filter<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -67,7 +66,7 @@ export class LuaLibArrayTests {
     @Test("array.every")
     public every<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return [${inp.toString()}].every(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return [${inp.toString()}].every(${func}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -83,7 +82,7 @@ export class LuaLibArrayTests {
     @Test("array.some")
     public some<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return [${inp.toString()}].some(${func}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return [${inp.toString()}].some(${func}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -102,7 +101,7 @@ export class LuaLibArrayTests {
     @Test("array.slice")
     public slice<T>(inp: T[], start: number, end?: number) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -124,8 +123,7 @@ export class LuaLibArrayTests {
         let lua = util.transpileString(
             `let spliceTestTable = [${inp.toString()}];
             spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
-            return JSONStringify(spliceTestTable);`,
-            util.dummyTypes.Array
+            return JSONStringify(spliceTestTable);`
         );
 
         // Execute
@@ -146,7 +144,7 @@ export class LuaLibArrayTests {
     @Test("array.splice[Remove]")
     public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`, util.dummyTypes.Array);
+        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`);
 
         // Execute
         let result = util.executeLua(lua);
@@ -177,8 +175,7 @@ export class LuaLibArrayTests {
         // Transpile
         let lua = util.transpileString(
             `let joinTestTable = ${JSON.stringify(inp)};
-            return joinTestTable.join(${seperatorLua});`,
-            util.dummyTypes.Array
+            return joinTestTable.join(${seperatorLua});`
         );
 
         // Execute
@@ -197,7 +194,7 @@ export class LuaLibArrayTests {
         // Transpile
         let lua = util.transpileString(
             `return ${JSON.stringify(inp)}.indexOf("${element}"))`
-            , util.dummyTypes.Array
+
         );
 
         // Execute
@@ -216,8 +213,7 @@ export class LuaLibArrayTests {
         let lua = util.transpileString(
             `let [x, y, z] = ${JSON.stringify(inp)}
             return z;
-            `
-            , util.dummyTypes.Number);
+            `);
 
         // Execute
         let result = util.executeLua(lua);
@@ -236,7 +232,7 @@ export class LuaLibArrayTests {
             testArray.push(${inp.join(', ')});
             return JSONStringify(testArray);
             `
-            , util.dummyTypes.Array);
+            );
 
         // Execute
         let result = util.executeLua(lua);

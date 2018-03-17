@@ -20,30 +20,6 @@ More detailed documentation and info on writing declarations can be found [on th
 
 `tstl -p path/to/tsconfig.json`
 
-**Options**
-```
-tstl [options] [files...]
-
-In addition to the options listed below you can also pass options for the
-typescript compiler (For a list of options use tsc -h).
-
-NOTES:
-- The tsc options might have no effect.
-- Options in tsconfig.json are prioritized.
-
-Options:
-  --help              Show help                                        [boolean]
-  --version           Show version number                              [boolean]
-  --lt, --luaTarget   Specify Lua target version.
-                 [string] [choices: "JIT", "5.1", "5.2", "5.3"] [default: "JIT"]
-  --ah, --addHeader   Specify if a header will be added to compiled files.
-                                                       [boolean] [default: true]
-
-Examples:
-  tstl path/to/file.ts [...]     Compile files
-  tstl -p path/to/tsconfig.json  Compile project
-```
-
 **Example tsconfig.json**
 ```
 {

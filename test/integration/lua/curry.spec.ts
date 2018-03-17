@@ -8,7 +8,6 @@ export class LuaCurryTests {
         // Transpile
         let lua = util.transpileString(
             `(x: number) => (y: number) => x + y;`
-            , util.dummyTypes.Number
         );
         // Assert
         Expect(lua).toBe(`function(x) return function(y) return x+y end end`);
@@ -22,7 +21,6 @@ export class LuaCurryTests {
         let lua = util.transpileString(
             `let add = (x: number) => (y: number) => x + y;
             return add(${x})(${y})`
-            , util.dummyTypes.Number
         );
 
         // Execute

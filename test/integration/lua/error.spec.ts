@@ -8,7 +8,6 @@ export class LuaErrorTests {
         // Transpile
         let lua = util.transpileString(
             `throw "Some Error"`
-            , util.dummyTypes.Number
         );
         // Assert
         Expect(lua).toBe(`error("Some Error")`);
@@ -20,7 +19,6 @@ export class LuaErrorTests {
         Expect(() => {
             let lua = util.transpileString(
                 `throw Error("Some Error")`
-                , util.dummyTypes.Number
             );
         }).toThrowError(Error, "Unsupported throw expression, only string literals are supported");
     }

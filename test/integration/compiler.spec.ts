@@ -1,7 +1,7 @@
 import { Expect, Teardown, Test, TestCase } from "alsatian";
-import { execSync } from "child_process"
-import { existsSync, removeSync, unlink } from "fs-extra"
-import { resolve } from "path"
+import * as fs from "fs-extra";
+import * as path from "path";
+import { execCommandLine } from "../../src/Compiler";
 
 export class CompilerTests {
 
@@ -11,20 +11,20 @@ export class CompilerTests {
     @TestCase('tsconfig.bothDirOptions.json', ['outDir/typescript_lualib.lua', 'outDir/folder/file.lua'])
     @Test("Compile options: outDir and rootDir")
     public compileProject(tsconfig: string, expectedFiles: string[]) {
-        const compilerPath = resolve('dist/Compiler.js');
-        const tsconfigPath = resolve('test/integration/project', tsconfig);
+        const compilerPath = path.resolve('dist/Compiler.js');
+        const tsconfigPath = path.resolve('test/integration/project', tsconfig);
 
         // Compile project
-        execSync(`node ${compilerPath} -p ${tsconfigPath}`);
+        execCommandLine(['-p', tsconfigPath]);
 
         expectedFiles.forEach(relativePath => {
-            const absolutePath = resolve('test/integration/project', relativePath);
+            const absolutePath = path.resolve('test/integration/project', relativePath);
 
             // Assert
-            Expect(existsSync(absolutePath)).toBe(true);
+            Expect(fs.existsSync(absolutePath)).toBe(true);
 
             // Delete file
-            unlink(absolutePath, (error) => {
+            fs.unlink(absolutePath, (error) => {
                 throw error;
             });
         });
@@ -33,7 +33,7 @@ export class CompilerTests {
     @Teardown
     public teardown() {
         // Delete outDir folder
-        removeSync('test/integration/project/outDir');
+        fs.removeSync('test/integration/project/outDir');
     }
 
 }

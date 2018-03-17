@@ -1,6 +1,8 @@
 import * as ts from "typescript";
 import * as path from "path";
 
+import { Expect } from "alsatian";
+
 import { LuaTranspiler, TranspileError } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 
@@ -58,6 +60,18 @@ export function executeLua(lua: string, withLib = true): any {
     }
     const luavm = new LuaVM.Lua.State();
     return luavm.execute(lua)[0];
+}
+
+export function expectCodeEqual(code1: string, code2: string) {
+    // Trim leading/trailing whitespace
+    let c1 = code1.trim();
+    let c2 = code2.trim();
+
+    // Unify indentation
+    c1 = c1.replace(/\s+/g, " ");
+    c2 = c2.replace(/\s+/g, " ");
+
+    Expect(c1).toBe(c2);
 }
 
 const lualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";

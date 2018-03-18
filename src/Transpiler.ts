@@ -160,6 +160,8 @@ export class LuaTranspiler {
                 return this.transpileIf(<ts.IfStatement>node);
             case ts.SyntaxKind.WhileStatement:
                 return this.transpileWhile(<ts.WhileStatement>node);
+            case ts.SyntaxKind.DoStatement:
+                return this.transpileDoStatement(<ts.DoStatement>node);
             case ts.SyntaxKind.ForStatement:
                 return this.transpileFor(<ts.ForStatement>node);
             case ts.SyntaxKind.ForOfStatement:
@@ -310,6 +312,19 @@ export class LuaTranspiler {
         result += this.transpileStatement(node.statement);
         this.popIndent();
         return result + this.indent + "end\n";
+    }
+
+    transpileDoStatement(node: ts.DoStatement): string {
+        let result = this.indent + `repeat\n`;
+
+        this.pushIndent();
+        result += this.transpileStatement(node.statement);
+        this.popIndent();
+
+        // Negate the expression because we translate from do-while to repeat-until (repeat-while-not)
+        result += this.indent + `until not ${this.transpileExpression(node.expression, true)}\n`;
+
+        return result;
     }
 
     transpileFor(node: ts.ForStatement): string {

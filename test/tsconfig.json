@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "sourceMap": true
     },
     "exclude": [
         "integration/testfiles/*",

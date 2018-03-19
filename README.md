@@ -1,7 +1,9 @@
 # TypescriptToLua
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!
 
-[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua) [![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
+[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/perryvw/typescripttolua?branch=master&svg=true)](https://ci.appveyor.com/project/Perryvw/typescripttolua)
+[![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
 
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).

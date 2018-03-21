@@ -42,7 +42,6 @@ export class FileTests {
     @TestCases(files)
     @Test("Transformation Tests")
     public transformationTests(tsFile: string, luaFile:string) {
-        // Don't check error message because the yargs library messes the message up.
         Expect(
             BufferToTestString(fileContents[luaFile]))
         .toEqual(

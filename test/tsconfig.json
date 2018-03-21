@@ -4,6 +4,6 @@
         "sourceMap": true
     },
     "exclude": [
-        "transformation/ts/*",
+        "translation/ts/*",
     ]
 }

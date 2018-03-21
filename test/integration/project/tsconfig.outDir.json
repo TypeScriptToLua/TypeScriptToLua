@@ -1,6 +1,0 @@
-{
-    "extends": "./tsconfig.default.json",
-    "compilerOptions": {
-        "outDir": "../project/outDir"
-    }
-}

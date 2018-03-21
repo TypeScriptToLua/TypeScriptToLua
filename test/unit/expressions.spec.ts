@@ -1,8 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
-import { LuaTranspiler, TranspileError } from "../../dist/Transpiler";
-
 import * as util from "../src/util";
 
 export class ExpressionTests {

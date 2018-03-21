@@ -1,0 +1,1 @@
+import {TestClass} from "test"

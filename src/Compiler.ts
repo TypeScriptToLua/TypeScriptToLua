@@ -60,11 +60,13 @@ function compile(fileNames: string[], options: CompilerOptions): void {
                 if (exception.node) {
                     const pos = ts.getLineAndCharacterOfPosition(sourceFile, exception.node.pos);
                     // Graciously handle transpilation errors
-                    throw new Error(
+                    console.error(
                         "Encountered error parsing file: " + exception.message + "\n" +
                         sourceFile.fileName +
                         " line: " + (1 + pos.line) + " column: " + pos.character + "\n" +
-                        exception.stack);
+                        exception.stack
+                    );
+                    process.exit(1);
                 } else {
                     throw exception;
                 }

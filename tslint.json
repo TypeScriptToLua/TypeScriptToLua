@@ -24,7 +24,8 @@
                 "esSpecCompliant": true
             }
         ],
-        "interface-name": false
+        "interface-name": false,
+        "radix": false
     },
     "rulesDirectory": []
 }

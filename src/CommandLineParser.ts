@@ -23,7 +23,7 @@ export class CLIError extends Error {
 const optionDeclarations: { [key: string]: yargs.Options } = {
     addHeader: {
         alias: "ah",
-        default: false,
+        default: true,
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },

@@ -7,4 +7,6 @@ function TestClass.new(construct, ...)
     if construct and TestClass.constructor then TestClass.constructor(instance, ...) end
     return instance
 end
+function TestClass.constructor(self)
+end
 return exports

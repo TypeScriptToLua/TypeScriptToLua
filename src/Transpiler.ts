@@ -1212,12 +1212,9 @@ export class LuaTranspiler {
         if (constructor) {
             // Add constructor plus initialisation of instance fields
             result += this.transpileConstructor(constructor, className, instanceFields);
-        } else {
-            // No constructor, make one to set all instance fields if there are any
-            if (instanceFields.length > 0) {
-                // Create empty constructor and add instance fields
-                result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)), className, instanceFields);
-            }
+        } else if (!isExtension) {
+            // Generate a constructor if none was defined
+            result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)), className, instanceFields);
         }
 
         // Transpile methods

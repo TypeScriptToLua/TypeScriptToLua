@@ -42,10 +42,8 @@ export class FileTests {
     @TestCases(files)
     @Test("Transformation Tests")
     public transformationTests(tsFile: string, luaFile:string) {
-        Expect(
-            BufferToTestString(fileContents[luaFile]))
-        .toEqual(
-            util.transpileString(BufferToTestString(fileContents[tsFile])));
+        Expect(util.transpileString(BufferToTestString(fileContents[tsFile])))
+        .toEqual(BufferToTestString(fileContents[luaFile]));
     }
 
 }

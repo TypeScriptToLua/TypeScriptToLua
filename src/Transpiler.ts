@@ -600,7 +600,7 @@ export class LuaTranspiler {
                 return this.transpileExpression((node as ts.DeleteExpression).expression) + "=nil";
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
-                return this.transpileArrowFunction(node as ts.ArrowFunction);
+                return this.transpileFunctionExpression(node as ts.ArrowFunction);
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(node as ts.NewExpression);
             case ts.SyntaxKind.ComputedPropertyName:
@@ -1363,21 +1363,7 @@ export class LuaTranspiler {
         return "{" + properties.join(",") + "}";
     }
 
-    public transpileFunctionExpression(node: ts.FunctionExpression): string {
-        // Build parameter string
-        const paramNames: string[] = [];
-        node.parameters.forEach((param) => {
-            paramNames.push((param.name as ts.Identifier).escapedText as string);
-        });
-
-        let result = `function(${paramNames.join(",")})\n`;
-        this.pushIndent();
-        result += this.transpileBlock(node.body);
-        this.popIndent();
-        return result + this.indent + "end\n";
-    }
-
-    public transpileArrowFunction(node: ts.ArrowFunction): string {
+    public transpileFunctionExpression(node: ts.ArrowFunction): string {
         // Build parameter string
         const paramNames: string[] = [];
         node.parameters.forEach((param) => {

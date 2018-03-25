@@ -3,9 +3,6 @@ import * as path from "path";
 import * as ts from "typescript";
 import * as yargs from "yargs";
 
-// ES6 syntax broken
-import dedent = require("dedent");
-
 export interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
     luaTarget?: string;

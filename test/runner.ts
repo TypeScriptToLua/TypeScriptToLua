@@ -1,4 +1,4 @@
-import { TestSet, TestRunner } from "alsatian";
+import { TestRunner, TestSet } from "alsatian";
 import { TapBark } from "tap-bark";
 
 // create test set
@@ -21,6 +21,6 @@ testRunner.outputStream
 // run the test set
 testRunner.run(testSet);
           // this will be called after all tests have been run
-          //.then((results) => done())
+          // .then((results) => done())
           // this will be called if there was a problem
-          //.catch((error) => doSomethingWith(error));
+          // .catch((error) => doSomethingWith(error));

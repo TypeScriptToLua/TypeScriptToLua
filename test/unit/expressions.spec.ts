@@ -128,4 +128,28 @@ export class ExpressionTests {
     public conditional(input: string, lua: string) {
         Expect(util.transpileString(input)).toBe(lua);
     }
+
+    @Test("Arrow Function Expression")
+    public arrowFunctionExpression(input: string) {
+        // Transpile
+        const lua = util.transpileString(`let add = (a, b) => a+b; return add(1,2);`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3);
+    }
+
+    @Test("Function Expression")
+    public functionExpression(input: string) {
+        // Transpile
+        const lua = util.transpileString(`let add = function(a, b) {return a+b}; return add(1,2);`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3);
+    }
 }

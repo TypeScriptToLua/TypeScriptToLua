@@ -21,6 +21,28 @@ export class StringTests {
         Expect(result).toBe(String.fromCharCode(...inp));
     }
 
+    @TestCase(12, 23, 43)
+    @TestCase("test", "hello", "bye")
+    @TestCase("test", 42, "bye")
+    @TestCase("test", 42, 12)
+    @Test("Template Strings")
+    public templateStrings(a: any, b: any, c: any) {
+        // Transpile
+        const a1 = typeof(a) === "string" ? "'" + a + "'" : a;
+        const b1 = typeof(b) === "string" ? "'" + b + "'" : b;
+        const c1 = typeof(c) === "string" ? "'" + c + "'" : c;
+
+        let lua = util.transpileString(
+            "let a = " + a1 + "; let b = " + b1 + "; let c = " + c1 + "; return `${a} ${b} test ${c}`;"
+        );
+
+        // Execute
+        let result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(`${a} ${b} test ${c}`);
+    }
+
     @TestCase("hello test", "", "")
     @TestCase("hello test", " ", "")
     @TestCase("hello test", "hello", "")

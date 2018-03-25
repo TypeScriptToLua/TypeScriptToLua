@@ -21,12 +21,9 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "dedent": "^0.7.0",
-        "fs-extra": "^5.0.0",
         "yargs": "^11.0.0"
     },
     "devDependencies": {
-        "@types/fs-extra": "^5.0.1",
         "@types/node": "^9.4.7",
         "@types/yargs": "^11.0.0",
         "alsatian": "^2.2.1",

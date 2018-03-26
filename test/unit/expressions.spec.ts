@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";

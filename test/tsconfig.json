@@ -5,6 +5,7 @@
     },
     "exclude": [
         "translation/ts/*",
-        "compiler/project/*"
+        "compiler/project/*",
+        "compiler/testfiles/*"
     ]
 }

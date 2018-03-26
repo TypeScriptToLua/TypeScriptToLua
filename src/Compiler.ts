@@ -8,7 +8,7 @@ import { CompilerOptions, parseCommandLine } from "./CommandLineParser";
 import { LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
 
-function compile(fileNames: string[], options: CompilerOptions): void {
+export function compile(fileNames: string[], options: CompilerOptions): void {
     const program = ts.createProgram(fileNames, options);
     const checker = program.getTypeChecker();
 
@@ -60,10 +60,9 @@ function compile(fileNames: string[], options: CompilerOptions): void {
                 if (exception.node) {
                     const pos = ts.getLineAndCharacterOfPosition(sourceFile, exception.node.pos);
                     // Graciously handle transpilation errors
+                    console.error("Encountered error parsing file: " + exception.message);
                     console.error(
-                        "Encountered error parsing file: " + exception.message + "\n" +
-                        sourceFile.fileName +
-                        " line: " + (1 + pos.line) + " column: " + pos.character + "\n" +
+                        sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character + "\n" +
                         exception.stack
                     );
                     process.exit(1);

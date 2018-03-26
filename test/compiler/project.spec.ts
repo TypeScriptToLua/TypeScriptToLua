@@ -17,7 +17,7 @@ function getAllFiles(dir: string): string[] {
     );
 }
 
-export class CompilerTests {
+export class CompilerProjectTests {
 
     private existingFiles: string[];
     private filesAfterCompile: string[];
@@ -28,7 +28,11 @@ export class CompilerTests {
       this.filesAfterCompile = [];
     }
 
-    @TestCase("tsconfig.default.json",
+    @TestCase("tsconfig.json",
+              "typescript_lualib.lua",
+              "test_src/test_lib/file.lua",
+              "test_src/main.lua")
+    @TestCase("test_src/main.ts",
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")

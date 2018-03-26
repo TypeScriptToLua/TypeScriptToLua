@@ -162,7 +162,7 @@ function findConfigFile(commandLine: ts.ParsedCommandLine) {
     if (path.isAbsolute(commandLine.options.project)) {
         configPath = commandLine.options.project;
     } else {
-        path.join(process.cwd(), commandLine.options.project);
+        configPath = path.join(process.cwd(), commandLine.options.project);
     }
     if (fs.statSync(configPath).isDirectory()) {
         configPath = path.join(configPath, "tsconfig.json");

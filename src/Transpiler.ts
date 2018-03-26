@@ -1186,10 +1186,14 @@ export class LuaTranspiler {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
+        // Parameters with default values
+        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+
         // Build function header
         result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
 
         this.pushIndent();
+        result += this.transpileParameterDefaultValues(defaultValueParams);
         result += this.transpileBlock(body);
         this.popIndent();
 
@@ -1370,14 +1374,29 @@ export class LuaTranspiler {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
-        if (ts.isBlock(node.body)) {
+        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+
+        if (ts.isBlock(node.body) || defaultValueParams.length > 0) {
             let result = `function(${paramNames.join(",")})\n`;
             this.pushIndent();
+            result += this.transpileParameterDefaultValues(defaultValueParams);
             result += this.transpileBlock(node.body);
             this.popIndent();
             return result + this.indent + "end\n";
         } else {
             return `function(${paramNames.join(",")}) return ` + this.transpileExpression(node.body) + " end";
         }
+    }
+
+    public transpileParameterDefaultValues(params: ts.ParameterDeclaration[]): string {
+        let result = "";
+
+        params.filter((declaration) => declaration.initializer !== undefined).forEach((declaration) => {
+            const paramName = (declaration.name as ts.Identifier).escapedText;
+            const paramValue = this.transpileExpression(declaration.initializer);
+            result += this.indent + `if ${paramName}==nil then ${paramName}=${paramValue} end\n`;
+        });
+
+        return result;
     }
 }

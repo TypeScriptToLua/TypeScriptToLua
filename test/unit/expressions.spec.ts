@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -26,7 +26,6 @@ export class ExpressionTests {
             util.transpileString(input);
         }).toThrowError(Error, expectedError);
     }
-
 
     @TestCase("1+1", "1+1")
     @TestCase("1-1", "1-1")
@@ -93,7 +92,7 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a=bit.rshift(a,b)")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: 'JIT', dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: "JIT", dontRequireLuaLib: true })).toBe(lua);
     }
 
     @TestCase("a&b", "a&b")
@@ -108,9 +107,8 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a=a>>>b")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: '5.3', dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true })).toBe(lua);
     }
-
 
     @TestCase("1+1", "1+1")
     @TestCase("-1+1", "-1+1")
@@ -130,7 +128,7 @@ export class ExpressionTests {
     }
 
     @Test("Arrow Function Expression")
-    public arrowFunctionExpression(input: string) {
+    public arrowFunctionExpression() {
         // Transpile
         const lua = util.transpileString(`let add = (a, b) => a+b; return add(1,2);`);
 
@@ -141,8 +139,31 @@ export class ExpressionTests {
         Expect(result).toBe(3);
     }
 
+    @TestCase([])
+    @TestCase([5])
+    @TestCase([1, 2])
+    @Test("Arrow Default Values")
+    public arrowFunctionDefaultValues(inp: number[]) {
+        // Default value is 3 for v1
+        const v1 = inp.length > 0 ? inp[0] : 3;
+        // Default value is 4 for v2
+        const v2 = inp.length > 1 ? inp[1] : 4;
+
+        const callArgs = inp.join(",");
+
+        // Transpile
+        const lua = util.transpileString(`let add = (a: number = 3, b: number = 4) => { return a+b; }`
+                                       + `return add(${callArgs});`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(v1 + v2);
+    }
+
     @Test("Function Expression")
-    public functionExpression(input: string) {
+    public functionExpression() {
         // Transpile
         const lua = util.transpileString(`let add = function(a, b) {return a+b}; return add(1,2);`);
 
@@ -151,5 +172,28 @@ export class ExpressionTests {
 
         // Assert
         Expect(result).toBe(3);
+    }
+
+    @TestCase([], 7)
+    @TestCase([5], 9)
+    @TestCase([1, 2], 3)
+    @Test("Arrow Default Values")
+    public functionExpressionDefaultValues(inp: number[]) {
+        // Default value is 3 for v1
+        const v1 = inp.length > 0 ? inp[0] : 3;
+        // Default value is 4 for v2
+        const v2 = inp.length > 1 ? inp[1] : 4;
+
+        const callArgs = inp.join(",");
+
+        // Transpile
+        const lua = util.transpileString(`let add = function(a: number = 3, b: number = 4) { return a+b; }`
+                                       + `return add(${callArgs});`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(v1 + v2);
     }
 }

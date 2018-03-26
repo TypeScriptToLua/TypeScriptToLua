@@ -98,6 +98,9 @@ export class LuaLoopTests {
     }
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i < arrTest.length; i++")
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i <= arrTest.length - 1; i++")
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length > i; i++")
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length - 1 >= i; i++")
     @TestCase([0, 1, 2, 3], [1, 1, 3, 3], "let i = 0; i < arrTest.length; i += 2")
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = arrTest.length - 1; i <= 0; i--")
     @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i <= 0; i -= 2")
@@ -135,18 +138,26 @@ export class LuaLoopTests {
         }).toThrowError(Error, "Unsupported for-loop increment step: BinaryExpression")
     }
 
+    @TestCase("let i = 0; i + 3; i++")
+    @TestCase("let i = 0; 3 + i; i++")
+    @TestCase("let i = 0; i - 3; i++")
+    @TestCase("let i = 0; i * 3; i++")
+    @TestCase("let i = 0; i / 3; i++")
+    @TestCase("let i = 0; i &= 3; i++")
+    @TestCase("let i = 0; i < 3; !i")
+    @TestCase("let i = 0; i < 3; i as string")
     @Test("forconditionThrow")
-    public forconditionThrow(inp: number[], expected: number[], header: string) {
+    public forconditionThrow(header: string) {
         // Transpile & Assert
         Expect(() => {
             let lua = util.transpileString(
-                `for (let i = arrTest.length - 1; i; i-- {
+                `for (${header}) {
                 }`
             );
 
             // Execute
             let result = util.executeLua(lua);
-        }).toThrowError(Error, "Unsupported for-loop condition type: Identifier")
+        }).toThrow();
     }
 
     @TestCase({ ['test1']: 0, ['test2']: 1, ['test3']: 2 }, { ['test1']: 1, ['test2']: 2, ['test3']: 3 })

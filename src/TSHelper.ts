@@ -27,7 +27,7 @@ export class TSHelper {
 
     // Breaks down a mask into all flag names.
     public static enumNames(mask, haystack) {
-        const result = [mask];
+        const result = [];
         for (const name in haystack) {
             if ((mask & haystack[name]) !== 0 && mask >= haystack[name]) {
                 result.push(name);
@@ -108,21 +108,6 @@ export class TSHelper {
             return decorators.indexOf(decorator) > -1;
         }
         return false;
-    }
-
-    // Depth-First-Search up the inheritance tree for the name of the symbol containing the member
-    public static findMemberHolder(type: ts.Type, memberName: ts.__String, typeChecker: ts.TypeChecker): string {
-        if (type.symbol.members.has(memberName) || (type.symbol.exports && type.symbol.exports.has(memberName))) {
-            while (this.isExtensionClass(type, typeChecker)) {
-                type = typeChecker.getBaseTypes(type as ts.InterfaceType)[0];
-            }
-            return type.symbol.name;
-        } else {
-            for (const parent of typeChecker.getBaseTypes(type as ts.InterfaceType)) {
-                const parentMember = this.findMemberHolder(parent, memberName, typeChecker);
-                if (parentMember) { return parentMember; }
-            }
-        }
     }
 
     // Search up until finding a node satisfying the callback

@@ -361,21 +361,17 @@ export class LuaTranspiler {
     }
 
     public transpileFor(node: ts.ForStatement): string {
-        // Get iterator variable
-        const variableDeclaration = (node.initializer as ts.VariableDeclarationList).declarations[0];
-        const variable = this.transpileVariableDeclaration(variableDeclaration);
-        const condition = this.transpileExpression(node.condition);
-        const incrementor = this.transpileExpression(node.incrementor);
-
         // Add header
-        let result = `--for(${variable.trim()}; ${condition}; ${incrementor};)\n`;
-        result += this.indent + variable;
+        let result = "";
+        for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
+            result += this.transpileVariableDeclaration(variableDeclaration);
+        }
         result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
 
         // Add body
         this.pushIndent();
         result += this.transpileStatement(node.statement);
-        result += this.indent + incrementor + "\n";
+        result += this.indent + this.transpileExpression(node.incrementor) + "\n";
         this.popIndent();
 
         result += this.indent + "end\n";

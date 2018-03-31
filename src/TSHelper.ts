@@ -101,10 +101,13 @@ export class TSHelper {
     }
 
     public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
-        const comment = type.symbol.getDocumentationComment(checker);
-        const decorators =
-            comment.filter((_) => _.kind === "text").map((_) => _.text.trim()).filter((_) => _[0] === "!");
-        return decorators.indexOf(decorator) > -1;
+        if (type.symbol) {
+            const comment = type.symbol.getDocumentationComment(checker);
+            const decorators =
+                comment.filter((_) => _.kind === "text").map((_) => _.text.trim()).filter((_) => _[0] === "!");
+            return decorators.indexOf(decorator) > -1;
+        }
+        return false;
     }
 
     // Search up until finding a node satisfying the callback

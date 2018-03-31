@@ -97,17 +97,14 @@ export class TSHelper {
     public static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0)
-            &&  this.hasCustomDecorator(type, checker, "!TupleReturn");
+            && this.hasCustomDecorator(type, checker, "!TupleReturn");
     }
 
     public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
-        if (type.symbol) {
-            const comment = type.symbol.getDocumentationComment(checker);
-            const decorators =
-                comment.filter((_) => _.kind === "text").map((_) => _.text.trim()).filter((_) => _[0] === "!");
-            return decorators.indexOf(decorator) > -1;
-        }
-        return false;
+        const comment = type.symbol.getDocumentationComment(checker);
+        const decorators =
+            comment.filter((_) => _.kind === "text").map((_) => _.text.trim()).filter((_) => _[0] === "!");
+        return decorators.indexOf(decorator) > -1;
     }
 
     // Search up until finding a node satisfying the callback

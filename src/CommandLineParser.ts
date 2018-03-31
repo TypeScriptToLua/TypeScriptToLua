@@ -19,7 +19,7 @@ export class CLIError extends Error {
 
 const optionDeclarations: { [key: string]: yargs.Options } = {
     addHeader: {
-        alias: "ah",
+        alias: ["ah", "header"],
         default: true,
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
@@ -154,9 +154,9 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 }
 
 /** Find configFile, function from ts api seems to be broken? */
-function findConfigFile(commandLine: ts.ParsedCommandLine) {
+export function findConfigFile(commandLine: ts.ParsedCommandLine) {
     if (!commandLine.options.project) {
-        return;
+        throw new CLIError(`error no base path provided, could not find config.`);
     }
     let configPath;
     if (path.isAbsolute(commandLine.options.project)) {

@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase, Teardown } from "alsatian";
 
-import { CompilerOptions, parseCommandLine, ParsedCommandLine } from "../../src/CommandLineParser";
+import { CompilerOptions, findConfigFile, parseCommandLine, ParsedCommandLine } from "../../src/CommandLineParser";
 
 
 export class CLITests {
@@ -23,7 +23,7 @@ export class CLITests {
         Expect(() => parseCommandLine(['--luaTarget', '42'])).toThrow();
     }
 
-    @Test("InvalidArgument")
+    @Test("InvalidArgumentTSTL")
     public invalidArgument() {
         // Don't check error message because the yargs library messes the message up.
         Expect(() => parseCommandLine(['--invalidTarget', 'test'])).toThrow();
@@ -50,6 +50,12 @@ export class CLITests {
 
         Expect(parsedCommandLine.options['outDir']).toBe('./testOut');
         Expect(parsedCommandLine.options['rootDir']).toBe('./testRoot');
+    }
+
+    @Test("Find config no path")
+    public findConfigNoPath() {
+        Expect(() => findConfigFile({options: {}, fileNames: [], errors: []})).toThrow();
+
     }
 
 }

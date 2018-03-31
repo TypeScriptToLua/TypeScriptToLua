@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 
 import { CompilerOptions } from "./CommandLineParser";
-import { ForHelper } from "./ForHelper";
 import { TSHelper as tsEx } from "./TSHelper";
 
 import * as path from "path";
@@ -363,23 +362,25 @@ export class LuaTranspiler {
 
     public transpileFor(node: ts.ForStatement): string {
         // Get iterator variable
-        const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
-
-        // Populate three components of lua numeric for loop:
-        const start = this.transpileExpression(variable.initializer);
-        const end = ForHelper.GetForEnd(node.condition, this);
-        const step = ForHelper.GetForStep(node.incrementor, this);
+        const variableDeclaration = (node.initializer as ts.VariableDeclarationList).declarations[0];
+        const variable = this.transpileVariableDeclaration(variableDeclaration);
+        const condition = this.transpileExpression(node.condition);
+        const incrementor = this.transpileExpression(node.incrementor);
 
         // Add header
-        let result = this.indent + `for ${identifier.escapedText}=${start},${end},${step} do\n`;
+        let result = `--for(${variable.trim()}; ${condition}; ${incrementor};)\n`;
+        result += this.indent + variable;
+        result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
 
         // Add body
         this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + incrementor + "\n";
         this.popIndent();
 
-        return result + this.indent + "end\n";
+        result += this.indent + "end\n";
+
+        return result;
     }
 
     public transpileForOf(node: ts.ForOfStatement): string {

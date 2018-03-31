@@ -102,8 +102,8 @@ export class LuaLoopTests {
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length > i; i++")
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length - 1 >= i; i++")
     @TestCase([0, 1, 2, 3], [1, 1, 3, 3], "let i = 0; i < arrTest.length; i += 2")
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = arrTest.length - 1; i <= 0; i--")
-    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i <= 0; i -= 2")
+    // @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = arrTest.length - 1; i <= 0; i--")
+    // @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i <= 0; i -= 2")
     @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i >= 0; i -= 2")
     @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i > 0; i -= 2")
     @Test("forheader")
@@ -122,42 +122,6 @@ export class LuaLoopTests {
 
         // Assert
         Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @Test("forstepThrow")
-    public forstepThrow(inp: number[], expected: number[], header: string) {
-        // Transpile & Assert
-        Expect(() => {
-            let lua = util.transpileString(
-                `for (let i = 0; i < 30; i = i + 10) {
-                }`
-            );
-
-            // Execute
-            let result = util.executeLua(lua);
-        }).toThrowError(Error, "Unsupported for-loop increment step: BinaryExpression")
-    }
-
-    @TestCase("let i = 0; i + 3; i++")
-    @TestCase("let i = 0; 3 + i; i++")
-    @TestCase("let i = 0; i - 3; i++")
-    @TestCase("let i = 0; i * 3; i++")
-    @TestCase("let i = 0; i / 3; i++")
-    @TestCase("let i = 0; i &= 3; i++")
-    @TestCase("let i = 0; i < 3; !i")
-    @TestCase("let i = 0; i < 3; i as string")
-    @Test("forconditionThrow")
-    public forconditionThrow(header: string) {
-        // Transpile & Assert
-        Expect(() => {
-            let lua = util.transpileString(
-                `for (${header}) {
-                }`
-            );
-
-            // Execute
-            let result = util.executeLua(lua);
-        }).toThrow();
     }
 
     @TestCase({ ['test1']: 0, ['test2']: 1, ['test3']: 2 }, { ['test1']: 1, ['test2']: 2, ['test3']: 3 })

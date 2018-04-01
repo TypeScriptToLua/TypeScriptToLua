@@ -3,6 +3,16 @@ import * as util from "../src/util"
 
 export class StringTests {
 
+    @Test("Unsuported string function")
+    public stringUnsuportedFunction() {
+        // Assert
+        Expect(() => {
+            util.transpileString(
+                `return "test".testThisIsNoMember()`
+            );
+        }).toThrowError(Error, "Unsupported string function: testThisIsNoMember");
+    }
+
     @TestCase([])
     @TestCase([65])
     @TestCase([65, 66])

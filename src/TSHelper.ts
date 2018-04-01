@@ -97,7 +97,7 @@ export class TSHelper {
     public static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0)
-            &&  this.hasCustomDecorator(type, checker, "!TupleReturn");
+            && this.hasCustomDecorator(type, checker, "!TupleReturn");
     }
 
     public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {

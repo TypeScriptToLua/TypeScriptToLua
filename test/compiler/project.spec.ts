@@ -32,6 +32,10 @@ export class CompilerProjectTests {
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
+    @TestCase(".",
+              "typescript_lualib.lua",
+              "test_src/test_lib/file.lua",
+              "test_src/main.lua")
     @TestCase("test_src/main.ts",
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",

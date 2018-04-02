@@ -55,7 +55,7 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
                     if (path.isAbsolute(options.outFile)) {
                         outPath = options.outFile;
                     } else {
-                        // append to workinDir or outDir
+                        // append to workingDir or outDir
                         outPath = path.resolve(options.outDir, options.outFile);
                     }
                 } else {

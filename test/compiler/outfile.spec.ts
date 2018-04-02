@@ -1,4 +1,4 @@
-import { Expect, SetupFixture, Teardown, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, SetupFixture, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
 import { execCommandLine } from "../../src/Compiler";
@@ -15,7 +15,6 @@ export class CompilerOutFileTests {
     }
 
     @Test("Compile project")
-    @FocusTest
     public outFileTest() {
         // Compile project
         execCommandLine(["--outFile", this.outFileAbsPath, path.join(__dirname, "./testfiles/out_file.ts")]);

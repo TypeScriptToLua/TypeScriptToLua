@@ -388,7 +388,7 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Use ipairs for array types, pairs otherwise
-        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression));
+        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
@@ -410,7 +410,7 @@ export class LuaTranspiler {
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
 
-        if (tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression))) {
+        if (tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
             throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
         }
 
@@ -861,7 +861,7 @@ export class LuaTranspiler {
                     return this.transpileStringCallExpression(node);
 
             }
-            if (tsEx.isArrayType(expType)) {
+            if (tsEx.isArrayType(expType, this.checker)) {
                 return this.transpileArrayCallExpression(node);
             }
 
@@ -1007,7 +1007,7 @@ export class LuaTranspiler {
             case ts.TypeFlags.StringLiteral:
                 return this.transpileStringProperty(node);
             case ts.TypeFlags.Object:
-                if (tsEx.isArrayType(type)) {
+                if (tsEx.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
                 }
         }
@@ -1083,7 +1083,7 @@ export class LuaTranspiler {
         const index = this.transpileExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        if (tsEx.isArrayType(type) || tsEx.isTupleType(type)) {
+        if (tsEx.isArrayType(type, this.checker) || tsEx.isTupleType(type, this.checker)) {
             return `${element}[${index}+1]`;
         } else if (tsEx.isStringType(type)) {
             return `string.sub(${element},${index}+1,${index}+1)`;
@@ -1130,9 +1130,9 @@ export class LuaTranspiler {
             if (ts.isCallExpression(node.initializer)
                 && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression), this.checker)
                ) {
-                return `local ${vars}=${value}`;
+                return `local ${vars}=${value}\n`;
             } else {
-                return `local ${vars}=unpack(${value})`;
+                return `local ${vars}=unpack(${value})\n`;
             }
         } else {
             throw new TranspileError(

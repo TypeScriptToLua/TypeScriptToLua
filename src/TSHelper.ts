@@ -58,15 +58,14 @@ export class TSHelper {
             || (type.flags & ts.TypeFlags.StringLiteral) !== 0;
     }
 
-    public static isArrayType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) !== 0
-            && (type as ts.ObjectType).symbol
-            && (type as ts.ObjectType).symbol.escapedName === "Array";
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const typeNode = checker.typeToTypeNode(type);
+        return typeNode && typeNode.kind === ts.SyntaxKind.ArrayType;
     }
 
-    public static isTupleType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Object) !== 0
-            && (type as ts.TypeReference).typeArguments !== undefined;
+    public static isTupleType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const typeNode = checker.typeToTypeNode(type);
+        return typeNode && typeNode.kind === ts.SyntaxKind.TupleType;
     }
 
     public static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {

@@ -364,7 +364,7 @@ export class LuaTranspiler {
         // Add header
         let result = "";
         for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
-            result += this.transpileVariableDeclaration(variableDeclaration);
+            result += this.indent + this.transpileVariableDeclaration(variableDeclaration);
         }
         result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
 

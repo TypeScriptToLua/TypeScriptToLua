@@ -50,9 +50,18 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
                     outPath = path.join(options.outDir, relativeSourcePath);
                 }
 
-                // change extension
-                const fileNameLua = path.basename(outPath, path.extname(outPath)) + ".lua";
-                outPath = path.join(path.dirname(outPath), fileNameLua);
+                // change extension or rename to outFile
+                if (options.outFile) {
+                    if (path.isAbsolute(options.outFile)) {
+                        outPath = options.outFile;
+                    } else {
+                        // appedn to workinDir or outDir
+                        outPath = path.resolve(options.outDir, options.outFile);
+                    }
+                } else {
+                    const fileNameLua = path.basename(outPath, path.extname(outPath)) + ".lua";
+                    outPath = path.join(path.dirname(outPath), fileNameLua);
+                }
 
                 // Write output
                 ts.sys.writeFile(outPath, lua);

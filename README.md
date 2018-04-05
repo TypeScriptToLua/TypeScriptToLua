@@ -38,6 +38,7 @@ More detailed documentation and info on writing declarations can be found [on th
 ## Declarations
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)
+- [Defold Game Engine Scripting](https://github.com/dasannikov/DefoldTypeScript/blob/master/defold.d.ts)
 
 ## Sublime Text integration
 This compiler works great in combination with the [Sublime Text Typescript plugin](https://github.com/Microsoft/TypeScript-Sublime-Plugin) (available through the package manager as `TypeScript`).

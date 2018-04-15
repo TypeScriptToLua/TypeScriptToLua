@@ -87,7 +87,7 @@ export class LuaTranspiler {
     }
 
     public accessPrefix(node?: ts.Node): string {
-        return node && this.isModule ?
+        return node && (this.isModule || this.namespace.length > 0) ?
             "local " : "";
     }
 

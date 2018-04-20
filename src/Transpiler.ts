@@ -833,7 +833,7 @@ export class LuaTranspiler {
 
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
-        const params = this.transpileArguments(node.arguments, ts.createTrue());
+        const params = node.arguments ? this.transpileArguments(node.arguments, ts.createTrue()) : "true";
 
         return `${name}.new(${params})`;
     }

@@ -1,7 +1,7 @@
 {
     "name": "typescript-to-lua",
     "license": "MIT",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
         "build": "tsc -p tsconfig.json",
@@ -21,7 +21,8 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "yargs": "^11.0.0"
+        "yargs": "^11.0.0",
+        "typescript": "^2.7.2"
     },
     "devDependencies": {
         "@types/node": "^9.4.7",
@@ -31,7 +32,6 @@
         "deep-equal": "^1.0.1",
         "lua.vm.js": "0.0.1",
         "nyc": "^11.5.0",
-        "tslint": "^5.9.1",
-        "typescript": "^2.7.2"
+        "tslint": "^5.9.1"
     }
 }

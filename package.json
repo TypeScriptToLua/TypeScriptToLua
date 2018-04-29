@@ -21,17 +21,17 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "yargs": "^11.0.0",
-        "typescript": "^2.7.2"
+        "typescript": "^2.8.3",
+        "yargs": "^11.1.0"
     },
     "devDependencies": {
-        "@types/node": "^9.4.7",
+        "@types/node": "^9.6.7",
         "@types/yargs": "^11.0.0",
         "alsatian": "^2.2.1",
-        "codecov": "^3.0.0",
+        "codecov": "^3.0.1",
         "deep-equal": "^1.0.1",
         "lua.vm.js": "0.0.1",
-        "nyc": "^11.5.0",
+        "nyc": "^11.7.1",
         "tslint": "^5.9.1"
     }
 }

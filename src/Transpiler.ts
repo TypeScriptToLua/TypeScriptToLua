@@ -1175,7 +1175,7 @@ export class LuaTranspiler {
 
         // Push spread operator here
         if (spreadIdentifier !== "") {
-            result += `    local ${spreadIdentifier} = { ... }\n`;
+            result += this.indent + `local ${spreadIdentifier} = { ... }\n`;
         }
 
         result += this.transpileBlock(body);
@@ -1198,10 +1198,22 @@ export class LuaTranspiler {
 
         // Build parameter string
         const paramNames: string[] = ["self"];
-        parameters.forEach((param) => {
-            paramNames.push((param.name as ts.Identifier).escapedText as string);
-        });
 
+        let spreadIdentifier = "";
+
+        // Only push parameter name to paramName array if it isn't a spread parameter
+        for (const param of parameters) {
+            const paramName = (param.name as ts.Identifier).escapedText as string;
+
+            // This parameter is a spread parameter (...param)
+            if (!param.dotDotDotToken) {
+                paramNames.push(paramName);
+            } else {
+                spreadIdentifier = paramName;
+                // Push the spread operator into the paramNames array
+                paramNames.push("...");
+            }
+        }
         // Parameters with default values
         const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
 
@@ -1209,6 +1221,12 @@ export class LuaTranspiler {
         result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
 
         this.pushIndent();
+
+        // Push spread operator here
+        if (spreadIdentifier !== "") {
+            result += this.indent + `local ${spreadIdentifier} = { ... }\n`;
+        }
+
         result += this.transpileParameterDefaultValues(defaultValueParams);
         result += this.transpileBlock(body);
         this.popIndent();

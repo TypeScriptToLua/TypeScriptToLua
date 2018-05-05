@@ -148,9 +148,7 @@ export class LuaTranspiler {
     // Transpile a node of unknown kind.
     public transpileNode(node: ts.Node): string {
         // Ignore declarations
-        if (tsEx.getChildrenOfType(node, (child) =>
-            child.kind === ts.SyntaxKind.DeclareKeyword).length > 0
-           ) {
+        if (node.modifiers && node.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return "";
         }
 
@@ -172,7 +170,7 @@ export class LuaTranspiler {
                        this.transpileVariableStatement(node as ts.VariableStatement) + "\n";
             case ts.SyntaxKind.ExpressionStatement:
                 return this.indent +
-                       this.transpileExpression(tsEx.getChildren(node)[0] as ts.Expression) + "\n";
+                       this.transpileExpression((node as ts.ExpressionStatement).expression) + "\n";
             case ts.SyntaxKind.ReturnStatement:
                 return this.indent + this.transpileReturn(node as ts.ReturnStatement) + "\n";
             case ts.SyntaxKind.IfStatement:
@@ -1385,16 +1383,21 @@ export class LuaTranspiler {
     public transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
         const properties: string[] = [];
         // Add all property assignments
-        node.properties.forEach((assignment) => {
-            const [key, value] = tsEx.getChildren(assignment);
-            if (ts.isIdentifier(key)) {
-                properties.push(`${key.escapedText}=` + this.transpileExpression(value));
-            } else if (ts.isComputedPropertyName(key)) {
-                const index = this.transpileExpression(key);
-                properties.push(`${index}=` + this.transpileExpression(value));
+        node.properties.forEach((element) => {
+            let name = "";
+            if (ts.isIdentifier(element.name)) {
+                name = element.name.escapedText as string;
+            } else if (ts.isComputedPropertyName(element.name)) {
+                name = this.transpileExpression(element.name);
             } else {
-                const index = this.transpileExpression(key as ts.Expression);
-                properties.push(`[${index}]=` + this.transpileExpression(value));
+                name = `[${this.transpileExpression(element.name)}]`;
+            }
+
+            if (ts.isPropertyAssignment(element)) {
+                const expression = this.transpileExpression(element.initializer);
+                properties.push(`${name} = ${expression}`);
+            } else {
+                throw new TranspileError(`Encountered unsupported object literal element ${element.kind}.`, node);
             }
         });
 

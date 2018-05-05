@@ -1,19 +1,6 @@
 import * as ts from "typescript";
 
 export class TSHelper {
-    // Get all children of a node, required until microsoft fixes node.getChildren()
-    public static getChildren(node: ts.Node): ts.Node[] {
-        const children: ts.Node[] = [];
-        node.forEachChild((child) => {
-            children.push(child);
-        });
-        return children;
-    }
-
-    // Get children filtered by function and cast to predefined type
-    public static getChildrenOfType<T>(node: ts.Node, typeFilter: (node: ts.Node) => boolean): T[] {
-        return this.getChildren(node).filter(typeFilter) as any as T[];
-    }
 
     // Reverse lookup of enum key by value
     public static enumName(needle, haystack) {

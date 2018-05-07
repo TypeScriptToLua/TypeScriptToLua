@@ -108,4 +108,30 @@ export class TSHelper {
         }
         return null;
     }
+
+    public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
+        if (ts.isPropertyAccessExpression(node)) {
+            const name = node.name.escapedText;
+            const type = checker.getTypeAtLocation(node.expression);
+
+            if (type && type.symbol && type.symbol.members) {
+                const field = type.symbol.members.get(name);
+                return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
+            }
+        }
+        return false;
+    }
+
+    public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
+        if (ts.isPropertyAccessExpression(node)) {
+            const name = node.name.escapedText;
+            const type = checker.getTypeAtLocation(node.expression);
+
+            if (type && type.symbol && type.symbol.members) {
+                const field = type.symbol.members.get(name);
+                return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
+            }
+        }
+        return false;
+    }
 }

@@ -17,13 +17,13 @@ export class TranspileError extends Error {
     }
 }
 
-export enum Target {
+export enum LuaTarget {
     Lua53 = "5.3",
     LuaJIT = "JIT",
 }
 
 export class LuaTranspiler {
-    public static AvailableLuaTargets = [Target.LuaJIT, Target.Lua53];
+    public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
 
     // Transpile a source file
     public static transpileSourceFile(node: ts.SourceFile,
@@ -627,7 +627,7 @@ export class LuaTranspiler {
         let result = "";
 
         // Transpile Bitops
-        if (this.options.luaTarget === Target.LuaJIT) {
+        if (this.options.luaTarget === LuaTarget.LuaJIT) {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.AmpersandToken:
                     result = `bit.band(${lhs},${rhs})`;
@@ -981,7 +981,7 @@ export class LuaTranspiler {
             fromCodePoint: "utf8.char",
         };
 
-        if (identifier.escapedText as string === "fromCodePoint" && this.options.luaTarget !== Target.Lua53) {
+        if (identifier.escapedText as string === "fromCodePoint" && this.options.luaTarget !== LuaTarget.Lua53) {
             throw new TranspileError(
                 `Unsupported string property ${identifier.escapedText} is only supported for lua 5.3.`,
                 identifier
@@ -1079,13 +1079,13 @@ export class LuaTranspiler {
     public transpileGetAccessor(node: ts.PropertyAccessExpression): string {
         const name = node.name.escapedText;
         const expression = this.transpileExpression(node.expression);
-        return `${expression}.get__${name}()`;
+        return `${expression}:get__${name}()`;
     }
 
     public transpileSetAccessor(node: ts.PropertyAccessExpression, value: string): string {
         const name = node.name.escapedText;
         const expression = this.transpileExpression(node.expression);
-        return `${expression}.set__${name}(${value})`;
+        return `${expression}:set__${name}(${value})`;
     }
 
     // Transpile a Math._ property
@@ -1407,7 +1407,7 @@ export class LuaTranspiler {
     public transpileGetAccessorDeclaration(getAccessor: ts.GetAccessorDeclaration, className: string): string {
         const name = (getAccessor.name as ts.Identifier).escapedText;
 
-        let result = this.indent + `function ${className}.get__${name}()\n`;
+        let result = this.indent + `function ${className}.get__${name}(self)\n`;
 
         this.pushIndent();
         result += this.transpileBlock(getAccessor.body);
@@ -1421,7 +1421,7 @@ export class LuaTranspiler {
     public transpileSetAccessorDeclaration(setAccessor: ts.SetAccessorDeclaration, className: string): string {
         const name = (setAccessor.name as ts.Identifier).escapedText;
 
-        const paramNames: string[] = [];
+        const paramNames: string[] = ["self"];
         setAccessor.parameters.forEach((param) => {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });

@@ -3,7 +3,7 @@ import * as path from "path";
 
 import { Expect } from "alsatian";
 
-import { LuaTranspiler, TranspileError } from "../../src/Transpiler";
+import { LuaTranspiler, TranspileError, LuaTarget } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 
 const LuaVM = require("lua.vm.js");
@@ -11,7 +11,7 @@ const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true }): string {
+export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.LuaJIT }): string {
     let compilerHost = {
         getSourceFile: (filename, languageVersion) => {
             if (filename === "file.ts") {

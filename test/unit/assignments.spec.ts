@@ -1,4 +1,5 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { TranspileError } from "../../src/Transpiler";
 
 import * as util from "../src/util";
 const fs = require("fs");
@@ -51,5 +52,25 @@ export class AssignmentTests {
         const lua = util.transpileString(declaration + " return myvar;");
         const result = util.executeLua(lua);
         Expect(result).toBe(undefined);
+    }
+
+    @TestCase(["a", "b"], ["e", "f"])
+    @TestCase(["a", "b"], ["e", "f", "g"])
+    @TestCase(["a", "b", "c"], ["e", "f", "g"])
+    @Test("Binding pattern assignment")
+    public bindingPattern(input: string[], values: string[]) {
+        const pattern = input.join(",");
+        const initializer = values.map(v => `"${v}"`).join(",");
+
+        const lua = util.transpileString(`const [${pattern}] = [${initializer}]; return [${pattern}].join("-");`);
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(values.slice(0, input.length).join("-"));
+    }
+
+    @Test("Ellipsis binding pattern")
+    public ellipsisBindingPattern() {
+        Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];"))
+            .toThrowError(Error, "Ellipsis destruction is not allowed.");
     }
 }

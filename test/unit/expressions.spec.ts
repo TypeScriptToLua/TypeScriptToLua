@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { LuaTarget } from "../../src/Transpiler";
 
 import * as ts from "typescript";
@@ -175,6 +175,16 @@ export class ExpressionTests {
         Expect(result).toBe(3);
     }
 
+    @Test("Null Expression")
+    public nullExpression() {
+        Expect(util.transpileString("null")).toBe("nil");
+    }
+
+    @Test("Undefined Expression")
+    public undefinedExpression() {
+        Expect(util.transpileString("undefined")).toBe("nil");
+    }
+
     @TestCase([], 7)
     @TestCase([5], 9)
     @TestCase([1, 2], 3)
@@ -230,6 +240,7 @@ export class ExpressionTests {
     }
 
     @TestCase("= 4", 4 + 4)
+    @TestCase("-= 3", 4 - 3 + 4)
     @TestCase("+= 3", 4 + 3 + 4)
     @TestCase("*= 3", 4 * 3 + 4)
     @TestCase("/= 3", 4 / 3 + 4)

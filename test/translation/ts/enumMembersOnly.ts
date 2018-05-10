@@ -4,3 +4,5 @@ enum TestEnum {
     val2 = 2,
     val3
 }
+
+const a = TestEnum.val1;

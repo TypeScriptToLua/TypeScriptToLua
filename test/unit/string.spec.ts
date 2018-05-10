@@ -1,5 +1,5 @@
-import { Expect, Test, TestCase, IgnoreTest } from "alsatian";
-import * as util from "../src/util"
+import { Expect, Test, TestCase } from "alsatian";
+import * as util from "../src/util";
 
 export class StringTests {
 
@@ -20,12 +20,12 @@ export class StringTests {
     @Test("String.fromCharCode")
     public stringFromCharcode(inp: number[], expected: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return String.fromCharCode(${inp.toString()})`,
+        const lua = util.transpileString(
+            `return String.fromCharCode(${inp.toString()})`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(String.fromCharCode(...inp));
@@ -42,12 +42,12 @@ export class StringTests {
         const b1 = typeof(b) === "string" ? "'" + b + "'" : b;
         const c1 = typeof(c) === "string" ? "'" + c + "'" : c;
 
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             "let a = " + a1 + "; let b = " + b1 + "; let c = " + c1 + "; return `${a} ${b} test ${c}`;"
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(`${a} ${b} test ${c}`);
@@ -61,12 +61,12 @@ export class StringTests {
     @Test("string.replace")
     public replace<T>(inp: string, searchValue: string, replaceValue: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".replace("${searchValue}", "${replaceValue}")`,
+        const lua = util.transpileString(
+            `return "${inp}".replace("${searchValue}", "${replaceValue}")`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.replace(searchValue, replaceValue));
@@ -79,15 +79,15 @@ export class StringTests {
     @TestCase([42, "hello"], "42hello")
     @Test("string.concat[+]")
     public concat(inp: any[], expected: string) {
-        let concatStr = inp.map(elem => typeof(elem) === "string" ? `"${elem}"` : elem).join(" + ");
+        const concatStr = inp.map(elem => typeof(elem) === "string" ? `"${elem}"` : elem).join(" + ");
 
         // Transpile
-        let lua = util.transpileString(
-            `return ${concatStr}`,
+        const lua = util.transpileString(
+            `return ${concatStr}`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -100,15 +100,33 @@ export class StringTests {
     @Test("string.indexOf")
     public indexOf(inp: string, searchValue: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".indexOf("${searchValue}")`,
+        const lua = util.transpileString(
+            `return "${inp}".indexOf("${searchValue}")`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.indexOf(searchValue));
+    }
+
+    @TestCase("hello test", "t", 5)
+    @TestCase("hello test", "t", 6)
+    @TestCase("hello test", "t", 7)
+    @TestCase("hello test", "h", 4)
+    @Test("string.indexOf with offset")
+    public indexOfOffset(inp: string, searchValue: string, offset: number) {
+        // Transpile
+        const lua = util.transpileString(
+            `return "${inp}".indexOf("${searchValue}", ${offset})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.indexOf(searchValue, offset));
     }
 
     @TestCase("hello test", 0)
@@ -118,13 +136,13 @@ export class StringTests {
     @Test("string.substring")
     public substring(inp: string, start: number, end?: number) {
         // Transpile
-        let paramStr = end ? `${start}, ${end}` : `${start}`;
-        let lua = util.transpileString(
-            `return "${inp}".substring(${paramStr})`,
+        const paramStr = end ? `${start}, ${end}` : `${start}`;
+        const lua = util.transpileString(
+            `return "${inp}".substring(${paramStr})`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.substring(start, end));
@@ -136,12 +154,12 @@ export class StringTests {
     @Test("string.length")
     public length(inp: string, expected: number) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".length`,
+        const lua = util.transpileString(
+            `return "${inp}".length`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.length);
@@ -151,12 +169,12 @@ export class StringTests {
     @Test("string.toLowerCase")
     public toLowerCase(inp: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".toLowerCase()`,
+        const lua = util.transpileString(
+            `return "${inp}".toLowerCase()`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.toLowerCase());
@@ -166,12 +184,12 @@ export class StringTests {
     @Test("string.toUpperCase")
     public toUpperCase(inp: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".toUpperCase()`,
+        const lua = util.transpileString(
+            `return "${inp}".toUpperCase()`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.toUpperCase());
@@ -187,12 +205,12 @@ export class StringTests {
     @Test("string.split")
     public split(inp: string, separator: string) {
         // Transpile
-        let lua = util.transpileString(
-            `return JSONStringify("${inp}".split("${separator}"))`,
+        const lua = util.transpileString(
+            `return JSONStringify("${inp}".split("${separator}"))`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.split(separator)));
@@ -205,15 +223,27 @@ export class StringTests {
     @Test("string.charAt")
     public charAt(inp: string, index: number) {
         // Transpile
-        let lua = util.transpileString(
-            `return "${inp}".charAt(${index})`,
+        const lua = util.transpileString(
+            `return "${inp}".charAt(${index})`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.charAt(index));
     }
 
+    @TestCase("abcd", 3)
+    @TestCase("abcde", 3)
+    @TestCase("abcde", 0)
+    @TestCase("a", 0)
+    @Test("string index")
+    public index(input: string, index: number) {
+        const lua = util.transpileString(`return "${input}"[${index}];`);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(input[index]);
+    }
 }

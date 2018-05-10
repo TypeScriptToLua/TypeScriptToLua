@@ -6,7 +6,7 @@ export class LuaErrorTests {
     @Test("throwString")
     public trowString() {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `throw "Some Error"`
         );
         // Assert
@@ -17,7 +17,7 @@ export class LuaErrorTests {
     public throwError() {
         // Transpile & Asser
         Expect(() => {
-            let lua = util.transpileString(
+            const lua = util.transpileString(
                 `throw Error("Some Error")`
             );
         }).toThrowError(Error, "Unsupported throw expression, only string literals are supported");

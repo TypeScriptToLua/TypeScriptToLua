@@ -24,14 +24,14 @@ export class TSHelper {
     }
 
     public static containsStatement(statements: ts.NodeArray<ts.Statement>, kind: ts.SyntaxKind): boolean {
-        return statements.some((statement) => statement.kind === kind);
+        return statements.some(statement => statement.kind === kind);
     }
 
     public static isFileModule(sourceFile: ts.SourceFile) {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements
-            return sourceFile.statements.some((statement) =>
+            return sourceFile.statements.some(statement =>
                 (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
                 || statement.kind === ts.SyntaxKind.ExportAssignment
                 || statement.kind === ts.SyntaxKind.ExportDeclaration);
@@ -88,9 +88,11 @@ export class TSHelper {
 
     public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
         if (type.symbol) {
-            const comment = type.symbol.getDocumentationComment(checker);
+            const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
-                comment.filter((_) => _.kind === "text").map((_) => _.text.trim()).filter((_) => _[0] === "!");
+                comments.filter(comment => comment.kind === "text")
+                .map(comment => comment.text.trim())
+                .filter(comment => comment[0] === "!");
             return decorators.indexOf(decorator) > -1;
         }
         return false;

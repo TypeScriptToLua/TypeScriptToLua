@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 
 import { CompilerOptions } from "./CommandLineParser";
-import { TSHelper as tsEx } from "./TSHelper";
+import { TSHelper as tsHelper } from "./TSHelper";
 
 import * as path from "path";
 
@@ -71,7 +71,7 @@ export class LuaTranspiler {
         this.namespace = [];
         this.importCount = 0;
         this.sourceFile = sourceFile;
-        this.isModule = tsEx.isFileModule(sourceFile);
+        this.isModule = tsHelper.isFileModule(sourceFile);
     }
 
     public pushIndent(): void {
@@ -133,11 +133,11 @@ export class LuaTranspiler {
         let result = "";
 
         if (ts.isBlock(node)) {
-            node.statements.forEach((statement) => {
+            node.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
         } else {
-            node.forEachChild((child) => {
+            node.forEachChild(child => {
                 result += this.transpileNode(child);
             });
         }
@@ -148,7 +148,7 @@ export class LuaTranspiler {
     // Transpile a node of unknown kind.
     public transpileNode(node: ts.Node): string {
         // Ignore declarations
-        if (node.modifiers && node.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return "";
         }
 
@@ -224,7 +224,7 @@ export class LuaTranspiler {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
             let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
             this.importCount++;
-            imports.elements.forEach((element) => {
+            imports.elements.forEach(element => {
                 const nameText = element.name.escapedText;
                 if (element.propertyName) {
                     result +=
@@ -245,7 +245,7 @@ export class LuaTranspiler {
 
     public transpileNamespace(node: ts.ModuleDeclaration): string {
         // If phantom namespace just transpile the body as normal
-        if (tsEx.isPhantom(this.checker.getTypeAtLocation(node), this.checker) && node.body) {
+        if (tsHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker) && node.body) {
             return this.transpileNode(node.body);
         }
 
@@ -277,7 +277,7 @@ export class LuaTranspiler {
         let result = "";
 
         const type = this.checker.getTypeAtLocation(node);
-        const membersOnly = tsEx.isCompileMembersOnlyEnum(type, this.checker);
+        const membersOnly = tsHelper.isCompileMembersOnlyEnum(type, this.checker);
 
         if (!membersOnly) {
             const name = node.name.escapedText;
@@ -285,7 +285,7 @@ export class LuaTranspiler {
             result += this.makeExport(name, node);
         }
 
-        node.members.forEach((member) => {
+        node.members.forEach(member => {
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
                     val = parseInt(member.initializer.text);
@@ -386,7 +386,7 @@ export class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         // Use ipairs for array types, pairs otherwise
-        const isArray = tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
+        const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
@@ -408,7 +408,7 @@ export class LuaTranspiler {
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
 
-        if (tsEx.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
+        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
             throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
         }
 
@@ -456,13 +456,13 @@ export class LuaTranspiler {
             this.pushIndent();
 
             this.transpilingSwitch++;
-            clause.statements.forEach((statement) => {
+            clause.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
             this.transpilingSwitch--;
 
             let i = index + 1;
-            if (i < clauses.length && !tsEx.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+            if (i < clauses.length && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
                 let nextClause = clauses[i];
                 while (i < clauses.length
                     && ts.isCaseClause(nextClause)
@@ -538,10 +538,10 @@ export class LuaTranspiler {
         if (node.expression) {
             // If parent function is a TupleReturn function
             // and return expression is an array literal, leave out brackets.
-            const declaration = tsEx.findFirstNodeAbove(node, ts.isFunctionDeclaration);
-            if (declaration && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(declaration), this.checker)
+            const declaration = tsHelper.findFirstNodeAbove(node, ts.isFunctionDeclaration);
+            if (declaration && tsHelper.isTupleReturnFunction(this.checker.getTypeAtLocation(declaration), this.checker)
                 && ts.isArrayLiteralExpression(node.expression)) {
-                return "return " + node.expression.elements.map((elem) => this.transpileExpression(elem)).join(",");
+                return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
             }
 
             // Otherwise just do a normal return
@@ -566,7 +566,11 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ElementAccessExpression:
                 return this.transpileElementAccessExpression(node as ts.ElementAccessExpression);
             case ts.SyntaxKind.Identifier:
-                // For identifiers simply return their name
+                // Catch undefined which is passed as identifier
+                if ((node as ts.Identifier).originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+                    return "nil";
+                }
+                // Otherwise simply return the name
                 return (node as ts.Identifier).text;
             case ts.SyntaxKind.StringLiteral:
                 const text = (node as ts.StringLiteral).text;
@@ -580,6 +584,7 @@ export class LuaTranspiler {
             case ts.SyntaxKind.FalseKeyword:
                 return "false";
             case ts.SyntaxKind.NullKeyword:
+            case ts.SyntaxKind.UndefinedKeyword:
                 return "nil";
             case ts.SyntaxKind.ThisKeyword:
                 return "self";
@@ -612,7 +617,7 @@ export class LuaTranspiler {
                 return this.transpileExpression((node as ts.AsExpression).expression);
             default:
                 throw new TranspileError(
-                    "Unsupported expression kind: " + tsEx.enumName(node.kind, ts.SyntaxKind),
+                    "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
                     node
                 );
         }
@@ -633,7 +638,7 @@ export class LuaTranspiler {
                     result = `bit.band(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.AmpersandEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
                                                          `bit.band(${lhs},${rhs})`);
                     }
@@ -643,7 +648,7 @@ export class LuaTranspiler {
                     result = `bit.bor(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.BarEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
                                                          `bit.bor(${lhs},${rhs})`);
                     }
@@ -653,7 +658,7 @@ export class LuaTranspiler {
                     result = `bit.lshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
                                                          `bit.lshift(${lhs},${rhs})`);
                     }
@@ -663,7 +668,7 @@ export class LuaTranspiler {
                     result = `bit.arshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
                                                          `bit.arshift(${lhs},${rhs})`);
                     }
@@ -673,7 +678,7 @@ export class LuaTranspiler {
                     result = `bit.rshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
                                                          `bit.rshift(${lhs},${rhs})`);
                     }
@@ -686,7 +691,7 @@ export class LuaTranspiler {
                     result = `${lhs}&${rhs}`;
                     break;
                 case ts.SyntaxKind.AmpersandEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}&${rhs}`);
                     }
                     result = `${lhs}=${lhs}&${rhs}`;
@@ -695,7 +700,7 @@ export class LuaTranspiler {
                     result = `${lhs}|${rhs}`;
                     break;
                 case ts.SyntaxKind.BarEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}|${rhs}`);
                     }
                     result = `${lhs}=${lhs}|${rhs}`;
@@ -704,7 +709,7 @@ export class LuaTranspiler {
                     result = `${lhs}<<${rhs}`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}<<${rhs}`);
                     }
                     result = `${lhs}=${lhs}<<${rhs}`;
@@ -713,7 +718,7 @@ export class LuaTranspiler {
                     result = `${lhs}>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}>>${rhs}`);
                     }
                     result = `${lhs}=${lhs}>>${rhs}`;
@@ -722,7 +727,7 @@ export class LuaTranspiler {
                     result = `${lhs}>>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}>>>${rhs}`);
                     }
                     result = `${lhs}=${lhs}>>>${rhs}`;
@@ -734,25 +739,25 @@ export class LuaTranspiler {
         if (result === "") {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.PlusEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}+${rhs}`);
                     }
                     result = `${lhs}=${lhs}+${rhs}`;
                     break;
                 case ts.SyntaxKind.MinusEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}-${rhs}`);
                     }
                     result = `${lhs}=${lhs}-${rhs}`;
                     break;
                 case ts.SyntaxKind.AsteriskEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}*${rhs}`);
                     }
                     result = `${lhs}=${lhs}*${rhs}`;
                     break;
                 case ts.SyntaxKind.SlashEqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}/${rhs}`);
                     }
                     result = `${lhs}=${lhs}/${rhs}`;
@@ -798,7 +803,7 @@ export class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
-                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
                     result = `${lhs}=${rhs}`;
@@ -832,7 +837,7 @@ export class LuaTranspiler {
 
     public transpileTemplateExpression(node: ts.TemplateExpression) {
         const parts = [`"${node.head.text}"`];
-        node.templateSpans.forEach((span) => {
+        node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
             if (ts.isTemplateTail(span.literal)) {
                 parts.push(`tostring(${expr}).."${span.literal.text}"`);
@@ -859,7 +864,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusMinusToken:
                 return `${operand}=${operand}-1`;
             default:
-                throw new TranspileError("Unsupported unary postfix: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+                throw new TranspileError("Unsupported unary postfix: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
+                                         node);
         }
     }
 
@@ -875,7 +881,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
-                throw new TranspileError("Unsupported unary prefix: " + tsEx.enumName(node.kind, ts.SyntaxKind), node);
+                throw new TranspileError("Unsupported unary prefix: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
+                                         node);
         }
     }
 
@@ -909,7 +916,7 @@ export class LuaTranspiler {
                     return this.transpileStringCallExpression(node);
 
             }
-            if (tsEx.isArrayType(expType, this.checker)) {
+            if (tsHelper.isArrayType(expType, this.checker)) {
                 return this.transpileArrayCallExpression(node);
             }
 
@@ -1038,7 +1045,7 @@ export class LuaTranspiler {
             parameters.push(this.transpileExpression(context));
         }
 
-        params.forEach((param) => {
+        params.forEach(param => {
             parameters.push(this.transpileExpression(param));
         });
 
@@ -1055,15 +1062,15 @@ export class LuaTranspiler {
             case ts.TypeFlags.StringLiteral:
                 return this.transpileStringProperty(node);
             case ts.TypeFlags.Object:
-                if (tsEx.isArrayType(type, this.checker)) {
+                if (tsHelper.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
-                } else if (tsEx.hasGetAccessor(node, this.checker)) {
+                } else if (tsHelper.hasGetAccessor(node, this.checker)) {
                     return this.transpileGetAccessor(node);
                 }
         }
 
         // Do not output path for member only enums
-        if (tsEx.isCompileMembersOnlyEnum(type, this.checker)) {
+        if (tsHelper.isCompileMembersOnlyEnum(type, this.checker)) {
             return property;
         }
 
@@ -1145,9 +1152,9 @@ export class LuaTranspiler {
         const index = this.transpileExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        if (tsEx.isArrayType(type, this.checker) || tsEx.isTupleType(type, this.checker)) {
+        if (tsHelper.isArrayType(type, this.checker) || tsHelper.isTupleType(type, this.checker)) {
             return `${element}[${index}+1]`;
-        } else if (tsEx.isStringType(type)) {
+        } else if (tsHelper.isStringType(type)) {
             return `string.sub(${element},${index}+1,${index}+1)`;
         } else {
             return `${element}[${index}]`;
@@ -1158,7 +1165,7 @@ export class LuaTranspiler {
     public transpileVariableStatement(node: ts.VariableStatement): string {
         let result = "";
 
-        node.declarationList.declarations.forEach((declaration) => {
+        node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
             result += this.makeExport((declaration.name as ts.Identifier).escapedText, node);
         });
@@ -1181,16 +1188,18 @@ export class LuaTranspiler {
             const value = this.transpileExpression(node.initializer);
 
             // Disallow ellipsis destruction
-            if (node.name.elements.some((elem) => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
+            if (node.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
                 throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
             }
 
             const vars = node.name.elements.map(
-                (element) => ((element as ts.BindingElement).name as ts.Identifier).escapedText).join(",");
+                    element => ((element as ts.BindingElement).name as ts.Identifier
+                ).escapedText).join(",");
 
             // Don't unpack TupleReturn decorated functions
             if (ts.isCallExpression(node.initializer)
-                && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression), this.checker)
+                && tsHelper.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression),
+                                                  this.checker)
                ) {
                 return `local ${vars}=${value}\n`;
             } else {
@@ -1198,7 +1207,7 @@ export class LuaTranspiler {
             }
         } else {
             throw new TranspileError(
-                "Unsupported variable declaration type " + tsEx.enumName(node.name.kind, ts.SyntaxKind),
+                "Unsupported variable declaration type " + tsHelper.enumName(node.name.kind, ts.SyntaxKind),
                 node
             );
         }
@@ -1277,7 +1286,7 @@ export class LuaTranspiler {
             }
         }
         // Parameters with default values
-        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+        const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
 
         // Build function header
         result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
@@ -1304,14 +1313,14 @@ export class LuaTranspiler {
         // Find extends class, ignore implements
         let extendsType: ts.ExpressionWithTypeArguments | undefined;
         let noClassOr = false;
-        if (node.heritageClauses) { node.heritageClauses.forEach((clause) => {
+        if (node.heritageClauses) { node.heritageClauses.forEach(clause => {
             if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                 const superType = this.checker.getTypeAtLocation(clause.types[0]);
                 // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                if (!tsEx.isPureAbstractClass(superType, this.checker)) {
+                if (!tsHelper.isPureAbstractClass(superType, this.checker)) {
                     extendsType = clause.types[0];
                 }
-                noClassOr = tsEx.hasCustomDecorator(superType, this.checker, "!NoClassOr");
+                noClassOr = tsHelper.hasCustomDecorator(superType, this.checker, "!NoClassOr");
             }
         });
         }
@@ -1324,7 +1333,7 @@ export class LuaTranspiler {
         let result = "";
 
         // Skip header if this is an extension class
-        const isExtension = tsEx.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
+        const isExtension = tsHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
         if (!isExtension) {
             // Write class declaration
             const classOr = noClassOr ? "" : `${className} or `;
@@ -1358,12 +1367,12 @@ export class LuaTranspiler {
 
         // Get all properties with value
         const properties = node.members.filter(ts.isPropertyDeclaration)
-            .filter((_) => _.initializer);
+            .filter(member => member.initializer);
 
         // Divide properties into static and non-static
-        const isStatic = (_) => _.modifiers && _.modifiers.some((__) => __.kind === ts.SyntaxKind.StaticKeyword);
+        const isStatic = prop => prop.modifiers && prop.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
         const staticFields = properties.filter(isStatic);
-        const instanceFields = properties.filter((_) => !isStatic(_));
+        const instanceFields = properties.filter(prop => !isStatic(prop));
 
         // Add static declarations
         for (const field of staticFields) {
@@ -1387,17 +1396,17 @@ export class LuaTranspiler {
         }
 
         // Transpile get accessors
-        node.members.filter(ts.isGetAccessor).forEach((getAccessor) => {
+        node.members.filter(ts.isGetAccessor).forEach(getAccessor => {
             result += this.transpileGetAccessorDeclaration(getAccessor, className);
         });
 
         // Transpile set accessors
-        node.members.filter(ts.isSetAccessor).forEach((setAccessor) => {
+        node.members.filter(ts.isSetAccessor).forEach(setAccessor => {
             result += this.transpileSetAccessorDeclaration(setAccessor, className);
         });
 
         // Transpile methods
-        node.members.filter(ts.isMethodDeclaration).forEach((method) => {
+        node.members.filter(ts.isMethodDeclaration).forEach(method => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
 
@@ -1422,7 +1431,7 @@ export class LuaTranspiler {
         const name = (setAccessor.name as ts.Identifier).escapedText;
 
         const paramNames: string[] = ["self"];
-        setAccessor.parameters.forEach((param) => {
+        setAccessor.parameters.forEach(param => {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
@@ -1443,7 +1452,7 @@ export class LuaTranspiler {
         const extraInstanceFields = [];
 
         const parameters = ["self"];
-        node.parameters.forEach((param) => {
+        node.parameters.forEach(param => {
             // If param has decorators, add extra instance field
             if (param.modifiers !== undefined) {
                 extraInstanceFields.push((param.name as ts.Identifier).escapedText as string);
@@ -1480,7 +1489,7 @@ export class LuaTranspiler {
     public transpileArrayLiteral(node: ts.ArrayLiteralExpression): string {
         const values: string[] = [];
 
-        node.elements.forEach((child) => {
+        node.elements.forEach(child => {
             values.push(this.transpileExpression(child));
         });
 
@@ -1490,7 +1499,7 @@ export class LuaTranspiler {
     public transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
         const properties: string[] = [];
         // Add all property assignments
-        node.properties.forEach((element) => {
+        node.properties.forEach(element => {
             let name = "";
             if (ts.isIdentifier(element.name)) {
                 name = element.name.escapedText as string;
@@ -1514,11 +1523,11 @@ export class LuaTranspiler {
     public transpileFunctionExpression(node: ts.ArrowFunction): string {
         // Build parameter string
         const paramNames: string[] = [];
-        node.parameters.forEach((param) => {
+        node.parameters.forEach(param => {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
-        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+        const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
 
         if (ts.isBlock(node.body) || defaultValueParams.length > 0) {
             let result = `function(${paramNames.join(",")})\n`;
@@ -1535,7 +1544,7 @@ export class LuaTranspiler {
     public transpileParameterDefaultValues(params: ts.ParameterDeclaration[]): string {
         let result = "";
 
-        params.filter((declaration) => declaration.initializer !== undefined).forEach((declaration) => {
+        params.filter(declaration => declaration.initializer !== undefined).forEach(declaration => {
             const paramName = (declaration.name as ts.Identifier).escapedText;
             const paramValue = this.transpileExpression(declaration.initializer);
             result += this.indent + `if ${paramName}==nil then ${paramName}=${paramValue} end\n`;

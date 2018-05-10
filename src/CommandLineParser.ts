@@ -136,7 +136,7 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
             }
         }
 
-        commandLine.errors.forEach((err) => {
+        commandLine.errors.forEach(err => {
             let ignore = false;
             // Ignore errors caused by tstl specific compiler options
             if (err.code === tsInvalidCompilerOptionErrorCode) {

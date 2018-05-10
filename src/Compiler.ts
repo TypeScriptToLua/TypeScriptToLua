@@ -13,8 +13,8 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
     const checker = program.getTypeChecker();
 
     // Get all diagnostics, ignore unsupported extension
-    const diagnostics = ts.getPreEmitDiagnostics(program).filter((diag) => diag.code !== 6054);
-    diagnostics.forEach((diagnostic) => {
+    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
+    diagnostics.forEach(diagnostic => {
         if (diagnostic.file) {
             const { line, character } =
                 diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
@@ -30,12 +30,12 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
     });
 
     // If there are errors dont emit
-    if (diagnostics.filter((diag) => diag.category === ts.DiagnosticCategory.Error).length > 0) {
+    if (diagnostics.filter(diag => diag.category === ts.DiagnosticCategory.Error).length > 0) {
         console.log("Stopping compilation process because of errors.");
         process.exit(1);
     }
 
-    program.getSourceFiles().forEach((sourceFile) => {
+    program.getSourceFiles().forEach(sourceFile => {
         if (!sourceFile.isDeclarationFile) {
             try {
                 const rootDir = options.rootDir;

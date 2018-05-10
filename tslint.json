@@ -6,6 +6,7 @@
     "jsRules": {},
     "rules": {
         "align": [true, "parameters", "statements", "arguments", "members", "elements"],
+        "arrow-parens": [true, "ban-single-arg-parens"],
         "class-name": true,
         "no-bitwise": false,
         "indent": [true, "spaces", 4],

@@ -133,11 +133,11 @@ export class LuaTranspiler {
         let result = "";
 
         if (ts.isBlock(node)) {
-            node.statements.forEach((statement) => {
+            node.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
         } else {
-            node.forEachChild((child) => {
+            node.forEachChild(child => {
                 result += this.transpileNode(child);
             });
         }
@@ -148,7 +148,7 @@ export class LuaTranspiler {
     // Transpile a node of unknown kind.
     public transpileNode(node: ts.Node): string {
         // Ignore declarations
-        if (node.modifiers && node.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return "";
         }
 
@@ -224,7 +224,7 @@ export class LuaTranspiler {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
             let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
             this.importCount++;
-            imports.elements.forEach((element) => {
+            imports.elements.forEach(element => {
                 const nameText = element.name.escapedText;
                 if (element.propertyName) {
                     result +=
@@ -285,7 +285,7 @@ export class LuaTranspiler {
             result += this.makeExport(name, node);
         }
 
-        node.members.forEach((member) => {
+        node.members.forEach(member => {
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
                     val = parseInt(member.initializer.text);
@@ -456,7 +456,7 @@ export class LuaTranspiler {
             this.pushIndent();
 
             this.transpilingSwitch++;
-            clause.statements.forEach((statement) => {
+            clause.statements.forEach(statement => {
                 result += this.transpileNode(statement);
             });
             this.transpilingSwitch--;
@@ -541,7 +541,7 @@ export class LuaTranspiler {
             const declaration = tsEx.findFirstNodeAbove(node, ts.isFunctionDeclaration);
             if (declaration && tsEx.isTupleReturnFunction(this.checker.getTypeAtLocation(declaration), this.checker)
                 && ts.isArrayLiteralExpression(node.expression)) {
-                return "return " + node.expression.elements.map((elem) => this.transpileExpression(elem)).join(",");
+                return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
             }
 
             // Otherwise just do a normal return
@@ -832,7 +832,7 @@ export class LuaTranspiler {
 
     public transpileTemplateExpression(node: ts.TemplateExpression) {
         const parts = [`"${node.head.text}"`];
-        node.templateSpans.forEach((span) => {
+        node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
             if (ts.isTemplateTail(span.literal)) {
                 parts.push(`tostring(${expr}).."${span.literal.text}"`);
@@ -1038,7 +1038,7 @@ export class LuaTranspiler {
             parameters.push(this.transpileExpression(context));
         }
 
-        params.forEach((param) => {
+        params.forEach(param => {
             parameters.push(this.transpileExpression(param));
         });
 
@@ -1158,7 +1158,7 @@ export class LuaTranspiler {
     public transpileVariableStatement(node: ts.VariableStatement): string {
         let result = "";
 
-        node.declarationList.declarations.forEach((declaration) => {
+        node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
             result += this.makeExport((declaration.name as ts.Identifier).escapedText, node);
         });
@@ -1181,12 +1181,13 @@ export class LuaTranspiler {
             const value = this.transpileExpression(node.initializer);
 
             // Disallow ellipsis destruction
-            if (node.name.elements.some((elem) => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
+            if (node.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
                 throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
             }
 
             const vars = node.name.elements.map(
-                (element) => ((element as ts.BindingElement).name as ts.Identifier).escapedText).join(",");
+                    element => ((element as ts.BindingElement).name as ts.Identifier
+                ).escapedText).join(",");
 
             // Don't unpack TupleReturn decorated functions
             if (ts.isCallExpression(node.initializer)
@@ -1277,7 +1278,7 @@ export class LuaTranspiler {
             }
         }
         // Parameters with default values
-        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+        const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
 
         // Build function header
         result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
@@ -1304,7 +1305,7 @@ export class LuaTranspiler {
         // Find extends class, ignore implements
         let extendsType: ts.ExpressionWithTypeArguments | undefined;
         let noClassOr = false;
-        if (node.heritageClauses) { node.heritageClauses.forEach((clause) => {
+        if (node.heritageClauses) { node.heritageClauses.forEach(clause => {
             if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                 const superType = this.checker.getTypeAtLocation(clause.types[0]);
                 // Ignore purely abstract types (decorated with /** @PureAbstract */)
@@ -1358,12 +1359,12 @@ export class LuaTranspiler {
 
         // Get all properties with value
         const properties = node.members.filter(ts.isPropertyDeclaration)
-            .filter((_) => _.initializer);
+            .filter(member => member.initializer);
 
         // Divide properties into static and non-static
-        const isStatic = (_) => _.modifiers && _.modifiers.some((__) => __.kind === ts.SyntaxKind.StaticKeyword);
+        const isStatic = prop => prop.modifiers && prop.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
         const staticFields = properties.filter(isStatic);
-        const instanceFields = properties.filter((_) => !isStatic(_));
+        const instanceFields = properties.filter(prop => !isStatic(prop));
 
         // Add static declarations
         for (const field of staticFields) {
@@ -1387,17 +1388,17 @@ export class LuaTranspiler {
         }
 
         // Transpile get accessors
-        node.members.filter(ts.isGetAccessor).forEach((getAccessor) => {
+        node.members.filter(ts.isGetAccessor).forEach(getAccessor => {
             result += this.transpileGetAccessorDeclaration(getAccessor, className);
         });
 
         // Transpile set accessors
-        node.members.filter(ts.isSetAccessor).forEach((setAccessor) => {
+        node.members.filter(ts.isSetAccessor).forEach(setAccessor => {
             result += this.transpileSetAccessorDeclaration(setAccessor, className);
         });
 
         // Transpile methods
-        node.members.filter(ts.isMethodDeclaration).forEach((method) => {
+        node.members.filter(ts.isMethodDeclaration).forEach(method => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
 
@@ -1422,7 +1423,7 @@ export class LuaTranspiler {
         const name = (setAccessor.name as ts.Identifier).escapedText;
 
         const paramNames: string[] = ["self"];
-        setAccessor.parameters.forEach((param) => {
+        setAccessor.parameters.forEach(param => {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
@@ -1443,7 +1444,7 @@ export class LuaTranspiler {
         const extraInstanceFields = [];
 
         const parameters = ["self"];
-        node.parameters.forEach((param) => {
+        node.parameters.forEach(param => {
             // If param has decorators, add extra instance field
             if (param.modifiers !== undefined) {
                 extraInstanceFields.push((param.name as ts.Identifier).escapedText as string);
@@ -1480,7 +1481,7 @@ export class LuaTranspiler {
     public transpileArrayLiteral(node: ts.ArrayLiteralExpression): string {
         const values: string[] = [];
 
-        node.elements.forEach((child) => {
+        node.elements.forEach(child => {
             values.push(this.transpileExpression(child));
         });
 
@@ -1490,7 +1491,7 @@ export class LuaTranspiler {
     public transpileObjectLiteral(node: ts.ObjectLiteralExpression): string {
         const properties: string[] = [];
         // Add all property assignments
-        node.properties.forEach((element) => {
+        node.properties.forEach(element => {
             let name = "";
             if (ts.isIdentifier(element.name)) {
                 name = element.name.escapedText as string;
@@ -1514,11 +1515,11 @@ export class LuaTranspiler {
     public transpileFunctionExpression(node: ts.ArrowFunction): string {
         // Build parameter string
         const paramNames: string[] = [];
-        node.parameters.forEach((param) => {
+        node.parameters.forEach(param => {
             paramNames.push((param.name as ts.Identifier).escapedText as string);
         });
 
-        const defaultValueParams = node.parameters.filter((declaration) => declaration.initializer !== undefined);
+        const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
 
         if (ts.isBlock(node.body) || defaultValueParams.length > 0) {
             let result = `function(${paramNames.join(",")})\n`;
@@ -1535,7 +1536,7 @@ export class LuaTranspiler {
     public transpileParameterDefaultValues(params: ts.ParameterDeclaration[]): string {
         let result = "";
 
-        params.filter((declaration) => declaration.initializer !== undefined).forEach((declaration) => {
+        params.filter(declaration => declaration.initializer !== undefined).forEach(declaration => {
             const paramName = (declaration.name as ts.Identifier).escapedText;
             const paramValue = this.transpileExpression(declaration.initializer);
             result += this.indent + `if ${paramName}==nil then ${paramName}=${paramValue} end\n`;

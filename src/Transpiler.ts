@@ -566,7 +566,11 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ElementAccessExpression:
                 return this.transpileElementAccessExpression(node as ts.ElementAccessExpression);
             case ts.SyntaxKind.Identifier:
-                // For identifiers simply return their name
+                // Catch undefined which is passed as identifier
+                if ((node as ts.Identifier).originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+                    return "nil";
+                }
+                // Otherwise simply return the name
                 return (node as ts.Identifier).text;
             case ts.SyntaxKind.StringLiteral:
                 const text = (node as ts.StringLiteral).text;
@@ -580,6 +584,7 @@ export class LuaTranspiler {
             case ts.SyntaxKind.FalseKeyword:
                 return "false";
             case ts.SyntaxKind.NullKeyword:
+            case ts.SyntaxKind.UndefinedKeyword:
                 return "nil";
             case ts.SyntaxKind.ThisKeyword:
                 return "self";

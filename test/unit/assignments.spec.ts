@@ -13,7 +13,7 @@ export class AssignmentTests {
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
     public constAssignment(inp: string, out: string) {
-        var lua = util.transpileString(`const myvar = ${inp};`)
+        const lua = util.transpileString(`const myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
 
@@ -25,7 +25,7 @@ export class AssignmentTests {
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
     public letAssignment(inp: string, out: string) {
-        var lua = util.transpileString(`let myvar = ${inp};`)
+        const lua = util.transpileString(`let myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
 
@@ -37,7 +37,19 @@ export class AssignmentTests {
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
     public varAssignment(inp: string, out: string) {
-        var lua = util.transpileString(`var myvar = ${inp};`)
+        const lua = util.transpileString(`var myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
+    }
+
+    @TestCase("var myvar;")
+    @TestCase("let myvar;")
+    @TestCase("const myvar;")
+    @TestCase("const myvar = null;")
+    @TestCase("const myvar = undefined;")
+    @Test("Null assignments")
+    public nullAssignment(declaration: string) {
+        const lua = util.transpileString(declaration + " return myvar;");
+        const result = util.executeLua(lua);
+        Expect(result).toBe(undefined);
     }
 }

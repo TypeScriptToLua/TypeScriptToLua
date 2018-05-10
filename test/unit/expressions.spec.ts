@@ -1,4 +1,5 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { LuaTarget } from "../../src/Transpiler";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -195,5 +196,64 @@ export class ExpressionTests {
 
         // Assert
         Expect(result).toBe(v1 + v2);
+    }
+
+    @TestCase("inst.field", 8)
+    @TestCase("inst.field + 3", 8 + 3)
+    @TestCase("inst.field * 3", 8 * 3)
+    @TestCase("inst.field / 3", 8 / 3)
+    @TestCase("inst.field && 3", 8 && 3)
+    @TestCase("inst.field || 3", 8 || 3)
+    // @TestCase("inst.field & 3", 8 & 3)
+    // @TestCase("inst.field | 3", 8 | 3)
+    // @TestCase("inst.field << 3", 8 << 3)
+    // @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase(`"abc" + inst.field`, "abc8")
+    public getAccessorBinary(expression: string, expected: any) {
+        const source = `class MyClass {`
+                     + `    public _field: number;`
+                     + `    public get field(): number { return this._field + 4; }`
+                     + `    public set field(v: number) { this._field = v; }`
+                     + `}`
+                     + `var inst = new MyClass();`
+                     + `inst._field = 4;`
+                     + `return ${expression};`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("= 4", 4 + 4)
+    @TestCase("+= 3", 4 + 3 + 4)
+    @TestCase("*= 3", 4 * 3 + 4)
+    @TestCase("/= 3", 4 / 3 + 4)
+    // @TestCase("&= 3", 4 & 3 + 4)
+    // @TestCase("|= 3", 4 | 3 + 4)
+    // @TestCase("<<= 3", 4 << 3 + 4)
+    // @TestCase(">>= 3", 4 >> 3 + 4)
+    public setAccessorBinary(expression: string, expected: any) {
+        const source = `class MyClass {`
+                     + `    public _field: number = 4;`
+                     + `    public get field(): number { return this._field; }`
+                     + `    public set field(v: number) { this._field = v + 4; }`
+                     + `}`
+                     + `var inst = new MyClass();`
+                     + `inst.field ${expression};`
+                     + `return inst._field;`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
     }
 }

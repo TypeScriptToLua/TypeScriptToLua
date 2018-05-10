@@ -17,13 +17,13 @@ export class TranspileError extends Error {
     }
 }
 
-export enum Target {
+export enum LuaTarget {
     Lua53 = "5.3",
     LuaJIT = "JIT",
 }
 
 export class LuaTranspiler {
-    public static AvailableLuaTargets = [Target.LuaJIT, Target.Lua53];
+    public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
 
     // Transpile a source file
     public static transpileSourceFile(node: ts.SourceFile,
@@ -627,36 +627,56 @@ export class LuaTranspiler {
         let result = "";
 
         // Transpile Bitops
-        if (this.options.luaTarget === Target.LuaJIT) {
+        if (this.options.luaTarget === LuaTarget.LuaJIT) {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.AmpersandToken:
                     result = `bit.band(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.AmpersandEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
+                                                         `bit.band(${lhs},${rhs})`);
+                    }
                     result = `${lhs}=bit.band(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.BarToken:
                     result = `bit.bor(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.BarEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
+                                                         `bit.bor(${lhs},${rhs})`);
+                    }
                     result = `${lhs}=bit.bor(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanToken:
                     result = `bit.lshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
+                                                         `bit.lshift(${lhs},${rhs})`);
+                    }
                     result = `${lhs}=bit.lshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanToken:
                     result = `bit.arshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
+                                                         `bit.arshift(${lhs},${rhs})`);
+                    }
                     result = `${lhs}=bit.arshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                     result = `bit.rshift(${lhs},${rhs})`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression,
+                                                         `bit.rshift(${lhs},${rhs})`);
+                    }
                     result = `${lhs}=bit.rshift(${lhs},${rhs})`;
                     break;
             }
@@ -666,30 +686,45 @@ export class LuaTranspiler {
                     result = `${lhs}&${rhs}`;
                     break;
                 case ts.SyntaxKind.AmpersandEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}&${rhs}`);
+                    }
                     result = `${lhs}=${lhs}&${rhs}`;
                     break;
                 case ts.SyntaxKind.BarToken:
                     result = `${lhs}|${rhs}`;
                     break;
                 case ts.SyntaxKind.BarEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}|${rhs}`);
+                    }
                     result = `${lhs}=${lhs}|${rhs}`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanToken:
                     result = `${lhs}<<${rhs}`;
                     break;
                 case ts.SyntaxKind.LessThanLessThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}<<${rhs}`);
+                    }
                     result = `${lhs}=${lhs}<<${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanToken:
                     result = `${lhs}>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}>>${rhs}`);
+                    }
                     result = `${lhs}=${lhs}>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                     result = `${lhs}>>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}>>>${rhs}`);
+                    }
                     result = `${lhs}=${lhs}>>>${rhs}`;
                     break;
             }
@@ -699,15 +734,27 @@ export class LuaTranspiler {
         if (result === "") {
             switch (node.operatorToken.kind) {
                 case ts.SyntaxKind.PlusEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}+${rhs}`);
+                    }
                     result = `${lhs}=${lhs}+${rhs}`;
                     break;
                 case ts.SyntaxKind.MinusEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}-${rhs}`);
+                    }
                     result = `${lhs}=${lhs}-${rhs}`;
                     break;
                 case ts.SyntaxKind.AsteriskEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}*${rhs}`);
+                    }
                     result = `${lhs}=${lhs}*${rhs}`;
                     break;
                 case ts.SyntaxKind.SlashEqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}/${rhs}`);
+                    }
                     result = `${lhs}=${lhs}/${rhs}`;
                     break;
                 case ts.SyntaxKind.AmpersandAmpersandToken:
@@ -751,6 +798,9 @@ export class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
+                    if (tsEx.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
+                    }
                     result = `${lhs}=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
@@ -931,7 +981,7 @@ export class LuaTranspiler {
             fromCodePoint: "utf8.char",
         };
 
-        if (identifier.escapedText as string === "fromCodePoint" && this.options.luaTarget !== Target.Lua53) {
+        if (identifier.escapedText as string === "fromCodePoint" && this.options.luaTarget !== LuaTarget.Lua53) {
             throw new TranspileError(
                 `Unsupported string property ${identifier.escapedText} is only supported for lua 5.3.`,
                 identifier
@@ -1007,6 +1057,8 @@ export class LuaTranspiler {
             case ts.TypeFlags.Object:
                 if (tsEx.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
+                } else if (tsEx.hasGetAccessor(node, this.checker)) {
+                    return this.transpileGetAccessor(node);
                 }
         }
 
@@ -1022,6 +1074,18 @@ export class LuaTranspiler {
 
         const callPath = this.transpileExpression(node.expression);
         return `${callPath}.${property}`;
+    }
+
+    public transpileGetAccessor(node: ts.PropertyAccessExpression): string {
+        const name = node.name.escapedText;
+        const expression = this.transpileExpression(node.expression);
+        return `${expression}:get__${name}()`;
+    }
+
+    public transpileSetAccessor(node: ts.PropertyAccessExpression, value: string): string {
+        const name = node.name.escapedText;
+        const expression = this.transpileExpression(node.expression);
+        return `${expression}:set__${name}(${value})`;
     }
 
     // Transpile a Math._ property
@@ -1322,10 +1386,53 @@ export class LuaTranspiler {
             );
         }
 
+        // Transpile get accessors
+        node.members.filter(ts.isGetAccessor).forEach((getAccessor) => {
+            result += this.transpileGetAccessorDeclaration(getAccessor, className);
+        });
+
+        // Transpile set accessors
+        node.members.filter(ts.isSetAccessor).forEach((setAccessor) => {
+            result += this.transpileSetAccessorDeclaration(setAccessor, className);
+        });
+
         // Transpile methods
         node.members.filter(ts.isMethodDeclaration).forEach((method) => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
+
+        return result;
+    }
+
+    public transpileGetAccessorDeclaration(getAccessor: ts.GetAccessorDeclaration, className: string): string {
+        const name = (getAccessor.name as ts.Identifier).escapedText;
+
+        let result = this.indent + `function ${className}.get__${name}(self)\n`;
+
+        this.pushIndent();
+        result += this.transpileBlock(getAccessor.body);
+        this.popIndent();
+
+        result += this.indent + `end\n`;
+
+        return result;
+    }
+
+    public transpileSetAccessorDeclaration(setAccessor: ts.SetAccessorDeclaration, className: string): string {
+        const name = (setAccessor.name as ts.Identifier).escapedText;
+
+        const paramNames: string[] = ["self"];
+        setAccessor.parameters.forEach((param) => {
+            paramNames.push((param.name as ts.Identifier).escapedText as string);
+        });
+
+        let result = this.indent + `function ${className}.set__${name}(${paramNames.join(",")})\n`;
+
+        this.pushIndent();
+        result += this.transpileBlock(setAccessor.body);
+        this.popIndent();
+
+        result += this.indent + `end\n`;
 
         return result;
     }

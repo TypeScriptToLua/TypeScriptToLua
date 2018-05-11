@@ -17,7 +17,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -38,7 +38,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -64,7 +64,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -91,7 +91,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -122,7 +122,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -156,7 +156,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -202,7 +202,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -246,7 +246,7 @@ export class LuaConditionalsTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);

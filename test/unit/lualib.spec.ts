@@ -7,7 +7,7 @@ export class LuaLibArrayTests {
     @Test("forEach")
     public forEach(inp: number[], expected: number[]) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
             arrTest.forEach((elem, index) => {
                 arrTest[index] = arrTest[index] + 1;
@@ -16,7 +16,7 @@ export class LuaLibArrayTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify(expected));
@@ -31,10 +31,10 @@ export class LuaLibArrayTests {
     @Test("array.map")
     public map<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.map(eval(func))));
@@ -50,10 +50,10 @@ export class LuaLibArrayTests {
     @Test("array.filter")
     public filter<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.filter(eval(func))));
@@ -66,13 +66,13 @@ export class LuaLibArrayTests {
     @Test("array.every")
     public every<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return [${inp.toString()}].every(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].every(${func})))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
-        Expect(JSON.stringify(result)).toBe(JSON.stringify(inp.every(eval(func))));
+        Expect(result).toBe(JSON.stringify(inp.every(eval(func))));
     }
 
     @TestCase([], "x => x > 1")
@@ -82,13 +82,13 @@ export class LuaLibArrayTests {
     @Test("array.some")
     public some<T>(inp: T[], func: string) {
         // Transpile
-        let lua = util.transpileString(`return [${inp.toString()}].some(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].some(${func})))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
-        Expect(JSON.stringify(result)).toBe(JSON.stringify(inp.some(eval(func))));
+        Expect(result).toBe(JSON.stringify(inp.some(eval(func))));
     }
 
     @TestCase([], 1, 2)
@@ -101,10 +101,10 @@ export class LuaLibArrayTests {
     @Test("array.slice")
     public slice<T>(inp: T[], start: number, end?: number) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.slice(start, end)));
@@ -120,14 +120,14 @@ export class LuaLibArrayTests {
     @Test("array.splice[Insert]")
     public spliceInsert<T>(inp: T[], start: number, deleteCount: number, ...newElements: any[]) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let spliceTestTable = [${inp.toString()}];
             spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
             return JSONStringify(spliceTestTable);`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         inp.splice(start, deleteCount, ...newElements)
@@ -144,10 +144,10 @@ export class LuaLibArrayTests {
     @Test("array.splice[Remove]")
     public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
         // Transpile
-        let lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         if (deleteCount) {
@@ -173,16 +173,16 @@ export class LuaLibArrayTests {
             seperatorLua = "";
         }
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let joinTestTable = ${JSON.stringify(inp)};
             return joinTestTable.join(${seperatorLua});`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
-        let joinedInp = inp.join(seperator);
+        const joinedInp = inp.join(seperator);
         Expect(result).toBe(joinedInp);
     }
 
@@ -192,13 +192,13 @@ export class LuaLibArrayTests {
     @Test("array.indexOf")
     public indexOf(inp: string[], element: string) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `return ${JSON.stringify(inp)}.indexOf("${element}"))`
 
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         // Acount for lua indexing (-1)
@@ -210,13 +210,13 @@ export class LuaLibArrayTests {
     @Test("array.destructuring.simple")
     public arrayDestructuringSimple(inp: number[], expected: number) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let [x, y, z] = ${JSON.stringify(inp)}
             return z;
             `);
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(expected);
@@ -227,7 +227,7 @@ export class LuaLibArrayTests {
     @Test("array.push")
     public arrayPush(inp: number[]) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let testArray = [0];
             testArray.push(${inp.join(', ')});
             return JSONStringify(testArray);
@@ -235,7 +235,7 @@ export class LuaLibArrayTests {
             );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(JSON.stringify([0].concat(inp)));

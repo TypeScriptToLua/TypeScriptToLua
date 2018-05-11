@@ -6,7 +6,8 @@ import { Expect } from "alsatian";
 import { LuaTranspiler, TranspileError, LuaTarget } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 
-const LuaVM = require("lua.vm.js");
+import {lauxlib, lua, lualib, to_luastring} from "fengari";
+
 const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
@@ -50,16 +51,40 @@ export function transpileFile(path: string): string {
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`));
 
     const options: ts.CompilerOptions = { dontRequireLuaLib: true };
-    const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
-    return lua.trim();
+    const result = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
+    return result.trim();
 }
 
-export function executeLua(lua: string, withLib = true): any {
+export enum LuaReturnType {
+    String,
+    Number,
+    Boolean
+}
+
+export function executeLua(luaStr: string, type: LuaReturnType = LuaReturnType.String, withLib = true): any {
     if (withLib) {
-        lua = minimalTestLib + lua
+        luaStr = minimalTestLib + luaStr;
     }
-    const luavm = new LuaVM.Lua.State();
-    return luavm.execute(lua)[0];
+
+    const L = lauxlib.luaL_newstate();
+    lualib.luaL_openlibs(L);
+    lauxlib.luaL_dostring(L, to_luastring(luaStr));
+
+    let result;
+
+    switch (type) {
+        case LuaReturnType.String:
+            result = lua.lua_tojsstring(L, -1);
+            break;
+        case LuaReturnType.Number:
+            result = lua.lua_tonumber(L, -1);
+            break;
+        case LuaReturnType.Boolean:
+            result = lua.lua_toboolean(L, -1);
+            break;
+    }
+
+    return result;
 }
 
 export function expectCodeEqual(code1: string, code2: string) {
@@ -74,8 +99,8 @@ export function expectCodeEqual(code1: string, code2: string) {
     Expect(c1).toBe(c2);
 }
 
-const lualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
+const tslualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
 
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 
-export const minimalTestLib = lualib + jsonlib;
+export const minimalTestLib = tslualib + jsonlib;

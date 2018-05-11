@@ -116,7 +116,7 @@ function TS_split(str, separator)
 end
 
 function TS_push(list, ...)
-    for _, v in pairs({...}) do
+    for _, v in ipairs({...}) do
         list[#list + 1] = v
     end
 end

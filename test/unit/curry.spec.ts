@@ -24,7 +24,7 @@ export class LuaCurryTests {
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        let result = util.executeLua(lua, util.LuaReturnType.Number);
 
         // Assert
         Expect(result).toBe(x + y);

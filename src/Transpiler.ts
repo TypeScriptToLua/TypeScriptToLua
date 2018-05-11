@@ -1203,7 +1203,7 @@ export class LuaTranspiler {
                ) {
                 return `local ${vars}=${value}\n`;
             } else {
-                return `local ${vars}=unpack(${value})\n`;
+                return `local ${vars}=table.unpack(${value})\n`;
             }
         } else {
             throw new TranspileError(

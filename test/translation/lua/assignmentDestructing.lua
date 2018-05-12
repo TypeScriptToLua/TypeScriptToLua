@@ -1,1 +1,1 @@
-local a,b=unpack(myFunc())
+local a,b=table.unpack(myFunc())

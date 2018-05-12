@@ -85,6 +85,11 @@ function TS_indexOf(list, object )
     return -1
 end
 
+function TS_replace(source, searchVal, newVal)
+    local result = string.gsub(source, searchVal, newVal)
+    return result
+end
+
 function TS_split(str, separator)
     local out = {}
 
@@ -116,7 +121,7 @@ function TS_split(str, separator)
 end
 
 function TS_push(list, ...)
-    for _, v in pairs({...}) do
+    for _, v in ipairs({...}) do
         list[#list + 1] = v
     end
 end

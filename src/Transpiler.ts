@@ -953,7 +953,7 @@ export class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "replace":
-                return `string.gsub(${caller},${params})`;
+                return `TS_replace(${caller},${params})`;
             case "indexOf":
                 if (node.arguments.length === 1) {
                     return `(string.find(${caller},${params},1,true) or 0)-1`;
@@ -1203,7 +1203,7 @@ export class LuaTranspiler {
                ) {
                 return `local ${vars}=${value}\n`;
             } else {
-                return `local ${vars}=unpack(${value})\n`;
+                return `local ${vars}=table.unpack(${value})\n`;
             }
         } else {
             throw new TranspileError(

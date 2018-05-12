@@ -1,12 +1,12 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util"
+import * as util from "../src/util";
 
 export class LuaCurryTests {
 
     @Test("currying")
     public currying() {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `(x: number) => (y: number) => x + y;`
         );
         // Assert
@@ -18,13 +18,13 @@ export class LuaCurryTests {
     @TestCase(5, 4)
     public curryingAdd(x: number, y: number) {
         // Transpile
-        let lua = util.transpileString(
+        const lua = util.transpileString(
             `let add = (x: number) => (y: number) => x + y;
             return add(${x})(${y})`
         );
 
         // Execute
-        let result = util.executeLua(lua);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(x + y);

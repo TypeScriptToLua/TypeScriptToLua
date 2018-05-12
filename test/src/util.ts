@@ -6,12 +6,13 @@ import { Expect } from "alsatian";
 import { LuaTranspiler, TranspileError, LuaTarget } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 
-const LuaVM = require("lua.vm.js");
+import {lauxlib, lua, lualib, to_luastring, to_jsstring } from "fengari";
+
 const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.LuaJIT }): string {
+export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.Lua53 }): string {
     let compilerHost = {
         getSourceFile: (filename, languageVersion) => {
             if (filename === "file.ts") {
@@ -50,16 +51,39 @@ export function transpileFile(path: string): string {
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')}`));
 
     const options: ts.CompilerOptions = { dontRequireLuaLib: true };
-    const lua = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
-    return lua.trim();
+    const result = LuaTranspiler.transpileSourceFile(program.getSourceFile(path), checker, options);
+    return result.trim();
 }
 
-export function executeLua(lua: string, withLib = true): any {
+export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
-        lua = minimalTestLib + lua
+        luaStr = minimalTestLib + luaStr;
     }
-    const luavm = new LuaVM.Lua.State();
-    return luavm.execute(lua)[0];
+
+    const L = lauxlib.luaL_newstate();
+    lualib.luaL_openlibs(L);
+    const status = lauxlib.luaL_dostring(L, to_luastring(luaStr));
+
+    if (status === lua.LUA_OK) {
+        // Read the return value from stack depending on its type.
+        if (lua.lua_isboolean(L, -1)) {
+            return lua.lua_toboolean(L, -1);
+        } else if (lua.lua_isnil(L, -1)) {
+            return null;
+        } else if (lua.lua_isnumber(L, -1)) {
+            return lua.lua_tonumber(L, -1);
+        } else if (lua.lua_isstring(L, -1)) {
+            return lua.lua_tojsstring(L, -1);
+        } else {
+            throw new Error("Unsupported lua return type: " + to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))));
+        }
+    } else {
+        // If the lua VM did not terminate with status code LUA_OK an error occurred.
+        // Throw a JS error with the message, retrieved by reading a string from the stack.
+
+        // Filter control characters out of string which are in there because ????
+        throw new Error("LUA ERROR: " + to_jsstring(lua.lua_tostring(L, -1).filter(c => c >= 20)));
+    }
 }
 
 export function expectCodeEqual(code1: string, code2: string) {
@@ -74,8 +98,8 @@ export function expectCodeEqual(code1: string, code2: string) {
     Expect(c1).toBe(c2);
 }
 
-const lualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
+const tslualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
 
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 
-export const minimalTestLib = lualib + jsonlib;
+export const minimalTestLib = tslualib + jsonlib;

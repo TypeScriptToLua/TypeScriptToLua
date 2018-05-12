@@ -33,18 +33,8 @@ export class ExpressionTests {
     @TestCase("1*1", "1*1")
     @TestCase("1/1", "1/1")
     @TestCase("1%1", "1%1")
-    @TestCase("1==1", "1==1")
-    @TestCase("1===1", "1==1")
-    @TestCase("1!=1", "1~=1")
-    @TestCase("1!==1", "1~=1")
-    @TestCase("1>1", "1>1")
-    @TestCase("1>=1", "1>=1")
-    @TestCase("1<1", "1<1")
-    @TestCase("1<=1", "1<=1")
-    @TestCase("1&&1", "1 and 1")
-    @TestCase("1||1", "1 or 1")
-    @Test("Binary expressions basic")
-    public binary(input: string, output: string) {
+    @Test("Binary expressions basic numeric")
+    public binaryNum(input: string, output: string) {
         // Transpile
         const lua = util.transpileString(input);
 
@@ -54,6 +44,28 @@ export class ExpressionTests {
         // Assert
         Expect(lua).toBe(output);
         Expect(result).toBe(eval(input));
+    }
+
+    @TestCase("1==1", true)
+    @TestCase("1===1", true)
+    @TestCase("1!=1", false)
+    @TestCase("1!==1", false)
+    @TestCase("1>1", false)
+    @TestCase("1>=1", true)
+    @TestCase("1<1", false)
+    @TestCase("1<=1", true)
+    @TestCase("1&&1", 1)
+    @TestCase("1||1", 1)
+    @Test("Binary expressions basic boolean")
+    public binaryBool(input: string, expected: any) {
+        // Transpile
+        const lua = util.transpileString(input);
+
+        // Execute
+        const result = util.executeLua(`return ${lua}`);
+
+        // Assert
+        Expect(result).toBe(expected);
     }
 
     @TestCase("'key' in obj")
@@ -211,14 +223,15 @@ export class ExpressionTests {
     @TestCase("inst.field", 8)
     @TestCase("inst.field + 3", 8 + 3)
     @TestCase("inst.field * 3", 8 * 3)
-    @TestCase("inst.field / 3", 8 / 3)
+    @TestCase("inst.field / 2", 8 / 2)
     @TestCase("inst.field && 3", 8 && 3)
     @TestCase("inst.field || 3", 8 || 3)
-    // @TestCase("inst.field & 3", 8 & 3)
-    // @TestCase("inst.field | 3", 8 | 3)
-    // @TestCase("inst.field << 3", 8 << 3)
-    // @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase("(inst.field + 3) & 3", (8 + 3) & 3)
+    @TestCase("inst.field | 3", 8 | 3)
+    @TestCase("inst.field << 3", 8 << 3)
+    @TestCase("inst.field >> 1", 8 >> 1)
     @TestCase(`"abc" + inst.field`, "abc8")
+    @Test("Get accessor expression")
     public getAccessorBinary(expression: string, expected: any) {
         const source = `class MyClass {`
                      + `    public _field: number;`
@@ -240,14 +253,15 @@ export class ExpressionTests {
     }
 
     @TestCase("= 4", 4 + 4)
-    @TestCase("-= 3", 4 - 3 + 4)
-    @TestCase("+= 3", 4 + 3 + 4)
-    @TestCase("*= 3", 4 * 3 + 4)
-    @TestCase("/= 3", 4 / 3 + 4)
-    // @TestCase("&= 3", 4 & 3 + 4)
-    // @TestCase("|= 3", 4 | 3 + 4)
-    // @TestCase("<<= 3", 4 << 3 + 4)
-    // @TestCase(">>= 3", 4 >> 3 + 4)
+    @TestCase("-= 3", (4 - 3) + 4)
+    @TestCase("+= 3", (4 + 3) + 4)
+    @TestCase("*= 3", (4 * 3) + 4)
+    @TestCase("/= 2", (4 / 2) + 4)
+    @TestCase("&= 3", (4 & 3) + 4)
+    @TestCase("|= 3", (4 | 3) + 4)
+    @TestCase("<<= 3", (4 << 3) + 4)
+    @TestCase(">>= 3", (4 >> 3) + 4)
+    @Test("Set accessorExpression")
     public setAccessorBinary(expression: string, expected: any) {
         const source = `class MyClass {`
                      + `    public _field: number = 4;`

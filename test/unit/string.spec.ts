@@ -62,7 +62,7 @@ export class StringTests {
     public replace<T>(inp: string, searchValue: string, replaceValue: string) {
         // Transpile
         const lua = util.transpileString(
-            `return "${inp}".replace("${searchValue}", "${replaceValue}")`
+            `return "${inp}".replace("${searchValue}", "${replaceValue}");`
         );
 
         // Execute
@@ -100,9 +100,7 @@ export class StringTests {
     @Test("string.indexOf")
     public indexOf(inp: string, searchValue: string) {
         // Transpile
-        const lua = util.transpileString(
-            `return "${inp}".indexOf("${searchValue}")`
-        );
+        const lua = util.transpileString(`return "${inp}".indexOf("${searchValue}")`);
 
         // Execute
         const result = util.executeLua(lua);

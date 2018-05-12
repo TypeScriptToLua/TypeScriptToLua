@@ -118,20 +118,17 @@ function addTSTLOptions(commandLine: ts.ParsedCommandLine,
 /** Check the current state of the ParsedCommandLine for errors */
 function runDiagnostics(commandLine: ts.ParsedCommandLine) {
     const tsInvalidCompilerOptionErrorCode = 5023;
-
     if (commandLine.errors.length !== 0) {
         // Generate a list of valid option names and aliases
         const optionNames: string[] = [];
-        for (const key in optionDeclarations) {
-            if (optionDeclarations[key]) {
-                optionNames.push(key);
-                const alias = optionDeclarations[key].alias;
-                if (alias) {
-                    if (typeof alias === "string") {
-                        optionNames.push(alias);
-                    } else {
-                        optionNames.push(...alias);
-                    }
+        for (const key of Object.keys(optionDeclarations)) {
+            optionNames.push(key);
+            const alias = optionDeclarations[key].alias;
+            if (alias) {
+                if (typeof alias === "string") {
+                    optionNames.push(alias);
+                } else {
+                    optionNames.push(...alias);
                 }
             }
         }

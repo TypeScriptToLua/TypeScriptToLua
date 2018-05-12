@@ -2,7 +2,6 @@ import { Expect, Test, TestCase, Teardown } from "alsatian";
 
 import { CompilerOptions, findConfigFile, parseCommandLine, ParsedCommandLine } from "../../src/CommandLineParser";
 
-
 export class CLITests {
 
     @Test("defaultOption")
@@ -15,6 +14,12 @@ export class CLITests {
         let parsedCommandLine = parseCommandLine([]);
 
         Expect(expected).toBe(parsedCommandLine.options[option]);
+    }
+
+    @Test("ValidLuaTarget")
+    public validLuaTarget() {
+        let parsedCommandLine = parseCommandLine(['--luaTarget', '5.3']);
+        Expect(parsedCommandLine.options["luaTarget"]).toBe("5.3");
     }
 
     @Test("InvalidLuaTarget")

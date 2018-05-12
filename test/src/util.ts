@@ -6,13 +6,13 @@ import { Expect } from "alsatian";
 import { LuaTranspiler, TranspileError, LuaTarget } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 
-import {lauxlib, lua, lualib, to_luastring} from "fengari";
+import {lauxlib, lua, lualib, to_luastring, to_jsstring } from "fengari";
 
 const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.LuaJIT }): string {
+export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.Lua53 }): string {
     let compilerHost = {
         getSourceFile: (filename, languageVersion) => {
             if (filename === "file.ts") {
@@ -55,36 +55,35 @@ export function transpileFile(path: string): string {
     return result.trim();
 }
 
-export enum LuaReturnType {
-    String,
-    Number,
-    Boolean
-}
-
-export function executeLua(luaStr: string, type: LuaReturnType = LuaReturnType.String, withLib = true): any {
+export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
     }
 
     const L = lauxlib.luaL_newstate();
     lualib.luaL_openlibs(L);
-    lauxlib.luaL_dostring(L, to_luastring(luaStr));
+    const status = lauxlib.luaL_dostring(L, to_luastring(luaStr));
 
-    let result;
+    if (status === lua.LUA_OK) {
+        // Read the return value from stack depending on its type.
+        if (lua.lua_isboolean(L, -1)) {
+            return lua.lua_toboolean(L, -1);
+        } else if (lua.lua_isnil(L, -1)) {
+            return null;
+        } else if (lua.lua_isnumber(L, -1)) {
+            return lua.lua_tonumber(L, -1);
+        } else if (lua.lua_isstring(L, -1)) {
+            return lua.lua_tojsstring(L, -1);
+        } else {
+            throw new Error("Unsupported lua return type: " + to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))));
+        }
+    } else {
+        // If the lua VM did not terminate with status code LUA_OK an error occurred.
+        // Throw a JS error with the message, retrieved by reading a string from the stack.
 
-    switch (type) {
-        case LuaReturnType.String:
-            result = lua.lua_tojsstring(L, -1);
-            break;
-        case LuaReturnType.Number:
-            result = lua.lua_tonumber(L, -1);
-            break;
-        case LuaReturnType.Boolean:
-            result = lua.lua_toboolean(L, -1);
-            break;
+        // Filter control characters out of string which are in there because ????
+        throw new Error("LUA ERROR: " + to_jsstring(lua.lua_tostring(L, -1).filter(c => c >= 20)));
     }
-
-    return result;
 }
 
 export function expectCodeEqual(code1: string, code2: string) {

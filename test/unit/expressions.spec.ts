@@ -28,7 +28,6 @@ export class ExpressionTests {
         }).toThrowError(Error, expectedError);
     }
 
-
     @TestCase("1+1", "1+1")
     @TestCase("1-1", "1-1")
     @TestCase("1*1", "1*1")
@@ -40,7 +39,7 @@ export class ExpressionTests {
         const lua = util.transpileString(input);
 
         // Execute
-        const result = util.executeLua(`return ${lua}`, util.LuaReturnType.Number);
+        const result = util.executeLua(`return ${lua}`);
 
         // Assert
         Expect(lua).toBe(output);
@@ -55,15 +54,15 @@ export class ExpressionTests {
     @TestCase("1>=1", true)
     @TestCase("1<1", false)
     @TestCase("1<=1", true)
-    @TestCase("1&&1", true) // TODO 1&&1 evals to one actually JS LUL
-    @TestCase("1||1", true) // TODO 1&&1 evals to one actually JS LUL
+    @TestCase("1&&1", 1)
+    @TestCase("1||1", 1)
     @Test("Binary expressions basic boolean")
     public binaryBool(input: string, expected: any) {
         // Transpile
         const lua = util.transpileString(input);
 
         // Execute
-        const result = util.executeLua(`return ${lua}`, util.LuaReturnType.Boolean);
+        const result = util.executeLua(`return ${lua}`);
 
         // Assert
         Expect(result).toBe(expected);
@@ -79,7 +78,7 @@ export class ExpressionTests {
         const lua = util.transpileString(input);
 
         // Execute
-        const result = util.executeLua(`obj = { existingKey = 1 }\nreturn ${lua}`, util.LuaReturnType.Boolean);
+        const result = util.executeLua(`obj = { existingKey = 1 }\nreturn ${lua}`);
 
         // Assert
         Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
@@ -147,7 +146,7 @@ export class ExpressionTests {
         const lua = util.transpileString(`let add = (a, b) => a+b; return add(1,2);`);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(3);
@@ -170,7 +169,7 @@ export class ExpressionTests {
                                        + `return add(${callArgs});`);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(v1 + v2);
@@ -182,7 +181,7 @@ export class ExpressionTests {
         const lua = util.transpileString(`let add = function(a, b) {return a+b}; return add(1,2);`);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(3);
@@ -215,7 +214,7 @@ export class ExpressionTests {
                                        + `return add(${callArgs});`);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(v1 + v2);
@@ -227,11 +226,12 @@ export class ExpressionTests {
     @TestCase("inst.field / 2", 8 / 2)
     @TestCase("inst.field && 3", 8 && 3)
     @TestCase("inst.field || 3", 8 || 3)
-    @TestCase("inst.field & 3", 8 & 3)
-    // @TestCase("inst.field | 3", 8 | 3)
-    // @TestCase("inst.field << 3", 8 << 3)
-    // @TestCase("inst.field >> 1", 8 >> 1)
-    // @TestCase(`"abc" + inst.field`, "abc8")
+    @TestCase("(inst.field + 3) & 3", (8 + 3) & 3)
+    @TestCase("inst.field | 3", 8 | 3)
+    @TestCase("inst.field << 3", 8 << 3)
+    @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase(`"abc" + inst.field`, "abc8")
+    @Test("Get accessor expression")
     public getAccessorBinary(expression: string, expected: any) {
         const source = `class MyClass {`
                      + `    public _field: number;`
@@ -246,21 +246,22 @@ export class ExpressionTests {
         const lua = util.transpileString(source);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
     }
 
     @TestCase("= 4", 4 + 4)
-    @TestCase("-= 3", 4 - 3 + 4)
-    @TestCase("+= 3", 4 + 3 + 4)
-    @TestCase("*= 3", 4 * 3 + 4)
-    @TestCase("/= 2", 4 / 2 + 4)
-    // @TestCase("&= 3", 4 & 3 + 4)
-    // @TestCase("|= 3", 4 | 3 + 4)
-    // @TestCase("<<= 3", 4 << 3 + 4)
-    @TestCase(">>= 3", 4 >> 3 + 4)
+    @TestCase("-= 3", (4 - 3) + 4)
+    @TestCase("+= 3", (4 + 3) + 4)
+    @TestCase("*= 3", (4 * 3) + 4)
+    @TestCase("/= 2", (4 / 2) + 4)
+    @TestCase("&= 3", (4 & 3) + 4)
+    @TestCase("|= 3", (4 | 3) + 4)
+    @TestCase("<<= 3", (4 << 3) + 4)
+    @TestCase(">>= 3", (4 >> 3) + 4)
+    @Test("Set accessorExpression")
     public setAccessorBinary(expression: string, expected: any) {
         const source = `class MyClass {`
                      + `    public _field: number = 4;`
@@ -275,7 +276,7 @@ export class ExpressionTests {
         const lua = util.transpileString(source);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);

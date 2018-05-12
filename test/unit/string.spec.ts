@@ -103,7 +103,7 @@ export class StringTests {
         const lua = util.transpileString(`return "${inp}".indexOf("${searchValue}")`);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.indexOf(searchValue));
@@ -121,7 +121,7 @@ export class StringTests {
         );
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.indexOf(searchValue, offset));
@@ -157,7 +157,7 @@ export class StringTests {
         );
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(inp.length);

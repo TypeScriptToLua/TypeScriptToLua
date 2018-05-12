@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util"
+import * as util from "../src/util";
 
 export class LuaLibArrayTests {
 
@@ -130,7 +130,7 @@ export class LuaLibArrayTests {
         const result = util.executeLua(lua);
 
         // Assert
-        inp.splice(start, deleteCount, ...newElements)
+        inp.splice(start, deleteCount, ...newElements);
         Expect(result).toBe(JSON.stringify(inp));
     }
 
@@ -198,7 +198,7 @@ export class LuaLibArrayTests {
         );
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         // Acount for lua indexing (-1)
@@ -216,7 +216,7 @@ export class LuaLibArrayTests {
             `);
 
         // Execute
-        const result = util.executeLua(lua, util.LuaReturnType.Number);
+        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -229,7 +229,7 @@ export class LuaLibArrayTests {
         // Transpile
         const lua = util.transpileString(
             `let testArray = [0];
-            testArray.push(${inp.join(', ')});
+            testArray.push(${inp.join(", ")});
             return JSONStringify(testArray);
             `
             );

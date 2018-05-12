@@ -85,6 +85,11 @@ function TS_indexOf(list, object )
     return -1
 end
 
+function TS_replace(source, searchVal, newVal)
+    local result = string.gsub(source, searchVal, newVal)
+    return result
+end
+
 function TS_split(str, separator)
     local out = {}
 

@@ -62,8 +62,7 @@ export class StringTests {
     public replace<T>(inp: string, searchValue: string, replaceValue: string) {
         // Transpile
         const lua = util.transpileString(
-            `local res = "${inp}".replace("${searchValue}", "${replaceValue}");
-            return res;`
+            `return "${inp}".replace("${searchValue}", "${replaceValue}");`
         );
 
         // Execute

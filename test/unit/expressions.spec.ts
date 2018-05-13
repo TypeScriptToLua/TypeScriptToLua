@@ -116,11 +116,17 @@ export class ExpressionTests {
     @TestCase("a<<=b", "a=a<<b")
     @TestCase("a>>b", "a>>b")
     @TestCase("a>>=b", "a=a>>b")
-    @TestCase("a>>>b", "a>>>b")
-    @TestCase("a>>>=b", "a=a>>>b")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string) {
         Expect(util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true })).toBe(lua);
+    }
+
+    @TestCase("a>>>b")
+    @TestCase("a>>>=b")
+    @Test("Unsupported bitop 5.3")
+    public bitOperatorOverride53Unsupported(input: string) {
+        Expect(() => util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true }))
+            .toThrowError(Error, "Bitwise operator >>> not supported");
     }
 
     @TestCase("1+1", "1+1")
@@ -280,5 +286,120 @@ export class ExpressionTests {
 
         // Assert
         Expect(result).toBe(expected);
+    }
+
+    // ====================================
+    // Test expected errors
+    // ====================================
+
+    @Test("Unknown unary postfix error")
+    public unknownUnaryPostfixError() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockExpression: any = {
+            operand: ts.createLiteral(false),
+            operator: ts.SyntaxKind.AsteriskToken,
+        };
+
+        Expect(() => transpiler.transpilePostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
+            .toThrowError(Error, "Unsupported unary postfix: AsteriskToken");
+    }
+
+    @Test("Unknown unary postfix error")
+    public unknownUnaryPrefixError() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockExpression: any = {
+            operand: ts.createLiteral(false),
+            operator: ts.SyntaxKind.AsteriskToken,
+        };
+
+        Expect(() => transpiler.transpilePrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
+            .toThrowError(Error, "Unsupported unary prefix: AsteriskToken");
+    }
+
+    @Test("Incompatible fromCodePoint expression error")
+    public incompatibleFromCodePointExpression() {
+        const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
+
+        const identifier = ts.createIdentifier("fromCodePoint");
+        Expect(() => transpiler.transpileStringExpression(identifier))
+            .toThrowError(Error, "Unsupported string property fromCodePoint is only supported for lua 5.3.");
+    }
+
+    @Test("Unknown string expression error")
+    public unknownStringExpression() {
+        const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
+
+        const identifier = ts.createIdentifier("abcd");
+        Expect(() => transpiler.transpileStringExpression(identifier))
+            .toThrowError(Error, "Unsupported string property abcd.");
+    }
+
+    @Test("Unsupported array function error")
+    public unsupportedArrayFunctionError() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockNode: any = {
+            arguments: [],
+            caller: ts.createLiteral(false),
+            expression: {name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false)},
+        };
+
+        Expect(() => transpiler.transpileArrayCallExpression(mockNode as ts.CallExpression))
+            .toThrowError(Error, "Unsupported array function: unknownFunction");
+    }
+
+    @Test("Unsupported array property error")
+    public unsupportedArrayPropertyError() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockNode: any = {
+            name: ts.createIdentifier("unknownProperty"),
+        };
+
+        Expect(() => transpiler.transpileArrayProperty(mockNode as ts.PropertyAccessExpression))
+            .toThrowError(Error, "Unsupported array property: unknownProperty");
+    }
+
+    @Test("Unsupported math property error")
+    public unsupportedMathPropertyError() {
+        const transpiler = util.makeTestTranspiler();
+
+        Expect(() => transpiler.transpileMathExpression(ts.createIdentifier("unknownProperty")))
+            .toThrowError(Error, "Unsupported math property: unknownProperty.");
+    }
+
+    @Test("Unsupported variable declaration type error")
+    public unsupportedVariableDeclarationType() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockNode: any = {name: ts.createLiteral(false)};
+
+        Expect(() => transpiler.transpileVariableDeclaration(mockNode as ts.VariableDeclaration))
+            .toThrowError(Error, "Unsupported variable declaration type: FalseKeyword");
+    }
+
+    @Test("Class without name error")
+    public classWithoutNameError() {
+        const transpiler = util.makeTestTranspiler();
+
+        Expect(() => transpiler.transpileClass({} as ts.ClassDeclaration))
+            .toThrowError(Error, "Unexpected Error: Node has no Name");
+    }
+
+    @Test("Unsupported object literal element error")
+    public unsupportedObjectLiteralElementError() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockObject: any = {
+            properties: [{
+                kind: ts.SyntaxKind.FalseKeyword,
+                name: ts.createIdentifier("testProperty"),
+            }],
+        };
+
+        Expect(() => transpiler.transpileObjectLiteral(mockObject as ts.ObjectLiteralExpression))
+            .toThrowError(Error, "Encountered unsupported object literal element: FalseKeyword.");
     }
 }

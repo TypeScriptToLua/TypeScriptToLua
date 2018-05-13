@@ -724,14 +724,9 @@ export class LuaTranspiler {
                     result = `${lhs}=${lhs}>>${rhs}`;
                     break;
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                    result = `${lhs}>>>${rhs}`;
-                    break;
+                    throw new TranspileError("Bitwise operator >>> not supported", node);
                 case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}>>>${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}>>>${rhs}`;
-                    break;
+                    throw new TranspileError("Bitwise operator >>> not supported", node);
             }
         }
 
@@ -864,7 +859,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusMinusToken:
                 return `${operand}=${operand}-1`;
             default:
-                throw new TranspileError("Unsupported unary postfix: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
+                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
+                throw new TranspileError("Unsupported unary postfix: " + operator,
                                          node);
         }
     }
@@ -881,7 +877,8 @@ export class LuaTranspiler {
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
-                throw new TranspileError("Unsupported unary prefix: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
+                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
+                throw new TranspileError("Unsupported unary prefix: " + operator,
                                          node);
         }
     }
@@ -1121,7 +1118,7 @@ export class LuaTranspiler {
         if (translation[identifier.escapedText as string]) {
             return `math.${translation[identifier.escapedText as string]}`;
         } else {
-            throw new TranspileError(`Unsupported math property ${identifier.escapedText}.`, identifier);
+            throw new TranspileError(`Unsupported math property: ${identifier.escapedText}.`, identifier);
         }
     }
 
@@ -1207,7 +1204,7 @@ export class LuaTranspiler {
             }
         } else {
             throw new TranspileError(
-                "Unsupported variable declaration type " + tsHelper.enumName(node.name.kind, ts.SyntaxKind),
+                "Unsupported variable declaration type: " + tsHelper.enumName(node.name.kind, ts.SyntaxKind),
                 node
             );
         }
@@ -1513,7 +1510,8 @@ export class LuaTranspiler {
                 const expression = this.transpileExpression(element.initializer);
                 properties.push(`${name} = ${expression}`);
             } else {
-                throw new TranspileError(`Encountered unsupported object literal element ${element.kind}.`, node);
+                const elementKind = tsHelper.enumName(element.kind, ts.SyntaxKind);
+                throw new TranspileError(`Encountered unsupported object literal element: ${elementKind}.`, node);
             }
         });
 

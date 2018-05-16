@@ -66,6 +66,7 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
                 // Write output
                 ts.sys.writeFile(outPath, lua);
             } catch (exception) {
+                /* istanbul ignore else: Testing else part would require to add a bug/exception to our code */
                 if (exception.node) {
                     const pos = ts.getLineAndCharacterOfPosition(sourceFile, exception.node.pos);
                     // Graciously handle transpilation errors

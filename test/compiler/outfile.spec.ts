@@ -14,10 +14,24 @@ export class CompilerOutFileTests {
         this.outFileAbsPath = path.join(__dirname, this.outFileRelPath);
     }
 
-    @Test("Compile project")
-    public outFileTest() {
+    @Test("Outfile absoulte path")
+    public outFileAbsTest() {
         // Compile project
         execCommandLine(["--outFile", this.outFileAbsPath, path.join(__dirname, "./testfiles/out_file.ts")]);
+
+        Expect(fs.existsSync(this.outFileAbsPath)).toBe(true);
+    }
+
+    @Test("Outfile relative path")
+    public outFileRelTest() {
+        // Compile project
+        execCommandLine([
+            "--outDir",
+            __dirname,
+            "--outFile",
+            this.outFileRelPath,
+            path.join(__dirname, "./testfiles/out_file.ts"),
+        ]);
 
         Expect(fs.existsSync(this.outFileAbsPath)).toBe(true);
     }

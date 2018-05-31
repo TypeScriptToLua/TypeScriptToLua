@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/Transpiler";
 
 import * as util from "../src/util";
@@ -72,5 +72,39 @@ export class AssignmentTests {
     public ellipsisBindingPattern() {
         Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];"))
             .toThrowError(Error, "Ellipsis destruction is not allowed.");
+    }
+
+    @Test("TupleReturn assignment")
+    public tupleReturnFunction() {
+        const code = `/** !TupleReturn */\n`
+                   + `declare function abc() { return [1,2,3]; }\n`
+                   + `let [a,b] = abc();`;
+
+        const lua = util.transpileString(code);
+        Expect(lua).toBe("local a,b=abc()");
+    }
+
+    @Test("TupleReturn namespace assignment")
+    public tupleReturnNameSpace() {
+        const code = `interface def {\n`
+                   + `/** !TupleReturn */\n`
+                   + `abc();\n`
+                   + `} declare const jkl : def;\n`
+                   + `let [a,b] = jkl.abc();`;
+
+        const lua = util.transpileString(code);
+        Expect(lua).toBe("local a,b=jkl:abc()");
+    }
+
+    @Test("TupleReturn method assignment")
+    public tupleReturnMethod() {
+        const code = `declare class def {\n`
+                   + `/** !TupleReturn */\n`
+                   + `abc() { return [1,2,3]; }\n`
+                   + `} const jkl = new def();\n`
+                   + `let [a,b] = jkl.abc();`;
+
+        const lua = util.transpileString(code);
+        Expect(lua).toBe("local jkl = def.new(true)\n\nlocal a,b=jkl:abc()");
     }
 }

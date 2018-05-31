@@ -917,7 +917,7 @@ export class LuaTranspiler {
                 return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
+            if (tsHelper.isDotMethod(node, this.checker)) {
                 // Don't replace . with : for namespaces
                 callPath = this.transpileExpression(node.expression);
                 params = this.transpileArguments(node.arguments);
@@ -1317,7 +1317,7 @@ export class LuaTranspiler {
                 if (!tsHelper.isPureAbstractClass(superType, this.checker)) {
                     extendsType = clause.types[0];
                 }
-                noClassOr = tsHelper.hasCustomDecorator(superType, this.checker, "!NoClassOr");
+                noClassOr = tsHelper.hasCustomDecorator(superType.symbol, this.checker, "!NoClassOr");
             }
         });
         }

@@ -17,12 +17,20 @@ declare class MixedClass {
     public regularMethod(): void;
 }
 
+declare class SubClass extends MixedClass {}
+
+declare function irrelevant(): void;
+
 declare const classInstance: TestClass;
 declare const interfaceInstance: TestInterface;
 declare const mixedInstance: MixedClass;
+declare const subClassInstance: SubClass;
 
 classInstance.dotMethod();
 interfaceInstance.dotMethod();
 MixedClass.staticMethod();
 mixedInstance.dotMethod();
 mixedInstance.regularMethod();
+subClassInstance.dotMethod();
+subClassInstance.regularMethod();
+irrelevant();

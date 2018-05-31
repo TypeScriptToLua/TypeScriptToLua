@@ -87,21 +87,27 @@ export class TSHelper {
     }
 
     public static isDotMethod(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+        // if we're not accessing a property on something, it doesn't matter
         if (!ts.isPropertyAccessExpression(call.expression)) {
             return false;
         }
 
-        if (ts.getCombinedModifierFlags(call.expression) & ts.ModifierFlags.Static) {
-            return true;
-        }
-
+        // check by function type
         const functionType = checker.getTypeAtLocation(call.expression);
+
+        // static functions should always use dot syntax
+        for (const k of functionType.symbol.valueDeclaration.modifiers || []) {
+            if (k.kind === ts.SyntaxKind.StaticKeyword) {
+                return true;
+            }
+        }
 
         // check whether the function is marked as a dot method
         if (this.hasCustomDecorator(functionType.symbol, checker, "!DotMethod")) {
             return true;
         }
 
+        // check by the container of the function
         const containerType = checker.getTypeAtLocation(call.expression.expression);
 
         // check if it's declared in a namespace

@@ -84,8 +84,8 @@ export class AssignmentTests {
         Expect(lua).toBe("local a,b=abc()");
     }
 
-    @Test("TupleReturn namespace assignment")
-    public tupleReturnNameSpace() {
+    @Test("TupleReturn interface assignment")
+    public tupleReturnInterface() {
         const code = `interface def {\n`
                    + `/** !TupleReturn */\n`
                    + `abc();\n`
@@ -94,6 +94,18 @@ export class AssignmentTests {
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a,b=jkl:abc()");
+    }
+
+    @Test("TupleReturn namespace assignment")
+    public tupleReturnNameSpace() {
+        const code = `declare namespace def {\n`
+                   + `/** !TupleReturn */\n`
+                   + `function abc() {}\n`
+                   + `}\n`
+                   + `let [a,b] = def.abc();`;
+
+        const lua = util.transpileString(code);
+        Expect(lua).toBe("local a,b=def.abc()");
     }
 
     @Test("TupleReturn method assignment")

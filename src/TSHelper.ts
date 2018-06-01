@@ -97,9 +97,13 @@ export class TSHelper {
         const functionType = checker.getTypeAtLocation(call.expression);
 
         // static functions should always use dot syntax
-        for (const k of functionType.symbol.valueDeclaration.modifiers || []) {
-            if (k.kind === ts.SyntaxKind.StaticKeyword) {
-                return true;
+        if (functionType.symbol
+            && functionType.symbol.valueDeclaration
+            && functionType.symbol.valueDeclaration.modifiers) {
+            for (const k of functionType.symbol.valueDeclaration.modifiers || []) {
+                if (k.kind === ts.SyntaxKind.StaticKeyword) {
+                    return true;
+                }
             }
         }
 

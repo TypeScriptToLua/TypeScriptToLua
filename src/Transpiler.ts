@@ -917,7 +917,8 @@ export class LuaTranspiler {
                 return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
+            if (expType.symbol && ((expType.symbol.flags & ts.SymbolFlags.Namespace)
+                                || (expType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
                 // Don't replace . with : for namespaces
                 callPath = this.transpileExpression(node.expression);
                 params = this.transpileArguments(node.arguments);

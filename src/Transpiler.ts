@@ -194,8 +194,7 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ThrowStatement:
                 return this.transpileThrow(node as ts.ThrowStatement);
             case ts.SyntaxKind.ContinueStatement:
-                // Disallow continue
-                throw new TranspileError("Continue is not supported in Lua", node);
+                return this.transpileContinue();
             case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.InterfaceDeclaration:
             case ts.SyntaxKind.EndOfFileToken:
@@ -317,6 +316,11 @@ export class LuaTranspiler {
         }
     }
 
+    public transpileContinue(): string {
+        const result = this.indent + "____continue = true\n";
+        return result + this.indent + "break\n";
+    }
+
     public transpileIf(node: ts.IfStatement): string {
         const condition = this.transpileExpression(node.expression);
 
@@ -340,7 +344,14 @@ export class LuaTranspiler {
 
         let result = this.indent + `while ${condition} do\n`;
         this.pushIndent();
+        result += this.indent + "local ____continue = false\n";
+        result += this.indent + "repeat\n";
+        this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + "____continue = true\n";
+        this.popIndent();
+        result += this.indent + "until true\n";
+        result += this.indent + "if not ____continue then break end\n";
         this.popIndent();
         return result + this.indent + "end\n";
     }
@@ -349,7 +360,14 @@ export class LuaTranspiler {
         let result = this.indent + `repeat\n`;
 
         this.pushIndent();
+        result += this.indent + "local ____continue = false\n";
+        result += this.indent + "repeat\n";
+        this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + "____continue = true\n";
+        this.popIndent();
+        result += this.indent + "until true\n";
+        result += this.indent + "if not ____continue then break end\n";
         this.popIndent();
 
         // Negate the expression because we translate from do-while to repeat-until (repeat-while-not)
@@ -368,8 +386,15 @@ export class LuaTranspiler {
 
         // Add body
         this.pushIndent();
+        result += this.indent + "local ____continue = false\n";
+        result += this.indent + "repeat\n";
+        this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + "____continue = true\n";
+        this.popIndent();
+        result += this.indent + "until true\n";
         result += this.indent + this.transpileExpression(node.incrementor) + "\n";
+        result += this.indent + "if not ____continue then break end\n";
         this.popIndent();
 
         result += this.indent + "end\n";
@@ -394,7 +419,14 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
+        result += this.indent + "local ____continue = false\n";
+        result += this.indent + "repeat\n";
+        this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + "____continue = true\n";
+        this.popIndent();
+        result += this.indent + "until true\n";
+        result += this.indent + "if not ____continue then break end\n";
         this.popIndent();
 
         return result + this.indent + "end\n";
@@ -417,7 +449,14 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
+        result += this.indent + "local ____continue = false\n";
+        result += this.indent + "repeat\n";
+        this.pushIndent();
         result += this.transpileStatement(node.statement);
+        result += this.indent + "____continue = true\n";
+        this.popIndent();
+        result += this.indent + "until true\n";
+        result += this.indent + "if not ____continue then break end\n";
         this.popIndent();
 
         return result + this.indent + "end\n";

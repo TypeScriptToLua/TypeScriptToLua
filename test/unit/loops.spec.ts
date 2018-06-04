@@ -7,14 +7,28 @@ export class LuaLoopTests {
 
     @Test("continue")
     public continue(inp: number[], expected: number[]) {
-        // Transpile & Assert
-        Expect(() => {
-            let lua = util.transpileString(
-                `while (i < arrTest.length) {
-                    continue;
-                }`
-            );
-        }).toThrowError(Error, "Continue is not supported in Lua")
+        const input = `const i = 2;
+        const arrTest = [1, 2, 3, 4, 5, 6];
+        while (i < arrTest.length) {
+            continue;
+        }`;
+
+        const exp = `local i = 2
+
+        local arrTest = {1,2,3,4,5,6}
+
+        while i<#arrTest do
+            local ____continue = false
+            repeat
+                ____continue = true
+                break
+                ____continue = true
+            until true
+            if not ____continue then break end
+        end`;
+
+        util.expectCodeEqual(util.transpileString(input), exp);
+
     }
 
 

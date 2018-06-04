@@ -11,7 +11,12 @@ export class WhileTests {
         }`;
 
         const expected = `while a<10 do
-            a=a+1
+            local ____continue = false
+            repeat
+                a=a+1
+                ____continue = true
+            until true
+            if not ____continue then break end
         end`;
 
         util.expectCodeEqual(util.transpileString(input), expected);
@@ -25,7 +30,11 @@ export class WhileTests {
         } while (a < 10);`;
 
         const expected = `repeat
-            a=a+1
+            local ____continue = false
+            repeat
+                a=a+1
+                ____continue = true
+            until true if not ____continue then break end
         until not (a<10)`;
 
         util.expectCodeEqual(util.transpileString(input), expected);

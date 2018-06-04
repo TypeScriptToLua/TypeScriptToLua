@@ -1,0 +1,8 @@
+classInstance.dotMethod()
+interfaceInstance.dotMethod()
+MixedClass.staticMethod()
+mixedInstance.dotMethod()
+mixedInstance:regularMethod()
+subClassInstance.dotMethod()
+subClassInstance:regularMethod()
+irrelevant()

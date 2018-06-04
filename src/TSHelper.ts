@@ -59,25 +59,25 @@ export class TSHelper {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) !== 0)
             && type.symbol.getDocumentationComment(checker)[0] !== undefined
-            && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
+            && this.hasCustomDecorator(type.symbol, checker, "!CompileMembersOnly");
     }
 
     public static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) !== 0)
-            && this.hasCustomDecorator(type, checker, "!PureAbstract");
+            && this.hasCustomDecorator(type.symbol, checker, "!PureAbstract");
     }
 
     public static isExtensionClass(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Class) !== 0)
-            && this.hasCustomDecorator(type, checker, "!Extension");
+            && this.hasCustomDecorator(type.symbol, checker, "!Extension");
     }
 
     public static isPhantom(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Namespace) !== 0)
-            && this.hasCustomDecorator(type, checker, "!Phantom");
+            && this.hasCustomDecorator(type.symbol, checker, "!Phantom");
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -93,12 +93,48 @@ export class TSHelper {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0
                || (type.symbol.flags & ts.SymbolFlags.Method) !== 0)
-            && this.hasCustomDecorator(type, checker, "!TupleReturn");
+            && this.hasCustomDecorator(type.symbol, checker, "!TupleReturn");
     }
 
-    public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
-        if (type.symbol) {
-            const comments = type.symbol.getDocumentationComment(checker);
+    public static isDotMethod(call: ts.CallExpression, checker: ts.TypeChecker): boolean {
+        // if we're not accessing a property on something, it doesn't matter
+        if (!ts.isPropertyAccessExpression(call.expression)) {
+            return false;
+        }
+
+        // check by function type
+        const functionType = checker.getTypeAtLocation(call.expression);
+
+        // static functions should always use dot syntax
+        if (functionType.symbol
+            && functionType.symbol.valueDeclaration
+            && functionType.symbol.valueDeclaration.modifiers) {
+            for (const k of functionType.symbol.valueDeclaration.modifiers || []) {
+                if (k.kind === ts.SyntaxKind.StaticKeyword) {
+                    return true;
+                }
+            }
+        }
+
+        // check whether the function is marked as a dot method
+        if (this.hasCustomDecorator(functionType.symbol, checker, "!DotMethod")) {
+            return true;
+        }
+
+        // check by the container of the function
+        const containerType = checker.getTypeAtLocation(call.expression.expression);
+
+        // check if it's declared in a namespace
+        if (containerType.symbol.flags & ts.SymbolFlags.Namespace) {
+            return true;
+        }
+
+        return this.hasCustomDecorator(containerType.symbol, checker, "!DotMethod");
+    }
+
+    public static hasCustomDecorator(symbol: ts.Symbol | undefined, checker: ts.TypeChecker, decorator: string) {
+        if (symbol) {
+            const comments = symbol.getDocumentationComment(checker);
             const decorators =
                 comments.filter(comment => comment.kind === "text")
                 .map(comment => comment.text.trim())

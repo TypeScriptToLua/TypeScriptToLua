@@ -917,9 +917,12 @@ export class LuaTranspiler {
                 return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && ((expType.symbol.flags & ts.SymbolFlags.Namespace)
-                                || (expType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
+            const expType2 = this.checker.getTypeAtLocation(node.expression);
+            if (expType.symbol &&
                 // Don't replace . with : for namespaces
+                ((expType.symbol.flags & ts.SymbolFlags.Namespace)
+                // If function is defined as property with lambda type use . instead of :
+                || (expType2.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
                 callPath = this.transpileExpression(node.expression);
                 params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;

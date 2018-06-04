@@ -1,3 +1,6 @@
 classInstance:colonMethod()
+classInstance.dotMethod()
 interfaceInstance:colonMethod()
-wrapperObj.dotMethod()
+interfaceInstance.dotMethod()
+TestNameSpace.dotMethod()
+TestNameSpace.dotMethod2()

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/Transpiler";
 
 import * as util from "../src/util";
@@ -87,11 +87,12 @@ export class AssignmentTests {
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment() {
         const code = `/** !TupleReturn */\n`
-                   + `declare function abc() { return [1,2,3]; }\n`
-                   + `let a = abc();`;
+                   + `declare function abc(): [number, string]; }\n`
+                   + `let a = abc();`
+                   + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = abc()");
+        Expect(lua).toBe("local a = { abc() }\n\na={ abc() }");
     }
 
     @Test("TupleReturn interface assignment")

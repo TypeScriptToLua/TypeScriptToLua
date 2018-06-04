@@ -80,6 +80,15 @@ export class TSHelper {
             && this.hasCustomDecorator(type, checker, "!Phantom");
     }
 
+    public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+        if (ts.isCallExpression(node)) {
+            const type = checker.getTypeAtLocation(node.expression);
+            return this.isTupleReturnFunction(type, checker);
+        } else {
+            return false;
+        }
+    }
+
     public static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0

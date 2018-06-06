@@ -47,7 +47,7 @@ export class TSHelper {
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type);
-        return typeNode && typeNode.kind === ts.SyntaxKind.ArrayType;
+        return typeNode && (typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType);
     }
 
     public static isTupleType(type: ts.Type, checker: ts.TypeChecker): boolean {

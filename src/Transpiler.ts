@@ -1158,7 +1158,7 @@ export class LuaTranspiler {
         const index = this.transpileExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        if (tsHelper.isArrayType(type, this.checker) || tsHelper.isTupleType(type, this.checker)) {
+        if (tsHelper.isArrayType(type, this.checker)) {
             return `${element}[${index}+1]`;
         } else if (tsHelper.isStringType(type)) {
             return `string.sub(${element},${index}+1,${index}+1)`;

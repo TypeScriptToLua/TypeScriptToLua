@@ -288,6 +288,104 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @Test("Class method call")
+    public classMethod() {
+        const returnValue = 4;
+        const source = `class TestClass {
+                            public classMethod(): number { return ${returnValue}; }
+                        }
+
+                        const classInstance = new TestClass();
+                        return classInstance.classMethod();`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(returnValue);
+    }
+
+    @Test("Class dot method call void")
+    public classDotMethod() {
+        const returnValue = 4;
+        const source = `class TestClass {
+                            public dotMethod: () => number = () => ${returnValue};
+                        }
+
+                        const classInstance = new TestClass();
+                        return classInstance.dotMethod();`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(returnValue);
+    }
+
+    @Test("Class dot method call with parameter")
+    public classDotMethod2() {
+        const returnValue = 4;
+        const source = `class TestClass {
+                            public dotMethod: (x: number) => number = x => 3 * x;
+                        }
+
+                        const classInstance = new TestClass();
+                        return classInstance.dotMethod(${returnValue});`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3 * returnValue);
+    }
+
+    @Test("Class static dot method")
+    public classDotMethodStatic() {
+        const returnValue = 4;
+        const source = `class TestClass {
+                            public static dotMethod: () => number = () => ${returnValue};
+                        }
+
+                        return TestClass.dotMethod();`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(returnValue);
+    }
+
+    @Test("Class static dot method with parameter")
+    public classDotMethodStaticWithParameter() {
+        const returnValue = 4;
+        const source = `class TestClass {
+                            public static dotMethod: (x: number) => number = x => 3 * x;
+                        }
+
+                        return TestClass.dotMethod(${returnValue});`;
+
+        // Transpile
+        const lua = util.transpileString(source);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3 * returnValue);
+    }
+
     // ====================================
     // Test expected errors
     // ====================================

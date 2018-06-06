@@ -128,6 +128,35 @@ export class LuaTranspiler {
         return `"${relativePath.replace(new RegExp("\\\\|\/", "g"), ".")}"`;
     }
 
+    // Recursively check if the node has a continue statement which belongs
+    // to this node
+    public hasContinue(node: ts.Node): boolean {
+        let found = false;
+        for (const child of node.getChildren()) {
+            switch (child.kind) {
+                case ts.SyntaxKind.ContinueStatement:
+                    found = true;
+                    break;
+                case ts.SyntaxKind.WhileStatement:
+                case ts.SyntaxKind.DoStatement:
+                case ts.SyntaxKind.ForStatement:
+                case ts.SyntaxKind.ForOfStatement:
+                case ts.SyntaxKind.ForInStatement:
+                    // Do no recursively check the loops, as continues inside
+                    // of these loops would no longer belong to the parent loop
+                    break;
+                default:
+                    // Recursively check for continue in all the other nodes
+                    if (this.hasContinue(child)) {
+                        found = true;
+                    }
+                    break;
+            }
+        }
+
+        return found;
+    }
+
     // Transpile a block
     public transpileBlock(node: ts.Node): string {
         let result = "";
@@ -176,15 +205,15 @@ export class LuaTranspiler {
             case ts.SyntaxKind.IfStatement:
                 return this.transpileIf(node as ts.IfStatement);
             case ts.SyntaxKind.WhileStatement:
-                return this.transpileWhile(node as ts.WhileStatement);
+                return this.transpileLoop(node as ts.WhileStatement);
             case ts.SyntaxKind.DoStatement:
-                return this.transpileDoStatement(node as ts.DoStatement);
+                return this.transpileLoop(node as ts.DoStatement);
             case ts.SyntaxKind.ForStatement:
-                return this.transpileFor(node as ts.ForStatement);
+                return this.transpileLoop(node as ts.ForStatement);
             case ts.SyntaxKind.ForOfStatement:
-                return this.transpileForOf(node as ts.ForOfStatement);
+                return this.transpileLoop(node as ts.ForOfStatement);
             case ts.SyntaxKind.ForInStatement:
-                return this.transpileForIn(node as ts.ForInStatement);
+                return this.transpileLoop(node as ts.ForInStatement);
             case ts.SyntaxKind.SwitchStatement:
                 return this.transpileSwitch(node as ts.SwitchStatement);
             case ts.SyntaxKind.BreakStatement:
@@ -317,8 +346,7 @@ export class LuaTranspiler {
     }
 
     public transpileContinue(): string {
-        const result = this.indent + "____continue = true\n";
-        return result + this.indent + "break\n";
+        return this.indent + "goto __continue\n";
     }
 
     public transpileIf(node: ts.IfStatement): string {
@@ -339,127 +367,93 @@ export class LuaTranspiler {
         return result + this.indent + "end\n";
     }
 
-    public transpileWhile(node: ts.WhileStatement): string {
-        const condition = this.transpileExpression(node.expression);
-
-        let result = this.indent + `while ${condition} do\n`;
-        this.pushIndent();
-        result += this.indent + "local ____continue = false\n";
-        result += this.indent + "repeat\n";
-        this.pushIndent();
-        result += this.transpileStatement(node.statement);
-        result += this.indent + "____continue = true\n";
-        this.popIndent();
-        result += this.indent + "until true\n";
-        result += this.indent + "if not ____continue then break end\n";
-        this.popIndent();
-        return result + this.indent + "end\n";
-    }
-
-    public transpileDoStatement(node: ts.DoStatement): string {
-        let result = this.indent + `repeat\n`;
-
-        this.pushIndent();
-        result += this.indent + "local ____continue = false\n";
-        result += this.indent + "repeat\n";
-        this.pushIndent();
-        result += this.transpileStatement(node.statement);
-        result += this.indent + "____continue = true\n";
-        this.popIndent();
-        result += this.indent + "until true\n";
-        result += this.indent + "if not ____continue then break end\n";
-        this.popIndent();
-
-        // Negate the expression because we translate from do-while to repeat-until (repeat-while-not)
-        result += this.indent + `until not ${this.transpileExpression(node.expression, true)}\n`;
-
-        return result;
-    }
-
-    public transpileFor(node: ts.ForStatement): string {
-        // Add header
+    public transpileLoop(
+        node: ts.WhileStatement
+            | ts.DoStatement
+            | ts.ForStatement
+            | ts.ForOfStatement
+            | ts.ForInStatement
+    ): string {
+        const hasContinue = this.hasContinue(node);
         let result = "";
-        for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
-            result += this.indent + this.transpileVariableDeclaration(variableDeclaration);
+
+        // Loop header
+        switch (node.kind) {
+            case ts.SyntaxKind.WhileStatement:
+                const whileCond = this.transpileExpression(node.expression);
+                result += this.indent + `while (${whileCond}) do\n`;
+                break;
+            case ts.SyntaxKind.DoStatement:
+                result += this.indent + "repeat\n";
+                break;
+            case ts.SyntaxKind.ForStatement:
+                for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
+                    result += this.indent + this.transpileVariableDeclaration(variableDeclaration) + "\n";
+                }
+                result += this.indent + `while (${this.transpileExpression(node.condition)}) do\n`;
+                break;
+            case ts.SyntaxKind.ForOfStatement:
+            case ts.SyntaxKind.ForInStatement:
+                // Get variable identifier
+                const forVar = (node.initializer as ts.VariableDeclarationList).declarations[0];
+                const forId = forVar.name as ts.Identifier;
+
+                // Transpile expression
+                const forExp = this.transpileExpression(node.expression);
+
+                if (node.kind === ts.SyntaxKind.ForOfStatement) {
+                    // Use ipairs for array types, pairs otherwise
+                    const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
+                    const pairs = isArray ? "ipairs" : "pairs";
+
+                    // Create the header
+                    result += this.indent + `for _, ${forId.escapedText} in ${pairs}(${forExp}) do\n`;
+                } else {
+                    // For in array check
+                    if (tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
+                        throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
+                    }
+
+                    // Make header
+                    result = this.indent + `for ${forId.escapedText}, _ in pairs(${forExp}) do\n`;
+                }
+
+                break;
         }
-        result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
+        this.pushIndent();
 
-        // Add body
-        this.pushIndent();
-        result += this.indent + "local ____continue = false\n";
-        result += this.indent + "repeat\n";
-        this.pushIndent();
+        // Loop body
+        if (hasContinue) {
+            result += this.indent + "do\n";
+            this.pushIndent();
+        }
         result += this.transpileStatement(node.statement);
-        result += this.indent + "____continue = true\n";
-        this.popIndent();
-        result += this.indent + "until true\n";
-        result += this.indent + this.transpileExpression(node.incrementor) + "\n";
-        result += this.indent + "if not ____continue then break end\n";
-        this.popIndent();
+        if (hasContinue) {
+            this.popIndent();
+            result += this.indent + "end\n";
+            result += this.indent + "::__continue::\n";
+        }
+        if (node.kind === ts.SyntaxKind.ForStatement) {
+            const forInc = this.transpileExpression(node.incrementor);
+            result += this.indent + `${forInc}\n`;
+        }
 
-        result += this.indent + "end\n";
+        // Loop footer
+        this.popIndent();
+        switch (node.kind) {
+            case ts.SyntaxKind.WhileStatement:
+            case ts.SyntaxKind.ForStatement:
+            case ts.SyntaxKind.ForOfStatement:
+            case ts.SyntaxKind.ForInStatement:
+                result += this.indent + "end\n";
+                break;
+            case ts.SyntaxKind.DoStatement:
+                const doCond = this.transpileExpression(node.expression, true);
+                result += this.indent + `until not ${doCond}\n`;
+                break;
+        }
 
         return result;
-    }
-
-    public transpileForOf(node: ts.ForOfStatement): string {
-        // Get variable identifier
-        const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
-
-        // Transpile expression
-        const expression = this.transpileExpression(node.expression);
-
-        // Use ipairs for array types, pairs otherwise
-        const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
-        const pairs = isArray ? "ipairs" : "pairs";
-
-        // Make header
-        let result = this.indent + `for _, ${identifier.escapedText} in ${pairs}(${expression}) do\n`;
-
-        // For body
-        this.pushIndent();
-        result += this.indent + "local ____continue = false\n";
-        result += this.indent + "repeat\n";
-        this.pushIndent();
-        result += this.transpileStatement(node.statement);
-        result += this.indent + "____continue = true\n";
-        this.popIndent();
-        result += this.indent + "until true\n";
-        result += this.indent + "if not ____continue then break end\n";
-        this.popIndent();
-
-        return result + this.indent + "end\n";
-    }
-
-    public transpileForIn(node: ts.ForInStatement): string {
-        // Get variable identifier
-        const variable = (node.initializer as ts.VariableDeclarationList).declarations[0] as ts.VariableDeclaration;
-        const identifier = variable.name as ts.Identifier;
-
-        // Transpile expression
-        const expression = this.transpileExpression(node.expression);
-
-        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
-            throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
-        }
-
-        // Make header
-        let result = this.indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
-
-        // For body
-        this.pushIndent();
-        result += this.indent + "local ____continue = false\n";
-        result += this.indent + "repeat\n";
-        this.pushIndent();
-        result += this.transpileStatement(node.statement);
-        result += this.indent + "____continue = true\n";
-        this.popIndent();
-        result += this.indent + "until true\n";
-        result += this.indent + "if not ____continue then break end\n";
-        this.popIndent();
-
-        return result + this.indent + "end\n";
     }
 
     public transpileStatement(node: ts.Statement): string {

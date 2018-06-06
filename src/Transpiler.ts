@@ -904,9 +904,10 @@ export class LuaTranspiler {
         let params;
         let callPath;
         if (ts.isPropertyAccessExpression(node.expression)) {
-            const expType = this.checker.getTypeAtLocation(node.expression.expression);
+            // If the function being called is of type owner.func, get the type of owner
+            const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
-            if (expType.symbol && expType.symbol.escapedName === "Math") {
+            if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
                 params = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
             }
@@ -916,18 +917,22 @@ export class LuaTranspiler {
                 return this.transpileStringExpression(node.expression.name) + `(${params})`;
             }
 
-            switch (expType.flags) {
+            switch (ownerType.flags) {
                 case ts.TypeFlags.String:
                 case ts.TypeFlags.StringLiteral:
                     return this.transpileStringCallExpression(node);
 
             }
-            if (tsHelper.isArrayType(expType, this.checker)) {
+            if (tsHelper.isArrayType(ownerType, this.checker)) {
                 return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
-                // Don't replace . with : for namespaces
+            // Get the type of the function
+            const functionType = this.checker.getTypeAtLocation(node.expression);
+            // Don't replace . with : for namespaces
+            if ((ownerType.symbol && (ownerType.symbol.flags & ts.SymbolFlags.Namespace))
+                // If function is defined as property with lambda type use . instead of :
+                || (functionType.symbol && (functionType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
                 callPath = this.transpileExpression(node.expression);
                 params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;

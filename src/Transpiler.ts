@@ -61,6 +61,7 @@ export class LuaTranspiler {
     public importCount: number;
     public isModule: boolean;
     public sourceFile: ts.SourceFile;
+    public loopStack: number[];
 
     constructor(checker: ts.TypeChecker, options: ts.CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
@@ -72,6 +73,7 @@ export class LuaTranspiler {
         this.importCount = 0;
         this.sourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);
+        this.loopStack = [];
     }
 
     public pushIndent(): void {
@@ -194,8 +196,7 @@ export class LuaTranspiler {
             case ts.SyntaxKind.ThrowStatement:
                 return this.transpileThrow(node as ts.ThrowStatement);
             case ts.SyntaxKind.ContinueStatement:
-                // Disallow continue
-                throw new TranspileError("Continue is not supported in Lua", node);
+                return this.transpileContinue();
             case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.InterfaceDeclaration:
             case ts.SyntaxKind.EndOfFileToken:
@@ -317,6 +318,10 @@ export class LuaTranspiler {
         }
     }
 
+    public transpileContinue(): string {
+        return this.indent + `goto __continue${this.loopStack[this.loopStack.length - 1]}\n`;
+    }
+
     public transpileIf(node: ts.IfStatement): string {
         const condition = this.transpileExpression(node.expression);
 
@@ -335,12 +340,30 @@ export class LuaTranspiler {
         return result + this.indent + "end\n";
     }
 
+    public transpileLoopBody(
+        node: ts.WhileStatement
+            | ts.DoStatement
+            | ts.ForStatement
+            | ts.ForOfStatement
+            | ts.ForInStatement
+    ): string {
+        this.loopStack.push(this.genVarCounter);
+        this.genVarCounter++;
+        let result = this.indent + "do\n";
+        this.pushIndent();
+        result += this.transpileStatement(node.statement);
+        this.popIndent();
+        result += this.indent + "end\n";
+        result += this.indent + `::__continue${this.loopStack.pop()}::\n`;
+        return result;
+    }
+
     public transpileWhile(node: ts.WhileStatement): string {
         const condition = this.transpileExpression(node.expression);
 
         let result = this.indent + `while ${condition} do\n`;
         this.pushIndent();
-        result += this.transpileStatement(node.statement);
+        result += this.transpileLoopBody(node);
         this.popIndent();
         return result + this.indent + "end\n";
     }
@@ -349,7 +372,7 @@ export class LuaTranspiler {
         let result = this.indent + `repeat\n`;
 
         this.pushIndent();
-        result += this.transpileStatement(node.statement);
+        result += this.transpileLoopBody(node);
         this.popIndent();
 
         // Negate the expression because we translate from do-while to repeat-until (repeat-while-not)
@@ -368,7 +391,7 @@ export class LuaTranspiler {
 
         // Add body
         this.pushIndent();
-        result += this.transpileStatement(node.statement);
+        result += this.transpileLoopBody(node);
         result += this.indent + this.transpileExpression(node.incrementor) + "\n";
         this.popIndent();
 
@@ -394,7 +417,7 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
-        result += this.transpileStatement(node.statement);
+        result += this.transpileLoopBody(node);
         this.popIndent();
 
         return result + this.indent + "end\n";
@@ -417,7 +440,7 @@ export class LuaTranspiler {
 
         // For body
         this.pushIndent();
-        result += this.transpileStatement(node.statement);
+        result += this.transpileLoopBody(node);
         this.popIndent();
 
         return result + this.indent + "end\n";

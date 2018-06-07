@@ -5,6 +5,7 @@ import { Expect } from "alsatian";
 
 import { LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
+import { transpileSourceFile } from "../../src/Compiler";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
@@ -40,9 +41,9 @@ export function transpileString(str: string, options: CompilerOptions = { dontRe
     };
     const program = ts.createProgram(["file.ts"], options, compilerHost);
 
-    const result = LuaTranspiler.transpileSourceFile(program.getSourceFile("file.ts"),
-                                                     program.getTypeChecker(),
-                                                     options);
+    const result = transpileSourceFile(program.getTypeChecker(),
+                                       options,
+                                       program.getSourceFile("file.ts"));
     return result.trim();
 }
 
@@ -55,7 +56,7 @@ export function transpileFile(filePath: string): string {
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
 
     const options: ts.CompilerOptions = { dontRequireLuaLib: true };
-    const result = LuaTranspiler.transpileSourceFile(program.getSourceFile(filePath), checker, options);
+    const result = transpileSourceFile(checker, options, program.getSourceFile(filePath));
     return result.trim();
 }
 

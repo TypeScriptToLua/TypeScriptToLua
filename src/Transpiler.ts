@@ -821,10 +821,19 @@ export class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
+                    let assignmentValue = rhs;
+                    // If the right-hand side of the equation is a tuple return method
+                    // and the left-hand side is not a destructing statement, wrap the
+                    // rhs in { }.
+                    if (ts.isIdentifier(node.left) && tsHelper.isTupleReturnCall(node.right, this.checker)) {
+                        assignmentValue = `{ ${rhs} }`;
                     }
-                    result = `${lhs}=${rhs}`;
+
+                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, assignmentValue);
+                    }
+
+                    result = `${lhs}=${assignmentValue}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:
@@ -918,9 +927,10 @@ export class LuaTranspiler {
         let params;
         let callPath;
         if (ts.isPropertyAccessExpression(node.expression)) {
-            const expType = this.checker.getTypeAtLocation(node.expression.expression);
+            // If the function being called is of type owner.func, get the type of owner
+            const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
-            if (expType.symbol && expType.symbol.escapedName === "Math") {
+            if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
                 params = this.transpileArguments(node.arguments);
                 return this.transpileMathExpression(node.expression.name) + `(${params})`;
             }
@@ -930,18 +940,22 @@ export class LuaTranspiler {
                 return this.transpileStringExpression(node.expression.name) + `(${params})`;
             }
 
-            switch (expType.flags) {
+            switch (ownerType.flags) {
                 case ts.TypeFlags.String:
                 case ts.TypeFlags.StringLiteral:
                     return this.transpileStringCallExpression(node);
 
             }
-            if (tsHelper.isArrayType(expType, this.checker)) {
+            if (tsHelper.isArrayType(ownerType, this.checker)) {
                 return this.transpileArrayCallExpression(node);
             }
 
-            if (expType.symbol && (expType.symbol.flags & ts.SymbolFlags.Namespace)) {
-                // Don't replace . with : for namespaces
+            // Get the type of the function
+            const functionType = this.checker.getTypeAtLocation(node.expression);
+            // Don't replace . with : for namespaces
+            if ((ownerType.symbol && (ownerType.symbol.flags & ts.SymbolFlags.Namespace))
+                // If function is defined as property with lambda type use . instead of :
+                || (functionType.symbol && (functionType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
                 callPath = this.transpileExpression(node.expression);
                 params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
@@ -1172,7 +1186,7 @@ export class LuaTranspiler {
         const index = this.transpileExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        if (tsHelper.isArrayType(type, this.checker) || tsHelper.isTupleType(type, this.checker)) {
+        if (tsHelper.isArrayType(type, this.checker)) {
             return `${element}[${index}+1]`;
         } else if (tsHelper.isStringType(type)) {
             return `string.sub(${element},${index}+1,${index}+1)`;
@@ -1199,7 +1213,15 @@ export class LuaTranspiler {
             const identifier = node.name;
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-                return `local ${identifier.escapedText} = ${value}\n`;
+
+                // If the right-hand side of the equation is a tuple return method
+                // and the left-hand side is not a destructing statement, wrap the
+                // rhs in { }.
+                if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
+                    return `local ${identifier.escapedText} = { ${value} }\n`;
+                } else {
+                    return `local ${identifier.escapedText} = ${value}\n`;
+                }
             } else {
                 return `local ${identifier.escapedText} = nil\n`;
             }
@@ -1217,10 +1239,7 @@ export class LuaTranspiler {
                 ).escapedText).join(",");
 
             // Don't unpack TupleReturn decorated functions
-            if (ts.isCallExpression(node.initializer)
-                && tsHelper.isTupleReturnFunction(this.checker.getTypeAtLocation(node.initializer.expression),
-                                                  this.checker)
-               ) {
+            if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
                 return `local ${vars}=${value}\n`;
             } else {
                 return `local ${vars}=table.unpack(${value})\n`;

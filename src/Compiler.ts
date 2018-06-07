@@ -5,10 +5,18 @@ import * as path from "path";
 import * as ts from "typescript";
 
 import { CompilerOptions, parseCommandLine } from "./CommandLineParser";
-import { LuaTranspiler, TranspileError } from "./Transpiler";
+import { LuaTranspiler51 } from "./targets/Transpiler.51";
+import { LuaTranspiler52 } from "./targets/Transpiler.52";
+import { LuaTranspiler53 } from "./targets/Transpiler.53";
+import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
+import { LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
 import { TSHelper as tsEx } from "./TSHelper";
 
 export function compile(fileNames: string[], options: CompilerOptions): void {
+    if (!options.luaTarget) {
+        options.luaTarget = LuaTarget.LuaJIT;
+    }
+
     const program = ts.createProgram(fileNames, options);
     const checker = program.getTypeChecker();
 
@@ -41,7 +49,7 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
                 const rootDir = options.rootDir;
 
                 // Transpile AST
-                const lua = LuaTranspiler.transpileSourceFile(sourceFile, checker, options);
+                const lua = createTranspiler(checker, options, sourceFile).transpileSourceFile();
 
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
@@ -88,6 +96,31 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
         path.resolve(__dirname, "../dist/lualib/typescript.lua"),
         path.join(options.outDir, "typescript_lualib.lua")
     );
+}
+
+export function createTranspiler(checker: ts.TypeChecker,
+                                 options: ts.CompilerOptions,
+                                 sourceFile: ts.SourceFile): LuaTranspiler {
+    let luaTargetTranspiler: LuaTranspiler;
+    switch (options.luaTarget) {
+        case LuaTarget.LuaJIT:
+            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
+            break;
+        case LuaTarget.Lua51:
+            luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
+            break;
+        case LuaTarget.Lua52:
+            luaTargetTranspiler = new LuaTranspiler52(checker, options, sourceFile);
+            break;
+        case LuaTarget.Lua53:
+            luaTargetTranspiler = new LuaTranspiler53(checker, options, sourceFile);
+            break;
+        default:
+            // should not happen
+            throw Error("No luaTarget Specified please ensure a target is set!");
+    }
+
+    return luaTargetTranspiler;
 }
 
 export function execCommandLine(argv?: string[]) {

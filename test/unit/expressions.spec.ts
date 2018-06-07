@@ -126,7 +126,7 @@ export class ExpressionTests {
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string) {
         Expect(() => util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true }))
-            .toThrowError(Error, "Bitwise operator >>> not supported");
+            .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
     }
 
     @TestCase("1+1", "1+1")
@@ -422,7 +422,7 @@ export class ExpressionTests {
 
         const identifier = ts.createIdentifier("fromCodePoint");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property fromCodePoint is only supported for lua 5.3.");
+            .toThrowError(Error, "Unsupported string property fromCodePoint, is not supported in Lua JIT.");
     }
 
     @Test("Unknown string expression error")
@@ -431,7 +431,7 @@ export class ExpressionTests {
 
         const identifier = ts.createIdentifier("abcd");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property abcd.");
+            .toThrowError(Error, "Unsupported string property abcd, is not supported in Lua JIT.");
     }
 
     @Test("Unsupported array function error")

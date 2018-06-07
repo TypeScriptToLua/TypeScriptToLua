@@ -5,7 +5,7 @@ import { Expect } from "alsatian";
 
 import { LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
-import { transpileSourceFile } from "../../src/Compiler";
+import { createTranspiler } from "../../src/Compiler";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
@@ -41,9 +41,9 @@ export function transpileString(str: string, options: CompilerOptions = { dontRe
     };
     const program = ts.createProgram(["file.ts"], options, compilerHost);
 
-    const result = transpileSourceFile(program.getTypeChecker(),
-                                       options,
-                                       program.getSourceFile("file.ts"));
+    const result = createTranspiler(program.getTypeChecker(),
+                                    options,
+                                    program.getSourceFile("file.ts")).transpileSourceFile();
     return result.trim();
 }
 
@@ -56,7 +56,7 @@ export function transpileFile(filePath: string): string {
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
 
     const options: ts.CompilerOptions = { dontRequireLuaLib: true };
-    const result = transpileSourceFile(checker, options, program.getSourceFile(filePath));
+    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
     return result.trim();
 }
 
@@ -105,9 +105,9 @@ export function expectCodeEqual(code1: string, code2: string) {
 
 // Get a mock transpiler to use for testing
 export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53) {
-    return new LuaTranspiler({} as ts.TypeChecker,
-                             { dontRequireLuaLib: true, luaTarget: target } as any,
-                             { statements: [] } as any as ts.SourceFile);
+    return createTranspiler({} as ts.TypeChecker,
+                            { dontRequireLuaLib: true, luaTarget: target } as any,
+                            { statements: [] } as any as ts.SourceFile);
 }
 
 const tslualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";

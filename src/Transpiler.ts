@@ -24,7 +24,7 @@ export enum LuaTarget {
     LuaJIT = "JIT",
 }
 
-export class LuaTranspiler {
+export abstract class LuaTranspiler {
     public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
 
     public indent: string;

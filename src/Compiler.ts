@@ -49,7 +49,7 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
                 const rootDir = options.rootDir;
 
                 // Transpile AST
-                const lua = transpileSourceFile(checker, options, sourceFile);
+                const lua = createTranspiler(checker, options, sourceFile).transpileSourceFile();
 
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
@@ -98,9 +98,9 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
     );
 }
 
-export function transpileSourceFile(checker: ts.TypeChecker,
-                                    options: ts.CompilerOptions,
-                                    sourceFile: ts.SourceFile): string {
+export function createTranspiler(checker: ts.TypeChecker,
+                                 options: ts.CompilerOptions,
+                                 sourceFile: ts.SourceFile): LuaTranspiler {
     let luaTargetTranspiler: LuaTranspiler;
     switch (options.luaTarget) {
         case LuaTarget.LuaJIT:
@@ -116,12 +116,11 @@ export function transpileSourceFile(checker: ts.TypeChecker,
             luaTargetTranspiler = new LuaTranspiler53(checker, options, sourceFile);
             break;
         default:
-            throw Error("LEL");
+            // should not happen
+            throw Error("No luaTarget Specified please ensure a target is set!");
     }
 
-    const lua = luaTargetTranspiler.transpileSourceFile();
-
-    return lua;
+    return luaTargetTranspiler;
 }
 
 export function execCommandLine(argv?: string[]) {

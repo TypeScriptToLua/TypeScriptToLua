@@ -40,4 +40,12 @@ export class LuaTranspiler53 extends LuaTranspiler {
                 throw new TranspileError("Bitwise operator >>> not supported in Lua 5.3", node);
         }
     }
+
+    public getValidStringProperties(): {[js: string]: string} {
+        return {
+            fromCharCode: "string.char",
+            fromCodePoint: "utf8.char",
+        };
+    }
+
 }

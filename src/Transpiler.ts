@@ -933,19 +933,15 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public getValidStringProperties(): {[js: string]: string} {
+        return {
+            fromCharCode: "string.char",
+        };
+    }
+
     // Transpile a String._ property
     public transpileStringExpression(identifier: ts.Identifier): string {
-        const translation = {
-            fromCharCode: "string.char",
-            fromCodePoint: "utf8.char",
-        };
-
-        if (identifier.escapedText as string === "fromCodePoint" && this.options.luaTarget !== LuaTarget.Lua53) {
-            throw new TranspileError(
-                `Unsupported string property ${identifier.escapedText} is only supported for lua 5.3.`,
-                identifier
-            );
-        }
+        const translation = this.getValidStringProperties();
 
         if (translation[identifier.escapedText as string]) {
             return `${translation[identifier.escapedText as string]}`;

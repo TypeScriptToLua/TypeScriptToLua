@@ -946,7 +946,9 @@ export abstract class LuaTranspiler {
         if (translation[identifier.escapedText as string]) {
             return `${translation[identifier.escapedText as string]}`;
         } else {
-            throw new TranspileError(`Unsupported string property ${identifier.escapedText}.`, identifier);
+            throw new TranspileError(`Unsupported string property ${identifier.escapedText}, ` +
+                                     `is not supported in Lua ${this.options.luaTarget}.`,
+                                     identifier);
         }
     }
 

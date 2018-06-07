@@ -1,9 +1,9 @@
-import { LuaTranspiler } from "../Transpiler";
 import { TSHelper as tsHelper } from "../TSHelper";
+import { LuaTranspiler52 } from "./Transpiler.52";
 
 import * as ts from "typescript";
 
-export class LuaTranspilerJIT extends LuaTranspiler {
+export class LuaTranspilerJIT extends LuaTranspiler52 {
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:

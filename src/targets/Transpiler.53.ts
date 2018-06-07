@@ -1,9 +1,10 @@
-import { LuaTranspiler, TranspileError } from "../Transpiler";
+import { TranspileError } from "../Transpiler";
 import { TSHelper as tsHelper } from "../TSHelper";
+import { LuaTranspiler52 } from "./Transpiler.52";
 
 import * as ts from "typescript";
 
-export class LuaTranspiler53 extends LuaTranspiler {
+export class LuaTranspiler53 extends LuaTranspiler52 {
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:
@@ -40,7 +41,6 @@ export class LuaTranspiler53 extends LuaTranspiler {
                 throw new TranspileError("Bitwise operator >>> not supported in Lua 5.3", node);
         }
     }
-
     public getValidStringProperties(): {[js: string]: string} {
         return {
             fromCharCode: "string.char",

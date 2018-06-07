@@ -347,15 +347,14 @@ export class LuaTranspiler {
             | ts.ForOfStatement
             | ts.ForInStatement
     ): string {
-        this.genVarCounter++;
         this.loopStack.push(this.genVarCounter);
+        this.genVarCounter++;
         let result = this.indent + "do\n";
         this.pushIndent();
         result += this.transpileStatement(node.statement);
         this.popIndent();
         result += this.indent + "end\n";
-        result += this.indent + `::__continue${this.loopStack[this.loopStack.length - 1]}::\n`;
-        this.loopStack.pop();
+        result += this.indent + `::__continue${this.loopStack.pop()}::\n`;
         return result;
     }
 

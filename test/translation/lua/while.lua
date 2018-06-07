@@ -4,5 +4,5 @@ while d>0 do
     do
         d=d-1
     end
-    ::__continue1::
+    ::__continue0::
 end

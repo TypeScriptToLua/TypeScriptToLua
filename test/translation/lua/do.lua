@@ -4,5 +4,5 @@ repeat
     do
         e=e-1
     end
-    ::__continue1::
+    ::__continue0::
 until not (e>0)

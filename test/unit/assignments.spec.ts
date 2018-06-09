@@ -92,7 +92,7 @@ export class AssignmentTests {
                    + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = { abc() }\n\na={ abc() }");
+        Expect(lua).toBe("local a = ({ abc() })\n\na=({ abc() })");
     }
 
     @Test("TupleReturn interface assignment")
@@ -129,5 +129,46 @@ export class AssignmentTests {
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local jkl = def.new(true)\n\nlocal a,b=jkl:abc()");
+    }
+
+    @Test("TupleReturn functional")
+    public tupleReturnFunctional() {
+        const code = `/** !TupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        const [a, b] = abc();
+        return b + a;`;
+
+        const lua = util.transpileString(code);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe("a3");
+    }
+
+    @Test("TupleReturn single")
+    public tupleReturnSingle() {
+        const code = `/** !TupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        const res = abc();
+        return res.length`;
+
+        const lua = util.transpileString(code);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(2);
+    }
+
+    @Test("TupleReturn in expression")
+    public tupleReturnInExpression() {
+        const code = `/** !TupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        return abc()[1] + abc()[0];`;
+
+        const lua = util.transpileString(code);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe("a3");
     }
 }

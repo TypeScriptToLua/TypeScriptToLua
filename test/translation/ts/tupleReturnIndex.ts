@@ -1,3 +1,3 @@
 /** !TupleReturn */
 declare function myFunc(): [number, string];
-let [a, b] = myFunc();
+let a = myFunc()[0];

@@ -735,19 +735,11 @@ export abstract class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
-                    let assignmentValue = rhs;
-                    // If the right-hand side of the equation is a tuple return method
-                    // and the left-hand side is not a destructing statement, wrap the
-                    // rhs in { }.
-                    if (ts.isIdentifier(node.left) && tsHelper.isTupleReturnCall(node.right, this.checker)) {
-                        assignmentValue = `{ ${rhs} }`;
-                    }
-
                     if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, assignmentValue);
+                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
-                    result = `${lhs}=${assignmentValue}`;
+                    result = `${lhs}=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:
@@ -844,46 +836,13 @@ export abstract class LuaTranspiler {
         // Check for calls on primitives to override
         let params;
         let callPath;
+
+        const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+
         if (ts.isPropertyAccessExpression(node.expression)) {
-            // If the function being called is of type owner.func, get the type of owner
-            const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
-
-            if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
-                params = this.transpileArguments(node.arguments);
-                return this.transpileMathExpression(node.expression.name) + `(${params})`;
-            }
-
-            if (this.transpileExpression((node.expression as ts.PropertyAccessExpression).expression) === "String") {
-                params = this.transpileArguments(node.arguments);
-                return this.transpileStringExpression(node.expression.name) + `(${params})`;
-            }
-
-            switch (ownerType.flags) {
-                case ts.TypeFlags.String:
-                case ts.TypeFlags.StringLiteral:
-                    return this.transpileStringCallExpression(node);
-
-            }
-            if (tsHelper.isArrayType(ownerType, this.checker)) {
-                return this.transpileArrayCallExpression(node);
-            }
-
-            // Get the type of the function
-            const functionType = this.checker.getTypeAtLocation(node.expression);
-            // Don't replace . with : for namespaces
-            if ((ownerType.symbol && (ownerType.symbol.flags & ts.SymbolFlags.Namespace))
-                // If function is defined as property with lambda type use . instead of :
-                || (functionType.symbol && (functionType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
-                callPath = this.transpileExpression(node.expression);
-                params = this.transpileArguments(node.arguments);
-                return `${callPath}(${params})`;
-            } else {
-                 // Replace last . with : here
-                callPath =
-                    `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
-                params = this.transpileArguments(node.arguments);
-                return `${callPath}(${params})`;
-            }
+            const result = this.transpilePropertyCall(node);
+            return isTupleReturn && !isInDestructingAssignment ? `({ ${result} })` : result;
         }
 
         // Handle super calls properly
@@ -896,7 +855,58 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return `${callPath}(${params})`;
+        return isTupleReturn && !isInDestructingAssignment ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
+    }
+
+    public transpilePropertyCall(node: ts.CallExpression) {
+        let params;
+        let callPath;
+
+        // Check if call is actually on a property access expression
+        if (!ts.isPropertyAccessExpression(node.expression)) {
+            throw new TranspileError("Tried to transpile a non-property call as property call.", node);
+        }
+
+        // If the function being called is of type owner.func, get the type of owner
+        const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
+
+        if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
+            params = this.transpileArguments(node.arguments);
+            return this.transpileMathExpression(node.expression.name) + `(${params})`;
+        }
+
+        if (this.transpileExpression((node.expression as ts.PropertyAccessExpression).expression) === "String") {
+            params = this.transpileArguments(node.arguments);
+            return this.transpileStringExpression(node.expression.name) + `(${params})`;
+        }
+
+        switch (ownerType.flags) {
+            case ts.TypeFlags.String:
+            case ts.TypeFlags.StringLiteral:
+                return this.transpileStringCallExpression(node);
+
+        }
+
+        if (tsHelper.isArrayType(ownerType, this.checker)) {
+            return this.transpileArrayCallExpression(node);
+        }
+
+        // Get the type of the function
+        const functionType = this.checker.getTypeAtLocation(node.expression);
+        // Don't replace . with : for namespaces
+        if ((ownerType.symbol && (ownerType.symbol.flags & ts.SymbolFlags.Namespace))
+            // If function is defined as property with lambda type use . instead of :
+            || (functionType.symbol && (functionType.symbol.flags & ts.SymbolFlags.TypeLiteral))) {
+            callPath = this.transpileExpression(node.expression);
+            params = this.transpileArguments(node.arguments);
+            return `${callPath}(${params})`;
+        } else {
+             // Replace last . with : here
+            callPath =
+                `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
+            params = this.transpileArguments(node.arguments);
+            return `${callPath}(${params})`;
+        }
     }
 
     public transpileStringCallExpression(node: ts.CallExpression): string {
@@ -1129,15 +1139,7 @@ export abstract class LuaTranspiler {
             const identifier = node.name;
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-
-                // If the right-hand side of the equation is a tuple return method
-                // and the left-hand side is not a destructing statement, wrap the
-                // rhs in { }.
-                if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
-                    return `local ${identifier.escapedText} = { ${value} }\n`;
-                } else {
-                    return `local ${identifier.escapedText} = ${value}\n`;
-                }
+                return `local ${identifier.escapedText} = ${value}\n`;
             } else {
                 return `local ${identifier.escapedText} = nil\n`;
             }

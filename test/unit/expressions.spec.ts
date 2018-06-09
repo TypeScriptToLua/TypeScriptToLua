@@ -500,4 +500,16 @@ export class ExpressionTests {
         Expect(() => transpiler.transpileObjectLiteral(mockObject as ts.ObjectLiteralExpression))
             .toThrowError(Error, "Encountered unsupported object literal element: FalseKeyword.");
     }
+
+    @Test("Invalid property access call transpilation")
+    public invalidPropertyCall() {
+        const transpiler = util.makeTestTranspiler();
+
+        const mockObject: any = {
+            expression: ts.createLiteral("abc"),
+        };
+
+        Expect(() => transpiler.transpilePropertyCall(mockObject as ts.CallExpression))
+            .toThrowError(Error, "Tried to transpile a non-property call as property call.");
+    }
 }

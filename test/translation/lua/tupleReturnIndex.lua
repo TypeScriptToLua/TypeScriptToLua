@@ -1,0 +1,1 @@
+local a = ({ myFunc() })[0+1]

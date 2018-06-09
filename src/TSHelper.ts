@@ -39,6 +39,10 @@ export class TSHelper {
         return false;
     }
 
+    public static isInDestructingAssignment(node: ts.Node) {
+        return node.parent && ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name);
+    }
+
     public static isStringType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.String) !== 0
             || (type.flags & ts.TypeFlags.StringLike) !== 0

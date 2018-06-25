@@ -194,7 +194,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.ThrowStatement:
                 return this.transpileThrow(node as ts.ThrowStatement);
             case ts.SyntaxKind.ContinueStatement:
-                return this.transpileContinue();
+                return this.transpileContinue(node as ts.ContinueStatement);
             case ts.SyntaxKind.TypeAliasDeclaration:
             case ts.SyntaxKind.InterfaceDeclaration:
             case ts.SyntaxKind.EndOfFileToken:
@@ -316,8 +316,12 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileContinue(): string {
-        return this.indent + `goto __continue${this.loopStack[this.loopStack.length - 1]}\n`;
+    public transpileContinue(node: ts.ContinueStatement): string {
+        throw new TranspileError(
+            `Unsupported continue statement, ` +
+            `continue is not supported in Lua ${this.options.luaTarget}.`,
+            node
+        );
     }
 
     public transpileIf(node: ts.IfStatement): string {
@@ -352,7 +356,6 @@ export abstract class LuaTranspiler {
         result += this.transpileStatement(node.statement);
         this.popIndent();
         result += this.indent + "end\n";
-        result += this.indent + `::__continue${this.loopStack.pop()}::\n`;
         return result;
     }
 

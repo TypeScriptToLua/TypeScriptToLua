@@ -31,7 +31,7 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
     },
     luaTarget: {
         alias: "lt",
-        choices: ["JIT", "5.3"],
+        choices: ["JIT", "5.3", "5.2", "5.1"],
         default: "JIT",
         describe: "Specify Lua target version.",
         type: "string",

@@ -144,7 +144,7 @@ function Set.constructor(self, other)
 end
 function Set.add(self, item) self._items[item] = true end
 function Set.contains(self, item) return self._items[item] ~= nil end
-function Set.remove(self, item)
+function Set.delete(self, item)
     local contains = Set.contains(self, item)
     self._items[item] = nil
     return contains
@@ -180,9 +180,9 @@ function Map.constructor(self, other)
         end
     end
 end
-function Map.put(self, key, value) self._items[key] = value end
+function Map.set(self, key, value) self._items[key] = value end
 function Map.containsKey(self, key) return self._items[key] ~= nil end
-function Map.remove(self, key)
+function Map.delete(self, key)
     local contains = self.containsKey(self, key)
     self._items[key] = nil
     return contains

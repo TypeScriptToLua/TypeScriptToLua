@@ -1016,6 +1016,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
+        const callPath = this.transpileExpression(node.expression);
         const property = node.name.text;
 
         // Check for primitive types to override
@@ -1029,6 +1030,11 @@ export abstract class LuaTranspiler {
                     return this.transpileArrayProperty(node);
                 } else if (tsHelper.hasGetAccessor(node, this.checker)) {
                     return this.transpileGetAccessor(node);
+                } else if (property === "size" && type.symbol) {
+                    const symbolName = type.symbol.escapedName;
+                    if (symbolName === "Set" || symbolName === "Map") {
+                        return `${callPath}:count()`;
+                    }
                 }
         }
 
@@ -1042,7 +1048,6 @@ export abstract class LuaTranspiler {
             return this.transpileMathExpression(node.name);
         }
 
-        const callPath = this.transpileExpression(node.expression);
         return `${callPath}.${property}`;
     }
 

@@ -71,7 +71,7 @@ export abstract class LuaTranspiler {
     public makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
         let result: string = "";
         if (node &&
-            node.modifiers &&
+            node.modifiers && this.isModule &&
             (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)
            ) {
             if (dummy) {

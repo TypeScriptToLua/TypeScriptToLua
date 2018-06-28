@@ -33,6 +33,7 @@ export class TSHelper {
             // export statement, we only check for export statements
             return sourceFile.statements.some(statement =>
                 (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+                || statement.kind === ts.SyntaxKind.ModuleDeclaration
                 || statement.kind === ts.SyntaxKind.ExportAssignment
                 || statement.kind === ts.SyntaxKind.ExportDeclaration);
         }

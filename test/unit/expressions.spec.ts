@@ -19,15 +19,6 @@ export class ExpressionTests {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
-    @TestCase("obj instanceof someClass", "Unsupported binary operator kind: instanceof")
-    @TestCase("typeof obj", "Unsupported expression kind: TypeOfExpression")
-    @Test("Prohibted Expressions")
-    public prohibtedExpressions(input: string, expectedError: string) {
-        Expect(() => {
-            util.transpileString(input);
-        }).toThrowError(Error, expectedError);
-    }
-
     @TestCase("1+1", "1+1")
     @TestCase("1-1", "1-1")
     @TestCase("1*1", "1*1")

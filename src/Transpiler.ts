@@ -1185,6 +1185,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileFunctionDeclaration(node: ts.FunctionDeclaration): string {
+        // Don't transpile functions without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name;
         const methodName = identifier.escapedText;
@@ -1232,6 +1235,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileMethodDeclaration(node: ts.MethodDeclaration, callPath: string): string {
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name as ts.Identifier;
         const methodName = identifier.escapedText;

@@ -1,15 +1,14 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 
 import * as util from "../src/util";
 
+@FocusTests
 export class OverloadTests {
-
     @TestCase("0")
     @TestCase("30")
     @TestCase("30_000")
     @TestCase("30.00")
     @Test("typeof number")
-    @FocusTest
     public typeofNumberTest(inp: string) {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
@@ -37,8 +36,8 @@ export class OverloadTests {
         Expect(result).toBe("boolean");
     }
 
-    @Test("{}")
-    @Test("[]")
+    @TestCase("{}")
+    @TestCase("[]")
     @Test("typeof object literal")
     public typeofObjectLiteral(inp: string) {
         const lua = util.transpileString(`return typeof ${inp};`);
@@ -55,13 +54,57 @@ export class OverloadTests {
         Expect(result).toBe("table");
     }
 
-    @Test("null")
-    @Test("undefined")
+    @TestCase("null")
+    @TestCase("undefined")
     @Test("typeof undefined")
     public typeofUndefinedTest(inp: string) {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
         Expect(result).toBe("nil");
+    }
+
+    @Test("instanceof")
+    public instanceOf() {
+        const lua = util.transpileString("class myClass {} let inst = new myClass(); return inst instanceof myClass;");
+        const result = util.executeLua(lua);
+
+        Expect(result).toBeTruthy();
+    }
+
+    @Test("instanceof inheritance")
+    public instanceOfInheritance() {
+        const lua = util.transpileString("class myClass {}\n"
+            + "class childClass extends myClass{}\n"
+            + "let inst = new childClass(); return inst instanceof myClass;");
+        const result = util.executeLua(lua);
+
+        Expect(result).toBeTruthy();
+    }
+
+    @Test("instanceof inheritance false")
+    public instanceOfInheritanceFalse() {
+        const lua = util.transpileString("class myClass {}\n"
+            + "class childClass extends myClass{}\n"
+            + "let inst = new myClass(); return inst instanceof childClass;");
+        const result = util.executeLua(lua);
+
+        Expect(result).toBeTruthy();
+    }
+
+    @Test("null instanceof Object")
+    public nullInstanceOf() {
+        const lua = util.transpileString("return null instanceof Object;");
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(false);
+    }
+
+    @Test("null instanceof Class")
+    public nullInstanceOfClass() {
+        const lua = util.transpileString("class myClass {} return null instanceof myClass;");
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(false);
     }
 }

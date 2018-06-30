@@ -126,6 +126,16 @@ function TS_push(list, ...)
     end
 end
 
+function TS_instanceof(obj, class)
+    while obj ~= nil do
+        if obj.__index == class then
+            return true
+        end
+        obj = obj.__base
+    end
+    return false
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set

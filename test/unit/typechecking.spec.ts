@@ -1,8 +1,7 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import * as util from "../src/util";
 
-@FocusTests
 export class OverloadTests {
     @TestCase("0")
     @TestCase("30")
@@ -89,7 +88,7 @@ export class OverloadTests {
             + "let inst = new myClass(); return inst instanceof childClass;");
         const result = util.executeLua(lua);
 
-        Expect(result).toBeTruthy();
+        Expect(result).toBe(false);
     }
 
     @Test("null instanceof Object")

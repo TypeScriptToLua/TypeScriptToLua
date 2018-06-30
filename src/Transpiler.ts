@@ -597,6 +597,7 @@ export abstract class LuaTranspiler {
                 // Otherwise simply return the name
                 return (node as ts.Identifier).text;
             case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 const text = (node as ts.StringLiteral).text;
                 return `"${text}"`;
             case ts.SyntaxKind.TemplateExpression:
@@ -639,6 +640,8 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.AsExpression:
                 // Also ignore as casts
                 return this.transpileExpression((node as ts.AsExpression).expression);
+            case ts.SyntaxKind.TypeOfExpression:
+                return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             default:
                 throw new TranspileError(
                     "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
@@ -754,6 +757,9 @@ export abstract class LuaTranspiler {
                     break;
                 case ts.SyntaxKind.InKeyword:
                     result = `${rhs}[${lhs}]~=nil`;
+                    break;
+                case ts.SyntaxKind.InstanceOfKeyword:
+                    result = `TS_instanceof(${lhs}, ${rhs})`;
                     break;
                 default:
                     throw new TranspileError(
@@ -1122,6 +1128,11 @@ export abstract class LuaTranspiler {
         } else {
             return `${element}[${index}]`;
         }
+    }
+
+    public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
+        const expression = this.transpileExpression(node.expression);
+        return `type(${expression})`;
     }
 
     // Transpile a variable statement

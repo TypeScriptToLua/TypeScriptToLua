@@ -597,6 +597,7 @@ export abstract class LuaTranspiler {
                 // Otherwise simply return the name
                 return (node as ts.Identifier).text;
             case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 const text = (node as ts.StringLiteral).text;
                 return `"${text}"`;
             case ts.SyntaxKind.TemplateExpression:
@@ -639,6 +640,8 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.AsExpression:
                 // Also ignore as casts
                 return this.transpileExpression((node as ts.AsExpression).expression);
+            case ts.SyntaxKind.TypeOfExpression:
+                return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             default:
                 throw new TranspileError(
                     "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
@@ -755,6 +758,9 @@ export abstract class LuaTranspiler {
                 case ts.SyntaxKind.InKeyword:
                     result = `${rhs}[${lhs}]~=nil`;
                     break;
+                case ts.SyntaxKind.InstanceOfKeyword:
+                    result = `TS_instanceof(${lhs}, ${rhs})`;
+                    break;
                 default:
                     throw new TranspileError(
                         "Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind),
@@ -818,7 +824,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.MinusMinusToken:
                 return `${operand}=${operand}-1`;
             case ts.SyntaxKind.ExclamationToken:
-                return `not ${operand}`;
+                return `(not ${operand})`;
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
@@ -1124,6 +1130,11 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
+        const expression = this.transpileExpression(node.expression);
+        return `(type(${expression}) == "table" and "object" or type(${expression}))`;
+    }
+
     // Transpile a variable statement
     public transpileVariableStatement(node: ts.VariableStatement): string {
         let result = "";
@@ -1174,6 +1185,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileFunctionDeclaration(node: ts.FunctionDeclaration): string {
+        // Don't transpile functions without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name;
         const methodName = identifier.escapedText;
@@ -1221,6 +1235,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileMethodDeclaration(node: ts.MethodDeclaration, callPath: string): string {
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name as ts.Identifier;
         const methodName = identifier.escapedText;

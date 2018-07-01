@@ -42,7 +42,7 @@ export class OverloadTests {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
-        Expect(result).toBe("table");
+        Expect(result).toBe("object");
     }
 
     @Test("typeof class instance")
@@ -50,7 +50,15 @@ export class OverloadTests {
         const lua = util.transpileString(`class myClass {} let inst = new myClass(); return typeof inst;`);
         const result = util.executeLua(lua);
 
-        Expect(result).toBe("table");
+        Expect(result).toBe("object");
+    }
+
+    @Test("typeof function")
+    public typeofFunction() {
+        const lua = util.transpileString(`return typeof (() => 3);`);
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe("function");
     }
 
     @TestCase("null")

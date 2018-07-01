@@ -1132,7 +1132,7 @@ export abstract class LuaTranspiler {
 
     public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
         const expression = this.transpileExpression(node.expression);
-        return `type(${expression})`;
+        return `type(${expression}) == "table" and "object" or type(${expression})`;
     }
 
     // Transpile a variable statement

@@ -10,7 +10,7 @@ export class ExpressionTests {
     @TestCase("++i", "i=i+1")
     @TestCase("i--", "i=i-1")
     @TestCase("--i", "i=i-1")
-    @TestCase("!a", "not a")
+    @TestCase("!a", "(not a)")
     @TestCase("-a", "-a")
     @TestCase("delete tbl['test']", "tbl[\"test\"]=nil")
     @TestCase("delete tbl.test", "tbl.test=nil")

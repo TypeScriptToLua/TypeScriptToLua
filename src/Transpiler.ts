@@ -824,7 +824,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.MinusMinusToken:
                 return `${operand}=${operand}-1`;
             case ts.SyntaxKind.ExclamationToken:
-                return `not ${operand}`;
+                return `(not ${operand})`;
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
@@ -1132,7 +1132,7 @@ export abstract class LuaTranspiler {
 
     public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
         const expression = this.transpileExpression(node.expression);
-        return `type(${expression}) == "table" and "object" or type(${expression})`;
+        return `(type(${expression}) == "table" and "object" or type(${expression}))`;
     }
 
     // Transpile a variable statement

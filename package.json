@@ -5,7 +5,7 @@
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "test": "tslint -p . && tsc -p ./test && node ./test/runner.js",
+        "test": "tslint -p . && ts-node ./test/runner.ts",
         "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov && codecov",
         "coverage-html": "nyc npm test && nyc report --reporter=html",
         "release-patch": "npm version patch",
@@ -32,6 +32,7 @@
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
         "nyc": "^11.7.1",
+        "ts-node": "^7.0.0",
         "tslint": "^5.9.1"
     }
 }

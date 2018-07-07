@@ -655,51 +655,33 @@ export abstract class LuaTranspiler {
         const lhs = this.transpileExpression(node.left, true);
         const rhs = this.transpileExpression(node.right, true);
 
-        // Rewrite some non-existant binary operators
+        // Check if this is an assignment token, then handle accordingly
+        const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
+        if (isAssignment) {
+            const valueExpression = ts.createBinary(node.left, operator, node.right);
+            const value = this.transpileBinaryExpression(valueExpression);
+            if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+                return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, value);
+            }
+            return `${lhs} = ${value}`;
+        }
+
         let result = "";
 
         // Transpile Bitops
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:
-            case ts.SyntaxKind.AmpersandEqualsToken:
             case ts.SyntaxKind.BarToken:
-            case ts.SyntaxKind.BarEqualsToken:
+            case ts.SyntaxKind.CaretToken:
             case ts.SyntaxKind.LessThanLessThanToken:
-            case ts.SyntaxKind.LessThanLessThanEqualsToken:
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
-            case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
                 result = this.transpileBitOperation(node, lhs, rhs);
         }
 
         // Transpile operators
         if (result === "") {
             switch (node.operatorToken.kind) {
-                case ts.SyntaxKind.PlusEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}+${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}+${rhs}`;
-                    break;
-                case ts.SyntaxKind.MinusEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}-${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}-${rhs}`;
-                    break;
-                case ts.SyntaxKind.AsteriskEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}*${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}*${rhs}`;
-                    break;
-                case ts.SyntaxKind.SlashEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}/${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}/${rhs}`;
-                    break;
                 case ts.SyntaxKind.AmpersandAmpersandToken:
                     result = `${lhs} and ${rhs}`;
                     break;
@@ -721,6 +703,9 @@ export abstract class LuaTranspiler {
                     break;
                 case ts.SyntaxKind.AsteriskToken:
                     result = `${lhs}*${rhs}`;
+                    break;
+                case ts.SyntaxKind.AsteriskAsteriskToken:
+                    result = `${lhs}^${rhs}`;
                     break;
                 case ts.SyntaxKind.SlashToken:
                     result = `${lhs}/${rhs}`;
@@ -745,7 +730,7 @@ export abstract class LuaTranspiler {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
-                    result = `${lhs}=${rhs}`;
+                    result = `${lhs} = ${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:

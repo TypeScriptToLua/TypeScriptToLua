@@ -25,4 +25,21 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
     public transpileContinue(node: ts.ContinueStatement): string {
         return this.indent + `goto __continue${this.loopStack[this.loopStack.length - 1]}\n`;
     }
+
+    public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
+        switch (node.operatorToken.kind) {
+            case ts.SyntaxKind.AmpersandToken:
+                return `bit32.band(${lhs},${rhs})`;
+            case ts.SyntaxKind.BarToken:
+                return `bit32.bor(${lhs},${rhs})`;
+            case ts.SyntaxKind.CaretToken:
+                return `bit32.bxor(${lhs},${rhs})`;
+            case ts.SyntaxKind.LessThanLessThanToken:
+                return `bit32.lshift(${lhs},${rhs})`;
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+                return `bit32.rshift(${lhs},${rhs})`;
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                return `bit32.arshift(${lhs},${rhs})`;
+        }
+    }
 }

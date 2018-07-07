@@ -1,3 +1,3 @@
 local a = {}
 
-a["abc"]="def"
+a["abc"] = "def"

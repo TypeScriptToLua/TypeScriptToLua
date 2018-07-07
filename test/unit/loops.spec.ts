@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { LuaTarget } from "../../src/Transpiler";
 import * as util from "../src/util";
 
@@ -322,7 +322,6 @@ export class LuaLoopTests {
     @TestCase("for (let a in b) {}")
     @TestCase("for (let a of b) {}")
     @Test("loop versions")
-    @FocusTest
     public whileVersions(loop: string) {
         // Transpile
         const lua51 = util.transpileString(loop, { luaTarget: LuaTarget.Lua51 });

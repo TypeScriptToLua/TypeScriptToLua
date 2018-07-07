@@ -11,7 +11,7 @@ function MyClass.get__field(self)
     return self._field+4
 end
 function MyClass.set__field(self,v)
-    self._field=(v*2)
+    self._field = (v*2)
 end
 local instance = MyClass.new(true)
 

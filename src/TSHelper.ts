@@ -54,11 +54,6 @@ export class TSHelper {
         return typeNode && (typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType);
     }
 
-    public static isTupleType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type);
-        return typeNode && typeNode.kind === ts.SyntaxKind.TupleType;
-    }
-
     public static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) !== 0)

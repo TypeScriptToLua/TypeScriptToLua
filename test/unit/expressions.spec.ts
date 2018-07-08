@@ -76,14 +76,19 @@ export class ExpressionTests {
         Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
     }
 
-    @TestCase("a+=b", "a = a+b")
-    @TestCase("a-=b", "a = a-b")
-    @TestCase("a*=b", "a = a*b")
-    @TestCase("a/=b", "a = a/b")
-    @TestCase("a%=b", "a = a%b")
+    @TestCase("a+=b", 5 + 3)
+    @TestCase("a-=b", 5 - 3)
+    @TestCase("a*=b", 5 * 3)
+    @TestCase("a/=b", 5 / 3)
+    @TestCase("a%=b", 5 % 3)
+    @TestCase("a**=b", 5 ** 3)
     @Test("Binary expressions overridden operators")
-    public binaryOperatorOverride(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
+    public binaryOperatorOverride(input: string, expected: number) {
+        const lua = util.transpileString(`let a = 5; let b = 3; ${input}; return a;`);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(expected);
     }
 
     @TestCase("~b")

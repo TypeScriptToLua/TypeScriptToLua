@@ -6,6 +6,14 @@ import * as ts from "typescript";
 
 export class LuaTranspiler53 extends LuaTranspiler52 {
     /** @override */
+    public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
+        switch (node.operator) {
+            case ts.SyntaxKind.TildeToken:
+                return `~${operand}`;
+        }
+    }
+
+    /** @override */
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:

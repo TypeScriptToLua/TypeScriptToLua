@@ -86,6 +86,7 @@ export class ExpressionTests {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
+    @TestCase("~b")
     @TestCase("a&b")
     @TestCase("a&=b")
     @TestCase("a|b")
@@ -105,6 +106,7 @@ export class ExpressionTests {
             .toThrow();
     }
 
+    @TestCase("~a", "bit.bnot(a)")
     @TestCase("a&b", "bit.band(a,b)")
     @TestCase("a&=b", "a = bit.band(a,b)")
     @TestCase("a|b", "bit.bor(a,b)")
@@ -122,6 +124,7 @@ export class ExpressionTests {
         Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, dontRequireLuaLib: true })).toBe(lua);
     }
 
+    @TestCase("~a", "bit32.bnot(a)")
     @TestCase("a&b", "bit32.band(a,b)")
     @TestCase("a&=b", "a = bit32.band(a,b)")
     @TestCase("a|b", "bit32.bor(a,b)")
@@ -139,6 +142,7 @@ export class ExpressionTests {
         Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, dontRequireLuaLib: true })).toBe(lua);
     }
 
+    @TestCase("~a", "~a")
     @TestCase("a&b", "a & b")
     @TestCase("a&=b", "a = a & b")
     @TestCase("a|b", "a | b")

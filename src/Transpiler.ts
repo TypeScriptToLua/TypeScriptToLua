@@ -762,8 +762,12 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
+        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
+    }
+
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-        throw new TranspileError(`Bit Oeprations are not supported in Lua ${this.options.target}`, node);
+        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
     }
 
     public transpileTemplateExpression(node: ts.TemplateExpression) {
@@ -804,6 +808,8 @@ export abstract class LuaTranspiler {
     public transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
+            case ts.SyntaxKind.TildeToken:
+                return this.transpileUnaryBitOperation(node, operand);
             case ts.SyntaxKind.PlusPlusToken:
                 return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:

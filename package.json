@@ -17,6 +17,15 @@
     "bin": {
         "tstl": "./dist/Compiler.js"
     },
+    "nyc": {
+        "all": true,
+        "extension": [
+            ".ts"
+        ],
+        "include": [
+            "src/**/*"
+        ]
+    },
     "engines": {
         "node": ">=8.5.0"
     },

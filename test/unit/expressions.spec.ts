@@ -86,10 +86,31 @@ export class ExpressionTests {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
+    @TestCase("a&b")
+    @TestCase("a&=b")
+    @TestCase("a|b")
+    @TestCase("a|=b")
+    @TestCase("a^b")
+    @TestCase("a^=b")
+    @TestCase("a<<b")
+    @TestCase("a<<=b")
+    @TestCase("a>>b")
+    @TestCase("a>>=b")
+    @TestCase("a>>>b")
+    @TestCase("a>>>=b")
+    @Test("Bitop [5.1]")
+    public bitOperatorOverride51(input: string, lua: string) {
+        // Bit operations not supported in 5.1, expect an exception
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, dontRequireLuaLib: true }))
+            .toThrow();
+    }
+
     @TestCase("a&b", "bit.band(a,b)")
     @TestCase("a&=b", "a = bit.band(a,b)")
     @TestCase("a|b", "bit.bor(a,b)")
     @TestCase("a|=b", "a = bit.bor(a,b)")
+    @TestCase("a^b", "bit.bxor(a,b)")
+    @TestCase("a^=b", "a = bit.bxor(a,b)")
     @TestCase("a<<b", "bit.lshift(a,b)")
     @TestCase("a<<=b", "a = bit.lshift(a,b)")
     @TestCase("a>>b", "bit.rshift(a,b)")
@@ -98,27 +119,46 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a = bit.arshift(a,b)")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: "JIT", dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, dontRequireLuaLib: true })).toBe(lua);
+    }
+
+    @TestCase("a&b", "bit32.band(a,b)")
+    @TestCase("a&=b", "a = bit32.band(a,b)")
+    @TestCase("a|b", "bit32.bor(a,b)")
+    @TestCase("a|=b", "a = bit32.bor(a,b)")
+    @TestCase("a^b", "bit32.bxor(a,b)")
+    @TestCase("a^=b", "a = bit32.bxor(a,b)")
+    @TestCase("a<<b", "bit32.lshift(a,b)")
+    @TestCase("a<<=b", "a = bit32.lshift(a,b)")
+    @TestCase("a>>b", "bit32.rshift(a,b)")
+    @TestCase("a>>=b", "a = bit32.rshift(a,b)")
+    @TestCase("a>>>b", "bit32.arshift(a,b)")
+    @TestCase("a>>>=b", "a = bit32.arshift(a,b)")
+    @Test("Bitop [5.2]")
+    public bitOperatorOverride52(input: string, lua: string) {
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, dontRequireLuaLib: true })).toBe(lua);
     }
 
     @TestCase("a&b", "a & b")
     @TestCase("a&=b", "a = a & b")
     @TestCase("a|b", "a | b")
     @TestCase("a|=b", "a = a | b")
+    @TestCase("a^b", "a ~ b")
+    @TestCase("a^=b", "a = a ~ b")
     @TestCase("a<<b", "a << b")
     @TestCase("a<<=b", "a = a << b")
     @TestCase("a>>b", "a >> b")
     @TestCase("a>>=b", "a = a >> b")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true })).toBe(lua);
     }
 
     @TestCase("a>>>b")
     @TestCase("a>>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string) {
-        Expect(() => util.transpileString(input, { luaTarget: "5.3", dontRequireLuaLib: true }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true }))
             .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
     }
 

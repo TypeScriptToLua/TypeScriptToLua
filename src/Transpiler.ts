@@ -5,8 +5,6 @@ import { TSHelper as tsHelper } from "./TSHelper";
 
 import * as path from "path";
 
-import * as fs from "fs";
-
 /* tslint:disable */
 const packageJSON = require("../package.json");
 /* tslint:enable */
@@ -93,7 +91,7 @@ export abstract class LuaTranspiler {
     }
 
     public getAbsouluteImportPath(relativePath: string) {
-        if (path.isAbsolute(relativePath) && this.options.baseUrl) {
+        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
             return path.resolve(this.options.baseUrl, relativePath);
         }
         return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
@@ -220,10 +218,6 @@ export abstract class LuaTranspiler {
     public transpileImport(node: ts.ImportDeclaration): string {
         const importPath = this.transpileExpression(node.moduleSpecifier);
         const importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
-
-        if (fs.existsSync(this.getAbsouluteImportPath(importPathWithoutQuotes) + ".d.ts")) {
-            return "";
-        }
 
         if (!node.importClause || !node.importClause.namedBindings) {
             throw new TranspileError(

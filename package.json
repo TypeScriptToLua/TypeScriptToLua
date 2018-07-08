@@ -37,12 +37,12 @@
         "@types/node": "^9.6.23",
         "@types/yargs": "^11.0.0",
         "alsatian": "^2.2.1",
-        "codecov": "^3.0.3",
+        "codecov": "3.0.2",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
         "nyc": "^11.9.0",
         "ts-node": "^7.0.0",
         "tslint": "^5.10.0",
-        "tslint-override": "^0.1.0"
+        "tslint-override": "^0.1.2"
     }
 }

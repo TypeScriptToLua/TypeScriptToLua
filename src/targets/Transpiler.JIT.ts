@@ -4,6 +4,7 @@ import { LuaTranspiler52 } from "./Transpiler.52";
 import * as ts from "typescript";
 
 export class LuaTranspilerJIT extends LuaTranspiler52 {
+    /** @override */
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:

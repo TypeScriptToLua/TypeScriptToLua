@@ -21,18 +21,19 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "typescript": "^2.8.3",
+        "typescript": "^2.9.2",
         "yargs": "^11.1.0"
     },
     "devDependencies": {
-        "@types/node": "^9.6.7",
+        "@types/node": "^9.6.23",
         "@types/yargs": "^11.0.0",
         "alsatian": "^2.2.1",
-        "codecov": "^3.0.1",
+        "codecov": "^3.0.3",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
-        "nyc": "^11.7.1",
+        "nyc": "^11.9.0",
         "ts-node": "^7.0.0",
-        "tslint": "^5.9.1"
+        "tslint": "^5.10.0",
+        "tslint-override": "^0.1.0"
     }
 }

@@ -4,6 +4,7 @@ import { LuaTranspiler51 } from "./Transpiler.51";
 import * as ts from "typescript";
 
 export class LuaTranspiler52 extends LuaTranspiler51 {
+    /** @override */
     public transpileLoopBody(
         node: ts.WhileStatement
             | ts.DoStatement
@@ -22,10 +23,12 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
         return result;
     }
 
+    /** @override */
     public transpileContinue(node: ts.ContinueStatement): string {
         return this.indent + `goto __continue${this.loopStack[this.loopStack.length - 1]}\n`;
     }
 
+    /** @override */
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:

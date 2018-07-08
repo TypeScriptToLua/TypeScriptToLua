@@ -92,7 +92,7 @@ export class AssignmentTests {
                    + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = ({ abc() })\n\na=({ abc() })");
+        Expect(lua).toBe("local a = ({ abc() })\n\na = ({ abc() })");
     }
 
     @Test("TupleReturn interface assignment")

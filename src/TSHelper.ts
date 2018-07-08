@@ -54,11 +54,6 @@ export class TSHelper {
         return typeNode && (typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType);
     }
 
-    public static isTupleType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type);
-        return typeNode && typeNode.kind === ts.SyntaxKind.TupleType;
-    }
-
     public static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Enum) !== 0)
@@ -96,7 +91,7 @@ export class TSHelper {
     public static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
         return type.symbol
             && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0
-               || (type.symbol.flags & ts.SymbolFlags.Method) !== 0)
+                || (type.symbol.flags & ts.SymbolFlags.Method) !== 0)
             && this.hasCustomDecorator(type, checker, "!TupleReturn");
     }
 
@@ -105,8 +100,8 @@ export class TSHelper {
             const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
                 comments.filter(comment => comment.kind === "text")
-                .map(comment => comment.text.trim())
-                .filter(comment => comment[0] === "!");
+                    .map(comment => comment.text.trim())
+                    .filter(comment => comment[0] === "!");
             return decorators.indexOf(decorator) > -1;
         }
         return false;
@@ -149,5 +144,36 @@ export class TSHelper {
             }
         }
         return false;
+    }
+
+    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, ts.BinaryOperator] {
+        switch (token) {
+            case ts.SyntaxKind.BarEqualsToken:
+                return [true, ts.SyntaxKind.BarToken];
+            case ts.SyntaxKind.PlusEqualsToken:
+                return [true, ts.SyntaxKind.PlusToken];
+            case ts.SyntaxKind.CaretEqualsToken:
+                return [true, ts.SyntaxKind.CaretToken];
+            case ts.SyntaxKind.MinusEqualsToken:
+                return [true, ts.SyntaxKind.MinusToken];
+            case ts.SyntaxKind.SlashEqualsToken:
+                return [true, ts.SyntaxKind.SlashToken];
+            case ts.SyntaxKind.PercentEqualsToken:
+                return [true, ts.SyntaxKind.PercentToken];
+            case ts.SyntaxKind.AsteriskEqualsToken:
+                return [true, ts.SyntaxKind.AsteriskToken];
+            case ts.SyntaxKind.AmpersandEqualsToken:
+                return [true, ts.SyntaxKind.AmpersandToken];
+            case ts.SyntaxKind.AsteriskAsteriskEqualsToken:
+                return [true, ts.SyntaxKind.AsteriskAsteriskToken];
+            case ts.SyntaxKind.LessThanLessThanEqualsToken:
+                return [true, ts.SyntaxKind.LessThanLessThanToken];
+            case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
+                return [true, ts.SyntaxKind.GreaterThanGreaterThanToken];
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
+        }
+
+        return [false, null];
     }
 }

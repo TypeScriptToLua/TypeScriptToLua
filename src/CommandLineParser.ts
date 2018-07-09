@@ -156,9 +156,11 @@ export function findConfigFile(commandLine: ts.ParsedCommandLine) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }
     let configPath;
+    /* istanbul ignore else: Testing else part is not really possible via automated tests */
     if (path.isAbsolute(commandLine.options.project)) {
         configPath = commandLine.options.project;
     } else {
+        // TODO check if commandLine.options.project can even contain non absolute paths
         configPath = path.join(process.cwd(), commandLine.options.project);
     }
     if (fs.statSync(configPath).isDirectory()) {

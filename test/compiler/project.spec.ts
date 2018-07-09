@@ -22,45 +22,57 @@ export class CompilerProjectTests {
     private existingFiles: string[];
     private filesAfterCompile: string[];
 
-    @Setup
-    public setup() {
-      this.existingFiles = getAllFiles(path.resolve(__dirname, "./project"));
-      this.filesAfterCompile = [];
-    }
-
-    @TestCase("tsconfig.json",
+    @TestCase("basic",
+              "tsconfig.json",
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
-    @TestCase(".",
+    @TestCase("basic",
+              ".",
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
-    @TestCase("test_src/main.ts",
+    @TestCase("basic",
+              "test_src/main.ts",
               "typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
-    @TestCase("tsconfig.outDir.json",
+    @TestCase("basic",
+              "tsconfig.outDir.json",
               "out_dir/typescript_lualib.lua",
               "out_dir/test_src/test_lib/file.lua",
               "out_dir/test_src/main.lua")
-    @TestCase("tsconfig.rootDir.json",
+    @TestCase("basic",
+              "tsconfig.rootDir.json",
               "test_src/typescript_lualib.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
-    @TestCase("tsconfig.bothDirOptions.json",
+    @TestCase("basic",
+              "tsconfig.bothDirOptions.json",
               "out_dir/typescript_lualib.lua",
               "out_dir/test_lib/file.lua",
               "out_dir/main.lua")
+    @TestCase("baseurl",
+              "tsconfig.json",
+              "out_dir/typescript_lualib.lua",
+              "out_dir/test_src/test_lib/nested/lib_file.lua",
+              "out_dir/test_src/main.lua")
     @Test("Compile project")
-    public compileProject(tsconfig: string, ...expectedFiles: string[]) {
-        const tsconfigPath = path.resolve(__dirname, "project", tsconfig);
+    public compileProject(projectName: string, tsconfig: string, ...expectedFiles: string[]) {
+        const relPathToProject = path.join("projects", projectName);
+
+        // Setup we cant do this in @setup because we need the projectname
+        this.existingFiles = getAllFiles(path.resolve(__dirname, relPathToProject));
+        this.filesAfterCompile = [];
+        // Setup End
+
+        const tsconfigPath = path.resolve(__dirname, relPathToProject, tsconfig);
 
         // Compile project
         execCommandLine(["-p", tsconfigPath]);
 
-        this.filesAfterCompile = getAllFiles(path.resolve(__dirname, "project"));
-        expectedFiles = expectedFiles.map((relPath) => path.resolve(__dirname, "project", relPath));
+        this.filesAfterCompile = getAllFiles(path.resolve(__dirname, relPathToProject));
+        expectedFiles = expectedFiles.map(relPath => path.resolve(__dirname, relPathToProject, relPath));
         expectedFiles.push(...this.existingFiles);
 
         for (const existingFile of this.filesAfterCompile) {
@@ -70,8 +82,8 @@ export class CompilerProjectTests {
 
     @Teardown
     public teardown() {
-        // Remove files taht were created by the test
-        const createdFiles = this.filesAfterCompile.filter((v) => this.existingFiles.indexOf(v) < 0);
+        // Remove files that were created by the test
+        const createdFiles = this.filesAfterCompile.filter(v => this.existingFiles.indexOf(v) < 0);
         for (const file of createdFiles) {
             fs.unlinkSync(file);
         }

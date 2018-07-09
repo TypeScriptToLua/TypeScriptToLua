@@ -90,19 +90,29 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    public getAbsouluteImportPath(relativePath: string) {
+        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
+            return path.resolve(this.options.baseUrl, relativePath);
+        }
+        return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
+    }
+
     public getImportPath(relativePath: string) {
         // Calculate absolute path to import
-        const absolutePathToImport =
-            path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
+        const absolutePathToImport = this.getAbsouluteImportPath(relativePath);
         if (this.options.rootDir) {
             // Calculate path realtive to project root
             // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = absolutePathToImport.replace(this.options.rootDir, "")
-                                                   .replace(new RegExp("\\\\|\/", "g"), ".")
-                                                   .slice(1);
+            const relativePathToRoot =
+                this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
             return `"${relativePathToRoot}"`;
         }
-        return `"${relativePath.replace(new RegExp("\\\\|\/", "g"), ".")}"`;
+
+        return `"${this.pathToLuaRequirePath(relativePath)}"`;
+    }
+
+    public pathToLuaRequirePath(filePath: string) {
+        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
     // Transpile a source file

@@ -18,6 +18,7 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
     }
 
     const program = ts.createProgram(fileNames, options);
+
     const checker = program.getTypeChecker();
 
     // Get all diagnostics, ignore unsupported extension

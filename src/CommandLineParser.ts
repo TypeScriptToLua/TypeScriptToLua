@@ -31,7 +31,7 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
     },
     luaTarget: {
         alias: "lt",
-        choices: ["JIT", "5.3"],
+        choices: ["JIT", "5.3", "5.2", "5.1"],
         default: "JIT",
         describe: "Specify Lua target version.",
         type: "string",
@@ -156,9 +156,11 @@ export function findConfigFile(commandLine: ts.ParsedCommandLine) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }
     let configPath;
+    /* istanbul ignore else: Testing else part is not really possible via automated tests */
     if (path.isAbsolute(commandLine.options.project)) {
         configPath = commandLine.options.project;
     } else {
+        // TODO check if commandLine.options.project can even contain non absolute paths
         configPath = path.join(process.cwd(), commandLine.options.project);
     }
     if (fs.statSync(configPath).isDirectory()) {

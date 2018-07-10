@@ -1,0 +1,8 @@
+{
+    "luaTarget": "JIT",
+    "compilerOptions": {
+        "outDir": "./out_dir",
+        "rootDir": ".",
+        "baseUrl": "./test_src/test_lib",
+    }
+}

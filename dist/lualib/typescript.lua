@@ -32,9 +32,9 @@ function TS_filter(list, func)
 end
 
 function TS_slice(list, startI, endI)
-    endI = endI or #list
-    if startI < 0 then startI = #list + startI end
-    if endI < 0 then endI = #list + endI end
+    if not endI or endI > #list then endI = #list end
+    if startI < 0 then startI = math.max(#list + startI, 1) end
+    if endI < 0 then endI = math.max(#list + endI, 1) end
     local out = {}
     for i = startI + 1, endI do
         table.insert(out, list[i])
@@ -42,29 +42,112 @@ function TS_slice(list, startI, endI)
     return out
 end
 
-function TS_splice(list, startI, deleteCount, ...)
-    if not deleteCount or deleteCount > #list - startI then
-        deleteCount = #list - startI
+function TS_splice(list, start, deleteCount, ...)
+    -- 1. 2.
+    local len = #list
+
+    local actualStart
+
+    -- 4.
+    if start <  0 then
+        actualStart = math.max(len + start, 0)
+    else
+        actualStart = math.min(start, len)
     end
-    startI = startI + 1
-    local newElements = {...}
+
+    -- 13.
+    local items = {...}
+    -- 14.
+    local itemCount = #items
+
+    -- 5. - 7.
+    local actualDeleteCount
+
+    if not start then
+        actualDeleteCount = 0
+    elseif not deleteCount then
+        actualDeleteCount = len - actualStart
+    else
+        actualDeleteCount = math.min(math.max(deleteCount, 0), len - actualStart)
+    end
+
+    -- 8. ignored
+
+    -- 9.
     local out = {}
-    local outPtr = deleteCount
-    local newElementsCount = #newElements
-    for i = startI + deleteCount - 1, startI, -1 do
-        out[outPtr] = list[i]
-        outPtr = outPtr -1
-        if newElements[k] then
-            list[i] = newElements[k]
-            newElementsCount = newElementsCount - 1
-        else
-            table.remove(list, i)
+
+    -- 10.
+    local k
+
+    k = 0
+
+    -- 11.
+    while k < actualDeleteCount do
+        local from = actualStart + k
+
+        if list[from + 1] then
+            out[k + 1] = list[from + 1]
+        end
+
+        k = k + 1
+    end
+
+    -- 15.
+    if itemCount < actualDeleteCount then
+        -- a. b.
+        k = actualStart
+        while k < len - actualDeleteCount do
+            local from = k + actualDeleteCount
+            local to = k + itemCount
+
+            if list[from + 1] then
+                list[to + 1] = list[from + 1]
+            else
+                list[to + 1] = nil
+            end
+
+            k = k + 1
+        end
+        -- c. d.
+        k = len
+        while k > len - actualDeleteCount + itemCount do
+            list[k] = nil
+            k = k - 1
+        end
+    -- 16.
+    elseif itemCount > actualDeleteCount then
+        k = len - actualDeleteCount
+        while k > actualStart do
+            local from = k + actualDeleteCount
+            local to = k + itemCount
+
+            if list[from] then
+                list[to] = list[from]
+            else
+                list[to] = nil
+            end
+
+            k = k - 1
         end
     end
-    while newElements[newElementsCount] do
-        table.insert(list, startI, newElements[newElementsCount])
-        newElementsCount = newElementsCount - 1
+
+    -- 17.
+    k = actualStart
+
+    -- 18.
+    for _, e in pairs(items) do
+        list[k + 1] = e
+        k = k + 1
     end
+
+    -- 19.
+    k = #list
+    while k > len - actualDeleteCount + itemCount do
+        list[k] = nil
+        k = k - 1
+    end
+
+    -- 20.
     return out
 end
 
@@ -154,8 +237,8 @@ function Set.constructor(self, other)
         end
     end
 end
-function Set.add(self, item) 
-    self._items[item] = true 
+function Set.add(self, item)
+    self._items[item] = true
     self.size = self.size + 1
 end
 function Set.clear(self)
@@ -210,7 +293,7 @@ function Map.constructor(self, other)
         end
     end
 end
-function Map.clear(self) 
+function Map.clear(self)
     self._items = {}
     self.size = 0
 end
@@ -241,7 +324,7 @@ function Map.keys(self)
     end
     return out
 end
-function Map.set(self, key, value) 
+function Map.set(self, key, value)
     self._items[key] = value
     self.size = self.size + 1
     return self

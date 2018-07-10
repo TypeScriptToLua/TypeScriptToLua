@@ -11,7 +11,7 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 const fs = require("fs");
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.d.ts')).toString();
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.es6.d.ts')).toString();
 
 export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.Lua53 }): string {
     const compilerHost = {
@@ -19,7 +19,7 @@ export function transpileString(str: string, options: CompilerOptions = { dontRe
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
-        getDefaultLibFileName: () => "lib.d.ts",
+        getDefaultLibFileName: () => "lib.es6.d.ts",
         getDirectories: () => [],
         getNewLine: () => "\n",
 
@@ -27,7 +27,7 @@ export function transpileString(str: string, options: CompilerOptions = { dontRe
             if (filename === "file.ts") {
                 return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
             }
-            if (filename === "lib.d.ts") {
+            if (filename === "lib.es6.d.ts") {
                 return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
             }
             return undefined;
@@ -108,6 +108,10 @@ export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53) {
     return createTranspiler({} as ts.TypeChecker,
                             { dontRequireLuaLib: true, luaTarget: target } as any,
                             { statements: [] } as any as ts.SourceFile);
+}
+
+export function transpileAndExecute(ts: string): any {
+    return executeLua(transpileString(ts));
 }
 
 const tslualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";

@@ -5,7 +5,7 @@ import { TapBark } from "tap-bark";
 const testSet = TestSet.create();
 
 // add your tests
-testSet.addTestsFromFiles("./test/**/*.spec.js");
+testSet.addTestsFromFiles("./test/**/*.spec.ts");
 
 // create a test runner
 const testRunner = new TestRunner();

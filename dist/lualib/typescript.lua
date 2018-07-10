@@ -126,6 +126,16 @@ function TS_push(list, ...)
     end
 end
 
+function TS_instanceof(obj, class)
+    while obj ~= nil do
+        if obj.__index == class then
+            return true
+        end
+        obj = obj.__base
+    end
+    return false
+end
+
 -- Set data structure implementation
 Set = Set or {}
 Set.__index = Set
@@ -136,32 +146,50 @@ function Set.new(construct, ...)
 end
 function Set.constructor(self, other)
     self._items = {}
+    self.size = 0
     if other then
-        for a, _ in pairs(other) do
+        self.size = #other
+        for _, a in pairs(other) do
             self._items[a] = true
         end
     end
 end
-function Set.add(self, item) self._items[item] = true end
-function Set.contains(self, item) return self._items[item] ~= nil end
-function Set.remove(self, item)
-    local contains = Set.contains(self, item)
+function Set.add(self, item) 
+    self._items[item] = true 
+    self.size = self.size + 1
+end
+function Set.clear(self)
+    self._items = {}
+    self.size = 0
+end
+function Set.delete(self, item)
+    local contains = Set.has(self, item)
     self._items[item] = nil
+    self.size = self.size - 1
     return contains
 end
-function Set.items(self)
+function Set.entries(self)
     local out = {}
     for item, _ in pairs(self._items) do
-        table.insert(out, item)
+        table.insert(out, {item, item})
     end
     return out
 end
-function Set.count(self)
-    local count = 0
-    for item, _ in pairs(self._items) do
-        count = count + 1
+function Set.forEach(self, callbackFn)
+    for k, v in pairs(self._items) do
+        callbackFn(k, k, self)
     end
-    return count
+end
+function Set.has(self, item) return self._items[item] ~= nil end
+function Set.keys(self)
+    return Set.values(self)
+end
+function Set.values(self)
+    local out = {}
+    for k, _ in pairs(self._items) do
+        table.insert(out, k)
+    end
+    return out
 end
 
 -- Set data structure implementation
@@ -174,20 +202,38 @@ function Map.new(construct, ...)
 end
 function Map.constructor(self, other)
     self._items = {}
+    self.size = 0
     if other then
-        for k, v in pairs(other) do
-            self._items[k] = v
+        self.size = #other
+        for _, v in pairs(other) do
+            self._items[v[1]] = v[2]
         end
     end
 end
-function Map.put(self, key, value) self._items[key] = value end
-function Map.containsKey(self, key) return self._items[key] ~= nil end
-function Map.remove(self, key)
-    local contains = self.containsKey(self, key)
+function Map.clear(self) 
+    self._items = {}
+    self.size = 0
+end
+function Map.delete(self, key)
+    local contains = self.has(self, key)
     self._items[key] = nil
+    self.size = self.size - 1
     return contains
 end
+function Map.entries(self)
+    local out = {}
+    for k, v in pairs(self._items) do
+        table.insert(out, {k, v})
+    end
+    return out
+end
+function Map.forEach(self, callbackFn)
+    for k, v in pairs(self._items) do
+        callbackFn(v, k, self)
+    end
+end
 function Map.get(self, key) return self._items[key] end
+function Map.has(self, key) return self._items[key] ~= nil end
 function Map.keys(self)
     local out = {}
     for k, v in pairs(self._items) do
@@ -195,24 +241,15 @@ function Map.keys(self)
     end
     return out
 end
+function Map.set(self, key, value) 
+    self._items[key] = value
+    self.size = self.size + 1
+    return self
+end
 function Map.values(self)
     local out = {}
     for k, v in pairs(self._items) do
         table.insert(out, v)
     end
     return out
-end
-function Map.items(self)
-    local out = {}
-    for k, v in pairs(self._items) do
-        table.insert(out, {key=k, value=v})
-    end
-    return out
-end
-function Map.count(self)
-    local count = 0
-    for k, v in pairs(self._items) do
-        count = count + 1
-    end
-    return count
 end

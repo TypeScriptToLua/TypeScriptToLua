@@ -71,7 +71,7 @@ export abstract class LuaTranspiler {
     public makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
         let result: string = "";
         if (node &&
-            node.modifiers &&
+            node.modifiers && this.isModule &&
             (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)
            ) {
             if (dummy) {
@@ -90,19 +90,29 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    public getAbsouluteImportPath(relativePath: string) {
+        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
+            return path.resolve(this.options.baseUrl, relativePath);
+        }
+        return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
+    }
+
     public getImportPath(relativePath: string) {
         // Calculate absolute path to import
-        const absolutePathToImport =
-            path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
+        const absolutePathToImport = this.getAbsouluteImportPath(relativePath);
         if (this.options.rootDir) {
             // Calculate path realtive to project root
             // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = absolutePathToImport.replace(this.options.rootDir, "")
-                                                   .replace(new RegExp("\\\\|\/", "g"), ".")
-                                                   .slice(1);
+            const relativePathToRoot =
+                this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
             return `"${relativePathToRoot}"`;
         }
-        return `"${relativePath.replace(new RegExp("\\\\|\/", "g"), ".")}"`;
+
+        return `"${this.pathToLuaRequirePath(relativePath)}"`;
+    }
+
+    public pathToLuaRequirePath(filePath: string) {
+        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
     // Transpile a source file
@@ -597,6 +607,7 @@ export abstract class LuaTranspiler {
                 // Otherwise simply return the name
                 return (node as ts.Identifier).text;
             case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 const text = (node as ts.StringLiteral).text;
                 return `"${text}"`;
             case ts.SyntaxKind.TemplateExpression:
@@ -639,6 +650,8 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.AsExpression:
                 // Also ignore as casts
                 return this.transpileExpression((node as ts.AsExpression).expression);
+            case ts.SyntaxKind.TypeOfExpression:
+                return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             default:
                 throw new TranspileError(
                     "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
@@ -652,51 +665,33 @@ export abstract class LuaTranspiler {
         const lhs = this.transpileExpression(node.left, true);
         const rhs = this.transpileExpression(node.right, true);
 
-        // Rewrite some non-existant binary operators
+        // Check if this is an assignment token, then handle accordingly
+        const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
+        if (isAssignment) {
+            const valueExpression = ts.createBinary(node.left, operator, node.right);
+            const value = this.transpileBinaryExpression(valueExpression);
+            if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+                return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, value);
+            }
+            return `${lhs} = ${value}`;
+        }
+
         let result = "";
 
         // Transpile Bitops
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:
-            case ts.SyntaxKind.AmpersandEqualsToken:
             case ts.SyntaxKind.BarToken:
-            case ts.SyntaxKind.BarEqualsToken:
+            case ts.SyntaxKind.CaretToken:
             case ts.SyntaxKind.LessThanLessThanToken:
-            case ts.SyntaxKind.LessThanLessThanEqualsToken:
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
-            case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
                 result = this.transpileBitOperation(node, lhs, rhs);
         }
 
         // Transpile operators
         if (result === "") {
             switch (node.operatorToken.kind) {
-                case ts.SyntaxKind.PlusEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}+${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}+${rhs}`;
-                    break;
-                case ts.SyntaxKind.MinusEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}-${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}-${rhs}`;
-                    break;
-                case ts.SyntaxKind.AsteriskEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}*${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}*${rhs}`;
-                    break;
-                case ts.SyntaxKind.SlashEqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, `${lhs}/${rhs}`);
-                    }
-                    result = `${lhs}=${lhs}/${rhs}`;
-                    break;
                 case ts.SyntaxKind.AmpersandAmpersandToken:
                     result = `${lhs} and ${rhs}`;
                     break;
@@ -718,6 +713,9 @@ export abstract class LuaTranspiler {
                     break;
                 case ts.SyntaxKind.AsteriskToken:
                     result = `${lhs}*${rhs}`;
+                    break;
+                case ts.SyntaxKind.AsteriskAsteriskToken:
+                    result = `${lhs}^${rhs}`;
                     break;
                 case ts.SyntaxKind.SlashToken:
                     result = `${lhs}/${rhs}`;
@@ -742,7 +740,7 @@ export abstract class LuaTranspiler {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
-                    result = `${lhs}=${rhs}`;
+                    result = `${lhs} = ${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:
@@ -754,6 +752,9 @@ export abstract class LuaTranspiler {
                     break;
                 case ts.SyntaxKind.InKeyword:
                     result = `${rhs}[${lhs}]~=nil`;
+                    break;
+                case ts.SyntaxKind.InstanceOfKeyword:
+                    result = `TS_instanceof(${lhs}, ${rhs})`;
                     break;
                 default:
                     throw new TranspileError(
@@ -771,8 +772,12 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
+        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
+    }
+
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-        throw new TranspileError(`Bit Oeprations are not supported in Lua ${this.options.target}`, node);
+        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
     }
 
     public transpileTemplateExpression(node: ts.TemplateExpression) {
@@ -813,12 +818,14 @@ export abstract class LuaTranspiler {
     public transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
+            case ts.SyntaxKind.TildeToken:
+                return this.transpileUnaryBitOperation(node, operand);
             case ts.SyntaxKind.PlusPlusToken:
                 return `${operand}=${operand}+1`;
             case ts.SyntaxKind.MinusMinusToken:
                 return `${operand}=${operand}-1`;
             case ts.SyntaxKind.ExclamationToken:
-                return `not ${operand}`;
+                return `(not ${operand})`;
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
@@ -1124,6 +1131,11 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
+        const expression = this.transpileExpression(node.expression);
+        return `(type(${expression}) == "table" and "object" or type(${expression}))`;
+    }
+
     // Transpile a variable statement
     public transpileVariableStatement(node: ts.VariableStatement): string {
         let result = "";
@@ -1174,6 +1186,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileFunctionDeclaration(node: ts.FunctionDeclaration): string {
+        // Don't transpile functions without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name;
         const methodName = identifier.escapedText;
@@ -1221,6 +1236,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileMethodDeclaration(node: ts.MethodDeclaration, callPath: string): string {
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) { return ""; }
+
         let result = "";
         const identifier = node.name as ts.Identifier;
         const methodName = identifier.escapedText;

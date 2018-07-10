@@ -11,6 +11,8 @@ Large projects written in lua can become hard to maintain and make it easy to ma
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).
 
+Changelog can be found in [CHANGELOG.md](https://github.com/Perryvw/TypescriptToLua/blob/master/CHANGELOG.md)
+
 ## Usage Guide
 
 **Install**

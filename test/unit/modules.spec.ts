@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as ts from "typescript";
-import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
+
 import * as util from "../src/util";
 
 export class LuaModuleTests {
@@ -33,5 +33,14 @@ export class LuaModuleTests {
 
         Expect(() => transpiler.transpileImport(mockDeclaration as ts.ImportDeclaration))
             .toThrowError(Error, "Unsupported import type.");
+    }
+
+    @Test("Non-exported module")
+    public nonExportedModule() {
+        const lua = util.transpileString("module g { export function test() { return 3; } } return g.test();");
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(3);
     }
 }

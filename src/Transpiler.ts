@@ -282,7 +282,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileEnum(node: ts.EnumDeclaration): string {
-        let val = 0;
+        let val: number | string = 0;
         let result = "";
 
         const type = this.checker.getTypeAtLocation(node);
@@ -298,8 +298,10 @@ export abstract class LuaTranspiler {
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
                     val = parseInt(member.initializer.text);
+                } else if (ts.isStringLiteral(member.initializer)) {
+                    val = `"${member.initializer.text}"`;
                 } else {
-                    throw new TranspileError("Only numeric initializers allowed for enums.", node);
+                    throw new TranspileError("Only numeric or string initializers allowed for enums.", node);
                 }
             }
 
@@ -313,7 +315,9 @@ export abstract class LuaTranspiler {
                 result += this.indent + `${defName}=${val}\n`;
             }
 
-            val++;
+            if (typeof val === "number") {
+              val++;
+            }
         });
         return result;
     }

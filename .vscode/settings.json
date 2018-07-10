@@ -1,0 +1,15 @@
+{
+    "files.trimTrailingWhitespace": false,
+    "editor.formatOnSave": false,
+    "[typescript]": {
+        "editor.formatOnSave": false
+    },
+    "[javascript]": {
+        "editor.formatOnSave": false
+    },
+    "[json]": {
+        "editor.formatOnSave": false
+    },
+    "editor.detectIndentation": true,
+    "tslint.autoFixOnSave": true
+}

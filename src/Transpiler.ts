@@ -1175,7 +1175,7 @@ export abstract class LuaTranspiler {
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
                 return `local ${vars}=${value}\n`;
             } else {
-                return `local ${vars}=table.unpack(${value})\n`;
+                return `local ${vars}=${this.getUnpackFunction()}(${value})\n`;
             }
         } else {
             throw new TranspileError(
@@ -1530,5 +1530,9 @@ export abstract class LuaTranspiler {
         });
 
         return result;
+    }
+
+    protected getUnpackFunction() {
+        return "unpack";
     }
 }

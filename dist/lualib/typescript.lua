@@ -135,7 +135,7 @@ function TS_splice(list, start, deleteCount, ...)
     k = actualStart
 
     -- 18.
-    for _, e in pairs(items) do
+    for _, e in ipairs(items) do
         list[k + 1] = e
         k = k + 1
     end

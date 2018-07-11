@@ -1,7 +1,6 @@
-import { Expect, Test, TestCase, FocusTests  } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-@FocusTests
 export class LuaLibArrayTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])

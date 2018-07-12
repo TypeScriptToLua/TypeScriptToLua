@@ -12,7 +12,11 @@ config.set({
     }
 });
 
-const cpuCount = os.cpus().length + 1;
+let cpuCount = os.cpus().length + 1;
+if ("TRAVIS" in process.env && "CI" in process.env) {
+    // fixed thread coutn for CI
+    cpuCount = 8;
+}
 const testFiles: string[] = glob.sync("./test/**/*.spec.ts");
 const pool = new Pool(cpuCount);
 let jobCounter = 0;

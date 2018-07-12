@@ -26,10 +26,11 @@ const fileArrToString = (fileArr: string[]) => fileArr.map(val => path.basename(
 console.log (`Running tests: ${fileArrToString(testFiles)} with ${cpuCount} threads`);
 
 let filesPerThread = Math.floor(testFiles.length / cpuCount);
+let threadsWithMoreWork = testFiles.length % cpuCount;
 
 for (let i = 1; i <= cpuCount; i++) {
     let files: string[] = [];
-    if (i === cpuCount) {
+    if (i <= threadsWithMoreWork) {
         files = testFiles.splice(0, filesPerThread + 1);
     } else {
         files = testFiles.splice(0, filesPerThread);

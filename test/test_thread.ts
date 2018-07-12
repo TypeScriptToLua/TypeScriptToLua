@@ -3,7 +3,7 @@ import * as JSON from "circular-json";
 
 module.exports = function(input, done) {
     const testSet = TestSet.create();
-    testSet.addTestsFromFiles(input.file);
+    testSet.addTestsFromFiles(input.files);
     const testRunner = new TestRunner();
 
     testRunner.onTestComplete((result) => {

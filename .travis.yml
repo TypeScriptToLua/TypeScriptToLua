@@ -6,7 +6,7 @@ install:
 script:
 - npm run build
 # Testing & Coverage
-- npm coverage-threaded
+- npm run coverage-threaded
 after_success:
 - codecov
 deploy:

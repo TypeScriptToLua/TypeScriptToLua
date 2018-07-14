@@ -37,6 +37,7 @@ export abstract class LuaTranspiler {
     public isModule: boolean;
     public sourceFile: ts.SourceFile;
     public loopStack: number[];
+    public classStack: string[];
 
     constructor(checker: ts.TypeChecker, options: ts.CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
@@ -49,6 +50,7 @@ export abstract class LuaTranspiler {
         this.sourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);
         this.loopStack = [];
+        this.classStack = [];
     }
 
     public pushIndent(): void {
@@ -131,7 +133,10 @@ export abstract class LuaTranspiler {
             // Shadow exports if it already exists
             result += "local exports = exports or {}\n";
         }
-        result += this.transpileBlock(this.sourceFile);
+
+        // Transpile content statements
+        this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
+
         if (this.isModule) {
             result += "return exports\n";
         }
@@ -139,20 +144,8 @@ export abstract class LuaTranspiler {
     }
 
     // Transpile a block
-    public transpileBlock(node: ts.Node): string {
-        let result = "";
-
-        if (ts.isBlock(node)) {
-            node.statements.forEach(statement => {
-                result += this.transpileNode(statement);
-            });
-        } else {
-            node.forEachChild(child => {
-                result += this.transpileNode(child);
-            });
-        }
-
-        return result;
+    public transpileBlock(block: ts.Block): string {
+        return block.statements.map(statement => this.transpileNode(statement)).join("");
     }
 
     // Transpile a node of unknown kind.
@@ -857,10 +850,9 @@ export abstract class LuaTranspiler {
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-            callPath = this.transpileExpression(node.expression);
-            params =
-                this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
-            return `self.__base.constructor(${params})`;
+            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            const className = this.classStack[this.classStack.length - 1];
+            return `${className}.__base.constructor(${params})`;
         }
 
         callPath = this.transpileExpression(node.expression);
@@ -1288,60 +1280,17 @@ export abstract class LuaTranspiler {
 
     // Transpile a class declaration
     public transpileClass(node: ts.ClassDeclaration): string {
-        // Find extends class, ignore implements
-        let extendsType: ts.ExpressionWithTypeArguments | undefined;
-        let noClassOr = false;
-        if (node.heritageClauses) { node.heritageClauses.forEach(clause => {
-            if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
-                const superType = this.checker.getTypeAtLocation(clause.types[0]);
-                // Ignore purely abstract types (decorated with /** @PureAbstract */)
-                if (!tsHelper.isPureAbstractClass(superType, this.checker)) {
-                    extendsType = clause.types[0];
-                }
-                noClassOr = tsHelper.hasCustomDecorator(superType, this.checker, "!NoClassOr");
-            }
-        });
-        }
-
         if (!node.name) {
-            throw new TranspileError("Unexpected Error: Node has no Name", node);
+            throw new TranspileError("Class declaration has no name.", node);
         }
 
         let className = node.name.escapedText as string;
-        let result = "";
 
-        // Skip header if this is an extension class
+        // Find out if this class is extension of exising class
         const isExtension = tsHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
-        if (!isExtension) {
-            // Write class declaration
-            const classOr = noClassOr ? "" : `${className} or `;
-            if (!extendsType) {
-                result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
-                result += this.makeExport(className, node);
-            } else {
-                const baseName = (extendsType.expression as ts.Identifier).escapedText;
-                result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`;
-                result += this.makeExport(className, node);
-            }
-            result += this.indent + `${className}.__index = ${className}\n`;
-            if (extendsType) {
-                const baseName = (extendsType.expression as ts.Identifier).escapedText;
-                result += this.indent + `${className}.__base = ${baseName}\n`;
-            }
-            result += this.indent + `function ${className}.new(construct, ...)\n`;
-            result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
-            result += this.indent + `    if construct and ${className}.constructor then `
-                                  + `${className}.constructor(instance, ...) end\n`;
-            result += this.indent + `    return instance\n`;
-            result += this.indent + `end\n`;
-        } else {
-            // export empty table
-            result += this.makeExport(className, node, true);
-            // Overwrite the original className with the class we are overriding for extensions
-            if (extendsType) {
-                className = (extendsType.expression as ts.Identifier).escapedText as string;
-            }
-        }
+
+        // Get type that is extended
+        const extendsType = tsHelper.getExtendedType(node, this.checker);
 
         // Get all properties with value
         const properties = node.members.filter(ts.isPropertyDeclaration)
@@ -1351,6 +1300,20 @@ export abstract class LuaTranspiler {
         const isStatic = prop => prop.modifiers && prop.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
         const staticFields = properties.filter(isStatic);
         const instanceFields = properties.filter(prop => !isStatic(prop));
+
+        let result = "";
+
+        if (!isExtension) {
+            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
+        } else {
+            // export empty table
+            result += this.makeExport(className, node, true);
+        }
+
+        // Overwrite the original className with the class we are overriding for extensions
+        if (isExtension && extendsType) {
+            className = extendsType.symbol.escapedName as string;
+        }
 
         // Add static declarations
         for (const field of staticFields) {
@@ -1363,14 +1326,11 @@ export abstract class LuaTranspiler {
         const constructor = node.members.filter(ts.isConstructorDeclaration)[0];
         if (constructor) {
             // Add constructor plus initialisation of instance fields
-            result += this.transpileConstructor(constructor, className, instanceFields);
+            result += this.transpileConstructor(constructor, className);
         } else if (!isExtension) {
             // Generate a constructor if none was defined
-            result += this.transpileConstructor(
-                ts.createConstructor([], [], [], ts.createBlock([], true)),
-                className,
-                instanceFields
-            );
+            result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)),
+                                                className);
         }
 
         // Transpile get accessors
@@ -1387,6 +1347,50 @@ export abstract class LuaTranspiler {
         node.members.filter(ts.isMethodDeclaration).forEach(method => {
             result += this.transpileMethodDeclaration(method, `${className}.`);
         });
+
+        return result;
+    }
+
+    public transpileClassCreationMethods(node: ts.ClassDeclaration, instanceFields: ts.PropertyDeclaration[],
+                                         extendsType: ts.Type): string {
+        const className = node.name.escapedText as string;
+
+        const noClassOr = extendsType && tsHelper.hasCustomDecorator(extendsType, this.checker, "!NoClassOr");
+
+        let result = "";
+
+        // Write class declaration
+        const classOr = noClassOr ? "" : `${className} or `;
+        if (!extendsType) {
+            result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
+            result += this.makeExport(className, node);
+        } else {
+            const baseName = extendsType.symbol.escapedName;
+            result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`;
+            result += this.makeExport(className, node);
+        }
+        result += this.indent + `${className}.__index = ${className}\n`;
+        if (extendsType) {
+            const baseName = extendsType.symbol.escapedName;
+            result += this.indent + `${className}.__base = ${baseName}\n`;
+        }
+        result += this.indent + `function ${className}.new(construct, ...)\n`;
+        result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
+        result += this.indent + `    if construct and ${className}.constructor then `
+                              + `${className}.constructor(instance, ...) end\n`;
+
+        for (const f of instanceFields) {
+            // Get identifier
+            const fieldIdentifier = f.name as ts.Identifier;
+            const fieldName = fieldIdentifier.escapedText;
+
+            const value = this.transpileExpression(f.initializer);
+
+            result += this.indent + `    instance.${fieldName} = ${value}\n`;
+        }
+
+        result += this.indent + `    return instance\n`;
+        result += this.indent + `end\n`;
 
         return result;
     }
@@ -1425,8 +1429,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileConstructor(node: ts.ConstructorDeclaration,
-                                className: string,
-                                instanceFields: ts.PropertyDeclaration[]): string {
+                                className: string): string {
         const extraInstanceFields = [];
 
         const parameters = ["self"];
@@ -1446,19 +1449,11 @@ export abstract class LuaTranspiler {
             result += this.indent + `    self.${f} = ${f}\n`;
         }
 
-        for (const f of instanceFields) {
-            // Get identifier
-            const fieldIdentifier = f.name as ts.Identifier;
-            const fieldName = fieldIdentifier.escapedText;
-
-            const value = this.transpileExpression(f.initializer);
-
-            result += this.indent + `    self.${fieldName} = ${value}\n`;
-        }
-
         // Transpile constructor body
         this.pushIndent();
+        this.classStack.push(className);
         result += this.transpileBlock(node.body);
+        this.classStack.pop();
         this.popIndent();
 
         return result + this.indent + "end\n";
@@ -1512,7 +1507,7 @@ export abstract class LuaTranspiler {
             let result = `function(${paramNames.join(",")})\n`;
             this.pushIndent();
             result += this.transpileParameterDefaultValues(defaultValueParams);
-            result += this.transpileBlock(node.body);
+            result += this.transpileBlock(node.body as ts.Block);
             this.popIndent();
             return result + this.indent + "end\n";
         } else {

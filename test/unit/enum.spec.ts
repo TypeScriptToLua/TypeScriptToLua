@@ -2,18 +2,18 @@ import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util"
 
 export class EnumTests {
-    @Test("String enum")
-    public stringEnum() {
+    @Test("Invalid heterogeneous enum")
+    public invalidHeterogeneousEnum() {
         // Transpile & Assert
         Expect(() => {
             let lua = util.transpileString(
                 `enum TestEnum {
-                    val1 = "test",
-                    val2 = "ok",
-                    val3 = "bye"
+                    a,
+                    b = "ok",
+                    c,
                 }`
             );
-        }).not.toThrow();
+        }).toThrowError(Error, "Invalid heterogeneous enum.");
     }
 
     @Test("Unsuported enum")

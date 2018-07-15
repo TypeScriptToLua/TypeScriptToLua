@@ -42,6 +42,7 @@ function TS_slice(list, startI, endI)
     return out
 end
 
+-- https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf
 function TS_splice(list, start, deleteCount, ...)
     -- 1. 2.
     local len = #list

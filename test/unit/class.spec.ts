@@ -5,12 +5,29 @@ import * as util from "../src/util";
 
 export class ClassTests {
 
+    @Test("ClassFieldInitializer")
+    public classFieldInitializer() {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                field: number = 4;
+            }
+            return new a().field;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
     @Test("ClassConstructor")
     public classConstructor() {
         // Transpile
         const lua = util.transpileString(
             `class a {
-                field: number;
+                field: number = 3;
                 constructor(n: number) {
                     this.field = n * 2;
                 }
@@ -220,6 +237,31 @@ export class ClassTests {
             }
             class c extends b {}
             let inst = new c();
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassMethodOverride")
+    public classMethodOverride() {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public method(): number {
+                    return 2;
+                }
+            }
+            class b extends a {
+                public method(): number {
+                    return 4;
+                }
+            }
+            let inst = new b();
             return inst.method();`
         );
 

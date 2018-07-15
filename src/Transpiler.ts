@@ -1384,8 +1384,6 @@ export abstract class LuaTranspiler {
         }
         result += this.indent + `function ${className}.new(construct, ...)\n`;
         result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
-        result += this.indent + `    if construct and ${className}.constructor then `
-                              + `${className}.constructor(instance, ...) end\n`;
 
         for (const f of instanceFields) {
             // Get identifier
@@ -1396,6 +1394,9 @@ export abstract class LuaTranspiler {
 
             result += this.indent + `    instance.${fieldName} = ${value}\n`;
         }
+
+        result += this.indent + `    if construct and ${className}.constructor then `
+                      + `${className}.constructor(instance, ...) end\n`;
 
         result += this.indent + `    return instance\n`;
         result += this.indent + `end\n`;

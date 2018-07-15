@@ -18,7 +18,7 @@ export class StringTests {
     @TestCase([65, 66])
     @TestCase([65, 66, 67])
     @Test("String.fromCharCode")
-    public stringFromCharcode(inp: number[], expected: string) {
+    public stringFromCharcode(inp: number[]) {
         // Transpile
         const lua = util.transpileString(
             `return String.fromCharCode(${inp.toString()})`

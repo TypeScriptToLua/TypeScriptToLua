@@ -27,6 +27,20 @@ export class TSHelper {
         return statements.some(statement => statement.kind === kind);
     }
 
+    public static getExtendedType(node: ts.ClassDeclaration, checker: ts.TypeChecker): ts.Type | undefined {
+        if (node.heritageClauses) {
+            for (const clause of node.heritageClauses) {
+                if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
+                    const superType = checker.getTypeAtLocation(clause.types[0]);
+                    if (!this.isPureAbstractClass(superType, checker)) {
+                        return superType;
+                    }
+                }
+            }
+        }
+        return undefined;
+    }
+
     public static isFileModule(sourceFile: ts.SourceFile) {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or

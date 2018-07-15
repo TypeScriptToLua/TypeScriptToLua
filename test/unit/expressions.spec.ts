@@ -520,14 +520,6 @@ export class ExpressionTests {
             .toThrowError(Error, "Unsupported variable declaration type: FalseKeyword");
     }
 
-    @Test("Class without name error")
-    public classWithoutNameError() {
-        const transpiler = util.makeTestTranspiler();
-
-        Expect(() => transpiler.transpileClass({} as ts.ClassDeclaration))
-            .toThrowError(Error, "Unexpected Error: Node has no Name");
-    }
-
     @Test("Unsupported object literal element error")
     public unsupportedObjectLiteralElementError() {
         const transpiler = util.makeTestTranspiler();

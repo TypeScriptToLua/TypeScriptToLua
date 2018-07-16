@@ -144,16 +144,31 @@ export class LuaLibArrayTests {
     @Test("array.splice[Remove]")
     public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
         // Transpile
-        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].splice(${start}, ${deleteCount}, ${newElements}))`);
+        let lua;
+        if (deleteCount) {
+            lua = util.transpileString(
+               `let spliceTestTable = [${inp.toString()}];
+               spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
+               return JSONStringify(spliceTestTable);`
+            );
+        } else {
+            lua = util.transpileString(
+               `let spliceTestTable = [${inp.toString()}];
+               spliceTestTable.splice(${start});
+               return JSONStringify(spliceTestTable);`
+            );
+        }
 
         // Execute
         const result = util.executeLua(lua);
 
         // Assert
         if (deleteCount) {
-            Expect(result).toBe(JSON.stringify(inp.splice(start, deleteCount, ...newElements)));
+            inp.splice(start, deleteCount, ...newElements);
+            Expect(result).toBe(JSON.stringify(inp));
         } else {
-            Expect(result).toBe(JSON.stringify(inp.splice(start)));
+            inp.splice(start);
+            Expect(result).toBe(JSON.stringify(inp));
         }
     }
 

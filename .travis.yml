@@ -6,9 +6,9 @@ install:
 script:
 - npm run build
 # Testing & Coverage
-- npm test
-after_success:
 - npm run coverage
+after_success:
+- codecov
 deploy:
   provider: npm
   email: 'lorenz.junglas@student.kit.edu'

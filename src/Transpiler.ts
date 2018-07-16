@@ -24,6 +24,12 @@ export enum LuaTarget {
     LuaJIT = "JIT",
 }
 
+interface ExportInfo {
+    name: string | ts.__String;
+    node: ts.Node;
+    dummy: boolean;
+}
+
 export abstract class LuaTranspiler {
     public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
 
@@ -38,6 +44,7 @@ export abstract class LuaTranspiler {
     public sourceFile: ts.SourceFile;
     public loopStack: number[];
     public classStack: string[];
+    public exportStack: ExportInfo[][];
 
     constructor(checker: ts.TypeChecker, options: ts.CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
@@ -51,6 +58,7 @@ export abstract class LuaTranspiler {
         this.isModule = tsHelper.isFileModule(sourceFile);
         this.loopStack = [];
         this.classStack = [];
+        this.exportStack = [];
     }
 
     public pushIndent(): void {
@@ -68,6 +76,10 @@ export abstract class LuaTranspiler {
     public accessPrefix(node?: ts.Node): string {
         return node && (this.isModule || this.namespace.length > 0) ?
             "local " : "";
+    }
+
+    public pushExport(nameIn: string | ts.__String, nodeIn: ts.Node, dummyIn: boolean = false) {
+        this.exportStack[this.exportStack.length - 1].push({name: nameIn, node: nodeIn, dummy: dummyIn});
     }
 
     public makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
@@ -135,7 +147,10 @@ export abstract class LuaTranspiler {
         }
 
         // Transpile content statements
+        this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
+        const exps = this.exportStack.pop();
+        exps.forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
 
         if (this.isModule) {
             result += "return exports\n";
@@ -145,7 +160,12 @@ export abstract class LuaTranspiler {
 
     // Transpile a block
     public transpileBlock(block: ts.Block): string {
-        return block.statements.map(statement => this.transpileNode(statement)).join("");
+        this.exportStack.push([]);
+        let result = block.statements.map(statement => this.transpileNode(statement)).join("");
+        const exps = this.exportStack.pop();
+        exps.forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
+
+        return result;
     }
 
     // Transpile a node of unknown kind.
@@ -260,7 +280,7 @@ export abstract class LuaTranspiler {
         if (this.namespace.length > 0) {
             result += this.indent + `${defName} = ${node.name.text} or {}\n`;
         }
-        result += this.makeExport(defName, node);
+        this.pushExport(defName, node);
         // Create closure
         result += this.indent + "do\n";
         this.pushIndent();
@@ -284,7 +304,7 @@ export abstract class LuaTranspiler {
         if (!membersOnly) {
             const name = node.name.escapedText;
             result += this.indent + this.accessPrefix(node) + `${name}={}\n`;
-            result += this.makeExport(name, node);
+            this.pushExport(name, node);
         }
 
         let hasStringInitializers = false;
@@ -1142,7 +1162,7 @@ export abstract class LuaTranspiler {
 
         node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
-            result += this.makeExport((declaration.name as ts.Identifier).escapedText, node);
+            this.pushExport((declaration.name as ts.Identifier).escapedText, node);
         });
 
         return result;
@@ -1230,7 +1250,7 @@ export abstract class LuaTranspiler {
         // Close function block
         result += this.indent + "end\n";
 
-        result += this.makeExport(methodName, node);
+        this.pushExport(methodName, node);
 
         return result;
     }
@@ -1315,7 +1335,7 @@ export abstract class LuaTranspiler {
             result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
         } else {
             // export empty table
-            result += this.makeExport(className, node, true);
+            this.pushExport(className, node, true);
         }
 
         // Overwrite the original className with the class we are overriding for extensions
@@ -1371,11 +1391,11 @@ export abstract class LuaTranspiler {
         const classOr = noClassOr ? "" : `${className} or `;
         if (!extendsType) {
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
-            result += this.makeExport(className, node);
+            this.pushExport(className, node);
         } else {
             const baseName = extendsType.symbol.escapedName;
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`;
-            result += this.makeExport(className, node);
+            this.pushExport(className, node);
         }
         result += this.indent + `${className}.__index = ${className}\n`;
         if (extendsType) {

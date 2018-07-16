@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+* Reworked part of the class system to solve some issues.
+* Reworked class tests from translation to functional.
+* Fixed issue with Lua splice implementation.
+* Added threaded test runner to use for faster testing (use with `npm run test-threaded`).
+* Added support for string-valued enums.
+* Added tsconfig values to target Lua 5.1 and 5.2.
+
 ## 0.5.0
 * Added support for `**` operator.
 * Added support for `~` operator.

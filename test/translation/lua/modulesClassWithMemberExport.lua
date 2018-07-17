@@ -1,6 +1,5 @@
 local exports = exports or {}
 local TestClass = TestClass or {}
-exports.TestClass = TestClass
 TestClass.__index = TestClass
 function TestClass.new(construct, ...)
     local instance = setmetatable({}, TestClass)
@@ -11,4 +10,5 @@ function TestClass.constructor(self)
 end
 function TestClass.memberFunc(self)
 end
+exports.TestClass = TestClass
 return exports

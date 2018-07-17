@@ -35,7 +35,7 @@ export abstract class LuaTranspiler {
 
     public indent: string;
     public checker: ts.TypeChecker;
-    public options: ts.CompilerOptions;
+    public options: CompilerOptions;
     public genVarCounter: number;
     public transpilingSwitch: number;
     public namespace: string[];
@@ -46,7 +46,7 @@ export abstract class LuaTranspiler {
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
-    constructor(checker: ts.TypeChecker, options: ts.CompilerOptions, sourceFile: ts.SourceFile) {
+    constructor(checker: ts.TypeChecker, options: CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
         this.checker = checker;
         this.options = options;
@@ -104,6 +104,12 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    public makeExports(): string {
+        let result = "";
+        this.exportStack.pop().forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
+        return result;
+    }
+
     public getAbsouluteImportPath(relativePath: string) {
         if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
             return path.resolve(this.options.baseUrl, relativePath);
@@ -149,8 +155,7 @@ export abstract class LuaTranspiler {
         // Transpile content statements
         this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
-        const exps = this.exportStack.pop();
-        exps.forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
+        result += this.makeExports();
 
         if (this.isModule) {
             result += "return exports\n";
@@ -162,8 +167,7 @@ export abstract class LuaTranspiler {
     public transpileBlock(block: ts.Block): string {
         this.exportStack.push([]);
         let result = block.statements.map(statement => this.transpileNode(statement)).join("");
-        const exps = this.exportStack.pop();
-        exps.forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
+        result += this.makeExports();
 
         return result;
     }

@@ -24,6 +24,24 @@ export enum LuaTarget {
     LuaJIT = "JIT",
 }
 
+export enum LuaLibFeature {
+    ArrayEvery = "ArrayEvery",
+    ArrayFilter = "ArrayFilter",
+    ArrayForEach = "ArrayForEach",
+    ArrayIndexOf = "ArrayIndexOf",
+    ArrayMap = "ArrayMap",
+    ArrayPush = "ArrayPush",
+    ArraySlice = "ArraySlice",
+    ArraySome = "ArraySome",
+    ArraySplice = "ArraySplice",
+    InstanceOf = "InstanceOf",
+    Map = "Map",
+    Set = "Set",
+    StringReplace = "StringReplace",
+    StringSplit = "StringSplit",
+    Ternary = "Ternary",
+}
+
 interface ExportInfo {
     name: string | ts.__String;
     node: ts.Node;
@@ -46,6 +64,8 @@ export abstract class LuaTranspiler {
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
+    public luaLibFeatureSet: Set<LuaLibFeature>;
+
     constructor(checker: ts.TypeChecker, options: CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
         this.checker = checker;
@@ -59,6 +79,7 @@ export abstract class LuaTranspiler {
         this.loopStack = [];
         this.classStack = [];
         this.exportStack = [];
+        this.luaLibFeatureSet = new Set<LuaLibFeature>();
     }
 
     public pushIndent(): void {
@@ -108,6 +129,11 @@ export abstract class LuaTranspiler {
         let result = "";
         this.exportStack.pop().forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
         return result;
+    }
+
+    public importLuaLibFeature(feature: LuaLibFeature) {
+        // TODO inline imported features in output i option set
+        this.luaLibFeatureSet.add(feature);
     }
 
     public getAbsouluteImportPath(relativePath: string) {
@@ -230,6 +256,11 @@ export abstract class LuaTranspiler {
             default:
                 return this.indent + this.transpileExpression(node) + "\n";
         }
+    }
+
+    public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
+        this.importLuaLibFeature(func);
+        return `__TS__${func}(${params.join(", ")})`;
     }
 
     public transpileImport(node: ts.ImportDeclaration): string {
@@ -779,7 +810,7 @@ export abstract class LuaTranspiler {
                     result = `${rhs}[${lhs}]~=nil`;
                     break;
                 case ts.SyntaxKind.InstanceOfKeyword:
-                    result = `TS_instanceof(${lhs}, ${rhs})`;
+                    result = this.transpileLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
                     break;
                 default:
                     throw new TranspileError(
@@ -823,7 +854,8 @@ export abstract class LuaTranspiler {
         const val1 = this.transpileExpression(node.whenTrue);
         const val2 = this.transpileExpression(node.whenFalse);
 
-        return `TS_ITE(${condition},function() return ${val1} end,function() return ${val2} end)`;
+        return this.transpileLuaLibFunction(LuaLibFeature.Ternary, condition,
+                                       `function() return ${val1} end`, `function() return ${val2} end)`);
     }
 
     public transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
@@ -949,7 +981,7 @@ export abstract class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "replace":
-                return `TS_replace(${caller},${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.StringReplace, caller, params);
             case "indexOf":
                 if (node.arguments.length === 1) {
                     return `(string.find(${caller},${params},1,true) or 0)-1`;
@@ -969,7 +1001,7 @@ export abstract class LuaTranspiler {
             case "toUpperCase":
                 return `string.upper(${caller})`;
             case "split":
-                return `TS_split(${caller},${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.StringSplit, caller, params);
             case "charAt":
                 return `string.sub(${caller},${params}+1,${params}+1)`;
             default:
@@ -1002,23 +1034,23 @@ export abstract class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         switch (expression.name.escapedText) {
             case "push":
-                return `TS_push(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
             case "forEach":
-                return `TS_forEach(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayForEach, caller, params);
             case "indexOf":
-                return `TS_indexOf(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayIndexOf, caller, params);
             case "map":
-                return `TS_map(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayMap, caller, params);
             case "filter":
-                return `TS_filter(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayFilter, caller, params);
             case "some":
-                return `TS_some(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySome, caller, params);
             case "every":
-                return `TS_every(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayEvery, caller, params);
             case "slice":
-                return `TS_slice(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySlice, caller, params);
             case "splice":
-                return `TS_splice(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySplice, caller, params);
             case "join":
                 if (node.arguments.length === 0) {
                     // if seperator is omitted default seperator is ","

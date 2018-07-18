@@ -97,10 +97,10 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     });
 
     // Copy lualib to target dir
-    fs.copyFileSync(
+    /*fs.copyFileSync(
         path.resolve(__dirname, "../dist/lualib/typescript.lua"),
         path.join(options.outDir, "typescript_lualib.lua")
-    );
+    ); */
 }
 
 export function createTranspiler(checker: ts.TypeChecker,

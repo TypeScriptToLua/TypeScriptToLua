@@ -1,7 +1,7 @@
 import { Expect, SetupFixture, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
-import { execCommandLine } from "../../src/Compiler";
+import { compile } from "../../src/Compiler";
 
 export class CompilerOutFileTests {
 
@@ -17,7 +17,7 @@ export class CompilerOutFileTests {
     @Test("Outfile absoulte path")
     public outFileAbsTest() {
         // Compile project
-        execCommandLine(["--outFile", this.outFileAbsPath, path.join(__dirname, "./testfiles/out_file.ts")]);
+        compile(["--outFile", this.outFileAbsPath, path.join(__dirname, "./testfiles/out_file.ts")]);
 
         Expect(fs.existsSync(this.outFileAbsPath)).toBe(true);
     }
@@ -25,7 +25,7 @@ export class CompilerOutFileTests {
     @Test("Outfile relative path")
     public outFileRelTest() {
         // Compile project
-        execCommandLine([
+        compile([
             "--outDir",
             __dirname,
             "--outFile",

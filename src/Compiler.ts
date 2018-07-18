@@ -10,9 +10,13 @@ import { LuaTranspiler52 } from "./targets/Transpiler.52";
 import { LuaTranspiler53 } from "./targets/Transpiler.53";
 import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
 import { LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
-import { TSHelper as tsEx } from "./TSHelper";
 
-export function compile(fileNames: string[], options: CompilerOptions): void {
+export function compile(argv: string[]) {
+    const commandLine = parseCommandLine(argv);
+    compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+}
+
+export function compileFilesWithOptions(fileNames: string[], options: CompilerOptions): void {
     if (!options.luaTarget) {
         options.luaTarget = LuaTarget.LuaJIT;
     }
@@ -123,11 +127,3 @@ export function createTranspiler(checker: ts.TypeChecker,
 
     return luaTargetTranspiler;
 }
-
-export function execCommandLine(argv?: string[]) {
-    argv = argv ? argv : process.argv.slice(2);
-    const commandLine = parseCommandLine(argv);
-    compile(commandLine.fileNames, commandLine.options);
-}
-
-execCommandLine();

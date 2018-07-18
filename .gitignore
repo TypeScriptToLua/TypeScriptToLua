@@ -17,3 +17,5 @@ coverage/
 .idea/
 
 typescript_lualib.lua
+
+dist/*

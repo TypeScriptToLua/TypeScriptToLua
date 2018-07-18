@@ -1,7 +1,7 @@
 import { Expect, Setup, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
-import { execCommandLine } from "../../src/Compiler";
+import { compile } from "../../src/Compiler";
 
 /**
  * Find all files inside a dir, recursively.
@@ -69,7 +69,7 @@ export class CompilerProjectTests {
         const tsconfigPath = path.resolve(__dirname, relPathToProject, tsconfig);
 
         // Compile project
-        execCommandLine(["-p", tsconfigPath]);
+        compile(["-p", tsconfigPath]);
 
         this.filesAfterCompile = getAllFiles(path.resolve(__dirname, relPathToProject));
         expectedFiles = expectedFiles.map(relPath => path.resolve(__dirname, relPathToProject, relPath));

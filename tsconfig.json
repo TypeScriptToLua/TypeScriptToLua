@@ -7,5 +7,5 @@
         "sourceMap": true,
         "experimentalDecorators": true
     },
-    "exclude": ["test/**/*"]
+    "exclude": ["test/**/*", "gulpfile.ts", "src/lualib"]
 }

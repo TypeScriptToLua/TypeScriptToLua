@@ -24,7 +24,7 @@ class Map<TKey, TValue> {
     public delete(key: TKey): boolean {
         const contains = this.has(key);
         if (contains) {
-            this.size = this.size - 1;
+            this.size--;
         }
         this.items[key as any] = undefined;
         return contains;
@@ -63,7 +63,7 @@ class Map<TKey, TValue> {
 
     public set(key: TKey, value: TValue): Map<TKey, TValue> {
         if (!this.has(key)) {
-            this.size = this.size + 1;
+            this.size++;
         }
         this.items[key as any] = value;
         return this;

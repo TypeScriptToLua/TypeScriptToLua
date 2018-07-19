@@ -1,0 +1,14 @@
+interface LuaClass {
+    __index: LuaClass;
+    __base: LuaClass;
+}
+
+function __TS_InstanceOf(obj: LuaClass, classTbl: LuaClass): boolean {
+    while (obj !== undefined) {
+        if (obj.__index === classTbl) {
+            return true;
+        }
+        obj = obj.__base;
+    }
+    return false;
+}

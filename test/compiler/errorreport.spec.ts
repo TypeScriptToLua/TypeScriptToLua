@@ -2,7 +2,7 @@ import { Any, Expect, Setup, SpyOn, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import { compile } from "../../src/Compiler";
+import { compile, compileFilesWithOptions } from "../../src/Compiler";
 
 export class CompilerErrorReportTests {
     private originalStdErr: any;
@@ -15,7 +15,7 @@ export class CompilerErrorReportTests {
     @Test("Compile project")
     public compileProject(errorMsg: string, ...fileNames: string[]) {
         fileNames = fileNames.map((file) => path.resolve(__dirname, "testfiles", file));
-        compile(fileNames, {outDir: ".", rootDir: "."});
+        compileFilesWithOptions(fileNames, {outDir: ".", rootDir: "."});
 
         Expect(process.stderr.write).toHaveBeenCalledWith(errorMsg, Any);
 

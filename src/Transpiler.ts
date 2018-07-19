@@ -855,7 +855,7 @@ export abstract class LuaTranspiler {
         const val2 = this.transpileExpression(node.whenFalse);
 
         return this.transpileLuaLibFunction(LuaLibFeature.Ternary, condition,
-                                       `function() return ${val1} end`, `function() return ${val2} end)`);
+                                            `function() return ${val1} end`, `function() return ${val2} end)`);
     }
 
     public transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {

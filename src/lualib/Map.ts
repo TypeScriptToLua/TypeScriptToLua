@@ -9,26 +9,31 @@ class Map<TKey, TValue> {
 
         if (other) {
             this.size = other.size;
-            other.forEach((value, key) => {this.items[key] = value; });
+            for (const [key, value] of other.entries()) {
+                this.items[key] = value;
+            }
         }
     }
 
     public clear(): void {
         this.items = {};
         this.size = 0;
+        return;
     }
 
     public delete(key: TKey): boolean {
         const contains = this.has(key);
+        if (contains) {
+            this.size = this.size - 1;
+        }
         this.items[key as any] = undefined;
-        this.size = this.size - 1;
         return contains;
     }
 
     public entries(): Array<[TKey, TValue]> {
         const out = [];
         for (const key in this.items) {
-            out[out.length + 1] = [key, this.items[key]];
+            out[out.length] = [key, this.items[key]];
         }
         return out;
     }
@@ -37,6 +42,7 @@ class Map<TKey, TValue> {
         for (const key in this.items) {
             callback(this.items[key], key as any, this);
         }
+        return;
     }
 
     public get(key: TKey): TValue {
@@ -44,13 +50,13 @@ class Map<TKey, TValue> {
     }
 
     public has(key: TKey): boolean {
-        return this.items[key as any] != undefined;
+        return this.items[key as any] !== undefined;
     }
 
     public keys(): TKey[] {
         const out = [];
         for (const key in this.items) {
-            out[out.length + 1] = key;
+            out[out.length] = key;
         }
         return out;
     }
@@ -66,7 +72,7 @@ class Map<TKey, TValue> {
     public values(): TValue[] {
         const out = [];
         for (const key in this.items) {
-            out[out.length + 1] = this.items[key];
+            out[out.length] = this.items[key];
         }
         return out;
     }

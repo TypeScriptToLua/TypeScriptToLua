@@ -9,6 +9,7 @@
         "align": [true, "parameters", "statements", "arguments", "members", "elements"],
         "arrow-parens": [true, "ban-single-arg-parens"],
         "class-name": true,
+        "forin": false,
         "no-bitwise": false,
         "indent": [true, "spaces", 4],
         "max-classes-per-file": 1,

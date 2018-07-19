@@ -97,10 +97,12 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     });
 
     // Copy lualib to target dir
-    fs.copyFileSync(
-        path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-        path.join(options.outDir, "lualib_bundle.lua")
-    );
+    if (!options.dontRequireLuaLib) {
+        fs.copyFileSync(
+            path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
+            path.join(options.outDir, "lualib_bundle.lua")
+        );
+    }
 }
 
 export function createTranspiler(checker: ts.TypeChecker,

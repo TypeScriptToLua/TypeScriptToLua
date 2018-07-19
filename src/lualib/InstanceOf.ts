@@ -3,7 +3,7 @@ interface LuaClass {
     __base: LuaClass;
 }
 
-function __TS_InstanceOf(obj: LuaClass, classTbl: LuaClass): boolean {
+function __TS__InstanceOf(obj: LuaClass, classTbl: LuaClass): boolean {
     while (obj !== undefined) {
         if (obj.__index === classTbl) {
             return true;

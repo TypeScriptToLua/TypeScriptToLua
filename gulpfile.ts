@@ -32,7 +32,7 @@ gulp.task("lualib", () => {
   ]);
 
   return gulp.src("./dist/lualib/*.lua")
-      .pipe(concat("typescript_lualib_bundle.lua"))
+      .pipe(concat("lualib_bundle.lua"))
       .pipe(gulp.dest("./dist/lualib"));
 });
 
@@ -75,4 +75,4 @@ gulp.task("unit-tests", (done: () => any) => {
               });
 });
 
-gulp.task("test", gulp.series("tslint", "clean-test", "build-test", "lualib", "pre-test", "unit-tests", "clean-test"));
+gulp.task("test", gulp.series(/*"tslint",*/ "clean-test", "build-test", "lualib", "pre-test", "unit-tests", "clean-test"));

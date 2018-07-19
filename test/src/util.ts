@@ -114,7 +114,7 @@ export function transpileAndExecute(ts: string): any {
     return executeLua(transpileString(ts));
 }
 
-const tslualib = fs.readFileSync("dist/lualib/typescript.lua") + "\n";
+const tslualib = fs.readFileSync("dist/lualib/lualib_bundle.lua") + "\n";
 
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 

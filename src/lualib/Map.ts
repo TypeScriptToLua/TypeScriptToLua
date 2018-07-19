@@ -9,7 +9,7 @@ class Map<TKey, TValue> {
 
         if (other) {
             this.size = other.size;
-            other.forEach((value, key) => this.items[key] = value);
+            other.forEach((value, key) => {this.items[key] = value; });
         }
     }
 

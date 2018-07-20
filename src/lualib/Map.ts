@@ -3,7 +3,7 @@ class Map<TKey, TValue> {
 
     private items: {[key: string]: TValue}; // Type of key is actually TKey
 
-    public Map(other: any) {
+    constructor(other: any) {
         this.items = {};
         this.size = 0;
 

@@ -3,7 +3,7 @@ class Set<TValue> {
 
     private items: {[key: string]: boolean}; // Key type is actually TValue
 
-    public Set(other: any) {
+    constructor(other: any) {
         this.items = {};
         this.size = 0;
 

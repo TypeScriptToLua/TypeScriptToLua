@@ -1,6 +1,7 @@
-import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import * as util from "../../src/util";
 
+@FocusTests
 export class SetTests {
     @Test("set constructor")
     public setConstructor() {
@@ -13,6 +14,15 @@ export class SetTests {
     @Test("set iterable constructor")
     public setIterableConstructor() {
         const lua = util.transpileString(`let myset = new Set(["a", "b"]);
+                                          return myset.has("a") || myset.has("b");`);
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(true);
+    }
+
+    @Test("set iterable constructor set")
+    public setIterableConstructorSet() {
+        const lua = util.transpileString(`let myset = new Set(new Set(["a", "b"]));
                                           return myset.has("a") || myset.has("b");`);
         const result = util.executeLua(lua);
 
@@ -44,6 +54,16 @@ export class SetTests {
         const lua = util.transpileString(setTS + `return myset.has("b") && !myset.has("a");`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(true);
+    }
+
+    @Test("set entries")
+    public setEntries() {
+        const lua = util.transpileString(`let myset = new Set([5, 6, 7]);
+                                          let count = 0;
+                                          for (var [key, value] of myset.entries()) { count += key + value; }
+                                          return count;`);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(36);
     }
 
     @Test("set foreach")

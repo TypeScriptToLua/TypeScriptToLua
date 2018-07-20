@@ -1,7 +1,7 @@
 class Map<TKey, TValue> {
     public size: number;
 
-    private items: {[key: string]: TValue};
+    private items: {[key: string]: TValue}; // Type of key is actually TKey
 
     public Map(other: any) {
         this.items = {};

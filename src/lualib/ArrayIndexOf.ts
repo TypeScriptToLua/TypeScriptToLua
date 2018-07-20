@@ -15,7 +15,7 @@ function __TS__ArrayIndexOf<T>(arr: T[], searchElement: T, fromIndex?: number) {
 
     let k;
     if (n >= 0) {
-        k = 0;
+        k = n;
     } else {
         k = len + n;
         if (k < 0) {

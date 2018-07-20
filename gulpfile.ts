@@ -18,23 +18,27 @@ gulp.task("build", () => {
   return tsProject.src().pipe(tsProject()).js.pipe(gulp.dest("dist"));
 });
 
-gulp.task("lualib", () => {
-  compile([
-    "-ah",
-    "--dontRequireLuaLib",
-    "--luaTarget",
-    "5.1",
-    "--outDir",
-    "./dist/lualib",
-    "--rootDir",
-    "./src/lualib",
-    ...glob.sync("./src/lualib/*.ts"),
-  ]);
+gulp.task("clean-lualib", () => del("./dist/lualib/*.lua"));
 
-  return gulp.src("./dist/lualib/*.lua")
-      .pipe(concat("lualib_bundle.lua"))
-      .pipe(gulp.dest("./dist/lualib"));
-});
+gulp.task("build-lualib", () => {
+    compile([
+      "-ah",
+      "--dontRequireLuaLib",
+      "--luaTarget",
+      "5.1",
+      "--outDir",
+      "./dist/lualib",
+      "--rootDir",
+      "./src/lualib",
+      ...glob.sync("./src/lualib/*.ts"),
+    ]);
+
+    return gulp.src("./dist/lualib/*.lua")
+        .pipe(concat("lualib_bundle.lua"))
+        .pipe(gulp.dest("./dist/lualib"));
+  });
+
+gulp.task("lualib", gulp.series("clean-lualib", "build-lualib"));
 
 gulp.task("default", gulp.series("build", "lualib"));
 

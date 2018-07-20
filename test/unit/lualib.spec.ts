@@ -204,20 +204,26 @@ export class LuaLibArrayTests {
     @TestCase([], "test1")
     @TestCase(["test1"], "test1")
     @TestCase(["test1", "test2"], "test2")
+    @TestCase(["test1", "test2", "test3"], "test3", 1)
+    @TestCase(["test1", "test2", "test3"], "test1", 2)
+    @TestCase(["test1", "test2", "test3"], "test1", -2)
+    @TestCase(["test1", "test2", "test3"], "test1", 12)
     @Test("array.indexOf")
-    public indexOf(inp: string[], element: string) {
-        // Transpile
-        const lua = util.transpileString(
-            `return ${JSON.stringify(inp)}.indexOf("${element}"))`
+    public indexOf(inp: string[], element: string, fromIndex?: number) {
+        let str = `return ${JSON.stringify(inp)}.indexOf("${element}"))`;
+        if (fromIndex) {
+            str = `return ${JSON.stringify(inp)}.indexOf("${element}", ${fromIndex}))`;
+        }
 
-        );
+        // Transpile
+        const lua = util.transpileString(str);
 
         // Execute
         const result = util.executeLua(lua);
 
         // Assert
-        // Acount for lua indexing (-1)
-        Expect(result).toBe(inp.indexOf(element));
+        // Account for lua indexing (-1)
+        Expect(result).toBe(inp.indexOf(element, fromIndex));
     }
 
     @TestCase([1, 2, 3], 3)

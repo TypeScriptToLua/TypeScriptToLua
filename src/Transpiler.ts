@@ -727,6 +727,8 @@ export abstract class LuaTranspiler {
                 return this.transpileExpression((node as ts.AsExpression).expression);
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
+            case ts.SyntaxKind.EmptyStatement:
+                    return "";
             default:
                 throw new TranspileError(
                     "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),

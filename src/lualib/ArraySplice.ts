@@ -84,7 +84,7 @@ function __TS__ArraySplice<T>(list: T[], start: number, deleteCount: number, ...
     }
 
     // 19.
-    for (let k = list.length - 1; k > len - actualDeleteCount + itemCount; k--) {
+    for (let k = list.length - 1; k >= len - actualDeleteCount + itemCount; k--) {
         list[k] = undefined;
     }
 

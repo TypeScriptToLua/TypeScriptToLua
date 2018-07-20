@@ -1,7 +1,6 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../../src/util";
 
-@FocusTests
 export class SetTests {
     @Test("set constructor")
     public setConstructor() {

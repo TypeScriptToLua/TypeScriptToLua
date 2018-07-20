@@ -3,14 +3,19 @@ class Set<TValue> {
 
     private items: {[key: string]: boolean}; // Key type is actually TValue
 
-    constructor(other: any) {
+    constructor(other: Set<TValue> | TValue[]) {
         this.items = {};
         this.size = 0;
 
-        if (other) {
+        if (other instanceof Set) {
             this.size = other.size;
             for (const value of other.values()) {
-                this.items[value] = true;
+                this.items[value as any] = true as any;
+            }
+        } else if (other !== undefined) {
+            this.size = other.length;
+            for (const value of other) {
+                this.items[value as any] = true as any;
             }
         }
     }

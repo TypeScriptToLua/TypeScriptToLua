@@ -3,14 +3,19 @@ class Map<TKey, TValue> {
 
     private items: {[key: string]: TValue}; // Type of key is actually TKey
 
-    constructor(other: any) {
+    constructor(other: Map<TKey, TValue> | Array<[TKey, TValue]>) {
         this.items = {};
         this.size = 0;
 
-        if (other) {
+        if (other instanceof Map) {
             this.size = other.size;
             for (const [key, value] of other.entries()) {
-                this.items[key] = value;
+                this.items[key as any] = value;
+            }
+        } else if (other !== undefined) {
+            this.size = other.length;
+            for (const [key, value] of other) {
+                this.items[key as any] = value;
             }
         }
     }

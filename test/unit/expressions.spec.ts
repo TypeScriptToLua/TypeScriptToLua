@@ -181,13 +181,6 @@ export class ExpressionTests {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
-    @TestCase("1 + a ? 3*a : c", "TS_ITE(1+a,function() return 3*a end,function() return c end)")
-    @TestCase("a ? b : c", "TS_ITE(a,function() return b end,function() return c end)")
-    @Test("Ternary operator")
-    public conditional(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
-    }
-
     @Test("Null Expression")
     public nullExpression() {
         Expect(util.transpileString("null")).toBe("nil");

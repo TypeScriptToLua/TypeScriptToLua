@@ -1,7 +1,7 @@
-function __TS__Ternary(condition: any, cb1: () => void, cb2: () => void) {
+function __TS__Ternary<T>(condition: boolean, cb1: () => T, cb2: () => T): T {
     if (condition) {
-        cb1();
+        return cb1();
     } else {
-        cb2();
+        return cb2();
     }
 }

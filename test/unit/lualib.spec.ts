@@ -1,6 +1,7 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 import * as util from "../src/util";
 
+@FocusTests
 export class LuaLibArrayTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
@@ -260,5 +261,40 @@ export class LuaLibArrayTests {
 
         // Assert
         Expect(result).toBe(JSON.stringify([0].concat(inp)));
+    }
+
+    @TestCase("true", "4", "5", 4)
+    @TestCase("false", "4", "5", 5)
+    @TestCase("3", "4", "5", 4)
+    @Test("Ternary Conditional")
+    public ternaryConditional(condition: string, lhs: string, rhs: string, expected: any) {
+        // Transpile
+        const lua = util.transpileString(`return ${condition} ? ${lhs} : ${rhs};`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("true", 11)
+    @TestCase("false", 13)
+    @TestCase("a < 4", 13)
+    @TestCase("a == 8", 11)
+    @Test("Ternary Conditional Delayed")
+    public ternaryConditionalDelayed(condition: string, expected: any) {
+        // Transpile
+        const lua = util.transpileString(
+            `let a = 3;
+             let delay = () => ${condition} ? a + 3 : a + 5;
+             a = 8;
+             return delay();`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
     }
 }

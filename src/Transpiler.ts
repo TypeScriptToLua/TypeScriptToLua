@@ -637,9 +637,18 @@ export abstract class LuaTranspiler {
                 return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
             }
 
-            // Otherwise just do a normal return
+            // If the expression is an assignment transpile as 2 lines, one containing expression, one returning
+            // the left-hand side of the expression.
+            if (ts.isBinaryExpression(node.expression)
+                && (tsHelper.isBinaryAssignmentToken(node.expression.operatorToken.kind)[0]
+                    || node.expression.operatorToken.kind === ts.SyntaxKind.EqualsToken)) {
+                return this.transpileExpression(node.expression) + "\n"
+                     + this.indent + "   return " + this.transpileExpression(node.expression.left);
+            }
+
             return "return " + this.transpileExpression(node.expression);
         } else {
+            // Empty return
             return "return";
         }
     }
@@ -1599,7 +1608,9 @@ export abstract class LuaTranspiler {
             this.popIndent();
             return result + this.indent + "end\n";
         } else {
-            return `function(${paramNames.join(",")}) return ` + this.transpileExpression(node.body) + " end";
+            // Transpile as return value
+            const returnVal = this.transpileReturn(ts.createReturn(node.body));
+            return `function(${paramNames.join(",")}) ${returnVal} end`;
         }
     }
 

@@ -473,7 +473,6 @@ export abstract class LuaTranspiler {
     public transpileForOf(node: ts.ForOfStatement): string {
         // Get variable identifier
         const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
 
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
@@ -483,7 +482,15 @@ export abstract class LuaTranspiler {
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
-        let result = this.indent + `for _, ${this.transpileIdentifier(identifier)} in ${pairs}(${expression}) do\n`;
+        let result = "";
+        if (ts.isIdentifier(variable.name)) {
+            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in ${pairs}(${expression}) do\n`;
+        } else if (ts.isArrayBindingPattern(variable.name)) {
+            const valueVar =  "__forOfValue" + this.genVarCounter;
+            result = this.indent + `for _, ${valueVar} in ${pairs}(${expression}) do\n`;
+            const declaration = ts.createVariableDeclaration(variable.name, undefined, ts.createIdentifier(valueVar));
+            result += this.indent + this.transpileVariableDeclaration(declaration);
+        }
 
         // For body
         this.pushIndent();
@@ -1215,6 +1222,17 @@ export abstract class LuaTranspiler {
             return escapedText.substr(1);
         }
         return escapedText;
+    }
+
+    public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {
+        if (ts.isOmittedExpression(name)) {
+            return "_";
+        } else if (ts.isIdentifier(name)) {
+            return this.transpileIdentifier(name);
+        } else {
+            const kind = tsHelper.enumName(name.kind, ts.SyntaxKind);
+            throw new TranspileError(`Encountered not-supported array binding element kind: ${kind}`, name);
+        }
     }
 
     public transpileTypeOfExpression(node: ts.TypeOfExpression): string {

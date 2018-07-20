@@ -53,6 +53,8 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
             try {
                 const rootDir = options.rootDir;
 
+                console.log(`Transpiling ${sourceFile.fileName}...`);
+
                 // Transpile AST
                 const lua = createTranspiler(checker, options, sourceFile).transpileSourceFile();
 

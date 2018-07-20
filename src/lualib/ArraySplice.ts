@@ -1,5 +1,5 @@
 // https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf
-function __TS__ArraySplice<T>(list: T[], start: number, deleteCount: number, ...items: T[]) {
+function __TS__ArraySplice<T>(list: T[], start: number, deleteCount: number, ...items: T[]): T[] {
     // 1. 2.
     const len = list.length;
 

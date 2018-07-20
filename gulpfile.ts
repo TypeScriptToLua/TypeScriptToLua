@@ -22,7 +22,7 @@ gulp.task("lualib", () => {
   compile([
     "-ah",
     "--dontRequireLuaLib",
-    "-lt",
+    "--luaTarget",
     "5.1",
     "--outDir",
     "./dist/lualib",

@@ -4,9 +4,12 @@ import * as glob from "glob";
 import * as gulp from "gulp";
 import * as concat from "gulp-concat";
 import * as istanbul from "gulp-istanbul";
+import * as shell from "gulp-shell";
 import tslint from "gulp-tslint";
 import * as ts from "gulp-typescript";
 import { TapBark } from "tap-bark";
+
+import * as remapIstanbul from "remap-istanbul/lib/gulpRemapIstanbul";
 
 import {parseCommandLine} from "./src/CommandLineParser";
 import {compile, compileFilesWithOptions} from "./src/Compiler";
@@ -50,33 +53,33 @@ gulp.task(
 
 gulp.task("clean-test", () => del("./test/**/*.spec.js"));
 
-gulp.task("build-test", () => {
-    const tsProject = ts.createProject("./test/tsconfig.json");
-    return tsProject.src().pipe(tsProject()).js.pipe(gulp.dest("./test"));
-});
+gulp.task("build-test", shell.task("tsc -p ./test", {cwd: __dirname}));
 
 gulp.task("pre-test", () =>
-    gulp.src(["src/**/*.js"])
+    gulp.src(["./src/**/*.js"])
       .pipe(istanbul())
       .pipe(istanbul.hookRequire())
 );
 
-gulp.task("unit-tests", (done: () => any) => {
+gulp.task("unit-tests", done => {
     const testSet = TestSet.create();
 
     testSet.addTestsFromFiles("./test/**/*.spec.js");
 
     const testRunner = new TestRunner();
 
-    testRunner.outputStream
-              .pipe(TapBark.create().getPipeable())
-              .pipe(process.stdout);
+    // testRunner.outputStream
+      //          .pipe(TapBark.create().getPipeable())
+        //        .pipe(process.stdout);
 
     testRunner.run(testSet)
               .then(() => {
-                  istanbul.writeReports();
-                  done();
-              });
+                  console.log("sdasddsadasdas");
+                  gulp.src("./coverage/coverage-final.json")
+                    .pipe(istanbul.writeReports({reporters: ["lcov", "json", "text"]}))
+                    .pipe(remapIstanbul())
+                    .pipe(gulp.dest("coverage-remapped")).on("end", done);
+            }).catch(error => console.log(error));
 });
 
 gulp.task("test", gulp.series(/*"tslint",*/ "clean-test", "build-test", "lualib", "pre-test", "unit-tests", "clean-test"));

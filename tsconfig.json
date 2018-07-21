@@ -9,5 +9,5 @@
         "target": "es6",
         "module": "commonjs"
     },
-    "exclude": ["test/**/*", "gulpfile.ts", "src/lualib"]
+    "exclude": ["test/**/*", "build_lualib.ts", "src/lualib"]
 }

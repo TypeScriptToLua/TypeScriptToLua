@@ -1,4 +1,4 @@
-import { Expect, Setup, Teardown, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Setup, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
 import { compile } from "../../src/Compiler";
@@ -17,7 +17,6 @@ function getAllFiles(dir: string): string[] {
     );
 }
 
-@FocusTests
 export class CompilerProjectTests {
 
     private existingFiles: string[];

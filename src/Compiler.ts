@@ -7,7 +7,7 @@ import { LuaTranspiler51 } from "./targets/Transpiler.51";
 import { LuaTranspiler52 } from "./targets/Transpiler.52";
 import { LuaTranspiler53 } from "./targets/Transpiler.53";
 import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
-import { LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
+import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
 
 export function compile(argv: string[]) {
     const commandLine = parseCommandLine(argv);
@@ -97,7 +97,7 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     });
 
     // Copy lualib to target dir
-    if (!options.dontRequireLuaLib) {
+    if (options.luaLibImport === LuaLibImportKind.Require) {
         fs.copyFileSync(
             path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
             path.join(options.outDir, "lualib_bundle.lua")

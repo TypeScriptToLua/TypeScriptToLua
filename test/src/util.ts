@@ -13,7 +13,7 @@ const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.es6.d.ts')).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { dontRequireLuaLib: true, luaTarget: LuaTarget.Lua53 }): string {
+export function transpileString(str: string, options: CompilerOptions = { luaLibImport: "require", luaTarget: LuaTarget.Lua53 }): string {
     const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -55,7 +55,7 @@ export function transpileFile(filePath: string): string {
     const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
     diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
 
-    const options: ts.CompilerOptions = { dontRequireLuaLib: true };
+    const options: ts.CompilerOptions = { luaLibImport: "none" };
     const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
     return result.trim();
 }
@@ -106,7 +106,7 @@ export function expectCodeEqual(code1: string, code2: string) {
 // Get a mock transpiler to use for testing
 export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53) {
     return createTranspiler({} as ts.TypeChecker,
-                            { dontRequireLuaLib: true, luaTarget: target } as any,
+                            { luaLibImport: "none", luaTarget: target } as any,
                             { statements: [] } as any as ts.SourceFile);
 }
 

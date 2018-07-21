@@ -3,8 +3,8 @@ import * as glob from "glob";
 import {compile} from "./src/Compiler";
 
 compile([
-    "-ah",
-    "--dontRequireLuaLib",
+    "--luaLibImport",
+    "none",
     "--luaTarget",
     "5.1",
     "--outDir",

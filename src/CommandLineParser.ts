@@ -6,7 +6,7 @@ import * as yargs from "yargs";
 export interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
     luaTarget?: string;
-    dontRequireLuaLib?: boolean;
+    luaLibImport?: string;
 }
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
@@ -24,10 +24,11 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },
-    dontRequireLuaLib: {
-        default: false,
-        describe: "Dont require lua library that enables advanced Typescipt/JS functionality.",
-        type: "boolean",
+    luaLibImport: {
+        choices: ["inline", "require", "none"],
+        default: "inline",
+        describe: "Specify Lua target version.",
+        type: "string",
     },
     luaTarget: {
         alias: "lt",
@@ -117,6 +118,9 @@ function addTSTLOptions(commandLine: ts.ParsedCommandLine,
 
 /** Check the current state of the ParsedCommandLine for errors */
 function runDiagnostics(commandLine: ts.ParsedCommandLine) {
+    // Remove files that dont exist
+    commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
+
     const tsInvalidCompilerOptionErrorCode = 5023;
     if (commandLine.errors.length !== 0) {
         // Generate a list of valid option names and aliases

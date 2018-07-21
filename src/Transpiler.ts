@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "./CommandLineParser";
 import { TSHelper as tsHelper } from "./TSHelper";
 
+import * as fs from "fs";
 import * as path from "path";
 
 /* tslint:disable */
@@ -40,6 +41,12 @@ export enum LuaLibFeature {
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
     Ternary = "Ternary",
+}
+
+export enum LuaLibImportKind {
+    Inline = "inline",
+    Require = "require",
+    None = "none",
 }
 
 interface ExportInfo {
@@ -171,9 +178,9 @@ export abstract class LuaTranspiler {
             "-- https://github.com/Perryvw/TypescriptToLua\n";
         }
         let result = header;
-        if (!this.options.dontRequireLuaLib) {
+        if (this.options.luaLibImport === LuaLibImportKind.Require) {
             // require helper functions
-            result += `require("typescript_lualib")\n`;
+            result += `require("lualib_bundle")\n`;
         }
         if (this.isModule) {
             // Shadow exports if it already exists
@@ -187,6 +194,13 @@ export abstract class LuaTranspiler {
 
         if (this.isModule) {
             result += "return exports\n";
+        }
+
+        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
+            for (const feature of this.luaLibFeatureSet) {
+                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+                result += fs.readFileSync(featureFile) + "\n";
+            }
         }
         return result;
     }

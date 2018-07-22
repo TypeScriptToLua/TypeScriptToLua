@@ -107,7 +107,7 @@ export abstract class LuaTranspiler {
             "local " : "";
     }
 
-    public pushExport(nameIn: string, nodeIn: ts.Node, dummyIn: boolean = false) {
+    public pushExport(nameIn: string, nodeIn: ts.Node, dummyIn: boolean = false): void {
         this.exportStack[this.exportStack.length - 1].push({name: nameIn, node: nodeIn, dummy: dummyIn});
     }
 
@@ -135,24 +135,23 @@ export abstract class LuaTranspiler {
 
     public makeExports(): string {
         let result = "";
-        this.exportStack.pop().forEach(
-            exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
+        this.exportStack.pop().forEach(exp => result += this.makeExport(exp.name, exp.node, exp.dummy));
         return result;
     }
 
-    public importLuaLibFeature(feature: LuaLibFeature) {
+    public importLuaLibFeature(feature: LuaLibFeature): void {
         // TODO inline imported features in output i option set
         this.luaLibFeatureSet.add(feature);
     }
 
-    public getAbsoluteImportPath(relativePath: string) {
+    public getAbsoluteImportPath(relativePath: string): string {
         if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
             return path.resolve(this.options.baseUrl, relativePath);
         }
         return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
     }
 
-    public getImportPath(relativePath: string) {
+    public getImportPath(relativePath: string): string {
         // Calculate absolute path to import
         const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
         if (this.options.rootDir) {
@@ -166,7 +165,7 @@ export abstract class LuaTranspiler {
         return `"${this.pathToLuaRequirePath(relativePath)}"`;
     }
 
-    public pathToLuaRequirePath(filePath: string) {
+    public pathToLuaRequirePath(filePath: string): string {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
@@ -299,19 +298,20 @@ export abstract class LuaTranspiler {
         if (ts.isNamedImports(imports)) {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
+
             let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
             this.importCount++;
+
             imports.elements.forEach(element => {
                 const nameText = this.transpileIdentifier(element.name);
                 if (element.propertyName) {
                     const propertyText = this.transpileIdentifier(element.propertyName);
-                    result +=
-                        `local ${nameText} = ${fileImportTable}.${propertyText}\n`;
+                    result += `local ${nameText} = ${fileImportTable}.${propertyText}\n`;
                 } else {
-                    result +=
-                        `local ${nameText} = ${fileImportTable}.${nameText}\n`;
+                    result += `local ${nameText} = ${fileImportTable}.${nameText}\n`;
                 }
             });
+
             return result;
         } else if (ts.isNamespaceImport(imports)) {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
@@ -875,7 +875,7 @@ export abstract class LuaTranspiler {
         throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
     }
 
-    public transpileTemplateExpression(node: ts.TemplateExpression) {
+    public transpileTemplateExpression(node: ts.TemplateExpression): string {
         const parts = [`"${node.head.text}"`];
         node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
@@ -963,7 +963,7 @@ export abstract class LuaTranspiler {
         return isTupleReturn && !isInDestructingAssignment ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 
-    public transpilePropertyCall(node: ts.CallExpression) {
+    public transpilePropertyCall(node: ts.CallExpression): string {
         let params;
         let callPath;
 
@@ -1240,6 +1240,8 @@ export abstract class LuaTranspiler {
         }
     }
 
+    // Counter-act typescript's identifier escaping:
+    // https://github.com/Microsoft/TypeScript/blob/master/src/compiler/utilities.ts#L556
     public transpileIdentifier(identifier: ts.Identifier): string {
         const escapedText = identifier.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
@@ -1254,7 +1256,7 @@ export abstract class LuaTranspiler {
 
     public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {
         if (ts.isOmittedExpression(name)) {
-            return "_";
+            return "__";
         } else if (ts.isIdentifier(name)) {
             return this.transpileIdentifier(name);
         } else {
@@ -1274,8 +1276,8 @@ export abstract class LuaTranspiler {
 
         node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
-            if (ts.isIdentifier((declaration.name as ts.Identifier))) {
-                this.pushExport(this.transpileIdentifier((declaration.name as ts.Identifier)), node);
+            if (ts.isIdentifier(declaration.name)) {
+                this.pushExport(this.transpileIdentifier(declaration.name as ts.Identifier), node);
             }
         });
 
@@ -1301,9 +1303,7 @@ export abstract class LuaTranspiler {
                 throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
             }
 
-            const vars = node.name.elements.map(
-                    element =>
-                        (this.transpileIdentifier((element as ts.BindingElement).name as ts.Identifier))).join(",");
+            const vars = node.name.elements.map(this.transpileArrayBindingElement).join(",");
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {

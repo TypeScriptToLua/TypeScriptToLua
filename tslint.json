@@ -28,7 +28,12 @@
             }
         ],
         "interface-name": false,
-        "radix": false
+        "radix": false,
+        "typedef": [
+          true,
+          "call-signature",
+          "property-declaration"
+        ]
     },
     "rulesDirectory": []
 }

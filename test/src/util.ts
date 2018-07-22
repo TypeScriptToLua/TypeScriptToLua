@@ -1,19 +1,19 @@
-import * as ts from "typescript";
 import * as path from "path";
+import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
 import { CompilerOptions } from "../../src/CommandLineParser";
 import { createTranspiler } from "../../src/Compiler";
+import { LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 const fs = require("fs");
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve('typescript')), 'lib.es6.d.ts')).toString();
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { luaLibImport: "require", luaTarget: LuaTarget.Lua53 }): string {
+export function transpileString(str: string, options: CompilerOptions = { luaLibImport: "none", luaTarget: LuaTarget.Lua53 }): string {
     const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,

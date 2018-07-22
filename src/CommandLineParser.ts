@@ -18,11 +18,6 @@ export class CLIError extends Error {
 }
 
 const optionDeclarations: { [key: string]: yargs.Options } = {
-    noHeader: {
-        default: false,
-        describe: "Specify if a header will be added to compiled files.",
-        type: "boolean",
-    },
     luaLibImport: {
         choices: ["inline", "require", "none"],
         default: "inline",
@@ -35,6 +30,11 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
         default: "JIT",
         describe: "Specify Lua target version.",
         type: "string",
+    },
+    noHeader: {
+        default: false,
+        describe: "Specify if a header will be added to compiled files.",
+        type: "boolean",
     },
 };
 

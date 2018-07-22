@@ -1,6 +1,9 @@
 import concat = require("concat");
 import * as glob from "glob";
 import {compile} from "./src/Compiler";
+import * as fs from "fs";
+
+const bundlePath = "./dist/lualib/lualib_bundle.lua";
 
 compile([
     "--luaLibImport",
@@ -15,4 +18,6 @@ compile([
     ...glob.sync("./src/lualib/*.ts"),
   ]);
 
-concat(glob.sync("./dist/lualib/*.lua"), "./dist/lualib/lualib_bundle.lua");
+fs.unlinkSync(bundlePath);
+
+concat(glob.sync("./dist/lualib/*.lua"), bundlePath);

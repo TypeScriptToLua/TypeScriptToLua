@@ -187,17 +187,20 @@ export abstract class LuaTranspiler {
             result += "local exports = exports or {}\n";
         }
 
-        // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
-            for (const feature of this.luaLibFeatureSet) {
-                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-                result += fs.readFileSync(featureFile) + "\n";
-            }
-        }
-
         // Transpile content statements
         this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
+
+        // Inline lualib features
+        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
+            result += "\n" + "-- Lua Library Imports\n";
+            for (const feature of this.luaLibFeatureSet) {
+                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+                result += fs.readFileSync(featureFile).toString() + "\n";
+            }
+        }
+
+        // Exports
         result += this.makeExports();
 
         if (this.isModule) {

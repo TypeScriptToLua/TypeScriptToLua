@@ -1259,6 +1259,8 @@ export abstract class LuaTranspiler {
             return "__";
         } else if (ts.isIdentifier(name)) {
             return this.transpileIdentifier(name);
+        } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
+            return this.transpileIdentifier(name.name);
         } else {
             const kind = tsHelper.enumName(name.kind, ts.SyntaxKind);
             throw new TranspileError(`Encountered not-supported array binding element kind: ${kind}`, name);
@@ -1303,7 +1305,7 @@ export abstract class LuaTranspiler {
                 throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
             }
 
-            const vars = node.name.elements.map(this.transpileArrayBindingElement).join(",");
+            const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {

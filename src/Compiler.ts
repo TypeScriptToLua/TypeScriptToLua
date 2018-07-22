@@ -9,7 +9,7 @@ import { LuaTranspiler53 } from "./targets/Transpiler.53";
 import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
 import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
 
-export function compile(argv: string[]) {
+export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
     compileFilesWithOptions(commandLine.fileNames, commandLine.options);
 }

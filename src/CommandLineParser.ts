@@ -102,7 +102,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
 
 function addTSTLOptions(commandLine: ts.ParsedCommandLine,
                         additionalArgs?: yargs.Arguments,
-                        forceOverride?: boolean) {
+                        forceOverride?: boolean): void {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw;
     // Add compiler options that are ignored by TS parsers
     if (additionalArgs) {
@@ -116,7 +116,7 @@ function addTSTLOptions(commandLine: ts.ParsedCommandLine,
 }
 
 /** Check the current state of the ParsedCommandLine for errors */
-function runDiagnostics(commandLine: ts.ParsedCommandLine) {
+function runDiagnostics(commandLine: ts.ParsedCommandLine): void {
     // Remove files that dont exist
     commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
 
@@ -154,7 +154,7 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 }
 
 /** Find configFile, function from ts api seems to be broken? */
-export function findConfigFile(commandLine: ts.ParsedCommandLine) {
+export function findConfigFile(commandLine: ts.ParsedCommandLine): void {
     if (!commandLine.options.project) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }

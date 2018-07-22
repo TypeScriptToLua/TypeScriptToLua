@@ -7,6 +7,7 @@ compile([
     "none",
     "--luaTarget",
     "5.1",
+    "--noHeader",
     "--outDir",
     "./dist/lualib",
     "--rootDir",

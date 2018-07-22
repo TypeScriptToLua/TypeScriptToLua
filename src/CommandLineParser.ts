@@ -21,7 +21,7 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
     luaLibImport: {
         choices: ["inline", "require", "none"],
         default: "inline",
-        describe: "Specify Lua target version.",
+        describe: "Specifies how js standard features missing in lua are imported.",
         type: "string",
     },
     luaTarget: {

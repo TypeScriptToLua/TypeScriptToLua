@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
+import * as util from "../../src/util";
 
 export class LuaLibArrayTests {
 

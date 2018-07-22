@@ -22,4 +22,8 @@ if (fs.existsSync(bundlePath)) {
   fs.unlinkSync(bundlePath);
 }
 
-concat(glob.sync("./dist/lualib/*.lua"), bundlePath);
+let bundle = "";
+
+glob.sync("./dist/lualib/*.lua").forEach(fileName => bundle += fs.readFileSync(fileName));
+
+fs.writeFileSync(bundlePath, bundle);

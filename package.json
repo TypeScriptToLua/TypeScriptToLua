@@ -51,7 +51,6 @@
         "alsatian": "^2.2.1",
         "circular-json": "^0.5.5",
         "codecov": "3.0.2",
-        "concat": "^1.0.3",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
         "glob": "^7.1.2",

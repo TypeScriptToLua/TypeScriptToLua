@@ -15,6 +15,7 @@
         "max-classes-per-file": 1,
         "max-line-length": [true, 120],
         "no-console": [false],
+        "no-namespace": false,
         "trailing-comma": [
             true,
             {

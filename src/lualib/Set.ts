@@ -20,7 +20,7 @@ class Set<TValue> {
         }
     }
 
-    public add(value: TValue) {
+    public add(value: TValue): Set<TValue> {
         if (!this.has(value)) {
             this.size++;
         }

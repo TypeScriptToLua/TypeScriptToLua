@@ -6,7 +6,7 @@ export class CLITests {
 
     @Test("defaultOption")
     @TestCase("luaTarget", "JIT")
-    @TestCase("addHeader", true)
+    @TestCase("noHeader", false)
     @TestCase("luaLibImport", "inline")
     @TestCase("rootDir", process.cwd())
     @TestCase("outDir", process.cwd())

@@ -18,6 +18,8 @@ compile([
     ...glob.sync("./src/lualib/*.ts"),
   ]);
 
-fs.unlinkSync(bundlePath);
+if (fs.existsSync(bundlePath)) {
+  fs.unlinkSync(bundlePath);
+}
 
 concat(glob.sync("./dist/lualib/*.lua"), bundlePath);

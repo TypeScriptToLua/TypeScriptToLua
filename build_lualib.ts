@@ -1,7 +1,6 @@
-import concat = require("concat");
+import * as fs from "fs";
 import * as glob from "glob";
 import {compile} from "./src/Compiler";
-import * as fs from "fs";
 
 const bundlePath = "./dist/lualib/lualib_bundle.lua";
 

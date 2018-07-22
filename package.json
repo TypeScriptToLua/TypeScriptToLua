@@ -10,12 +10,12 @@
         "transpiler"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json",
-        "test": "tslint -p . && ts-node ./test/runner.ts",
-        "test-threaded": "tslint -p . && ts-node ./test/threaded_runner.ts",
-        "coverage-threaded": "nyc npm run test-threaded && nyc report --reporter=text-lcov > coverage.lcov",
+        "build": "tsc -p tsconfig.json && npm run build-lualib",
+        "build-lualib": "ts-node ./build_lualib.ts",
+        "test": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts && ts-node ./test/runner.ts",
         "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
         "coverage-html": "nyc npm test && nyc report --reporter=html",
+        "test-threaded": "tslint -p . && npm run build && ts-node ./test/threaded_runner.ts",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
         "release-major": "npm version major",
@@ -23,7 +23,7 @@
         "postversion": "git push && git push --tags"
     },
     "bin": {
-        "tstl": "./dist/Compiler.js"
+        "tstl": "./dist/index.js"
     },
     "nyc": {
         "all": true,
@@ -32,6 +32,9 @@
         ],
         "include": [
             "src/**/*"
+        ],
+        "exclude": [
+            "src/lualib/*"
         ]
     },
     "engines": {

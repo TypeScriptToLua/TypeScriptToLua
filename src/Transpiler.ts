@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "./CommandLineParser";
 import { TSHelper as tsHelper } from "./TSHelper";
 
+import * as fs from "fs";
 import * as path from "path";
 
 /* tslint:disable */
@@ -24,13 +25,38 @@ export enum LuaTarget {
     LuaJIT = "JIT",
 }
 
+export enum LuaLibFeature {
+    ArrayEvery = "ArrayEvery",
+    ArrayFilter = "ArrayFilter",
+    ArrayForEach = "ArrayForEach",
+    ArrayIndexOf = "ArrayIndexOf",
+    ArrayMap = "ArrayMap",
+    ArrayPush = "ArrayPush",
+    ArraySlice = "ArraySlice",
+    ArraySome = "ArraySome",
+    ArraySplice = "ArraySplice",
+    InstanceOf = "InstanceOf",
+    Map = "Map",
+    Set = "Set",
+    StringReplace = "StringReplace",
+    StringSplit = "StringSplit",
+    Ternary = "Ternary",
+}
+
+export enum LuaLibImportKind {
+    Inline = "inline",
+    Require = "require",
+    None = "none",
+}
+
 interface ExportInfo {
-    name: string | ts.__String;
+    name: string;
     node: ts.Node;
     dummy: boolean;
 }
 
 export abstract class LuaTranspiler {
+
     public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
 
     public indent: string;
@@ -46,6 +72,8 @@ export abstract class LuaTranspiler {
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
+    public luaLibFeatureSet: Set<LuaLibFeature>;
+
     constructor(checker: ts.TypeChecker, options: CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
         this.checker = checker;
@@ -59,6 +87,7 @@ export abstract class LuaTranspiler {
         this.loopStack = [];
         this.classStack = [];
         this.exportStack = [];
+        this.luaLibFeatureSet = new Set<LuaLibFeature>();
     }
 
     public pushIndent(): void {
@@ -69,7 +98,7 @@ export abstract class LuaTranspiler {
         this.indent = this.indent.slice(4);
     }
 
-    public definitionName(name: string | ts.__String): string {
+    public definitionName(name: string): string {
         return this.namespace.concat(name as string).join(".");
     }
 
@@ -78,11 +107,11 @@ export abstract class LuaTranspiler {
             "local " : "";
     }
 
-    public pushExport(nameIn: string | ts.__String, nodeIn: ts.Node, dummyIn: boolean = false) {
+    public pushExport(nameIn: string, nodeIn: ts.Node, dummyIn: boolean = false): void {
         this.exportStack[this.exportStack.length - 1].push({name: nameIn, node: nodeIn, dummy: dummyIn});
     }
 
-    public makeExport(name: string | ts.__String, node: ts.Node, dummy?: boolean): string {
+    public makeExport(name: string, node: ts.Node, dummy?: boolean): string {
         let result: string = "";
         if (node &&
             node.modifiers && this.isModule &&
@@ -110,18 +139,23 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    public getAbsouluteImportPath(relativePath: string) {
+    public importLuaLibFeature(feature: LuaLibFeature): void {
+        // TODO inline imported features in output i option set
+        this.luaLibFeatureSet.add(feature);
+    }
+
+    public getAbsoluteImportPath(relativePath: string): string {
         if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
             return path.resolve(this.options.baseUrl, relativePath);
         }
         return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
     }
 
-    public getImportPath(relativePath: string) {
+    public getImportPath(relativePath: string): string {
         // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsouluteImportPath(relativePath);
+        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
         if (this.options.rootDir) {
-            // Calculate path realtive to project root
+            // Calculate path relative to project root
             // and replace path.sep with dots (lua doesn't know paths)
             const relativePathToRoot =
                 this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
@@ -131,7 +165,7 @@ export abstract class LuaTranspiler {
         return `"${this.pathToLuaRequirePath(relativePath)}"`;
     }
 
-    public pathToLuaRequirePath(filePath: string) {
+    public pathToLuaRequirePath(filePath: string): string {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
@@ -143,9 +177,9 @@ export abstract class LuaTranspiler {
             "-- https://github.com/Perryvw/TypescriptToLua\n";
         }
         let result = header;
-        if (!this.options.dontRequireLuaLib) {
+        if (this.options.luaLibImport === LuaLibImportKind.Require) {
             // require helper functions
-            result += `require("typescript_lualib")\n`;
+            result += `require("lualib_bundle")\n`;
         }
         if (this.isModule) {
             // Shadow exports if it already exists
@@ -155,6 +189,17 @@ export abstract class LuaTranspiler {
         // Transpile content statements
         this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
+
+        // Inline lualib features
+        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
+            result += "\n" + "-- Lua Library Imports\n";
+            for (const feature of this.luaLibFeatureSet) {
+                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+                result += fs.readFileSync(featureFile).toString() + "\n";
+            }
+        }
+
+        // Exports
         result += this.makeExports();
 
         if (this.isModule) {
@@ -232,6 +277,11 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
+        this.importLuaLibFeature(func);
+        return `__TS__${func}(${params.join(", ")})`;
+    }
+
     public transpileImport(node: ts.ImportDeclaration): string {
         const importPath = this.transpileExpression(node.moduleSpecifier);
         const importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
@@ -248,22 +298,24 @@ export abstract class LuaTranspiler {
         if (ts.isNamedImports(imports)) {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
+
             let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
             this.importCount++;
+
             imports.elements.forEach(element => {
-                const nameText = element.name.escapedText;
+                const nameText = this.transpileIdentifier(element.name);
                 if (element.propertyName) {
-                    result +=
-                        `local ${nameText} = ${fileImportTable}.${element.propertyName.escapedText}\n`;
+                    const propertyText = this.transpileIdentifier(element.propertyName);
+                    result += `local ${nameText} = ${fileImportTable}.${propertyText}\n`;
                 } else {
-                    result +=
-                        `local ${nameText} = ${fileImportTable}.${element.name.escapedText}\n`;
+                    result += `local ${nameText} = ${fileImportTable}.${nameText}\n`;
                 }
             });
+
             return result;
         } else if (ts.isNamespaceImport(imports)) {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${imports.name.escapedText} = require(${resolvedImportPath})\n`;
+            return `local ${this.transpileIdentifier(imports.name)} = require(${resolvedImportPath})\n`;
         } else {
             throw new TranspileError("Unsupported import type.", node);
         }
@@ -306,7 +358,7 @@ export abstract class LuaTranspiler {
         const membersOnly = tsHelper.isCompileMembersOnlyEnum(type, this.checker);
 
         if (!membersOnly) {
-            const name = node.name.escapedText;
+            const name = this.transpileIdentifier(node.name);
             result += this.indent + this.accessPrefix(node) + `${name}={}\n`;
             this.pushExport(name, node);
         }
@@ -327,11 +379,11 @@ export abstract class LuaTranspiler {
             }
 
             if (membersOnly) {
-                const defName = this.definitionName((member.name as ts.Identifier).escapedText);
+                const defName = this.definitionName(this.transpileIdentifier(member.name as ts.Identifier));
                 result += this.indent + `${defName}=${val}\n`;
             } else {
                 const defName = this.definitionName(
-                    `${node.name.escapedText}.${(member.name as ts.Identifier).escapedText}`
+                    `${this.transpileIdentifier(node.name)}.${this.transpileIdentifier((member.name as ts.Identifier))}`
                 );
                 result += this.indent + `${defName}=${val}\n`;
             }
@@ -439,7 +491,6 @@ export abstract class LuaTranspiler {
     public transpileForOf(node: ts.ForOfStatement): string {
         // Get variable identifier
         const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
 
         // Transpile expression
         const expression = this.transpileExpression(node.expression);
@@ -449,7 +500,15 @@ export abstract class LuaTranspiler {
         const pairs = isArray ? "ipairs" : "pairs";
 
         // Make header
-        let result = this.indent + `for _, ${identifier.escapedText} in ${pairs}(${expression}) do\n`;
+        let result = "";
+        if (ts.isIdentifier(variable.name)) {
+            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in ${pairs}(${expression}) do\n`;
+        } else if (ts.isArrayBindingPattern(variable.name)) {
+            const valueVar =  "__forOfValue" + this.genVarCounter;
+            result = this.indent + `for _, ${valueVar} in ${pairs}(${expression}) do\n`;
+            const declaration = ts.createVariableDeclaration(variable.name, undefined, ts.createIdentifier(valueVar));
+            result += this.indent + this.transpileVariableDeclaration(declaration);
+        }
 
         // For body
         this.pushIndent();
@@ -472,7 +531,7 @@ export abstract class LuaTranspiler {
         }
 
         // Make header
-        let result = this.indent + `for ${identifier.escapedText}, _ in pairs(${expression}) do\n`;
+        let result = this.indent + `for ${this.transpileIdentifier(identifier)}, _ in pairs(${expression}) do\n`;
 
         // For body
         this.pushIndent();
@@ -568,7 +627,7 @@ export abstract class LuaTranspiler {
         tryFunc += "end";
         let catchFunc = "function(e)\nend";
         if (node.catchClause && node.catchClause.variableDeclaration) {
-            const variableName = (node.catchClause.variableDeclaration.name as ts.Identifier).escapedText;
+            const variableName = this.transpileIdentifier(node.catchClause.variableDeclaration.name as ts.Identifier);
             catchFunc = this.indent + `function(${variableName})\n`;
             this.pushIndent();
             catchFunc += this.transpileBlock(node.catchClause.block);
@@ -639,7 +698,7 @@ export abstract class LuaTranspiler {
                     return "nil";
                 }
                 // Otherwise simply return the name
-                return (node as ts.Identifier).text;
+                return this.transpileIdentifier(node as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 const text = (node as ts.StringLiteral).text;
@@ -686,6 +745,8 @@ export abstract class LuaTranspiler {
                 return this.transpileExpression((node as ts.AsExpression).expression);
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
+            case ts.SyntaxKind.EmptyStatement:
+                    return "";
             default:
                 throw new TranspileError(
                     "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
@@ -788,7 +849,7 @@ export abstract class LuaTranspiler {
                     result = `${rhs}[${lhs}]~=nil`;
                     break;
                 case ts.SyntaxKind.InstanceOfKeyword:
-                    result = `TS_instanceof(${lhs}, ${rhs})`;
+                    result = this.transpileLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
                     break;
                 default:
                     throw new TranspileError(
@@ -814,7 +875,7 @@ export abstract class LuaTranspiler {
         throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
     }
 
-    public transpileTemplateExpression(node: ts.TemplateExpression) {
+    public transpileTemplateExpression(node: ts.TemplateExpression): string {
         const parts = [`"${node.head.text}"`];
         node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
@@ -832,7 +893,8 @@ export abstract class LuaTranspiler {
         const val1 = this.transpileExpression(node.whenTrue);
         const val2 = this.transpileExpression(node.whenFalse);
 
-        return `TS_ITE(${condition},function() return ${val1} end,function() return ${val2} end)`;
+        return this.transpileLuaLibFunction(LuaLibFeature.Ternary, condition,
+                                            `function() return ${val1} end`, `function() return ${val2} end`);
     }
 
     public transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
@@ -901,7 +963,7 @@ export abstract class LuaTranspiler {
         return isTupleReturn && !isInDestructingAssignment ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 
-    public transpilePropertyCall(node: ts.CallExpression) {
+    public transpilePropertyCall(node: ts.CallExpression): string {
         let params;
         let callPath;
 
@@ -944,9 +1006,10 @@ export abstract class LuaTranspiler {
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;
         } else {
-             // Replace last . with : here
+            // Replace last . with : here
+            const name = this.transpileIdentifier(node.expression.name);
             callPath =
-                `${this.transpileExpression(node.expression.expression)}:${node.expression.name.escapedText}`;
+                `${this.transpileExpression(node.expression.expression)}:${name}`;
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;
         }
@@ -956,14 +1019,23 @@ export abstract class LuaTranspiler {
         const expression = node.expression as ts.PropertyAccessExpression;
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
-        switch (expression.name.escapedText) {
+        const expressionName = this.transpileIdentifier(expression.name);
+        switch (expressionName) {
             case "replace":
-                return `TS_replace(${caller},${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.StringReplace, caller, params);
             case "indexOf":
                 if (node.arguments.length === 1) {
                     return `(string.find(${caller},${params},1,true) or 0)-1`;
                 } else {
                     return `(string.find(${caller},${params}+1,true) or 0)-1`;
+                }
+            case "substr":
+                if (node.arguments.length === 1) {
+                    return `string.sub(${caller},${params}+1)`;
+                } else {
+                    const arg1 = this.transpileExpression(node.arguments[0]);
+                    const arg2 = this.transpileExpression(node.arguments[1]);
+                    return `string.sub(${caller},${arg1}+1,${arg1}+${arg2})`;
                 }
             case "substring":
                 if (node.arguments.length === 1) {
@@ -978,11 +1050,11 @@ export abstract class LuaTranspiler {
             case "toUpperCase":
                 return `string.upper(${caller})`;
             case "split":
-                return `TS_split(${caller},${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.StringSplit, caller, params);
             case "charAt":
                 return `string.sub(${caller},${params}+1,${params}+1)`;
             default:
-                throw new TranspileError("Unsupported string function: " + expression.name.escapedText, node);
+                throw new TranspileError("Unsupported string function: " + expressionName, node);
         }
     }
 
@@ -995,11 +1067,12 @@ export abstract class LuaTranspiler {
     // Transpile a String._ property
     public transpileStringExpression(identifier: ts.Identifier): string {
         const translation = this.getValidStringProperties();
+        const identifierString = this.transpileIdentifier(identifier);
 
-        if (translation[identifier.escapedText as string]) {
-            return `${translation[identifier.escapedText as string]}`;
+        if (translation[identifierString]) {
+            return `${translation[identifierString]}`;
         } else {
-            throw new TranspileError(`Unsupported string property ${identifier.escapedText}, ` +
+            throw new TranspileError(`Unsupported string property ${identifierString}, ` +
                                      `is not supported in Lua ${this.options.luaTarget}.`,
                                      identifier);
         }
@@ -1009,34 +1082,35 @@ export abstract class LuaTranspiler {
         const expression = node.expression as ts.PropertyAccessExpression;
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
-        switch (expression.name.escapedText) {
+        const expressionName = this.transpileIdentifier(expression.name);
+        switch (expressionName) {
             case "push":
-                return `TS_push(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
             case "forEach":
-                return `TS_forEach(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayForEach, caller, params);
             case "indexOf":
-                return `TS_indexOf(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayIndexOf, caller, params);
             case "map":
-                return `TS_map(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayMap, caller, params);
             case "filter":
-                return `TS_filter(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayFilter, caller, params);
             case "some":
-                return `TS_some(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySome, caller, params);
             case "every":
-                return `TS_every(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayEvery, caller, params);
             case "slice":
-                return `TS_slice(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySlice, caller, params);
             case "splice":
-                return `TS_splice(${caller}, ${params})`;
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySplice, caller, params);
             case "join":
                 if (node.arguments.length === 0) {
-                    // if seperator is omitted default seperator is ","
+                    // if separator is omitted default separator is ","
                     return `table.concat(${caller}, ",")`;
                 } else {
                     return `table.concat(${caller}, ${params})`;
                 }
             default:
-                throw new TranspileError("Unsupported array function: " + expression.name.escapedText, node);
+                throw new TranspileError("Unsupported array function: " + expressionName, node);
         }
     }
 
@@ -1078,7 +1152,7 @@ export abstract class LuaTranspiler {
         }
 
         // Catch math expressions
-        if (ts.isIdentifier(node.expression) && node.expression.escapedText === "Math") {
+        if (ts.isIdentifier(node.expression) && this.transpileIdentifier(node.expression) === "Math") {
             return this.transpileMathExpression(node.name);
         }
 
@@ -1087,13 +1161,13 @@ export abstract class LuaTranspiler {
     }
 
     public transpileGetAccessor(node: ts.PropertyAccessExpression): string {
-        const name = node.name.escapedText;
+        const name = this.transpileIdentifier(node.name);
         const expression = this.transpileExpression(node.expression);
         return `${expression}:get__${name}()`;
     }
 
     public transpileSetAccessor(node: ts.PropertyAccessExpression, value: string): string {
-        const name = node.name.escapedText;
+        const name = this.transpileIdentifier(node.name);
         const expression = this.transpileExpression(node.expression);
         return `${expression}:set__${name}(${value})`;
     }
@@ -1121,32 +1195,34 @@ export abstract class LuaTranspiler {
             tan: "tan",
         };
 
-        if (translation[identifier.escapedText as string]) {
-            return `math.${translation[identifier.escapedText as string]}`;
+        const identifierString = this.transpileIdentifier(identifier);
+
+        if (translation[identifierString]) {
+            return `math.${translation[identifierString]}`;
         } else {
-            throw new TranspileError(`Unsupported math property: ${identifier.escapedText}.`, identifier);
+            throw new TranspileError(`Unsupported math property: ${identifierString}.`, identifier);
         }
     }
 
     // Transpile access of string properties, only supported properties are allowed
     public transpileStringProperty(node: ts.PropertyAccessExpression): string {
-        const property = node.name;
-        switch (property.escapedText) {
+        const propertyName = this.transpileIdentifier(node.name);
+        switch (propertyName) {
             case "length":
                 return "#" + this.transpileExpression(node.expression);
             default:
-                throw new TranspileError("Unsupported string property: " + property.escapedText, node);
+                throw new TranspileError("Unsupported string property: " + propertyName, node);
         }
     }
 
     // Transpile access of array properties, only supported properties are allowed
     public transpileArrayProperty(node: ts.PropertyAccessExpression): string {
-        const property = node.name;
-        switch (property.escapedText) {
+        const propertyName = this.transpileIdentifier(node.name);
+        switch (propertyName) {
             case "length":
                 return "#" + this.transpileExpression(node.expression);
             default:
-                throw new TranspileError("Unsupported array property: " + property.escapedText, node);
+                throw new TranspileError("Unsupported array property: " + propertyName, node);
         }
     }
 
@@ -1164,6 +1240,33 @@ export abstract class LuaTranspiler {
         }
     }
 
+    // Counter-act typescript's identifier escaping:
+    // https://github.com/Microsoft/TypeScript/blob/master/src/compiler/utilities.ts#L556
+    public transpileIdentifier(identifier: ts.Identifier): string {
+        const escapedText = identifier.escapedText as string;
+        const underScoreCharCode = "_".charCodeAt(0);
+        if (escapedText.length >= 3
+            && escapedText.charCodeAt(0) === underScoreCharCode
+            && escapedText.charCodeAt(1) === underScoreCharCode
+            && escapedText.charCodeAt(2) === underScoreCharCode) {
+            return escapedText.substr(1);
+        }
+        return escapedText;
+    }
+
+    public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {
+        if (ts.isOmittedExpression(name)) {
+            return "__";
+        } else if (ts.isIdentifier(name)) {
+            return this.transpileIdentifier(name);
+        } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
+            return this.transpileIdentifier(name.name);
+        } else {
+            const kind = tsHelper.enumName(name.kind, ts.SyntaxKind);
+            throw new TranspileError(`Encountered not-supported array binding element kind: ${kind}`, name);
+        }
+    }
+
     public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
         const expression = this.transpileExpression(node.expression);
         return `(type(${expression}) == "table" and "object" or type(${expression}))`;
@@ -1175,7 +1278,9 @@ export abstract class LuaTranspiler {
 
         node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
-            this.pushExport((declaration.name as ts.Identifier).escapedText, node);
+            if (ts.isIdentifier(declaration.name)) {
+                this.pushExport(this.transpileIdentifier(declaration.name as ts.Identifier), node);
+            }
         });
 
         return result;
@@ -1184,12 +1289,12 @@ export abstract class LuaTranspiler {
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {
         if (ts.isIdentifier(node.name)) {
             // Find variable identifier
-            const identifier = node.name;
+            const identifierName = this.transpileIdentifier(node.name);
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-                return `local ${identifier.escapedText} = ${value}\n`;
+                return `local ${identifierName} = ${value}\n`;
             } else {
-                return `local ${identifier.escapedText} = nil\n`;
+                return `local ${identifierName} = nil\n`;
             }
         } else if (ts.isArrayBindingPattern(node.name)) {
             // Destructuring type
@@ -1200,9 +1305,7 @@ export abstract class LuaTranspiler {
                 throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
             }
 
-            const vars = node.name.elements.map(
-                    element => ((element as ts.BindingElement).name as ts.Identifier
-                ).escapedText).join(",");
+            const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
@@ -1224,7 +1327,7 @@ export abstract class LuaTranspiler {
 
         let result = "";
         const identifier = node.name;
-        const methodName = identifier.escapedText;
+        const methodName = this.transpileIdentifier(identifier);
         const parameters = node.parameters;
         const body = node.body;
 
@@ -1235,7 +1338,7 @@ export abstract class LuaTranspiler {
 
         // Only push parameter name to paramName array if it isn't a spread parameter
         for (const param of parameters) {
-            const paramName = (param.name as ts.Identifier).escapedText as string;
+            const paramName = this.transpileIdentifier(param.name as ts.Identifier);
 
             // This parameter is a spread parameter (...param)
             if (!param.dotDotDotToken) {
@@ -1274,7 +1377,7 @@ export abstract class LuaTranspiler {
 
         let result = "";
         const identifier = node.name as ts.Identifier;
-        const methodName = identifier.escapedText;
+        const methodName = this.transpileIdentifier(identifier);
         const parameters = node.parameters;
         const body = node.body;
 
@@ -1285,7 +1388,7 @@ export abstract class LuaTranspiler {
 
         // Only push parameter name to paramName array if it isn't a spread parameter
         for (const param of parameters) {
-            const paramName = (param.name as ts.Identifier).escapedText as string;
+            const paramName = this.transpileIdentifier(param.name as ts.Identifier);
 
             // This parameter is a spread parameter (...param)
             if (!param.dotDotDotToken) {
@@ -1325,9 +1428,9 @@ export abstract class LuaTranspiler {
             throw new TranspileError("Class declaration has no name.", node);
         }
 
-        let className = node.name.escapedText as string;
+        let className = this.transpileIdentifier(node.name);
 
-        // Find out if this class is extension of exising class
+        // Find out if this class is extension of existing class
         const isExtension = tsHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
 
         // Get type that is extended
@@ -1358,7 +1461,7 @@ export abstract class LuaTranspiler {
 
         // Add static declarations
         for (const field of staticFields) {
-            const fieldName = (field.name as ts.Identifier).escapedText;
+            const fieldName = this.transpileIdentifier(field.name as ts.Identifier);
             const value = this.transpileExpression(field.initializer);
             result += this.indent + `${className}.${fieldName} = ${value}\n`;
         }
@@ -1366,7 +1469,7 @@ export abstract class LuaTranspiler {
         // Try to find constructor
         const constructor = node.members.filter(ts.isConstructorDeclaration)[0];
         if (constructor) {
-            // Add constructor plus initialisation of instance fields
+            // Add constructor plus initialization of instance fields
             result += this.transpileConstructor(constructor, className);
         } else if (!isExtension) {
             // Generate a constructor if none was defined
@@ -1394,7 +1497,7 @@ export abstract class LuaTranspiler {
 
     public transpileClassCreationMethods(node: ts.ClassDeclaration, instanceFields: ts.PropertyDeclaration[],
                                          extendsType: ts.Type): string {
-        const className = node.name.escapedText as string;
+        const className = this.transpileIdentifier(node.name);
 
         const noClassOr = extendsType && tsHelper.hasCustomDecorator(extendsType, this.checker, "!NoClassOr");
 
@@ -1421,7 +1524,7 @@ export abstract class LuaTranspiler {
         for (const f of instanceFields) {
             // Get identifier
             const fieldIdentifier = f.name as ts.Identifier;
-            const fieldName = fieldIdentifier.escapedText;
+            const fieldName = this.transpileIdentifier(fieldIdentifier);
 
             const value = this.transpileExpression(f.initializer);
 
@@ -1438,7 +1541,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileGetAccessorDeclaration(getAccessor: ts.GetAccessorDeclaration, className: string): string {
-        const name = (getAccessor.name as ts.Identifier).escapedText;
+        const name = this.transpileIdentifier(getAccessor.name as ts.Identifier);
 
         let result = this.indent + `function ${className}.get__${name}(self)\n`;
 
@@ -1452,11 +1555,11 @@ export abstract class LuaTranspiler {
     }
 
     public transpileSetAccessorDeclaration(setAccessor: ts.SetAccessorDeclaration, className: string): string {
-        const name = (setAccessor.name as ts.Identifier).escapedText;
+        const name = this.transpileIdentifier(setAccessor.name as ts.Identifier);
 
         const paramNames: string[] = ["self"];
         setAccessor.parameters.forEach(param => {
-            paramNames.push((param.name as ts.Identifier).escapedText as string);
+            paramNames.push(this.transpileIdentifier(param.name as ts.Identifier));
         });
 
         let result = this.indent + `function ${className}.set__${name}(${paramNames.join(",")})\n`;
@@ -1478,10 +1581,10 @@ export abstract class LuaTranspiler {
         node.parameters.forEach(param => {
             // If param has decorators, add extra instance field
             if (param.modifiers !== undefined) {
-                extraInstanceFields.push((param.name as ts.Identifier).escapedText as string);
+                extraInstanceFields.push(this.transpileIdentifier(param.name as ts.Identifier));
             }
             // Add to parameter list
-            parameters.push((param.name as ts.Identifier).escapedText as string);
+            parameters.push(this.transpileIdentifier(param.name as ts.Identifier));
         });
 
         let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n`;
@@ -1517,7 +1620,7 @@ export abstract class LuaTranspiler {
         node.properties.forEach(element => {
             let name = "";
             if (ts.isIdentifier(element.name)) {
-                name = element.name.escapedText as string;
+                name = this.transpileIdentifier(element.name);
             } else if (ts.isComputedPropertyName(element.name)) {
                 name = this.transpileExpression(element.name);
             } else {
@@ -1540,7 +1643,7 @@ export abstract class LuaTranspiler {
         // Build parameter string
         const paramNames: string[] = [];
         node.parameters.forEach(param => {
-            paramNames.push((param.name as ts.Identifier).escapedText as string);
+            paramNames.push(this.transpileIdentifier(param.name as ts.Identifier));
         });
 
         const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
@@ -1563,7 +1666,7 @@ export abstract class LuaTranspiler {
         let result = "";
 
         params.filter(declaration => declaration.initializer !== undefined).forEach(declaration => {
-            const paramName = (declaration.name as ts.Identifier).escapedText;
+            const paramName = this.transpileIdentifier(declaration.name as ts.Identifier);
             const paramValue = this.transpileExpression(declaration.initializer);
             result += this.indent + `if ${paramName}==nil then ${paramName}=${paramValue} end\n`;
         });

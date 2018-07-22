@@ -146,6 +146,25 @@ export class StringTests {
         Expect(result).toBe(inp.substring(start, end));
     }
 
+    @TestCase("hello test", 0)
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 1, 2)
+    @TestCase("hello test", 1, 5)
+    @Test("string.substring")
+    public substr(inp: string, start: number, end?: number) {
+        // Transpile
+        const paramStr = end ? `${start}, ${end}` : `${start}`;
+        const lua = util.transpileString(
+            `return "${inp}".substr(${paramStr})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.substr(start, end));
+    }
+
     @TestCase("", 0)
     @TestCase("h", 1)
     @TestCase("hello", 5)

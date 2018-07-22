@@ -6,7 +6,7 @@ import * as yargs from "yargs";
 export interface CompilerOptions extends ts.CompilerOptions {
     addHeader?: boolean;
     luaTarget?: string;
-    dontRequireLuaLib?: boolean;
+    luaLibImport?: string;
 }
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
@@ -18,16 +18,11 @@ export class CLIError extends Error {
 }
 
 const optionDeclarations: { [key: string]: yargs.Options } = {
-    addHeader: {
-        alias: ["ah", "header"],
-        default: true,
-        describe: "Specify if a header will be added to compiled files.",
-        type: "boolean",
-    },
-    dontRequireLuaLib: {
-        default: false,
-        describe: "Dont require lua library that enables advanced Typescipt/JS functionality.",
-        type: "boolean",
+    luaLibImport: {
+        choices: ["inline", "require", "none"],
+        default: "inline",
+        describe: "Specifies how js standard features missing in lua are imported.",
+        type: "string",
     },
     luaTarget: {
         alias: "lt",
@@ -35,6 +30,11 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
         default: "JIT",
         describe: "Specify Lua target version.",
         type: "string",
+    },
+    noHeader: {
+        default: false,
+        describe: "Specify if a header will be added to compiled files.",
+        type: "boolean",
     },
 };
 
@@ -102,7 +102,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
 
 function addTSTLOptions(commandLine: ts.ParsedCommandLine,
                         additionalArgs?: yargs.Arguments,
-                        forceOverride?: boolean) {
+                        forceOverride?: boolean): void {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw;
     // Add compiler options that are ignored by TS parsers
     if (additionalArgs) {
@@ -116,7 +116,10 @@ function addTSTLOptions(commandLine: ts.ParsedCommandLine,
 }
 
 /** Check the current state of the ParsedCommandLine for errors */
-function runDiagnostics(commandLine: ts.ParsedCommandLine) {
+function runDiagnostics(commandLine: ts.ParsedCommandLine): void {
+    // Remove files that dont exist
+    commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
+
     const tsInvalidCompilerOptionErrorCode = 5023;
     if (commandLine.errors.length !== 0) {
         // Generate a list of valid option names and aliases
@@ -151,7 +154,7 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 }
 
 /** Find configFile, function from ts api seems to be broken? */
-export function findConfigFile(commandLine: ts.ParsedCommandLine) {
+export function findConfigFile(commandLine: ts.ParsedCommandLine): void {
     if (!commandLine.options.project) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }

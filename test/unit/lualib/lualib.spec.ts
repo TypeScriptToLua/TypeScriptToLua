@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
+import * as util from "../../src/util";
 
 export class LuaLibArrayTests {
 
@@ -204,20 +204,26 @@ export class LuaLibArrayTests {
     @TestCase([], "test1")
     @TestCase(["test1"], "test1")
     @TestCase(["test1", "test2"], "test2")
+    @TestCase(["test1", "test2", "test3"], "test3", 1)
+    @TestCase(["test1", "test2", "test3"], "test1", 2)
+    @TestCase(["test1", "test2", "test3"], "test1", -2)
+    @TestCase(["test1", "test2", "test3"], "test1", 12)
     @Test("array.indexOf")
-    public indexOf(inp: string[], element: string) {
-        // Transpile
-        const lua = util.transpileString(
-            `return ${JSON.stringify(inp)}.indexOf("${element}"))`
+    public indexOf(inp: string[], element: string, fromIndex?: number) {
+        let str = `return ${JSON.stringify(inp)}.indexOf("${element}"))`;
+        if (fromIndex) {
+            str = `return ${JSON.stringify(inp)}.indexOf("${element}", ${fromIndex}))`;
+        }
 
-        );
+        // Transpile
+        const lua = util.transpileString(str);
 
         // Execute
         const result = util.executeLua(lua);
 
         // Assert
-        // Acount for lua indexing (-1)
-        Expect(result).toBe(inp.indexOf(element));
+        // Account for lua indexing (-1)
+        Expect(result).toBe(inp.indexOf(element, fromIndex));
     }
 
     @TestCase([1, 2, 3], 3)
@@ -254,5 +260,40 @@ export class LuaLibArrayTests {
 
         // Assert
         Expect(result).toBe(JSON.stringify([0].concat(inp)));
+    }
+
+    @TestCase("true", "4", "5", 4)
+    @TestCase("false", "4", "5", 5)
+    @TestCase("3", "4", "5", 4)
+    @Test("Ternary Conditional")
+    public ternaryConditional(condition: string, lhs: string, rhs: string, expected: any) {
+        // Transpile
+        const lua = util.transpileString(`return ${condition} ? ${lhs} : ${rhs};`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("true", 11)
+    @TestCase("false", 13)
+    @TestCase("a < 4", 13)
+    @TestCase("a == 8", 11)
+    @Test("Ternary Conditional Delayed")
+    public ternaryConditionalDelayed(condition: string, expected: any) {
+        // Transpile
+        const lua = util.transpileString(
+            `let a = 3;
+             let delay = () => ${condition} ? a + 3 : a + 5;
+             a = 8;
+             return delay();`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
     }
 }

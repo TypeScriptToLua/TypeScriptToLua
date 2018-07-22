@@ -15,10 +15,10 @@ export class LuaModuleTests {
     @Test("lualibRequire")
     public lualibRequire() {
         // Transpile
-        const lua = util.transpileString(``, {dontRequireLuaLib: false, luaTarget: "JIT"});
+        const lua = util.transpileString(``, {luaLibImport: "require", luaTarget: "JIT"});
 
         // Assert
-        Expect(lua).toBe(`require("typescript_lualib")`);
+        Expect(lua).toBe(`require("lualib_bundle")`);
     }
 
     @Test("Import named bindings exception")

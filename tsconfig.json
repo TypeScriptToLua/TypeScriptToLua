@@ -5,7 +5,9 @@
         "outDir": "./dist/",
         "rootDir": "./src/",
         "sourceMap": true,
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "target": "es6",
+        "module": "commonjs"
     },
-    "exclude": ["test/**/*"]
+    "exclude": ["test/**/*", "build_lualib.ts", "src/lualib"]
 }

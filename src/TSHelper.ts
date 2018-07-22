@@ -3,7 +3,7 @@ import * as ts from "typescript";
 export class TSHelper {
 
     // Reverse lookup of enum key by value
-    public static enumName(needle, haystack) {
+    public static enumName(needle, haystack): string {
         for (const name in haystack) {
             if (haystack[name] === needle) {
                 return name;
@@ -13,7 +13,7 @@ export class TSHelper {
     }
 
     // Breaks down a mask into all flag names.
-    public static enumNames(mask, haystack) {
+    public static enumNames(mask, haystack): string[] {
         const result = [];
         for (const name in haystack) {
             if ((mask & haystack[name]) !== 0 && mask >= haystack[name]) {
@@ -41,7 +41,7 @@ export class TSHelper {
         return undefined;
     }
 
-    public static isFileModule(sourceFile: ts.SourceFile) {
+    public static isFileModule(sourceFile: ts.SourceFile): boolean {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements
@@ -53,7 +53,7 @@ export class TSHelper {
         return false;
     }
 
-    public static isInDestructingAssignment(node: ts.Node) {
+    public static isInDestructingAssignment(node: ts.Node): boolean {
         return node.parent && ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name);
     }
 

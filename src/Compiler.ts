@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
@@ -9,10 +7,14 @@ import { LuaTranspiler51 } from "./targets/Transpiler.51";
 import { LuaTranspiler52 } from "./targets/Transpiler.52";
 import { LuaTranspiler53 } from "./targets/Transpiler.53";
 import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
-import { LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
-import { TSHelper as tsEx } from "./TSHelper";
+import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
 
-export function compile(fileNames: string[], options: CompilerOptions): void {
+export function compile(argv: string[]): void {
+    const commandLine = parseCommandLine(argv);
+    compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+}
+
+export function compileFilesWithOptions(fileNames: string[], options: CompilerOptions): void {
     if (!options.luaTarget) {
         options.luaTarget = LuaTarget.LuaJIT;
     }
@@ -93,10 +95,12 @@ export function compile(fileNames: string[], options: CompilerOptions): void {
     });
 
     // Copy lualib to target dir
-    fs.copyFileSync(
-        path.resolve(__dirname, "../dist/lualib/typescript.lua"),
-        path.join(options.outDir, "typescript_lualib.lua")
-    );
+    if (options.luaLibImport === LuaLibImportKind.Require) {
+        fs.copyFileSync(
+            path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
+            path.join(options.outDir, "lualib_bundle.lua")
+        );
+    }
 }
 
 export function createTranspiler(checker: ts.TypeChecker,
@@ -123,11 +127,3 @@ export function createTranspiler(checker: ts.TypeChecker,
 
     return luaTargetTranspiler;
 }
-
-export function execCommandLine(argv?: string[]) {
-    argv = argv ? argv : process.argv.slice(2);
-    const commandLine = parseCommandLine(argv);
-    compile(commandLine.fileNames, commandLine.options);
-}
-
-execCommandLine();

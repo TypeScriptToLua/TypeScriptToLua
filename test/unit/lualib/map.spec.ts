@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
+import * as util from "../../src/util";
 
 export class MapTests {
     @Test("map constructor")
@@ -13,6 +13,15 @@ export class MapTests {
     @Test("map iterable constructor")
     public mapIterableConstructor() {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"],["b", "d"]]);
+                                          return mymap.has("a") && mymap.has("b");`);
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(true);
+    }
+
+    @Test("map iterable constructor map")
+    public mapIterableConstructor2() {
+        const lua = util.transpileString(`let mymap = new Map(new Map([["a", "c"],["b", "d"]]));
                                           return mymap.has("a") && mymap.has("b");`);
         const result = util.executeLua(lua);
 
@@ -39,12 +48,22 @@ export class MapTests {
         Expect(contains).toBe(true);
     }
 
+    @Test("map entries")
+    public mapEntries() {
+        const lua = util.transpileString(`let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
+                                          let count = 0;
+                                          for (var [key, value] of mymap.entries()) { count += key + value; }
+                                          return count;`);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(27);
+    }
+
     @Test("map foreach")
     public mapForEach() {
         const lua = util.transpileString(
             `let mymap = new Map([["a", 2],["b", 3],["c", 4]]);
             let count = 0;
-            mymap.forEach(i => { count += i; });
+            mymap.forEach(i => count += i);
             return count;`
         );
 

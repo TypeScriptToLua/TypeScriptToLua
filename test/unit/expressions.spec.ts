@@ -107,7 +107,7 @@ export class ExpressionTests {
     @Test("Bitop [5.1]")
     public bitOperatorOverride51(input: string, lua: string) {
         // Bit operations not supported in 5.1, expect an exception
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, dontRequireLuaLib: true }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: "none" }))
             .toThrow();
     }
 
@@ -126,7 +126,7 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a = bit.arshift(a,b)")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, luaLibImport: "none" })).toBe(lua);
     }
 
     @TestCase("~a", "bit32.bnot(a)")
@@ -144,7 +144,7 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a = bit32.arshift(a,b)")
     @Test("Bitop [5.2]")
     public bitOperatorOverride52(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, luaLibImport: "none" })).toBe(lua);
     }
 
     @TestCase("~a", "~a")
@@ -160,14 +160,14 @@ export class ExpressionTests {
     @TestCase("a>>=b", "a = a >> b")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true })).toBe(lua);
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" })).toBe(lua);
     }
 
     @TestCase("a>>>b")
     @TestCase("a>>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string) {
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" }))
             .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
     }
 
@@ -178,13 +178,6 @@ export class ExpressionTests {
     @TestCase("1*(3+4*2)", "1*(3+(4*2))")
     @Test("Binary expressions ordering parentheses")
     public binaryParentheses(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
-    }
-
-    @TestCase("1 + a ? 3*a : c", "TS_ITE(1+a,function() return 3*a end,function() return c end)")
-    @TestCase("a ? b : c", "TS_ITE(a,function() return b end,function() return c end)")
-    @Test("Ternary operator")
-    public conditional(input: string, lua: string) {
         Expect(util.transpileString(input)).toBe(lua);
     }
 

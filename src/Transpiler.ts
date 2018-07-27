@@ -1286,6 +1286,9 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    // Implemented in 5.1 and overridden in 5.2 (and onwards)
+    public abstract transpileVariableDestructuring(value: string): string;
+
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {
         if (ts.isIdentifier(node.name)) {
             // Find variable identifier
@@ -1298,7 +1301,6 @@ export abstract class LuaTranspiler {
             }
         } else if (ts.isArrayBindingPattern(node.name)) {
             // Destructuring type
-            const value = this.transpileExpression(node.initializer);
 
             // Disallow ellipsis destruction
             if (node.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
@@ -1306,12 +1308,13 @@ export abstract class LuaTranspiler {
             }
 
             const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
+            const value = this.transpileExpression(node.initializer);
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
                 return `local ${vars}=${value}\n`;
             } else {
-                return `local ${vars}=table.unpack(${value})\n`;
+                return `local ${vars}=${this.transpileVariableDestructuring(value)}\n`;
             }
         } else {
             throw new TranspileError(

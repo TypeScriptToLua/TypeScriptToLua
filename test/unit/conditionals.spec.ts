@@ -259,4 +259,12 @@ export class LuaConditionalsTests {
 
         Expect(result).toBe(3);
     }
+
+    @Test("switch dead code after return")
+    public whileDeadCodeAfterReturn(): void {
+        const result = util.transpileAndExecute(
+            `switch ("abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
+
+        Expect(result).toBe(5);
+    }
 }

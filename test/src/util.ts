@@ -5,7 +5,7 @@ import { Expect } from "alsatian";
 
 import { CompilerOptions } from "../../src/CommandLineParser";
 import { createTranspiler } from "../../src/Compiler";
-import { LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
+import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
@@ -13,7 +13,7 @@ const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
 
-export function transpileString(str: string, options: CompilerOptions = { luaLibImport: "none", luaTarget: LuaTarget.Lua53 }): string {
+export function transpileString(str: string, options: CompilerOptions = { luaLibImport: LuaLibImportKind.Require, luaTarget: LuaTarget.Lua53 }): string {
     const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -114,8 +114,6 @@ export function transpileAndExecute(ts: string): any {
     return executeLua(transpileString(ts));
 }
 
-const tslualib = fs.readFileSync("dist/lualib/lualib_bundle.lua") + "\n";
-
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 
-export const minimalTestLib = tslualib + jsonlib;
+export const minimalTestLib = jsonlib;

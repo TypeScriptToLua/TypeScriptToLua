@@ -691,7 +691,7 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileStringLiteralExpression(node: ts.Node): string {
+    public escapeString(text: string): string {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
         const escapeSequences: Array<[RegExp, string]> = [
             [/[\\]/g, "\\\\"],
@@ -707,12 +707,12 @@ export abstract class LuaTranspiler {
             [/[\0]/g, "\\0"],
         ];
 
-        let text = (node as ts.StringLiteral).text;
-
-        for (const [regex, replacement] of escapeSequences) {
-            text = text.replace(regex, replacement);
+        if (text.length > 0) {
+            for (const [regex, replacement] of escapeSequences) {
+                text = text.replace(regex, replacement);
+            }
         }
-        return `"${text}"`;
+        return text;
     }
 
     public transpileExpression(node: ts.Node, brackets?: boolean): string {
@@ -738,7 +738,8 @@ export abstract class LuaTranspiler {
                 return this.transpileIdentifier(node as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-                return this.transpileStringLiteralExpression(node);
+                const text = this.escapeString((node as ts.StringLiteral).text);
+                return `"${text}"`;
             case ts.SyntaxKind.TemplateExpression:
                 return this.transpileTemplateExpression(node as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
@@ -912,13 +913,15 @@ export abstract class LuaTranspiler {
     }
 
     public transpileTemplateExpression(node: ts.TemplateExpression): string {
-        const parts = [`"${node.head.text}"`];
+        const parts = [`"${this.escapeString(node.head.text)}"`];
         node.templateSpans.forEach(span => {
             const expr = this.transpileExpression(span.expression, true);
+            const text = this.escapeString(span.literal.text);
+
             if (ts.isTemplateTail(span.literal)) {
-                parts.push(`tostring(${expr}).."${span.literal.text}"`);
+                parts.push(`tostring(${expr}).."${text}"`);
             } else {
-                parts.push(`tostring(${expr}).."${span.literal.text}"`);
+                parts.push(`tostring(${expr}).."${text}"`);
             }
         });
         return parts.join("..");

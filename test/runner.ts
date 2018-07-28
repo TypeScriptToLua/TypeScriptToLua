@@ -30,9 +30,12 @@ testRunner.outputStream
 // run the test set
 testRunner.run(testSet)
           // this will be called after all tests have been run
-          .then(_ => {
+          .then(result => {
+              // Remove lualib bundle again
+              fs.unlinkSync("lualib_bundle.lua");
+          })
+          // this will be called if there was a problem
+          .catch(error => {
               // Remove lualib bundle again
               fs.unlinkSync("lualib_bundle.lua");
           });
-          // this will be called if there was a problem
-          // .catch((error) => doSomethingWith(error));

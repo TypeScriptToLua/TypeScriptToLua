@@ -224,7 +224,17 @@ export abstract class LuaTranspiler {
     // Transpile a block
     public transpileBlock(block: ts.Block): string {
         this.exportStack.push([]);
-        let result = block.statements.map(statement => this.transpileNode(statement)).join("");
+
+        let result = "";
+        for (const statement of block.statements) {
+            result += this.transpileNode(statement);
+
+            // Don't transpile any dead code after a return
+            if (ts.isReturnStatement(statement)) {
+                break;
+            }
+        }
+
         result += this.makeExports();
 
         return result;

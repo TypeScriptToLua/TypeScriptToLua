@@ -1,13 +1,12 @@
 import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
 import { LuaTarget } from "../../src/Transpiler";
+import * as util from "../src/util";
 
 export class AssignmentDestructuringTests {
-    
-    private readonly assignmentDestruturingTs = `
-    declare function myFunc(): [number, string];
-    let [a, b] = myFunc();`;
 
+    private readonly assignmentDestruturingTs = `
+        declare function myFunc(): [number, string];
+        let [a, b] = myFunc();`;
 
     @Test("Assignment destructuring [5.1]")
     public assignmentDestructuring51() {

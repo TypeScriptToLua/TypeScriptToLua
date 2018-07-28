@@ -1287,7 +1287,12 @@ export abstract class LuaTranspiler {
     }
 
     // Implemented in 5.1 and overridden in 5.2 (and onwards)
-    public abstract transpileVariableDestructuring(value: string): string;
+    public transpileVariableDestructuring(value: string): string {
+        throw new TranspileError(
+            `transpileVariableDestructuring must be implemented!`,
+            null
+        );
+    }
 
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {
         if (ts.isIdentifier(node.name)) {

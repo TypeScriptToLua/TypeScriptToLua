@@ -419,7 +419,7 @@ export abstract class LuaTranspiler {
     public transpileContinue(node: ts.ContinueStatement): string {
         throw new TranspileError(
             `Unsupported continue statement, ` +
-            `continue is not supported in Lua ${this.options.luaTarget}.`,
+            `continue is not supported for target Lua ${this.options.luaTarget}.`,
             node
         );
     }
@@ -881,11 +881,11 @@ export abstract class LuaTranspiler {
     }
 
     public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
-        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
+        throw new TranspileError(`Bit operations are not supported for target Lua ${this.options.target}`, node);
     }
 
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-        throw new TranspileError(`Bit operations are not supported in Lua ${this.options.target}`, node);
+        throw new TranspileError(`Bit operations are not supported for target Lua ${this.options.target}`, node);
     }
 
     public transpileTemplateExpression(node: ts.TemplateExpression): string {
@@ -1088,7 +1088,7 @@ export abstract class LuaTranspiler {
             return `${translation[identifierString]}`;
         } else {
             throw new TranspileError(`Unsupported string property ${identifierString}, ` +
-                                     `is not supported in Lua ${this.options.luaTarget}.`,
+                                     `is not supported for target Lua ${this.options.luaTarget}.`,
                                      identifier);
         }
     }
@@ -1303,11 +1303,11 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    // Implemented in 5.1 and overridden in 5.2 (and onwards)
-    public transpileVariableDestructuring(value: string): string {
+    public transpileDestructingAssignmentValue(node: ts.Expression): string {
         throw new TranspileError(
-            `transpileVariableDestructuring must be implemented!`,
-            null
+            `Unsupported destructing statement, ` +
+            `destructing statements are not supported for target Lua ${this.options.luaTarget}.`,
+            node
         );
     }
 
@@ -1330,13 +1330,12 @@ export abstract class LuaTranspiler {
             }
 
             const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
-            const value = this.transpileExpression(node.initializer);
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
-                return `local ${vars}=${value}\n`;
+                return `local ${vars}=${this.transpileExpression(node.initializer)}\n`;
             } else {
-                return `local ${vars}=${this.transpileVariableDestructuring(value)}\n`;
+                return `local ${vars}=${this.transpileDestructingAssignmentValue(node.initializer)}\n`;
             }
         } else {
             throw new TranspileError(

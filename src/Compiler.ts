@@ -95,7 +95,7 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     });
 
     // Copy lualib to target dir
-    if (options.luaLibImport === LuaLibImportKind.Require) {
+    if (options.luaLibImport === LuaLibImportKind.Require || options.luaLibImport === LuaLibImportKind.Always) {
         fs.copyFileSync(
             path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
             path.join(options.outDir, "lualib_bundle.lua")

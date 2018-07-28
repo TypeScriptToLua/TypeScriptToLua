@@ -9,13 +9,13 @@ class Map<TKey, TValue> {
 
         if (other instanceof Map) {
             this.size = other.size;
-            for (const [key, value] of other.entries()) {
-                this.items[key as any] = value;
+            for (const kvp of other.entries()) {
+                this.items[kvp[0] as any] = kvp[1];
             }
         } else if (other !== undefined) {
             this.size = other.length;
-            for (const [key, value] of other) {
-                this.items[key as any] = value;
+            for (const kvp of other) {
+                this.items[kvp[0] as any] = kvp[1];
             }
         }
     }

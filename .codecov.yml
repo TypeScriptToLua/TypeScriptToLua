@@ -15,5 +15,6 @@ coverage:
       only_pulls: false
       flags: null
       paths: null
+      comment: false
 
 comment: false

@@ -12,7 +12,6 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 const fs = require("fs");
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
-const backport51 = fs.readFileSync("test/src/backport.51.lua") + "\n";
 
 export function transpileString(str: string, options: CompilerOptions = { luaLibImport: "none", luaTarget: LuaTarget.Lua53 }): string {
     const compilerHost = {
@@ -61,13 +60,9 @@ export function transpileFile(filePath: string): string {
     return result.trim();
 }
 
-export function executeLua(luaStr: string, withLib = true, with51Backport = true): any {
+export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
-    }
-
-    if (with51Backport) {
-        luaStr = backport51 + luaStr;
     }
 
     const L = lauxlib.luaL_newstate();

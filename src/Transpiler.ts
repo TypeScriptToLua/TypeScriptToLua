@@ -44,9 +44,10 @@ export enum LuaLibFeature {
 }
 
 export enum LuaLibImportKind {
+    None = "none",
+    Always = "always",
     Inline = "inline",
     Require = "require",
-    None = "none",
 }
 
 interface ExportInfo {
@@ -140,6 +141,11 @@ export abstract class LuaTranspiler {
     }
 
     public importLuaLibFeature(feature: LuaLibFeature): void {
+        // Add additional lib requirements
+        if (feature === LuaLibFeature.Map || feature === LuaLibFeature.Set) {
+            this.luaLibFeatureSet.add(LuaLibFeature.InstanceOf);
+        }
+
         // TODO inline imported features in output i option set
         this.luaLibFeatureSet.add(feature);
     }
@@ -177,18 +183,17 @@ export abstract class LuaTranspiler {
             "-- https://github.com/Perryvw/TypescriptToLua\n";
         }
         let result = header;
-        if (this.options.luaLibImport === LuaLibImportKind.Require) {
+
+        // Transpile content first to gather some info on dependencies
+        let fileStatements = "";
+        this.exportStack.push([]);
+        this.sourceFile.statements.forEach(s => fileStatements += this.transpileNode(s));
+
+        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.size > 0)
+            || this.options.luaLibImport === LuaLibImportKind.Always) {
             // require helper functions
             result += `require("lualib_bundle")\n`;
         }
-        if (this.isModule) {
-            // Shadow exports if it already exists
-            result += "local exports = exports or {}\n";
-        }
-
-        // Transpile content statements
-        this.exportStack.push([]);
-        this.sourceFile.statements.forEach(s => result += this.transpileNode(s));
 
         // Inline lualib features
         if (this.options.luaLibImport === LuaLibImportKind.Inline) {
@@ -198,6 +203,14 @@ export abstract class LuaTranspiler {
                 result += fs.readFileSync(featureFile).toString() + "\n";
             }
         }
+
+        if (this.isModule) {
+            // Shadow exports if it already exists
+            result += "local exports = exports or {}\n";
+        }
+
+        // Add file systems after imports since order matters in Lua
+        result += fileStatements;
 
         // Exports
         result += this.makeExports();
@@ -935,6 +948,8 @@ export abstract class LuaTranspiler {
         const name = this.transpileExpression(node.expression);
         const params = node.arguments ? this.transpileArguments(node.arguments, ts.createTrue()) : "true";
 
+        this.checkForLuaLibType(this.checker.getTypeAtLocation(node));
+
         return `${name}.new(${params})`;
     }
 
@@ -1145,6 +1160,8 @@ export abstract class LuaTranspiler {
                     return this.transpileGetAccessor(node);
                 }
         }
+
+        this.checkForLuaLibType(type);
 
         // Do not output path for member only enums
         if (tsHelper.isCompileMembersOnlyEnum(type, this.checker)) {
@@ -1680,5 +1697,18 @@ export abstract class LuaTranspiler {
         });
 
         return result;
+    }
+
+    public checkForLuaLibType(type: ts.Type): void {
+        if (type.symbol) {
+            switch (this.checker.getFullyQualifiedName(type.symbol)) {
+                case "Map":
+                    this.importLuaLibFeature(LuaLibFeature.Map);
+                    return;
+                case "Set":
+                    this.importLuaLibFeature(LuaLibFeature.Set);
+                    return;
+            }
+        }
     }
 }

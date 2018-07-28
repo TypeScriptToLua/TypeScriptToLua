@@ -678,6 +678,30 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileStringLiteralExpression(node: ts.Node): string {
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
+        const escapeSequences: Array<[RegExp, string]> = [
+            [/[\\]/g, "\\\\"],
+            [/[\']/g, "\\\'"],
+            [/[\`]/g, "\\\`"],
+            [/[\"]/g, "\\\""],
+            [/[\n]/g, "\\n"],
+            [/[\r]/g, "\\r"],
+            [/[\v]/g, "\\v"],
+            [/[\t]/g, "\\t"],
+            [/[\b]/g, "\\b"],
+            [/[\f]/g, "\\f"],
+            [/[\0]/g, "\\0"],
+        ];
+
+        let text = (node as ts.StringLiteral).text;
+
+        for (const [regex, replacement] of escapeSequences) {
+            text = text.replace(regex, replacement);
+        }
+        return `"${text}"`;
+    }
+
     public transpileExpression(node: ts.Node, brackets?: boolean): string {
         switch (node.kind) {
             case ts.SyntaxKind.BinaryExpression:
@@ -701,8 +725,7 @@ export abstract class LuaTranspiler {
                 return this.transpileIdentifier(node as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-                const text = (node as ts.StringLiteral).text;
-                return `"${text}"`;
+                return this.transpileStringLiteralExpression(node);
             case ts.SyntaxKind.TemplateExpression:
                 return this.transpileTemplateExpression(node as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:

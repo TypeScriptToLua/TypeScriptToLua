@@ -190,4 +190,12 @@ export class TSHelper {
 
         return [false, null];
     }
+
+    public static isUnaryAssignmentExpression(node: ts.Node): boolean {
+        return (
+            (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+            node.parent &&
+            node.parent.kind !== ts.SyntaxKind.ExpressionStatement
+        );
+    }
 }

@@ -805,10 +805,41 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileBinaryExpressionLeft(node: ts.BinaryExpression): [boolean, string] {
+        const lhs = this.transpileExpression(node.left, true);
+        let isUnary = false;
+        let result = lhs;
+        // When node.right is an assigning unary expression
+        // and node.left uses the same operand as node.right,
+        // the evaluation of node.left is wrapped in an anonymous function call
+        // to preserve order of operation (right will be transpiled to an anonymous function call)
+        // This is an edge case as "count = count++" is probably considered bad practice.
+        if (tsHelper.isUnaryAssignmentExpression(node.right)) {
+            let rightOperand: string;
+            if ((node.right as any).operand != null) {
+                rightOperand = this.transpileExpression((node.right as any).operand);
+            }
+
+            if (
+                lhs === rightOperand && (
+                    node.operatorToken.kind === ts.SyntaxKind.PlusToken ||
+                    node.operatorToken.kind === ts.SyntaxKind.MinusToken
+                )
+            ) {
+                isUnary = true;
+                result = this.transpileExpression(ts.createImmediatelyInvokedArrowFunction([
+                    ts.createReturn(node.left),
+                ]));
+            }
+        }
+
+        return [isUnary, result];
+    }
+
     public transpileBinaryExpression(node: ts.BinaryExpression, brackets?: boolean): string {
         // Transpile operands
-        const lhs = this.transpileExpression(node.left, true);
-        const rhs = this.transpileExpression(node.right, true);
+        const [isUnary, lhs] = this.transpileBinaryExpressionLeft(node);
+        const rhs = this.transpileExpression(node.right, isUnary);
 
         // Check if this is an assignment token, then handle accordingly
         const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
@@ -823,7 +854,7 @@ export abstract class LuaTranspiler {
 
         let result = "";
 
-        // Transpile Bitops
+         // Transpile Bitops
         switch (node.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:
             case ts.SyntaxKind.BarToken:
@@ -836,76 +867,76 @@ export abstract class LuaTranspiler {
 
         // Transpile operators
         if (result === "") {
-            switch (node.operatorToken.kind) {
-                case ts.SyntaxKind.AmpersandAmpersandToken:
-                    result = `${lhs} and ${rhs}`;
-                    break;
-                case ts.SyntaxKind.BarBarToken:
-                    result = `${lhs} or ${rhs}`;
-                    break;
-                case ts.SyntaxKind.PlusToken:
-                    // Replace string + with ..
-                    const typeLeft = this.checker.getTypeAtLocation(node.left);
-                    const typeRight = this.checker.getTypeAtLocation(node.right);
-                    if ((typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
-                        ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.right)) {
-                        return lhs + " .. " + rhs;
-                    }
-                    result = `${lhs}+${rhs}`;
-                    break;
-                case ts.SyntaxKind.MinusToken:
-                    result = `${lhs}-${rhs}`;
-                    break;
-                case ts.SyntaxKind.AsteriskToken:
-                    result = `${lhs}*${rhs}`;
-                    break;
-                case ts.SyntaxKind.AsteriskAsteriskToken:
-                    result = `${lhs}^${rhs}`;
-                    break;
-                case ts.SyntaxKind.SlashToken:
-                    result = `${lhs}/${rhs}`;
-                    break;
-                case ts.SyntaxKind.PercentToken:
-                    result = `${lhs}%${rhs}`;
-                    break;
-                case ts.SyntaxKind.GreaterThanToken:
-                    result = `${lhs}>${rhs}`;
-                    break;
-                case ts.SyntaxKind.GreaterThanEqualsToken:
-                    result = `${lhs}>=${rhs}`;
-                    break;
-                case ts.SyntaxKind.LessThanToken:
-                    result = `${lhs}<${rhs}`;
-                    break;
-                case ts.SyntaxKind.LessThanEqualsToken:
-                    result = `${lhs}<=${rhs}`;
-                    break;
-                case ts.SyntaxKind.EqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
-                    }
+        switch (node.operatorToken.kind) {
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+                result = `${lhs} and ${rhs}`;
+                break;
+            case ts.SyntaxKind.BarBarToken:
+                result = `${lhs} or ${rhs}`;
+                break;
+            case ts.SyntaxKind.PlusToken:
+                // Replace string + with ..
+                const typeLeft = this.checker.getTypeAtLocation(node.left);
+                const typeRight = this.checker.getTypeAtLocation(node.right);
+                if ((typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
+                    ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.right)) {
+                    return lhs + " .. " + rhs;
+                }
+                result = `${lhs}+${rhs}`;
+                break;
+            case ts.SyntaxKind.MinusToken:
+                result = `${lhs}-${rhs}`;
+                break;
+            case ts.SyntaxKind.AsteriskToken:
+                result = `${lhs}*${rhs}`;
+                break;
+            case ts.SyntaxKind.AsteriskAsteriskToken:
+                result = `${lhs}^${rhs}`;
+                break;
+            case ts.SyntaxKind.SlashToken:
+                result = `${lhs}/${rhs}`;
+                break;
+            case ts.SyntaxKind.PercentToken:
+                result = `${lhs}%${rhs}`;
+                break;
+            case ts.SyntaxKind.GreaterThanToken:
+                result = `${lhs}>${rhs}`;
+                break;
+            case ts.SyntaxKind.GreaterThanEqualsToken:
+                result = `${lhs}>=${rhs}`;
+                break;
+            case ts.SyntaxKind.LessThanToken:
+                result = `${lhs}<${rhs}`;
+                break;
+            case ts.SyntaxKind.LessThanEqualsToken:
+                result = `${lhs}<=${rhs}`;
+                break;
+            case ts.SyntaxKind.EqualsToken:
+                if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+                    return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
+                }
 
-                    result = `${lhs} = ${rhs}`;
-                    break;
-                case ts.SyntaxKind.EqualsEqualsToken:
-                case ts.SyntaxKind.EqualsEqualsEqualsToken:
-                    result = `${lhs}==${rhs}`;
-                    break;
-                case ts.SyntaxKind.ExclamationEqualsToken:
-                case ts.SyntaxKind.ExclamationEqualsEqualsToken:
-                    result = `${lhs}~=${rhs}`;
-                    break;
-                case ts.SyntaxKind.InKeyword:
-                    result = `${rhs}[${lhs}]~=nil`;
-                    break;
-                case ts.SyntaxKind.InstanceOfKeyword:
-                    result = this.transpileLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
-                    break;
-                default:
-                    throw new TranspileError(
-                        "Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind),
-                        node
-                    );
+                result = `${lhs} = ${rhs}`;
+                break;
+            case ts.SyntaxKind.EqualsEqualsToken:
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                result = `${lhs}==${rhs}`;
+                break;
+            case ts.SyntaxKind.ExclamationEqualsToken:
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                result = `${lhs}~=${rhs}`;
+                break;
+            case ts.SyntaxKind.InKeyword:
+                result = `${rhs}[${lhs}]~=nil`;
+                break;
+            case ts.SyntaxKind.InstanceOfKeyword:
+                result = this.transpileLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
+                break;
+            default:
+                throw new TranspileError(
+                    "Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind),
+                    node
+                );
             }
         }
 
@@ -949,38 +980,112 @@ export abstract class LuaTranspiler {
                                             `function() return ${val1} end`, `function() return ${val2} end`);
     }
 
+    /** Transpiles a self-assigning unary expression (--var OR var-- OR ++var OR var++) */
+    public transpileSelfAssigningUnaryExpression(
+        node: ts.PrefixUnaryExpression | ts.PostfixUnaryExpression,
+        operator: ts.SyntaxKind.PlusToken | ts.SyntaxKind.MinusToken
+    ): string {
+        let expression: ts.Expression;
+        // @TODO "most likely" isn't a proper reason to do this
+        // If the node has a parent and it's not an Expression statement,
+        // the return value of the expression is most likely assigned to something.
+        // The operation has to be wrapped in an anonymous function call because lua
+        // doesn't support inline assignments.
+        const exemptWrapFunctionCall = [
+            ts.SyntaxKind.ExpressionStatement,
+            ts.SyntaxKind.ForStatement,
+        ];
+
+        if (node.parent && exemptWrapFunctionCall.indexOf(node.parent.kind) === -1) {
+            let returnIdentifier: ts.Identifier | ts.Expression;
+            const functionBody: ts.Statement[] = [
+                ts.createStatement(
+                    ts.createBinary(
+                        node.operand,
+                        ts.SyntaxKind.EqualsToken,
+                        ts.createBinary(node.operand, operator, ts.createLiteral(1))
+                    )
+                ),
+            ];
+
+            if (ts.isPostfixUnaryExpression(node)) {
+                // Name of the temp var is based on the operand's name to avoid collision
+                const tempVarName = `${this.transpileExpression(node.operand)}_before`;
+                // Add local variable storing the value before the operation, because:
+                // var++ / var-- is a special case where the return value of the expression
+                // is the value before the ++/-- operation
+                functionBody.unshift(ts.createVariableStatement(
+                    null,
+                    [ts.createVariableDeclaration(tempVarName, null, node.operand)]
+                ));
+
+                returnIdentifier = ts.createIdentifier(tempVarName);
+            } else if (ts.isPrefixUnaryExpression(node)) {
+                returnIdentifier = node.operand;
+            } else {
+                throw new TranspileError("Attempting to transpile non-unary node as unary", node);
+            }
+
+            functionBody.push(ts.createReturn(returnIdentifier));
+            expression = ts.createImmediatelyInvokedArrowFunction(functionBody);
+        } else {
+            expression = ts.createBinary(
+                node.operand,
+                ts.SyntaxKind.EqualsToken,
+                ts.createBinary(
+                    node.operand,
+                    operator,
+                    ts.createLiteral(1)
+                )
+            );
+        }
+
+        return this.transpileExpression(expression, false);
+    }
+
     public transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
-        const operand = this.transpileExpression(node.operand, true);
+        let operator: ts.BinaryOperator;
+
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand}=${operand}+1`;
+                operator = ts.SyntaxKind.PlusToken;
+                break;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand}=${operand}-1`;
+                operator = ts.SyntaxKind.MinusToken;
+                break;
             default:
-                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
-                throw new TranspileError("Unsupported unary postfix: " + operator,
+                const operatorName = tsHelper.enumName(node.operator, ts.SyntaxKind);
+                throw new TranspileError("Unsupported unary postfix: " + operatorName,
                                          node);
         }
+
+        return this.transpileSelfAssigningUnaryExpression(node, operator);
     }
 
     public transpilePrefixUnaryExpression(node: ts.PrefixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand, true);
+        let operator: ts.BinaryOperator;
+
         switch (node.operator) {
             case ts.SyntaxKind.TildeToken:
                 return this.transpileUnaryBitOperation(node, operand);
             case ts.SyntaxKind.PlusPlusToken:
-                return `${operand}=${operand}+1`;
+                operator = ts.SyntaxKind.PlusToken;
+                break;
             case ts.SyntaxKind.MinusMinusToken:
-                return `${operand}=${operand}-1`;
+                operator = ts.SyntaxKind.MinusToken;
+                break;
             case ts.SyntaxKind.ExclamationToken:
                 return `(not ${operand})`;
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
             default:
-                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
-                throw new TranspileError("Unsupported unary prefix: " + operator,
+                const operatorName = tsHelper.enumName(node.operator, ts.SyntaxKind);
+                throw new TranspileError("Unsupported unary prefix: " + operatorName,
                                          node);
         }
+
+        return this.transpileSelfAssigningUnaryExpression(node, operator);
     }
 
     public transpileNewExpression(node: ts.NewExpression): string {

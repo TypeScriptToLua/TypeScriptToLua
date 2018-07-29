@@ -6,10 +6,10 @@ import * as util from "../src/util";
 
 export class ExpressionTests {
 
-    @TestCase("i++", "i=i+1")
-    @TestCase("++i", "i=i+1")
-    @TestCase("i--", "i=i-1")
-    @TestCase("--i", "i=i-1")
+    @TestCase("i++", "i = i+1")
+    @TestCase("++i", "i = i+1")
+    @TestCase("i--", "i = i-1")
+    @TestCase("--i", "i = i-1")
     @TestCase("!a", "(not a)")
     @TestCase("-a", "-a")
     @TestCase("delete tbl['test']", "tbl[\"test\"]=nil")
@@ -175,7 +175,7 @@ export class ExpressionTests {
     @TestCase("-1+1", "-1+1")
     @TestCase("1*30+4", "(1*30)+4")
     @TestCase("1*(3+4)", "1*(3+4)")
-    @TestCase("1*(3+4*2)", "1*(3+(4*2))")
+    @TestCase("1*(3+4*2)", "1*(3+4*2)")
     @Test("Binary expressions ordering parentheses")
     public binaryParentheses(input: string, lua: string) {
         Expect(util.transpileString(input)).toBe(lua);

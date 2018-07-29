@@ -1,19 +1,11 @@
+comment: off
+
 coverage:
   status:
-    patch: false
-    changes: false
     project:
-      # basic
-      target: 95
-      threshold: null
-      base: auto 
-      # advanced
-      branches: null
-      if_no_uploads: error
-      if_not_found: success
-      if_ci_failed: error
-      only_pulls: false
-      flags: null
-      paths: null
-
-comment: off
+      default:
+        target: 95
+        threshold: null
+        base: auto
+    changes: off
+    patch: off

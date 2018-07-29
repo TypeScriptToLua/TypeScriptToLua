@@ -224,7 +224,17 @@ export abstract class LuaTranspiler {
     // Transpile a block
     public transpileBlock(block: ts.Block): string {
         this.exportStack.push([]);
-        let result = block.statements.map(statement => this.transpileNode(statement)).join("");
+
+        let result = "";
+        for (const statement of block.statements) {
+            result += this.transpileNode(statement);
+
+            // Don't transpile any dead code after a return
+            if (ts.isReturnStatement(statement)) {
+                break;
+            }
+        }
+
         result += this.makeExports();
 
         return result;
@@ -587,13 +597,14 @@ export abstract class LuaTranspiler {
             this.pushIndent();
 
             this.transpilingSwitch++;
-            clause.statements.forEach(statement => {
-                result += this.transpileNode(statement);
-            });
+            result += this.transpileBlock(ts.createBlock(clause.statements));
             this.transpilingSwitch--;
 
             let i = index + 1;
-            if (i < clauses.length && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+            if (i < clauses.length
+                && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)
+                && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.ReturnStatement)
+            ) {
                 let nextClause = clauses[i];
                 while (i < clauses.length
                     && ts.isCaseClause(nextClause)
@@ -605,8 +616,8 @@ export abstract class LuaTranspiler {
 
                 if (i !== index && nextClause) {
                     if (ts.isCaseClause(nextClause)) {
-                        result += this.indent +
-                                  `${jumpTableName}[${this.transpileExpression(nextClause.expression, true)}]()\n`;
+                        const nextValue = this.transpileExpression(nextClause.expression, true);
+                        result += this.indent + `return ${jumpTableName}[${nextValue}]()\n`;
                     } else {
                         result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"]()\n`;
                     }
@@ -619,11 +630,13 @@ export abstract class LuaTranspiler {
 
             result += this.indent + `end\n`;
         });
-        result += this.indent +
-                  `if ${jumpTableName}[${expression}] then ${jumpTableName}[${expression}]()\n`;
-        result += this.indent +
-                  `elseif ${jumpTableName}["____default${this.genVarCounter}"] ` +
-                  `then ${jumpTableName}["____default${this.genVarCounter}"]() end\n`;
+        result += this.indent + `if ${jumpTableName}[${expression}] then\n`
+            + this.indent + `   local ${jumpTableName}Return = ${jumpTableName}[${expression}]()\n`
+            + this.indent + `   if ${jumpTableName}Return ~= nil then return ${jumpTableName}Return end\n`;
+        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then\n`
+            + this.indent + `   local ${jumpTableName}Return = ${jumpTableName}["____default${this.genVarCounter}"]()\n`
+            + this.indent + `   if ${jumpTableName}Return ~= nil then return ${jumpTableName}Return end\n`
+            + this.indent + `end\n`;
         result += this.indent +
                   "--------Switch statement end--------\n";
 

@@ -8,7 +8,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("while")
-    public while(inp: number[], expected: number[]) {
+    public while(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -29,7 +29,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3, 4], [0, 1, 2, 1, 4])
     @Test("while with continue")
-    public whileWithContinue(inp: number[], expected: number[]) {
+    public whileWithContinue(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -63,7 +63,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3, 4], [0, 1, 2, 1, 4])
     @Test("dowhile with continue")
-    public dowhileWithContinue(inp: number[], expected: number[]) {
+    public dowhileWithContinue(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -97,7 +97,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("for")
-    public for(inp: number[], expected: number[]) {
+    public for(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -116,7 +116,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
     @Test("for with continue")
-    public forWithContinue(inp: number[], expected: number[]) {
+    public forWithContinue(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -145,7 +145,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("forMirror")
-    public forMirror(inp: number[], expected: number[]) {
+    public forMirror(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -164,7 +164,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3], [0, 1, 2, 3])
     @Test("forBreak")
-    public forBreak(inp: number[], expected: number[]) {
+    public forBreak(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -191,7 +191,7 @@ export class LuaLoopTests {
     @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i >= 0; i -= 2")
     @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i > 0; i -= 2")
     @Test("forheader")
-    public forheader(inp: number[], expected: number[], header: string) {
+    public forheader(inp: number[], expected: number[], header: string): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -210,7 +210,7 @@ export class LuaLoopTests {
 
     @TestCase({ ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 }, { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 })
     @Test("forin[Object]")
-    public forinObject(inp: any, expected: any) {
+    public forinObject(inp: any, expected: any): void {
         // Transpile
         const lua = util.transpileString(
             `let objTest = ${JSON.stringify(inp)};
@@ -229,7 +229,7 @@ export class LuaLoopTests {
 
     @TestCase([1, 2, 3])
     @Test("forin[Array]")
-    public forinArray(inp: number[]) {
+    public forinArray(inp: number[]): void {
         // Transpile & Assert
         Expect(() =>
             util.transpileString(
@@ -243,7 +243,7 @@ export class LuaLoopTests {
 
     @TestCase({a: 0, b: 1, c: 2, d: 3, e: 4}, {a: 0, b: 0, c: 2, d: 0, e: 4})
     @Test("forin with continue")
-    public forinWithContinue(inp: number[], expected: number[]) {
+    public forinWithContinue(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let obj = ${JSON.stringify(inp)};
@@ -267,7 +267,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2], [1, 2, 3])
     @Test("forof")
-    public forof(inp: any, expected: any) {
+    public forof(inp: any, expected: any): void {
         // Transpile
         const lua = util.transpileString(
             `let objTest = ${JSON.stringify(inp)};
@@ -287,7 +287,7 @@ export class LuaLoopTests {
 
     @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
     @Test("forof with continue")
-    public forofWithContinue(inp: number[], expected: number[]) {
+    public forofWithContinue(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let testArr = ${JSON.stringify(inp)};
@@ -322,7 +322,7 @@ export class LuaLoopTests {
     @TestCase("for (let a in b) {}")
     @TestCase("for (let a of b) {}")
     @Test("loop versions")
-    public whileVersions(loop: string) {
+    public whileVersions(loop: string): void {
         // Transpile
         const lua51 = util.transpileString(loop, { luaTarget: LuaTarget.Lua51 });
         const lua52 = util.transpileString(loop, { luaTarget: LuaTarget.Lua52 });
@@ -334,5 +334,37 @@ export class LuaLoopTests {
         Expect(lua52.indexOf("::__continue0::") !== -1).toBe(true); // Labels from 5.2 onwards
         Expect(lua53.indexOf("::__continue0::") !== -1).toBe(true);
         Expect(luajit.indexOf("::__continue0::") !== -1).toBe(true);
+    }
+
+    @Test("for dead code after return")
+    public forDeadCodeAfterReturn(): void {
+        const result = util.transpileAndExecute(
+            `for (let i = 0; i < 10; i++) { return 3; const b = 8; }`);
+
+        Expect(result).toBe(3);
+    }
+
+    @Test("for..in dead code after return")
+    public forInDeadCodeAfterReturn(): void {
+        const result = util.transpileAndExecute(
+            `for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`);
+
+        Expect(result).toBe(3);
+    }
+
+    @Test("for..of dead code after return")
+    public forOfDeadCodeAfterReturn(): void {
+        const result = util.transpileAndExecute(
+            `for (let a of [1,2,4]) { return 3; const b = 8; }`);
+
+        Expect(result).toBe(3);
+    }
+
+    @Test("while dead code after return")
+    public whileDeadCodeAfterReturn(): void {
+        const result = util.transpileAndExecute(
+            `while (true) { return 3; const b = 8; }`);
+
+        Expect(result).toBe(3);
     }
 }

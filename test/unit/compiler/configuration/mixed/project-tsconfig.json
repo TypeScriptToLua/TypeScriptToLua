@@ -1,0 +1,8 @@
+{
+    "compilerOptions": {
+        "outDir": "../../dist/test",
+        "rootDir": "./"
+    },
+    "luaTarget": "5.1",
+    "luaLibImport": "none"
+}

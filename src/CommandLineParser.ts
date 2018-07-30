@@ -17,7 +17,11 @@ export class CLIError extends Error {
 
 }
 
-const optionDeclarations: { [key: string]: yargs.Options } = {
+export interface YargsOptions {
+    [key: string]: yargs.Options;
+}
+
+export const optionDeclarations: YargsOptions = {
     luaLibImport: {
         choices: ["inline", "require", "none"],
         default: "inline",
@@ -39,10 +43,32 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
 };
 
 /**
+ * Removes defaults from the arguments.
+ * Returns a tuple where [0] is a copy of the options without defaults and [1] is the extracted defaults.
+ */
+function getYargOptionsWithoutDefaults(options: YargsOptions): [YargsOptions, yargs.Arguments] {
+    // options is a deep object, Object.assign or {...options} still keeps the referece
+    const copy = JSON.parse(JSON.stringify(options));
+
+    const optionDefaults: yargs.Arguments = {_: null, $0: null};
+    for (const optionName in copy) {
+        const section = copy[optionName];
+
+        optionDefaults[optionName] = section.default;
+        delete section.default;
+    }
+
+    return [copy, optionDefaults];
+}
+
+/**
  * Pares the supplied arguments.
  * The result will include arguments supplied via CLI and arguments from tsconfig.
  */
 export function parseCommandLine(args: string[]): ParsedCommandLine {
+    // Get a copy of the options without defaults to prevent defaults overriding project config
+    const [tstlOptions, tstlDefaults] = getYargOptionsWithoutDefaults(optionDeclarations);
+
     const parsedArgs = yargs
         .usage("Syntax: tstl [options] [files...]\n\n" +
             "In addition to the options listed below you can also pass options" +
@@ -51,7 +77,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
         .example("tstl path/to/file.ts [...]", "Compile files")
         .example("tstl -p path/to/tsconfig.json", "Compile project")
         .wrap(yargs.terminalWidth())
-        .options(optionDeclarations)
+        .options(tstlOptions)
         .fail((msg, err) => {
             throw new CLIError(msg);
         })
@@ -81,6 +107,9 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
 
     // Add TSTL options from tsconfig
     addTSTLOptions(commandLine);
+
+    // Add TSTL defaults last
+    addTSTLOptions(commandLine, tstlDefaults);
 
     // Run diagnostics again to check for errors in tsconfig
     runDiagnostics(commandLine);
@@ -158,13 +187,15 @@ export function findConfigFile(commandLine: ts.ParsedCommandLine): void {
     if (!commandLine.options.project) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }
-    let configPath;
-    /* istanbul ignore else: Testing else part is not really possible via automated tests */
-    if (path.isAbsolute(commandLine.options.project)) {
-        configPath = commandLine.options.project;
-    } else {
+    let configPath = commandLine.options.project;
+    // If the project path is wrapped in double quotes, remove them
+    if (/^".*"$/.test(configPath)) {
+        configPath = configPath.substring(1, configPath.length - 1);
+    }
+    /* istanbul ignore if: Testing else part is not really possible via automated tests */
+    if (!path.isAbsolute(configPath)) {
         // TODO check if commandLine.options.project can even contain non absolute paths
-        configPath = path.join(process.cwd(), commandLine.options.project);
+        configPath = path.join(process.cwd(), configPath);
     }
     if (fs.statSync(configPath).isDirectory()) {
         configPath = path.join(configPath, "tsconfig.json");

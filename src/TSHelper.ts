@@ -190,4 +190,10 @@ export class TSHelper {
 
         return [false, null];
     }
+
+    public static isExpressionStatement(node: ts.Expression): boolean {
+        return node.parent === undefined
+            || ts.isExpressionStatement(node.parent)
+            || ts.isForStatement(node.parent);
+    }
 }

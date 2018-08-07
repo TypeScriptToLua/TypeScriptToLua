@@ -275,6 +275,15 @@ export class ExpressionTests {
         Expect(result).toEqual(expected);
     }
 
+    @TestCase("a + b++", 10)
+    @TestCase("a + (b += 5)", 15)
+    @Test("Mixed assignment expressions")
+    public mixedAssignmentExpressions(expression: string, expected: number): void {
+        const result = util.transpileAndExecute(`let a = 4; let b = 6; return ${expression};`);
+
+        Expect(result).toBe(expected);
+    }
+
     // ====================================
     // Test expected errors
     // ====================================

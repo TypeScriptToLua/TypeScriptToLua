@@ -798,16 +798,12 @@ export abstract class LuaTranspiler {
         // Check if this is an assignment token, then handle accordingly
         const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
         if (isAssignment) {
-            const valueExpression = ts.createBinary(node.left, operator, node.right);
-            const assignmentExpression = ts.createAssignment(node.left, valueExpression);
-            const returnExpression = ts.createReturn(node.left);
-
-            if (tsHelper.isExpressionStatement(node)) {
-                return this.transpileExpression(assignmentExpression);
-            } else {
-                return this.transpileExpression(ts.createImmediatelyInvokedArrowFunction(
-                    [ts.createStatement(assignmentExpression), returnExpression]));
-            }
+            return this.transpileAssignmentExpression(
+                node.left,
+                ts.createBinary(node.left, operator, node.right),
+                tsHelper.isExpressionStatement(node),
+                false
+            );
         }
 
         // Transpile operands
@@ -946,43 +942,56 @@ export abstract class LuaTranspiler {
                                             `function() return ${val1} end`, `function() return ${val2} end`);
     }
 
+    public transpileAssignmentExpression(
+        lhs: ts.Expression,
+        replacementExpression: ts.BinaryExpression,
+        isStatement: boolean,
+        returnValueBefore: boolean): string {
+        // Assign replacement expression to its left-hand side
+        const assignment = ts.createAssignment(lhs, replacementExpression);
+
+        if (isStatement) {
+            return this.transpileExpression(assignment);
+        } else {
+            if (returnValueBefore) {
+                const oldValueName = `__originalValue${this.transpileExpression(lhs)}${this.genVarCounter++}`;
+                const oldValueAssignment = ts.createVariableStatement(
+                [], [ts.createVariableDeclaration(oldValueName, undefined, lhs)]);
+
+                const valueReturn = ts.createReturn(ts.createIdentifier(oldValueName));
+
+                return this.transpileExpression(ts.createImmediatelyInvokedArrowFunction(
+                    [oldValueAssignment, ts.createStatement(assignment), valueReturn]));
+            } else {
+                const valueReturn = ts.createReturn(lhs);
+                return this.transpileExpression(
+                    ts.createImmediatelyInvokedArrowFunction([ts.createStatement(assignment), valueReturn]));
+            }
+        }
+    }
+
     public transpilePostfixUnaryExpression(node: ts.PostfixUnaryExpression): string {
         const operand = this.transpileExpression(node.operand, true);
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken: {
-                const increment = ts.createBinary(node.operand, ts.SyntaxKind.PlusToken, ts.createLiteral(1));
-                const oldValueName = `__originalValue${this.genVarCounter++}`;
-                const oldValueAssignment = ts.createVariableStatement(
-                    [], [ts.createVariableDeclaration(oldValueName, undefined, node.operand)]);
-                const assignment = ts.createAssignment(node.operand, increment);
-                const valueReturn = ts.createReturn(ts.createIdentifier(oldValueName));
-
-                if (tsHelper.isExpressionStatement(node)) {
-                    return this.transpileExpression(assignment);
-                } else {
-                    return this.transpileExpression(ts.createImmediatelyInvokedArrowFunction(
-                        [oldValueAssignment, ts.createStatement(assignment), valueReturn]));
-                }
+                return this.transpileAssignmentExpression(
+                    node.operand,
+                    ts.createBinary(node.operand, ts.SyntaxKind.PlusToken, ts.createLiteral(1)),
+                    tsHelper.isExpressionStatement(node),
+                    true
+                );
             }
             case ts.SyntaxKind.MinusMinusToken: {
-                const increment = ts.createBinary(node.operand, ts.SyntaxKind.MinusToken, ts.createLiteral(1));
-                const oldValueName = `__originalValue${this.genVarCounter++}`;
-                const oldValueAssignment = ts.createVariableStatement(
-                    [], [ts.createVariableDeclaration(oldValueName, undefined, node.operand)]);
-                const assignment = ts.createAssignment(node.operand, increment);
-                const valueReturn = ts.createReturn(ts.createIdentifier(oldValueName));
-
-                if (tsHelper.isExpressionStatement(node)) {
-                    return this.transpileExpression(assignment);
-                } else {
-                    return this.transpileExpression(ts.createImmediatelyInvokedArrowFunction(
-                        [oldValueAssignment, ts.createStatement(assignment), valueReturn]));
-                }
+                return this.transpileAssignmentExpression(
+                    node.operand,
+                    ts.createBinary(node.operand, ts.SyntaxKind.MinusToken, ts.createLiteral(1)),
+                    tsHelper.isExpressionStatement(node),
+                    true
+                );
             }
             default:
                 const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
-                throw new TranspileError("Unsupported unary postfix: " + operator,
-                                         node);
+                throw new TranspileError("Unsupported unary postfix: " + operator, node);
         }
     }
 
@@ -992,26 +1001,20 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.TildeToken:
                 return this.transpileUnaryBitOperation(node, operand);
             case ts.SyntaxKind.PlusPlusToken: {
-                const increment = ts.createBinary(node.operand, ts.SyntaxKind.PlusToken, ts.createLiteral(1));
-                const assignment = ts.createAssignment(node.operand, increment);
-                if (tsHelper.isExpressionStatement(node)) {
-                    return this.transpileExpression(assignment);
-                } else {
-                    const valueReturn = ts.createReturn(node.operand);
-                    return this.transpileExpression(
-                        ts.createImmediatelyInvokedArrowFunction([ts.createStatement(assignment), valueReturn]));
-                }
+                return this.transpileAssignmentExpression(
+                    node.operand,
+                    ts.createBinary(node.operand, ts.SyntaxKind.PlusToken, ts.createLiteral(1)),
+                    tsHelper.isExpressionStatement(node),
+                    false
+                );
             }
             case ts.SyntaxKind.MinusMinusToken: {
-                const increment = ts.createBinary(node.operand, ts.SyntaxKind.MinusToken, ts.createLiteral(1));
-                const assignment = ts.createAssignment(node.operand, increment);
-                if (tsHelper.isExpressionStatement(node)) {
-                    return this.transpileExpression(assignment);
-                } else {
-                    const valueReturn = ts.createReturn(node.operand);
-                    return this.transpileExpression(
-                        ts.createImmediatelyInvokedArrowFunction([ts.createStatement(assignment), valueReturn]));
-                }
+                return this.transpileAssignmentExpression(
+                    node.operand,
+                    ts.createBinary(node.operand, ts.SyntaxKind.MinusToken, ts.createLiteral(1)),
+                    tsHelper.isExpressionStatement(node),
+                    false
+                );
             }
             case ts.SyntaxKind.ExclamationToken:
                 return `(not ${operand})`;

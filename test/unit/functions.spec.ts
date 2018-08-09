@@ -17,6 +17,17 @@ export class FunctionTests {
         Expect(result).toBe(3);
     }
 
+    @TestCase("i++", 15)
+    @TestCase("i--", 5)
+    @TestCase("++i", 15)
+    @TestCase("--i", 5)
+    @Test("Arrow function unary expression")
+    public arrowFunctionUnary(lambda: string, expected: number): void {
+        const result = util.transpileAndExecute(`let i = 10; [1,2,3,4,5].forEach(() => ${lambda}); return i;`);
+
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("b => a = b", 5)
     @TestCase("b => a += b", 15)
     @TestCase("b => a -= b", 5)

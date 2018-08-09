@@ -9,5 +9,5 @@ while(i<10) do
         end
     end
     ::__continue0::
-    i=i+1
+    i = (i+1)
 end

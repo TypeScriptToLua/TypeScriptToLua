@@ -5,16 +5,15 @@ install:
 - npm install
 script:
 - npm run build
-# Testing & Coverage
 - npm run coverage
 after_success:
 - codecov
 deploy:
   provider: npm
-  email: 'lorenz.junglas@student.kit.edu'
+  email: lorenz.junglas@student.kit.edu
   skip_cleanup: true
   api_key:
-    secure: FQoclPvgZwwA0aiGT1Hmh8BxcgzqyGyqyhIz/wcL1wGh1/9v0XA93W8lmnpWw4eT/sWd3CJt26aCzZd+9GbhRRUt4YaR/JS/kLseq6ahI4xSLrXbHRJuXQKsuAaVRnddIR0CTZh5Qy4X9MtKvm74fPLTYaMYDrGYWxtawO/s1PsqyDeZrwZt7MhbxBTGk5nkiqI03/kKTCoXPpvYncFlSGlJAlSXyx3G7gkbplIr3JL5eqNYmv2KdclU7Q8R9j2NGV2DCJbE6E6SUdwWPXWs5UaKP2HHzXinIqh4HRA8GVb9x08BW6PFVbXmNCCfVtZf748cizLpT+SFWKRXL8DSPnJihI2QH9xiwMqDTNeZhBVtzsxe2aomKdwqrlFIUMGe85s+cEnEM9pncLHqwEXIUB/TrDtjObd+UOvp/4GopF5ZQ1iOi0pt7RFRrR/uZq49R3yU9FlcIh8SOR8J8w8MQjsf/C2DfMAVYc46iQS0yKFLkOOcG4su7V7n/kw8e5vQBVnzLngFJ4YcvXp24VHWZ9A8hxIoMLwaYbxrMHu3NKTt/nJn1z//Lr+MYpkliOWDmyHJ8JektcuySpJ0xpIRK5043P7p4/LBL2yMh9cVvHiumxhekJ4y/G/x3guSC/lmDu+/X3K+zMhm04Aky1OLiniaamB4XnyeUZrcY8dGijY=
+    secure: zXFXK1GohutgqKXQ101uKcJKcf0wgCuVPFMY44Xl/JwXeLsA1CJ4aqUdoXh2ramcI+9wTVj7RR3N3/7W+2DeDCfUlj+gxw26pTV3EUnU2B1TXEz01Ar07WPHmhHJSS5tgyo9kPUqm/YBFkJuDtfx0Kp3sL6IRYDddvGv/2L1X8r3I14PxgppkU9T4FGINdClOEwfwelmxx3kjxpnTsUHZ+ztx7o+blteSf/r+pT1RDaIap80JaTy6vHwJKECRSvtpyTKEYeVmBIaA3yXqRhfMdlp8bU20t2DXoDGXWPk0GXRGXkVHE6yj64gPe/eOOesAxzv0v/vr5w4poemJ+SGwP3RSbrbVtiusD4FC6+hFBH7hiNUhxww5euvbAfNOTq2XyxtjcNmKB5/O675xGihK1gBgrsPdJ4enwkhQNrUuQBHm5wIKGiaH7t7q+T8W9JAnk3FGGuSZPg9b7AnFDQ3graxZK9mtOxi0GvE7DHinH6qErd4noGjS/KSy1fnDkCEkeplOQmvxb4w7wLMR5pePFc77NBXiR3RJDKh4QKskcvXPx58OWNffTkS2QwYPYhraNNKbUfGFBNEA4KPNmw1jYlDE/1BhOebmONpZQMP/CdcCWL+CKyTdi1/289Ak4B0iSZZN+Yx+AONzPlcvBVi+bXeXtqoIt2zMFKkr/0YFQg=
   on:
     tags: true
     repo: Perryvw/TypescriptToLua

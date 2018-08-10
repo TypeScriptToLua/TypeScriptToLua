@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.7.0
+* Lualib runtime library is now compiled from TypeScript using the transpiler when building!
+    * Split up runtime library definition into individual files.
+    * Added multiple inclusion modes using the tsconfig option `lubLibImport`, options are:
+        * `require` : Requires the entire library if lualib features are used.
+        * `always` : Always require the runtime library.
+        * `inline` : Inline the library code for used features in the file.
+        * `none` : Do not include the runtime library
+* Added support for assigning expressions (`+=`, `&=`, `++`, etc) in other expressions (i.e. `lastIndex = i++` or `return a += b`) by transpiling them as immediately called anonymous functions.
+* Unreachable code (after returns) is no longer transpiled, preventing a Lua syntax error.
+* Fixed issue with destructing statements in Lua 5.1
+* Fixed issue with escaped characters in strings.
+* Fixed bug regarding changing an exported variable after its export.
+
+
 ## 0.6.0
 * Reworked part of the class system to solve some issues.
 * Reworked class tests from translation to functional.

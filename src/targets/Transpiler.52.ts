@@ -53,4 +53,9 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
                 return `bit32.arshift(${lhs},${rhs})`;
         }
     }
+
+    /** @override */
+    public transpileDestructingAssignmentValue(node: ts.Expression): string {
+        return `table.unpack(${this.transpileExpression(node)})`;
+    }
 }

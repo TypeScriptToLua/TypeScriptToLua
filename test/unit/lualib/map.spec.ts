@@ -3,7 +3,7 @@ import * as util from "../../src/util";
 
 export class MapTests {
     @Test("map constructor")
-    public mapConstructor() {
+    public mapConstructor(): void {
         const lua = util.transpileString(`let mymap = new Map(); return mymap.size;`);
         const result = util.executeLua(lua);
 
@@ -11,7 +11,7 @@ export class MapTests {
     }
 
     @Test("map iterable constructor")
-    public mapIterableConstructor() {
+    public mapIterableConstructor(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"],["b", "d"]]);
                                           return mymap.has("a") && mymap.has("b");`);
         const result = util.executeLua(lua);
@@ -20,7 +20,7 @@ export class MapTests {
     }
 
     @Test("map iterable constructor map")
-    public mapIterableConstructor2() {
+    public mapIterableConstructor2(): void {
         const lua = util.transpileString(`let mymap = new Map(new Map([["a", "c"],["b", "d"]]));
                                           return mymap.has("a") && mymap.has("b");`);
         const result = util.executeLua(lua);
@@ -29,7 +29,7 @@ export class MapTests {
     }
 
     @Test("map clear")
-    public mapClear() {
+    public mapClear(): void {
         const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();`;
         const lua = util.transpileString(mapTS + `return mymap.size;`);
         const size = util.executeLua(lua);
@@ -41,7 +41,7 @@ export class MapTests {
     }
 
     @Test("map delete")
-    public mapDelete() {
+    public mapDelete(): void {
         const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.delete("a");`;
         const lua = util.transpileString(mapTS + `return mymap.has("b") && !mymap.has("a");`);
         const contains = util.executeLua(lua);
@@ -49,7 +49,7 @@ export class MapTests {
     }
 
     @Test("map entries")
-    public mapEntries() {
+    public mapEntries(): void {
         const lua = util.transpileString(`let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
                                           let count = 0;
                                           for (var [key, value] of mymap.entries()) { count += key + value; }
@@ -59,7 +59,7 @@ export class MapTests {
     }
 
     @Test("map foreach")
-    public mapForEach() {
+    public mapForEach(): void {
         const lua = util.transpileString(
             `let mymap = new Map([["a", 2],["b", 3],["c", 4]]);
             let count = 0;
@@ -72,7 +72,7 @@ export class MapTests {
     }
 
     @Test("map foreach keys")
-    public mapForEachKeys() {
+    public mapForEachKeys(): void {
         const lua = util.transpileString(
             `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
             let count = 0;
@@ -85,42 +85,42 @@ export class MapTests {
     }
 
     @Test("map get")
-    public mapGet() {
+    public mapGet(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("a");`);
         const result = util.executeLua(lua);
         Expect(result).toBe("c");
     }
 
     @Test("map get missing")
-    public mapGetMissing() {
+    public mapGetMissing(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");`);
         const result = util.executeLua(lua);
         Expect(result).toBe(null);
     }
 
     @Test("map has")
-    public mapHas() {
+    public mapHas(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"]]); return mymap.has("a");`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(true);
     }
 
     @Test("map has false")
-    public mapHasFalse() {
+    public mapHasFalse(): void {
         const lua = util.transpileString(`let mymap = new Map(); return mymap.has("a");`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(false);
     }
 
     @Test("map has null")
-    public mapHasNull() {
+    public mapHasNull(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"]]); return mymap.has(null);`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(false);
     }
 
     @Test("map keys")
-    public mapKeys() {
+    public mapKeys(): void {
         const lua = util.transpileString(`let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
                                           let count = 0;
                                           for (var key of mymap.keys()) { count += key; }
@@ -130,7 +130,7 @@ export class MapTests {
     }
 
     @Test("map set")
-    public mapSet() {
+    public mapSet(): void {
         const mapTS = `let mymap = new Map(); mymap.set("a", 5);`;
         const lua = util.transpileString(mapTS + `return mymap.has("a");`);
         const has = util.executeLua(lua);
@@ -142,7 +142,7 @@ export class MapTests {
     }
 
     @Test("map values")
-    public mapValues() {
+    public mapValues(): void {
         const lua = util.transpileString(`let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
                                           let count = 0;
                                           for (var value of mymap.values()) { count += value; }
@@ -152,7 +152,7 @@ export class MapTests {
     }
 
     @Test("map size")
-    public mapSize() {
+    public mapSize(): void {
         Expect(util.transpileAndExecute(`let m = new Map(); return m.size;`)).toBe(0);
         Expect(util.transpileAndExecute(`let m = new Map(); m.set(1,3); return m.size;`)).toBe(1);
         Expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); return m.size;`)).toBe(2);

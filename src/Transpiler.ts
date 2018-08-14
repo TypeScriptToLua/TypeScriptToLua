@@ -250,7 +250,7 @@ export abstract class LuaTranspiler {
             }
         }
 
-        result += "end";
+        result += "end\n";
         return result;
     }
 

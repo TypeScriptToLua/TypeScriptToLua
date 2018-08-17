@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { DecoratorCollection, DecoratorKind } from "./Decorator";
 
 export class TSHelper {
 
@@ -28,11 +29,12 @@ export class TSHelper {
     }
 
     public static getExtendedType(node: ts.ClassDeclaration, checker: ts.TypeChecker): ts.Type | undefined {
-        if (node.heritageClauses) {
+        if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                     const superType = checker.getTypeAtLocation(clause.types[0]);
-                    if (!this.isPureAbstractClass(superType, checker)) {
+                    const decorators = this.getCustomDecorators(superType, checker);
+                    if (!decorators.hasDecorator(DecoratorKind.PureAbstract)) {
                         return superType;
                     }
                 }
@@ -68,57 +70,28 @@ export class TSHelper {
         return typeNode && (typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType);
     }
 
-    public static isCompileMembersOnlyEnum(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Enum) !== 0)
-            && type.symbol.getDocumentationComment(checker)[0] !== undefined
-            && this.hasCustomDecorator(type, checker, "!CompileMembersOnly");
-    }
-
-    public static isPureAbstractClass(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Class) !== 0)
-            && this.hasCustomDecorator(type, checker, "!PureAbstract");
-    }
-
-    public static isExtensionClass(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Class) !== 0)
-            && this.hasCustomDecorator(type, checker, "!Extension");
-    }
-
-    public static isPhantom(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Namespace) !== 0)
-            && this.hasCustomDecorator(type, checker, "!Phantom");
-    }
-
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const type = checker.getTypeAtLocation(node.expression);
-            return this.isTupleReturnFunction(type, checker);
+
+            return this.getCustomDecorators(type, checker)
+                       .hasDecorator(DecoratorKind.TupleReturn);
         } else {
             return false;
         }
     }
 
-    public static isTupleReturnFunction(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return type.symbol
-            && ((type.symbol.flags & ts.SymbolFlags.Function) !== 0
-                || (type.symbol.flags & ts.SymbolFlags.Method) !== 0)
-            && this.hasCustomDecorator(type, checker, "!TupleReturn");
-    }
-
-    public static hasCustomDecorator(type: ts.Type, checker: ts.TypeChecker, decorator: string): boolean {
+    public static getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): DecoratorCollection {
         if (type.symbol) {
             const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
                 comments.filter(comment => comment.kind === "text")
-                    .map(comment => comment.text.trim())
-                    .filter(comment => comment[0] === "!");
-            return decorators.indexOf(decorator) > -1;
+                        .map(comment => comment.text.trim().split("\n"))
+                        .reduce((a, b) => a.concat(b), [])
+                        .filter(comment => comment[0] === "!");
+            return new DecoratorCollection(decorators);
         }
-        return false;
+        return new DecoratorCollection([]);
     }
 
     // Search up until finding a node satisfying the callback

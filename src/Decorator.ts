@@ -12,26 +12,6 @@ export class Decorator {
     }
 }
 
-export class DecoratorCollection {
-    private decorators: Map<DecoratorKind, Decorator>;
-
-    constructor(rawCommentLines: string[]) {
-        this.decorators = new Map<DecoratorKind, Decorator>();
-        rawCommentLines.forEach(raw => {
-            const dec = new Decorator(raw);
-            this.decorators.set(dec.kind, dec);
-        });
-    }
-
-    public hasDecorator(kind: DecoratorKind): boolean {
-        return this.decorators.has(kind);
-    }
-
-    public getDecorator(kind: DecoratorKind): Decorator {
-        return this.decorators.get(kind);
-    }
-}
-
 export enum DecoratorKind {
     Extension = "Extension",
     MetaExtension = "MetaExtension",

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { DecoratorCollection, DecoratorKind } from "./Decorator";
+import { Decorator, DecoratorKind } from "./Decorator";
 
 export class TSHelper {
 
@@ -34,7 +34,7 @@ export class TSHelper {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                     const superType = checker.getTypeAtLocation(clause.types[0]);
                     const decorators = this.getCustomDecorators(superType, checker);
-                    if (!decorators.hasDecorator(DecoratorKind.PureAbstract)) {
+                    if (!decorators.has(DecoratorKind.PureAbstract)) {
                         return superType;
                     }
                 }
@@ -75,13 +75,13 @@ export class TSHelper {
             const type = checker.getTypeAtLocation(node.expression);
 
             return this.getCustomDecorators(type, checker)
-                       .hasDecorator(DecoratorKind.TupleReturn);
+                       .has(DecoratorKind.TupleReturn);
         } else {
             return false;
         }
     }
 
-    public static getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): DecoratorCollection {
+    public static getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map<DecoratorKind, Decorator> {
         if (type.symbol) {
             const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
@@ -89,9 +89,14 @@ export class TSHelper {
                         .map(comment => comment.text.trim().split("\n"))
                         .reduce((a, b) => a.concat(b), [])
                         .filter(comment => comment[0] === "!");
-            return new DecoratorCollection(decorators);
+            const decMap = new Map<DecoratorKind, Decorator>();
+            decorators.forEach(decStr => {
+                const dec = new Decorator(decStr);
+                decMap.set(dec.kind, dec);
+            });
+            return decMap;
         }
-        return new DecoratorCollection([]);
+        return new Map<DecoratorKind, Decorator>();
     }
 
     // Search up until finding a node satisfying the callback

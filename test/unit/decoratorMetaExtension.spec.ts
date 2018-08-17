@@ -23,10 +23,6 @@ export class DecoratorMetaExtension {
             return debug.getregistry()["_LOADED"].test();
             `
         );
-        console.log(lua);
-        console.log("\n");
-        console.log("\n");
-        console.log("\n");
         const result = util.executeLua(lua);
         // Assert
         Expect(result).toBe(5);

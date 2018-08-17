@@ -346,7 +346,7 @@ export abstract class LuaTranspiler {
     public transpileNamespace(node: ts.ModuleDeclaration): string {
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
         // If phantom namespace just transpile the body as normal
-        if (decorators.hasDecorator(DecoratorKind.Phantom) && node.body) {
+        if (decorators.has(DecoratorKind.Phantom) && node.body) {
             return this.transpileNode(node.body);
         }
 
@@ -379,7 +379,7 @@ export abstract class LuaTranspiler {
 
         const type = this.checker.getTypeAtLocation(node);
         const membersOnly = tsHelper.getCustomDecorators(type, this.checker)
-                                    .hasDecorator(DecoratorKind.CompileMembersOnly);
+                                    .has(DecoratorKind.CompileMembersOnly);
 
         if (!membersOnly) {
             const name = this.transpileIdentifier(node.name);
@@ -690,7 +690,7 @@ export abstract class LuaTranspiler {
                     this.checker.getTypeAtLocation(declaration),
                     this.checker
                 );
-                isTupleReturn = decorators.hasDecorator(DecoratorKind.TupleReturn);
+                isTupleReturn = decorators.has(DecoratorKind.TupleReturn);
             }
             if (isTupleReturn && ts.isArrayLiteralExpression(node.expression)) {
                 return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
@@ -1045,8 +1045,8 @@ export abstract class LuaTranspiler {
 
         this.checkForLuaLibType(type);
 
-        if (classDecorators.hasDecorator(DecoratorKind.CustomConstructor)) {
-            const customDecorator = classDecorators.getDecorator(DecoratorKind.CustomConstructor);
+        if (classDecorators.has(DecoratorKind.CustomConstructor)) {
+            const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
             if (!customDecorator.args[0]) {
                 throw new TranspileError("!CustomConstructor requires one argument", node);
             }
@@ -1268,7 +1268,7 @@ export abstract class LuaTranspiler {
 
         const decorators = tsHelper.getCustomDecorators(type, this.checker);
         // Do not output path for member only enums
-        if (decorators.hasDecorator(DecoratorKind.CompileMembersOnly)) {
+        if (decorators.has(DecoratorKind.CompileMembersOnly)) {
             return property;
         }
 
@@ -1561,9 +1561,9 @@ export abstract class LuaTranspiler {
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
 
         // Find out if this class is extension of existing class
-        const isExtension = decorators.hasDecorator(DecoratorKind.Extension);
+        const isExtension = decorators.has(DecoratorKind.Extension);
 
-        const isMetaExtension = decorators.hasDecorator(DecoratorKind.MetaExtension);
+        const isMetaExtension = decorators.has(DecoratorKind.MetaExtension);
 
         if (isExtension && isMetaExtension) {
             throw new TranspileError(
@@ -1607,7 +1607,7 @@ export abstract class LuaTranspiler {
         }
 
         if (isExtension) {
-            const extensionNameArg = decorators.getDecorator(DecoratorKind.Extension).args[0];
+            const extensionNameArg = decorators.get(DecoratorKind.Extension).args[0];
             if (extensionNameArg) {
                 className = extensionNameArg;
             } else if (extendsType) {
@@ -1658,7 +1658,7 @@ export abstract class LuaTranspiler {
         let noClassOr = false;
         if (extendsType) {
             const decorators = tsHelper.getCustomDecorators(extendsType, this.checker);
-            noClassOr = decorators.hasDecorator(DecoratorKind.NoClassOr);
+            noClassOr = decorators.has(DecoratorKind.NoClassOr);
         }
 
         let result = "";

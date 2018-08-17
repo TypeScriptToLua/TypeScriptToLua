@@ -5,6 +5,7 @@ import { TSHelper as tsHelper } from "./TSHelper";
 
 import * as fs from "fs";
 import * as path from "path";
+import { DecoratorKind } from "./Decorator";
 
 /* tslint:disable */
 const packageJSON = require("../package.json");
@@ -343,8 +344,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileNamespace(node: ts.ModuleDeclaration): string {
+        const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
         // If phantom namespace just transpile the body as normal
-        if (tsHelper.isPhantom(this.checker.getTypeAtLocation(node), this.checker) && node.body) {
+        if (decorators.has(DecoratorKind.Phantom) && node.body) {
             return this.transpileNode(node.body);
         }
 
@@ -376,7 +378,8 @@ export abstract class LuaTranspiler {
         let result = "";
 
         const type = this.checker.getTypeAtLocation(node);
-        const membersOnly = tsHelper.isCompileMembersOnlyEnum(type, this.checker);
+        const membersOnly = tsHelper.getCustomDecorators(type, this.checker)
+                                    .has(DecoratorKind.CompileMembersOnly);
 
         if (!membersOnly) {
             const name = this.transpileIdentifier(node.name);
@@ -681,8 +684,15 @@ export abstract class LuaTranspiler {
             // If parent function is a TupleReturn function
             // and return expression is an array literal, leave out brackets.
             const declaration = tsHelper.findFirstNodeAbove(node, ts.isFunctionDeclaration);
-            if (declaration && tsHelper.isTupleReturnFunction(this.checker.getTypeAtLocation(declaration), this.checker)
-                && ts.isArrayLiteralExpression(node.expression)) {
+            let isTupleReturn = false;
+            if (declaration) {
+                const decorators = tsHelper.getCustomDecorators(
+                    this.checker.getTypeAtLocation(declaration),
+                    this.checker
+                );
+                isTupleReturn = decorators.has(DecoratorKind.TupleReturn);
+            }
+            if (isTupleReturn && ts.isArrayLiteralExpression(node.expression)) {
                 return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
             }
 
@@ -1030,8 +1040,18 @@ export abstract class LuaTranspiler {
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
         const params = node.arguments ? this.transpileArguments(node.arguments, ts.createTrue()) : "true";
+        const type = this.checker.getTypeAtLocation(node);
+        const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
 
-        this.checkForLuaLibType(this.checker.getTypeAtLocation(node));
+        this.checkForLuaLibType(type);
+
+        if (classDecorators.has(DecoratorKind.CustomConstructor)) {
+            const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
+            if (!customDecorator.args[0]) {
+                throw new TranspileError("!CustomConstructor requires one argument", node);
+            }
+            return `${customDecorator.args[0]}(${this.transpileArguments(node.arguments)})`;
+        }
 
         return `${name}.new(${params})`;
     }
@@ -1246,8 +1266,9 @@ export abstract class LuaTranspiler {
 
         this.checkForLuaLibType(type);
 
+        const decorators = tsHelper.getCustomDecorators(type, this.checker);
         // Do not output path for member only enums
-        if (tsHelper.isCompileMembersOnlyEnum(type, this.checker)) {
+        if (decorators.has(DecoratorKind.CompileMembersOnly)) {
             return property;
         }
 
@@ -1537,8 +1558,19 @@ export abstract class LuaTranspiler {
 
         let className = this.transpileIdentifier(node.name);
 
+        const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
+
         // Find out if this class is extension of existing class
-        const isExtension = tsHelper.isExtensionClass(this.checker.getTypeAtLocation(node), this.checker);
+        const isExtension = decorators.has(DecoratorKind.Extension);
+
+        const isMetaExtension = decorators.has(DecoratorKind.MetaExtension);
+
+        if (isExtension && isMetaExtension) {
+            throw new TranspileError(
+                "Can't use both decorators '!Extension' and '!MetaExtension' on the same class.",
+                node
+            );
+        }
 
         // Get type that is extended
         const extendsType = tsHelper.getExtendedType(node, this.checker);
@@ -1554,7 +1586,7 @@ export abstract class LuaTranspiler {
 
         let result = "";
 
-        if (!isExtension) {
+        if (!isExtension && !isMetaExtension) {
             result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
         } else {
             // export empty table
@@ -1562,8 +1594,25 @@ export abstract class LuaTranspiler {
         }
 
         // Overwrite the original className with the class we are overriding for extensions
-        if (isExtension && extendsType) {
-            className = extendsType.symbol.escapedName as string;
+        if (isMetaExtension) {
+            if (!extendsType) {
+                throw new TranspileError(
+                    "!MetaExtension requires the base class to have the name of the metatable beeing extended.",
+                    node
+                );
+            }
+            const extendsName = extendsType.symbol.escapedName as string;
+            className = "__meta__" + extendsName;
+            result += `local ${className} = debug.getregistry()["${extendsName}"]\n`;
+        }
+
+        if (isExtension) {
+            const extensionNameArg = decorators.get(DecoratorKind.Extension).args[0];
+            if (extensionNameArg) {
+                className = extensionNameArg;
+            } else if (extendsType) {
+                className = extendsType.symbol.escapedName as string;
+            }
         }
 
         // Add static declarations
@@ -1606,7 +1655,11 @@ export abstract class LuaTranspiler {
                                          extendsType: ts.Type): string {
         const className = this.transpileIdentifier(node.name);
 
-        const noClassOr = extendsType && tsHelper.hasCustomDecorator(extendsType, this.checker, "!NoClassOr");
+        let noClassOr = false;
+        if (extendsType) {
+            const decorators = tsHelper.getCustomDecorators(extendsType, this.checker);
+            noClassOr = decorators.has(DecoratorKind.NoClassOr);
+        }
 
         let result = "";
 

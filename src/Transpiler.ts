@@ -1,23 +1,15 @@
+import * as fs from "fs";
+import * as path from "path";
 import * as ts from "typescript";
 
 import { CompilerOptions } from "./CommandLineParser";
-import { TSHelper as tsHelper } from "./TSHelper";
-
-import * as fs from "fs";
-import * as path from "path";
 import { DecoratorKind } from "./Decorator";
+import { TSTLErrors } from "./Errors";
+import { TSHelper as tsHelper } from "./TSHelper";
 
 /* tslint:disable */
 const packageJSON = require("../package.json");
 /* tslint:enable */
-
-export class TranspileError extends Error {
-    public node: ts.Node;
-    constructor(message: string, node: ts.Node) {
-        super(message);
-        this.node = node;
-    }
-}
 
 export enum LuaTarget {
     Lua51 = "5.1",
@@ -309,10 +301,7 @@ export abstract class LuaTranspiler {
         const importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
 
         if (!node.importClause || !node.importClause.namedBindings) {
-            throw new TranspileError(
-                "Default Imports are not supported, please use named imports instead!",
-                node
-            );
+            throw TSTLErrors.DefaultImportsNotSupported(node);
         }
 
         const imports = node.importClause.namedBindings;
@@ -339,7 +328,7 @@ export abstract class LuaTranspiler {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
             return `local ${this.transpileIdentifier(imports.name)} = require(${resolvedImportPath})\n`;
         } else {
-            throw new TranspileError("Unsupported import type.", node);
+            throw TSTLErrors.UnsupportedImportType(imports);
         }
     }
 
@@ -396,10 +385,10 @@ export abstract class LuaTranspiler {
                     hasStringInitializers = true;
                     val = `"${member.initializer.text}"`;
                 } else {
-                    throw new TranspileError("Only numeric or string initializers allowed for enums.", node);
+                    throw TSTLErrors.InvalidEnumMember(member.initializer);
                 }
             } else if (hasStringInitializers) {
-                throw new TranspileError("Invalid heterogeneous enum.", node);
+                throw TSTLErrors.HeterogeneousEnum(node);
             }
 
             if (membersOnly) {
@@ -428,11 +417,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileContinue(node: ts.ContinueStatement): string {
-        throw new TranspileError(
-            `Unsupported continue statement, ` +
-            `continue is not supported for target Lua ${this.options.luaTarget}.`,
-            node
-        );
+        throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, node);
     }
 
     public transpileIf(node: ts.IfStatement): string {
@@ -551,7 +536,7 @@ export abstract class LuaTranspiler {
         const expression = this.transpileExpression(node.expression);
 
         if (tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
-            throw new TranspileError("Iterating over arrays with 'for in' is not allowed.", node);
+            throw TSTLErrors.ForbiddenForIn(node);
         }
 
         // Make header
@@ -672,10 +657,7 @@ export abstract class LuaTranspiler {
         if (ts.isStringLiteral(node.expression)) {
             return `error("${node.expression.text}")`;
         } else {
-            throw new TranspileError(
-                "Unsupported throw expression, only string literals are supported",
-                node.expression
-            );
+            throw TSTLErrors.InvalidThrowExpression(node.expression);
         }
     }
 
@@ -797,10 +779,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.EmptyStatement:
                     return "";
             default:
-                throw new TranspileError(
-                    "Unsupported expression kind: " + tsHelper.enumName(node.kind, ts.SyntaxKind),
-                    node
-                );
+                throw TSTLErrors.UnsupportedKind("expression", node.kind, node);
         }
     }
 
@@ -905,10 +884,7 @@ export abstract class LuaTranspiler {
                     result = this.transpileLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
                     break;
                 default:
-                    throw new TranspileError(
-                        "Unsupported binary operator kind: " + ts.tokenToString(node.operatorToken.kind),
-                        node
-                    );
+                    throw TSTLErrors.UnsupportedKind("binary operator", node.kind, node);
             }
         }
 
@@ -921,11 +897,11 @@ export abstract class LuaTranspiler {
     }
 
     public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
-        throw new TranspileError(`Bit operations are not supported for target Lua ${this.options.target}`, node);
+        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
     }
 
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-        throw new TranspileError(`Bit operations are not supported for target Lua ${this.options.target}`, node);
+        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
     }
 
     public transpileTemplateExpression(node: ts.TemplateExpression): string {
@@ -1000,8 +976,7 @@ export abstract class LuaTranspiler {
                 );
             }
             default:
-                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
-                throw new TranspileError("Unsupported unary postfix: " + operator, node);
+                throw TSTLErrors.UnsupportedKind("unary postfix operator", node.operator, node);
         }
     }
 
@@ -1030,10 +1005,10 @@ export abstract class LuaTranspiler {
                 return `(not ${operand})`;
             case ts.SyntaxKind.MinusToken:
                 return `-${operand}`;
+            case ts.SyntaxKind.PlusToken:
+                return `tonumber(${operand})`;
             default:
-                const operator = tsHelper.enumName(node.operator, ts.SyntaxKind);
-                throw new TranspileError("Unsupported unary prefix: " + operator,
-                                         node);
+                throw TSTLErrors.UnsupportedKind("unary prefix operator", node.operator, node);
         }
     }
 
@@ -1048,7 +1023,7 @@ export abstract class LuaTranspiler {
         if (classDecorators.has(DecoratorKind.CustomConstructor)) {
             const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
             if (!customDecorator.args[0]) {
-                throw new TranspileError("!CustomConstructor requires one argument", node);
+                throw TSTLErrors.InvalidDecoratorArgumentNumber("!CustomConstructor", 0, 1, node);
             }
             return `${customDecorator.args[0]}(${this.transpileArguments(node.arguments)})`;
         }
@@ -1087,7 +1062,7 @@ export abstract class LuaTranspiler {
 
         // Check if call is actually on a property access expression
         if (!ts.isPropertyAccessExpression(node.expression)) {
-            throw new TranspileError("Tried to transpile a non-property call as property call.", node);
+            throw TSTLErrors.InvalidPropertyCall(node);
         }
 
         // If the function being called is of type owner.func, get the type of owner
@@ -1172,7 +1147,7 @@ export abstract class LuaTranspiler {
             case "charAt":
                 return `string.sub(${caller},${params}+1,${params}+1)`;
             default:
-                throw new TranspileError("Unsupported string function: " + expressionName, node);
+                throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
         }
     }
 
@@ -1190,9 +1165,9 @@ export abstract class LuaTranspiler {
         if (translation[identifierString]) {
             return `${translation[identifierString]}`;
         } else {
-            throw new TranspileError(`Unsupported string property ${identifierString}, ` +
-                                     `is not supported for target Lua ${this.options.luaTarget}.`,
-                                     identifier);
+            throw TSTLErrors.UnsupportedForTarget(`string property ${identifierString}`,
+                                                  this.options.luaTarget,
+                                                  identifier);
         }
     }
 
@@ -1228,7 +1203,7 @@ export abstract class LuaTranspiler {
                     return `table.concat(${caller}, ${params})`;
                 }
             default:
-                throw new TranspileError("Unsupported array function: " + expressionName, node);
+                throw TSTLErrors.UnsupportedProperty("array", expressionName, node);
         }
     }
 
@@ -1321,7 +1296,7 @@ export abstract class LuaTranspiler {
         if (translation[identifierString]) {
             return `math.${translation[identifierString]}`;
         } else {
-            throw new TranspileError(`Unsupported math property: ${identifierString}.`, identifier);
+            throw TSTLErrors.UnsupportedProperty("math", identifierString, identifier);
         }
     }
 
@@ -1332,7 +1307,7 @@ export abstract class LuaTranspiler {
             case "length":
                 return "#" + this.transpileExpression(node.expression);
             default:
-                throw new TranspileError("Unsupported string property: " + propertyName, node);
+                throw TSTLErrors.UnsupportedProperty("string", propertyName, node);
         }
     }
 
@@ -1343,7 +1318,7 @@ export abstract class LuaTranspiler {
             case "length":
                 return "#" + this.transpileExpression(node.expression);
             default:
-                throw new TranspileError("Unsupported array property: " + propertyName, node);
+                throw TSTLErrors.UnsupportedProperty("array", propertyName, node);
         }
     }
 
@@ -1383,8 +1358,7 @@ export abstract class LuaTranspiler {
         } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
             return this.transpileIdentifier(name.name);
         } else {
-            const kind = tsHelper.enumName(name.kind, ts.SyntaxKind);
-            throw new TranspileError(`Encountered not-supported array binding element kind: ${kind}`, name);
+            throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
         }
     }
 
@@ -1408,11 +1382,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileDestructingAssignmentValue(node: ts.Expression): string {
-        throw new TranspileError(
-            `Unsupported destructing statement, ` +
-            `destructing statements are not supported for target Lua ${this.options.luaTarget}.`,
-            node
-        );
+        throw TSTLErrors.UnsupportedForTarget("Destructing statements", this.options.luaTarget, node);
     }
 
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {
@@ -1430,7 +1400,7 @@ export abstract class LuaTranspiler {
 
             // Disallow ellipsis destruction
             if (node.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
-                throw new TranspileError(`Ellipsis destruction is not allowed.`, node);
+                throw TSTLErrors.ForbiddenEllipsisDestruction(node);
             }
 
             const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
@@ -1442,10 +1412,7 @@ export abstract class LuaTranspiler {
                 return `local ${vars}=${this.transpileDestructingAssignmentValue(node.initializer)}\n`;
             }
         } else {
-            throw new TranspileError(
-                "Unsupported variable declaration type: " + tsHelper.enumName(node.name.kind, ts.SyntaxKind),
-                node
-            );
+            throw TSTLErrors.UnsupportedKind("variable declaration", node.name.kind, node);
         }
     }
 
@@ -1553,7 +1520,7 @@ export abstract class LuaTranspiler {
     // Transpile a class declaration
     public transpileClass(node: ts.ClassDeclaration): string {
         if (!node.name) {
-            throw new TranspileError("Class declaration has no name.", node);
+            throw TSTLErrors.MissingClassName(node);
         }
 
         let className = this.transpileIdentifier(node.name);
@@ -1566,10 +1533,7 @@ export abstract class LuaTranspiler {
         const isMetaExtension = decorators.has(DecoratorKind.MetaExtension);
 
         if (isExtension && isMetaExtension) {
-            throw new TranspileError(
-                "Can't use both decorators '!Extension' and '!MetaExtension' on the same class.",
-                node
-            );
+            throw TSTLErrors.InvalidExtensionMetaExtension(node);
         }
 
         // Get type that is extended
@@ -1596,10 +1560,7 @@ export abstract class LuaTranspiler {
         // Overwrite the original className with the class we are overriding for extensions
         if (isMetaExtension) {
             if (!extendsType) {
-                throw new TranspileError(
-                    "!MetaExtension requires the base class to have the name of the metatable beeing extended.",
-                    node
-                );
+                throw TSTLErrors.MissingMetaExtension(node);
             }
             const extendsName = extendsType.symbol.escapedName as string;
             className = "__meta__" + extendsName;
@@ -1791,8 +1752,7 @@ export abstract class LuaTranspiler {
                 const expression = this.transpileExpression(element.initializer);
                 properties.push(`${name} = ${expression}`);
             } else {
-                const elementKind = tsHelper.enumName(element.kind, ts.SyntaxKind);
-                throw new TranspileError(`Encountered unsupported object literal element: ${elementKind}.`, node);
+                throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
             }
         });
 

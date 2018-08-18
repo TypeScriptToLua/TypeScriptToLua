@@ -1,4 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 import * as util from "../src/util";
 
@@ -238,7 +239,7 @@ export class LuaLoopTests {
                     arrTest[key]++;
                 }`
             )
-        ).toThrowError(Error, "Iterating over arrays with 'for in' is not allowed.");
+        ).toThrowError(TranspileError, "Iterating over arrays with 'for ... in' is not allowed.");
     }
 
     @TestCase({a: 0, b: 1, c: 2, d: 3, e: 4}, {a: 0, b: 0, c: 2, d: 0, e: 4})

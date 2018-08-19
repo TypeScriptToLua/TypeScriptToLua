@@ -20,7 +20,9 @@ export function compile(argv: string[]): void {
 
 export function watchWithOptions(fileNames: string[], options: CompilerOptions): void {
     let host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>;
+    let config = false;
     if (options.project) {
+        config = true;
         host = ts.createWatchCompilerHost(
             options.project,
             options,
@@ -62,7 +64,13 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
         );
     };
 
-    ts.createWatchProgram(host);
+    if (config) {
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
+    } else {
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>);
+    }
 }
 
 export function compileFilesWithOptions(fileNames: string[], options: CompilerOptions): void {

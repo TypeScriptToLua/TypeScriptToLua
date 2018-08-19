@@ -50,8 +50,13 @@ interface ExportInfo {
 }
 
 export abstract class LuaTranspiler {
-
-    public static AvailableLuaTargets = [LuaTarget.LuaJIT, LuaTarget.Lua53];
+    // Lua key words for this Lua target
+    // https://www.lua.org/manual/5.0/manual.html#2.1
+    public luaKeywords: Set<string> = new Set(
+        ["and", "break", "do", "else", "elseif",
+         "end", "false", "for", "function", "if",
+         "in", "local", "nil", "not", "or",
+         "repeat", "return", "then", "until", "while"]);
 
     public indent: string;
     public checker: ts.TypeChecker;
@@ -1339,14 +1344,19 @@ export abstract class LuaTranspiler {
     // Counter-act typescript's identifier escaping:
     // https://github.com/Microsoft/TypeScript/blob/master/src/compiler/utilities.ts#L556
     public transpileIdentifier(identifier: ts.Identifier): string {
-        const escapedText = identifier.escapedText as string;
+        let escapedText = identifier.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3
             && escapedText.charCodeAt(0) === underScoreCharCode
             && escapedText.charCodeAt(1) === underScoreCharCode
             && escapedText.charCodeAt(2) === underScoreCharCode) {
-            return escapedText.substr(1);
+            escapedText = escapedText.substr(1);
         }
+
+        if (this.luaKeywords.has(escapedText)) {
+            throw TSTLErrors.KeywordIdentifier(identifier);
+        }
+
         return escapedText;
     }
 

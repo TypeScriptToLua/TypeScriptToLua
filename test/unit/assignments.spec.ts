@@ -1,4 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
 
 import * as util from "../src/util";
 const fs = require("fs");
@@ -169,5 +170,19 @@ export class AssignmentTests {
         const result = util.executeLua(lua);
 
         Expect(result).toBe("a3");
+    }
+
+    @TestCase("and")
+    @TestCase("local")
+    @TestCase("nil")
+    @TestCase("not")
+    @TestCase("or")
+    @TestCase("repeat")
+    @TestCase("then")
+    @TestCase("until")
+    @Test("Keyword identifier error")
+    public keywordIdentifierError(identifier: string): void {
+        Expect(() => util.transpileString(`const ${identifier} = 3;`))
+            .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
     }
 }

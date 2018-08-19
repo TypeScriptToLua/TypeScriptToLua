@@ -162,9 +162,6 @@ export function createTranspiler(checker: ts.TypeChecker,
                                  sourceFile: ts.SourceFile): LuaTranspiler {
     let luaTargetTranspiler: LuaTranspiler;
     switch (options.luaTarget) {
-        case LuaTarget.LuaJIT:
-            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
-            break;
         case LuaTarget.Lua51:
             luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
             break;
@@ -175,8 +172,8 @@ export function createTranspiler(checker: ts.TypeChecker,
             luaTargetTranspiler = new LuaTranspiler53(checker, options, sourceFile);
             break;
         default:
-            // should not happen
-            throw Error("No luaTarget Specified please ensure a target is set!");
+            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
+            break;
     }
 
     return luaTargetTranspiler;

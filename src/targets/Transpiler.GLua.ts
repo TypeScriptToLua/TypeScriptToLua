@@ -7,7 +7,7 @@ export class LuaTranspilerGLua extends LuaTranspiler {
     public getImportPath(relativePath: string): string {
         if (path.isAbsolute(relativePath)) {
             // Get Path relative to baseDir (baseDir should be set to /lua/)
-            return `${this.getAbsoluteImportPath(relativePath)}`;
+            return `"${this.getAbsoluteImportPath(relativePath)}"`;
         } else {
             // We can use realtive paths in gmod
             return `"${this.pathToLuaRequirePath(relativePath)}"`;

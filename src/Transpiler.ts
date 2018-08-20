@@ -320,11 +320,13 @@ export abstract class LuaTranspiler {
 
         const imports = node.importClause.namedBindings;
 
+        const reqKeyword = this.getRequireKeyword();
+
         if (ts.isNamedImports(imports)) {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
 
-            let result = `local ${fileImportTable} = ${this.getRequireKeyword()}(${resolvedImportPath})\n`;
+            let result = `local ${fileImportTable} = ${reqKeyword}(${resolvedImportPath})\n`;
             this.importCount++;
 
             imports.elements.forEach(element => {
@@ -340,7 +342,7 @@ export abstract class LuaTranspiler {
             return result;
         } else if (ts.isNamespaceImport(imports)) {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${this.transpileIdentifier(imports.name)} = require(${resolvedImportPath})\n`;
+            return `local ${this.transpileIdentifier(imports.name)} = ${reqKeyword}(${resolvedImportPath})\n`;
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }

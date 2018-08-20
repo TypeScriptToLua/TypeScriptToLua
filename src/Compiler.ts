@@ -159,7 +159,8 @@ export function createTranspiler(checker: ts.TypeChecker,
                                  options: CompilerOptions,
                                  sourceFile: ts.SourceFile): LuaTranspiler {
     let luaTargetTranspiler: LuaTranspiler;
-    switch (options.luaTarget.toLowerCase()) {
+    const target = options.luaTarget ? options.luaTarget.toLowerCase : "";
+    switch (target) {
         case LuaTarget.Lua51:
             luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
             break;

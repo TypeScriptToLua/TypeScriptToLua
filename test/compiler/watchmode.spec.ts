@@ -1,50 +1,47 @@
-import { AsyncTest, Expect, Setup, Timeout } from "alsatian";
+import { AsyncTest, Expect, Setup, TestCase, Timeout } from "alsatian";
 import { fork } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
 export class CompilerWatchModeTest {
 
-    private singleFilePath: string;
-    private singleFilePathOut: string;
-
+    @TestCase(["-w", path.join(__dirname, "./testfiles/watch.ts")],
+              path.join(__dirname, "./testfiles/watch.ts"))
+    @TestCase(["-w", "-p", path.join(__dirname, "./projects/watchmode/")],
+              path.join(__dirname, "./projects/watchmode/watch.ts"))
     @AsyncTest("Watch single File")
-    @Timeout(10000)
-    public async testSingle(): Promise<void> {
-        // spawn watcher in different thread, that way we can just terminate it after test are completed
+    @Timeout(16000)
+    public async testSingle(args: string[], fileToChange: string): Promise<void> {
+        fileToChange = fileToChange;
+        const fileToChangeOut = fileToChange.replace(".ts", ".lua");
+
         const child = fork(path.join(__dirname, "watcher_proccess.ts"));
-        child.send(["-w", this.singleFilePath]);
+        child.send(args);
 
-        await this.waitForFileExists(this.singleFilePathOut, 4000)
+        await this.waitForFileExists(fileToChangeOut, 9000)
                   .catch(err => console.error(err));
 
-        Expect(fs.existsSync(this.singleFilePathOut)).toBe(true);
+        Expect(fs.existsSync(fileToChangeOut)).toBe(true);
 
-        const initialResultLua = fs.readFileSync(this.singleFilePathOut);
-        const originalTS = fs.readFileSync(this.singleFilePath);
+        const initialResultLua = fs.readFileSync(fileToChangeOut);
+        const originalTS = fs.readFileSync(fileToChange);
 
-        fs.unlinkSync(this.singleFilePathOut);
+        fs.unlinkSync(fileToChangeOut);
 
-        fs.writeFileSync(this.singleFilePath, "class MyTest2 {}");
+        fs.writeFileSync(fileToChange, "class MyTest2 {}");
 
-        await this.waitForFileExists(this.singleFilePathOut)
+        await this.waitForFileExists(fileToChangeOut, 5000)
                   .catch(err => console.error(err));
 
-        const updatedResultLua = fs.readFileSync(this.singleFilePathOut).toString();
+        const updatedResultLua = fs.readFileSync(fileToChangeOut).toString();
 
         Expect(initialResultLua).not.toEqual(updatedResultLua);
 
-        fs.writeFileSync(this.singleFilePath, originalTS);
+        fs.writeFileSync(fileToChange, originalTS);
 
-        fs.unlinkSync(this.singleFilePathOut);
+        fs.unlinkSync(fileToChangeOut);
 
         child.kill();
-    }
-
-    @Setup
-    private setup(): void {
-      this.singleFilePath =  path.join(__dirname, "./testfiles/watch_single.ts");
-      this.singleFilePathOut =  path.join(__dirname, "./testfiles/watch_single.lua");
     }
 
     private waitForFileExists(filepath: string, timeout: number = 3000): Promise<void> {

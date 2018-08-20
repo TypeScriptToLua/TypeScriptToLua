@@ -11,6 +11,7 @@ import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "./Tr
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
+    /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
     if (commandLine.options.watch) {
         watchWithOptions(commandLine.fileNames, commandLine.options);
     } else {
@@ -18,6 +19,7 @@ export function compile(argv: string[]): void {
     }
 }
 
+/* istanbul ignore next: tested in test/compiler/watchmode.spec with subproccess */
 export function watchWithOptions(fileNames: string[], options: CompilerOptions): void {
     let host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>;
     let config = false;

@@ -6,7 +6,7 @@ import * as util from "../src/util";
 export class ClassTests {
 
     @Test("ClassFieldInitializer")
-    public classFieldInitializer() {
+    public classFieldInitializer(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -23,7 +23,7 @@ export class ClassTests {
     }
 
     @Test("ClassConstructor")
-    public classConstructor() {
+    public classConstructor(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -43,7 +43,7 @@ export class ClassTests {
     }
 
     @Test("ClassConstructorAssignment")
-    public classConstructorAssignment() {
+    public classConstructorAssignment(): void {
          // Transpile
         const lua = util.transpileString(
             `class a { constructor(public field: number) {} }
@@ -58,7 +58,7 @@ export class ClassTests {
     }
 
     @Test("ClassNewNoBrackets")
-    public classNewNoBrackets() {
+    public classNewNoBrackets(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -77,7 +77,7 @@ export class ClassTests {
     }
 
     @Test("ClassStaticFields")
-    public classStaticFields() {
+    public classStaticFields(): void {
         // Transpile
         const lua = util.transpileString(
             `class a { static field: number = 4; }
@@ -92,7 +92,7 @@ export class ClassTests {
     }
 
     @Test("classExtends")
-    public classExtends() {
+    public classExtends(): void {
         // Transpile
         const lua = util.transpileString(
             `class a { field: number = 4; }
@@ -108,7 +108,7 @@ export class ClassTests {
     }
 
     @Test("classSuper")
-    public classSuper() {
+    public classSuper(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -133,7 +133,7 @@ export class ClassTests {
     }
 
     @Test("classSuperSuper")
-    public classSuperSuper() {
+    public classSuperSuper(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -163,7 +163,7 @@ export class ClassTests {
     }
 
     @Test("ClassMethodCall")
-    public classMethodCall() {
+    public classMethodCall(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -183,7 +183,7 @@ export class ClassTests {
     }
 
     @Test("ClassInheritedMethodCall")
-    public classInheritedMethodCall() {
+    public classInheritedMethodCall(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -204,7 +204,7 @@ export class ClassTests {
     }
 
     @Test("ClassDoubleInheritedMethodCall")
-    public classDoubleInheritedMethodCall() {
+    public classDoubleInheritedMethodCall(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -226,7 +226,7 @@ export class ClassTests {
     }
 
     @Test("ClassInheritedMethodCall2")
-    public classInheritedMethodCall2() {
+    public classInheritedMethodCall2(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {}
@@ -248,7 +248,7 @@ export class ClassTests {
     }
 
     @Test("ClassMethodOverride")
-    public classMethodOverride() {
+    public classMethodOverride(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -273,7 +273,7 @@ export class ClassTests {
     }
 
     @Test("methodDefaultParameters")
-    public methodInheritedParameters() {
+    public methodInheritedParameters(): void {
         // Transpile
         const lua = util.transpileString(
             `class a {
@@ -293,10 +293,10 @@ export class ClassTests {
     }
 
     @Test("Class without name error")
-    public classWithoutNameError() {
+    public classWithoutNameError(): void {
         const transpiler = util.makeTestTranspiler();
 
         Expect(() => transpiler.transpileClass({} as ts.ClassDeclaration))
-            .toThrowError(Error, "Class declaration has no name.");
+            .toThrowError(Error, "Class declarations must have a name.");
     }
 }

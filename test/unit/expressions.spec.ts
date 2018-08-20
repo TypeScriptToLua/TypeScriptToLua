@@ -1,4 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 
 import * as ts from "typescript";
@@ -168,7 +169,7 @@ export class ExpressionTests {
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
         Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" }))
-            .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
+            .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
     }
 
     @TestCase("1+1", "1+1")
@@ -298,7 +299,7 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpilePostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
-            .toThrowError(Error, "Unsupported unary postfix: AsteriskToken");
+            .toThrowError(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
     }
 
     @Test("Unknown unary postfix error")
@@ -311,7 +312,7 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpilePrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
-            .toThrowError(Error, "Unsupported unary prefix: AsteriskToken");
+            .toThrowError(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
     }
 
     @Test("Incompatible fromCodePoint expression error")
@@ -320,7 +321,8 @@ export class ExpressionTests {
 
         const identifier = ts.createIdentifier("fromCodePoint");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property fromCodePoint, is not supported for target Lua JIT.");
+            .toThrowError(TranspileError, "string property fromCodePoint is/are not supported " +
+                          "for target Lua JIT.");
     }
 
     @Test("Unknown string expression error")
@@ -329,7 +331,7 @@ export class ExpressionTests {
 
         const identifier = ts.createIdentifier("abcd");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property abcd, is not supported for target Lua JIT.");
+            .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua JIT.");
     }
 
     @Test("Unsupported array function error")
@@ -343,7 +345,7 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileArrayCallExpression(mockNode as ts.CallExpression))
-            .toThrowError(Error, "Unsupported array function: unknownFunction");
+            .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
     }
 
     @Test("Unsupported array property error")
@@ -355,7 +357,7 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileArrayProperty(mockNode as ts.PropertyAccessExpression))
-            .toThrowError(Error, "Unsupported array property: unknownProperty");
+            .toThrowError(TranspileError, "Unsupported property on array: unknownProperty");
     }
 
     @Test("Unsupported math property error")
@@ -363,7 +365,7 @@ export class ExpressionTests {
         const transpiler = util.makeTestTranspiler();
 
         Expect(() => transpiler.transpileMathExpression(ts.createIdentifier("unknownProperty")))
-            .toThrowError(Error, "Unsupported math property: unknownProperty.");
+            .toThrowError(TranspileError, "Unsupported property on math: unknownProperty");
     }
 
     @Test("Unsupported variable declaration type error")
@@ -373,7 +375,7 @@ export class ExpressionTests {
         const mockNode: any = {name: ts.createLiteral(false)};
 
         Expect(() => transpiler.transpileVariableDeclaration(mockNode as ts.VariableDeclaration))
-            .toThrowError(Error, "Unsupported variable declaration type: FalseKeyword");
+            .toThrowError(TranspileError, "Unsupported variable declaration kind: FalseKeyword");
     }
 
     @Test("Unsupported object literal element error")
@@ -388,6 +390,6 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileObjectLiteral(mockObject as ts.ObjectLiteralExpression))
-            .toThrowError(Error, "Encountered unsupported object literal element: FalseKeyword.");
+            .toThrowError(TranspileError, "Unsupported object literal element kind: FalseKeyword");
     }
 }

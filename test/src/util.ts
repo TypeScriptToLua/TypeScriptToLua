@@ -5,7 +5,7 @@ import { Expect } from "alsatian";
 
 import { CompilerOptions } from "../../src/CommandLineParser";
 import { createTranspiler } from "../../src/Compiler";
-import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "../../src/Transpiler";
+import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "../../src/Transpiler";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 

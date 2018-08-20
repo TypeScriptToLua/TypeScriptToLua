@@ -1,3 +1,4 @@
+import { TSTLErrors } from "../Errors";
 import { TSHelper as tsHelper } from "../TSHelper";
 import { LuaTranspiler52 } from "./Transpiler.52";
 
@@ -9,6 +10,8 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
         switch (node.operator) {
             case ts.SyntaxKind.TildeToken:
                 return `bit.bnot(${operand})`;
+            default:
+                throw TSTLErrors.UnsupportedKind("bitwise operator", node.operator, node);
         }
     }
 
@@ -27,6 +30,8 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
                 return `bit.rshift(${lhs},${rhs})`;
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 return `bit.arshift(${lhs},${rhs})`;
+            default:
+                throw TSTLErrors.UnsupportedKind("bitwise operator", node.operatorToken.kind, node);
         }
     }
 }

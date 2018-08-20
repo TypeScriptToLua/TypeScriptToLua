@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { TranspileError } from "../../src/Transpiler";
+import { TranspileError } from "../../src/Errors";
 
 import * as util from "../src/util";
 const fs = require("fs");
@@ -13,7 +13,7 @@ export class AssignmentTests {
     @TestCase("false", "false")
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
-    public constAssignment(inp: string, out: string) {
+    public constAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`const myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
@@ -25,7 +25,7 @@ export class AssignmentTests {
     @TestCase("false", "false")
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
-    public letAssignment(inp: string, out: string) {
+    public letAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`let myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
@@ -37,7 +37,7 @@ export class AssignmentTests {
     @TestCase("false", "false")
     @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
     @Test("Const assignment")
-    public varAssignment(inp: string, out: string) {
+    public varAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`var myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
@@ -48,7 +48,7 @@ export class AssignmentTests {
     @TestCase("const myvar = null;")
     @TestCase("const myvar = undefined;")
     @Test("Null assignments")
-    public nullAssignment(declaration: string) {
+    public nullAssignment(declaration: string): void {
         const lua = util.transpileString(declaration + " return myvar;");
         const result = util.executeLua(lua);
         Expect(result).toBe(null);
@@ -58,7 +58,7 @@ export class AssignmentTests {
     @TestCase(["a", "b"], ["e", "f", "g"])
     @TestCase(["a", "b", "c"], ["e", "f", "g"])
     @Test("Binding pattern assignment")
-    public bindingPattern(input: string[], values: string[]) {
+    public bindingPattern(input: string[], values: string[]): void {
         const pattern = input.join(",");
         const initializer = values.map(v => `"${v}"`).join(",");
 
@@ -69,13 +69,13 @@ export class AssignmentTests {
     }
 
     @Test("Ellipsis binding pattern")
-    public ellipsisBindingPattern() {
+    public ellipsisBindingPattern(): void {
         Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];"))
             .toThrowError(Error, "Ellipsis destruction is not allowed.");
     }
 
     @Test("TupleReturn assignment")
-    public tupleReturnFunction() {
+    public tupleReturnFunction(): void {
         const code = `/** !TupleReturn */\n`
                    + `declare function abc() { return [1,2,3]; }\n`
                    + `let [a,b] = abc();`;
@@ -85,7 +85,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn Single assignment")
-    public tupleReturnSingleAssignment() {
+    public tupleReturnSingleAssignment(): void {
         const code = `/** !TupleReturn */\n`
                    + `declare function abc(): [number, string]; }\n`
                    + `let a = abc();`
@@ -96,7 +96,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn interface assignment")
-    public tupleReturnInterface() {
+    public tupleReturnInterface(): void {
         const code = `interface def {\n`
                    + `/** !TupleReturn */\n`
                    + `abc();\n`
@@ -108,7 +108,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn namespace assignment")
-    public tupleReturnNameSpace() {
+    public tupleReturnNameSpace(): void {
         const code = `declare namespace def {\n`
                    + `/** !TupleReturn */\n`
                    + `function abc() {}\n`
@@ -120,7 +120,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn method assignment")
-    public tupleReturnMethod() {
+    public tupleReturnMethod(): void {
         const code = `declare class def {\n`
                    + `/** !TupleReturn */\n`
                    + `abc() { return [1,2,3]; }\n`
@@ -132,7 +132,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn functional")
-    public tupleReturnFunctional() {
+    public tupleReturnFunctional(): void {
         const code = `/** !TupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const [a, b] = abc();
@@ -146,7 +146,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn single")
-    public tupleReturnSingle() {
+    public tupleReturnSingle(): void {
         const code = `/** !TupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const res = abc();
@@ -160,7 +160,7 @@ export class AssignmentTests {
     }
 
     @Test("TupleReturn in expression")
-    public tupleReturnInExpression() {
+    public tupleReturnInExpression(): void {
         const code = `/** !TupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];`;
@@ -170,5 +170,19 @@ export class AssignmentTests {
         const result = util.executeLua(lua);
 
         Expect(result).toBe("a3");
+    }
+
+    @TestCase("and")
+    @TestCase("local")
+    @TestCase("nil")
+    @TestCase("not")
+    @TestCase("or")
+    @TestCase("repeat")
+    @TestCase("then")
+    @TestCase("until")
+    @Test("Keyword identifier error")
+    public keywordIdentifierError(identifier: string): void {
+        Expect(() => util.transpileString(`const ${identifier} = 3;`))
+            .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
     }
 }

@@ -7,7 +7,7 @@ import { LuaTranspiler51 } from "./targets/Transpiler.51";
 import { LuaTranspiler52 } from "./targets/Transpiler.52";
 import { LuaTranspiler53 } from "./targets/Transpiler.53";
 import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
-import { LuaLibImportKind, LuaTarget, LuaTranspiler, TranspileError } from "./Transpiler";
+import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "./Transpiler";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);

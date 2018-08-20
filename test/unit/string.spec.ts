@@ -1,16 +1,17 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
 import * as util from "../src/util";
 
 export class StringTests {
 
     @Test("Unsuported string function")
-    public stringUnsuportedFunction() {
+    public stringUnsuportedFunction(): void {
         // Assert
         Expect(() => {
             util.transpileString(
                 `return "test".testThisIsNoMember()`
             );
-        }).toThrowError(Error, "Unsupported string function: testThisIsNoMember");
+        }).toThrowError(TranspileError, "Unsupported property on string: testThisIsNoMember");
     }
 
     @TestCase([])
@@ -18,7 +19,7 @@ export class StringTests {
     @TestCase([65, 66])
     @TestCase([65, 66, 67])
     @Test("String.fromCharCode")
-    public stringFromCharcode(inp: number[]) {
+    public stringFromCharcode(inp: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `return String.fromCharCode(${inp.toString()})`
@@ -36,7 +37,7 @@ export class StringTests {
     @TestCase("test", 42, "bye")
     @TestCase("test", 42, 12)
     @Test("Template Strings")
-    public templateStrings(a: any, b: any, c: any) {
+    public templateStrings(a: any, b: any, c: any): void {
         // Transpile
         const a1 = typeof(a) === "string" ? "'" + a + "'" : a;
         const b1 = typeof(b) === "string" ? "'" + b + "'" : b;
@@ -59,7 +60,7 @@ export class StringTests {
     @TestCase("hello test", "test", "")
     @TestCase("hello test", "test", "world")
     @Test("string.replace")
-    public replace<T>(inp: string, searchValue: string, replaceValue: string) {
+    public replace<T>(inp: string, searchValue: string, replaceValue: string): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".replace("${searchValue}", "${replaceValue}");`
@@ -78,7 +79,7 @@ export class StringTests {
     @TestCase(["hello", 42], "hello42")
     @TestCase([42, "hello"], "42hello")
     @Test("string.concat[+]")
-    public concat(inp: any[], expected: string) {
+    public concat(inp: any[], expected: string): void {
         const concatStr = inp.map(elem => typeof(elem) === "string" ? `"${elem}"` : elem).join(" + ");
 
         // Transpile
@@ -98,7 +99,7 @@ export class StringTests {
     @TestCase("hello test", "h")
     @TestCase("hello test", "invalid")
     @Test("string.indexOf")
-    public indexOf(inp: string, searchValue: string) {
+    public indexOf(inp: string, searchValue: string): void {
         // Transpile
         const lua = util.transpileString(`return "${inp}".indexOf("${searchValue}")`);
 
@@ -114,7 +115,7 @@ export class StringTests {
     @TestCase("hello test", "t", 7)
     @TestCase("hello test", "h", 4)
     @Test("string.indexOf with offset")
-    public indexOfOffset(inp: string, searchValue: string, offset: number) {
+    public indexOfOffset(inp: string, searchValue: string, offset: number): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".indexOf("${searchValue}", ${offset})`
@@ -132,7 +133,7 @@ export class StringTests {
     @TestCase("hello test", 1, 2)
     @TestCase("hello test", 1, 5)
     @Test("string.substring")
-    public substring(inp: string, start: number, end?: number) {
+    public substring(inp: string, start: number, end?: number): void {
         // Transpile
         const paramStr = end ? `${start}, ${end}` : `${start}`;
         const lua = util.transpileString(
@@ -151,7 +152,7 @@ export class StringTests {
     @TestCase("hello test", 1, 2)
     @TestCase("hello test", 1, 5)
     @Test("string.substring")
-    public substr(inp: string, start: number, end?: number) {
+    public substr(inp: string, start: number, end?: number): void {
         // Transpile
         const paramStr = end ? `${start}, ${end}` : `${start}`;
         const lua = util.transpileString(
@@ -169,7 +170,7 @@ export class StringTests {
     @TestCase("h", 1)
     @TestCase("hello", 5)
     @Test("string.length")
-    public length(inp: string, expected: number) {
+    public length(inp: string, expected: number): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".length`
@@ -184,7 +185,7 @@ export class StringTests {
 
     @TestCase("hello TEST")
     @Test("string.toLowerCase")
-    public toLowerCase(inp: string) {
+    public toLowerCase(inp: string): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".toLowerCase()`
@@ -199,7 +200,7 @@ export class StringTests {
 
     @TestCase("hello test")
     @Test("string.toUpperCase")
-    public toUpperCase(inp: string) {
+    public toUpperCase(inp: string): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".toUpperCase()`
@@ -220,7 +221,7 @@ export class StringTests {
     @TestCase("hello test", "invalid")
     @TestCase("hello test", "hello test")
     @Test("string.split")
-    public split(inp: string, separator: string) {
+    public split(inp: string, separator: string): void {
         // Transpile
         const lua = util.transpileString(
             `return JSONStringify("${inp}".split("${separator}"))`
@@ -238,7 +239,7 @@ export class StringTests {
     @TestCase("hello test", 3)
     @TestCase("hello test", 99)
     @Test("string.charAt")
-    public charAt(inp: string, index: number) {
+    public charAt(inp: string, index: number): void {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".charAt(${index})`
@@ -256,7 +257,7 @@ export class StringTests {
     @TestCase("abcde", 0)
     @TestCase("a", 0)
     @Test("string index")
-    public index(input: string, index: number) {
+    public index(input: string, index: number): void {
         const lua = util.transpileString(`return "${input}"[${index}];`);
 
         const result = util.executeLua(lua);

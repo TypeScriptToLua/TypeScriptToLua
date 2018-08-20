@@ -15,8 +15,8 @@ export enum LuaTarget {
     Lua51 = "5.1",
     Lua52 = "5.2",
     Lua53 = "5.3",
-    LuaJIT = "JIT",
-    GLua = "GLua",
+    LuaJIT = "jit",
+    GLua = "glua",
 }
 
 export enum LuaLibFeature {
@@ -174,6 +174,10 @@ export abstract class LuaTranspiler {
         return `"${this.pathToLuaRequirePath(relativePath)}"`;
     }
 
+    public getRequireKeyword(): string {
+        return "require";
+    }
+
     public pathToLuaRequirePath(filePath: string): string {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
@@ -320,7 +324,7 @@ export abstract class LuaTranspiler {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
 
-            let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
+            let result = `local ${fileImportTable} = ${this.getRequireKeyword()}(${resolvedImportPath})\n`;
             this.importCount++;
 
             imports.elements.forEach(element => {

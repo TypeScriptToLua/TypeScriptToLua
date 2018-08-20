@@ -88,6 +88,10 @@ export abstract class LuaTranspiler {
         this.classStack = [];
         this.exportStack = [];
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
+
+        if (!this.options.luaTarget) {
+            this.options.luaTarget = LuaTarget.LuaJIT;
+        }
     }
 
     public pushIndent(): void {

@@ -11,42 +11,91 @@ import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "./Transpiler";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
-    compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+    /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
+    if (commandLine.options.watch) {
+        watchWithOptions(commandLine.fileNames, commandLine.options);
+    } else {
+        compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+    }
+}
+
+/* istanbul ignore next: tested in test/compiler/watchmode.spec with subproccess */
+export function watchWithOptions(fileNames: string[], options: CompilerOptions): void {
+    let host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>;
+    let config = false;
+    if (options.project) {
+        config = true;
+        host = ts.createWatchCompilerHost(
+            options.project,
+            options,
+            ts.sys,
+            ts.createSemanticDiagnosticsBuilderProgram
+        );
+    } else {
+        host = ts.createWatchCompilerHost(
+            fileNames,
+            options,
+            ts.sys,
+            ts.createSemanticDiagnosticsBuilderProgram
+        );
+    }
+
+    host.afterProgramCreate = program => {
+        const status = emitFilesAndReportErrors(program.getProgram());
+        const errorDiagnostic: ts.Diagnostic = {
+            category: undefined,
+            code: 6194,
+            file: undefined,
+            length: 0,
+            messageText: "Found 0 errors. Watching for file changes.",
+            start: 0,
+        };
+        if (status !== 0) {
+            errorDiagnostic.messageText = "Found Errors. Watching for file changes.";
+            errorDiagnostic.code = 6193;
+        }
+        host.onWatchStatusChange(
+            errorDiagnostic,
+            host.getNewLine(),
+            program.getCompilerOptions()
+        );
+    };
+
+    if (config) {
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
+    } else {
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>);
+    }
 }
 
 export function compileFilesWithOptions(fileNames: string[], options: CompilerOptions): void {
-    if (!options.luaTarget) {
-        options.luaTarget = LuaTarget.LuaJIT;
-    }
-
     const program = ts.createProgram(fileNames, options);
+
+    emitFilesAndReportErrors(program);
+}
+
+function emitFilesAndReportErrors(program: ts.Program): number {
+    const options = program.getCompilerOptions() as CompilerOptions;
 
     const checker = program.getTypeChecker();
 
     // Get all diagnostics, ignore unsupported extension
     const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
-    diagnostics.forEach(diagnostic => {
-        if (diagnostic.file) {
-            const { line, character } =
-                diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
-            const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-            console.log(
-                `${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`
-            );
-        } else {
-            console.log(
-                `${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`
-            );
-        }
-    });
+    diagnostics.forEach(reportDiagnostic);
 
     // If there are errors dont emit
     if (diagnostics.filter(diag => diag.category === ts.DiagnosticCategory.Error).length > 0) {
-        console.log("Stopping compilation process because of errors.");
-        process.exit(1);
+        if (!options.watch) {
+            process.exit(1);
+        } else {
+            return 1;
+        }
     }
 
     program.getSourceFiles().forEach(sourceFile => {
+
         if (!sourceFile.isDeclarationFile) {
             try {
                 const rootDir = options.rootDir;
@@ -101,6 +150,8 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
             path.join(options.outDir, "lualib_bundle.lua")
         );
     }
+
+    return 0;
 }
 
 export function createTranspiler(checker: ts.TypeChecker,
@@ -108,9 +159,6 @@ export function createTranspiler(checker: ts.TypeChecker,
                                  sourceFile: ts.SourceFile): LuaTranspiler {
     let luaTargetTranspiler: LuaTranspiler;
     switch (options.luaTarget) {
-        case LuaTarget.LuaJIT:
-            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
-            break;
         case LuaTarget.Lua51:
             luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
             break;
@@ -121,9 +169,24 @@ export function createTranspiler(checker: ts.TypeChecker,
             luaTargetTranspiler = new LuaTranspiler53(checker, options, sourceFile);
             break;
         default:
-            // should not happen
-            throw Error("No luaTarget Specified please ensure a target is set!");
+            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
+            break;
     }
 
     return luaTargetTranspiler;
+}
+
+function reportDiagnostic(diagnostic: ts.Diagnostic): void {
+    if (diagnostic.file) {
+        const { line, character } =
+            diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+        const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
+        console.log(
+            `${diagnostic.code}: ${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`
+        );
+    } else {
+        console.log(
+            `${diagnostic.code}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`
+        );
+    }
 }

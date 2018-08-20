@@ -40,25 +40,20 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
         );
     }
 
-    const errorDiagnostic: ts.Diagnostic = {
-        category: undefined,
-        code: 0,
-        file: undefined,
-        length: 0,
-        messageText: "",
-        start: 0,
-    };
-
     host.afterProgramCreate = program => {
         const status = emitFilesAndReportErrors(program.getProgram());
-        let messageText = "Found 0 errors. Watching for file changes.";
-        let code = 6194;
+        const errorDiagnostic: ts.Diagnostic = {
+            category: undefined,
+            code: 6194,
+            file: undefined,
+            length: 0,
+            messageText: "Found 0 errors. Watching for file changes.",
+            start: 0,
+        };
         if (status !== 0) {
-            messageText = "Found Errors. Watching for file changes.";
-            code = 6193;
+            errorDiagnostic.messageText = "Found Errors. Watching for file changes.";
+            errorDiagnostic.code = 6193;
         }
-        errorDiagnostic.messageText = messageText;
-        errorDiagnostic.code = code;
         host.onWatchStatusChange(
             errorDiagnostic,
             host.getNewLine(),
@@ -111,7 +106,7 @@ function emitFilesAndReportErrors(program: ts.Program): number {
                 let outPath = sourceFile.fileName;
                 if (options.outDir !== options.rootDir) {
                     const relativeSourcePath = path.resolve(sourceFile.fileName)
-                                                .replace(path.resolve(rootDir), "");
+                                                   .replace(path.resolve(rootDir), "");
                     outPath = path.join(options.outDir, relativeSourcePath);
                 }
 

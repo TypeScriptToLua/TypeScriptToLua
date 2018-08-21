@@ -20,6 +20,7 @@ export enum LuaTarget {
 }
 
 export enum LuaLibFeature {
+    ArrayConcat = "ArrayConcat",
     ArrayEvery = "ArrayEvery",
     ArrayFilter = "ArrayFilter",
     ArrayForEach = "ArrayForEach",
@@ -329,7 +330,16 @@ export abstract class LuaTranspiler {
             let result = `local ${fileImportTable} = ${reqKeyword}(${resolvedImportPath})\n`;
             this.importCount++;
 
-            imports.elements.forEach(element => {
+            const filteredElements = imports.elements.filter(e => {
+                const decs = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
+                return !decs.has(DecoratorKind.Extension) && !decs.has(DecoratorKind.MetaExtension);
+            });
+
+            if (filteredElements.length === 0) {
+                return "";
+            }
+
+            filteredElements.forEach(element => {
                 const nameText = this.transpileIdentifier(element.name);
                 if (element.propertyName) {
                     const propertyText = this.transpileIdentifier(element.propertyName);
@@ -793,7 +803,9 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             case ts.SyntaxKind.EmptyStatement:
-                    return "";
+                return "";
+            case ts.SyntaxKind.SpreadElement:
+                return this.transpileSpreadElement(node as ts.SpreadElement);
             default:
                 throw TSTLErrors.UnsupportedKind("expression", node.kind, node);
         }
@@ -1036,6 +1048,10 @@ export abstract class LuaTranspiler {
 
         this.checkForLuaLibType(type);
 
+        if (classDecorators.has(DecoratorKind.Extension) || classDecorators.has(DecoratorKind.MetaExtension)) {
+            throw TSTLErrors.InvalidNewExpressionOnExtension(node);
+        }
+
         if (classDecorators.has(DecoratorKind.CustomConstructor)) {
             const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
             if (!customDecorator.args[0]) {
@@ -1193,6 +1209,8 @@ export abstract class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         const expressionName = this.transpileIdentifier(expression.name);
         switch (expressionName) {
+            case "concat":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayConcat, caller, params);
             case "push":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
             case "forEach":
@@ -1369,6 +1387,10 @@ export abstract class LuaTranspiler {
         }
 
         return escapedText;
+    }
+
+    public transpileSpreadElement(node: ts.SpreadElement): string {
+       return "unpack(" + this.transpileExpression(node.expression) + ")";
     }
 
     public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {

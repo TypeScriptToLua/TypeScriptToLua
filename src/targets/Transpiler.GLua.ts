@@ -1,8 +1,8 @@
-import { LuaTranspiler } from "../Transpiler";
+import { LuaTranspilerJIT } from "./Transpiler.JIT";
 
 import * as path from "path";
 
-export class LuaTranspilerGLua extends LuaTranspiler {
+export class LuaTranspilerGLua extends LuaTranspilerJIT {
     /** @override */
     public getImportPath(relativePath: string): string {
         if (path.isAbsolute(relativePath)) {

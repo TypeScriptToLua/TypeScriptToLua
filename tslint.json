@@ -31,9 +31,9 @@
         "interface-name": false,
         "radix": false,
         "typedef": [
-          true,
-          "call-signature",
-          "property-declaration"
+            true,
+            "call-signature",
+            "property-declaration"
         ]
     },
     "rulesDirectory": []

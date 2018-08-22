@@ -1,6 +1,9 @@
 import { LuaTranspilerJIT } from "./Transpiler.JIT";
 
 import * as path from "path";
+import * as ts from "typescript";
+
+import { LuaTranspiler } from "../Transpiler";
 
 export class LuaTranspilerGLua extends LuaTranspilerJIT {
     /** @override */
@@ -17,5 +20,15 @@ export class LuaTranspilerGLua extends LuaTranspilerJIT {
     /** @override */
     public getRequireKeyword(): string {
         return "include";
+    }
+
+    /** @override */
+    public transpileDestructingAssignmentValue(node: ts.Expression): string {
+        return LuaTranspiler.prototype.transpileDestructingAssignmentValue.call(this, node);
+    }
+
+    /** @override */
+    public transpileSpreadElement(node: ts.SpreadElement): string {
+        return LuaTranspiler.prototype.transpileSpreadElement.call(this, node);
     }
 }

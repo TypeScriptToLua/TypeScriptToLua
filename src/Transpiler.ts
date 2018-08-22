@@ -1259,6 +1259,10 @@ export abstract class LuaTranspiler {
     public transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
         const property = node.name.text;
 
+        if (tsHelper.hasGetAccessor(node, this.checker)) {
+            return this.transpileGetAccessor(node);
+        }
+
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
         switch (type.flags) {
@@ -1268,8 +1272,6 @@ export abstract class LuaTranspiler {
             case ts.TypeFlags.Object:
                 if (tsHelper.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
-                } else if (tsHelper.hasGetAccessor(node, this.checker)) {
-                    return this.transpileGetAccessor(node);
                 }
         }
 
@@ -1593,13 +1595,6 @@ export abstract class LuaTranspiler {
 
         let result = "";
 
-        if (!isExtension && !isMetaExtension) {
-            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
-        } else {
-            // export empty table
-            this.pushExport(className, node, true);
-        }
-
         // Overwrite the original className with the class we are overriding for extensions
         if (isMetaExtension) {
             if (!extendsType) {
@@ -1616,6 +1611,20 @@ export abstract class LuaTranspiler {
                 className = extensionNameArg;
             } else if (extendsType) {
                 className = extendsType.symbol.escapedName as string;
+            }
+        }
+
+        if (!isExtension && !isMetaExtension) {
+            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
+        } else {
+            for (const f of instanceFields) {
+                // Get identifier
+                const fieldIdentifier = f.name as ts.Identifier;
+                const fieldName = this.transpileIdentifier(fieldIdentifier);
+
+                const value = this.transpileExpression(f.initializer);
+
+                result += this.indent + `${className}.${fieldName} = ${value}\n`;
             }
         }
 

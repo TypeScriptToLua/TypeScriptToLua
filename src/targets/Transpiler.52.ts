@@ -67,5 +67,5 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
     /** @override */
     public transpileSpreadElement(node: ts.SpreadElement): string {
       return "table.unpack(" + this.transpileExpression(node.expression) + ")";
-   }
+    }
 }

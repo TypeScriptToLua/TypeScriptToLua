@@ -15,7 +15,7 @@ export class AssignmentTests {
     @Test("Const assignment")
     public constAssignment(inp: string, out: string) {
         const lua = util.transpileString(`const myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out}`);
+        Expect(lua).toBe(`local myvar = ${out};`);
     }
 
     @TestCase(`"abc"`, `"abc"`)
@@ -27,7 +27,7 @@ export class AssignmentTests {
     @Test("Const assignment")
     public letAssignment(inp: string, out: string) {
         const lua = util.transpileString(`let myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out}`);
+        Expect(lua).toBe(`local myvar = ${out};`);
     }
 
     @TestCase(`"abc"`, `"abc"`)
@@ -39,7 +39,7 @@ export class AssignmentTests {
     @Test("Const assignment")
     public varAssignment(inp: string, out: string) {
         const lua = util.transpileString(`var myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out}`);
+        Expect(lua).toBe(`local myvar = ${out};`);
     }
 
     @TestCase("var myvar;")
@@ -81,7 +81,7 @@ export class AssignmentTests {
                    + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=abc()");
+        Expect(lua).toBe("local a,b=abc();");
     }
 
     @Test("TupleReturn Single assignment")
@@ -92,7 +92,7 @@ export class AssignmentTests {
                    + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = ({ abc() })\n\na = ({ abc() })");
+        Expect(lua).toBe("local a = ({ abc() });\n\na = ({ abc() });");
     }
 
     @Test("TupleReturn interface assignment")
@@ -104,7 +104,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=jkl:abc()");
+        Expect(lua).toBe("local a,b=jkl:abc();");
     }
 
     @Test("TupleReturn namespace assignment")
@@ -116,7 +116,7 @@ export class AssignmentTests {
                    + `let [a,b] = def.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=def.abc()");
+        Expect(lua).toBe("local a,b=def.abc();");
     }
 
     @Test("TupleReturn method assignment")
@@ -128,7 +128,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local jkl = def.new(true)\n\nlocal a,b=jkl:abc()");
+        Expect(lua).toBe("local jkl = def.new(true);\n\nlocal a,b=jkl:abc();");
     }
 
     @Test("TupleReturn functional")

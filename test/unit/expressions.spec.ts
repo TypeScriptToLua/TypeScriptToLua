@@ -6,14 +6,14 @@ import * as util from "../src/util";
 
 export class ExpressionTests {
 
-    @TestCase("i++", "i = (i+1)")
-    @TestCase("++i", "i = (i+1)")
-    @TestCase("i--", "i = (i-1)")
-    @TestCase("--i", "i = (i-1)")
-    @TestCase("!a", "(not a)")
-    @TestCase("-a", "-a")
-    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil")
-    @TestCase("delete tbl.test", "tbl.test=nil")
+    @TestCase("i++", "i = (i+1);")
+    @TestCase("++i", "i = (i+1);")
+    @TestCase("i--", "i = (i-1);")
+    @TestCase("--i", "i = (i-1);")
+    @TestCase("!a", "(not a);")
+    @TestCase("-a", "-a;")
+    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil;")
+    @TestCase("delete tbl.test", "tbl.test=nil;")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
@@ -111,53 +111,53 @@ export class ExpressionTests {
             .toThrow();
     }
 
-    @TestCase("~a", "bit.bnot(a)")
-    @TestCase("a&b", "bit.band(a,b)")
-    @TestCase("a&=b", "a = (bit.band(a,b))")
-    @TestCase("a|b", "bit.bor(a,b)")
-    @TestCase("a|=b", "a = (bit.bor(a,b))")
-    @TestCase("a^b", "bit.bxor(a,b)")
-    @TestCase("a^=b", "a = (bit.bxor(a,b))")
-    @TestCase("a<<b", "bit.lshift(a,b)")
-    @TestCase("a<<=b", "a = (bit.lshift(a,b))")
-    @TestCase("a>>b", "bit.rshift(a,b)")
-    @TestCase("a>>=b", "a = (bit.rshift(a,b))")
-    @TestCase("a>>>b", "bit.arshift(a,b)")
-    @TestCase("a>>>=b", "a = (bit.arshift(a,b))")
+    @TestCase("~a", "bit.bnot(a);")
+    @TestCase("a&b", "bit.band(a,b);")
+    @TestCase("a&=b", "a = (bit.band(a,b));")
+    @TestCase("a|b", "bit.bor(a,b);")
+    @TestCase("a|=b", "a = (bit.bor(a,b));")
+    @TestCase("a^b", "bit.bxor(a,b);")
+    @TestCase("a^=b", "a = (bit.bxor(a,b));")
+    @TestCase("a<<b", "bit.lshift(a,b);")
+    @TestCase("a<<=b", "a = (bit.lshift(a,b));")
+    @TestCase("a>>b", "bit.rshift(a,b);")
+    @TestCase("a>>=b", "a = (bit.rshift(a,b));")
+    @TestCase("a>>>b", "bit.arshift(a,b);")
+    @TestCase("a>>>=b", "a = (bit.arshift(a,b));")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string): void {
         Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, luaLibImport: "none" })).toBe(lua);
     }
 
-    @TestCase("~a", "bit32.bnot(a)")
-    @TestCase("a&b", "bit32.band(a,b)")
-    @TestCase("a&=b", "a = (bit32.band(a,b))")
-    @TestCase("a|b", "bit32.bor(a,b)")
-    @TestCase("a|=b", "a = (bit32.bor(a,b))")
-    @TestCase("a^b", "bit32.bxor(a,b)")
-    @TestCase("a^=b", "a = (bit32.bxor(a,b))")
-    @TestCase("a<<b", "bit32.lshift(a,b)")
-    @TestCase("a<<=b", "a = (bit32.lshift(a,b))")
-    @TestCase("a>>b", "bit32.rshift(a,b)")
-    @TestCase("a>>=b", "a = (bit32.rshift(a,b))")
-    @TestCase("a>>>b", "bit32.arshift(a,b)")
-    @TestCase("a>>>=b", "a = (bit32.arshift(a,b))")
+    @TestCase("~a", "bit32.bnot(a);")
+    @TestCase("a&b", "bit32.band(a,b);")
+    @TestCase("a&=b", "a = (bit32.band(a,b));")
+    @TestCase("a|b", "bit32.bor(a,b);")
+    @TestCase("a|=b", "a = (bit32.bor(a,b));")
+    @TestCase("a^b", "bit32.bxor(a,b);")
+    @TestCase("a^=b", "a = (bit32.bxor(a,b));")
+    @TestCase("a<<b", "bit32.lshift(a,b);")
+    @TestCase("a<<=b", "a = (bit32.lshift(a,b));")
+    @TestCase("a>>b", "bit32.rshift(a,b);")
+    @TestCase("a>>=b", "a = (bit32.rshift(a,b));")
+    @TestCase("a>>>b", "bit32.arshift(a,b);")
+    @TestCase("a>>>=b", "a = (bit32.arshift(a,b));")
     @Test("Bitop [5.2]")
     public bitOperatorOverride52(input: string, lua: string): void {
         Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, luaLibImport: "none" })).toBe(lua);
     }
 
-    @TestCase("~a", "~a")
-    @TestCase("a&b", "a & b")
-    @TestCase("a&=b", "a = (a & b)")
-    @TestCase("a|b", "a | b")
-    @TestCase("a|=b", "a = (a | b)")
-    @TestCase("a^b", "a ~ b")
-    @TestCase("a^=b", "a = (a ~ b)")
-    @TestCase("a<<b", "a << b")
-    @TestCase("a<<=b", "a = (a << b)")
-    @TestCase("a>>b", "a >> b")
-    @TestCase("a>>=b", "a = (a >> b)")
+    @TestCase("~a", "~a;")
+    @TestCase("a&b", "a & b;")
+    @TestCase("a&=b", "a = (a & b);")
+    @TestCase("a|b", "a | b;")
+    @TestCase("a|=b", "a = (a | b);")
+    @TestCase("a^b", "a ~ b;")
+    @TestCase("a^=b", "a = (a ~ b);")
+    @TestCase("a<<b", "a << b;")
+    @TestCase("a<<=b", "a = (a << b);")
+    @TestCase("a>>b", "a >> b;")
+    @TestCase("a>>=b", "a = (a >> b);")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string): void {
         Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" })).toBe(lua);
@@ -171,11 +171,11 @@ export class ExpressionTests {
             .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
     }
 
-    @TestCase("1+1", "1+1")
-    @TestCase("-1+1", "-1+1")
-    @TestCase("1*30+4", "(1*30)+4")
-    @TestCase("1*(3+4)", "1*(3+4)")
-    @TestCase("1*(3+4*2)", "1*(3+(4*2))")
+    @TestCase("1+1", "1+1;")
+    @TestCase("-1+1", "-1+1;")
+    @TestCase("1*30+4", "(1*30)+4;")
+    @TestCase("1*(3+4)", "1*(3+4);")
+    @TestCase("1*(3+4*2)", "1*(3+(4*2));")
     @Test("Binary expressions ordering parentheses")
     public binaryParentheses(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
@@ -183,12 +183,12 @@ export class ExpressionTests {
 
     @Test("Null Expression")
     public nullExpression(): void {
-        Expect(util.transpileString("null")).toBe("nil");
+        Expect(util.transpileString("null")).toBe("nil;");
     }
 
     @Test("Undefined Expression")
     public undefinedExpression(): void {
-        Expect(util.transpileString("undefined")).toBe("nil");
+        Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
     @TestCase("inst.field", 8)

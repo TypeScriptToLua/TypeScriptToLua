@@ -1,8 +1,8 @@
 xpcall(function()
-    local a = 42
+    local a = 42;
 
 end,
 function(er)
-    local b = "fail"
+    local b = "fail";
 
 end)

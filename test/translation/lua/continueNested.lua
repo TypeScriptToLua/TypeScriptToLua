@@ -1,10 +1,10 @@
-local i = 0
+local i = 0;
 while(i<5) do
     do
         if (i%2)==0 then
             goto __continue0
         end
-        local j = 0
+        local j = 0;
         while(j<2) do
             do
                 if j==1 then

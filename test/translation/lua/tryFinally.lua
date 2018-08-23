@@ -1,7 +1,7 @@
 xpcall(function()
-    local a = 42
+    local a = 42;
 
 end,
 function(e)
 end)
-local b = "finally"
+local b = "finally";

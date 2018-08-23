@@ -1204,6 +1204,8 @@ export abstract class LuaTranspiler {
         switch (expressionName) {
             case "push":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
+            case "pop":
+                 return `table.remove(${caller})`;
             case "forEach":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayForEach, caller, params);
             case "indexOf":

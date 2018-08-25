@@ -262,6 +262,38 @@ export class LuaLibArrayTests {
         Expect(result).toBe(JSON.stringify([0].concat(inp)));
     }
 
+    @TestCase("[1, 2, 3]", [3, 2])
+    @TestCase("[1, 2, 3, null]", [3, 2])
+    @Test("array.pop")
+    public arrayPop(array: string, expected) {
+        {
+            // Transpile
+            const lua = util.transpileString(
+                `let testArray = ${array};
+                let val = testArray.pop();
+                return val`);
+
+            // Execute
+            const result = util.executeLua(lua);
+
+            // Assert
+            Expect(result).toBe(expected[0]);
+        }
+        {
+            // Transpile
+            const lua = util.transpileString(
+                `let testArray = ${array};
+                testArray.pop();
+                return testArray.length`);
+
+            // Execute
+            const result = util.executeLua(lua);
+
+            // Assert
+            Expect(result).toBe(expected[1]);
+        }
+    }
+
     @TestCase("true", "4", "5", 4)
     @TestCase("false", "4", "5", 5)
     @TestCase("3", "4", "5", 4)
@@ -276,7 +308,7 @@ export class LuaLibArrayTests {
         // Assert
         Expect(result).toBe(expected);
     }
-
+   
     @TestCase("true", 11)
     @TestCase("false", 13)
     @TestCase("a < 4", 13)

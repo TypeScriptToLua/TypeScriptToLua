@@ -180,9 +180,14 @@ export class AssignmentTests {
     @TestCase("repeat")
     @TestCase("then")
     @TestCase("until")
-    @Test("Keyword identifier error")
-    public keywordIdentifierError(identifier: string): void {
-        Expect(() => util.transpileString(`const ${identifier} = 3;`))
-            .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
+    @TestCase("type")
+    @TestCase("table")
+    @Test("Keyword identifier escaping")
+    public keywordIdentifierEscaping(identifier: string): void {
+        const lua = util.transpileString(`const ${identifier} = 3; return ${identifier};`);
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(3);
     }
 }

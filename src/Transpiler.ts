@@ -56,7 +56,8 @@ export abstract class LuaTranspiler {
         ["and", "break", "do", "else", "elseif",
          "end", "false", "for", "function", "if",
          "in", "local", "nil", "not", "or",
-         "repeat", "return", "then", "until", "while"]);
+         "repeat", "return", "then", "until", "while",
+         "type", "table"]);
 
     public indent: string;
     public checker: ts.TypeChecker;
@@ -1360,7 +1361,7 @@ export abstract class LuaTranspiler {
         }
 
         if (this.luaKeywords.has(escapedText)) {
-            throw TSTLErrors.KeywordIdentifier(identifier);
+            return `___${escapedText}`;
         }
 
         return escapedText;

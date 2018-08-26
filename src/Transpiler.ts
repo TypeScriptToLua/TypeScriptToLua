@@ -1767,6 +1767,8 @@ export abstract class LuaTranspiler {
             if (ts.isPropertyAssignment(element)) {
                 const expression = this.transpileExpression(element.initializer);
                 properties.push(`${name} = ${expression}`);
+            } else if (ts.isShorthandPropertyAssignment(element)) {
+                properties.push(`${name} = ${name}`);
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
             }

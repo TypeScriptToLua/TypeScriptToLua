@@ -16,7 +16,6 @@ export enum LuaTarget {
     Lua52 = "5.2",
     Lua53 = "5.3",
     LuaJIT = "jit",
-    GLua = "glua",
 }
 
 export enum LuaLibFeature {

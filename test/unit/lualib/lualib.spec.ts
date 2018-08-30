@@ -185,8 +185,6 @@ export class LuaLibArrayTests {
     @Test("array.concat")
     public concat<T>(arr: T[], ...args: T[]) {
         const argStr = args.map(arg => JSON.stringify(arg)).join(",");
-        console.log(argStr);
-        console.log("\n");
         // Transpile
         const lua = util.transpileString(
             `let concatTestTable = ${JSON.stringify(arr)};

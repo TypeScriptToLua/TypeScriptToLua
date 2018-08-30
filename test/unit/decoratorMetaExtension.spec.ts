@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test } from "alsatian";
 import * as util from "../src/util";
 
 import { TranspileError } from "../../src/Errors";
@@ -43,5 +43,21 @@ export class DecoratorMetaExtension {
             );
         }).toThrowError(TranspileError,
                         "!MetaExtension requires the extension of the metatable class.");
+    }
+
+    @Test("DontAllowInstantiation")
+    public dontAllowInstantiation(): void {
+        Expect(() => {
+            util.transpileString(
+                `
+                declare class _LOADED;
+                /** !MetaExtension */
+                class Ext extends _LOADED {
+                }
+                const e = new Ext();
+                `
+            );
+        }).toThrowError(TranspileError,
+                        "Cannot construct classes with decorator '!Extension' or '!MetaExtension'.");
     }
 }

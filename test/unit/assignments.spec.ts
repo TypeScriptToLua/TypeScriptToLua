@@ -92,7 +92,7 @@ export class AssignmentTests {
                    + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = ({ abc() });\n\na = ({ abc() });");
+        Expect(lua).toBe("local a = ({ abc() });\na = ({ abc() });");
     }
 
     @Test("TupleReturn interface assignment")
@@ -128,7 +128,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local jkl = def.new(true);\n\nlocal a,b=jkl:abc();");
+        Expect(lua).toBe("local jkl = def.new(true);\nlocal a,b=jkl:abc();");
     }
 
     @Test("TupleReturn functional")

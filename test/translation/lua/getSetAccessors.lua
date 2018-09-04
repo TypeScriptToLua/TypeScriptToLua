@@ -14,8 +14,6 @@ function MyClass.set__field(self,v)
     self._field = (v*2);
 end
 local instance = MyClass.new(true);
-
 instance:set__field(4);
 local b = instance:get__field();
-
 local c = (4+instance:get__field())*3;

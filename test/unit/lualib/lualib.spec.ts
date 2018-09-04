@@ -172,6 +172,33 @@ export class LuaLibArrayTests {
         }
     }
 
+    @TestCase([], [])
+    @TestCase([1, 2, 3], [])
+    @TestCase([1, 2, 3], [4])
+    @TestCase([1, 2, 3], [4, 5])
+    @TestCase([1, 2, 3], [4, 5])
+    @TestCase([1, 2, 3], 4, [5])
+    @TestCase([1, 2, 3], 4, [5, 6])
+    @TestCase([1, 2, 3], 4, [5, 6], 7)
+    @TestCase([1, 2, 3], "test", [5, 6], 7, ["test1", "test2"])
+    @TestCase([1, 2, "test"], "test", ["test1", "test2"])
+    @Test("array.concat")
+    public concat<T>(arr: T[], ...args: T[]) {
+        const argStr = args.map(arg => JSON.stringify(arg)).join(",");
+        // Transpile
+        const lua = util.transpileString(
+            `let concatTestTable = ${JSON.stringify(arr)};
+            return JSONStringify(concatTestTable.concat(${argStr}));`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        const concatArr = arr.concat(...args);
+        Expect(result).toBe(JSON.stringify(concatArr));
+    }
+
     @TestCase([], "")
     @TestCase(["test1"], "test1")
     @TestCase(["test1", "test2"], "test1,test2")
@@ -308,7 +335,7 @@ export class LuaLibArrayTests {
         // Assert
         Expect(result).toBe(expected);
     }
-   
+
     @TestCase("true", 11)
     @TestCase("false", 13)
     @TestCase("a < 4", 13)

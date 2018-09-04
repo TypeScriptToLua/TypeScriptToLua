@@ -322,7 +322,7 @@ export class ExpressionTests {
         const identifier = ts.createIdentifier("fromCodePoint");
         Expect(() => transpiler.transpileStringExpression(identifier))
             .toThrowError(TranspileError, "string property fromCodePoint is/are not supported " +
-                          "for target Lua JIT.");
+                          "for target Lua jit.");
     }
 
     @Test("Unknown string expression error")
@@ -331,7 +331,7 @@ export class ExpressionTests {
 
         const identifier = ts.createIdentifier("abcd");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua JIT.");
+            .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua jit.");
     }
 
     @Test("Unsupported array function error")

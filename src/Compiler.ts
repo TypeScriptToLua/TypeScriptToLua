@@ -155,10 +155,11 @@ function emitFilesAndReportErrors(program: ts.Program): number {
 }
 
 export function createTranspiler(checker: ts.TypeChecker,
-                                 options: ts.CompilerOptions,
+                                 options: CompilerOptions,
                                  sourceFile: ts.SourceFile): LuaTranspiler {
     let luaTargetTranspiler: LuaTranspiler;
-    switch (options.luaTarget) {
+    const target = options.luaTarget ? options.luaTarget.toLowerCase() : "";
+    switch (target) {
         case LuaTarget.Lua51:
             luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
             break;

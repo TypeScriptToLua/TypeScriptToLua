@@ -34,6 +34,9 @@ export class TSTLErrors {
     public static InvalidExtensionMetaExtension = (node: ts.Node) =>
         new TranspileError(`Cannot use both '!Extension' and '!MetaExtension' decorators on the same class.`, node)
 
+    public static InvalidNewExpressionOnExtension = (node: ts.Node) =>
+        new TranspileError(`Cannot construct classes with decorator '!Extension' or '!MetaExtension'.`, node)
+
     public static InvalidPropertyCall = (node: ts.Node) =>
         new TranspileError(`Tried to transpile a non-property call as property call.`, node)
 

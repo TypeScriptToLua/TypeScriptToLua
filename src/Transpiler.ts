@@ -15,10 +15,11 @@ export enum LuaTarget {
     Lua51 = "5.1",
     Lua52 = "5.2",
     Lua53 = "5.3",
-    LuaJIT = "JIT",
+    LuaJIT = "jit",
 }
 
 export enum LuaLibFeature {
+    ArrayConcat = "ArrayConcat",
     ArrayEvery = "ArrayEvery",
     ArrayFilter = "ArrayFilter",
     ArrayForEach = "ArrayForEach",
@@ -315,14 +316,25 @@ export abstract class LuaTranspiler {
 
         const imports = node.importClause.namedBindings;
 
+        const requireKeyword = "require";
+
         if (ts.isNamedImports(imports)) {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
 
-            let result = `local ${fileImportTable} = require(${resolvedImportPath})\n`;
+            let result = `local ${fileImportTable} = ${requireKeyword}(${resolvedImportPath})\n`;
             this.importCount++;
 
-            imports.elements.forEach(element => {
+            const filteredElements = imports.elements.filter(e => {
+                const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
+                return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
+            });
+
+            if (filteredElements.length === 0) {
+                return "";
+            }
+
+            filteredElements.forEach(element => {
                 const nameText = this.transpileIdentifier(element.name);
                 if (element.propertyName) {
                     const propertyText = this.transpileIdentifier(element.propertyName);
@@ -335,7 +347,7 @@ export abstract class LuaTranspiler {
             return result;
         } else if (ts.isNamespaceImport(imports)) {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${this.transpileIdentifier(imports.name)} = require(${resolvedImportPath})\n`;
+            return `local ${this.transpileIdentifier(imports.name)} = ${requireKeyword}(${resolvedImportPath})\n`;
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }
@@ -786,7 +798,9 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             case ts.SyntaxKind.EmptyStatement:
-                    return "";
+                return "";
+            case ts.SyntaxKind.SpreadElement:
+                return this.transpileSpreadElement(node as ts.SpreadElement);
             default:
                 throw TSTLErrors.UnsupportedKind("expression", node.kind, node);
         }
@@ -1029,6 +1043,10 @@ export abstract class LuaTranspiler {
 
         this.checkForLuaLibType(type);
 
+        if (classDecorators.has(DecoratorKind.Extension) || classDecorators.has(DecoratorKind.MetaExtension)) {
+            throw TSTLErrors.InvalidNewExpressionOnExtension(node);
+        }
+
         if (classDecorators.has(DecoratorKind.CustomConstructor)) {
             const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
             if (!customDecorator.args[0]) {
@@ -1186,6 +1204,8 @@ export abstract class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         const expressionName = this.transpileIdentifier(expression.name);
         switch (expressionName) {
+            case "concat":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayConcat, caller, params);
             case "push":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
             case "pop":
@@ -1236,6 +1256,10 @@ export abstract class LuaTranspiler {
     public transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
         const property = node.name.text;
 
+        if (tsHelper.hasGetAccessor(node, this.checker)) {
+            return this.transpileGetAccessor(node);
+        }
+
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
         switch (type.flags) {
@@ -1245,8 +1269,6 @@ export abstract class LuaTranspiler {
             case ts.TypeFlags.Object:
                 if (tsHelper.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
-                } else if (tsHelper.hasGetAccessor(node, this.checker)) {
-                    return this.transpileGetAccessor(node);
                 }
         }
 
@@ -1364,6 +1386,10 @@ export abstract class LuaTranspiler {
         }
 
         return escapedText;
+    }
+
+    public transpileSpreadElement(node: ts.SpreadElement): string {
+       return "unpack(" + this.transpileExpression(node.expression) + ")";
     }
 
     public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {
@@ -1566,13 +1592,6 @@ export abstract class LuaTranspiler {
 
         let result = "";
 
-        if (!isExtension && !isMetaExtension) {
-            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
-        } else {
-            // export empty table
-            this.pushExport(className, node, true);
-        }
-
         // Overwrite the original className with the class we are overriding for extensions
         if (isMetaExtension) {
             if (!extendsType) {
@@ -1589,6 +1608,20 @@ export abstract class LuaTranspiler {
                 className = extensionNameArg;
             } else if (extendsType) {
                 className = extendsType.symbol.escapedName as string;
+            }
+        }
+
+        if (!isExtension && !isMetaExtension) {
+            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
+        } else {
+            for (const f of instanceFields) {
+                // Get identifier
+                const fieldIdentifier = f.name as ts.Identifier;
+                const fieldName = this.transpileIdentifier(fieldIdentifier);
+
+                const value = this.transpileExpression(f.initializer);
+
+                result += this.indent + `${className}.${fieldName} = ${value}\n`;
             }
         }
 

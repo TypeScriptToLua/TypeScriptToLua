@@ -1,9 +1,9 @@
 /** !Extension RenamedTestClass */
 class TestClass {
-    myFunction() {}
+    public myFunction() {}
 }
 
 /** !Extension RenamedMyClass */
 class MyClass extends TestClass {
-    myFunction() {}
+    public myFunction() {}
 }

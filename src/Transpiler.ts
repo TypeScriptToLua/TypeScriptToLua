@@ -174,10 +174,6 @@ export abstract class LuaTranspiler {
         return `"${this.pathToLuaRequirePath(relativePath)}"`;
     }
 
-    public getRequireKeyword(): string {
-        return "require";
-    }
-
     public pathToLuaRequirePath(filePath: string): string {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
@@ -320,18 +316,18 @@ export abstract class LuaTranspiler {
 
         const imports = node.importClause.namedBindings;
 
-        const reqKeyword = this.getRequireKeyword();
+        const requireKeyword = "require";
 
         if (ts.isNamedImports(imports)) {
             const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
 
-            let result = `local ${fileImportTable} = ${reqKeyword}(${resolvedImportPath})\n`;
+            let result = `local ${fileImportTable} = ${requireKeyword}(${resolvedImportPath})\n`;
             this.importCount++;
 
             const filteredElements = imports.elements.filter(e => {
-                const decs = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
-                return !decs.has(DecoratorKind.Extension) && !decs.has(DecoratorKind.MetaExtension);
+                const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
+                return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
             });
 
             if (filteredElements.length === 0) {
@@ -351,7 +347,7 @@ export abstract class LuaTranspiler {
             return result;
         } else if (ts.isNamespaceImport(imports)) {
             const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${this.transpileIdentifier(imports.name)} = ${reqKeyword}(${resolvedImportPath})\n`;
+            return `local ${this.transpileIdentifier(imports.name)} = ${requireKeyword}(${resolvedImportPath})\n`;
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }

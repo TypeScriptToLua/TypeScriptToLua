@@ -182,6 +182,33 @@ export class ClassTests {
         Expect(result).toBe(4);
     }
 
+    @Test("CastClassMethodCall")
+    public extraParanthesisAssignment() {
+         // Transpile
+         const lua = util.transpileString(
+            `interface result
+            {
+                val : number;
+            }
+            class a {
+                public method(out: result) {
+                    out.val += 2;
+                }
+            }
+            let inst:any = new a();
+            let result = {val : 0};
+            (inst as a).method(result);
+            (inst as a).method(result);
+            return result.val;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
     @Test("ClassInheritedMethodCall")
     public classInheritedMethodCall(): void {
         // Transpile

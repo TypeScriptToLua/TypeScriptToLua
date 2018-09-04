@@ -263,9 +263,9 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.FunctionDeclaration:
                 return this.transpileFunctionDeclaration(node as ts.FunctionDeclaration);
             case ts.SyntaxKind.VariableStatement:
-                return this.indent + this.transpileVariableStatement(node as ts.VariableStatement) + "\n";
+                return this.indent + this.transpileVariableStatement(node as ts.VariableStatement) + ";\n";
             case ts.SyntaxKind.ExpressionStatement:
-                return this.indent + this.transpileExpression((node as ts.ExpressionStatement).expression) + "\n";
+                return this.indent + this.transpileExpression((node as ts.ExpressionStatement).expression) + ";\n";
             case ts.SyntaxKind.ReturnStatement:
                 return this.indent + this.transpileReturn(node as ts.ReturnStatement) + "\n";
             case ts.SyntaxKind.IfStatement:
@@ -491,7 +491,7 @@ export abstract class LuaTranspiler {
         // Add header
         let result = "";
         for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
-            result += this.indent + this.transpileVariableDeclaration(variableDeclaration);
+            result += this.indent + this.transpileVariableDeclaration(variableDeclaration) + "\n";
         }
         result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
 
@@ -1407,9 +1407,9 @@ export abstract class LuaTranspiler {
             const identifierName = this.transpileIdentifier(node.name);
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-                return `local ${identifierName} = ${value}\n`;
+                return `local ${identifierName} = ${value}`;
             } else {
-                return `local ${identifierName} = nil\n`;
+                return `local ${identifierName} = nil`;
             }
         } else if (ts.isArrayBindingPattern(node.name)) {
             // Destructuring type
@@ -1423,9 +1423,9 @@ export abstract class LuaTranspiler {
 
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
-                return `local ${vars}=${this.transpileExpression(node.initializer)}\n`;
+                return `local ${vars}=${this.transpileExpression(node.initializer)}`;
             } else {
-                return `local ${vars}=${this.transpileDestructingAssignmentValue(node.initializer)}\n`;
+                return `local ${vars}=${this.transpileDestructingAssignmentValue(node.initializer)}`;
             }
         } else {
             throw TSTLErrors.UnsupportedKind("variable declaration", node.name.kind, node);

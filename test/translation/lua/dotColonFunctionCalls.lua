@@ -1,6 +1,6 @@
-classInstance:colonMethod()
-classInstance.dotMethod()
-interfaceInstance:colonMethod()
-interfaceInstance.dotMethod()
-TestNameSpace.dotMethod()
-TestNameSpace.dotMethod2()
+classInstance:colonMethod();
+classInstance.dotMethod();
+interfaceInstance:colonMethod();
+interfaceInstance.dotMethod();
+TestNameSpace.dotMethod();
+TestNameSpace.dotMethod2();

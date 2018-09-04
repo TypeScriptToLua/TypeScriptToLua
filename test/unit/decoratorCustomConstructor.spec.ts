@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-import { TranspileError } from "../../src/Transpiler";
+import { TranspileError } from "../../src/Errors";
 
 export class DecoratorCustomConstructor {
 
@@ -37,6 +37,6 @@ export class DecoratorCustomConstructor {
                 return new Point2D(1, 2).x;
                 `
             );
-        }).toThrowError(TranspileError, "!CustomConstructor requires one argument");
+        }).toThrowError(TranspileError, "!CustomConstructor expects 1 argument(s) but got 0.");
     }
 }

@@ -1,10 +1,12 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
+import { TranspileError } from "../../src/Errors";
+
 export class LuaErrorTests {
 
     @Test("throwString")
-    public trowString() {
+    public trowString(): void {
         // Transpile
         const lua = util.transpileString(
             `throw "Some Error"`
@@ -14,12 +16,12 @@ export class LuaErrorTests {
     }
 
     @Test("throwError")
-    public throwError() {
+    public throwError(): void {
         // Transpile & Asser
         Expect(() => {
             const lua = util.transpileString(
                 `throw Error("Some Error")`
             );
-        }).toThrowError(Error, "Unsupported throw expression, only string literals are supported");
+        }).toThrowError(TranspileError, "Invalid throw expression, only strings can be thrown.");
     }
 }

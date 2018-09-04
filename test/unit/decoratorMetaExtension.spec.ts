@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-import { TranspileError } from "../../src/Transpiler";
+import { TranspileError } from "../../src/Errors";
 
 export class DecoratorMetaExtension {
 
@@ -42,6 +42,6 @@ export class DecoratorMetaExtension {
                 `
             );
         }).toThrowError(TranspileError,
-                        "!MetaExtension requires the base class to have the name of the metatable beeing extended.");
+                        "!MetaExtension requires the extension of the metatable class.");
     }
 }

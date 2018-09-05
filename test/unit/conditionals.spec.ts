@@ -252,6 +252,65 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
+    @Test("switchLocalScope")
+    @TestCase(0, 0)
+    @TestCase(1, 2)
+    @TestCase(2, 2)
+    public switchLocalScope(inp: number, expected: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let result = -1;
+
+            switch (${inp}) {
+                case 0:
+                    let x = 0;
+                    result = 0;
+                    break;
+                case 1:
+                    let x = 1;
+                    result = x;
+                case 2:
+                    let x = 2;
+                    result = x;
+                    break;
+            }
+            return result;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @Test("switchReturn")
+    @TestCase(0, 0)
+    @TestCase(1, 1)
+    @TestCase(2, 2)
+    public switchReturn(inp: number, expected: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `switch (${inp}) {
+                case 0:
+                    return 0;
+                    break;
+                case 1:
+                    return 1;
+                case 2:
+                    return 2;
+                    break;
+            }
+            return result;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
     @Test("If dead code after return")
     public ifDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(

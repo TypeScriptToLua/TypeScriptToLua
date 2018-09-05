@@ -585,70 +585,69 @@ export abstract class LuaTranspiler {
 
         let result = this.indent + "-------Switch statement start-------\n";
 
-        const jumpTableName = "____switch" + this.genVarCounter;
+        const switchVarName = "____switch" + this.genVarCounter;
         this.genVarCounter++;
 
-        result += this.indent + `local ${jumpTableName} = {}\n`;
+        result += this.indent + `local ${switchVarName} = ${expression}\n`;
+
+        let hasDefaultClause = false;
 
         // If statement to go to right entry label
         clauses.forEach((clause, index) => {
             if (ts.isCaseClause(clause)) {
-                result += this.indent + `-- case:\n`;
                 result += this.indent +
-                          `${jumpTableName}[${this.transpileExpression(clause.expression, true)}] = function()\n`;
+                          `if ${this.transpileExpression(clause.expression, true)} == ${switchVarName} then\n`;
+
+                this.pushIndent();
+                result += this.indent + `goto ${switchVarName}_case_${index}\n`;
+                this.popIndent();
+
+                result += this.indent + "end\n";
+            } else if (ts.isDefaultClause(clause)) {
+                hasDefaultClause = true;
             }
-            if (ts.isDefaultClause(clause)) {
-                result += this.indent + `-- default:\n`;
-                result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"] = function()\n`;
-            }
-            this.pushIndent();
-
-            this.transpilingSwitch++;
-            result += this.transpileBlock(ts.createBlock(clause.statements));
-            this.transpilingSwitch--;
-
-            let i = index + 1;
-            if (i < clauses.length
-                && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)
-                && !tsHelper.containsStatement(clause.statements, ts.SyntaxKind.ReturnStatement)
-            ) {
-                let nextClause = clauses[i];
-                while (i < clauses.length
-                    && ts.isCaseClause(nextClause)
-                    && nextClause.statements.length === 0
-                ) {
-                    i++;
-                    nextClause = clauses[i];
-                }
-
-                if (i !== index && nextClause) {
-                    if (ts.isCaseClause(nextClause)) {
-                        const nextValue = this.transpileExpression(nextClause.expression, true);
-                        result += this.indent + `return ${jumpTableName}[${nextValue}]()\n`;
-                    } else {
-                        result += this.indent + `${jumpTableName}["____default${this.genVarCounter}"]()\n`;
-                    }
-                }
-            } else {
-                result += this.indent + `-- break;\n`;
-            }
-
-            this.popIndent();
-
-            result += this.indent + `end\n`;
         });
-        result += this.indent + `if ${jumpTableName}[${expression}] then\n`
-            + this.indent + `   local ${jumpTableName}Return = ${jumpTableName}[${expression}]()\n`
-            + this.indent + `   if ${jumpTableName}Return ~= nil then return ${jumpTableName}Return end\n`;
-        result += this.indent + `elseif ${jumpTableName}["____default${this.genVarCounter}"] then\n`
-            + this.indent + `   local ${jumpTableName}Return = ${jumpTableName}["____default${this.genVarCounter}"]()\n`
-            + this.indent + `   if ${jumpTableName}Return ~= nil then return ${jumpTableName}Return end\n`
-            + this.indent + `end\n`;
-        result += this.indent +
-                  "--------Switch statement end--------\n";
 
-        // Increment counter for next switch statement
-        this.genVarCounter += clauses.length;
+        result += "\n";
+
+        // If no case condition is matched jump to end or default immediately
+        if (hasDefaultClause) {
+            result += this.indent + `goto ${switchVarName}_default\n`;
+        } else {
+            result += this.indent + `goto ${switchVarName}_end\n`;
+        }
+
+        result += "\n";
+
+        const transpileClauseBody = (clause: ts.CaseOrDefaultClause) => {
+            this.transpilingSwitch++;
+            result += this.indent + "do\n";
+            this.pushIndent();
+            result += this.transpileBlock(ts.createBlock(clause.statements));
+            this.popIndent();
+            result += this.indent + "end\n";
+            this.transpilingSwitch--;
+        };
+
+        clauses.forEach((clause, index) => {
+            if (ts.isCaseClause(clause)) {
+                result += this.indent + `::${switchVarName}_case_${index}::\n`;
+
+                transpileClauseBody(clause);
+
+                if (tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
+                    result += this.indent + `goto ${switchVarName}_end\n`;
+                }
+            } else if (ts.isDefaultClause(clause)) {
+                result += this.indent + `::${switchVarName}_default::\n`;
+
+                transpileClauseBody(clause);
+            }
+        });
+
+        result += this.indent + `::${switchVarName}_end::\n`;
+        result += this.indent + "-------Switch statement end-------\n";
+
         return result;
     }
 

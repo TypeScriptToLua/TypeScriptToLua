@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+* Added experimental watch mode, use it with `tstl --watch`
+* Refactored decorators
+* Added `...` spread operator
+* Added error when a lua keyword is used as variable name
+* Added support for shorthand object literals (thanks @gakada)
+* Added array.pop (thanks @andreiradu)
+* Added `;` after lines to avoid ambiguous syntax (thanks @andreiradu)
+* Fixed issue with tsconfig being overriden (thanks @Janne252)
+
 ## 0.7.0
 * Lualib runtime library is now compiled from TypeScript using the transpiler when building!
     * Split up runtime library definition into individual files.

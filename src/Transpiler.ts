@@ -1127,10 +1127,14 @@ export abstract class LuaTranspiler {
         } else {
             // Replace last . with : here
             const name = this.transpileIdentifier(node.expression.name);
-            callPath =
+            if (name === "toString") {
+                return  `tostring(${this.transpileExpression(node.expression.expression)})`;
+            } else {
+                callPath =
                 `${this.transpileExpression(node.expression.expression)}:${name}`;
-            params = this.transpileArguments(node.arguments);
-            return `${callPath}(${params})`;
+                params = this.transpileArguments(node.arguments);
+                return `${callPath}(${params})`;
+            }
         }
     }
 
@@ -1513,7 +1517,10 @@ export abstract class LuaTranspiler {
 
         let result = "";
         const identifier = node.name as ts.Identifier;
-        const methodName = this.transpileIdentifier(identifier);
+        let methodName = this.transpileIdentifier(identifier);
+        if (methodName === "toString") {
+            methodName = "__tostring";
+        }
         const parameters = node.parameters;
         const body = node.body;
 

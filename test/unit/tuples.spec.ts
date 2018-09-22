@@ -114,4 +114,43 @@ export class TupleTests {
         // Assert
         Expect(result).toBe(5);
     }
+
+    @Test("Tuple Static Method Return Destruct")
+    public tupleStaticMethodReturnDestruct() {
+        // Transpile
+        const lua = util.transpileString(
+            `class Test {\n
+                /** !TupleReturn */\n
+                static tuple(): [number, number, number] { return [3,5,1]; }\n
+            }\n
+            const [a,b,c] = Test.tuple();
+            return b;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(5);
+    }
+
+    @Test("Tuple Non-Static Method Return Destruct")
+    public tupleMethodNonStaticReturnDestruct() {
+        // Transpile
+        const lua = util.transpileString(
+            `class Test {\n
+                /** !TupleReturn */\n
+                tuple(): [number, number, number] { return [3,5,1]; }\n
+            }\n
+            const t = new Test();
+            const [a,b,c] = t.tuple();
+            return b;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(5);
+    }
 }

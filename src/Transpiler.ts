@@ -685,7 +685,8 @@ export abstract class LuaTranspiler {
         if (node.expression) {
             // If parent function is a TupleReturn function
             // and return expression is an array literal, leave out brackets.
-            const declaration = tsHelper.findFirstNodeAbove(node, ts.isFunctionDeclaration);
+            const declaration = tsHelper.findFirstNodeAbove(node, (n): n is ts.Node =>
+                ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
             let isTupleReturn = false;
             if (declaration) {
                 const decorators = tsHelper.getCustomDecorators(

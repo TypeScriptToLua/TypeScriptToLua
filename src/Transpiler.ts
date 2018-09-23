@@ -243,6 +243,20 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    // Transpile a block statement
+    public transpileBlockStatement(block: ts.Block): string {
+        let result = "do\n";
+        for (const statement of block.statements) {
+            result += this.transpileNode(statement);
+            if (ts.isReturnStatement(statement)) {
+                break;
+            }
+        }
+
+        result += "end\n";
+        return result;
+    }
+
     // Transpile a node of unknown kind.
     public transpileNode(node: ts.Node): string {
         // Ignore declarations
@@ -296,6 +310,8 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.EndOfFileToken:
                 // Ignore these
                 return "";
+            case ts.SyntaxKind.Block:
+                return this.transpileBlockStatement(node as ts.Block);
             default:
                 return this.indent + this.transpileExpression(node) + "\n";
         }

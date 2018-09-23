@@ -181,7 +181,25 @@ export class ClassTests {
         // Assert
         Expect(result).toBe(4);
     }
+    @Test("ClassToString")
+    public classToString(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public toString(): string {
+                    return "instance of a";
+                }
+            }
+            let inst = new a();
+            return inst.toString();`
+        );
 
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe("instance of a");
+    }
     @Test("CastClassMethodCall")
     public extraParanthesisAssignment() {
          // Transpile

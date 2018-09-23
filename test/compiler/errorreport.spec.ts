@@ -11,7 +11,6 @@ export class CompilerErrorReportTests {
 
     @TestCase("Encountered error parsing file: Default Imports are not supported, please use named imports instead!\n",
               "default_import.ts")
-    @TestCase("Encountered error parsing file: Unsupported expression kind: Block\n", "invalid_syntax.ts")
     @Test("Compile project")
     public compileProject(errorMsg: string, ...fileNames: string[]) {
         fileNames = fileNames.map((file) => path.resolve(__dirname, "testfiles", file));

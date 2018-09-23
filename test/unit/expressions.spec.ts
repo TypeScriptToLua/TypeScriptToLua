@@ -285,6 +285,11 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @Test("Block expression")
+    public blockExpresion(): void {
+        const result = util.transpileAndExecute(`let a = 4; {let a = 42; } return a;`);
+        Expect(result).toBe(4);
+    }
     // ====================================
     // Test expected errors
     // ====================================

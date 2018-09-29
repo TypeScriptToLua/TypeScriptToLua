@@ -56,7 +56,8 @@ export class TSHelper {
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
-        return node.parent && ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name);
+        return node.parent && ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name))
+            || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
     public static isStringType(type: ts.Type): boolean {

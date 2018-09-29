@@ -3,7 +3,7 @@ import * as util from "../src/util";
 
 export class TupleTests {
     @Test("Tuple loop")
-    public tupleLoop() {
+    public tupleLoop(): void {
         // Transpile
         const lua = util.transpileString(
             `const tuple: [number, number, number] = [3,5,1];
@@ -20,7 +20,7 @@ export class TupleTests {
     }
 
     @Test("Tuple foreach")
-    public tupleForEach() {
+    public tupleForEach(): void {
         // Transpile
         const lua = util.transpileString(
             `const tuple: [number, number, number] = [3,5,1];
@@ -37,7 +37,7 @@ export class TupleTests {
     }
 
     @Test("Tuple access")
-    public tupleAccess() {
+    public tupleAccess(): void {
         // Transpile
         const lua = util.transpileString(
             `const tuple: [number, number, number] = [3,5,1];
@@ -52,7 +52,7 @@ export class TupleTests {
     }
 
     @Test("Tuple Destruct")
-    public tupleDestruct() {
+    public tupleDestruct(): void {
         // Transpile
         const lua = util.transpileString(
             `function tuple(): [number, number, number] { return [3,5,1]; }\n
@@ -68,7 +68,7 @@ export class TupleTests {
     }
 
     @Test("Tuple length")
-    public tupleLength() {
+    public tupleLength(): void {
         // Transpile
         const lua = util.transpileString(
             `const tuple: [number, number, number] = [3,5,1];
@@ -83,7 +83,7 @@ export class TupleTests {
     }
 
     @Test("Tuple Return Access")
-    public tupleReturnAccess() {
+    public tupleReturnAccess(): void {
         // Transpile
         const lua = util.transpileString(
             `/** !TupleReturn */\n
@@ -98,8 +98,8 @@ export class TupleTests {
         Expect(result).toBe(1);
     }
 
-    @Test("Tuple Return Destruct")
-    public tupleReturnDestruct() {
+    @Test("Tuple Return Destruct Declaration")
+    public tupleReturnDestructDeclaration(): void {
         // Transpile
         const lua = util.transpileString(
             `/** !TupleReturn */\n
@@ -115,8 +115,26 @@ export class TupleTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Tuple Return Destruct Assignment")
+    public tupleReturnDestructAssignment(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `/** !TupleReturn */\n
+            function tuple(): [number, number] { return [3,6]; }\n
+            const [a,b] = [1,2];
+            [b,a] = tuple();
+            return a - b;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3);
+    }
+
     @Test("Tuple Static Method Return Destruct")
-    public tupleStaticMethodReturnDestruct() {
+    public tupleStaticMethodReturnDestruct(): void {
         // Transpile
         const lua = util.transpileString(
             `class Test {\n
@@ -135,7 +153,7 @@ export class TupleTests {
     }
 
     @Test("Tuple Non-Static Method Return Destruct")
-    public tupleMethodNonStaticReturnDestruct() {
+    public tupleMethodNonStaticReturnDestruct(): void {
         // Transpile
         const lua = util.transpileString(
             `class Test {\n

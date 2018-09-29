@@ -174,4 +174,15 @@ export class TSHelper {
             || ts.isExpressionStatement(node.parent)
             || ts.isForStatement(node.parent);
     }
+
+    public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {
+        let parent = node.parent;
+        while (parent !== undefined) {
+            if (ts.isBlock(parent)) {
+                return false;
+            }
+            parent = parent.parent;
+        }
+        return true;
+    }
 }

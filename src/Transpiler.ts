@@ -1156,23 +1156,25 @@ export abstract class LuaTranspiler {
                 if (node.arguments.length === 1) {
                     return `(string.find(${caller},${params},1,true) or 0)-1`;
                 } else {
-                    return `(string.find(${caller},${params}+1,true) or 0)-1`;
+                    const arg1 = this.transpileExpression(node.arguments[0]);
+                    const arg2 = this.transpileExpression(node.arguments[1]);
+                    return `(string.find(${caller},${arg1},(${arg2})+1,true) or 0)-1`;
                 }
             case "substr":
                 if (node.arguments.length === 1) {
-                    return `string.sub(${caller},${params}+1)`;
+                    return `string.sub(${caller},(${params})+1)`;
                 } else {
                     const arg1 = this.transpileExpression(node.arguments[0]);
                     const arg2 = this.transpileExpression(node.arguments[1]);
-                    return `string.sub(${caller},${arg1}+1,${arg1}+${arg2})`;
+                    return `string.sub(${caller},(${arg1})+1,(${arg1})+(${arg2}))`;
                 }
             case "substring":
                 if (node.arguments.length === 1) {
-                    return `string.sub(${caller},${params}+1)`;
+                    return `string.sub(${caller},(${params})+1)`;
                 } else {
                     const arg1 = this.transpileExpression(node.arguments[0]);
                     const arg2 = this.transpileExpression(node.arguments[1]);
-                    return `string.sub(${caller},${arg1}+1,${arg2})`;
+                    return `string.sub(${caller},(${arg1})+1,${arg2})`;
                 }
             case "toLowerCase":
                 return `string.lower(${caller})`;
@@ -1181,7 +1183,7 @@ export abstract class LuaTranspiler {
             case "split":
                 return this.transpileLuaLibFunction(LuaLibFeature.StringSplit, caller, params);
             case "charAt":
-                return `string.sub(${caller},${params}+1,${params}+1)`;
+                return `string.sub(${caller},(${params})+1,(${params})+1)`;
             default:
                 throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
         }
@@ -1370,9 +1372,9 @@ export abstract class LuaTranspiler {
 
         const type = this.checker.getTypeAtLocation(node.expression);
         if (tsHelper.isArrayType(type, this.checker)) {
-            return `${element}[${index}+1]`;
+            return `${element}[(${index})+1]`;
         } else if (tsHelper.isStringType(type)) {
-            return `string.sub(${element},${index}+1,${index}+1)`;
+            return `string.sub(${element},(${index})+1,(${index})+1)`;
         } else {
             return `${element}[${index}]`;
         }

@@ -128,6 +128,22 @@ export class StringTests {
         Expect(result).toBe(inp.indexOf(searchValue, offset));
     }
 
+    @TestCase("hello test", "t", 4, 3)
+    @TestCase("hello test", "h", 3, 4)
+    @Test("string.indexOf with offset expression")
+    public indexOfOffsetWithExpression(inp: string, searchValue: string, x: number, y: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `return "${inp}".indexOf("${searchValue}", 2 > 1 && ${x} || ${y})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.indexOf(searchValue, x));
+    }
+
     @TestCase("hello test", 0)
     @TestCase("hello test", 1)
     @TestCase("hello test", 1, 2)
@@ -147,14 +163,48 @@ export class StringTests {
         Expect(result).toBe(inp.substring(start, end));
     }
 
+    @TestCase("hello test", 1, 0)
+    @TestCase("hello test", 3, 0, 5)
+    @Test("string.substring with expression")
+    public substringWithExpression(inp: string, start: number, ignored: number, end?: number): void {
+        // Transpile
+        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
+        const lua = util.transpileString(
+            `return "${inp}".substring(${paramStr})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.substring(start, end));
+    }
+
     @TestCase("hello test", 0)
     @TestCase("hello test", 1)
     @TestCase("hello test", 1, 2)
     @TestCase("hello test", 1, 5)
-    @Test("string.substring")
+    @Test("string.substr")
     public substr(inp: string, start: number, end?: number): void {
         // Transpile
         const paramStr = end ? `${start}, ${end}` : `${start}`;
+        const lua = util.transpileString(
+            `return "${inp}".substr(${paramStr})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.substr(start, end));
+    }
+
+    @TestCase("hello test", 1, 0)
+    @TestCase("hello test", 3, 0, 2)
+    @Test("string.substr with expression")
+    public substrWithExpression(inp: string, start: number, ignored: number, end?: number): void {
+        // Transpile
+        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
         const lua = util.transpileString(
             `return "${inp}".substr(${paramStr})`
         );
@@ -243,6 +293,24 @@ export class StringTests {
         // Transpile
         const lua = util.transpileString(
             `return "${inp}".charAt(${index})`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(inp.charAt(index));
+    }
+
+    @TestCase("hello test", 1, 0)
+    @TestCase("hello test", 1, 2)
+    @TestCase("hello test", 3, 2)
+    @TestCase("hello test", 3, 99)
+    @Test("string.charAt with expression")
+    public charAtWithExpression(inp: string, index: number, ignored: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `return "${inp}".charAt(2 > 1 && ${index} || ${ignored})`
         );
 
         // Execute

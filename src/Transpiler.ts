@@ -895,6 +895,13 @@ export abstract class LuaTranspiler {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
+                    if (tsHelper.isTupleReturnCall(node.right, this.checker)
+                    && ts.isArrayLiteralExpression(node.left)) {
+                        // Destructing assignment
+                        const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
+                        return `${vars} = ${rhs}`;
+                    }
+
                     result = `${lhs} = ${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:

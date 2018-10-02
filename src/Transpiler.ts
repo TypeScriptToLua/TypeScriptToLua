@@ -1496,8 +1496,14 @@ export abstract class LuaTranspiler {
             }
         }
 
+        let prefix = this.accessPrefix(node);
+
+        if (!tsHelper.isInGlobalScope(node)) {
+            prefix = "local ";
+        }
+
         // Build function header
-        result += this.indent + this.accessPrefix(node) + `function ${methodName}(${paramNames.join(",")})\n`;
+        result += this.indent + prefix + `function ${methodName}(${paramNames.join(",")})\n`;
 
         this.pushIndent();
 

@@ -83,6 +83,20 @@ export class FunctionTests {
         Expect(result).toBe(3);
     }
 
+    @Test("Function definition scope")
+    public functionDefinitionScope(): void {
+        // Transpile
+        const lua = util.transpileString(`function abc() { function xyz() { return 5; } }\n
+            function def() { function xyz() { return 3; } abc(); return xyz(); }\n
+            return def();`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3);
+    }
+
     @TestCase([], 7)
     @TestCase([5], 9)
     @TestCase([1, 2], 3)

@@ -56,7 +56,8 @@ export class TSHelper {
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
-        return node.parent && ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name);
+        return node.parent && ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name))
+            || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
     public static isStringType(type: ts.Type): boolean {
@@ -173,5 +174,16 @@ export class TSHelper {
         return node.parent === undefined
             || ts.isExpressionStatement(node.parent)
             || ts.isForStatement(node.parent);
+    }
+
+    public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {
+        let parent = node.parent;
+        while (parent !== undefined) {
+            if (ts.isBlock(parent)) {
+                return false;
+            }
+            parent = parent.parent;
+        }
+        return true;
     }
 }

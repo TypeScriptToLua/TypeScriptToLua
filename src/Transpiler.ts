@@ -1130,10 +1130,8 @@ export abstract class LuaTranspiler {
 
         // Get the type of the function
         const functionType = this.checker.getTypeAtLocation(node.expression);
-        // Don't replace . with : for namespaces
-        if ((functionType.symbol && (!(functionType.symbol.flags & ts.SymbolFlags.Method)
-            // If function is defined as property with lambda type use . instead of :
-            || (functionType.symbol.flags & ts.SymbolFlags.TypeLiteral)))) {
+        // Don't replace . with : for namespaces or functions defined as properties with lambdas
+        if (functionType.symbol && !(functionType.symbol.flags & ts.SymbolFlags.Method)) {
             callPath = this.transpileExpression(node.expression);
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;

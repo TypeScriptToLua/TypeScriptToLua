@@ -344,4 +344,68 @@ export class ClassTests {
         Expect(() => transpiler.transpileClass({} as ts.ClassDeclaration))
             .toThrowError(Error, "Class declarations must have a name.");
     }
+
+    @Test("CallSuperMethodNoArgs")
+    public callSuperMethodNoArgs(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                a: number
+                constructor(n: number) {
+                    this.a = n;
+                }
+                public method() {
+                    return this.a;
+                }
+            }
+            class b extends a {
+                constructor(n: number) {
+                    super(n);
+                }
+                public method() {
+                    return super.method();
+                }
+            }
+            let inst = new b(6);
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(6);
+    }
+
+    @Test("CallSuperMethodArgs")
+    public callSuperMethodArgs(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                a: number
+                constructor(n: number) {
+                    this.a = n;
+                }
+                public method(n: number) {
+                    return this.a + n;
+                }
+            }
+            class b extends a {
+                constructor(n: number) {
+                    super(n);
+                }
+                public method(n: number) {
+                    return super.method(n);
+                }
+            }
+            let inst = new b(6);
+            return inst.method(4);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(10);
+    }
 }

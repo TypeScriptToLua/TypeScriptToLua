@@ -1137,6 +1137,10 @@ export abstract class LuaTranspiler {
             callPath = this.transpileExpression(node.expression);
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;
+        } else if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
+            // Super calls take the format of super.call(self,...)
+            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            return `${this.transpileExpression(node.expression)}(${params})`;
         } else {
             // Replace last . with : here
             const name = this.transpileIdentifier(node.expression.name);

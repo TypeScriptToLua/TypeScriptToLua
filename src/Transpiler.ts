@@ -119,6 +119,7 @@ export abstract class LuaTranspiler {
         let result: string = "";
         if (node &&
             node.modifiers && this.isModule &&
+            this.namespace.length === 0 &&
             (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)
            ) {
             if (dummy) {
@@ -127,11 +128,12 @@ export abstract class LuaTranspiler {
                 result = this.indent + `exports.${this.definitionName(name)} = ${name}\n`;
             }
         }
-        if (this.namespace.length !== 0 && !ts.isModuleDeclaration(node)) {
+        if (this.namespace.length !== 0 &&
+            (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
             if (dummy) {
-                result += this.indent + `${this.definitionName(name)} = {}\n`;
+                result += this.indent + `${this.namespace[this.namespace.length - 1]}.${name} = {}\n`;
             } else {
-                result += this.indent + `${this.definitionName(name)} = ${name}\n`;
+                result += this.indent + `${this.namespace[this.namespace.length - 1]}.${name} = ${name}\n`;
             }
         }
         return result;
@@ -361,15 +363,15 @@ export abstract class LuaTranspiler {
         }
 
         const defName = this.definitionName(node.name.text);
+        // Initialize to pre-existing export if one exists
+        const prefix = (this.namespace.length === 0 && this.isModule &&
+            (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) ? `exports.${node.name.text} or ` : "";
         let result =
             this.indent +
             this.accessPrefix(node) +
-            `${node.name.text} = ${node.name.text} or {}\n`;
+            `${node.name.text} = ${prefix}${node.name.text} or {}\n`;
 
-        if (this.namespace.length > 0) {
-            result += this.indent + `${defName} = ${node.name.text} or {}\n`;
-        }
-        this.pushExport(defName, node);
+        this.pushExport(node.name.text, node);
         // Create closure
         result += this.indent + "do\n";
         this.pushIndent();

@@ -1,11 +1,24 @@
-declare class MergedClass {
-    public propertyFunc: () => void;
-    public method(): void;
+class MergedClass {
+    public static staticMethodA(): void {}
+    public static staticMethodB(): void {
+        this.staticMethodA();
+    }
+
+    public propertyFunc: () => void = () => {};
+
+    public methodA(): void {}
+    public methodB(): void {
+        this.methodA();
+        this.propertyFunc();
+    }
 }
-declare namespace MergedClass {
-    export function namespaceFunc(): void;
+
+namespace MergedClass {
+    export function namespaceFunc(): void {}
 }
+
 const mergedClass = new MergedClass();
-mergedClass.method();
+mergedClass.methodB();
 mergedClass.propertyFunc();
+MergedClass.staticMethodB();
 MergedClass.namespaceFunc();

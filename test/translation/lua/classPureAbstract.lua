@@ -1,9 +1,9 @@
 ClassB = ClassB or {}
 ClassB.__index = ClassB
 function ClassB.new(construct, ...)
-    local instance = setmetatable({}, ClassB)
-    if construct and ClassB.constructor then ClassB.constructor(instance, ...) end
-    return instance
+    local self = setmetatable({}, ClassB)
+    if construct and ClassB.constructor then ClassB.constructor(self, ...) end
+    return self
 end
 function ClassB.constructor(self)
 end

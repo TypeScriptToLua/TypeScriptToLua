@@ -1720,7 +1720,7 @@ export abstract class LuaTranspiler {
             result += this.indent + `${className}.__base = ${baseName}\n`;
         }
         result += this.indent + `function ${className}.new(construct, ...)\n`;
-        result += this.indent + `    local instance = setmetatable({}, ${className})\n`;
+        result += this.indent + `    local self = setmetatable({}, ${className})\n`;
 
         for (const f of instanceFields) {
             // Get identifier
@@ -1729,13 +1729,13 @@ export abstract class LuaTranspiler {
 
             const value = this.transpileExpression(f.initializer);
 
-            result += this.indent + `    instance.${fieldName} = ${value}\n`;
+            result += this.indent + `    self.${fieldName} = ${value}\n`;
         }
 
         result += this.indent + `    if construct and ${className}.constructor then `
-                      + `${className}.constructor(instance, ...) end\n`;
+                      + `${className}.constructor(self, ...) end\n`;
 
-        result += this.indent + `    return instance\n`;
+        result += this.indent + `    return self\n`;
         result += this.indent + `end\n`;
 
         return result;

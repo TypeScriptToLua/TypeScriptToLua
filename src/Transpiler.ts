@@ -1077,10 +1077,11 @@ export abstract class LuaTranspiler {
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isInDestructingAssignment ? `({ ${result} })` : result;
+            return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed ? `({ ${result} })` : result;
         }
 
         // Handle super calls properly
@@ -1092,7 +1093,8 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return isTupleReturn && !isInDestructingAssignment ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
+        return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed
+            ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 
     public transpilePropertyCall(node: ts.CallExpression): string {

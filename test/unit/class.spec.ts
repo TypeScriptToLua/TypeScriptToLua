@@ -181,6 +181,7 @@ export class ClassTests {
         // Assert
         Expect(result).toBe(4);
     }
+
     @Test("ClassToString")
     public classToString(): void {
         // Transpile
@@ -200,10 +201,11 @@ export class ClassTests {
         // Assert
         Expect(result).toBe("instance of a");
     }
+
     @Test("CastClassMethodCall")
-    public extraParanthesisAssignment() {
-         // Transpile
-         const lua = util.transpileString(
+    public extraParenthesisAssignment(): void {
+        // Transpile
+        const lua = util.transpileString(
             `interface result
             {
                 val : number;
@@ -218,6 +220,25 @@ export class ClassTests {
             (inst as a).method(result);
             (inst as a).method(result);
             return result.val;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassPropertyFunctionThis")
+    public classPropertyFunctionThis(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                constructor(private n: number) {}
+                public method: () => number = () => this.n;
+            }
+            let inst = new a(4);
+            return inst.method();`
         );
 
         // Execute

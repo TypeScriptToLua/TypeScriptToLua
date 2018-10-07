@@ -895,11 +895,14 @@ export abstract class LuaTranspiler {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
-                    if (tsHelper.isTupleReturnCall(node.right, this.checker)
-                    && ts.isArrayLiteralExpression(node.left)) {
+                    if (ts.isArrayLiteralExpression(node.left)) {
                         // Destructing assignment
                         const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
-                        return `${vars} = ${rhs}`;
+                        if (tsHelper.isTupleReturnCall(node.right, this.checker)) {
+                            return `${vars} = ${rhs}`;
+                        } else {
+                            return `${vars} = ${this.transpileDestructingAssignmentValue(node.right)}`;
+                        }
                     }
 
                     result = `${lhs} = ${rhs}`;
@@ -1077,10 +1080,11 @@ export abstract class LuaTranspiler {
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isInDestructingAssignment ? `({ ${result} })` : result;
+            return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed ? `({ ${result} })` : result;
         }
 
         // Handle super calls properly
@@ -1092,7 +1096,8 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return isTupleReturn && !isInDestructingAssignment ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
+        return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed
+            ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 
     public transpilePropertyCall(node: ts.CallExpression): string {

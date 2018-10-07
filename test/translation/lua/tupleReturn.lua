@@ -1,0 +1,12 @@
+tupleReturn();
+noTupleReturn();
+local a,b=tupleReturn();
+local c,d=table.unpack(noTupleReturn());
+a,b = tupleReturn();
+c,d = table.unpack(noTupleReturn());
+local e = ({ tupleReturn() });
+local f = noTupleReturn();
+e = ({ tupleReturn() });
+f = noTupleReturn();
+foo(({ tupleReturn() }));
+foo(noTupleReturn());

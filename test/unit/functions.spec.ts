@@ -97,6 +97,19 @@ export class FunctionTests {
         Expect(result).toBe(3);
     }
 
+    @Test("Function default parameter")
+    public functionDefaultParameter(): void {
+        // Transpile
+        const lua = util.transpileString(`function abc(defaultParam: string = "abc") { return defaultParam; }\n
+            return abc() + abc("def");`);
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe("abcdef");
+    }
+
     @TestCase([], 7)
     @TestCase([5], 9)
     @TestCase([1, 2], 3)

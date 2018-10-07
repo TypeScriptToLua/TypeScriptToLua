@@ -1497,11 +1497,33 @@ export abstract class LuaTranspiler {
         if (!node.body) { return ""; }
 
         let result = "";
-        const identifier = node.name;
-        const methodName = this.transpileIdentifier(identifier);
-        const parameters = node.parameters;
-        const body = node.body;
+        const methodName = this.transpileIdentifier(node.name);
 
+        const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters);
+
+        let prefix = this.accessPrefix(node);
+
+        if (!tsHelper.isInGlobalScope(node)) {
+            prefix = "local ";
+        }
+
+        // Build function header
+        result += this.indent + prefix + `function ${methodName}(${paramNames.join(",")})\n`;
+
+        this.pushIndent();
+        result += this.transpileFunctionBody(node.parameters, node.body, spreadIdentifier);
+        this.popIndent();
+
+        // Close function block
+        result += this.indent + "end\n";
+
+        this.pushExport(methodName, node);
+
+        return result;
+    }
+
+    // Transpile a list of parameters, returns a list of transpiled parameters and an optional spread identifier
+    public transpileParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>): [string[], string] {
         // Build parameter string
         const paramNames: string[] = [];
 
@@ -1521,16 +1543,18 @@ export abstract class LuaTranspiler {
             }
         }
 
-        let prefix = this.accessPrefix(node);
+        return [paramNames, spreadIdentifier];
+    }
 
-        if (!tsHelper.isInGlobalScope(node)) {
-            prefix = "local ";
-        }
+    public transpileFunctionBody(parameters: ts.NodeArray<ts.ParameterDeclaration>,
+                                 body: ts.Block,
+                                 spreadIdentifier: string = ""
+    ): string {
+        let result = "";
 
-        // Build function header
-        result += this.indent + prefix + `function ${methodName}(${paramNames.join(",")})\n`;
-
-        this.pushIndent();
+        // Add default parameters
+        const defaultValueParams = parameters.filter(declaration => declaration.initializer !== undefined);
+        result += this.transpileParameterDefaultValues(defaultValueParams);
 
         // Push spread operator here
         if (spreadIdentifier !== "") {
@@ -1538,12 +1562,6 @@ export abstract class LuaTranspiler {
         }
 
         result += this.transpileBlock(body);
-        this.popIndent();
-
-        // Close function block
-        result += this.indent + "end\n";
-
-        this.pushExport(methodName, node);
 
         return result;
     }
@@ -1553,47 +1571,20 @@ export abstract class LuaTranspiler {
         if (!node.body) { return ""; }
 
         let result = "";
-        const identifier = node.name as ts.Identifier;
-        let methodName = this.transpileIdentifier(identifier);
+        let methodName = this.transpileIdentifier(node.name as ts.Identifier);
         if (methodName === "toString") {
             methodName = "__tostring";
         }
-        const parameters = node.parameters;
-        const body = node.body;
 
-        // Build parameter string
-        const paramNames: string[] = ["self"];
+        const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters);
 
-        let spreadIdentifier = "";
-
-        // Only push parameter name to paramName array if it isn't a spread parameter
-        for (const param of parameters) {
-            const paramName = this.transpileIdentifier(param.name as ts.Identifier);
-
-            // This parameter is a spread parameter (...param)
-            if (!param.dotDotDotToken) {
-                paramNames.push(paramName);
-            } else {
-                spreadIdentifier = paramName;
-                // Push the spread operator into the paramNames array
-                paramNames.push("...");
-            }
-        }
-        // Parameters with default values
-        const defaultValueParams = node.parameters.filter(declaration => declaration.initializer !== undefined);
+        const selfParamNames = ["self"].concat(paramNames);
 
         // Build function header
-        result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
+        result += this.indent + `function ${callPath}${methodName}(${selfParamNames.join(",")})\n`;
 
         this.pushIndent();
-
-        // Push spread operator here
-        if (spreadIdentifier !== "") {
-            result += this.indent + `local ${spreadIdentifier} = { ... }\n`;
-        }
-
-        result += this.transpileParameterDefaultValues(defaultValueParams);
-        result += this.transpileBlock(body);
+        result += this.transpileFunctionBody(node.parameters, node.body, spreadIdentifier);
         this.popIndent();
 
         // Close function block

@@ -266,7 +266,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.FunctionDeclaration:
                 return this.transpileFunctionDeclaration(node as ts.FunctionDeclaration);
             case ts.SyntaxKind.VariableStatement:
-                return this.indent + this.transpileVariableStatement(node as ts.VariableStatement) + ";\n";
+                return this.indent + this.transpileVariableStatement(node as ts.VariableStatement);
             case ts.SyntaxKind.ExpressionStatement:
                 return this.indent + this.transpileExpression((node as ts.ExpressionStatement).expression) + ";\n";
             case ts.SyntaxKind.ReturnStatement:
@@ -1443,7 +1443,7 @@ export abstract class LuaTranspiler {
         let result = "";
 
         node.declarationList.declarations.forEach(declaration => {
-            result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration);
+            result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration) + ";\n";
             if (ts.isIdentifier(declaration.name)) {
                 this.pushExport(this.transpileIdentifier(declaration.name as ts.Identifier), node);
             }

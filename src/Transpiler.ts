@@ -1462,7 +1462,12 @@ export abstract class LuaTranspiler {
             const identifierName = this.transpileIdentifier(node.name);
             if (node.initializer) {
                 const value = this.transpileExpression(node.initializer);
-                return `local ${identifierName} = ${value}`;
+                if (ts.isFunctionExpression(node.initializer) || ts.isArrowFunction(node.initializer)) {
+                    // Separate declaration and assignment for functions to allow recursion
+                    return `local ${identifierName}; ${identifierName} = ${value}`;
+                } else {
+                    return `local ${identifierName} = ${value}`;
+                }
             } else {
                 return `local ${identifierName} = nil`;
             }

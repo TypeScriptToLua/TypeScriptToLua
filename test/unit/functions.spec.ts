@@ -245,4 +245,28 @@ export class FunctionTests {
 
         Expect(result).toBe(3);
     }
+
+    @Test("Recursive function definition")
+    public recursiveFunctionDefinition(): void {
+        const result = util.transpileAndExecute(
+            `function f() { return typeof f; } return f();`);
+
+        Expect(result).toBe("function");
+    }
+
+    @Test("Recursive function expression")
+    public recursiveFunctionExpression(): void {
+        const result = util.transpileAndExecute(
+            `let f = function() { return typeof f; } return f();`);
+
+        Expect(result).toBe("function");
+    }
+
+    @Test("Recursive arrow function")
+    public recursiveArrowFunction(): void {
+        const result = util.transpileAndExecute(
+            `let f = () => typeof f; return f();`);
+
+        Expect(result).toBe("function");
+    }
 }

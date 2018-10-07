@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.0
+* Fixed an issue where default parameter values were ignored in function declarations.
+* Fixed a bug where `self` was undefined in function properties.
+* Fixed a bug where addition of +1 to indices sometimes caused issues with operation order (thanks @brianhang)
+* Fixed super calls having issues with their `self` instance. (thanks @hazzard993)
+* Methods now also accept custom decorators (thanks @hazzard993)
+* Improved support for `toString` calls (thanks @andreiradu)
+* Added support for block expressions (thanks @andreiradu)
+
+Thanks @tomblind for the following changes:
+* Fixed a bug where recursive use of a function expression caused a nil error.
+* Fixed syntax error when compiling variable declaration lists.
+* Fixed an issue with assignment order in exported namespaces.
+* Various fixes to `!TupleReturn` functions.
+* Fixed an issue with declaration merging.
+
 ## 0.8.0
 * Added experimental watch mode, use it with `tstl --watch`
 * Refactored decorators

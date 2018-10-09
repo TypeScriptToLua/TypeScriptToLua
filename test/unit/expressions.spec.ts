@@ -290,6 +290,14 @@ export class ExpressionTests {
         const result = util.transpileAndExecute(`let a = 4; {let a = 42; } return a;`);
         Expect(result).toBe(4);
     }
+
+    @Test("Non-null expression")
+    public nonNullExpression(): void {
+        const result = util.transpileAndExecute(`function abc(): number | undefined { return 3; }
+            const a: number = abc()!;
+            return a;`);
+        Expect(result).toBe(3);
+    }
     // ====================================
     // Test expected errors
     // ====================================

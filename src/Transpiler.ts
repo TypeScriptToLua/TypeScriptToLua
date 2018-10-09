@@ -829,10 +829,6 @@ export abstract class LuaTranspiler {
         const lhs = this.transpileExpression(node.left, true);
         const rhs = this.transpileExpression(node.right, true);
 
-        if (node.operatorToken.kind === ts.SyntaxKind.EqualsToken && !tsHelper.isExpressionStatement(node)) {
-            return `(function() ${lhs} = ${rhs}; return ${lhs} end)()`;
-        }
-
         let result = "";
 
         // Transpile Bitops
@@ -897,17 +893,36 @@ export abstract class LuaTranspiler {
                         return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
                     }
 
+                    // Property/element assignment expressions need to avoid duplicate calls
+                    if (!tsHelper.isExpressionStatement(node) &&
+                        (ts.isElementAccessExpression(node.left) || ts.isPropertyAccessExpression(node.left))) {
+                        const obj = this.transpileExpression(node.left.expression);
+                        const index = ts.isElementAccessExpression(node.left)
+                            ? this.transpileExpression(node.left.argumentExpression)
+                            : `"${this.transpileIdentifier(node.left.name)}"`;
+                        result = `(function(o, i, v) o[i] = v; return v end)(${obj}, ${index}, ${rhs})`;
+                        break;
+                    }
+
                     if (ts.isArrayLiteralExpression(node.left)) {
                         // Destructing assignment
                         const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
-                        if (tsHelper.isTupleReturnCall(node.right, this.checker)) {
-                            return `${vars} = ${rhs}`;
+                        const vals = !tsHelper.isTupleReturnCall(node.right, this.checker)
+                            ? this.transpileDestructingAssignmentValue(node.right)
+                            : rhs;
+                        if (tsHelper.isExpressionStatement(node)) {
+                            result = `${vars} = ${vals}`;
                         } else {
-                            return `${vars} = ${this.transpileDestructingAssignmentValue(node.right)}`;
+                            result = `(function(...) ${vars} = ...; return {...} end)(${vals})`;
                         }
+                        break;
                     }
 
-                    result = `${lhs} = ${rhs}`;
+                    if (tsHelper.isExpressionStatement(node)) {
+                        result = `${lhs} = ${rhs}`;
+                    } else {
+                        result = `(function(v) ${lhs} = v; return v end)(${rhs})`;
+                    }
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:

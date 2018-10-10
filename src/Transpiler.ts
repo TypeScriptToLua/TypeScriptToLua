@@ -897,9 +897,19 @@ export abstract class LuaTranspiler {
                     if (!tsHelper.isExpressionStatement(node) &&
                         (ts.isElementAccessExpression(node.left) || ts.isPropertyAccessExpression(node.left))) {
                         const obj = this.transpileExpression(node.left.expression);
-                        const index = ts.isElementAccessExpression(node.left)
-                            ? this.transpileExpression(node.left.argumentExpression)
-                            : `"${this.transpileIdentifier(node.left.name)}"`;
+                        let index: string;
+                        if (ts.isElementAccessExpression(node.left)) {
+                            // Element assignment with brackets []
+                            const type = this.checker.getTypeAtLocation(node.left.expression);
+                            if (tsHelper.isArrayType(type, this.checker)) {
+                                index = `(${this.transpileExpression(node.left.argumentExpression)})+1`;
+                            } else {
+                                index = this.transpileExpression(node.left.argumentExpression);
+                            }
+                        } else {
+                            // Property assignment with dot .
+                            index = `"${this.transpileIdentifier(node.left.name)}"`;
+                        }
                         result = `(function(o, i, v) o[i] = v; return v end)(${obj}, ${index}, ${rhs})`;
                         break;
                     }

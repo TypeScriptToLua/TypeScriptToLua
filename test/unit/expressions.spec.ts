@@ -285,6 +285,47 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase("x = 13", 13)
+    @TestCase("x = y", 5)
+    @Test("Assignment expression")
+    public assignmentExpressions(expression: string, expected: number): void {
+        const result = util.transpileAndExecute(`let x = 3; let y = 5; return (${expression});`);
+
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("o.x = \"BAZ\"", "BAZ")
+    @TestCase("a[0] = \"BAZ\"", "BAZ")
+    @TestCase("a[0] = o.x", "foo")
+    @TestCase("o.x = a[0]", "bar")
+    @Test("Property assignment expression")
+    public propertyAssignmentExpressions(expression: string, expected: number): void {
+        const result = util.transpileAndExecute(
+            `let o = {x: "foo"};
+            let a = ["bar"];
+            return (${expression});`);
+
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("ta = tb", "b1b2")
+    @TestCase("ta = tr()", "foobar")
+    @TestCase("[o.x, a[0]] = tb", "b1b2")
+    @TestCase("[a[0], o.x] = tr()", "foobar")
+    @Test("Destructure assignment expression")
+    public destructureAssignmentExpressions(expression: string, expected: number): void {
+        const result = util.transpileAndExecute(
+            `let o = {x: "foo"};
+            let a = ["bar"];
+            /** !TupleReturn */ function tr(): [string, string] { return ["foo", "bar"]; }
+            let ta: [string, string] = ["a1", "a2"];
+            let tb: [string, string] = ["b1", "b2"];
+            let [a, b] = (${expression});
+            return a + b;`);
+
+        Expect(result).toBe(expected);
+    }
+
     @Test("Block expression")
     public blockExpresion(): void {
         const result = util.transpileAndExecute(`let a = 4; {let a = 42; } return a;`);

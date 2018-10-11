@@ -803,6 +803,8 @@ export abstract class LuaTranspiler {
                 return "";
             case ts.SyntaxKind.SpreadElement:
                 return this.transpileSpreadElement(node as ts.SpreadElement);
+            case ts.SyntaxKind.NonNullExpression:
+                return this.transpileExpression((node as ts.NonNullExpression).expression);
             case ts.SyntaxKind.Block:
                 this.pushIndent();
                 const ret = "do \n" + this.transpileBlock(node as ts.Block) + "end\n";

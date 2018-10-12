@@ -9,6 +9,8 @@
         "tstl",
         "transpiler"
     ],
+    "main": "dist/tstl.js",
+    "types" : "dist/tstl.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",

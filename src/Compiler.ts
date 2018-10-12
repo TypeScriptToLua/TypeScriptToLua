@@ -177,6 +177,59 @@ export function createTranspiler(checker: ts.TypeChecker,
     return luaTargetTranspiler;
 }
 
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
+
+export function transpileString(str: string,
+                                options: CompilerOptions = {
+                                    luaLibImport: LuaLibImportKind.Require,
+                                    luaTarget: LuaTarget.Lua53,
+                                }): string {
+    const compilerHost = {
+        directoryExists: () => true,
+        fileExists: (fileName): boolean => true,
+        getCanonicalFileName: fileName => fileName,
+        getCurrentDirectory: () => "",
+        getDefaultLibFileName: () => "lib.es6.d.ts",
+        getDirectories: () => [],
+        getNewLine: () => "\n",
+
+        getSourceFile: (filename, languageVersion) => {
+            if (filename === "file.ts") {
+                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
+            }
+            if (filename === "lib.es6.d.ts") {
+                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            }
+            return undefined;
+        },
+
+        readFile: () => "",
+
+        useCaseSensitiveFileNames: () => false,
+        // Don't write output
+        writeFile: (name, text, writeByteOrderMark) => null,
+    };
+    const program = ts.createProgram(["file.ts"], options, compilerHost);
+
+    const result = createTranspiler(program.getTypeChecker(),
+                                    options,
+                                    program.getSourceFile("file.ts")).transpileSourceFile();
+    return result.trim();
+}
+
+export function transpileFile(filePath: string): string {
+    const program = ts.createProgram([filePath], {});
+    const checker = program.getTypeChecker();
+
+    // Output errors
+    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
+    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
+
+    const options: ts.CompilerOptions = { luaLibImport: "none" };
+    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
+    return result.trim();
+}
+
 function reportDiagnostic(diagnostic: ts.Diagnostic): void {
     if (diagnostic.file) {
         const { line, character } =

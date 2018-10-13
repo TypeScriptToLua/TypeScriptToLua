@@ -807,6 +807,11 @@ export abstract class LuaTranspiler {
                 return this.transpileSpreadElement(node as ts.SpreadElement);
             case ts.SyntaxKind.NonNullExpression:
                 return this.transpileExpression((node as ts.NonNullExpression).expression);
+            case ts.SyntaxKind.ClassExpression:
+                this.namespace.push("");
+                const classDeclaration =  this.transpileClass(node as ts.ClassExpression, "_");
+                this.namespace.pop();
+                return `(function() ${classDeclaration}; return _ end)()`;
             case ts.SyntaxKind.Block:
                 this.pushIndent();
                 const ret = "do \n" + this.transpileBlock(node as ts.Block) + "end\n";
@@ -1615,12 +1620,11 @@ export abstract class LuaTranspiler {
     }
 
     // Transpile a class declaration
-    public transpileClass(node: ts.ClassDeclaration): string {
-        if (!node.name) {
+    public transpileClass(node: ts.ClassLikeDeclarationBase, nameOverride?: string): string {
+        let className = node.name ? this.transpileIdentifier(node.name) : nameOverride;
+        if (!className) {
             throw TSTLErrors.MissingClassName(node);
         }
-
-        let className = this.transpileIdentifier(node.name);
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
 
@@ -1667,7 +1671,7 @@ export abstract class LuaTranspiler {
         }
 
         if (!isExtension && !isMetaExtension) {
-            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
+            result += this.transpileClassCreationMethods(node, className, instanceFields, extendsType);
         } else {
             for (const f of instanceFields) {
                 // Get identifier
@@ -1716,10 +1720,9 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    public transpileClassCreationMethods(node: ts.ClassDeclaration, instanceFields: ts.PropertyDeclaration[],
+    public transpileClassCreationMethods(node: ts.ClassLikeDeclarationBase, className: string,
+                                         instanceFields: ts.PropertyDeclaration[],
                                          extendsType: ts.Type): string {
-        const className = this.transpileIdentifier(node.name);
-
         let noClassOr = false;
         if (extendsType) {
             const decorators = tsHelper.getCustomDecorators(extendsType, this.checker);

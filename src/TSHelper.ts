@@ -28,7 +28,7 @@ export class TSHelper {
         return statements.some(statement => statement.kind === kind);
     }
 
-    public static getExtendedType(node: ts.ClassDeclaration, checker: ts.TypeChecker): ts.Type | undefined {
+    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
@@ -77,6 +77,20 @@ export class TSHelper {
 
             return this.getCustomDecorators(type, checker)
                        .has(DecoratorKind.TupleReturn);
+        } else {
+            return false;
+        }
+    }
+
+    public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const declaration = this.findFirstNodeAbove(node, (n): n is ts.Node =>
+            ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
+        if (declaration) {
+            const decorators = this.getCustomDecorators(
+                checker.getTypeAtLocation(declaration),
+                checker
+            );
+            return decorators.has(DecoratorKind.TupleReturn);
         } else {
             return false;
         }

@@ -201,7 +201,44 @@ export class ClassTests {
         // Assert
         Expect(result).toBe("instance of a");
     }
+    @Test("HasOwnProperty true")
+    public hasOwnProperty1(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public test(): void {
+                }
+            }
+            let inst = new a();
+            inst["prop"] = 17;
+            return inst.hasOwnProperty("prop");`
+        );
 
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(true);
+    }
+    @Test("HasOwnProperty false")
+    public hasOwnProperty2(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public test(): void {
+                }
+            }
+            let inst = new a();
+            inst["prop"] = 17;
+            return inst.hasOwnProperty("test");`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(false);
+    }
     @Test("CastClassMethodCall")
     public extraParenthesisAssignment(): void {
         // Transpile
@@ -428,5 +465,48 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(10);
+    }
+    @Test("classExpression")
+    public classExpression(): void {
+        const lua = util.transpileString(
+            `class a {
+                public method() {
+                    return "instance of a";
+                }
+            }
+            b = class extends a {
+                public method() {
+                    return "instance of b";
+                }
+            }
+            let inst = new b(6);
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe("instance of b");
+    }
+    @Test("classExpressionBaseClassMethod")
+    public classExpressionBaseClassMethod(): void {
+        const lua = util.transpileString(
+            `class a {
+                public method() {
+                    return 42;
+                }
+            }
+            b = class extends a {
+            }
+            let inst = new b();
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(42);
     }
 }

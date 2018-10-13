@@ -26,6 +26,10 @@ export enum LuaLibFeature {
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
+    ArrayReverse = "ArrayReverse",
+    ArrayShift = "ArrayShift",
+    ArrayUnshift = "ArrayUnshift",
+    ArraySort = "ArraySort",
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
@@ -305,6 +309,9 @@ export abstract class LuaTranspiler {
 
     public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
         this.importLuaLibFeature(func);
+        params = params.filter(element => {
+            return element.toString() !== "";
+          });
         return `__TS__${func}(${params.join(", ")})`;
     }
 
@@ -685,20 +692,15 @@ export abstract class LuaTranspiler {
 
     public transpileReturn(node: ts.ReturnStatement): string {
         if (node.expression) {
-            // If parent function is a TupleReturn function
-            // and return expression is an array literal, leave out brackets.
-            const declaration = tsHelper.findFirstNodeAbove(node, (n): n is ts.Node =>
-                ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
-            let isTupleReturn = false;
-            if (declaration) {
-                const decorators = tsHelper.getCustomDecorators(
-                    this.checker.getTypeAtLocation(declaration),
-                    this.checker
-                );
-                isTupleReturn = decorators.has(DecoratorKind.TupleReturn);
-            }
-            if (isTupleReturn && ts.isArrayLiteralExpression(node.expression)) {
-                return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
+            if (tsHelper.isInTupleReturnFunction(node, this.checker)) {
+                // Parent function is a TupleReturn function
+                if (ts.isArrayLiteralExpression(node.expression)) {
+                    // If return expression is an array literal, leave out brackets.
+                    return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
+                } else if (!tsHelper.isTupleReturnCall(node.expression, this.checker)) {
+                    // If return expression is not another TupleReturn call, unpack it
+                    return `return ${this.transpileDestructingAssignmentValue(node.expression)}`;
+                }
             }
 
             return "return " + this.transpileExpression(node.expression);
@@ -805,6 +807,11 @@ export abstract class LuaTranspiler {
                 return this.transpileSpreadElement(node as ts.SpreadElement);
             case ts.SyntaxKind.NonNullExpression:
                 return this.transpileExpression((node as ts.NonNullExpression).expression);
+            case ts.SyntaxKind.ClassExpression:
+                this.namespace.push("");
+                const classDeclaration =  this.transpileClass(node as ts.ClassExpression, "_");
+                this.namespace.pop();
+                return `(function() ${classDeclaration}; return _ end)()`;
             case ts.SyntaxKind.Block:
                 this.pushIndent();
                 const ret = "do \n" + this.transpileBlock(node as ts.Block) + "end\n";
@@ -819,9 +826,11 @@ export abstract class LuaTranspiler {
         // Check if this is an assignment token, then handle accordingly
         const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
         if (isAssignment) {
+            const binaryExpression = ts.createBinary(node.left, operator, node.right);
+            binaryExpression.pos = node.operatorToken.pos;
             return this.transpileAssignmentExpression(
                 node.left,
-                ts.createBinary(node.left, operator, node.right),
+                binaryExpression,
                 tsHelper.isExpressionStatement(node),
                 false
             );
@@ -1083,12 +1092,15 @@ export abstract class LuaTranspiler {
         let callPath;
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
+            && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed ? `({ ${result} })` : result;
+            return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
+                ? `({ ${result} })` : result;
         }
 
         // Handle super calls properly
@@ -1100,7 +1112,7 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed
+        return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 
@@ -1155,6 +1167,10 @@ export abstract class LuaTranspiler {
             const name = this.transpileIdentifier(node.expression.name);
             if (name === "toString") {
                 return  `tostring(${this.transpileExpression(node.expression.expression)})`;
+            } else if (name === "hasOwnProperty") {
+                const expr = this.transpileExpression(node.expression.expression);
+                params = this.transpileArguments(node.arguments);
+                return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
                 callPath =
                 `${this.transpileExpression(node.expression.expression)}:${name}`;
@@ -1239,6 +1255,14 @@ export abstract class LuaTranspiler {
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayConcat, caller, params);
             case "push":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
+            case "reverse":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayReverse, caller);
+            case "shift":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayShift, caller);
+            case "unshift":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayUnshift, caller, params);
+            case "sort":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySort, caller);
             case "pop":
                  return `table.remove(${caller})`;
             case "forEach":
@@ -1596,12 +1620,11 @@ export abstract class LuaTranspiler {
     }
 
     // Transpile a class declaration
-    public transpileClass(node: ts.ClassDeclaration): string {
-        if (!node.name) {
+    public transpileClass(node: ts.ClassLikeDeclarationBase, nameOverride?: string): string {
+        let className = node.name ? this.transpileIdentifier(node.name) : nameOverride;
+        if (!className) {
             throw TSTLErrors.MissingClassName(node);
         }
-
-        let className = this.transpileIdentifier(node.name);
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
 
@@ -1648,7 +1671,7 @@ export abstract class LuaTranspiler {
         }
 
         if (!isExtension && !isMetaExtension) {
-            result += this.transpileClassCreationMethods(node, instanceFields, extendsType);
+            result += this.transpileClassCreationMethods(node, className, instanceFields, extendsType);
         } else {
             for (const f of instanceFields) {
                 // Get identifier
@@ -1697,10 +1720,9 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    public transpileClassCreationMethods(node: ts.ClassDeclaration, instanceFields: ts.PropertyDeclaration[],
+    public transpileClassCreationMethods(node: ts.ClassLikeDeclarationBase, className: string,
+                                         instanceFields: ts.PropertyDeclaration[],
                                          extendsType: ts.Type): string {
-        const className = this.transpileIdentifier(node.name);
-
         let noClassOr = false;
         if (extendsType) {
             const decorators = tsHelper.getCustomDecorators(extendsType, this.checker);

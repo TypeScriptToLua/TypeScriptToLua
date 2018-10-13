@@ -309,11 +309,10 @@ export abstract class LuaTranspiler {
 
     public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
         this.importLuaLibFeature(func);
-        if (params.length > 1) {
-            return `__TS__${func}(${params.join(", ")})`;
-        } else {
-          return `__TS__${func}(${params[0]})`;
-        }
+        params = params.filter(element => {
+            return element.toString() !== "";
+          });
+        return `__TS__${func}(${params.join(", ")})`;
     }
 
     public transpileImport(node: ts.ImportDeclaration): string {

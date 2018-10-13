@@ -28,7 +28,7 @@ export class TSHelper {
         return statements.some(statement => statement.kind === kind);
     }
 
-    public static getExtendedType(node: ts.ClassDeclaration, checker: ts.TypeChecker): ts.Type | undefined {
+    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {

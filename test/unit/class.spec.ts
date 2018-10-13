@@ -429,4 +429,27 @@ export class ClassTests {
         // Assert
         Expect(result).toBe(10);
     }
+    @Test("classExpression")
+    public classExpression(): void {
+        const lua = util.transpileString(
+            `class a {
+                public method() {
+                    return "instance of a";
+                }
+            }
+            b = class extends a {
+                public method() {
+                    return "instance of b";
+                }
+            }
+            let inst = new b(6);
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe("instance of b");
+    }
 }

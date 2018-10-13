@@ -1,12 +1,14 @@
 export {
-    CompilerOptions,
     parseCommandLine
 } from "./CommandLineParser";
 
 export {
+    CompilerOptions
+} from "./CompilerOptions";
+
+export {
     compile,
     compileFilesWithOptions,
-    createTranspiler,
     transpileFile,
     transpileString,
     watchWithOptions
@@ -21,5 +23,9 @@ export {
     LuaLibFeature,
     LuaLibImportKind,
     LuaTarget,
-    LuaTranspiler
+    LuaTranspiler,
 } from "./Transpiler";
+
+export {
+    createTranspiler
+} from "./TranspilerFactory";

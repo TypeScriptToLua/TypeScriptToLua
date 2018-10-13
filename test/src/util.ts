@@ -3,9 +3,9 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { CompilerOptions } from "../../src/CommandLineParser";
-import { createTranspiler, transpileString } from "../../src/Compiler";
-import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "../../src/Transpiler";
+import { transpileString } from "../../src/Compiler";
+import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
+import { createTranspiler } from "../../src/TranspilerFactory";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 

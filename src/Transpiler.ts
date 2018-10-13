@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import { CompilerOptions } from "./CommandLineParser";
+import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
 import { TSHelper as tsHelper } from "./TSHelper";
@@ -120,7 +120,7 @@ export abstract class LuaTranspiler {
         if (node &&
             node.modifiers && this.isModule &&
             this.namespace.length === 0 &&
-            (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)
+            (ts.getCombinedModifierFlags(node as ts.Declaration) & ts.ModifierFlags.Export)
            ) {
             if (dummy) {
                 result = this.indent + `exports.${this.definitionName(name)} = {}\n`;
@@ -129,7 +129,7 @@ export abstract class LuaTranspiler {
             }
         }
         if (this.namespace.length !== 0 &&
-            (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
+            (ts.getCombinedModifierFlags(node as ts.Declaration) & ts.ModifierFlags.Export)) {
             if (dummy) {
                 result += this.indent + `${this.namespace[this.namespace.length - 1]}.${name} = {}\n`;
             } else {

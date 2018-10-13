@@ -323,6 +323,8 @@ export class LuaLibArrayTests {
     @TestCase("[1, 2, 3]", [3, 2, 1])
     @TestCase("[1, 2, 3, null]", [3, 2, 1])
     @TestCase("[1, 2, 3, 4]", [4, 3, 2, 1])
+    @TestCase("[1]", [1])
+    @TestCase("[]", [])
     @Test("array.reverse")
     public arrayReverse(array: string, expected): void {
         {
@@ -338,23 +340,44 @@ export class LuaLibArrayTests {
             Expect(result).toBe(JSON.stringify(expected));
         }
     }
-    @TestCase("[1, 2, 3]", [2, 3])
+    @TestCase("[1, 2, 3]", [2, 3], 1)
+    @TestCase("[1]", [], 1)
+    @TestCase("[]", [], null)
     @Test("array.shift")
-    public arrayShift(array: string, expected): void {
+    public arrayShift(array: string, expectedArray: number[], expectedValue: number): void {
         {
-            // Transpile
-            const lua = util.transpileString(
-                `let testArray = ${array};
-                let val = testArray.shift();
-                return JSONStringify(testArray)`);
+            // test array mutation
+            {
+                // Transpile
+                const lua = util.transpileString(
+                    `let testArray = ${array};
+                    let val = testArray.shift();
+                    return JSONStringify(testArray)`);
 
-            // Execute
-            const result = util.executeLua(lua);
-            // Assert
-            Expect(result).toBe(JSON.stringify(expected));
+                // Execute
+                const result = util.executeLua(lua);
+                // Assert
+                Expect(result).toBe(JSON.stringify(expectedArray));
+            }
+            // test return value
+            {
+                // Transpile
+                const lua = util.transpileString(
+                    `let testArray = ${array};
+                    let val = testArray.shift();
+                    return val`);
+
+                // Execute
+                const result = util.executeLua(lua);
+                // Assert
+                Expect(result).toBe(expectedValue);
+            }
         }
     }
     @TestCase("[3, 4, 5]", [1, 2], [1, 2, 3, 4, 5])
+    @TestCase("[]", [], [])
+    @TestCase("[1]", [], [1])
+    @TestCase("[]", [1], [1])
     @Test("array.unshift")
     public arrayUnshift(array: string, toUnshift, expected): void {
         {
@@ -363,7 +386,6 @@ export class LuaLibArrayTests {
                 `let testArray = ${array};
                 testArray.unshift(${toUnshift});
                 return JSONStringify(testArray)`);
-
             // Execute
             const result = util.executeLua(lua);
 
@@ -372,6 +394,9 @@ export class LuaLibArrayTests {
         }
     }
     @TestCase("[4, 5, 3, 2, 1]", [1, 2, 3, 4, 5])
+    @TestCase("[1]", [1])
+    @TestCase("[1, null]", [1])
+    @TestCase("[]", [])
     @Test("array.sort")
     public arraySort(array: string, expected): void {
         {

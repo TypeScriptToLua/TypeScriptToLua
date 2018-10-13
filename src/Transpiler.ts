@@ -685,20 +685,15 @@ export abstract class LuaTranspiler {
 
     public transpileReturn(node: ts.ReturnStatement): string {
         if (node.expression) {
-            // If parent function is a TupleReturn function
-            // and return expression is an array literal, leave out brackets.
-            const declaration = tsHelper.findFirstNodeAbove(node, (n): n is ts.Node =>
-                ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
-            let isTupleReturn = false;
-            if (declaration) {
-                const decorators = tsHelper.getCustomDecorators(
-                    this.checker.getTypeAtLocation(declaration),
-                    this.checker
-                );
-                isTupleReturn = decorators.has(DecoratorKind.TupleReturn);
-            }
-            if (isTupleReturn && ts.isArrayLiteralExpression(node.expression)) {
-                return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
+            if (tsHelper.isInTupleReturnFunction(node, this.checker)) {
+                // Parent function is a TupleReturn function
+                if (ts.isArrayLiteralExpression(node.expression)) {
+                    // If return expression is an array literal, leave out brackets.
+                    return "return " + node.expression.elements.map(elem => this.transpileExpression(elem)).join(",");
+                } else if (!tsHelper.isTupleReturnCall(node.expression, this.checker)) {
+                    // If return expression is not another TupleReturn call, unpack it
+                    return `return ${this.transpileDestructingAssignmentValue(node.expression)}`;
+                }
             }
 
             return "return " + this.transpileExpression(node.expression);
@@ -1085,12 +1080,15 @@ export abstract class LuaTranspiler {
         let callPath;
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
+            && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed ? `({ ${result} })` : result;
+            return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
+                ? `({ ${result} })` : result;
         }
 
         // Handle super calls properly
@@ -1102,7 +1100,7 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return isTupleReturn && !isInDestructingAssignment && returnValueIsUsed
+        return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
     }
 

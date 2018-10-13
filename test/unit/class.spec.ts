@@ -452,4 +452,24 @@ export class ClassTests {
         // Assert
         Expect(result).toBe("instance of b");
     }
+    @Test("classExpressionBaseClassMethod")
+    public classExpressionBaseClassMethod(): void {
+        const lua = util.transpileString(
+            `class a {
+                public method() {
+                    return 42;
+                }
+            }
+            b = class extends a {
+            }
+            let inst = new b();
+            return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(42);
+    }
 }

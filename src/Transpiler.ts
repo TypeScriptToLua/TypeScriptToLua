@@ -1602,12 +1602,8 @@ export abstract class LuaTranspiler {
 
     // Transpile a class declaration
     public transpileClass(node: ts.ClassLikeDeclarationBase, nameOverride?: string): string {
-        let className: string;
-        if (node.name) {
-            className = this.transpileIdentifier(node.name);
-        } else if (nameOverride) {
-            className = nameOverride;
-        } else {
+        let className = node.name ? this.transpileIdentifier(node.name) : nameOverride;
+        if (!className) {
             throw TSTLErrors.MissingClassName(node);
         }
 

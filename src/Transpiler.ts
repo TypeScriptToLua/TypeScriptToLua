@@ -819,9 +819,11 @@ export abstract class LuaTranspiler {
         // Check if this is an assignment token, then handle accordingly
         const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(node.operatorToken.kind);
         if (isAssignment) {
+            const binaryExpression = ts.createBinary(node.left, operator, node.right);
+            binaryExpression.pos = node.operatorToken.pos;
             return this.transpileAssignmentExpression(
                 node.left,
-                ts.createBinary(node.left, operator, node.right),
+                binaryExpression,
                 tsHelper.isExpressionStatement(node),
                 false
             );

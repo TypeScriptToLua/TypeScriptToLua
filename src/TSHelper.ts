@@ -84,7 +84,7 @@ export class TSHelper {
 
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = this.findFirstNodeAbove(node, (n): n is ts.Node =>
-        ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
+            ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n));
         if (declaration) {
             const decorators = this.getCustomDecorators(
                 checker.getTypeAtLocation(declaration),

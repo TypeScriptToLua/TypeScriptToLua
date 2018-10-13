@@ -1162,6 +1162,10 @@ export abstract class LuaTranspiler {
             const name = this.transpileIdentifier(node.expression.name);
             if (name === "toString") {
                 return  `tostring(${this.transpileExpression(node.expression.expression)})`;
+            } else if (name === "hasOwnProperty") {
+                const expr = this.transpileExpression(node.expression.expression);
+                params = this.transpileArguments(node.arguments);
+                return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
                 callPath =
                 `${this.transpileExpression(node.expression.expression)}:${name}`;

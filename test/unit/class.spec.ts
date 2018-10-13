@@ -201,7 +201,44 @@ export class ClassTests {
         // Assert
         Expect(result).toBe("instance of a");
     }
+    @Test("HasOwnProperty true")
+    public hasOwnProperty1(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public test(): void {
+                }
+            }
+            let inst = new a();
+            inst["prop"] = 17;
+            return inst.hasOwnProperty("prop");`
+        );
 
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(true);
+    }
+    @Test("HasOwnProperty false")
+    public hasOwnProperty2(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public test(): void {
+                }
+            }
+            let inst = new a();
+            inst["prop"] = 17;
+            return inst.hasOwnProperty("test");`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(false);
+    }
     @Test("CastClassMethodCall")
     public extraParenthesisAssignment(): void {
         // Transpile

@@ -26,6 +26,10 @@ export enum LuaLibFeature {
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
+    ArrayReverse = "ArrayReverse",
+    ArrayShift = "ArrayShift",
+    ArrayUnshift = "ArrayUnshift",
+    ArraySort = "ArraySort",
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
@@ -305,6 +309,9 @@ export abstract class LuaTranspiler {
 
     public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
         this.importLuaLibFeature(func);
+        params = params.filter(element => {
+            return element.toString() !== "";
+          });
         return `__TS__${func}(${params.join(", ")})`;
     }
 
@@ -1239,6 +1246,14 @@ export abstract class LuaTranspiler {
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayConcat, caller, params);
             case "push":
                 return this.transpileLuaLibFunction(LuaLibFeature.ArrayPush, caller, params);
+            case "reverse":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayReverse, caller);
+            case "shift":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayShift, caller);
+            case "unshift":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArrayUnshift, caller, params);
+            case "sort":
+                return this.transpileLuaLibFunction(LuaLibFeature.ArraySort, caller);
             case "pop":
                  return `table.remove(${caller})`;
             case "forEach":

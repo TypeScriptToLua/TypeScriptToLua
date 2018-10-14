@@ -200,4 +200,31 @@ export class TSHelper {
         }
         return true;
     }
+
+    // Returns true for expressions that may have effects when evaluated
+    public static isExpressionWithEffect(node: ts.Expression): boolean {
+        return !(ts.isLiteralExpression(node) || ts.isIdentifier(node));
+    }
+
+    // If expression is property/element access with possible effects from being evaluated, returns true along with the
+    // separated object and index expressions.
+    public static isAccessExpressionWithEffects(node: ts.Expression, checker: ts.TypeChecker):
+        [true, ts.Expression, ts.Expression] | [false, null, null] {
+        if (ts.isElementAccessExpression(node)
+            && (this.isExpressionWithEffect(node.expression) || this.isExpressionWithEffect(node.argumentExpression))) {
+            const type = checker.getTypeAtLocation(node.expression);
+            if (this.isArrayType(type, checker)) {
+                // Offset arrays by one
+                const oneLit = ts.createNumericLiteral("1");
+                const exp = ts.createParen(node.argumentExpression);
+                const addExp = ts.createBinary(exp, ts.SyntaxKind.PlusToken, oneLit);
+                return [true, node.expression, addExp];
+            } else {
+                return [true, node.expression, node.argumentExpression];
+            }
+        } else if (ts.isPropertyAccessExpression(node) && this.isExpressionWithEffect(node.expression)) {
+            return [true, node.expression, ts.createStringLiteral(node.name.text)];
+        }
+        return [false, null, null];
+    }
 }

@@ -294,7 +294,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.TryStatement:
                 return this.transpileTry(node as ts.TryStatement);
             case ts.SyntaxKind.ThrowStatement:
-                return this.transpileThrow(node as ts.ThrowStatement);
+                return this.indent + this.transpileThrow(node as ts.ThrowStatement) + "\n";
             case ts.SyntaxKind.ContinueStatement:
                 return this.transpileContinue(node as ts.ContinueStatement);
             case ts.SyntaxKind.TypeAliasDeclaration:
@@ -683,8 +683,9 @@ export abstract class LuaTranspiler {
     }
 
     public transpileThrow(node: ts.ThrowStatement): string {
-        if (ts.isStringLiteral(node.expression)) {
-            return `error("${node.expression.text}")`;
+        const type = this.checker.getTypeAtLocation(node.expression);
+        if (tsHelper.isStringType(type)) {
+            return `error(${this.transpileExpression(node.expression)})`;
         } else {
             throw TSTLErrors.InvalidThrowExpression(node.expression);
         }

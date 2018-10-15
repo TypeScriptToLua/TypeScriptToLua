@@ -2,12 +2,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import { CompilerOptions, parseCommandLine } from "./CommandLineParser";
-import { LuaTranspiler51 } from "./targets/Transpiler.51";
-import { LuaTranspiler52 } from "./targets/Transpiler.52";
-import { LuaTranspiler53 } from "./targets/Transpiler.53";
-import { LuaTranspilerJIT } from "./targets/Transpiler.JIT";
-import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "./Transpiler";
+import { parseCommandLine } from "./CommandLineParser";
+import { CompilerOptions } from "./CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "./Transpiler";
+
+import { createTranspiler } from "./TranspilerFactory";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
@@ -154,27 +153,57 @@ function emitFilesAndReportErrors(program: ts.Program): number {
     return 0;
 }
 
-export function createTranspiler(checker: ts.TypeChecker,
-                                 options: CompilerOptions,
-                                 sourceFile: ts.SourceFile): LuaTranspiler {
-    let luaTargetTranspiler: LuaTranspiler;
-    const target = options.luaTarget ? options.luaTarget.toLowerCase() : "";
-    switch (target) {
-        case LuaTarget.Lua51:
-            luaTargetTranspiler = new LuaTranspiler51(checker, options, sourceFile);
-            break;
-        case LuaTarget.Lua52:
-            luaTargetTranspiler = new LuaTranspiler52(checker, options, sourceFile);
-            break;
-        case LuaTarget.Lua53:
-            luaTargetTranspiler = new LuaTranspiler53(checker, options, sourceFile);
-            break;
-        default:
-            luaTargetTranspiler = new LuaTranspilerJIT(checker, options, sourceFile);
-            break;
-    }
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
 
-    return luaTargetTranspiler;
+export function transpileString(str: string,
+                                options: CompilerOptions = {
+                                    luaLibImport: LuaLibImportKind.Require,
+                                    luaTarget: LuaTarget.Lua53,
+                                }): string {
+    const compilerHost = {
+        directoryExists: () => true,
+        fileExists: (fileName): boolean => true,
+        getCanonicalFileName: fileName => fileName,
+        getCurrentDirectory: () => "",
+        getDefaultLibFileName: () => "lib.es6.d.ts",
+        getDirectories: () => [],
+        getNewLine: () => "\n",
+
+        getSourceFile: (filename, languageVersion) => {
+            if (filename === "file.ts") {
+                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
+            }
+            if (filename === "lib.es6.d.ts") {
+                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            }
+            return undefined;
+        },
+
+        readFile: () => "",
+
+        useCaseSensitiveFileNames: () => false,
+        // Don't write output
+        writeFile: (name, text, writeByteOrderMark) => null,
+    };
+    const program = ts.createProgram(["file.ts"], options, compilerHost);
+
+    const result = createTranspiler(program.getTypeChecker(),
+                                    options,
+                                    program.getSourceFile("file.ts")).transpileSourceFile();
+    return result.trim();
+}
+
+export function transpileFile(filePath: string): string {
+    const program = ts.createProgram([filePath], {});
+    const checker = program.getTypeChecker();
+
+    // Output errors
+    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
+    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
+
+    const options: ts.CompilerOptions = { luaLibImport: "none" };
+    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
+    return result.trim();
 }
 
 function reportDiagnostic(diagnostic: ts.Diagnostic): void {

@@ -3,62 +3,15 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { CompilerOptions } from "../../src/CommandLineParser";
-import { createTranspiler } from "../../src/Compiler";
-import { LuaLibImportKind, LuaTarget, LuaTranspiler } from "../../src/Transpiler";
+import { transpileString } from "../../src/Compiler";
+import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
+import { createTranspiler } from "../../src/TranspilerFactory";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
-const fs = require("fs");
+import * as fs from "fs";
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
-
-export function transpileString(str: string, options: CompilerOptions = { luaLibImport: LuaLibImportKind.Require, luaTarget: LuaTarget.Lua53 }): string {
-    const compilerHost = {
-        directoryExists: () => true,
-        fileExists: (fileName): boolean => true,
-        getCanonicalFileName: fileName => fileName,
-        getCurrentDirectory: () => "",
-        getDefaultLibFileName: () => "lib.es6.d.ts",
-        getDirectories: () => [],
-        getNewLine: () => "\n",
-
-        getSourceFile: (filename, languageVersion) => {
-            if (filename === "file.ts") {
-                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
-            }
-            if (filename === "lib.es6.d.ts") {
-                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
-            }
-            return undefined;
-        },
-
-        readFile: () => "",
-
-        useCaseSensitiveFileNames: () => false,
-        // Don't write output
-        writeFile: (name, text, writeByteOrderMark) => null,
-    };
-    const program = ts.createProgram(["file.ts"], options, compilerHost);
-
-    const result = createTranspiler(program.getTypeChecker(),
-                                    options,
-                                    program.getSourceFile("file.ts")).transpileSourceFile();
-    return result.trim();
-}
-
-export function transpileFile(filePath: string): string {
-    const program = ts.createProgram([filePath], {});
-    const checker = program.getTypeChecker();
-
-    // Output errors
-    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
-    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
-
-    const options: ts.CompilerOptions = { luaLibImport: "none" };
-    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
-    return result.trim();
-}
+export { transpileString };
 
 export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
@@ -91,7 +44,7 @@ export function executeLua(luaStr: string, withLib = true): any {
     }
 }
 
-export function expectCodeEqual(code1: string, code2: string) {
+export function expectCodeEqual(code1: string, code2: string): void {
     // Trim leading/trailing whitespace
     let c1 = code1.trim();
     let c2 = code2.trim();
@@ -104,14 +57,14 @@ export function expectCodeEqual(code1: string, code2: string) {
 }
 
 // Get a mock transpiler to use for testing
-export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53) {
+export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53): LuaTranspiler {
     return createTranspiler({} as ts.TypeChecker,
                             { luaLibImport: "none", luaTarget: target } as any,
                             { statements: [] } as any as ts.SourceFile);
 }
 
-export function transpileAndExecute(ts: string): any {
-    return executeLua(transpileString(ts));
+export function transpileAndExecute(tsStr: string): any {
+    return executeLua(transpileString(tsStr));
 }
 
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";

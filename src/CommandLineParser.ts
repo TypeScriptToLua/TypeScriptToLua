@@ -1,23 +1,15 @@
+import { CompilerOptions } from "./CompilerOptions";
+
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as yargs from "yargs";
 
-export interface CompilerOptions extends ts.CompilerOptions {
-    addHeader?: boolean;
-    luaTarget?: string;
-    luaLibImport?: string;
-}
-
-export interface ParsedCommandLine extends ts.ParsedCommandLine {
+interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
 
-export class CLIError extends Error {
-
-}
-
-export interface YargsOptions {
+interface YargsOptions {
     [key: string]: yargs.Options;
 }
 
@@ -41,6 +33,10 @@ export const optionDeclarations: YargsOptions = {
         type: "boolean",
     },
 };
+
+class CLIError extends Error {
+
+}
 
 /**
  * Removes defaults from the arguments.

@@ -1,9 +1,10 @@
-import { Expect, Test, TestCase, Teardown } from "alsatian";
-import * as path from 'path';
-import * as fs from 'fs';
+import { Expect, Test } from "alsatian";
+import * as fs from "fs";
+import * as path from "path";
 import * as ts from "typescript";
 
-import { CompilerOptions, findConfigFile, parseCommandLine, ParsedCommandLine, optionDeclarations } from "../../../../../src/CommandLineParser";
+import { CompilerOptions } from "../../../../../src/CompilerOptions";
+import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
 import { LuaLibImportKind } from "../../../../../src/Transpiler";
 
 export class MixedConfigurationTests {
@@ -16,17 +17,17 @@ export class MixedConfigurationTests {
             ts.parseConfigFileTextToJson(tsConfigPath, fs.readFileSync(tsConfigPath).toString()).config,
             ts.sys,
             path.dirname(tsConfigPath)
-        );        
+        );
 
         const parsedArgs = parseCommandLine([
             "-p",
             `"${tsConfigPath}"`,
             "--luaLibImport",
             LuaLibImportKind.Inline,
-            `${path.join(rootPath, 'test.ts')}`,
+            `${path.join(rootPath, "test.ts")}`,
         ]);
-        
-        Expect(parsedArgs.options).toEqual(<CompilerOptions>{
+
+        Expect(parsedArgs.options).toEqual({
             ...expectedTsConfig.options,
             // Overridden by cmd args (set to "none" in project-tsconfig.json)
             luaLibImport: LuaLibImportKind.Inline,
@@ -35,6 +36,6 @@ export class MixedConfigurationTests {
             // Only present in TSTL dfaults
             noHeader: optionDeclarations["noHeader"].default,
             project: tsConfigPath
-        });
+        } as CompilerOptions);
     }
 }

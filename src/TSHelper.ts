@@ -66,9 +66,16 @@ export class TSHelper {
             || (type.flags & ts.TypeFlags.StringLiteral) !== 0;
     }
 
+    public static isArrayTypeNode(typeNode: ts.TypeNode): boolean {
+        return typeNode.kind === ts.SyntaxKind.ArrayType
+            || typeNode.kind === ts.SyntaxKind.TupleType
+            || ((typeNode.kind === ts.SyntaxKind.UnionType || typeNode.kind === ts.SyntaxKind.IntersectionType)
+                && (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
+    }
+
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type);
-        return typeNode && (typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType);
+        return typeNode && this.isArrayTypeNode(typeNode);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {

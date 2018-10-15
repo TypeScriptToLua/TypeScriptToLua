@@ -74,7 +74,7 @@ export class TSHelper {
     }
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type);
+        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && this.isArrayTypeNode(typeNode);
     }
 

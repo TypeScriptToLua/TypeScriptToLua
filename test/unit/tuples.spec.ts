@@ -51,6 +51,33 @@ export class TupleTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Tuple union access")
+    public tupleUnionAccess(): void {
+        const lua = util.transpileString(
+            `function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }
+            const tuple = makeTuple();
+            return tuple[1];`
+        );
+        const result = util.executeLua(lua);
+        Expect(result).toBe(5);
+    }
+
+    @Test("Tuple intersection access")
+    public tupleIntersectionAccess(): void {
+        const lua = util.transpileString(
+            `type I = [number, number, number] & {foo: string};
+            function makeTuple(): I {
+                let t = [3,5,1];
+                (t as I).foo = "bar";
+                return (t as I);
+            }
+            const tuple = makeTuple();
+            return tuple[1];`
+        );
+        const result = util.executeLua(lua);
+        Expect(result).toBe(5);
+    }
+
     @Test("Tuple Destruct")
     public tupleDestruct(): void {
         // Transpile

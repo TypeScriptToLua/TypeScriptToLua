@@ -12,7 +12,7 @@ export class LuaErrorTests {
             `throw "Some Error"`
         );
         // Assert
-        Expect(lua).toBe(`error("Some Error")`);
+        Expect(lua).toBe(`error("Some Error");`);
     }
 
     @Test("throwError")

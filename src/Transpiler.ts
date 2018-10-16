@@ -294,7 +294,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.TryStatement:
                 return this.transpileTry(node as ts.TryStatement);
             case ts.SyntaxKind.ThrowStatement:
-                return this.indent + this.transpileThrow(node as ts.ThrowStatement) + "\n";
+                return this.indent + this.transpileThrow(node as ts.ThrowStatement) + ";\n";
             case ts.SyntaxKind.ContinueStatement:
                 return this.transpileContinue(node as ts.ContinueStatement);
             case ts.SyntaxKind.TypeAliasDeclaration:

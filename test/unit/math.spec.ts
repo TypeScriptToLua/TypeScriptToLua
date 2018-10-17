@@ -70,6 +70,31 @@ export class MathTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase("++o.p.d", "o=4;a=6")
+    @TestCase("o.p.d++", "o=4;a=6")
+    @TestCase("--o.p.d", "o=2;a=6")
+    @TestCase("o.p.d--", "o=2;a=6")
+    @TestCase("o.p.d += a[0][0]", "o=9;a=6")
+    @TestCase("o.p.d -= a[0][0]", "o=-3;a=6")
+    @TestCase("o.p.d *= a[0][0]", "o=18;a=6")
+    @TestCase("a[0][0] /= o.p.d", "o=3;a=2.0")
+    @TestCase("a[0][0] %= o.p.d", "o=3;a=0")
+    @TestCase("a[0][0] **= o.p.d", "o=3;a=216.0")
+    @TestCase("o.p.d |= a[0][0]", "o=7;a=6")
+    @TestCase("o.p.d &= a[0][0]", "o=2;a=6")
+    @TestCase("o.p.d ^= a[0][0]", "o=5;a=6")
+    @TestCase("o.p.d <<= a[0][0]", "o=192;a=6")
+    @TestCase("o.p.d >>= a[0][0]", "o=0;a=6")
+    @Test("Operator assignment to deep property statements")
+    public opDeepPropAssignmentStatement(statement: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let o = {p: {d: 3}};
+            let a = [[6], [7]];
+            ${statement};
+            return \`o=\${o.p.d};a=\${a[0][0]}\``);
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("++of().p", "o=4;a=6")
     @TestCase("of().p++", "o=4;a=6")
     @TestCase("--of().p", "o=2;a=6")
@@ -95,6 +120,35 @@ export class MathTests {
             function i() { return 0; }
             ${statement};
             return \`o=\${o.p};a=\${a[0]}\``);
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("++of().p.d", "o=4;a=6")
+    @TestCase("of().p.d++", "o=4;a=6")
+    @TestCase("--of().p.d", "o=2;a=6")
+    @TestCase("of().p.d--", "o=2;a=6")
+    @TestCase("of().p.d += af()[i()][i()]", "o=9;a=6")
+    @TestCase("of().p.d -= af()[i()][i()]", "o=-3;a=6")
+    @TestCase("of().p.d *= af()[i()][i()]", "o=18;a=6")
+    @TestCase("af()[i()][i()] /= of().p.d", "o=3;a=2.0")
+    @TestCase("af()[i()][i()] %= of().p.d", "o=3;a=0")
+    @TestCase("af()[i()][i()] **= of().p.d", "o=3;a=216.0")
+    @TestCase("of().p.d |= af()[i()][i()]", "o=7;a=6")
+    @TestCase("of().p.d &= af()[i()][i()]", "o=2;a=6")
+    @TestCase("of().p.d ^= af()[i()][i()]", "o=5;a=6")
+    @TestCase("of().p.d <<= af()[i()][i()]", "o=192;a=6")
+    @TestCase("of().p.d >>= af()[i()][i()]", "o=0;a=6")
+    @Test("Operator assignment to complex deep property statements")
+    public opComplexDeepPropAssignmentStatement(statement: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let o = {p: {d: 3}};
+            let a = [[7, 6], [11, 13]];
+            function of() { return o; }
+            function af() { return a; }
+            let _i = 0;
+            function i() { return _i++; }
+            ${statement};
+            return \`o=\${o.p.d};a=\${a[0][1]}\``);
         Expect(result).toBe(expected);
     }
 

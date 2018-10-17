@@ -899,43 +899,7 @@ export abstract class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
-                    if (tsHelper.hasSetAccessor(node.left, this.checker)) {
-                        return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
-                    }
-
-                    if (ts.isArrayLiteralExpression(node.left)) {
-                        // Destructing assignment
-                        const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
-                        const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
-                            ? rhs : this.transpileDestructingAssignmentValue(node.right);
-                        if (tsHelper.isExpressionStatement(node)) {
-                            // In JS, the right side of a destructuring assignment is evaluated before the left
-                            const tmps = node.left.elements.map((_, i) => `__TS_tmp${i}`).join(",");
-                            result = `do local ${tmps} = ${vals}; ${vars} = ${tmps} end`;
-                        } else {
-                            result = `(function(...) ${vars} = ...; return {...} end)(${vals})`;
-                        }
-                        break;
-                    }
-
-                    if (tsHelper.isExpressionStatement(node)) {
-                        result = `${lhs} = ${rhs}`;
-                        break;
-                    }
-
-                    const [hasEffects, objExp, indexExp] = tsHelper.isAccessExpressionWithEffects(node.left,
-                                                                                                  this.checker);
-                    if (hasEffects) {
-                        // Property/element access expressions need to have individual parts cached
-                        const obj = this.transpileExpression(objExp);
-                        const index = this.transpileExpression(indexExp);
-                        result = `(function(o, i, v) o[i] = v; return v end)(${obj}, ${index}, ${rhs})`;
-                    } else if (tsHelper.isExpressionWithEffect(node.right)) {
-                        // Cache right-hand express in temp
-                        result = `(function() local __TS_tmp = ${rhs}; ${lhs} = __TS_tmp; return __TS_tmp end)()`;
-                    } else {
-                        result = `(function() ${lhs} = ${rhs}; return ${rhs} end)()`;
-                    }
+                    result = this.transpileAssignment(node, lhs, rhs);
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:
@@ -961,6 +925,44 @@ export abstract class LuaTranspiler {
             return `(${result})`;
         } else {
             return result;
+        }
+    }
+
+    public transpileAssignment(node: ts.BinaryExpression, lhs: string, rhs: string): string {
+        if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+            return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
+        }
+
+        if (ts.isArrayLiteralExpression(node.left)) {
+            // Destructing assignment
+            const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
+            const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
+                ? rhs : this.transpileDestructingAssignmentValue(node.right);
+            if (tsHelper.isExpressionStatement(node)) {
+                // In JS, the right side of a destructuring assignment is evaluated before the left
+                const tmps = node.left.elements.map((_, i) => `__TS_tmp${i}`).join(",");
+                return `do local ${tmps} = ${vals}; ${vars} = ${tmps} end`;
+            } else {
+                return `(function(...) ${vars} = ...; return {...} end)(${vals})`;
+            }
+        }
+
+        if (tsHelper.isExpressionStatement(node)) {
+            return `${lhs} = ${rhs}`;
+        }
+
+        const [hasEffects, objExp, indexExp] = tsHelper.isAccessExpressionWithEvaluationEffects(
+            node.left, this.checker);
+        if (hasEffects) {
+            // Property/element access expressions need to have individual parts cached
+            const obj = this.transpileExpression(objExp);
+            const index = this.transpileExpression(indexExp);
+            return `(function(o, i, v) o[i] = v; return v end)(${obj}, ${index}, ${rhs})`;
+        } else if (tsHelper.isExpressionWithEvaluationEffect(node.right)) {
+            // Cache right-hand express in temp
+            return `(function() local __TS_tmp = ${rhs}; ${lhs} = __TS_tmp; return __TS_tmp end)()`;
+        } else {
+            return `(function() ${lhs} = ${rhs}; return ${rhs} end)()`;
         }
     }
 
@@ -996,87 +998,78 @@ export abstract class LuaTranspiler {
                                             `function() return ${val1} end`, `function() return ${val2} end`);
     }
 
+    public transpileBinaryAssignmentExpression(
+        assignee: ts.Expression,
+        lhs: ts.Expression,
+        operator: ts.BinaryOperator,
+        rhs: ts.Expression,
+        pos: number): string {
+        const opExp = ts.createBinary(lhs, operator, rhs);
+        opExp.pos = pos;
+        const assignExp = ts.createAssignment(assignee, opExp);
+        return this.transpileBinaryExpression(assignExp);
+    }
+
     public transpileAssignmentExpression(
         lhs: ts.Expression,
         operator: ts.BinaryOperator,
         rhs: ts.Expression,
         isStatement: boolean,
         returnValueBefore: boolean): string {
+        let statement: string; // Assignment statement
+        let result: string; // Result if expression
+        let wrap = true; // Wrap statement in do...end
         const pos = (lhs.parent ? lhs.parent : lhs).pos;
-        const [hasEffects, objExp, indexExp] = tsHelper.isAccessExpressionWithEffects(lhs, this.checker);
-        if (isStatement) {
-            // Statements
-            if (hasEffects) {
-                // Cache property access vars if there's possible side effects
-                const objIdent = ts.createIdentifier("__TS_obj");
-                const indexIdent = ts.createIdentifier("__TS_index");
-                const accessExp = ts.createElementAccess(objIdent, indexIdent);
-                const opExp = ts.createBinary(accessExp, operator, ts.createParen(rhs));
-                opExp.pos = pos;
-                const assignExp = ts.createAssignment(accessExp, opExp);
-                const assign = this.transpileBinaryExpression(assignExp);
-                const obj = this.transpileExpression(objExp);
-                const index = this.transpileExpression(indexExp);
-                return `do local __TS_obj, __TS_index = ${obj}, ${index}; ${assign}; end`;
+        const [hasEffects, objExp, indexExp] = tsHelper.isAccessExpressionWithEvaluationEffects(lhs, this.checker);
+        if (hasEffects) {
+            // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
+            const objIdent = ts.createIdentifier("__TS_obj");
+            const indexIdent = ts.createIdentifier("__TS_index");
+            const tempIdent = ts.createIdentifier("__TS_tmp");
+            const accessExp = ts.createElementAccess(objIdent, indexIdent);
+            rhs = ts.createParen(rhs);
+            const obj = this.transpileExpression(objExp);
+            const index = this.transpileExpression(indexExp);
+            let assignTemp: string;
+            let assign: string;
+            if (returnValueBefore) {
+                // Postfix
+                assignTemp = this.transpileBinaryExpression(ts.createAssignment(tempIdent, accessExp));
+                assign = this.transpileBinaryAssignmentExpression(accessExp, tempIdent, operator, rhs, pos);
             } else {
-                const opExp = ts.createBinary(lhs, operator, rhs);
-                opExp.pos = pos;
-                const assignExp = ts.createAssignment(lhs, opExp);
-                return this.transpileBinaryExpression(assignExp);
+                assignTemp = this.transpileBinaryAssignmentExpression(tempIdent, accessExp, operator, rhs, pos);
+                assign = this.transpileBinaryExpression(ts.createAssignment(accessExp, tempIdent));
             }
+            statement = `local __TS_obj, __TS_index = ${obj}, ${index}; local ${assignTemp}; ${assign}`;
+            result = "__TS_tmp";
+
+        } else if (!isStatement && returnValueBefore) {
+            // Postfix expressions need to cache original value in temp
+            const tempIdent = ts.createIdentifier("__TS_tmp");
+            const assignTemp = this.transpileBinaryExpression(ts.createAssignment(tempIdent, lhs));
+            const assign = this.transpileBinaryAssignmentExpression(lhs, tempIdent, operator, rhs, pos);
+            statement = `local ${assignTemp}; ${assign}`;
+            result = "__TS_tmp";
+
+        } else if (!isStatement && (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs))) {
+            // Simple property/element access expressions need to cache in temp to avoid double-evaluation
+            const tempIdent = ts.createIdentifier("__TS_tmp");
+            const assignTemp = this.transpileBinaryAssignmentExpression(tempIdent, lhs, operator, rhs, pos);
+            const assign = this.transpileBinaryExpression(ts.createAssignment(lhs, tempIdent));
+            statement = `local ${assignTemp}; ${assign}`;
+            result = "__TS_tmp";
+
         } else {
-            // Expressions
-            if (hasEffects) {
-                // Expressions with possible side effects
-                const objIdent = ts.createIdentifier("o");
-                const indexIdent = ts.createIdentifier("i");
-                const valIdent = ts.createIdentifier("v");
-                const accessExp = ts.createElementAccess(objIdent, indexIdent);
-                const obj = this.transpileExpression(objExp);
-                const index = this.transpileExpression(indexExp);
-                const val = this.transpileExpression(rhs);
-                if (returnValueBefore) {
-                    // Postfix
-                    const tempIdent = ts.createIdentifier("__TS_tmp");
-                    const opExp = ts.createBinary(tempIdent, operator, valIdent);
-                    const assignExp = ts.createAssignment(accessExp, opExp);
-                    const assign = this.transpileBinaryExpression(assignExp);
-                    return `(function(o, i, v) local __TS_tmp = o[i]; ${assign};`
-                        + ` return __TS_tmp end)(${obj}, ${index}, ${val})`;
-                } else {
-                    const opExp = ts.createBinary(accessExp, operator, valIdent);
-                    opExp.pos =  pos;
-                    const op = this.transpileBinaryExpression(opExp, true);
-                    return `(function(o, i, v) v = ${op}; o[i] = v; return v end)(${obj}, ${index}, ${val})`;
-                }
-            } else {
-                // Simple expressions
-                if (returnValueBefore) {
-                    // Postfix
-                    const tempIdent = ts.createIdentifier("__TS_tmp");
-                    const opExp = ts.createBinary(tempIdent, operator, rhs);
-                    const assignExp = ts.createAssignment(lhs, opExp);
-                    const assign = this.transpileBinaryExpression(assignExp);
-                    const assignee = this.transpileExpression(lhs);
-                    return `(function() local __TS_tmp = ${assignee}; ${assign}; return __TS_tmp end)()`;
-                } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
-                    // Avoid double-evaluation of properties
-                    const tempIdent = ts.createIdentifier("__TS_tmp");
-                    const opExp = ts.createBinary(lhs, operator, rhs);
-                    opExp.pos =  pos;
-                    const op = this.transpileBinaryExpression(opExp);
-                    const assignExp = ts.createAssignment(lhs, tempIdent);
-                    const assign = this.transpileBinaryExpression(assignExp);
-                    return `(function() local __TS_tmp = ${op}; ${assign}; return __TS_tmp end)()`;
-                } else {
-                    const opExp = ts.createBinary(lhs, operator, rhs);
-                    opExp.pos =  pos;
-                    const assignExp = ts.createAssignment(lhs, opExp);
-                    const assign = this.transpileBinaryExpression(assignExp);
-                    const assignee = this.transpileExpression(lhs);
-                    return `(function() ${assign}; return ${assignee} end)()`;
-                }
-            }
+            // Simple statements/expressions
+            statement = this.transpileBinaryAssignmentExpression(lhs, lhs, operator, rhs, pos);
+            result = this.transpileExpression(lhs);
+            wrap = false;
+        }
+
+        if (isStatement) {
+            return wrap ? `do ${statement}; end` : statement;
+        } else {
+            return `(function() ${statement}; return ${result} end)()`;
         }
     }
 

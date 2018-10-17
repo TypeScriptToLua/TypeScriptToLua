@@ -153,7 +153,8 @@ function emitFilesAndReportErrors(program: ts.Program): number {
     return 0;
 }
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
+const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es5.d.ts")).toString()
+    + fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es2015.collection.d.ts")).toString();
 
 export function transpileString(str: string,
                                 options: CompilerOptions = {
@@ -165,7 +166,7 @@ export function transpileString(str: string,
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
-        getDefaultLibFileName: () => "lib.es6.d.ts",
+        getDefaultLibFileName: () => "lib.es5.d.ts",
         getDirectories: () => [],
         getNewLine: () => "\n",
 
@@ -173,7 +174,7 @@ export function transpileString(str: string,
             if (filename === "file.ts") {
                 return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
             }
-            if (filename === "lib.es6.d.ts") {
+            if (filename === "lib.es5.d.ts") {
                 return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
             }
             return undefined;
@@ -190,19 +191,6 @@ export function transpileString(str: string,
     const result = createTranspiler(program.getTypeChecker(),
                                     options,
                                     program.getSourceFile("file.ts")).transpileSourceFile();
-    return result.trim();
-}
-
-export function transpileFile(filePath: string): string {
-    const program = ts.createProgram([filePath], {});
-    const checker = program.getTypeChecker();
-
-    // Output errors
-    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
-    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
-
-    const options: ts.CompilerOptions = { luaLibImport: "none" };
-    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
     return result.trim();
 }
 

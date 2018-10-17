@@ -47,9 +47,8 @@ export class TSHelper {
         if (sourceFile) {
             // Vanilla ts flags files as external module if they have an import or
             // export statement, we only check for export statements
-            // TODO will break in 3.x
             return sourceFile.statements.some(statement =>
-                (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+                (ts.getCombinedModifierFlags(statement as any as ts.Declaration) & ts.ModifierFlags.Export) !== 0
                 || statement.kind === ts.SyntaxKind.ExportAssignment
                 || statement.kind === ts.SyntaxKind.ExportDeclaration);
         }

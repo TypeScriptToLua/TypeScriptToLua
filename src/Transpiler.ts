@@ -1861,6 +1861,9 @@ export abstract class LuaTranspiler {
                 properties.push(`${name} = ${expression}`);
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 properties.push(`${name} = ${name}`);
+            } else if (ts.isMethodDeclaration(element)) {
+                const expression = this.transpileFunctionExpression(element);
+                properties.push(`${name} = ${expression}`);
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
             }
@@ -1869,9 +1872,12 @@ export abstract class LuaTranspiler {
         return "{" + properties.join(",") + "}";
     }
 
-    public transpileFunctionExpression(node: ts.ArrowFunction): string {
+    public transpileFunctionExpression(node: ts.FunctionLikeDeclaration): string {
         // Build parameter string
         const paramNames: string[] = [];
+        if (ts.isMethodDeclaration(node)) {
+            paramNames.push("self");
+        }
         node.parameters.forEach(param => {
             paramNames.push(this.transpileIdentifier(param.name as ts.Identifier));
         });

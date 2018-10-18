@@ -231,6 +231,26 @@ export class FunctionTests {
         Expect(result).toBe(3 * returnValue);
     }
 
+    @Test("Function bind")
+    public functionBind(): void {
+        const source = `const abc = function (a: string) { console.log(this.a + a); }
+                        abc.bind({ a: 4 })("b");`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4b");
+    }
+
+    @Test("Function apply")
+    public functionApply(): void {
+        const source = `const abc = function (a: string) { console.log(this.a + a); }
+                        abc.apply({ a: 4 }, ["b"]);`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4b");
+    }
+
     @Test("Invalid property access call transpilation")
     public invalidPropertyCall(): void {
         const transpiler = util.makeTestTranspiler();

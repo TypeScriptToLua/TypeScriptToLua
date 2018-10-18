@@ -282,4 +282,11 @@ export class FunctionTests {
 
         Expect(result).toBe("function");
     }
+
+    @Test("Object method declaration")
+    public objectMethodDeclaration(): void {
+        const result = util.transpileAndExecute(
+            `let o = { m(i: number): number { return i * i; } }; return o.m(3);`);
+        Expect(result).toBe(9);
+    }
 }

@@ -276,12 +276,58 @@ export class ExpressionTests {
         Expect(result).toEqual(expected);
     }
 
-    @TestCase("a + b++", 10)
-    @TestCase("a + (b += 5)", 15)
-    @Test("Mixed assignment expressions")
-    public mixedAssignmentExpressions(expression: string, expected: number): void {
-        const result = util.transpileAndExecute(`let a = 4; let b = 6; return ${expression};`);
+    @TestCase("x = y", "y")
+    @Test("Assignment expressions")
+    public assignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(`let x = "x"; let y = "y"; return ${expression};`);
+        Expect(result).toBe(expected);
+    }
 
+    @TestCase("x = o.p", "o")
+    @TestCase("x = a[0]", "a")
+    @TestCase("x = y = o.p", "o")
+    @TestCase("x = o.p", "o")
+    @Test("Assignment expressions using temp")
+    public assignmentWithTempExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x = "x";
+            let y = "y";
+            let o = {p: "o"};
+            let a = ["a"];
+            return ${expression};`);
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("o.p = x", "x")
+    @TestCase("a[0] = x", "x")
+    @TestCase("o.p = a[0]", "a")
+    @TestCase("o.p = a[0] = x", "x")
+    @Test("Property assignment expressions")
+    public propertyAssignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x = "x";
+            let o = {p: "o"};
+            let a = ["a"];
+            return ${expression};`);
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("x = t()", "t0,t1")
+    @TestCase("x = tr()", "tr0,tr1")
+    @TestCase("[x[1], x[0]] = t()", "t0,t1")
+    @TestCase("[x[1], x[0]] = tr()", "tr0,tr1")
+    @TestCase("x = [y[1], y[0]]", "y1,y0")
+    @TestCase("[x[0], x[1]] = [y[1], y[0]]", "y1,y0")
+    @Test("Tuple assignment expressions")
+    public tupleAssignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x: [string, string] = ["x0", "x1"];
+            let y: [string, string] = ["y0", "y1"];
+            function t(): [string, string] { return ["t0", "t1"] };
+            /** !TupleReturn */
+            function tr(): [string, string] { return ["tr0", "tr1"] };
+            const r = ${expression};
+            return \`\${r[0]},\${r[1]}\``);
         Expect(result).toBe(expected);
     }
 

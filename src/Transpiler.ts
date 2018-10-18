@@ -661,24 +661,44 @@ export abstract class LuaTranspiler {
     }
 
     public transpileTry(node: ts.TryStatement): string {
-        let tryFunc = "function()\n";
+        let result = this.indent + "do\n";
         this.pushIndent();
-        tryFunc += this.transpileBlock(node.tryBlock);
+
+        result += this.indent;
+        if (node.catchClause) {
+            result += "local __TS_try";
+            if (node.catchClause.variableDeclaration) {
+                const variableName = this.transpileIdentifier(
+                    node.catchClause.variableDeclaration.name as ts.Identifier);
+                result += ", " + variableName;
+            }
+            result += " = ";
+        }
+
+        result += "pcall(function()\n";
+        this.pushIndent();
+        result += this.transpileBlock(node.tryBlock);
         this.popIndent();
-        tryFunc += "end";
-        let catchFunc = "function(e)\nend";
-        if (node.catchClause && node.catchClause.variableDeclaration) {
-            const variableName = this.transpileIdentifier(node.catchClause.variableDeclaration.name as ts.Identifier);
-            catchFunc = this.indent + `function(${variableName})\n`;
+        result += this.indent + "end);\n";
+
+        if (node.catchClause) {
+            result += this.indent + `if not __TS_try then\n`;
             this.pushIndent();
-            catchFunc += this.transpileBlock(node.catchClause.block);
+            result += this.transpileBlock(node.catchClause.block);
             this.popIndent();
-            catchFunc += "end";
+            result += this.indent + "end\n";
         }
-        let result = this.indent + `xpcall(${tryFunc},\n${catchFunc})\n`;
+
         if (node.finallyBlock) {
+            result += this.indent + "do\n";
+            this.pushIndent();
             result += this.transpileBlock(node.finallyBlock);
+            this.popIndent();
+            result += this.indent + "end\n";
         }
+
+        this.popIndent();
+        result += this.indent + "end\n";
         return result;
     }
 

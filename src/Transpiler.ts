@@ -184,6 +184,34 @@ export abstract class LuaTranspiler {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
+    public computeEnumMembers(node: ts.EnumDeclaration): Array<{ name: string, value: string | number }> {
+        let val: number | string = 0;
+        let hasStringInitializers = false;
+
+        return node.members.map(member => {
+            if (member.initializer) {
+                if (ts.isNumericLiteral(member.initializer)) {
+                    val = parseInt(member.initializer.text);
+                } else if (ts.isStringLiteral(member.initializer)) {
+                    hasStringInitializers = true;
+                    val = `"${member.initializer.text}"`;
+                } else {
+                    throw TSTLErrors.InvalidEnumMember(member.initializer);
+                }
+            } else if (hasStringInitializers) {
+                throw TSTLErrors.HeterogeneousEnum(node);
+            }
+
+            const enumMember = { name: this.transpileIdentifier(member.name as ts.Identifier), value: val };
+
+            if (typeof val === "number") {
+              val++;
+            }
+
+            return enumMember;
+        });
+    }
+
     // Transpile a source file
     public transpileSourceFile(): string {
         let header = "";
@@ -393,12 +421,17 @@ export abstract class LuaTranspiler {
     }
 
     public transpileEnum(node: ts.EnumDeclaration): string {
-        let val: number | string = 0;
-        let result = "";
-
         const type = this.checker.getTypeAtLocation(node);
+
+        // Const enums should never appear in the resulting code
+        if (type.symbol.getFlags() & ts.SymbolFlags.ConstEnum) {
+            return "";
+        }
+
         const membersOnly = tsHelper.getCustomDecorators(type, this.checker)
                                     .has(DecoratorKind.CompileMembersOnly);
+
+        let result = "";
 
         if (!membersOnly) {
             const name = this.transpileIdentifier(node.name);
@@ -406,35 +439,18 @@ export abstract class LuaTranspiler {
             this.pushExport(name, node);
         }
 
-        let hasStringInitializers = false;
-        node.members.forEach(member => {
-            if (member.initializer) {
-                if (ts.isNumericLiteral(member.initializer)) {
-                    val = parseInt(member.initializer.text);
-                } else if (ts.isStringLiteral(member.initializer)) {
-                    hasStringInitializers = true;
-                    val = `"${member.initializer.text}"`;
-                } else {
-                    throw TSTLErrors.InvalidEnumMember(member.initializer);
-                }
-            } else if (hasStringInitializers) {
-                throw TSTLErrors.HeterogeneousEnum(node);
-            }
-
+        this.computeEnumMembers(node).forEach(enumMember => {
             if (membersOnly) {
-                const defName = this.definitionName(this.transpileIdentifier(member.name as ts.Identifier));
-                result += this.indent + `${defName}=${val}\n`;
+                const defName = this.definitionName(enumMember.name);
+                result += this.indent + `${defName}=${enumMember.value}\n`;
             } else {
                 const defName = this.definitionName(
-                    `${this.transpileIdentifier(node.name)}.${this.transpileIdentifier((member.name as ts.Identifier))}`
+                    `${this.transpileIdentifier(node.name)}.${enumMember.name}`
                 );
-                result += this.indent + `${defName}=${val}\n`;
-            }
-
-            if (typeof val === "number") {
-              val++;
+                result += this.indent + `${defName}=${enumMember.value}\n`;
             }
         });
+
         return result;
     }
 
@@ -1406,6 +1422,33 @@ export abstract class LuaTranspiler {
                 if (tsHelper.isArrayType(type, this.checker)) {
                     return this.transpileArrayProperty(node);
                 }
+        }
+
+        if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
+            const propertyValueDeclaration = this.checker.getTypeAtLocation(node).symbol.valueDeclaration;
+
+            if (propertyValueDeclaration && propertyValueDeclaration.kind === ts.SyntaxKind.EnumMember) {
+                const enumMember = propertyValueDeclaration as ts.EnumMember;
+
+                if (enumMember.initializer) {
+                    return this.transpileExpression(enumMember.initializer);
+                } else {
+                    const enumMembers = this.computeEnumMembers(enumMember.parent);
+                    const memberPosition = enumMember.parent.members.indexOf(enumMember);
+
+                    if (memberPosition === -1) {
+                        throw TSTLErrors.UnsupportedProperty(type.symbol.name, property, node);
+                    }
+
+                    const value = enumMembers[memberPosition].value;
+
+                    if (typeof value === "string") {
+                        return `"${value}"`;
+                    }
+
+                    return value.toString();
+                }
+            }
         }
 
         this.checkForLuaLibType(type);

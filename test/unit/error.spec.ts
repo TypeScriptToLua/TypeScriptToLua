@@ -25,44 +25,54 @@ export class LuaErrorTests {
         }).toThrowError(TranspileError, "Invalid throw expression, only strings can be thrown.");
     }
 
-    @TestCase(1, "ad")
-    @TestCase(2, "bcd")
-    @TestCase(3, "e")
-    @TestCase(4, "g")
-    @TestCase(5, "h")
-    @TestCase(6, "i")
+    @TestCase(0, "A")
+    @TestCase(1, "B")
+    @TestCase(2, "C")
     @Test("re-throw")
-    public reThrow(count: number, expected: any): void {
+    public reThrow(i: number, expected: any): void {
         const source =
-            `declare namespace string { export function match(s: string, p: string): string | null; }
-            let i = ${count};
-            function foo(s: string) { if (--i <= 0) { throw s; } }
-            try {
+            `const i = ${i};
+            function foo() {
                 try {
-                    foo("a");
                     try {
-                        foo("b");
+                        if (i === 0) { throw "z"; }
                     } catch (e) {
-                        foo(e + "c");
+                        throw "a";
+                    } finally {
+                        if (i === 1) { throw "b"; }
                     }
                 } catch (e) {
-                    foo(e + "d");
+                    throw (e as string).toUpperCase();
                 } finally {
-                    foo("e");
+                    throw "C";
                 }
-                try {
-                    foo("f");
-                } catch {
-                    foo("g");
-                } finally {
-                    foo("h");
-                }
+            }
+            let result = "x";
+            try {
+                foo();
             } catch (e) {
-                return string.match(e, "[a-h]+$");
-            } finally {
-                return "i";
-            }`;
+                result = (e as string)[(e as string).length - 1];
+            }
+            return result;`;
         const result = util.transpileAndExecute(source);
         Expect(result).toBe(expected);
+    }
+
+    @Test("re-throw (no catch var)")
+    public reThrowWithoutCatchVar(): void {
+        const source =
+            `let result = "x";
+            try {
+                try {
+                    throw "y";
+                } catch {
+                    throw "z";
+                }
+            } catch (e) {
+                result = (e as string)[(e as string).length - 1];
+            }
+            return result;`;
+        const result = util.transpileAndExecute(source);
+        Expect(result).toBe("z");
     }
 }

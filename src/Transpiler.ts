@@ -458,10 +458,20 @@ export abstract class LuaTranspiler {
         result += this.transpileStatement(node.thenStatement);
         this.popIndent();
 
-        if (node.elseStatement) {
+        let elseStatement = node.elseStatement;
+        while (elseStatement && ts.isIfStatement(elseStatement)) {
+            const elseIfCondition = this.transpileExpression(elseStatement.expression);
+            result += this.indent + `elseif ${elseIfCondition} then\n`;
+            this.pushIndent();
+            result += this.transpileStatement(elseStatement.thenStatement);
+            this.popIndent();
+            elseStatement = elseStatement.elseStatement;
+        }
+
+        if (elseStatement) {
             result += this.indent + "else\n";
             this.pushIndent();
-            result += this.transpileStatement(node.elseStatement);
+            result += this.transpileStatement(elseStatement);
             this.popIndent();
         }
 

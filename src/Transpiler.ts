@@ -1433,7 +1433,7 @@ export abstract class LuaTranspiler {
                     const value = enumMembers[memberPosition].value;
 
                     if (typeof value === "string") {
-                        return "\"" + value + "\"";
+                        return `"${value}"`;
                     }
 
                     return value.toString();

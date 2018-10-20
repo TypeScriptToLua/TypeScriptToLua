@@ -330,7 +330,7 @@ export class LuaConditionalsTests {
     }
 
     @Test("switch not allowed in 5.1")
-    public switchThrow50(): void {
+    public switchThrow51(): void {
         Expect( () => util.transpileString(`switch ("abc") {}`, {luaTarget: LuaTarget.Lua51}))
             .toThrowError(TranspileError, "Switch statements is/are not supported for target Lua 5.1.");
     }

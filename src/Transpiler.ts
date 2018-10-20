@@ -562,23 +562,33 @@ export abstract class LuaTranspiler {
 
         // Use ipairs for array types, pairs otherwise
         const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
-        const pairs = isArray ? "ipairs" : "pairs";
 
-        // Make header
         let result = "";
-        if (ts.isIdentifier(variable.name)) {
-            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in ${pairs}(${expression}) do\n`;
-        } else if (ts.isArrayBindingPattern(variable.name)) {
-            const valueVar =  "__forOfValue" + this.genVarCounter;
-            result = this.indent + `for _, ${valueVar} in ${pairs}(${expression}) do\n`;
-            const declaration = ts.createVariableDeclaration(variable.name, undefined, ts.createIdentifier(valueVar));
-            result += this.indent + this.transpileVariableDeclaration(declaration);
+
+        if (!isArray && ts.isIdentifier(variable.name)) {
+            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in pairs(${expression}) do\n`;
+        } else {
+            let itemVariable: ts.Identifier;
+            if (isArray) {
+                // Cache the expression result
+                result += this.indent + `local __loopVariable${this.genVarCounter} = ${expression};\n`;
+                result += this.indent + `for i${this.genVarCounter}=1, #__loopVariable${this.genVarCounter} do\n`;
+                itemVariable = ts.createIdentifier(`__loopVariable${this.genVarCounter}[i${this.genVarCounter}]`);
+            } else {
+                itemVariable =  ts.createIdentifier(`__forOfValue${this.genVarCounter}`);
+                result += this.indent + `for _, ${itemVariable} in pairs(${expression}) do\n`;
+            }
+
+            const declaration = ts.createVariableDeclaration(variable.name, undefined, itemVariable);
+            result += this.indent + "    " + this.transpileVariableDeclaration(declaration) + ";\n";
         }
 
         // For body
         this.pushIndent();
         result += this.transpileLoopBody(node);
         this.popIndent();
+
+        this.genVarCounter++;
 
         return result + this.indent + "end\n";
     }

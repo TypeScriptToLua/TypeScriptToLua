@@ -615,75 +615,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileSwitch(node: ts.SwitchStatement): string {
-        const expression = this.transpileExpression(node.expression, true);
-        const clauses = node.caseBlock.clauses;
-
-        let result = this.indent + "-------Switch statement start-------\n";
-
-        const switchVarName = "____switch" + this.genVarCounter;
-        this.genVarCounter++;
-
-        result += this.indent + `local ${switchVarName} = ${expression}\n`;
-
-        let hasDefaultClause = false;
-
-        // If statement to go to right entry label
-        clauses.forEach((clause, index) => {
-            if (ts.isCaseClause(clause)) {
-                result += this.indent +
-                          `if ${this.transpileExpression(clause.expression, true)} == ${switchVarName} then\n`;
-
-                this.pushIndent();
-                result += this.indent + `goto ${switchVarName}_case_${index}\n`;
-                this.popIndent();
-
-                result += this.indent + "end\n";
-            } else if (ts.isDefaultClause(clause)) {
-                hasDefaultClause = true;
-            }
-        });
-
-        result += "\n";
-
-        // If no case condition is matched jump to end or default immediately
-        if (hasDefaultClause) {
-            result += this.indent + `goto ${switchVarName}_default\n`;
-        } else {
-            result += this.indent + `goto ${switchVarName}_end\n`;
-        }
-
-        result += "\n";
-
-        const transpileClauseBody = (clause: ts.CaseOrDefaultClause) => {
-            this.transpilingSwitch++;
-            result += this.indent + "do\n";
-            this.pushIndent();
-            result += this.transpileBlock(ts.createBlock(clause.statements));
-            this.popIndent();
-            result += this.indent + "end\n";
-            this.transpilingSwitch--;
-        };
-
-        clauses.forEach((clause, index) => {
-            if (ts.isCaseClause(clause)) {
-                result += this.indent + `::${switchVarName}_case_${index}::\n`;
-
-                transpileClauseBody(clause);
-
-                if (tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
-                    result += this.indent + `goto ${switchVarName}_end\n`;
-                }
-            } else if (ts.isDefaultClause(clause)) {
-                result += this.indent + `::${switchVarName}_default::\n`;
-
-                transpileClauseBody(clause);
-            }
-        });
-
-        result += this.indent + `::${switchVarName}_end::\n`;
-        result += this.indent + "-------Switch statement end-------\n";
-
-        return result;
+        throw TSTLErrors.UnsupportedForTarget("Switch statements", this.options.luaTarget, node);
     }
 
     public transpileTry(node: ts.TryStatement): string {

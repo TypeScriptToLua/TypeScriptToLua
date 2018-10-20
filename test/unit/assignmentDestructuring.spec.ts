@@ -35,6 +35,6 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: "none"}
         );
         // Assert
-        Expect(lua).toBe(`local a,b=table.unpack(myFunc());`);
+        Expect(lua).toBe(`local a,b=unpack(myFunc());`);
     }
 }

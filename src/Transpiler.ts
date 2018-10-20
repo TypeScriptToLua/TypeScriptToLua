@@ -1623,7 +1623,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileDestructingAssignmentValue(node: ts.Expression): string {
-        throw TSTLErrors.UnsupportedForTarget("Destructing statements", this.options.luaTarget, node);
+        return `unpack(${this.transpileExpression(node)})`;
     }
 
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {

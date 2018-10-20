@@ -37,6 +37,6 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
 
     /** @override */
     public transpileDestructingAssignmentValue(node: ts.Expression): string {
-        return `table.unpack(${this.transpileExpression(node)})`;
+        return `unpack(${this.transpileExpression(node)})`;
     }
 }

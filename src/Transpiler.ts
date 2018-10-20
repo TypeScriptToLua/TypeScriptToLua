@@ -575,8 +575,9 @@ export abstract class LuaTranspiler {
                 result += this.indent + `for i${this.genVarCounter}=1, #__loopVariable${this.genVarCounter} do\n`;
                 itemVariable = ts.createIdentifier(`__loopVariable${this.genVarCounter}[i${this.genVarCounter}]`);
             } else {
-                itemVariable =  ts.createIdentifier(`__forOfValue${this.genVarCounter}`);
-                result += this.indent + `for _, ${itemVariable} in pairs(${expression}) do\n`;
+                const variableName = `__forOfValue${this.genVarCounter}`;
+                itemVariable =  ts.createIdentifier(variableName);
+                result += this.indent + `for _, ${variableName} in pairs(${expression}) do\n`;
             }
 
             const declaration = ts.createVariableDeclaration(variable.name, undefined, itemVariable);

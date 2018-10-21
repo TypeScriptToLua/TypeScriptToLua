@@ -286,6 +286,26 @@ export class LuaLoopTests {
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([[1, 2], [2, 3], [3, 4]], [3, 5, 7])
+    @Test("forof destructing")
+    public forofDestructing(inp: number[][], expected: any): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let objTest = ${JSON.stringify(inp)};
+            let arrResultTest = [];
+            for (let [a,b] of objTest) {
+                arrResultTest.push(a + b)
+            }
+            return JSONStringify(arrResultTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
     @Test("forof with continue")
     public forofWithContinue(inp: number[], expected: number[]): void {

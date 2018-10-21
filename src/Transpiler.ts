@@ -558,7 +558,7 @@ export abstract class LuaTranspiler {
         const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
 
         // Transpile expression
-        const expression = this.transpileExpression(node.expression);
+        const iterable = this.transpileExpression(node.expression);
 
         // Use ipairs for array types, pairs otherwise
         const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
@@ -566,22 +566,24 @@ export abstract class LuaTranspiler {
         let result = "";
 
         if (!isArray && ts.isIdentifier(variable.name)) {
-            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in pairs(${expression}) do\n`;
+            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in pairs(${iterable}) do\n`;
         } else {
             let itemVariable: ts.Identifier;
             if (isArray) {
                 // Cache the expression result
-                result += this.indent + `local __loopVariable${this.genVarCounter} = ${expression};\n`;
+                result += this.indent + `local __loopVariable${this.genVarCounter} = ${iterable};\n`;
                 result += this.indent + `for i${this.genVarCounter}=1, #__loopVariable${this.genVarCounter} do\n`;
                 itemVariable = ts.createIdentifier(`__loopVariable${this.genVarCounter}[i${this.genVarCounter}]`);
             } else {
                 const variableName = `__forOfValue${this.genVarCounter}`;
                 itemVariable =  ts.createIdentifier(variableName);
-                result += this.indent + `for _, ${variableName} in pairs(${expression}) do\n`;
+                result += this.indent + `for _, ${variableName} in pairs(${iterable}) do\n`;
             }
 
             const declaration = ts.createVariableDeclaration(variable.name, undefined, itemVariable);
-            result += this.indent + "    " + this.transpileVariableDeclaration(declaration) + ";\n";
+            this.pushIndent();
+            result += this.indent + this.transpileVariableDeclaration(declaration) + ";\n";
+            this.popIndent();
         }
 
         // For body

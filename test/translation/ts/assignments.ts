@@ -2,14 +2,19 @@ declare let x: number;
 declare let y: number;
 declare let z: number;
 declare let obj: {prop: number, arr: number[]};
+/** !NoContext */
 declare function getObj(): typeof obj;
 declare let arr: number[];
 declare let arr2: number[][];
+/** !NoContext */
 declare function getArr(): typeof arr;
+/** !NoContext */
 declare function getIndex(): number;
 declare let xTup: [number, number];
 declare let yTup: [number, number];
+/** !NoContext */
 declare function getTup(): [number, number];
+/** !NoContext */
 /** !TupleReturn */
 declare function getTupRet(): [number, number];
 x = y;

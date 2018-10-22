@@ -1,4 +1,6 @@
+/** !NoContext */
 declare function pcall(func: () => any): any;
+/** !NoContext */
 declare function type(val: any): string;
 
 function __TS__ArrayConcat(arr1: any[], ...args: any[]): any[] {

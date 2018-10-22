@@ -1,4 +1,5 @@
 declare namespace table {
+    /** !NoContext */
     function insert<T>(arr: T[], idx: number, val: T): void;
 }
 function __TS__ArrayUnshift<T>(arr: T[],  ...items: T[]): number {

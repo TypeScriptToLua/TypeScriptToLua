@@ -1,4 +1,5 @@
 declare namespace string {
+    /** !NoContext */
     /** !TupleReturn */
     function gsub(source: string, searchValue: string, replaceValue: string): [string, number];
 }

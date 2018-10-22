@@ -274,7 +274,8 @@ export class StringTests {
     public split(inp: string, separator: string): void {
         // Transpile
         const lua = util.transpileString(
-            `return JSONStringify("${inp}".split("${separator}"))`
+            `/** !NoContext */ declare function JSONStringify(t: any): string;
+            return JSONStringify("${inp}".split("${separator}"))`
         );
 
         // Execute

@@ -79,6 +79,11 @@ export class TSHelper {
         return typeNode && this.isArrayTypeNode(typeNode);
     }
 
+    public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
+        return typeNode && ts.isFunctionTypeNode(typeNode);
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const type = checker.getTypeAtLocation(node.expression);

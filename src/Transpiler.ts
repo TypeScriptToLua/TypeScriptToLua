@@ -33,6 +33,7 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    FunctionBind = "FunctionBind",
     InstanceOf = "InstanceOf",
     Map = "Map",
     Set = "Set",
@@ -1236,6 +1237,10 @@ export abstract class LuaTranspiler {
             return this.transpileArrayCallExpression(node);
         }
 
+        if (tsHelper.isFunctionType(ownerType, this.checker)) {
+            return this.transpileFunctionCallExpression(node);
+        }
+
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
@@ -1370,6 +1375,19 @@ export abstract class LuaTranspiler {
                 }
             default:
                 throw TSTLErrors.UnsupportedProperty("array", expressionName, node);
+        }
+    }
+
+    public transpileFunctionCallExpression(node: ts.CallExpression): string {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const params = this.transpileArguments(node.arguments);
+        const caller = this.transpileExpression(expression.expression);
+        const expressionName = this.transpileIdentifier(expression.name);
+        switch (expressionName) {
+            case "bind":
+                return this.transpileLuaLibFunction(LuaLibFeature.FunctionBind, caller, params);
+            default:
+                throw TSTLErrors.UnsupportedProperty("function", expressionName, node);
         }
     }
 

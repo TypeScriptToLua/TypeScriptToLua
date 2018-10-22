@@ -233,12 +233,12 @@ export class FunctionTests {
 
     @Test("Function bind")
     public functionBind(): void {
-        const source = `const abc = function (a: string) { console.log(this.a + a); }
-                        abc.bind({ a: 4 })("b");`;
+        const source = `const abc = function (a: string, b: string) { print(this.a + a + b); }
+                        abc.bind({ a: 4 }, "b")("c");`;
 
         const result = util.transpileAndExecute(source);
 
-        Expect(result).toBe("4b");
+        Expect(result).toBe("4bc");
     }
 
     @Test("Function apply")

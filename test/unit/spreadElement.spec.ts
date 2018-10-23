@@ -20,6 +20,6 @@ export class SpreadElementTest {
     public spreadElement51() {
         // Cant test functional because our VM doesn't run on 5.1
         const lua = util.transpileString(`[].push(...${JSON.stringify([1, 2, 3])});`, {luaTarget: LuaTarget.Lua51});
-        Expect(lua).toBe("__TS__ArrayPush(_G, {}, unpack({1,2,3}));");
+        Expect(lua).toBe("__TS__ArrayPush({}, unpack({1,2,3}));");
     }
 }

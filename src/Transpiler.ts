@@ -313,7 +313,6 @@ export abstract class LuaTranspiler {
         params = params.filter(element => {
             return element.toString() !== "";
           });
-        params.splice(0, 0, "_G");
         return `__TS__${func}(${params.join(", ")})`;
     }
 

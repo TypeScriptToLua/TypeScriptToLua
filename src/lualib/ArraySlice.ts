@@ -1,4 +1,5 @@
 // https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf 22.1.3.23
+/** !NoContext */
 function __TS__ArraySlice<T>(list: T[], first: number, last: number): T[] {
     const len = list.length;
 

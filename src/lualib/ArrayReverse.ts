@@ -1,3 +1,4 @@
+/** !NoContext */
 function __TS__ArrayReverse(arr: any[]): any[] {
     let i = 0;
     let j = arr.length - 1;

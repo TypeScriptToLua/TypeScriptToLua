@@ -233,8 +233,8 @@ export class FunctionTests {
 
     @Test("Function bind")
     public functionBind(): void {
-        const source = `const abc = function (a: string, b: string) { print(this.a + a + b); }
-                        abc.bind({ a: 4 }, "b")("c");`;
+        const source = `const abc = function (a: string, b: string) { return this.a + a + b; }
+                        return abc.bind({ a: 4 }, "b")("c");`;
 
         const result = util.transpileAndExecute(source);
 

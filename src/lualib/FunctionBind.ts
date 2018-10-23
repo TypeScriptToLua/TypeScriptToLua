@@ -13,6 +13,7 @@ declare namespace table {
 // tslint:disable-next-line:callable-types <- decorators don't work on type aliases right now
 declare interface Fn { (...argArray: any[]): any; }
 
+/** !NoContext */
 function __TS__FunctionBind(fn: Fn, thisArg: any, ...boundArgs: any[]): Fn {
     return (...argArray: any[]) => {
         for (let i = 0; i < boundArgs.length; ++i) {

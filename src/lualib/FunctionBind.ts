@@ -14,7 +14,7 @@ declare namespace table {
 declare interface Fn { (...argArray: any[]): any; }
 
 /** !NoContext */
-function __TS__FunctionBind(fn: Fn, thisArg: any, ...boundArgs: any[]): Fn {
+function __TS__FunctionBind(fn: Fn, thisArg: any, ...boundArgs: any[]): (...args: any[]) => any {
     return (...argArray: any[]) => {
         for (let i = 0; i < boundArgs.length; ++i) {
             table.insert(argArray, i + 1, boundArgs[i]);

@@ -243,8 +243,18 @@ export class FunctionTests {
 
     @Test("Function apply")
     public functionApply(): void {
-        const source = `const abc = function (a: string) { console.log(this.a + a); }
-                        abc.apply({ a: 4 }, ["b"]);`;
+        const source = `const abc = function (a: string) { return this.a + a; }
+                        return abc.apply({ a: 4 }, ["b"]);`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4b");
+    }
+
+    @Test("Function call")
+    public functionCall(): void {
+        const source = `const abc = function (a: string) { return this.a + a; }
+                        return abc.call({ a: 4 }, "b");`;
 
         const result = util.transpileAndExecute(source);
 

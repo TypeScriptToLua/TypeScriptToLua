@@ -33,7 +33,9 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    FunctionApply = "FunctionApply",
     FunctionBind = "FunctionBind",
+    FunctionCall = "FunctionCall",
     InstanceOf = "InstanceOf",
     Map = "Map",
     Set = "Set",
@@ -1383,8 +1385,12 @@ export abstract class LuaTranspiler {
         const caller = this.transpileExpression(expression.expression);
         const expressionName = this.transpileIdentifier(expression.name);
         switch (expressionName) {
+            case "apply":
+                return this.transpileLuaLibFunction(LuaLibFeature.FunctionApply, caller, params);
             case "bind":
                 return this.transpileLuaLibFunction(LuaLibFeature.FunctionBind, caller, params);
+            case "call":
+                return this.transpileLuaLibFunction(LuaLibFeature.FunctionCall, caller, params);
             default:
                 throw TSTLErrors.UnsupportedProperty("function", expressionName, node);
         }

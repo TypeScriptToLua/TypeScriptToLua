@@ -7,11 +7,10 @@ declare namespace table {
 }
 
 /** !NoContext */
-// tslint:disable-next-line:callable-types <- decorators don't work on type aliases right now
-declare interface Fn { (...argArray: any[]): any; }
+type ApplyFn = (...argArray: any[]) => any;
 
 /** !NoContext */
-function __TS__FunctionApply(fn: Fn, thisArg: any, argsArray?: any[]): any {
+function __TS__FunctionApply(fn: ApplyFn, thisArg: any, argsArray?: any[]): any {
     if (argsArray) {
         return fn(thisArg, (unpack || table.unpack)(argsArray));
     } else {

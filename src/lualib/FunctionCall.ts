@@ -7,10 +7,9 @@ declare namespace table {
 }
 
 /** !NoContext */
-// tslint:disable-next-line:callable-types <- decorators don't work on type aliases right now
-declare interface Fn { (...argArray: any[]): any; }
+type CallFn = (...argArray: any[]) => any;
 
 /** !NoContext */
-function __TS__FunctionCall(fn: Fn, thisArg: any, ...args: any[]): Fn {
+function __TS__FunctionCall(fn: CallFn, thisArg: any, ...args: any[]): any {
     return fn(thisArg, (unpack || table.unpack)(args));
 }

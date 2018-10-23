@@ -10,11 +10,10 @@ declare namespace table {
 }
 
 /** !NoContext */
-// tslint:disable-next-line:callable-types <- decorators don't work on type aliases right now
-declare interface Fn { (...argArray: any[]): any; }
+type BindFn = (...argArray: any[]) => any;
 
 /** !NoContext */
-function __TS__FunctionBind(fn: Fn, thisArg: any, ...boundArgs: any[]): (...args: any[]) => any {
+function __TS__FunctionBind(fn: BindFn, thisArg: any, ...boundArgs: any[]): (...args: any[]) => any {
     return (...argArray: any[]) => {
         for (let i = 0; i < boundArgs.length; ++i) {
             table.insert(argArray, i + 1, boundArgs[i]);

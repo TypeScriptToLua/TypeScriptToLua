@@ -1,33 +1,24 @@
+import { CompilerOptions } from "./CompilerOptions";
+
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as yargs from "yargs";
 
-export interface CompilerOptions extends ts.CompilerOptions {
-    addHeader?: boolean;
-    luaTarget?: string;
-    dontRequireLuaLib?: boolean;
-}
-
-export interface ParsedCommandLine extends ts.ParsedCommandLine {
+interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
 
-export class CLIError extends Error {
-
+interface YargsOptions {
+    [key: string]: yargs.Options;
 }
 
-const optionDeclarations: { [key: string]: yargs.Options } = {
-    addHeader: {
-        alias: ["ah", "header"],
-        default: true,
-        describe: "Specify if a header will be added to compiled files.",
-        type: "boolean",
-    },
-    dontRequireLuaLib: {
-        default: false,
-        describe: "Dont require lua library that enables advanced Typescipt/JS functionality.",
-        type: "boolean",
+export const optionDeclarations: YargsOptions = {
+    luaLibImport: {
+        choices: ["inline", "require", "none"],
+        default: "inline",
+        describe: "Specifies how js standard features missing in lua are imported.",
+        type: "string",
     },
     luaTarget: {
         alias: "lt",
@@ -36,13 +27,44 @@ const optionDeclarations: { [key: string]: yargs.Options } = {
         describe: "Specify Lua target version.",
         type: "string",
     },
+    noHeader: {
+        default: false,
+        describe: "Specify if a header will be added to compiled files.",
+        type: "boolean",
+    },
 };
+
+class CLIError extends Error {
+
+}
+
+/**
+ * Removes defaults from the arguments.
+ * Returns a tuple where [0] is a copy of the options without defaults and [1] is the extracted defaults.
+ */
+function getYargOptionsWithoutDefaults(options: YargsOptions): [YargsOptions, yargs.Arguments] {
+    // options is a deep object, Object.assign or {...options} still keeps the referece
+    const copy = JSON.parse(JSON.stringify(options));
+
+    const optionDefaults: yargs.Arguments = {_: null, $0: null};
+    for (const optionName in copy) {
+        const section = copy[optionName];
+
+        optionDefaults[optionName] = section.default;
+        delete section.default;
+    }
+
+    return [copy, optionDefaults];
+}
 
 /**
  * Pares the supplied arguments.
  * The result will include arguments supplied via CLI and arguments from tsconfig.
  */
 export function parseCommandLine(args: string[]): ParsedCommandLine {
+    // Get a copy of the options without defaults to prevent defaults overriding project config
+    const [tstlOptions, tstlDefaults] = getYargOptionsWithoutDefaults(optionDeclarations);
+
     const parsedArgs = yargs
         .usage("Syntax: tstl [options] [files...]\n\n" +
             "In addition to the options listed below you can also pass options" +
@@ -51,7 +73,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
         .example("tstl path/to/file.ts [...]", "Compile files")
         .example("tstl -p path/to/tsconfig.json", "Compile project")
         .wrap(yargs.terminalWidth())
-        .options(optionDeclarations)
+        .options(tstlOptions)
         .fail((msg, err) => {
             throw new CLIError(msg);
         })
@@ -82,6 +104,9 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     // Add TSTL options from tsconfig
     addTSTLOptions(commandLine);
 
+    // Add TSTL defaults last
+    addTSTLOptions(commandLine, tstlDefaults);
+
     // Run diagnostics again to check for errors in tsconfig
     runDiagnostics(commandLine);
 
@@ -102,7 +127,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
 
 function addTSTLOptions(commandLine: ts.ParsedCommandLine,
                         additionalArgs?: yargs.Arguments,
-                        forceOverride?: boolean) {
+                        forceOverride?: boolean): void {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw;
     // Add compiler options that are ignored by TS parsers
     if (additionalArgs) {
@@ -116,7 +141,10 @@ function addTSTLOptions(commandLine: ts.ParsedCommandLine,
 }
 
 /** Check the current state of the ParsedCommandLine for errors */
-function runDiagnostics(commandLine: ts.ParsedCommandLine) {
+function runDiagnostics(commandLine: ts.ParsedCommandLine): void {
+    // Remove files that dont exist
+    commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
+
     const tsInvalidCompilerOptionErrorCode = 5023;
     if (commandLine.errors.length !== 0) {
         // Generate a list of valid option names and aliases
@@ -151,17 +179,19 @@ function runDiagnostics(commandLine: ts.ParsedCommandLine) {
 }
 
 /** Find configFile, function from ts api seems to be broken? */
-export function findConfigFile(commandLine: ts.ParsedCommandLine) {
+export function findConfigFile(commandLine: ts.ParsedCommandLine): void {
     if (!commandLine.options.project) {
         throw new CLIError(`error no base path provided, could not find config.`);
     }
-    let configPath;
-    /* istanbul ignore else: Testing else part is not really possible via automated tests */
-    if (path.isAbsolute(commandLine.options.project)) {
-        configPath = commandLine.options.project;
-    } else {
+    let configPath = commandLine.options.project;
+    // If the project path is wrapped in double quotes, remove them
+    if (/^".*"$/.test(configPath)) {
+        configPath = configPath.substring(1, configPath.length - 1);
+    }
+    /* istanbul ignore if: Testing else part is not really possible via automated tests */
+    if (!path.isAbsolute(configPath)) {
         // TODO check if commandLine.options.project can even contain non absolute paths
-        configPath = path.join(process.cwd(), commandLine.options.project);
+        configPath = path.join(process.cwd(), configPath);
     }
     if (fs.statSync(configPath).isDirectory()) {
         configPath = path.join(configPath, "tsconfig.json");

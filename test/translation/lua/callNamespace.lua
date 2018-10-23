@@ -1,1 +1,1 @@
-Namespace.myFunction()
+Namespace.myFunction();

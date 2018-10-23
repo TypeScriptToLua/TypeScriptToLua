@@ -1,7 +1,11 @@
+comment: off
+
 coverage:
   status:
-    patch: false
-    changes: false
-    project: false
-
-comment: false
+    project:
+      default:
+        target: 90
+        threshold: null
+        base: auto
+    changes: off
+    patch: off

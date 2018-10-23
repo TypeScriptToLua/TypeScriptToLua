@@ -1,4 +1,4 @@
-import { LuaTranspiler, TranspileError } from "../Transpiler";
+import { LuaTranspiler } from "../Transpiler";
 import { TSHelper as tsHelper } from "../TSHelper";
 
 import * as ts from "typescript";

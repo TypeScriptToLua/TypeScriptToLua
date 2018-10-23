@@ -1,13 +1,13 @@
-import { Expect, Test, TestCase, Teardown } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
-import { CompilerOptions, findConfigFile, parseCommandLine, ParsedCommandLine } from "../../src/CommandLineParser";
+import { findConfigFile, parseCommandLine } from "../../src/CommandLineParser";
 
 export class CLITests {
 
     @Test("defaultOption")
     @TestCase("luaTarget", "JIT")
-    @TestCase("addHeader", true)
-    @TestCase("dontRequireLuaLib", false)
+    @TestCase("noHeader", false)
+    @TestCase("luaLibImport", "inline")
     @TestCase("rootDir", process.cwd())
     @TestCase("outDir", process.cwd())
     public defaultOptions(option: any, expected: any) {

@@ -1,3 +1,2 @@
-local a = {}
-
-a["abc"] = "def"
+local a = {};
+a["abc"] = "def";

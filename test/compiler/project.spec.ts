@@ -1,7 +1,7 @@
 import { Expect, Setup, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
-import { execCommandLine } from "../../src/Compiler";
+import { compile } from "../../src/Compiler";
 
 /**
  * Find all files inside a dir, recursively.
@@ -24,37 +24,37 @@ export class CompilerProjectTests {
 
     @TestCase("basic",
               "tsconfig.json",
-              "typescript_lualib.lua",
+              "lualib_bundle.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
     @TestCase("basic",
               ".",
-              "typescript_lualib.lua",
+              "lualib_bundle.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
     @TestCase("basic",
               "test_src/main.ts",
-              "typescript_lualib.lua",
+              "lualib_bundle.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
     @TestCase("basic",
               "tsconfig.outDir.json",
-              "out_dir/typescript_lualib.lua",
+              "out_dir/lualib_bundle.lua",
               "out_dir/test_src/test_lib/file.lua",
               "out_dir/test_src/main.lua")
     @TestCase("basic",
               "tsconfig.rootDir.json",
-              "test_src/typescript_lualib.lua",
+              "test_src/lualib_bundle.lua",
               "test_src/test_lib/file.lua",
               "test_src/main.lua")
     @TestCase("basic",
               "tsconfig.bothDirOptions.json",
-              "out_dir/typescript_lualib.lua",
+              "out_dir/lualib_bundle.lua",
               "out_dir/test_lib/file.lua",
               "out_dir/main.lua")
     @TestCase("baseurl",
               "tsconfig.json",
-              "out_dir/typescript_lualib.lua",
+              "out_dir/lualib_bundle.lua",
               "out_dir/test_src/test_lib/nested/lib_file.lua",
               "out_dir/test_src/main.lua")
     @Test("Compile project")
@@ -69,7 +69,7 @@ export class CompilerProjectTests {
         const tsconfigPath = path.resolve(__dirname, relPathToProject, tsconfig);
 
         // Compile project
-        execCommandLine(["-p", tsconfigPath]);
+        compile(["-p", tsconfigPath]);
 
         this.filesAfterCompile = getAllFiles(path.resolve(__dirname, relPathToProject));
         expectedFiles = expectedFiles.map(relPath => path.resolve(__dirname, relPathToProject, relPath));

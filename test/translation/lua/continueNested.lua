@@ -12,9 +12,9 @@ while(i<5) do
                 end
             end
             ::__continue1::
-            j=j+1
+            j = (j+1)
         end
     end
     ::__continue0::
-    i=i+1
+    i = (i+1)
 end

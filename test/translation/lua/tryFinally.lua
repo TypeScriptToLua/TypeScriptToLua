@@ -1,7 +1,8 @@
-xpcall(function()
-    local a = 42
-
-end,
-function(e)
-end)
-local b = "finally"
+do
+    pcall(function()
+        local a = 42;
+    end);
+    do
+        local b = "finally";
+    end
+end

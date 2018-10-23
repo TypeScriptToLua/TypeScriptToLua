@@ -1,4 +1,4 @@
-import { TranspileError } from "../Transpiler";
+import { TSTLErrors } from "../Errors";
 import { TSHelper as tsHelper } from "../TSHelper";
 import { LuaTranspiler52 } from "./Transpiler.52";
 
@@ -10,6 +10,8 @@ export class LuaTranspiler53 extends LuaTranspiler52 {
         switch (node.operator) {
             case ts.SyntaxKind.TildeToken:
                 return `~${operand}`;
+            default:
+                throw TSTLErrors.UnsupportedKind("bitwise operator", node.operator, node);
         }
     }
 
@@ -27,7 +29,9 @@ export class LuaTranspiler53 extends LuaTranspiler52 {
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
                 return `${lhs} >> ${rhs}`;
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                throw new TranspileError("Bitwise operator >>> not supported in Lua 5.3", node);
+                throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);
+            default:
+                throw TSTLErrors.UnsupportedKind("bitwise operator", node.operatorToken.kind, node);
         }
     }
 

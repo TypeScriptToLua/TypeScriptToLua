@@ -1,4 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 
 import * as ts from "typescript";
@@ -6,16 +7,16 @@ import * as util from "../src/util";
 
 export class ExpressionTests {
 
-    @TestCase("i++", "i=i+1")
-    @TestCase("++i", "i=i+1")
-    @TestCase("i--", "i=i-1")
-    @TestCase("--i", "i=i-1")
-    @TestCase("!a", "(not a)")
-    @TestCase("-a", "-a")
-    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil")
-    @TestCase("delete tbl.test", "tbl.test=nil")
+    @TestCase("i++", "i = (i+1);")
+    @TestCase("++i", "i = (i+1);")
+    @TestCase("i--", "i = (i-1);")
+    @TestCase("--i", "i = (i-1);")
+    @TestCase("!a", "(not a);")
+    @TestCase("-a", "-a;")
+    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil;")
+    @TestCase("delete tbl.test", "tbl.test=nil;")
     @Test("Unary expressions basic")
-    public unaryBasic(input: string, lua: string) {
+    public unaryBasic(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
@@ -27,7 +28,7 @@ export class ExpressionTests {
     @TestCase("15/10", 15 / 10)
     @TestCase("15%3", 15 % 3)
     @Test("Binary expressions basic numeric")
-    public binaryNum(input: string, output: number) {
+    public binaryNum(input: string, output: number): void {
         // Transpile
         const lua = util.transpileString(input);
 
@@ -49,7 +50,7 @@ export class ExpressionTests {
     @TestCase("1&&1", 1)
     @TestCase("1||1", 1)
     @Test("Binary expressions basic boolean")
-    public binaryBool(input: string, expected: any) {
+    public binaryBool(input: string, expected: any): void {
         // Transpile
         const lua = util.transpileString(input);
 
@@ -65,7 +66,7 @@ export class ExpressionTests {
     @TestCase("0 in obj")
     @TestCase("9 in obj")
     @Test("Binary expression in")
-    public binaryIn(input: string) {
+    public binaryIn(input: string): void {
         // Transpile
         const lua = util.transpileString(input);
 
@@ -83,7 +84,7 @@ export class ExpressionTests {
     @TestCase("a%=b", 5 % 3)
     @TestCase("a**=b", 5 ** 3)
     @Test("Binary expressions overridden operators")
-    public binaryOperatorOverride(input: string, expected: number) {
+    public binaryOperatorOverride(input: string, expected: number): void {
         const lua = util.transpileString(`let a = 5; let b = 3; ${input}; return a;`);
 
         const result = util.executeLua(lua);
@@ -105,167 +106,90 @@ export class ExpressionTests {
     @TestCase("a>>>b")
     @TestCase("a>>>=b")
     @Test("Bitop [5.1]")
-    public bitOperatorOverride51(input: string, lua: string) {
+    public bitOperatorOverride51(input: string, lua: string): void {
         // Bit operations not supported in 5.1, expect an exception
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, dontRequireLuaLib: true }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: "none" }))
             .toThrow();
     }
 
-    @TestCase("~a", "bit.bnot(a)")
-    @TestCase("a&b", "bit.band(a,b)")
-    @TestCase("a&=b", "a = bit.band(a,b)")
-    @TestCase("a|b", "bit.bor(a,b)")
-    @TestCase("a|=b", "a = bit.bor(a,b)")
-    @TestCase("a^b", "bit.bxor(a,b)")
-    @TestCase("a^=b", "a = bit.bxor(a,b)")
-    @TestCase("a<<b", "bit.lshift(a,b)")
-    @TestCase("a<<=b", "a = bit.lshift(a,b)")
-    @TestCase("a>>b", "bit.rshift(a,b)")
-    @TestCase("a>>=b", "a = bit.rshift(a,b)")
-    @TestCase("a>>>b", "bit.arshift(a,b)")
-    @TestCase("a>>>=b", "a = bit.arshift(a,b)")
+    @TestCase("~a", "bit.bnot(a);")
+    @TestCase("a&b", "bit.band(a,b);")
+    @TestCase("a&=b", "a = (bit.band(a,b));")
+    @TestCase("a|b", "bit.bor(a,b);")
+    @TestCase("a|=b", "a = (bit.bor(a,b));")
+    @TestCase("a^b", "bit.bxor(a,b);")
+    @TestCase("a^=b", "a = (bit.bxor(a,b));")
+    @TestCase("a<<b", "bit.lshift(a,b);")
+    @TestCase("a<<=b", "a = (bit.lshift(a,b));")
+    @TestCase("a>>b", "bit.rshift(a,b);")
+    @TestCase("a>>=b", "a = (bit.rshift(a,b));")
+    @TestCase("a>>>b", "bit.arshift(a,b);")
+    @TestCase("a>>>=b", "a = (bit.arshift(a,b));")
     @Test("Bitop [JIT]")
-    public bitOperatorOverrideJIT(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, dontRequireLuaLib: true })).toBe(lua);
+    public bitOperatorOverrideJIT(input: string, lua: string): void {
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, luaLibImport: "none" })).toBe(lua);
     }
 
-    @TestCase("~a", "bit32.bnot(a)")
-    @TestCase("a&b", "bit32.band(a,b)")
-    @TestCase("a&=b", "a = bit32.band(a,b)")
-    @TestCase("a|b", "bit32.bor(a,b)")
-    @TestCase("a|=b", "a = bit32.bor(a,b)")
-    @TestCase("a^b", "bit32.bxor(a,b)")
-    @TestCase("a^=b", "a = bit32.bxor(a,b)")
-    @TestCase("a<<b", "bit32.lshift(a,b)")
-    @TestCase("a<<=b", "a = bit32.lshift(a,b)")
-    @TestCase("a>>b", "bit32.rshift(a,b)")
-    @TestCase("a>>=b", "a = bit32.rshift(a,b)")
-    @TestCase("a>>>b", "bit32.arshift(a,b)")
-    @TestCase("a>>>=b", "a = bit32.arshift(a,b)")
+    @TestCase("~a", "bit32.bnot(a);")
+    @TestCase("a&b", "bit32.band(a,b);")
+    @TestCase("a&=b", "a = (bit32.band(a,b));")
+    @TestCase("a|b", "bit32.bor(a,b);")
+    @TestCase("a|=b", "a = (bit32.bor(a,b));")
+    @TestCase("a^b", "bit32.bxor(a,b);")
+    @TestCase("a^=b", "a = (bit32.bxor(a,b));")
+    @TestCase("a<<b", "bit32.lshift(a,b);")
+    @TestCase("a<<=b", "a = (bit32.lshift(a,b));")
+    @TestCase("a>>b", "bit32.rshift(a,b);")
+    @TestCase("a>>=b", "a = (bit32.rshift(a,b));")
+    @TestCase("a>>>b", "bit32.arshift(a,b);")
+    @TestCase("a>>>=b", "a = (bit32.arshift(a,b));")
     @Test("Bitop [5.2]")
-    public bitOperatorOverride52(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, dontRequireLuaLib: true })).toBe(lua);
+    public bitOperatorOverride52(input: string, lua: string): void {
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, luaLibImport: "none" })).toBe(lua);
     }
 
-    @TestCase("~a", "~a")
-    @TestCase("a&b", "a & b")
-    @TestCase("a&=b", "a = a & b")
-    @TestCase("a|b", "a | b")
-    @TestCase("a|=b", "a = a | b")
-    @TestCase("a^b", "a ~ b")
-    @TestCase("a^=b", "a = a ~ b")
-    @TestCase("a<<b", "a << b")
-    @TestCase("a<<=b", "a = a << b")
-    @TestCase("a>>b", "a >> b")
-    @TestCase("a>>=b", "a = a >> b")
+    @TestCase("~a", "~a;")
+    @TestCase("a&b", "a & b;")
+    @TestCase("a&=b", "a = (a & b);")
+    @TestCase("a|b", "a | b;")
+    @TestCase("a|=b", "a = (a | b);")
+    @TestCase("a^b", "a ~ b;")
+    @TestCase("a^=b", "a = (a ~ b);")
+    @TestCase("a<<b", "a << b;")
+    @TestCase("a<<=b", "a = (a << b);")
+    @TestCase("a>>b", "a >> b;")
+    @TestCase("a>>=b", "a = (a >> b);")
     @Test("Bitop [5.3]")
-    public bitOperatorOverride53(input: string, lua: string) {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true })).toBe(lua);
+    public bitOperatorOverride53(input: string, lua: string): void {
+        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" })).toBe(lua);
     }
 
     @TestCase("a>>>b")
     @TestCase("a>>>=b")
     @Test("Unsupported bitop 5.3")
-    public bitOperatorOverride53Unsupported(input: string) {
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, dontRequireLuaLib: true }))
-            .toThrowError(Error, "Bitwise operator >>> not supported in Lua 5.3");
+    public bitOperatorOverride53Unsupported(input: string): void {
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" }))
+            .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
     }
 
-    @TestCase("1+1", "1+1")
-    @TestCase("-1+1", "-1+1")
-    @TestCase("1*30+4", "(1*30)+4")
-    @TestCase("1*(3+4)", "1*(3+4)")
-    @TestCase("1*(3+4*2)", "1*(3+(4*2))")
+    @TestCase("1+1", "1+1;")
+    @TestCase("-1+1", "-1+1;")
+    @TestCase("1*30+4", "(1*30)+4;")
+    @TestCase("1*(3+4)", "1*(3+4);")
+    @TestCase("1*(3+4*2)", "1*(3+(4*2));")
     @Test("Binary expressions ordering parentheses")
-    public binaryParentheses(input: string, lua: string) {
+    public binaryParentheses(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
-    }
-
-    @TestCase("1 + a ? 3*a : c", "TS_ITE(1+a,function() return 3*a end,function() return c end)")
-    @TestCase("a ? b : c", "TS_ITE(a,function() return b end,function() return c end)")
-    @Test("Ternary operator")
-    public conditional(input: string, lua: string) {
-        Expect(util.transpileString(input)).toBe(lua);
-    }
-
-    @Test("Arrow Function Expression")
-    public arrowFunctionExpression() {
-        // Transpile
-        const lua = util.transpileString(`let add = (a, b) => a+b; return add(1,2);`);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(3);
-    }
-
-    @TestCase([])
-    @TestCase([5])
-    @TestCase([1, 2])
-    @Test("Arrow Default Values")
-    public arrowFunctionDefaultValues(inp: number[]) {
-        // Default value is 3 for v1
-        const v1 = inp.length > 0 ? inp[0] : 3;
-        // Default value is 4 for v2
-        const v2 = inp.length > 1 ? inp[1] : 4;
-
-        const callArgs = inp.join(",");
-
-        // Transpile
-        const lua = util.transpileString(`let add = (a: number = 3, b: number = 4) => { return a+b; }`
-                                       + `return add(${callArgs});`);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(v1 + v2);
-    }
-
-    @Test("Function Expression")
-    public functionExpression() {
-        // Transpile
-        const lua = util.transpileString(`let add = function(a, b) {return a+b}; return add(1,2);`);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(3);
     }
 
     @Test("Null Expression")
-    public nullExpression() {
-        Expect(util.transpileString("null")).toBe("nil");
+    public nullExpression(): void {
+        Expect(util.transpileString("null")).toBe("nil;");
     }
 
     @Test("Undefined Expression")
-    public undefinedExpression() {
-        Expect(util.transpileString("undefined")).toBe("nil");
-    }
-
-    @TestCase([], 7)
-    @TestCase([5], 9)
-    @TestCase([1, 2], 3)
-    @Test("Arrow Default Values")
-    public functionExpressionDefaultValues(inp: number[]) {
-        // Default value is 3 for v1
-        const v1 = inp.length > 0 ? inp[0] : 3;
-        // Default value is 4 for v2
-        const v2 = inp.length > 1 ? inp[1] : 4;
-
-        const callArgs = inp.join(",");
-
-        // Transpile
-        const lua = util.transpileString(`let add = function(a: number = 3, b: number = 4) { return a+b; }`
-                                       + `return add(${callArgs});`);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(v1 + v2);
+    public undefinedExpression(): void {
+        Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
     @TestCase("inst.field", 8)
@@ -280,7 +204,7 @@ export class ExpressionTests {
     @TestCase("inst.field >> 1", 8 >> 1)
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
-    public getAccessorBinary(expression: string, expected: any) {
+    public getAccessorBinary(expression: string, expected: any): void {
         const source = `class MyClass {`
                      + `    public _field: number;`
                      + `    public get field(): number { return this._field + 4; }`
@@ -310,7 +234,7 @@ export class ExpressionTests {
     @TestCase("<<= 3", (4 << 3) + 4)
     @TestCase(">>= 3", (4 >> 3) + 4)
     @Test("Set accessorExpression")
-    public setAccessorBinary(expression: string, expected: any) {
+    public setAccessorBinary(expression: string, expected: any): void {
         const source = `class MyClass {`
                      + `    public _field: number = 4;`
                      + `    public get field(): number { return this._field; }`
@@ -330,110 +254,102 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
-    @Test("Class method call")
-    public classMethod() {
-        const returnValue = 4;
-        const source = `class TestClass {
-                            public classMethod(): number { return ${returnValue}; }
-                        }
+    @TestCase("i++", 10)
+    @TestCase("i--", 10)
+    @TestCase("++i", 11)
+    @TestCase("--i", 9)
+    @Test("Incrementor value")
+    public incrementorValue(expression: string, expected: number): void {
+        const result = util.transpileAndExecute(`let i = 10; return ${expression};`);
 
-                        const classInstance = new TestClass();
-                        return classInstance.classMethod();`;
-
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(returnValue);
+        Expect(result).toBe(expected);
     }
 
-    @Test("Class dot method call void")
-    public classDotMethod() {
-        const returnValue = 4;
-        const source = `class TestClass {
-                            public dotMethod: () => number = () => ${returnValue};
-                        }
+    @TestCase("a++", "val3")
+    @TestCase("a--", "val3")
+    @TestCase("--a", "val2")
+    @TestCase("++a", "val4")
+    @Test("Template string expression")
+    public templateStringExpression(lambda: string, expected: string): void {
+        const result = util.transpileAndExecute("let a = 3; return `val${" + lambda + "}`;");
 
-                        const classInstance = new TestClass();
-                        return classInstance.dotMethod();`;
-
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(returnValue);
+        Expect(result).toEqual(expected);
     }
 
-    @Test("Class dot method call with parameter")
-    public classDotMethod2() {
-        const returnValue = 4;
-        const source = `class TestClass {
-                            public dotMethod: (x: number) => number = x => 3 * x;
-                        }
-
-                        const classInstance = new TestClass();
-                        return classInstance.dotMethod(${returnValue});`;
-
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(3 * returnValue);
+    @TestCase("x = y", "y")
+    @Test("Assignment expressions")
+    public assignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(`let x = "x"; let y = "y"; return ${expression};`);
+        Expect(result).toBe(expected);
     }
 
-    @Test("Class static dot method")
-    public classDotMethodStatic() {
-        const returnValue = 4;
-        const source = `class TestClass {
-                            public static dotMethod: () => number = () => ${returnValue};
-                        }
-
-                        return TestClass.dotMethod();`;
-
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(returnValue);
+    @TestCase("x = o.p", "o")
+    @TestCase("x = a[0]", "a")
+    @TestCase("x = y = o.p", "o")
+    @TestCase("x = o.p", "o")
+    @Test("Assignment expressions using temp")
+    public assignmentWithTempExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x = "x";
+            let y = "y";
+            let o = {p: "o"};
+            let a = ["a"];
+            return ${expression};`);
+        Expect(result).toBe(expected);
     }
 
-    @Test("Class static dot method with parameter")
-    public classDotMethodStaticWithParameter() {
-        const returnValue = 4;
-        const source = `class TestClass {
-                            public static dotMethod: (x: number) => number = x => 3 * x;
-                        }
-
-                        return TestClass.dotMethod(${returnValue});`;
-
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
-
-        // Assert
-        Expect(result).toBe(3 * returnValue);
+    @TestCase("o.p = x", "x")
+    @TestCase("a[0] = x", "x")
+    @TestCase("o.p = a[0]", "a")
+    @TestCase("o.p = a[0] = x", "x")
+    @Test("Property assignment expressions")
+    public propertyAssignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x = "x";
+            let o = {p: "o"};
+            let a = ["a"];
+            return ${expression};`);
+        Expect(result).toBe(expected);
     }
 
+    @TestCase("x = t()", "t0,t1")
+    @TestCase("x = tr()", "tr0,tr1")
+    @TestCase("[x[1], x[0]] = t()", "t0,t1")
+    @TestCase("[x[1], x[0]] = tr()", "tr0,tr1")
+    @TestCase("x = [y[1], y[0]]", "y1,y0")
+    @TestCase("[x[0], x[1]] = [y[1], y[0]]", "y1,y0")
+    @Test("Tuple assignment expressions")
+    public tupleAssignmentExpression(expression: string, expected: string): void {
+        const result = util.transpileAndExecute(
+            `let x: [string, string] = ["x0", "x1"];
+            let y: [string, string] = ["y0", "y1"];
+            function t(): [string, string] { return ["t0", "t1"] };
+            /** !TupleReturn */
+            function tr(): [string, string] { return ["tr0", "tr1"] };
+            const r = ${expression};
+            return \`\${r[0]},\${r[1]}\``);
+        Expect(result).toBe(expected);
+    }
+
+    @Test("Block expression")
+    public blockExpresion(): void {
+        const result = util.transpileAndExecute(`let a = 4; {let a = 42; } return a;`);
+        Expect(result).toBe(4);
+    }
+
+    @Test("Non-null expression")
+    public nonNullExpression(): void {
+        const result = util.transpileAndExecute(`function abc(): number | undefined { return 3; }
+            const a: number = abc()!;
+            return a;`);
+        Expect(result).toBe(3);
+    }
     // ====================================
     // Test expected errors
     // ====================================
 
     @Test("Unknown unary postfix error")
-    public unknownUnaryPostfixError() {
+    public unknownUnaryPostfixError(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockExpression: any = {
@@ -442,11 +358,11 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpilePostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
-            .toThrowError(Error, "Unsupported unary postfix: AsteriskToken");
+            .toThrowError(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
     }
 
     @Test("Unknown unary postfix error")
-    public unknownUnaryPrefixError() {
+    public unknownUnaryPrefixError(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockExpression: any = {
@@ -455,29 +371,30 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpilePrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
-            .toThrowError(Error, "Unsupported unary prefix: AsteriskToken");
+            .toThrowError(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
     }
 
     @Test("Incompatible fromCodePoint expression error")
-    public incompatibleFromCodePointExpression() {
+    public incompatibleFromCodePointExpression(): void {
         const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("fromCodePoint");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property fromCodePoint, is not supported in Lua JIT.");
+            .toThrowError(TranspileError, "string property fromCodePoint is/are not supported " +
+                          "for target Lua jit.");
     }
 
     @Test("Unknown string expression error")
-    public unknownStringExpression() {
+    public unknownStringExpression(): void {
         const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("abcd");
         Expect(() => transpiler.transpileStringExpression(identifier))
-            .toThrowError(Error, "Unsupported string property abcd, is not supported in Lua JIT.");
+            .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua jit.");
     }
 
     @Test("Unsupported array function error")
-    public unsupportedArrayFunctionError() {
+    public unsupportedArrayFunctionError(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockNode: any = {
@@ -487,11 +404,11 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileArrayCallExpression(mockNode as ts.CallExpression))
-            .toThrowError(Error, "Unsupported array function: unknownFunction");
+            .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
     }
 
     @Test("Unsupported array property error")
-    public unsupportedArrayPropertyError() {
+    public unsupportedArrayPropertyError(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockNode: any = {
@@ -499,29 +416,29 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileArrayProperty(mockNode as ts.PropertyAccessExpression))
-            .toThrowError(Error, "Unsupported array property: unknownProperty");
+            .toThrowError(TranspileError, "Unsupported property on array: unknownProperty");
     }
 
     @Test("Unsupported math property error")
-    public unsupportedMathPropertyError() {
+    public unsupportedMathPropertyError(): void {
         const transpiler = util.makeTestTranspiler();
 
         Expect(() => transpiler.transpileMathExpression(ts.createIdentifier("unknownProperty")))
-            .toThrowError(Error, "Unsupported math property: unknownProperty.");
+            .toThrowError(TranspileError, "Unsupported property on math: unknownProperty");
     }
 
     @Test("Unsupported variable declaration type error")
-    public unsupportedVariableDeclarationType() {
+    public unsupportedVariableDeclarationType(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockNode: any = {name: ts.createLiteral(false)};
 
         Expect(() => transpiler.transpileVariableDeclaration(mockNode as ts.VariableDeclaration))
-            .toThrowError(Error, "Unsupported variable declaration type: FalseKeyword");
+            .toThrowError(TranspileError, "Unsupported variable declaration kind: FalseKeyword");
     }
 
     @Test("Unsupported object literal element error")
-    public unsupportedObjectLiteralElementError() {
+    public unsupportedObjectLiteralElementError(): void {
         const transpiler = util.makeTestTranspiler();
 
         const mockObject: any = {
@@ -532,18 +449,6 @@ export class ExpressionTests {
         };
 
         Expect(() => transpiler.transpileObjectLiteral(mockObject as ts.ObjectLiteralExpression))
-            .toThrowError(Error, "Encountered unsupported object literal element: FalseKeyword.");
-    }
-
-    @Test("Invalid property access call transpilation")
-    public invalidPropertyCall() {
-        const transpiler = util.makeTestTranspiler();
-
-        const mockObject: any = {
-            expression: ts.createLiteral("abc"),
-        };
-
-        Expect(() => transpiler.transpilePropertyCall(mockObject as ts.CallExpression))
-            .toThrowError(Error, "Tried to transpile a non-property call as property call.");
+            .toThrowError(TranspileError, "Unsupported object literal element kind: FalseKeyword");
     }
 }

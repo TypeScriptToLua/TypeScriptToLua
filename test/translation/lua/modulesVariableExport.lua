@@ -1,5 +1,4 @@
 local exports = exports or {}
-local test = "test"
+local test = "test";
 exports.test = test
-
 return exports

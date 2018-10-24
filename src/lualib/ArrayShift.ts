@@ -1,6 +1,8 @@
 declare namespace table {
+    /** !NoContext */
     function remove<T>(arr: T[], idx: number): T;
 }
+/** !NoContext */
 function __TS__ArrayShift<T>(arr: T[]): T {
     return table.remove(arr, 1);
 }

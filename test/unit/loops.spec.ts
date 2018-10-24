@@ -18,6 +18,7 @@ export class LuaLoopTests {
                 arrTest[i] = arrTest[i] + 1;
                 i++;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -52,6 +53,7 @@ export class LuaLoopTests {
 
                 i++;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -86,6 +88,7 @@ export class LuaLoopTests {
 
                 i++;
             } while (i < arrTest.length)
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -105,6 +108,7 @@ export class LuaLoopTests {
             for (let i = 0; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -133,6 +137,7 @@ export class LuaLoopTests {
                     arrTest[i] = j;
                 }
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);
             `
         );
@@ -153,6 +158,7 @@ export class LuaLoopTests {
             for (let i = 0; arrTest.length > i; i++) {
                 arrTest[i] = arrTest[i] + 1;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -173,6 +179,7 @@ export class LuaLoopTests {
                 break;
                 arrTest[i] = arrTest[i] + 1;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -199,6 +206,7 @@ export class LuaLoopTests {
             for (${header}) {
                 arrTest[i] = arrTest[i] + 1;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -218,6 +226,7 @@ export class LuaLoopTests {
             for (let key in objTest) {
                 objTest[key] = objTest[key] + 1;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(objTest);`
         );
 
@@ -255,6 +264,7 @@ export class LuaLoopTests {
 
                 obj[i] = 0;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(obj);
             `
         );
@@ -276,6 +286,7 @@ export class LuaLoopTests {
             for (let value of objTest) {
                 arrResultTest.push(value + 1)
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrResultTest);`
         );
 
@@ -307,6 +318,7 @@ export class LuaLoopTests {
                 }
                 a++;
             }
+            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(testArr);`
         );
 

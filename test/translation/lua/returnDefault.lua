@@ -1,3 +1,3 @@
-function myFunc()
+function myFunc(self)
     return
 end

@@ -9,7 +9,7 @@ export class ObjectLiteralTests {
     @TestCase(`{"a":3,b:"4"}`, `{["a"] = 3,b = "4"};`)
     @TestCase(`{["a"]:3,b:"4"}`, `{["a"] = 3,b = "4"};`)
     @TestCase(`{["a"+123]:3,b:"4"}`, `{["a" .. 123] = 3,b = "4"};`)
-    @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc()] = 3,b = "4"};`)
+    @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc(_G)] = 3,b = "4"};`)
     @TestCase(`{x}`, `{x = x};`)
     @Test("Object Literal")
     public objectLiteral(inp: string, out: string) {

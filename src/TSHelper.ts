@@ -79,6 +79,11 @@ export class TSHelper {
         return typeNode && this.isArrayTypeNode(typeNode);
     }
 
+    public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
+        return typeNode && ts.isFunctionTypeNode(typeNode);
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const type = checker.getTypeAtLocation(node.expression);
@@ -104,22 +109,29 @@ export class TSHelper {
         }
     }
 
+    public static collectCustomDecorators(symbol: ts.Symbol, checker: ts.TypeChecker,
+                                          decMap: Map<DecoratorKind, Decorator>): void {
+        const comments = symbol.getDocumentationComment(checker);
+        const decorators =
+            comments.filter(comment => comment.kind === "text")
+                    .map(comment => comment.text.trim().split("\n"))
+                    .reduce((a, b) => a.concat(b), [])
+                    .filter(comment => comment[0] === "!");
+        decorators.forEach(decStr => {
+            const dec = new Decorator(decStr);
+            decMap.set(dec.kind, dec);
+        });
+    }
+
     public static getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map<DecoratorKind, Decorator> {
+        const decMap = new Map<DecoratorKind, Decorator>();
         if (type.symbol) {
-            const comments = type.symbol.getDocumentationComment(checker);
-            const decorators =
-                comments.filter(comment => comment.kind === "text")
-                        .map(comment => comment.text.trim().split("\n"))
-                        .reduce((a, b) => a.concat(b), [])
-                        .filter(comment => comment[0] === "!");
-            const decMap = new Map<DecoratorKind, Decorator>();
-            decorators.forEach(decStr => {
-                const dec = new Decorator(decStr);
-                decMap.set(dec.kind, dec);
-            });
-            return decMap;
+            this.collectCustomDecorators(type.symbol, checker, decMap);
         }
-        return new Map<DecoratorKind, Decorator>();
+        if (type.aliasSymbol) {
+            this.collectCustomDecorators(type.aliasSymbol, checker, decMap);
+        }
+        return decMap;
     }
 
     // Search up until finding a node satisfying the callback

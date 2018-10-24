@@ -233,18 +233,28 @@ export class FunctionTests {
 
     @Test("Function bind")
     public functionBind(): void {
-        const source = `const abc = function (a: string) { console.log(this.a + a); }
-                        abc.bind({ a: 4 })("b");`;
+        const source = `const abc = function (a: string, b: string) { return this.a + a + b; }
+                        return abc.bind({ a: 4 }, "b")("c");`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4bc");
+    }
+
+    @Test("Function apply")
+    public functionApply(): void {
+        const source = `const abc = function (a: string) { return this.a + a; }
+                        return abc.apply({ a: 4 }, ["b"]);`;
 
         const result = util.transpileAndExecute(source);
 
         Expect(result).toBe("4b");
     }
 
-    @Test("Function apply")
-    public functionApply(): void {
-        const source = `const abc = function (a: string) { console.log(this.a + a); }
-                        abc.apply({ a: 4 }, ["b"]);`;
+    @Test("Function call")
+    public functionCall(): void {
+        const source = `const abc = function (a: string) { return this.a + a; }
+                        return abc.call({ a: 4 }, "b");`;
 
         const result = util.transpileAndExecute(source);
 

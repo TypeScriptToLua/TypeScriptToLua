@@ -1,2 +1,2 @@
-function nsMember()
+function nsMember(self)
 end

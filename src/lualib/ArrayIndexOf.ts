@@ -1,3 +1,4 @@
+/** !NoContext */
 function __TS__ArrayIndexOf<T>(arr: T[], searchElement: T, fromIndex?: number): number {
     const len = arr.length;
     if (len === 0) {

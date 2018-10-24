@@ -12,7 +12,6 @@ export class LuaLibArrayTests {
             arrTest.forEach((elem, index) => {
                 arrTest[index] = arrTest[index] + 1;
             })
-            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(arrTest);`
         );
 
@@ -32,8 +31,7 @@ export class LuaLibArrayTests {
     @Test("array.map")
     public map<T>(inp: T[], func: string) {
         // Transpile
-        const lua = util.transpileString(`/** !NoContext */ declare function JSONStringify(t: any): string;
-            return JSONStringify([${inp.toString()}].map(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`);
 
         // Execute
         const result = util.executeLua(lua);
@@ -52,8 +50,7 @@ export class LuaLibArrayTests {
     @Test("array.filter")
     public filter<T>(inp: T[], func: string) {
         // Transpile
-        const lua = util.transpileString(`/** !NoContext */ declare function JSONStringify(t: any): string;
-            return JSONStringify([${inp.toString()}].filter(${func}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`);
 
         // Execute
         const result = util.executeLua(lua);
@@ -69,8 +66,7 @@ export class LuaLibArrayTests {
     @Test("array.every")
     public every<T>(inp: T[], func: string) {
         // Transpile
-        const lua = util.transpileString(`/** !NoContext */ declare function JSONStringify(t: any): string;
-            return JSONStringify([${inp.toString()}].every(${func})))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].every(${func})))`);
 
         // Execute
         const result = util.executeLua(lua);
@@ -86,8 +82,7 @@ export class LuaLibArrayTests {
     @Test("array.some")
     public some<T>(inp: T[], func: string) {
         // Transpile
-        const lua = util.transpileString(`/** !NoContext */ declare function JSONStringify(t: any): string;
-            return JSONStringify([${inp.toString()}].some(${func})))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].some(${func})))`);
 
         // Execute
         const result = util.executeLua(lua);
@@ -106,8 +101,7 @@ export class LuaLibArrayTests {
     @Test("array.slice")
     public slice<T>(inp: T[], start: number, end?: number) {
         // Transpile
-        const lua = util.transpileString(`/** !NoContext */ declare function JSONStringify(t: any): string;
-            return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
+        const lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
 
         // Execute
         const result = util.executeLua(lua);
@@ -129,7 +123,6 @@ export class LuaLibArrayTests {
         const lua = util.transpileString(
             `let spliceTestTable = [${inp.toString()}];
             spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
-            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(spliceTestTable);`
         );
 
@@ -156,14 +149,12 @@ export class LuaLibArrayTests {
             lua = util.transpileString(
                `let spliceTestTable = [${inp.toString()}];
                spliceTestTable.splice(${start}, ${deleteCount}, ${newElements});
-               /** !NoContext */ declare function JSONStringify(t: any): string;
                return JSONStringify(spliceTestTable);`
             );
         } else {
             lua = util.transpileString(
                `let spliceTestTable = [${inp.toString()}];
                spliceTestTable.splice(${start});
-               /** !NoContext */ declare function JSONStringify(t: any): string;
                return JSONStringify(spliceTestTable);`
             );
         }
@@ -197,7 +188,6 @@ export class LuaLibArrayTests {
         // Transpile
         const lua = util.transpileString(
             `let concatTestTable = ${JSON.stringify(arr)};
-            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(concatTestTable.concat(${argStr}));`
         );
 
@@ -288,7 +278,6 @@ export class LuaLibArrayTests {
         const lua = util.transpileString(
             `let testArray = [0];
             testArray.push(${inp.join(", ")});
-            /** !NoContext */ declare function JSONStringify(t: any): string;
             return JSONStringify(testArray);
             `
             );
@@ -343,7 +332,6 @@ export class LuaLibArrayTests {
             const lua = util.transpileString(
                 `let testArray = ${array};
                 let val = testArray.reverse();
-                /** !NoContext */ declare function JSONStringify(t: any): string;
                 return JSONStringify(testArray)`);
 
             // Execute
@@ -364,7 +352,6 @@ export class LuaLibArrayTests {
                 const lua = util.transpileString(
                     `let testArray = ${array};
                     let val = testArray.shift();
-                    /** !NoContext */ declare function JSONStringify(t: any): string;
                     return JSONStringify(testArray)`);
 
                 // Execute
@@ -398,7 +385,6 @@ export class LuaLibArrayTests {
             const lua = util.transpileString(
                 `let testArray = ${array};
                 testArray.unshift(${toUnshift});
-                /** !NoContext */ declare function JSONStringify(t: any): string;
                 return JSONStringify(testArray)`);
             // Execute
             const result = util.executeLua(lua);
@@ -418,7 +404,6 @@ export class LuaLibArrayTests {
             const lua = util.transpileString(
                 `let testArray = ${array};
                 testArray.sort();
-                /** !NoContext */ declare function JSONStringify(t: any): string;
                 return JSONStringify(testArray)`);
 
             // Execute

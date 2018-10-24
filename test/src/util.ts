@@ -3,7 +3,8 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { transpileString } from "../../src/Compiler";
+import { transpileString as _transpileString } from "../../src/Compiler";
+import { CompilerOptions } from "../../src/CompilerOptions";
 import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
 import { createTranspiler } from "../../src/TranspilerFactory";
 
@@ -11,7 +12,9 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 import * as fs from "fs";
 
-export { transpileString };
+export function transpileString(str: string, options?: CompilerOptions): string {
+    return _transpileString("/** !NoContext */ declare function JSONStringify(t: any): string;\n" + str, options);
+}
 
 export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {

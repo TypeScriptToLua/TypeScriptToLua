@@ -74,6 +74,7 @@ export abstract class LuaTranspiler {
     public namespace: string[];
     public importCount: number;
     public isModule: boolean;
+    public isStrict: boolean;
     public sourceFile: ts.SourceFile;
     public loopStack: number[];
     public classStack: string[];
@@ -91,6 +92,8 @@ export abstract class LuaTranspiler {
         this.importCount = 0;
         this.sourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);
+        this.isStrict = options.alwaysStrict || options.strict
+            || (options.target && options.target > ts.ScriptTarget.ES5);
         this.loopStack = [];
         this.classStack = [];
         this.exportStack = [];
@@ -1158,7 +1161,7 @@ export abstract class LuaTranspiler {
             if (!ts.isPropertyAccessExpression(node.expression)
                 && !ts.isElementAccessExpression(node.expression)
                 && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-                params = this.transpileArguments(node.arguments, ts.createIdentifier("_G"));
+                params = this.transpileArguments(node.arguments, ts.createIdentifier(this.isStrict ? "nil" : "_G"));
             } else {
                 params = this.transpileArguments(node.arguments);
             }
@@ -1197,7 +1200,7 @@ export abstract class LuaTranspiler {
         if (!ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)
             && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-            params = this.transpileArguments(node.arguments, ts.createIdentifier("_G"));
+            params = this.transpileArguments(node.arguments, ts.createIdentifier(this.isStrict ? "nil" : "_G"));
         } else {
             params = this.transpileArguments(node.arguments);
         }
@@ -1401,7 +1404,12 @@ export abstract class LuaTranspiler {
 
         // Add context as first param if present
         if (context) {
-            parameters.push(this.transpileExpression(context));
+            if (ts.isIdentifier(context) && context.text === "nil") {
+                // Avoid "Error: Cannot use Lua keyword nil as identifier."
+                parameters.push("nil");
+            } else {
+                parameters.push(this.transpileExpression(context));
+            }
         }
 
         params.forEach(param => {

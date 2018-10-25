@@ -74,6 +74,7 @@ export abstract class LuaTranspiler {
     public namespace: string[];
     public importCount: number;
     public isModule: boolean;
+    public isStrict: boolean;
     public sourceFile: ts.SourceFile;
     public loopStack: number[];
     public classStack: string[];
@@ -91,6 +92,9 @@ export abstract class LuaTranspiler {
         this.importCount = 0;
         this.sourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);
+        this.isStrict = options.alwaysStrict
+            || (options.strict && options.alwaysStrict !== false)
+            || (this.isModule && options.target && options.target >= ts.ScriptTarget.ES2015);
         this.loopStack = [];
         this.classStack = [];
         this.exportStack = [];
@@ -1158,7 +1162,8 @@ export abstract class LuaTranspiler {
             if (!ts.isPropertyAccessExpression(node.expression)
                 && !ts.isElementAccessExpression(node.expression)
                 && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-                params = this.transpileArguments(node.arguments, ts.createIdentifier("_G"));
+                const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
+                params = this.transpileArguments(node.arguments, context);
             } else {
                 params = this.transpileArguments(node.arguments);
             }
@@ -1197,7 +1202,8 @@ export abstract class LuaTranspiler {
         if (!ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)
             && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-            params = this.transpileArguments(node.arguments, ts.createIdentifier("_G"));
+            const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
+            params = this.transpileArguments(node.arguments, context);
         } else {
             params = this.transpileArguments(node.arguments);
         }

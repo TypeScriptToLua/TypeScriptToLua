@@ -92,8 +92,9 @@ export abstract class LuaTranspiler {
         this.importCount = 0;
         this.sourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);
-        this.isStrict = options.alwaysStrict || options.strict
-            || (options.target && options.target > ts.ScriptTarget.ES5);
+        this.isStrict = options.alwaysStrict
+            || (options.strict && options.alwaysStrict !== false)
+            || (this.isModule && options.target && options.target >= ts.ScriptTarget.ES2015);
         this.loopStack = [];
         this.classStack = [];
         this.exportStack = [];

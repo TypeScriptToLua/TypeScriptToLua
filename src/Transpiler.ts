@@ -1162,7 +1162,8 @@ export abstract class LuaTranspiler {
             if (!ts.isPropertyAccessExpression(node.expression)
                 && !ts.isElementAccessExpression(node.expression)
                 && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-                params = this.transpileArguments(node.arguments, ts.createIdentifier(this.isStrict ? "nil" : "_G"));
+                const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
+                params = this.transpileArguments(node.arguments, context);
             } else {
                 params = this.transpileArguments(node.arguments);
             }
@@ -1201,7 +1202,8 @@ export abstract class LuaTranspiler {
         if (!ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)
             && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-            params = this.transpileArguments(node.arguments, ts.createIdentifier(this.isStrict ? "nil" : "_G"));
+            const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
+            params = this.transpileArguments(node.arguments, context);
         } else {
             params = this.transpileArguments(node.arguments);
         }
@@ -1405,12 +1407,7 @@ export abstract class LuaTranspiler {
 
         // Add context as first param if present
         if (context) {
-            if (ts.isIdentifier(context) && context.text === "nil") {
-                // Avoid "Error: Cannot use Lua keyword nil as identifier."
-                parameters.push("nil");
-            } else {
-                parameters.push(this.transpileExpression(context));
-            }
+            parameters.push(this.transpileExpression(context));
         }
 
         params.forEach(param => {

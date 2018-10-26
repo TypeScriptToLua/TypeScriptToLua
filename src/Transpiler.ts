@@ -1144,7 +1144,7 @@ export abstract class LuaTranspiler {
 
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
-        let params = node.arguments ? this.transpileArguments(node.arguments, ts.createTrue()) : "true";
+        let params = node.arguments ? this.transpileArguments(node.arguments, null, ts.createTrue()) : "true";
         const type = this.checker.getTypeAtLocation(node);
         const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
 
@@ -1163,7 +1163,7 @@ export abstract class LuaTranspiler {
                 && !ts.isElementAccessExpression(node.expression)
                 && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
                 const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-                params = this.transpileArguments(node.arguments, context);
+                params = this.transpileArguments(node.arguments, null, context);
             } else {
                 params = this.transpileArguments(node.arguments);
             }
@@ -1192,20 +1192,21 @@ export abstract class LuaTranspiler {
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            params = this.transpileArguments(node.arguments, null, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             const className = this.classStack[this.classStack.length - 1];
             return `${className}.__base.constructor(${params})`;
         }
 
         callPath = this.transpileExpression(node.expression);
         const type = this.checker.getTypeAtLocation(node.expression);
+        const sig = (type.symbol.valueDeclaration as ts.SignatureDeclaration);
         if (!ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)
             && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
             const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-            params = this.transpileArguments(node.arguments, context);
+            params = this.transpileArguments(node.arguments, sig, context);
         } else {
-            params = this.transpileArguments(node.arguments);
+            params = this.transpileArguments(node.arguments, sig);
         }
         return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
@@ -1251,7 +1252,7 @@ export abstract class LuaTranspiler {
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
-            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            params = this.transpileArguments(node.arguments, null, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             return `${this.transpileExpression(node.expression)}(${params})`;
         } else {
             // Replace last . with : here
@@ -1402,7 +1403,8 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileArguments(params: ts.NodeArray<ts.Expression>, context?: ts.Expression): string {
+    public transpileArguments(params: ts.NodeArray<ts.Expression>, sig?: ts.SignatureDeclaration,
+                              context?: ts.Expression): string {
         const parameters: string[] = [];
 
         // Add context as first param if present
@@ -1410,9 +1412,32 @@ export abstract class LuaTranspiler {
             parameters.push(this.transpileExpression(context));
         }
 
-        params.forEach(param => {
-            parameters.push(this.transpileExpression(param));
-        });
+        if (sig) {
+            for (let i = 0; i < params.length; ++i) {
+                const param = params[i];
+                const paramTypeNode = sig.parameters[i].type;
+                const paramType = this.checker.getTypeAtLocation(paramTypeNode);
+                if (tsHelper.isFunctionType(paramType, this.checker)) {
+                    const argType = this.checker.getTypeAtLocation(param);
+                    const argNoContext = tsHelper.getCustomDecorators(argType, this.checker)
+                        .has(DecoratorKind.NoContext);
+                    const paramNoContext = tsHelper.getCustomDecorators(paramType, this.checker)
+                        .has(DecoratorKind.NoContext);
+                    if (argNoContext && !paramNoContext) {
+                        parameters.push(`function(____, ...) return ${this.transpileExpression(param)}(...) end`);
+                        continue;
+                    } else if (!argNoContext && paramNoContext) {
+                        parameters.push(`function(...) return ${this.transpileExpression(param)}(nil, ...) end`);
+                        continue;
+                    }
+                }
+                parameters.push(this.transpileExpression(param));
+            }
+        } else {
+            params.forEach(param => {
+                parameters.push(this.transpileExpression(param));
+            });
+        }
 
         return parameters.join(",");
     }

@@ -80,8 +80,10 @@ export class TSHelper {
     }
 
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
-        return typeNode && ts.isFunctionTypeNode(typeNode);
+        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        return sigs.length > 0;
+        // const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
+        // return typeNode && ts.isFunctionTypeNode(typeNode);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {

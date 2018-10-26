@@ -444,9 +444,7 @@ export abstract class LuaTranspiler {
                 const defName = this.definitionName(enumMember.name);
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             } else {
-                const defName = this.definitionName(
-                    `${this.transpileIdentifier(node.name)}.${enumMember.name}`
-                );
+                const defName = `${this.transpileIdentifier(node.name)}.${enumMember.name}`;
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             }
         });

@@ -253,4 +253,9 @@ export class TSHelper {
         }
         return [false, null, null];
     }
+
+    public static getFunctionSignature(declarations: ts.Declaration[]): ts.SignatureDeclaration {
+        return declarations
+            && declarations.find(d => (d as ts.FunctionLikeDeclaration).body !== undefined) as ts.SignatureDeclaration;
+    }
 }

@@ -846,7 +846,7 @@ export abstract class LuaTranspiler {
 
         // Transpile operands
         const lhs = this.transpileExpression(node.left, true);
-        const rhs = this.transpileExpression(node.right, true);
+        let rhs = this.transpileExpression(node.right, true);
 
         let result = "";
 
@@ -908,9 +908,9 @@ export abstract class LuaTranspiler {
                     result = `${lhs}<=${rhs}`;
                     break;
                 case ts.SyntaxKind.EqualsToken:
-                    const assignType = this.checker.getTypeAtLocation(node.left); // TOMB: will this work?
-                    const arhs = this.transpileExpressionForAssignment(node.right, assignType);
-                    result = this.transpileAssignment(node, lhs, arhs);
+                    const assignType = this.checker.getTypeAtLocation(node.left);
+                    rhs = this.transpileExpressionForAssignment(node.right, assignType);
+                    result = this.transpileAssignment(node, lhs, rhs);
                     break;
                 case ts.SyntaxKind.EqualsEqualsToken:
                 case ts.SyntaxKind.EqualsEqualsEqualsToken:
@@ -945,7 +945,7 @@ export abstract class LuaTranspiler {
         }
 
         if (ts.isArrayLiteralExpression(node.left)) {
-            // Destructing assignment
+            // Destructing assignment - TOMB: todo
             const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
             const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
                 ? rhs : this.transpileDestructingAssignmentValue(node.right);
@@ -1147,7 +1147,11 @@ export abstract class LuaTranspiler {
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
         const constructorType = this.checker.getTypeAtLocation(node.expression);
-        const sig = (constructorType.symbol.valueDeclaration as ts.SignatureDeclaration);
+        let sig: ts.SignatureDeclaration;
+        if (constructorType.symbol.members && constructorType.symbol.members.has(ts.InternalSymbolName.Constructor)) {
+            const constructorDecl = constructorType.symbol.members.get(ts.InternalSymbolName.Constructor);
+            sig = tsHelper.getFunctionSignature(constructorDecl.declarations);
+        }
         let params = node.arguments ? this.transpileArguments(node.arguments, sig, ts.createTrue()) : "true";
         const type = this.checker.getTypeAtLocation(node);
         const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
@@ -1167,9 +1171,9 @@ export abstract class LuaTranspiler {
                 && !ts.isElementAccessExpression(node.expression)
                 && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
                 const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-                params = this.transpileArguments(node.arguments, sig, context);
+                params = this.transpileArguments(node.arguments, null, context);
             } else {
-                params = this.transpileArguments(node.arguments, sig);
+                params = this.transpileArguments(node.arguments);
             }
             return `${customDecorator.args[0]}(${params})`;
         }
@@ -1195,7 +1199,7 @@ export abstract class LuaTranspiler {
         }
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        const sig = (type.symbol.valueDeclaration as ts.SignatureDeclaration);
+        const sig = tsHelper.getFunctionSignature(type.symbol.declarations);
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -1256,7 +1260,7 @@ export abstract class LuaTranspiler {
         }
 
         const type = this.checker.getTypeAtLocation(node.expression);
-        const sig = (type.symbol.valueDeclaration as ts.SignatureDeclaration);
+        const sig = tsHelper.getFunctionSignature(type.symbol.declarations);
 
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -1416,15 +1420,17 @@ export abstract class LuaTranspiler {
     public transpileExpressionForAssignment(node: ts.Expression, assignType: ts.Type): string {
         if (tsHelper.isCallableType(assignType, this.checker)) {
             const type = this.checker.getTypeAtLocation(node);
-            const noContext = tsHelper.getCustomDecorators(type, this.checker)
-                .has(DecoratorKind.NoContext);
-            const assignNoContext = tsHelper.getCustomDecorators(assignType, this.checker)
-                .has(DecoratorKind.NoContext);
-            if (noContext && !assignNoContext) {
-                return `function(____, ...) return ${this.transpileExpression(node)}(...) end`;
-            } else if (!noContext && assignNoContext) {
-                const context = this.isStrict ? "nil" : "_G";
-                return `function(...) return ${this.transpileExpression(node)}(${context}, ...) end`;
+            if (tsHelper.isCallableType(type, this.checker)) {
+                const noContext = tsHelper.getCustomDecorators(type, this.checker)
+                    .has(DecoratorKind.NoContext);
+                const assignNoContext = tsHelper.getCustomDecorators(assignType, this.checker)
+                    .has(DecoratorKind.NoContext);
+                if (noContext && !assignNoContext) {
+                    return `function(____, ...) return ${this.transpileExpression(node)}(...) end`;
+                } else if (!noContext && assignNoContext) {
+                    const context = this.isStrict ? "nil" : "_G";
+                    return `function(...) return ${this.transpileExpression(node)}(${context}, ...) end`;
+                }
             }
         }
         return this.transpileExpression(node);
@@ -1633,7 +1639,7 @@ export abstract class LuaTranspiler {
             // Find variable identifier
             const identifierName = this.transpileIdentifier(node.name);
             if (node.initializer) {
-                const type = this.checker.getTypeAtLocation(node.type); // TOMB: will this work?
+                const type = this.checker.getTypeAtLocation(node.type);
                 const value = this.transpileExpressionForAssignment(node.initializer, type);
                 if (ts.isFunctionExpression(node.initializer) || ts.isArrowFunction(node.initializer)) {
                     // Separate declaration and assignment for functions to allow recursion
@@ -1956,6 +1962,9 @@ export abstract class LuaTranspiler {
 
     public transpileConstructor(node: ts.ConstructorDeclaration,
                                 className: string): string {
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) { return ""; }
+
         const extraInstanceFields = [];
 
         const parameters = ["self"];

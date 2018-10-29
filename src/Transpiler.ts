@@ -1146,12 +1146,7 @@ export abstract class LuaTranspiler {
 
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
-        const constructorType = this.checker.getTypeAtLocation(node.expression);
-        let sig: ts.SignatureDeclaration;
-        if (constructorType.symbol.members && constructorType.symbol.members.has(ts.InternalSymbolName.Constructor)) {
-            const constructorDecl = constructorType.symbol.members.get(ts.InternalSymbolName.Constructor);
-            sig = tsHelper.getFunctionSignature(constructorDecl.declarations);
-        }
+        const sig = this.checker.getResolvedSignature(node);
         let params = node.arguments ? this.transpileArguments(node.arguments, sig, ts.createTrue()) : "true";
         const type = this.checker.getTypeAtLocation(node);
         const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
@@ -1198,8 +1193,7 @@ export abstract class LuaTranspiler {
                 ? `({ ${result} })` : result;
         }
 
-        const type = this.checker.getTypeAtLocation(node.expression);
-        const sig = tsHelper.getFunctionSignature(type.symbol.declarations);
+        const sig = this.checker.getResolvedSignature(node);
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -1209,6 +1203,7 @@ export abstract class LuaTranspiler {
             return `${className}.__base.constructor(${params})`;
         }
 
+        const type = this.checker.getTypeAtLocation(node.expression);
         callPath = this.transpileExpression(node.expression);
         if (!ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)
@@ -1259,8 +1254,7 @@ export abstract class LuaTranspiler {
             return this.transpileFunctionCallExpression(node);
         }
 
-        const type = this.checker.getTypeAtLocation(node.expression);
-        const sig = tsHelper.getFunctionSignature(type.symbol.declarations);
+        const sig = this.checker.getResolvedSignature(node);
 
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -1436,7 +1430,7 @@ export abstract class LuaTranspiler {
         return this.transpileExpression(node);
     }
 
-    public transpileArguments(params: ts.NodeArray<ts.Expression>, sig?: ts.SignatureDeclaration,
+    public transpileArguments(params: ts.NodeArray<ts.Expression>, sig?: ts.Signature,
                               context?: ts.Expression): string {
         const parameters: string[] = [];
 
@@ -1448,7 +1442,7 @@ export abstract class LuaTranspiler {
         if (sig && sig.parameters.length >= params.length) {
             for (let i = 0; i < params.length; ++i) {
                 const param = params[i];
-                const paramType = this.checker.getTypeAtLocation(sig.parameters[i].type);
+                const paramType = this.checker.getTypeAtLocation(sig.parameters[i].valueDeclaration);
                 parameters.push(this.transpileExpressionForAssignment(param, paramType));
             }
         } else {

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.11.0
+* Fixed bug when throwing anything that was not a string. (@tomblind)
+* Added support for object literal method declarations. (@tomblind)
+* Fixed several issues with assignment operators (@tomblind)
+* `else if` statements are now transpiled to Lua `elseif` instead of nested ifs statements. (@tomblind)
+* Occurrences of const enum values are now directly replaced with their value in the Lua output. (@DoctorGester)
+* Rethrowing is now possible from try/catch blocks (@tomblind)
+* Destructing statements in LuaJit now use `unpack` instead of `table.unpack`
+* Removed support for switch statements for versions <= 5.1.
+* Refactored `for ... of` translation, it now uses numeric `for ` loops instead of `ipairs` for performance reasons.
+
+## 0.10.0
+* Added support for NonNullExpression (`abc!` transforming the type from `abc | undefined` to `abc`)
+* Added expression position to replacement binary expression to improve error messages.
+* Fixed various issues with !TupleReturn (@tomblind)
+* Added support for `array.reverse`, `array.shift`, `array.unshift`, `array.sort`. (@andreiradu)
+* Added translation for `Object.hasOwnProperty()`. (@andreiradu)
+* Added support for class expressions (@andreiradu)
+* Fixed bug in detecting array types (@tomblind)
+* Added public API functions and better webpack functionality.
+
 ## 0.9.0
 * Fixed an issue where default parameter values were ignored in function declarations.
 * Fixed a bug where `self` was undefined in function properties.

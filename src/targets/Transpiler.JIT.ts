@@ -1,5 +1,4 @@
 import { TSTLErrors } from "../Errors";
-import { LuaTranspiler } from "../Transpiler";
 import { TSHelper as tsHelper } from "../TSHelper";
 import { LuaTranspiler52 } from "./Transpiler.52";
 

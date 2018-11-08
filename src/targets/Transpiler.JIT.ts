@@ -1,4 +1,5 @@
 import { TSTLErrors } from "../Errors";
+import { LuaTranspiler } from "../Transpiler";
 import { TSHelper as tsHelper } from "../TSHelper";
 import { LuaTranspiler52 } from "./Transpiler.52";
 
@@ -38,5 +39,10 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
     /** @override */
     public transpileDestructingAssignmentValue(node: ts.Expression): string {
         return `unpack(${this.transpileExpression(node)})`;
+    }
+
+     /** @override */
+    public transpileSpreadElement(node: ts.SpreadElement): string {
+        return LuaTranspiler.prototype.transpileSpreadElement(node);
     }
 }

@@ -193,19 +193,6 @@ export function transpileString(str: string,
     return result.trim();
 }
 
-export function transpileFile(filePath: string): string {
-    const program = ts.createProgram([filePath], {});
-    const checker = program.getTypeChecker();
-
-    // Output errors
-    const diagnostics = ts.getPreEmitDiagnostics(program).filter(diag => diag.code !== 6054);
-    diagnostics.forEach(diagnostic => console.log(`${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`));
-
-    const options: ts.CompilerOptions = { luaLibImport: "none" };
-    const result = createTranspiler(checker, options, program.getSourceFile(filePath)).transpileSourceFile();
-    return result.trim();
-}
-
 function reportDiagnostic(diagnostic: ts.Diagnostic): void {
     if (diagnostic.file) {
         const { line, character } =

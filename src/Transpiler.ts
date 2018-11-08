@@ -1777,9 +1777,8 @@ export abstract class LuaTranspiler {
         }
 
         // Find first constructor with body
-        const constructor = node.members.filter(n => {
-            return ts.isConstructorDeclaration(n) && n.body;
-        })[0] as ts.ConstructorDeclaration;
+        const constructor =
+            node.members.filter(n => ts.isConstructorDeclaration(n) && n.body)[0] as ts.ConstructorDeclaration;
         if (constructor) {
             // Add constructor plus initialization of instance fields
             result += this.transpileConstructor(constructor, className);

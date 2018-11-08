@@ -43,6 +43,6 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
 
      /** @override */
     public transpileSpreadElement(node: ts.SpreadElement): string {
-        return LuaTranspiler.prototype.transpileSpreadElement(node);
+        return "unpack(" + this.transpileExpression(node.expression) + ")";
     }
 }

@@ -337,9 +337,7 @@ export abstract class LuaTranspiler {
 
     public transpileLuaLibFunction(func: LuaLibFeature, ...params: string[]): string {
         this.importLuaLibFeature(func);
-        params = params.filter(element => {
-            return element.toString() !== "";
-        });
+        params = params.filter(element => element.toString() !== "");
         return `__TS__${func}(${params.join(", ")})`;
     }
 

@@ -41,20 +41,6 @@ export class LuaModuleTests {
         Expect(lua).toBe(`require("lualib_bundle")`);
     }
 
-    @Test("Import named bindings exception")
-    public namedBindigsException(): void {
-        const transpiler = util.makeTestTranspiler();
-
-        const mockDeclaration: any = {
-            importClause: {namedBindings: {}},
-            kind: ts.SyntaxKind.ImportDeclaration,
-            moduleSpecifier: ts.createLiteral("test"),
-        };
-
-        Expect(() => transpiler.transpileImport(mockDeclaration as ts.ImportDeclaration))
-            .toThrowError(Error, "Unsupported import type.");
-    }
-
     @Test("Non-exported module")
     public nonExportedModule(): void {
         const lua = util.transpileString("module g { export function test() { return 3; } } return g.test();");

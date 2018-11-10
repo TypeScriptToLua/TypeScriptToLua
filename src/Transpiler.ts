@@ -7,6 +7,8 @@ import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
 import { TSHelper as tsHelper } from "./TSHelper";
 
+import { LuaTransformer } from "./Transformer";
+
 /* tslint:disable */
 const packageJSON = require("../package.json");
 /* tslint:enable */
@@ -221,6 +223,9 @@ export abstract class LuaTranspiler {
         }
         let result = header;
 
+        const transformer = new LuaTransformer(this.checker, this.options);
+        this. sourceFile = transformer.transform(this.sourceFile);
+
         // Transpile content first to gather some info on dependencies
         let fileStatements = "";
         this.exportStack.push([]);
@@ -342,50 +347,8 @@ export abstract class LuaTranspiler {
     }
 
     public transpileImport(node: ts.ImportDeclaration): string {
-        const importPath = this.transpileExpression(node.moduleSpecifier);
-        const importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
-
-        if (!node.importClause || !node.importClause.namedBindings) {
-            throw TSTLErrors.DefaultImportsNotSupported(node);
-        }
-
-        const imports = node.importClause.namedBindings;
-
-        const requireKeyword = "require";
-
-        if (ts.isNamedImports(imports)) {
-            const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
-            const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-
-            let result = `local ${fileImportTable} = ${requireKeyword}(${resolvedImportPath})\n`;
-            this.importCount++;
-
-            const filteredElements = imports.elements.filter(e => {
-                const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
-                return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
-            });
-
-            if (filteredElements.length === 0) {
-                return "";
-            }
-
-            filteredElements.forEach(element => {
-                const nameText = this.transpileIdentifier(element.name);
-                if (element.propertyName) {
-                    const propertyText = this.transpileIdentifier(element.propertyName);
-                    result += `local ${nameText} = ${fileImportTable}.${propertyText}\n`;
-                } else {
-                    result += `local ${nameText} = ${fileImportTable}.${nameText}\n`;
-                }
-            });
-
-            return result;
-        } else if (ts.isNamespaceImport(imports)) {
-            const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${this.transpileIdentifier(imports.name)} = ${requireKeyword}(${resolvedImportPath})\n`;
-        } else {
-            throw TSTLErrors.UnsupportedImportType(imports);
-        }
+        // Handled in transform;
+        return "";
     }
 
     public transpileNamespace(node: ts.ModuleDeclaration): string {

@@ -287,7 +287,7 @@ export class LuaTransformer {
         return node;
     }
     public visitEmptyStatement(node: ts.EmptyStatement): ts.VisitResult<ts.EmptyStatement> {
-        throw undefined;
+        return undefined;
     }
     public visitBinaryExpression(node: ts.BinaryExpression): ts.VisitResult<ts.BinaryExpression> {
         return node;

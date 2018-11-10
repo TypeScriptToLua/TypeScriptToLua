@@ -182,6 +182,7 @@ export class LuaTransformer {
         const result: ts.Node[] = [];
 
         const moduleSpecifier = node.moduleSpecifier as ts.StringLiteral;
+        // TODO add path resolving!!!!!!!
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
 
         if (ts.isNamedImports(imports)) {

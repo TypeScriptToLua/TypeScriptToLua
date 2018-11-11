@@ -233,7 +233,7 @@ export abstract class LuaTranspiler {
         }
 
         // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
+        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
             result += "\n" + "-- Lua Library Imports\n";
             for (const feature of this.luaLibFeatureSet) {
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);

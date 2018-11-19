@@ -259,14 +259,29 @@ export class TSHelper {
             && declarations.find(d => (d as ts.FunctionLikeDeclaration).body !== undefined) as ts.SignatureDeclaration;
     }
 
-    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration): boolean {
+    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean {
         const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
                                                 && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
-        if (thisArg && thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword) {
-            return false;
+        if (thisArg) {
+            // Explicit 'this'
+            return !thisArg.type || thisArg.type.kind !== ts.SyntaxKind.VoidKeyword;
         }
-        return thisArg !== undefined || ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl)
-            || ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent);
+        if ((ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl))
+            && !(ts.getCombinedModifierFlags(sigDecl) & ts.ModifierFlags.Static)) {
+            // Non-static method
+            return true;
+        }
+        if ((ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent))
+            && !(ts.getCombinedModifierFlags(sigDecl.parent) & ts.ModifierFlags.Static)) {
+            // Non-static lambda property
+            return true;
+        }
+        if (ts.isBinaryExpression(sigDecl.parent)
+            && this.isFunctionWithContext(checker.getTypeAtLocation(sigDecl.parent.left), checker)) {
+            // Function expression: check type being assigned to
+            return true;
+        }
+        return false;
     }
 
     public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
@@ -275,7 +290,6 @@ export class TSHelper {
         }
         const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         const sigDecls = sigs.map(s => s.getDeclaration());
-        const isMethod = sigDecls.some(this.isDeclarationWithContext);
-        return isMethod;
+        return sigDecls.some(s => this.isDeclarationWithContext(s, checker));
     }
 }

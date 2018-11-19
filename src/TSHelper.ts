@@ -258,4 +258,24 @@ export class TSHelper {
         return declarations
             && declarations.find(d => (d as ts.FunctionLikeDeclaration).body !== undefined) as ts.SignatureDeclaration;
     }
+
+    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration): boolean {
+        const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
+                                                && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+        if (thisArg && thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword) {
+            return false;
+        }
+        return thisArg !== undefined || ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl)
+            || ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent);
+    }
+
+    public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
+        if (!this.isCallableType(type, checker)) {
+            return false;
+        }
+        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        const sigDecls = sigs.map(s => s.getDeclaration());
+        const isMethod = sigDecls.some(this.isDeclarationWithContext);
+        return isMethod;
+    }
 }

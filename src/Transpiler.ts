@@ -4,7 +4,7 @@ import * as ts from "typescript";
 
 import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
-import { TSTLErrors } from "./Errors";
+import { TSTLErrors, TranspileError } from "./Errors";
 import { TSHelper as tsHelper } from "./TSHelper";
 
 /* tslint:disable */
@@ -1412,18 +1412,22 @@ export abstract class LuaTranspiler {
     }
 
     public transpileExpressionForAssignment(node: ts.Expression, assignType: ts.Type): string {
-        if (tsHelper.isCallableType(assignType, this.checker)) {
+        if (tsHelper.isCallableType(assignType, this.checker) && !ts.isFunctionExpression(node)
+            && !ts.isArrowFunction(node)) {
             const type = this.checker.getTypeAtLocation(node);
-            if (tsHelper.isCallableType(type, this.checker)) {
-                const noContext = tsHelper.getCustomDecorators(type, this.checker)
-                    .has(DecoratorKind.NoContext);
-                const assignNoContext = tsHelper.getCustomDecorators(assignType, this.checker)
-                    .has(DecoratorKind.NoContext);
-                if (noContext && !assignNoContext) {
-                    return `function(____, ...) return ${this.transpileExpression(node)}(...) end`;
-                } else if (!noContext && assignNoContext) {
-                    const context = this.isStrict ? "nil" : "_G";
-                    return `function(...) return ${this.transpileExpression(node)}(${context}, ...) end`;
+            if (tsHelper.isCallableType(type, this.checker))
+            {
+                const hasContext = tsHelper.isFunctionWithContext(type, this.checker);
+                const assignHasContext = tsHelper.isFunctionWithContext(assignType, this.checker);
+                if (hasContext !== assignHasContext) {
+                    const pos = ts.getLineAndCharacterOfPosition(this.sourceFile, node.pos);
+                    if (hasContext) {
+                        console.error(`${this.sourceFile.fileName}:${pos.line + 1}:${pos.character} `
+                                    + `Cannot convert method to function`);
+                    } else {
+                        console.error(`${this.sourceFile.fileName}:${pos.line + 1}:${pos.character} `
+                                    + `Cannot convert function to method`);
+                    }
                 }
             }
         }

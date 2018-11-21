@@ -11,6 +11,7 @@ export class LuaTransformer {
     private checker: ts.TypeChecker;
     private options: CompilerOptions;
     private context: ts.TransformationContext;
+    private sourceFile: ts.SourceFile;
 
     constructor(checker: ts.TypeChecker, options: CompilerOptions) {
         this.checker = checker;
@@ -18,6 +19,7 @@ export class LuaTransformer {
     }
 
     public transform(node: ts.SourceFile): ts.SourceFile {
+        this.sourceFile = node;
         return ts
             .transform(node,
                        [(ctx: ts.TransformationContext) => {
@@ -182,8 +184,8 @@ export class LuaTransformer {
         const result: ts.Node[] = [];
 
         const moduleSpecifier = node.moduleSpecifier as ts.StringLiteral;
-        // TODO add path resolving!!!!!!!
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
+        const resolvedModuleSpecifier = ts.createStringLiteral(this.getImportPath(importPath));
 
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
@@ -197,7 +199,7 @@ export class LuaTransformer {
             }
 
             const importUniqueName = ts.createUniqueName(path.basename((importPath)));
-            const requireStatement = transformHelper.createLuaImport(importUniqueName, moduleSpecifier);
+            const requireStatement = transformHelper.createLuaImport(importUniqueName, resolvedModuleSpecifier);
             result.push(requireStatement);
 
             filteredElements.forEach(importSpecifier => {
@@ -213,7 +215,7 @@ export class LuaTransformer {
             });
             return result;
         } else if (ts.isNamespaceImport(imports)) {
-            const requireStatement = transformHelper.createLuaImport(imports.name, moduleSpecifier);
+            const requireStatement = transformHelper.createLuaImport(imports.name, resolvedModuleSpecifier);
             result.push(requireStatement);
             return result;
         } else {
@@ -226,7 +228,7 @@ export class LuaTransformer {
     // previously transpileNamespace
     public visitModuleDeclaration(node: ts.ModuleDeclaration): ts.VisitResult<ts.Node> {
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
-        // If phantom namespace elide the declaration and returnt he body
+        // If phantom namespace elide the declaration and return the body
         if (decorators.has(DecoratorKind.Phantom) && node.body) {
             return node.body;
         }
@@ -397,4 +399,30 @@ export class LuaTransformer {
     public visitEndOfFileToken(node: ts.EndOfFileToken): ts.VisitResult<ts.EndOfFileToken> {
         return node;
     }
+
+    private getAbsoluteImportPath(relativePath: string): string {
+        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
+            return path.resolve(this.options.baseUrl, relativePath);
+        }
+        return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
+    }
+
+    private getImportPath(relativePath: string): string {
+        // Calculate absolute path to import
+        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
+        if (this.options.rootDir) {
+            // Calculate path relative to project root
+            // and replace path.sep with dots (lua doesn't know paths)
+            const relativePathToRoot =
+                this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
+            return relativePathToRoot;
+        }
+
+        return this.pathToLuaRequirePath(relativePath);
+    }
+
+    private pathToLuaRequirePath(filePath: string): string {
+        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
+    }
+
 }

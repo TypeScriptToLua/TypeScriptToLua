@@ -161,31 +161,6 @@ export abstract class LuaTranspiler {
         this.luaLibFeatureSet.add(feature);
     }
 
-    public getAbsoluteImportPath(relativePath: string): string {
-        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
-            return path.resolve(this.options.baseUrl, relativePath);
-        }
-        return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
-    }
-
-    public getImportPath(relativePath: string): string {
-        // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot =
-                this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
-            return `"${relativePathToRoot}"`;
-        }
-
-        return `"${this.pathToLuaRequirePath(relativePath)}"`;
-    }
-
-    public pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
-    }
-
     public computeEnumMembers(node: ts.EnumDeclaration): Array<{ name: string, value: string | number }> {
         let val: number | string = 0;
         let hasStringInitializers = false;
@@ -290,8 +265,6 @@ export abstract class LuaTranspiler {
         }
 
         switch (node.kind) {
-            case ts.SyntaxKind.ImportDeclaration:
-                return this.transpileImport(node as ts.ImportDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(node as ts.ClassDeclaration);
             case ts.SyntaxKind.ModuleDeclaration:
@@ -344,11 +317,6 @@ export abstract class LuaTranspiler {
         this.importLuaLibFeature(func);
         params = params.filter(element => element.toString() !== "");
         return `__TS__${func}(${params.join(", ")})`;
-    }
-
-    public transpileImport(node: ts.ImportDeclaration): string {
-        // Handled in transform;
-        return "";
     }
 
     public transpileNamespace(node: ts.ModuleDeclaration): string {

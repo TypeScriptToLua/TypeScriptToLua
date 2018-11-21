@@ -10,7 +10,6 @@ import { createTranspiler } from "../../src/TranspilerFactory";
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 import * as fs from "fs";
-import { LuaTransformer } from "../../src/Transformer";
 
 export { transpileString };
 

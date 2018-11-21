@@ -1398,6 +1398,12 @@ export abstract class LuaTranspiler {
 
     public transpileFunctionCallExpression(node: ts.CallExpression): string {
         const expression = node.expression as ts.PropertyAccessExpression;
+        const callerType = this.checker.getTypeAtLocation(expression.expression);
+        if (!tsHelper.isFunctionWithContext(callerType, this.checker)) {
+            const linePos = ts.getLineAndCharacterOfPosition(this.sourceFile, node.pos);
+            console.error(`${this.sourceFile.fileName}:${linePos.line + 1}:${linePos.character} `
+                          + `Cannot convert function to method`);
+        }
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
         const expressionName = this.transpileIdentifier(expression.name);

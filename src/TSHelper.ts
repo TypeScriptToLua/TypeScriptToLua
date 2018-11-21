@@ -79,11 +79,6 @@ export class TSHelper {
         return typeNode && this.isArrayTypeNode(typeNode);
     }
 
-    public static isCallableType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
-        return sigs.length > 0;
-    }
-
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && ts.isFunctionTypeNode(typeNode);
@@ -254,11 +249,6 @@ export class TSHelper {
         return [false, null, null];
     }
 
-    public static getFunctionSignature(declarations: ts.Declaration[]): ts.SignatureDeclaration {
-        return declarations
-            && declarations.find(d => (d as ts.FunctionLikeDeclaration).body !== undefined) as ts.SignatureDeclaration;
-    }
-
     public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean {
         const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
                                                 && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
@@ -285,10 +275,10 @@ export class TSHelper {
     }
 
     public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
-        if (!this.isCallableType(type, checker)) {
+        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        if (sigs.length === 0) {
             return false;
         }
-        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         const sigDecls = sigs.map(s => s.getDeclaration());
         return sigDecls.every(s => this.isDeclarationWithContext(s, checker));
     }

@@ -1421,12 +1421,11 @@ export abstract class LuaTranspiler {
 
     public validateAssignment(fromType: ts.Type, toType: ts.Type, pos: number): void {
         if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
+            // Recurse into tuples/arrays
             (fromType as ts.TypeReference).typeArguments.forEach((t, i) => {
-                // Recurse into tuples
                 this.validateAssignment(t, (toType as ts.TypeReference).typeArguments[i], pos);
             });
-
-        } else if (tsHelper.isCallableType(toType, this.checker) && tsHelper.isCallableType(fromType, this.checker)) {
+        } else {
             // Check function assignments
             const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
             const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);

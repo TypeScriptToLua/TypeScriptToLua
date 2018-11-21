@@ -945,7 +945,7 @@ export abstract class LuaTranspiler {
         // Validate assignment
         const rightType = this.checker.getTypeAtLocation(node.right);
         const leftType = this.checker.getTypeAtLocation(node.left);
-        this.validateAssignment(rightType, leftType, node.right.pos);
+        this.validateAssignment(node.right, rightType, leftType);
 
         if (ts.isArrayLiteralExpression(node.left)) {
             const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
@@ -1400,9 +1400,7 @@ export abstract class LuaTranspiler {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
         if (!tsHelper.isFunctionWithContext(callerType, this.checker)) {
-            const linePos = ts.getLineAndCharacterOfPosition(this.sourceFile, node.pos);
-            console.error(`${this.sourceFile.fileName}:${linePos.line + 1}:${linePos.character} `
-                          + `Cannot convert function to method`);
+            throw TSTLErrors.UnsupportedMethodConversion(node);
         }
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
@@ -1419,24 +1417,21 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public validateAssignment(fromType: ts.Type, toType: ts.Type, pos: number): void {
+    public validateAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type): void {
         if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
             // Recurse into tuples/arrays
-            (fromType as ts.TypeReference).typeArguments.forEach((t, i) => {
-                this.validateAssignment(t, (toType as ts.TypeReference).typeArguments[i], pos);
+            (toType as ts.TypeReference).typeArguments.forEach((t, i) => {
+                this.validateAssignment(node, (fromType as ts.TypeReference).typeArguments[i], t);
             });
         } else {
             // Check function assignments
             const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
             const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);
             if (fromHasContext !== toHasContext) {
-                const linePos = ts.getLineAndCharacterOfPosition(this.sourceFile, pos);
                 if (fromHasContext) {
-                    console.error(`${this.sourceFile.fileName}:${linePos.line + 1}:${linePos.character} `
-                                  + `Cannot convert method to function`);
+                    throw TSTLErrors.UnsupportedFunctionConversion(node);
                 } else {
-                    console.error(`${this.sourceFile.fileName}:${linePos.line + 1}:${linePos.character} `
-                                  + `Cannot convert function to method`);
+                    throw TSTLErrors.UnsupportedMethodConversion(node);
                 }
             }
         }
@@ -1456,7 +1451,7 @@ export abstract class LuaTranspiler {
                 const param = params[i];
                 const paramType = this.checker.getTypeAtLocation(param);
                 const sigType = this.checker.getTypeAtLocation(sig.parameters[i].valueDeclaration);
-                this.validateAssignment(paramType, sigType, param.pos);
+                this.validateAssignment(param, paramType, sigType);
                 parameters.push(this.transpileExpression(param));
             }
         } else {
@@ -1647,7 +1642,7 @@ export abstract class LuaTranspiler {
             // Validate assignment
             const initializerType = this.checker.getTypeAtLocation(node.initializer);
             const varType = this.checker.getTypeFromTypeNode(node.type);
-            this.validateAssignment(initializerType, varType, node.initializer.pos);
+            this.validateAssignment(node.initializer, initializerType, varType);
         }
 
         if (ts.isIdentifier(node.name)) {

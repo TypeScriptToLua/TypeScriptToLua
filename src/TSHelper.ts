@@ -290,6 +290,6 @@ export class TSHelper {
         }
         const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         const sigDecls = sigs.map(s => s.getDeclaration());
-        return sigDecls.some(s => this.isDeclarationWithContext(s, checker));
+        return sigDecls.every(s => this.isDeclarationWithContext(s, checker));
     }
 }

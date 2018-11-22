@@ -1,2 +1,2 @@
-function publicFunc(self)
+function publicFunc()
 end

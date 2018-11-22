@@ -10,8 +10,8 @@ export class LuaCurryTests {
             `(x: number) => (y: number) => x + y;`
         );
         // Assert
-        Expect(lua).toBe(`function(_,x)
-    return function(_,y)
+        Expect(lua).toBe(`function(x)
+    return function(y)
         return x+y
     end
 end;`);

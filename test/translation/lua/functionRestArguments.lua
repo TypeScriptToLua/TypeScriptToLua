@@ -1,3 +1,3 @@
-function varargsFunction(self,a,...)
+function varargsFunction(a,...)
     local b = { ... }
 end

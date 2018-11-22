@@ -1149,7 +1149,7 @@ export abstract class LuaTranspiler {
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
         const sig = this.checker.getResolvedSignature(node);
-        let params = node.arguments ? this.transpileArguments(node.arguments, sig, ts.createTrue()) : "true";
+        const params = node.arguments ? this.transpileArguments(node.arguments, sig, ts.createTrue()) : "true";
         const type = this.checker.getTypeAtLocation(node);
         const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
 
@@ -1164,15 +1164,7 @@ export abstract class LuaTranspiler {
             if (!customDecorator.args[0]) {
                 throw TSTLErrors.InvalidDecoratorArgumentNumber("!CustomConstructor", 0, 1, node);
             }
-            if (!tsHelper.isFunctionWithContext(type, this.checker)
-                && !ts.isPropertyAccessExpression(node.expression)
-                && !ts.isElementAccessExpression(node.expression)) {
-                const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-                params = this.transpileArguments(node.arguments, null, context);
-            } else {
-                params = this.transpileArguments(node.arguments);
-            }
-            return `${customDecorator.args[0]}(${params})`;
+            return `${customDecorator.args[0]}(${this.transpileArguments(node.arguments)})`;
         }
 
         return `${name}.new(${params})`;
@@ -1418,7 +1410,10 @@ export abstract class LuaTranspiler {
     }
 
     public validateAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type): void {
-        if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
+        if ((toType.flags & ts.TypeFlags.Any) !== 0) {
+            // Assigning to un-typed variable
+            return;
+        } else if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
             // Recurse into tuples/arrays
             (toType as ts.TypeReference).typeArguments.forEach((t, i) => {
                 this.validateAssignment(node, (fromType as ts.TypeReference).typeArguments[i], t);

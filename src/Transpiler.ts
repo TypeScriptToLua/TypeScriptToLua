@@ -7,6 +7,8 @@ import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
 import { TSHelper as tsHelper } from "./TSHelper";
 
+import { LuaTransformer } from "./Transformer";
+
 /* tslint:disable */
 const packageJSON = require("../package.json");
 /* tslint:enable */
@@ -159,31 +161,6 @@ export abstract class LuaTranspiler {
         this.luaLibFeatureSet.add(feature);
     }
 
-    public getAbsoluteImportPath(relativePath: string): string {
-        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
-            return path.resolve(this.options.baseUrl, relativePath);
-        }
-        return path.resolve(path.dirname(this.sourceFile.fileName), relativePath);
-    }
-
-    public getImportPath(relativePath: string): string {
-        // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot =
-                this.pathToLuaRequirePath(absolutePathToImport.replace(this.options.rootDir, "").slice(1));
-            return `"${relativePathToRoot}"`;
-        }
-
-        return `"${this.pathToLuaRequirePath(relativePath)}"`;
-    }
-
-    public pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
-    }
-
     public computeEnumMembers(node: ts.EnumDeclaration): Array<{ name: string, value: string | number }> {
         let val: number | string = 0;
         let hasStringInitializers = false;
@@ -220,6 +197,9 @@ export abstract class LuaTranspiler {
             "-- https://github.com/Perryvw/TypescriptToLua\n";
         }
         let result = header;
+
+        const transformer = new LuaTransformer(this.checker, this.options);
+        this. sourceFile = transformer.transform(this.sourceFile);
 
         // Transpile content first to gather some info on dependencies
         let fileStatements = "";
@@ -285,8 +265,6 @@ export abstract class LuaTranspiler {
         }
 
         switch (node.kind) {
-            case ts.SyntaxKind.ImportDeclaration:
-                return this.transpileImport(node as ts.ImportDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(node as ts.ClassDeclaration);
             case ts.SyntaxKind.ModuleDeclaration:
@@ -339,53 +317,6 @@ export abstract class LuaTranspiler {
         this.importLuaLibFeature(func);
         params = params.filter(element => element.toString() !== "");
         return `__TS__${func}(${params.join(", ")})`;
-    }
-
-    public transpileImport(node: ts.ImportDeclaration): string {
-        const importPath = this.transpileExpression(node.moduleSpecifier);
-        const importPathWithoutQuotes = importPath.replace(new RegExp("\"", "g"), "");
-
-        if (!node.importClause || !node.importClause.namedBindings) {
-            throw TSTLErrors.DefaultImportsNotSupported(node);
-        }
-
-        const imports = node.importClause.namedBindings;
-
-        const requireKeyword = "require";
-
-        if (ts.isNamedImports(imports)) {
-            const fileImportTable = path.basename(importPathWithoutQuotes) + this.importCount;
-            const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-
-            let result = `local ${fileImportTable} = ${requireKeyword}(${resolvedImportPath})\n`;
-            this.importCount++;
-
-            const filteredElements = imports.elements.filter(e => {
-                const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
-                return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
-            });
-
-            if (filteredElements.length === 0) {
-                return "";
-            }
-
-            filteredElements.forEach(element => {
-                const nameText = this.transpileIdentifier(element.name);
-                if (element.propertyName) {
-                    const propertyText = this.transpileIdentifier(element.propertyName);
-                    result += `local ${nameText} = ${fileImportTable}.${propertyText}\n`;
-                } else {
-                    result += `local ${nameText} = ${fileImportTable}.${nameText}\n`;
-                }
-            });
-
-            return result;
-        } else if (ts.isNamespaceImport(imports)) {
-            const resolvedImportPath = this.getImportPath(importPathWithoutQuotes);
-            return `local ${this.transpileIdentifier(imports.name)} = ${requireKeyword}(${resolvedImportPath})\n`;
-        } else {
-            throw TSTLErrors.UnsupportedImportType(imports);
-        }
     }
 
     public transpileNamespace(node: ts.ModuleDeclaration): string {

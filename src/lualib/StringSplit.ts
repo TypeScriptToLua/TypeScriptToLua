@@ -1,4 +1,3 @@
-/** !NoContext */
 function __TS__StringSplit(source: string, separator?: string, limit?: number): string[] {
     if (limit === undefined) {
         limit = 4294967295;

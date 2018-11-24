@@ -3,7 +3,7 @@ local TestSpace = exports.TestSpace or TestSpace or {}
 do
     local TestNestedSpace = TestNestedSpace or {}
     do
-        local function innerFunc(self)
+        local function innerFunc()
         end
         TestNestedSpace.innerFunc = innerFunc
     end

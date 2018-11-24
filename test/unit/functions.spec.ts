@@ -233,7 +233,7 @@ export class FunctionTests {
 
     @Test("Function bind")
     public functionBind(): void {
-        const source = `const abc = function (a: string, b: string) { return this.a + a + b; }
+        const source = `const abc = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
                         return abc.bind({ a: 4 }, "b")("c");`;
 
         const result = util.transpileAndExecute(source);
@@ -243,7 +243,7 @@ export class FunctionTests {
 
     @Test("Function apply")
     public functionApply(): void {
-        const source = `const abc = function (a: string) { return this.a + a; }
+        const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
                         return abc.apply({ a: 4 }, ["b"]);`;
 
         const result = util.transpileAndExecute(source);
@@ -253,7 +253,7 @@ export class FunctionTests {
 
     @Test("Function call")
     public functionCall(): void {
-        const source = `const abc = function (a: string) { return this.a + a; }
+        const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
                         return abc.call({ a: 4 }, "b");`;
 
         const result = util.transpileAndExecute(source);

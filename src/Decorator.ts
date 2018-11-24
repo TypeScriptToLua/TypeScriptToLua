@@ -21,5 +21,4 @@ export enum DecoratorKind {
     Phantom = "Phantom",
     TupleReturn = "TupleReturn",
     NoClassOr = "NoClassOr",
-    NoContext = "NoContext",
 }

@@ -1,3 +1,3 @@
-local f; f = function(_,x)
+local f; f = function(x)
     return ({x = x})
 end;

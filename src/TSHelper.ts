@@ -248,4 +248,38 @@ export class TSHelper {
         }
         return [false, null, null];
     }
+
+    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean {
+        const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
+                                                && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+        if (thisArg) {
+            // Explicit 'this'
+            return !thisArg.type || thisArg.type.kind !== ts.SyntaxKind.VoidKeyword;
+        }
+        if ((ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl))
+            && !(ts.getCombinedModifierFlags(sigDecl) & ts.ModifierFlags.Static)) {
+            // Non-static method
+            return true;
+        }
+        if ((ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent))
+            && !(ts.getCombinedModifierFlags(sigDecl.parent) & ts.ModifierFlags.Static)) {
+            // Non-static lambda property
+            return true;
+        }
+        if (ts.isBinaryExpression(sigDecl.parent)
+            && this.isFunctionWithContext(checker.getTypeAtLocation(sigDecl.parent.left), checker)) {
+            // Function expression: check type being assigned to
+            return true;
+        }
+        return false;
+    }
+
+    public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        if (sigs.length === 0) {
+            return false;
+        }
+        const sigDecls = sigs.map(s => s.getDeclaration());
+        return sigDecls.every(s => this.isDeclarationWithContext(s, checker));
+    }
 }

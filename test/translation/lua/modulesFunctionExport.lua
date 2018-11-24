@@ -1,5 +1,5 @@
 local exports = exports or {}
-local function publicFunc(self)
+local function publicFunc()
 end
 exports.publicFunc = publicFunc
 return exports

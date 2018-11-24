@@ -1,4 +1,3 @@
-/** !NoContext */
 function __TS__ArraySplice<T>(list: T[], start: number, deleteCount: number, ...items: T[]): T[] {
 
     const len = list.length;

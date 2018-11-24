@@ -942,8 +942,12 @@ export abstract class LuaTranspiler {
             return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
         }
 
+        // Validate assignment
+        const rightType = this.checker.getTypeAtLocation(node.right);
+        const leftType = this.checker.getTypeAtLocation(node.left);
+        this.validateAssignment(node.right, rightType, leftType);
+
         if (ts.isArrayLiteralExpression(node.left)) {
-            // Destructing assignment
             const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
             const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
                 ? rhs : this.transpileDestructingAssignmentValue(node.right);
@@ -1144,7 +1148,8 @@ export abstract class LuaTranspiler {
 
     public transpileNewExpression(node: ts.NewExpression): string {
         const name = this.transpileExpression(node.expression);
-        let params = node.arguments ? this.transpileArguments(node.arguments, ts.createTrue()) : "true";
+        const sig = this.checker.getResolvedSignature(node);
+        const params = node.arguments ? this.transpileArguments(node.arguments, sig, ts.createTrue()) : "true";
         const type = this.checker.getTypeAtLocation(node);
         const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
 
@@ -1159,15 +1164,7 @@ export abstract class LuaTranspiler {
             if (!customDecorator.args[0]) {
                 throw TSTLErrors.InvalidDecoratorArgumentNumber("!CustomConstructor", 0, 1, node);
             }
-            if (!ts.isPropertyAccessExpression(node.expression)
-                && !ts.isElementAccessExpression(node.expression)
-                && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
-                const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-                params = this.transpileArguments(node.arguments, context);
-            } else {
-                params = this.transpileArguments(node.arguments);
-            }
-            return `${customDecorator.args[0]}(${params})`;
+            return `${customDecorator.args[0]}(${this.transpileArguments(node.arguments)})`;
         }
 
         return `${name}.new(${params})`;
@@ -1190,22 +1187,25 @@ export abstract class LuaTranspiler {
                 ? `({ ${result} })` : result;
         }
 
+        const sig = this.checker.getResolvedSignature(node);
+
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            params = this.transpileArguments(node.arguments, sig,
+                                             ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             const className = this.classStack[this.classStack.length - 1];
             return `${className}.__base.constructor(${params})`;
         }
 
-        callPath = this.transpileExpression(node.expression);
         const type = this.checker.getTypeAtLocation(node.expression);
-        if (!ts.isPropertyAccessExpression(node.expression)
-            && !ts.isElementAccessExpression(node.expression)
-            && !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext)) {
+        callPath = this.transpileExpression(node.expression);
+        if (tsHelper.isFunctionWithContext(type, this.checker)
+            && !ts.isPropertyAccessExpression(node.expression)
+            && !ts.isElementAccessExpression(node.expression)) {
             const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-            params = this.transpileArguments(node.arguments, context);
+            params = this.transpileArguments(node.arguments, sig, context);
         } else {
-            params = this.transpileArguments(node.arguments);
+            params = this.transpileArguments(node.arguments, sig);
         }
         return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
@@ -1248,10 +1248,13 @@ export abstract class LuaTranspiler {
             return this.transpileFunctionCallExpression(node);
         }
 
+        const sig = this.checker.getResolvedSignature(node);
+
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
-            params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
+            params = this.transpileArguments(node.arguments, sig,
+                                             ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             return `${this.transpileExpression(node.expression)}(${params})`;
         } else {
             // Replace last . with : here
@@ -1260,13 +1263,13 @@ export abstract class LuaTranspiler {
                 return  `tostring(${this.transpileExpression(node.expression.expression)})`;
             } else if (name === "hasOwnProperty") {
                 const expr = this.transpileExpression(node.expression.expression);
-                params = this.transpileArguments(node.arguments);
+                params = this.transpileArguments(node.arguments, sig);
                 return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
                 const type = this.checker.getTypeAtLocation(node.expression);
-                const op = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext) ? "." : ":";
+                const op = tsHelper.isFunctionWithContext(type, this.checker) ? ":" : ".";
                 callPath = `${this.transpileExpression(node.expression.expression)}${op}${name}`;
-                params = this.transpileArguments(node.arguments);
+                params = this.transpileArguments(node.arguments, sig);
                 return `${callPath}(${params})`;
             }
         }
@@ -1387,6 +1390,10 @@ export abstract class LuaTranspiler {
 
     public transpileFunctionCallExpression(node: ts.CallExpression): string {
         const expression = node.expression as ts.PropertyAccessExpression;
+        const callerType = this.checker.getTypeAtLocation(expression.expression);
+        if (!tsHelper.isFunctionWithContext(callerType, this.checker)) {
+            throw TSTLErrors.UnsupportedMethodConversion(node);
+        }
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
         const expressionName = this.transpileIdentifier(expression.name);
@@ -1402,7 +1409,31 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileArguments(params: ts.NodeArray<ts.Expression>, context?: ts.Expression): string {
+    public validateAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type): void {
+        if ((toType.flags & ts.TypeFlags.Any) !== 0) {
+            // Assigning to un-typed variable
+            return;
+        } else if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
+            // Recurse into tuples/arrays
+            (toType as ts.TypeReference).typeArguments.forEach((t, i) => {
+                this.validateAssignment(node, (fromType as ts.TypeReference).typeArguments[i], t);
+            });
+        } else {
+            // Check function assignments
+            const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
+            const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);
+            if (fromHasContext !== toHasContext) {
+                if (fromHasContext) {
+                    throw TSTLErrors.UnsupportedFunctionConversion(node);
+                } else {
+                    throw TSTLErrors.UnsupportedMethodConversion(node);
+                }
+            }
+        }
+    }
+
+    public transpileArguments(params: ts.NodeArray<ts.Expression>, sig?: ts.Signature,
+                              context?: ts.Expression): string {
         const parameters: string[] = [];
 
         // Add context as first param if present
@@ -1410,9 +1441,19 @@ export abstract class LuaTranspiler {
             parameters.push(this.transpileExpression(context));
         }
 
-        params.forEach(param => {
-            parameters.push(this.transpileExpression(param));
-        });
+        if (sig && sig.parameters.length >= params.length) {
+            for (let i = 0; i < params.length; ++i) {
+                const param = params[i];
+                const paramType = this.checker.getTypeAtLocation(param);
+                const sigType = this.checker.getTypeAtLocation(sig.parameters[i].valueDeclaration);
+                this.validateAssignment(param, paramType, sigType);
+                parameters.push(this.transpileExpression(param));
+            }
+        } else {
+            params.forEach(param => {
+                parameters.push(this.transpileExpression(param));
+            });
+        }
 
         return parameters.join(",");
     }
@@ -1592,6 +1633,13 @@ export abstract class LuaTranspiler {
     }
 
     public transpileVariableDeclaration(node: ts.VariableDeclaration): string {
+        if (node.initializer) {
+            // Validate assignment
+            const initializerType = this.checker.getTypeAtLocation(node.initializer);
+            const varType = this.checker.getTypeFromTypeNode(node.type);
+            this.validateAssignment(node.initializer, initializerType, varType);
+        }
+
         if (ts.isIdentifier(node.name)) {
             // Find variable identifier
             const identifierName = this.transpileIdentifier(node.name);
@@ -1635,7 +1683,7 @@ export abstract class LuaTranspiler {
         const methodName = this.transpileIdentifier(node.name);
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext) ? null : "self";
+        const context = tsHelper.isFunctionWithContext(type, this.checker) ? "self" : null;
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         let prefix = this.accessPrefix(node);
@@ -1672,6 +1720,9 @@ export abstract class LuaTranspiler {
 
         // Only push parameter name to paramName array if it isn't a spread parameter
         for (const param of parameters) {
+            if (ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+                continue;
+            }
             const paramName = this.transpileIdentifier(param.name as ts.Identifier);
 
             // This parameter is a spread parameter (...param)
@@ -1718,7 +1769,7 @@ export abstract class LuaTranspiler {
         }
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoContext) ? null : "self";
+        const context = tsHelper.isFunctionWithContext(type, this.checker) ? "self" : null;
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         // Build function header
@@ -1918,6 +1969,9 @@ export abstract class LuaTranspiler {
 
     public transpileConstructor(node: ts.ConstructorDeclaration,
                                 className: string): string {
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) { return ""; }
+
         const extraInstanceFields = [];
 
         const parameters = ["self"];
@@ -1987,8 +2041,10 @@ export abstract class LuaTranspiler {
     }
 
     public transpileFunctionExpression(node: ts.FunctionLikeDeclaration, context: string | null): string {
+        const type = this.checker.getTypeAtLocation(node);
+        const hasContext = tsHelper.isFunctionWithContext(type, this.checker);
         // Build parameter string
-        const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
+        const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, hasContext ? context : null);
         let result = `function(${paramNames.join(",")})\n`;
         this.pushIndent();
         const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);

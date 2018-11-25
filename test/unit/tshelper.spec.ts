@@ -135,8 +135,7 @@ export class TSHelperTests {
     @Test("GetCustomDecorators multiple default jsdoc")
     public GetCustomDecoratorsMultipleDefaultJSDoc(): void {
         const source = `/**
-            * @description
-            * @param abc def
+            * @description abc
             * @Phantom
             * @CompileMembersOnly */
             enum TestEnum {

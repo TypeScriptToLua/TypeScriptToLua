@@ -109,14 +109,29 @@ export class TSHelper {
             const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
                 comments.filter(comment => comment.kind === "text")
-                        .map(comment => comment.text.trim().split("\n"))
+                        .map(comment => comment.text.split("\n"))
                         .reduce((a, b) => a.concat(b), [])
+                        .map(line => line.trim())
                         .filter(comment => comment[0] === "!");
+
             const decMap = new Map<DecoratorKind, Decorator>();
+
             decorators.forEach(decStr => {
-                const dec = new Decorator(decStr);
-                decMap.set(dec.kind, dec);
+                const dec = new Decorator(decStr.substr(1));
+                if (dec.kind !== undefined) {
+                    decMap.set(dec.kind, dec);
+                } else {
+                    console.warn(`Encountered unknown decorator ${decStr}.`);
+                }
             });
+
+            type.symbol.getJsDocTags().forEach(tag => {
+                const dec = new Decorator(tag.name);
+                if (dec.kind !== undefined) {
+                    decMap.set(dec.kind, dec);
+                }
+            });
+
             return decMap;
         }
         return new Map<DecoratorKind, Decorator>();

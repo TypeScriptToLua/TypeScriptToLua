@@ -1,7 +1,10 @@
-import * as ts from "typescript";
+import { Expect, Test, TestCase } from "alsatian";
+import { TSHelper as tsHelper } from "../../src/TSHelper";
 
-import { Expect, FocusTest, IgnoreTest, Test, TestCase } from "alsatian";
-import { TSHelper as tsEx } from "../../src/TSHelper";
+import * as ts from "typescript";
+import * as util from "../src/util";
+
+import { DecoratorKind } from "../../src/Decorator";
 
 enum TestEnum {
     testA = 1,
@@ -15,8 +18,8 @@ export class TSHelperTests {
     @TestCase(-1, "unknown")
     @TestCase(TestEnum.testA | TestEnum.testB, "unknown")
     @Test("EnumName")
-    public testEnumName(inp, expected) {
-        const result = tsEx.enumName(inp, TestEnum);
+    public testEnumName(inp, expected): void {
+        const result = tsHelper.enumName(inp, TestEnum);
 
         Expect(result).toEqual(expected);
     }
@@ -26,14 +29,133 @@ export class TSHelperTests {
     @TestCase(TestEnum.testA | TestEnum.testC, ["testA", "testC"])
     @TestCase(TestEnum.testA | TestEnum.testB | TestEnum.testC, ["testA", "testB", "testC"])
     @Test("EnumNames")
-    public testEnumNames(inp, expected) {
-        const result = tsEx.enumNames(inp, TestEnum);
+    public testEnumNames(inp, expected): void {
+        const result = tsHelper.enumNames(inp, TestEnum);
 
         Expect(result).toEqual(expected);
     }
 
     @Test("IsFileModuleNull")
-    public isFileModuleNull() {
-        Expect(tsEx.isFileModule(null)).toEqual(false);
+    public isFileModuleNull(): void {
+        Expect(tsHelper.isFileModule(null)).toEqual(false);
+    }
+
+    @Test("GetCustomDecorators single")
+    public GetCustomDecoratorsSingle(): void {
+        const source = `/** !CompileMembersOnly */
+            enum TestEnum {
+                val1 = 0,
+                val2 = 2,
+                val3,
+                val4 = "bye",
+            }
+
+            const a = TestEnum.val1;`;
+
+        const [sourceFile, typeChecker] = util.parseTypeScript(source);
+        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const enumType = typeChecker.getTypeAtLocation(identifier);
+
+        const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
+
+        Expect(decorators.size).toBe(1);
+        Expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
+    }
+
+    @Test("GetCustomDecorators multiple")
+    public GetCustomDecoratorsMultiple(): void {
+        const source = `/** !CompileMembersOnly
+            * !Phantom */
+            enum TestEnum {
+                val1 = 0,
+                val2 = 2,
+                val3,
+                val4 = "bye",
+            }
+
+            const a = TestEnum.val1;`;
+
+        const [sourceFile, typeChecker] = util.parseTypeScript(source);
+        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const enumType = typeChecker.getTypeAtLocation(identifier);
+
+        const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
+
+        Expect(decorators.size).toBe(2);
+        Expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
+        Expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
+    }
+
+    @Test("GetCustomDecorators single jsdoc")
+    public GetCustomDecoratorsSingleJSDoc(): void {
+        const source = `/** @CompileMembersOnly */
+            enum TestEnum {
+                val1 = 0,
+                val2 = 2,
+                val3,
+                val4 = "bye",
+            }
+
+            const a = TestEnum.val1;`;
+
+        const [sourceFile, typeChecker] = util.parseTypeScript(source);
+        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const enumType = typeChecker.getTypeAtLocation(identifier);
+
+        const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
+
+        Expect(decorators.size).toBe(1);
+        Expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
+    }
+
+    @Test("GetCustomDecorators multiple jsdoc")
+    public GetCustomDecoratorsMultipleJSDoc(): void {
+        const source = `/** @Phantom
+            * @CompileMembersOnly */
+            enum TestEnum {
+                val1 = 0,
+                val2 = 2,
+                val3,
+                val4 = "bye",
+            }
+
+            const a = TestEnum.val1;`;
+
+        const [sourceFile, typeChecker] = util.parseTypeScript(source);
+        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const enumType = typeChecker.getTypeAtLocation(identifier);
+
+        const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
+
+        Expect(decorators.size).toBe(2);
+        Expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
+        Expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
+    }
+
+    @Test("GetCustomDecorators multiple default jsdoc")
+    public GetCustomDecoratorsMultipleDefaultJSDoc(): void {
+        const source = `/**
+            * @description
+            * @param abc def
+            * @Phantom
+            * @CompileMembersOnly */
+            enum TestEnum {
+                val1 = 0,
+                val2 = 2,
+                val3,
+                val4 = "bye",
+            }
+
+            const a = TestEnum.val1;`;
+
+        const [sourceFile, typeChecker] = util.parseTypeScript(source);
+        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const enumType = typeChecker.getTypeAtLocation(identifier);
+
+        const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
+
+        Expect(decorators.size).toBe(2);
+        Expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
+        Expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
     }
 }

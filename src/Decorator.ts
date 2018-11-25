@@ -7,7 +7,7 @@ export class Decorator {
         if (nameEnd === -1) {
             nameEnd = raw.length;
         }
-        this.kind = DecoratorKind[raw.substring(1, nameEnd)];
+        this.kind = DecoratorKind[raw.substring(0, nameEnd)];
         this.args = raw.split(" ").slice(1);
     }
 }

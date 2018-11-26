@@ -1,14 +1,30 @@
 export class Decorator {
+
+    public static isValid(decoratorKindString: string): boolean {
+        return this.getDecoratorKind(decoratorKindString) !== undefined;
+    }
+
+    public static getDecoratorKind(decoratorKindString: string): DecoratorKind {
+        switch (decoratorKindString.toLowerCase()) {
+            case "extension": return DecoratorKind.Extension;
+            case "metaextension": return DecoratorKind.MetaExtension;
+            case "customconstructor": return DecoratorKind.CustomConstructor;
+            case "compilemembersonly": return DecoratorKind.CompileMembersOnly;
+            case "pureabstract": return DecoratorKind.PureAbstract;
+            case "phantom": return DecoratorKind.Phantom;
+            case "tuplereturn": return DecoratorKind.TupleReturn;
+            case "noclassor": return DecoratorKind.NoClassOr;
+        }
+
+        return undefined;
+    }
+
     public kind: DecoratorKind;
     public args: string[];
 
-    constructor(raw: string) {
-        let nameEnd = raw.indexOf(" ");
-        if (nameEnd === -1) {
-            nameEnd = raw.length;
-        }
-        this.kind = DecoratorKind[raw.substring(0, nameEnd)];
-        this.args = raw.split(" ").slice(1);
+    constructor(name: string, args: string[]) {
+        this.kind = Decorator.getDecoratorKind(name);
+        this.args = args;
     }
 }
 

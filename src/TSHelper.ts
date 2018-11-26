@@ -117,8 +117,9 @@ export class TSHelper {
             const decMap = new Map<DecoratorKind, Decorator>();
 
             decorators.forEach(decStr => {
-                const dec = new Decorator(decStr.substr(1));
-                if (dec.kind !== undefined) {
+                const [decoratorName, ...decoratorArguments] = decStr.split(" ");
+                if (Decorator.isValid(decoratorName.substr(1))) {
+                    const dec = new Decorator(decoratorName.substr(1), decoratorArguments);
                     decMap.set(dec.kind, dec);
                     console.warn(`[Deprecated] Decorators with ! are being deprecated, `
                         + `use @${decStr.substr(1)} instead`);
@@ -128,8 +129,8 @@ export class TSHelper {
             });
 
             type.symbol.getJsDocTags().forEach(tag => {
-                const dec = new Decorator(tag.name);
-                if (dec.kind !== undefined) {
+                if (Decorator.isValid(tag.name)) {
+                    const dec = new Decorator(tag.name, tag.text.split(" "));
                     decMap.set(dec.kind, dec);
                 }
             });

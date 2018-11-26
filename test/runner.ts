@@ -1,5 +1,4 @@
 import { TestRunner, TestSet } from "alsatian";
-import { TapBark } from "tap-bark";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -21,9 +20,6 @@ fs.copyFileSync(
 
 // setup the output
 testRunner.outputStream
-          // this will use alsatian's default output if you remove this
-          // you'll get TAP or you can add your favourite TAP reporter in it's place
-          .pipe(TapBark.create().getPipeable())
           // pipe to the console
           .pipe(process.stdout);
 

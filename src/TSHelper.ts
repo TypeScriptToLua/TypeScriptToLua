@@ -120,6 +120,8 @@ export class TSHelper {
                 const dec = new Decorator(decStr.substr(1));
                 if (dec.kind !== undefined) {
                     decMap.set(dec.kind, dec);
+                    console.warn(`[Deprecated] Decorators with ! are being deprecated, `
+                        + `use @${decStr.substr(1)} instead`);
                 } else {
                     console.warn(`Encountered unknown decorator ${decStr}.`);
                 }

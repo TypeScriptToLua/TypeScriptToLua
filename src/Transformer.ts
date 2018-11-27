@@ -12,6 +12,9 @@ export class LuaTransformer {
     private options: CompilerOptions;
     private context: ts.TransformationContext;
     private sourceFile: ts.SourceFile;
+    private isModule: boolean;
+
+    private currentNamespace: ts.ModuleDeclaration;
 
     constructor(checker: ts.TypeChecker, options: CompilerOptions) {
         this.checker = checker;
@@ -20,6 +23,7 @@ export class LuaTransformer {
 
     public transform(node: ts.SourceFile): ts.SourceFile {
         this.sourceFile = node;
+        this.isModule = tsHelper.isFileModule(node);
         return ts
             .transform(node,
                        [(ctx: ts.TransformationContext) => {
@@ -232,8 +236,44 @@ export class LuaTransformer {
         if (decorators.has(DecoratorKind.Phantom) && node.body) {
             return node.body;
         }
-        // TODO actual transpilation
-        return node;
+
+        const result: ts.Node[] = [];
+
+        let declarationNameExpression: ts.Expression;
+        if (this.currentNamespace) {
+            const declarationNameExpression =
+                ts.createPropertyAccess(this.currentNamespace.name, node.name as ts.Identifier);
+            const declarationAssignment = ts.createAssignment(
+                declarationNameExpression, ts.createLogicalOr(declarationNameExpression, ts.createObjectLiteral()));
+
+            result.push(declarationAssignment);
+            // outerNS.innerNS = outerNS.innerNS or {};
+            // local innerNS = outerNS.innerNS
+        } else if (this.isModule && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
+            declarationNameExpression =
+                ts.createPropertyAccess(ts.createIdentifier("export"), node.name as ts.Identifier);
+            // exports.NS = exports.NS or {}
+            // local NS = exports.NS
+        } else {
+            declarationNameExpression = node.name;
+            // NS = NS or {}
+            // local NS = NS
+        }
+
+        // Set current namespace for nested NS
+        // Keep previous currentNS to reset after block transpilation
+        const previousNamespace = this.currentNamespace;
+        this.currentNamespace = node;
+
+        // Transform moduleblock to block and transform it
+        if (ts.isModuleBlock(node.body)) {
+            const bodyBlock = this.visitBlock(ts.createBlock(node.body.statements)) as ts.Block;
+            result.push(bodyBlock);
+        }
+
+        this.currentNamespace = previousNamespace;
+
+        return result;
     }
     public visitEnumDeclaration(node: ts.EnumDeclaration): ts.VisitResult<ts.EnumDeclaration> {
         return node;
@@ -424,5 +464,4 @@ export class LuaTransformer {
     private pathToLuaRequirePath(filePath: string): string {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
-
 }

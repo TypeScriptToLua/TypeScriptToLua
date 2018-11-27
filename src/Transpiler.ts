@@ -267,8 +267,6 @@ export abstract class LuaTranspiler {
         switch (node.kind) {
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transpileClass(node as ts.ClassDeclaration);
-            case ts.SyntaxKind.ModuleDeclaration:
-                return this.transpileNamespace(node as ts.ModuleDeclaration);
             case ts.SyntaxKind.ModuleBlock:
                 return this.transpileBlock(node as ts.Block);
             case ts.SyntaxKind.EnumDeclaration:
@@ -317,36 +315,6 @@ export abstract class LuaTranspiler {
         this.importLuaLibFeature(func);
         params = params.filter(element => element.toString() !== "");
         return `__TS__${func}(${params.join(", ")})`;
-    }
-
-    public transpileNamespace(node: ts.ModuleDeclaration): string {
-        const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(node), this.checker);
-        // If phantom namespace just transpile the body as normal
-        if (decorators.has(DecoratorKind.Phantom) && node.body) {
-            return this.transpileNode(node.body);
-        }
-
-        const defName = this.definitionName(node.name.text);
-        // Initialize to pre-existing export if one exists
-        const prefix = (this.namespace.length === 0 && this.isModule &&
-            (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) ? `exports.${node.name.text} or ` : "";
-        let result =
-            this.indent +
-            this.accessPrefix(node) +
-            `${node.name.text} = ${prefix}${node.name.text} or {}\n`;
-
-        this.pushExport(node.name.text, node);
-        // Create closure
-        result += this.indent + "do\n";
-        this.pushIndent();
-        this.namespace.push(node.name.text);
-        if (node.body) {
-            result += this.transpileNode(node.body);
-        }
-        this.namespace.pop();
-        this.popIndent();
-        result += this.indent + "end\n";
-        return result;
     }
 
     public transpileEnum(node: ts.EnumDeclaration): string {

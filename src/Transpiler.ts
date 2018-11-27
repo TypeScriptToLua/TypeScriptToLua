@@ -705,6 +705,7 @@ export abstract class LuaTranspiler {
                 this.popIndent();
                 return ret;
             default:
+                console.log(node);
                 throw TSTLErrors.UnsupportedKind("expression", node.kind, node);
         }
     }

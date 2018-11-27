@@ -239,25 +239,41 @@ export class LuaTransformer {
 
         const result: ts.Node[] = [];
 
-        let declarationNameExpression: ts.Expression;
         if (this.currentNamespace) {
+            // outerNS.innerNS = outerNS.innerNS or {};
+            // local innerNS = outerNS.innerNS
             const declarationNameExpression =
                 ts.createPropertyAccess(this.currentNamespace.name, node.name as ts.Identifier);
             const declarationAssignment = ts.createAssignment(
                 declarationNameExpression, ts.createLogicalOr(declarationNameExpression, ts.createObjectLiteral()));
 
             result.push(declarationAssignment);
-            // outerNS.innerNS = outerNS.innerNS or {};
-            // local innerNS = outerNS.innerNS
+
+            const localDeclaration =
+                transformHelper.createLuaVariableStatement(node.name as ts.Identifier, declarationNameExpression);
+
+            result.push(localDeclaration);
         } else if (this.isModule && (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Export)) {
-            declarationNameExpression =
-                ts.createPropertyAccess(ts.createIdentifier("export"), node.name as ts.Identifier);
             // exports.NS = exports.NS or {}
             // local NS = exports.NS
+            const declarationNameExpression =
+                ts.createPropertyAccess(ts.createIdentifier("exports"), node.name as ts.Identifier);
+            const declarationAssignment = ts.createAssignment(
+                declarationNameExpression, ts.createLogicalOr(declarationNameExpression, ts.createObjectLiteral()));
+
+            result.push(declarationAssignment);
+
+            const localDeclaration =
+                transformHelper.createLuaVariableStatement(node.name as ts.Identifier, declarationNameExpression);
+
+            result.push(localDeclaration);
         } else {
-            declarationNameExpression = node.name;
-            // NS = NS or {}
-            // local NS = NS
+            // local NS = NS or {}
+            const declarationNameExpression = node.name;
+            const declarationAssignment = ts.createAssignment(
+                declarationNameExpression, ts.createLogicalOr(declarationNameExpression, ts.createObjectLiteral()));
+
+            result.push(declarationAssignment);
         }
 
         // Set current namespace for nested NS
@@ -265,10 +281,10 @@ export class LuaTransformer {
         const previousNamespace = this.currentNamespace;
         this.currentNamespace = node;
 
-        // Transform moduleblock to block and transform it
-        if (ts.isModuleBlock(node.body)) {
+        // Transform moduleblock to block and visit it
+        if (node.body && ts.isModuleBlock(node.body)) {
             const bodyBlock = this.visitBlock(ts.createBlock(node.body.statements)) as ts.Block;
-            result.push(bodyBlock);
+            // result.push(bodyBlock);
         }
 
         this.currentNamespace = previousNamespace;
@@ -430,8 +446,8 @@ export class LuaTransformer {
     public visitComputedPropertyName(node: ts.ComputedPropertyName): ts.VisitResult<ts.ComputedPropertyName> {
         return node;
     }
-    public visitBlock(node: ts.Block): ts.VisitResult<ts.Block> {
-        return node;
+    public visitBlock(node: ts.Block): ts.Block {
+        return ts.updateBlock(node, node.statements.map(s => this.visitor(s)) as ts.Statement[]);
     }
     public visitModuleBlock(node: ts.ModuleBlock): ts.VisitResult<ts.ModuleBlock> {
         return node;

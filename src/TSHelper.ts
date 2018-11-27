@@ -130,7 +130,7 @@ export class TSHelper {
 
             type.symbol.getJsDocTags().forEach(tag => {
                 if (Decorator.isValid(tag.name)) {
-                    const dec = new Decorator(tag.name, tag.text.split(" "));
+                    const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
                     decMap.set(dec.kind, dec);
                 }
             });

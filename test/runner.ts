@@ -34,4 +34,7 @@ testRunner.run(testSet)
           .catch(error => {
               // Remove lualib bundle again
               fs.unlinkSync("lualib_bundle.lua");
+
+              console.error(error);
+              process.exit(1);
           });

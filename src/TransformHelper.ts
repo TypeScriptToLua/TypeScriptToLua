@@ -16,4 +16,9 @@ export class TransformHelper {
             ts.createCall(requireIdentifier, [ts.createLiteralTypeNode(moduleSpecifier)], [moduleSpecifier]);
         return this.createLuaVariableStatement(identifier, requireCall);
     }
+
+    public static flatten<T>(arr: T[]): T[] {
+        const flat = [].concat(...arr);
+        return flat.some(Array.isArray) ? this.flatten(flat) : flat;
+    }
 }

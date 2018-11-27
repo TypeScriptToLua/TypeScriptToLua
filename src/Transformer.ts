@@ -283,8 +283,8 @@ export class LuaTransformer {
 
         // Transform moduleblock to block and visit it
         if (node.body && ts.isModuleBlock(node.body)) {
-            const bodyBlock = this.visitBlock(ts.createBlock(node.body.statements)) as ts.Block;
-            // result.push(bodyBlock);
+            const bodyBlock = this.visitModuleBlock(node.body) as ts.Block;
+            result.push(bodyBlock);
         }
 
         this.currentNamespace = previousNamespace;
@@ -446,11 +446,12 @@ export class LuaTransformer {
     public visitComputedPropertyName(node: ts.ComputedPropertyName): ts.VisitResult<ts.ComputedPropertyName> {
         return node;
     }
-    public visitBlock(node: ts.Block): ts.Block {
-        return ts.updateBlock(node, node.statements.map(s => this.visitor(s)) as ts.Statement[]);
+    public visitBlock(node: ts.Block): ts.VisitResult<ts.Block> {
+        return ts.updateBlock(
+            node, transformHelper.flatten(node.statements.map(s => this.visitor(s)) as ts.Statement[]));
     }
-    public visitModuleBlock(node: ts.ModuleBlock): ts.VisitResult<ts.ModuleBlock> {
-        return node;
+    public visitModuleBlock(node: ts.ModuleBlock): ts.VisitResult<ts.Block> {
+        return this.visitBlock(ts.createBlock(node.statements));
     }
     public visitEndOfFileToken(node: ts.EndOfFileToken): ts.VisitResult<ts.EndOfFileToken> {
         return node;

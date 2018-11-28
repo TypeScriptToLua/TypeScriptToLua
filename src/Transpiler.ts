@@ -82,6 +82,8 @@ export abstract class LuaTranspiler {
 
     public luaLibFeatureSet: Set<LuaLibFeature>;
 
+    private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
+
     constructor(checker: ts.TypeChecker, options: CompilerOptions, sourceFile: ts.SourceFile) {
         this.indent = "";
         this.checker = checker;
@@ -948,6 +950,7 @@ export abstract class LuaTranspiler {
         this.validateAssignment(node.right, rightType, leftType);
 
         if (ts.isArrayLiteralExpression(node.left)) {
+            // Destructuring assignment
             const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
             const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
                 ? rhs : this.transpileDestructingAssignmentValue(node.right);
@@ -1409,26 +1412,59 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public validateAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type): void {
+    public validateAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type, toName?: string): void {
+        if (toType === fromType) {
+            return;
+        }
+
         if ((toType.flags & ts.TypeFlags.Any) !== 0) {
             // Assigning to un-typed variable
             return;
-        } else if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
+        }
+
+        // Use cache to avoid repeating check for same types (protects against infinite loop in recursive types)
+        let fromTypeCache = this.typeValidationCache.get(fromType);
+        if (fromTypeCache) {
+            if (fromTypeCache.has(toType)) {
+                return;
+            }
+        } else {
+            fromTypeCache = new Set();
+            this.typeValidationCache.set(fromType, fromTypeCache);
+        }
+        fromTypeCache.add(toType);
+
+        // Check function assignments
+        const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
+        const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);
+        if (fromHasContext !== toHasContext) {
+            if (fromHasContext) {
+                throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
+            } else {
+                throw TSTLErrors.UnsupportedMethodConversion(node, toName);
+            }
+        }
+
+        if ((fromType as ts.TypeReference).typeArguments && (toType as ts.TypeReference).typeArguments) {
             // Recurse into tuples/arrays
             (toType as ts.TypeReference).typeArguments.forEach((t, i) => {
-                this.validateAssignment(node, (fromType as ts.TypeReference).typeArguments[i], t);
+                this.validateAssignment(node, (fromType as ts.TypeReference).typeArguments[i], t, toName);
             });
-        } else {
-            // Check function assignments
-            const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
-            const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);
-            if (fromHasContext !== toHasContext) {
-                if (fromHasContext) {
-                    throw TSTLErrors.UnsupportedFunctionConversion(node);
-                } else {
-                    throw TSTLErrors.UnsupportedMethodConversion(node);
+        }
+
+        if ((toType.flags & ts.TypeFlags.Object) !== 0
+            && ((toType as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) !== 0
+            && toType.symbol && toType.symbol.members && fromType.symbol && fromType.symbol.members) {
+            // Recurse into interfaces
+            toType.symbol.members.forEach(
+                (toMember, memberName) => {
+                    const fromMember = fromType.symbol.members.get(memberName);
+                    const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
+                    const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
+                    this.validateAssignment(node, fromMemberType, toMemberType,
+                                            toName ? `${toName}.${memberName}` : memberName.toString());
                 }
-            }
+            );
         }
     }
 
@@ -1446,7 +1482,7 @@ export abstract class LuaTranspiler {
                 const param = params[i];
                 const paramType = this.checker.getTypeAtLocation(param);
                 const sigType = this.checker.getTypeAtLocation(sig.parameters[i].valueDeclaration);
-                this.validateAssignment(param, paramType, sigType);
+                this.validateAssignment(param, paramType, sigType, sig.parameters[i].name);
                 parameters.push(this.transpileExpression(param));
             }
         } else {

@@ -4,9 +4,10 @@ export class TransformHelper {
     // Helper to create simple lua variable statement;
     public static createLuaVariableStatement(identifier: ts.Identifier,
                                              expression?: ts.Expression,
-                                             typeNode?: ts.TypeNode): ts.VariableStatement {
+                                             typeNode?: ts.TypeNode,
+                                             modifiers: ReadonlyArray<ts.Modifier> = []): ts.VariableStatement {
         const declaration = ts.createVariableDeclaration(identifier, typeNode, expression);
-        const statement = ts.createVariableStatement([], ts.createVariableDeclarationList([declaration]));
+        const statement = ts.createVariableStatement(modifiers, ts.createVariableDeclarationList([declaration]));
         return statement;
     }
 

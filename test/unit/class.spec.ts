@@ -44,7 +44,7 @@ export class ClassTests {
 
     @Test("ClassConstructorAssignment")
     public classConstructorAssignment(): void {
-        // Transpile
+         // Transpile
         const lua = util.transpileString(
             `class a { constructor(public field: number) {} }
             return new a(4).field;`
@@ -55,26 +55,6 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(4);
-    }
-
-    @Test("ClassConstructorDefaultParameter")
-    public classConstructorDefaultParameter(): void {
-        const result = util.transpileAndExecute(
-            `class a { public field: number; constructor(f: number = 3) { this.field = f; } }
-            return new a().field;`
-        );
-
-        Expect(result).toBe(3);
-    }
-
-    @Test("ClassConstructorAssignmentDefault")
-    public classConstructorAssignmentParameterDefault(): void {
-        const result = util.transpileAndExecute(
-            `class a { constructor(public field: number = 3) { } }
-            return new a().field;`
-        );
-
-        Expect(result).toBe(3);
     }
 
     @Test("ClassNewNoBrackets")

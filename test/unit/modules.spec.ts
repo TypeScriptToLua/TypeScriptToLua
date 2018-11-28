@@ -23,6 +23,15 @@ export class LuaModuleTests {
         Expect(lua.startsWith(`require("lualib_bundle")`));
     }
 
+    @Test("lualibRequireNoUses")
+    public lualibRequireNoUses(): void {
+        // Transpile
+        const lua = util.transpileString(``, { luaLibImport: LuaLibImportKind.Require, luaTarget: LuaTarget.LuaJIT });
+
+        // Assert
+        Expect(lua).toBe(``);
+    }
+
     @Test("lualibRequireAlways")
     public lualibRequireAlways(): void {
         // Transpile
@@ -39,17 +48,5 @@ export class LuaModuleTests {
         const result = util.executeLua(lua);
 
         Expect(result).toBe(3);
-    }
-
-    @TestCase(LuaLibImportKind.Inline)
-    @TestCase(LuaLibImportKind.None)
-    @TestCase(LuaLibImportKind.Require)
-    @Test("LuaLib no uses? No code")
-    public lualibNoUsesNoCode(impKind: LuaLibImportKind): void {
-        // Transpile
-        const lua = util.transpileString(``, { luaLibImport: impKind });
-
-        // Assert
-        Expect(lua).toBe(``);
     }
 }

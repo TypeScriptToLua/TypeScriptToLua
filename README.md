@@ -8,8 +8,6 @@ Large projects written in lua can become hard to maintain and make it easy to ma
 [![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/TypescriptToLua/Lobby)
 
-You can also find us on Discord: [![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
-
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).
 

@@ -213,7 +213,7 @@ export abstract class LuaTranspiler {
         }
 
         // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline) {
+        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
             result += "\n" + "-- Lua Library Imports\n";
             for (const feature of this.luaLibFeatureSet) {
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
@@ -1789,29 +1789,30 @@ export abstract class LuaTranspiler {
 
     public transpileConstructor(node: ts.ConstructorDeclaration,
                                 className: string): string {
-        const extraInstanceFields = [];
+        // Check for field declarations in constructor
+        const constructorFieldsDeclarations = node.parameters.filter(p => p.modifiers !== undefined);
 
-        const parameters = ["self"];
-        node.parameters.forEach(param => {
-            // If param has decorators, add extra instance field
-            if (param.modifiers !== undefined) {
-                extraInstanceFields.push(this.transpileIdentifier(param.name as ts.Identifier));
-            }
-            // Add to parameter list
-            parameters.push(this.transpileIdentifier(param.name as ts.Identifier));
-        });
+        const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters);
 
-        let result = this.indent + `function ${className}.constructor(${parameters.join(",")})\n`;
-
-        // Add in instance field declarations
-        for (const f of extraInstanceFields) {
-            result += this.indent + `    self.${f} = ${f}\n`;
-        }
+        let result = this.indent + `function ${className}.constructor(${["self"].concat(paramNames).join(",")})\n`;
 
         // Transpile constructor body
         this.pushIndent();
         this.classStack.push(className);
-        result += this.transpileBlock(node.body);
+
+        // Add in instance field declarations
+        for (const declaration of constructorFieldsDeclarations) {
+            const declarationName = this.transpileIdentifier(declaration.name as ts.Identifier);
+            if (declaration.initializer) {
+                const value = this.transpileExpression(declaration.initializer);
+                result += this.indent + `self.${declarationName} = ${declarationName} or ${value}\n`;
+            } else {
+                result += this.indent + `self.${declarationName} = ${declarationName}\n`;
+            }
+        }
+
+        result += this.transpileFunctionBody(node.parameters, node.body, spreadIdentifier);
+
         this.classStack.pop();
         this.popIndent();
 

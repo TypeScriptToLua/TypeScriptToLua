@@ -74,7 +74,18 @@ export class TSHelper {
                 && (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
     }
 
-    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker, dontCheckBases?: boolean): boolean {
+        if (! dontCheckBases) {
+            // Check if type inherits from Array
+            const baseTypes = type.getBaseTypes();
+            if (baseTypes) {
+              for (const baseType of baseTypes) {
+                const baseTypeNode = checker.typeToTypeNode(baseType, undefined, ts.NodeBuilderFlags.InTypeAlias);
+                if (baseTypeNode && this.isArrayTypeNode(baseTypeNode)) { return true; }
+              }
+            }
+        }
+
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && this.isArrayTypeNode(typeNode);
     }

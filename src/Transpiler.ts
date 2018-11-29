@@ -1203,8 +1203,18 @@ export abstract class LuaTranspiler {
 
         }
 
-        if (tsHelper.isArrayType(ownerType, this.checker)) {
+        // if ownerType is a array, use only supported functions
+        if (tsHelper.isArrayType(ownerType, this.checker, true)) {
             return this.transpileArrayCallExpression(node);
+        }
+
+        // if ownerType inherits from an array, use array calls where appropriate
+        if (tsHelper.isArrayType(ownerType, this.checker)) {
+            try {
+                return this.transpileArrayCallExpression(node);
+            } catch (exception) {
+                // non-array method
+            }
         }
 
         // Get the type of the function

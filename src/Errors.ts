@@ -69,9 +69,19 @@ export class TSTLErrors {
     public static UnsupportedObjectLiteralElement = (elementKind: ts.SyntaxKind, node: ts.Node) =>
         new TranspileError(`Unsupported object literal element: ${elementKind}.`, node)
 
-    public static UnsupportedFunctionConversion = (node: ts.Node) =>
-        new TranspileError(`Unsupported conversion from method to function.`, node)
+    public static UnsupportedFunctionConversion = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported conversion from method to function "${name}".`, node);
+        } else {
+            return new TranspileError(`Unsupported conversion from method to function.`, node);
+        }
+    }
 
-    public static UnsupportedMethodConversion = (node: ts.Node) =>
-        new TranspileError(`Unsupported conversion from function to method.`, node)
+    public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported conversion from function to method "${name}".`, node);
+        } else {
+            return new TranspileError(`Unsupported conversion from function to method.`, node);
+        }
+    }
 }

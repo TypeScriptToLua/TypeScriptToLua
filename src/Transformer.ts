@@ -24,6 +24,7 @@ export class LuaTransformer {
     public transform(node: ts.SourceFile): ts.SourceFile {
         this.sourceFile = node;
         this.isModule = tsHelper.isFileModule(node);
+        console.log(this.checker.getTypeAtLocation(this.sourceFile).getSymbol().exports);
         return ts
             .transform(node,
                        [(ctx: ts.TransformationContext) => {
@@ -304,11 +305,6 @@ export class LuaTransformer {
         return undefined;
     }
     public visitVariableStatement(node: ts.VariableStatement): ts.VisitResult<ts.VariableStatement> {
-        // TODO maybe flag as gglobal/local here somehow?
-        if (!this.isModule && !this.currentNamespace) {
-            return ts.updateVariableStatement(
-                node, [ts.createModifier(ts.SyntaxKind.StaticKeyword)], node.declarationList);
-        }
         return node;
     }
     public visitExpressionStatement(node: ts.ExpressionStatement): ts.VisitResult<ts.ExpressionStatement> {

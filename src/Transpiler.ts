@@ -1210,9 +1210,10 @@ export abstract class LuaTranspiler {
 
         // if ownerType inherits from an array, use array calls where appropriate
         if (tsHelper.isArrayType(ownerType, this.checker)) {
-            try {
-                return this.transpileArrayCallExpression(node);
-            } catch (exception) {
+            const transpiledExpression = this.transpileArrayCallExpression(node, true);
+            if (transpiledExpression !== "") {
+                return transpiledExpression;
+            } else {
                 // non-array method
             }
         }
@@ -1313,7 +1314,7 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileArrayCallExpression(node: ts.CallExpression): string {
+    public transpileArrayCallExpression(node: ts.CallExpression, noException?: boolean ): string {
         const expression = node.expression as ts.PropertyAccessExpression;
         const params = this.transpileArguments(node.arguments);
         const caller = this.transpileExpression(expression.expression);
@@ -1357,6 +1358,7 @@ export abstract class LuaTranspiler {
                     return `table.concat(${caller}, ${params})`;
                 }
             default:
+                if (noException) { return ""; }
                 throw TSTLErrors.UnsupportedProperty("array", expressionName, node);
         }
     }

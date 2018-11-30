@@ -1,6 +1,13 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
 
+export enum ContextType {
+    None,
+    Void,
+    NonVoid,
+    Mixed,
+}
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -249,37 +256,43 @@ export class TSHelper {
         return [false, null, null];
     }
 
-    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean {
+    public static getDeclarationContextType(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): ContextType {
         const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
                                                 && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
         if (thisArg) {
             // Explicit 'this'
-            return !thisArg.type || thisArg.type.kind !== ts.SyntaxKind.VoidKeyword;
+            return thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword
+                ? ContextType.Void : ContextType.NonVoid;
         }
         if ((ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl))
             && !(ts.getCombinedModifierFlags(sigDecl) & ts.ModifierFlags.Static)) {
             // Non-static method
-            return true;
+            return ContextType.NonVoid;
         }
         if ((ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent))
             && !(ts.getCombinedModifierFlags(sigDecl.parent) & ts.ModifierFlags.Static)) {
             // Non-static lambda property
-            return true;
+            return ContextType.NonVoid;
         }
-        if (ts.isBinaryExpression(sigDecl.parent)
-            && this.isFunctionWithContext(checker.getTypeAtLocation(sigDecl.parent.left), checker)) {
+        if (ts.isBinaryExpression(sigDecl.parent)) {
             // Function expression: check type being assigned to
-            return true;
+            return this.getFunctionContextType(checker.getTypeAtLocation(sigDecl.parent.left), checker);
         }
-        return false;
+        return ContextType.Void;
     }
 
-    public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
+    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
         const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         if (sigs.length === 0) {
-            return false;
+            return ContextType.None;
         }
         const sigDecls = sigs.map(s => s.getDeclaration());
-        return sigDecls.every(s => this.isDeclarationWithContext(s, checker));
+        const context = this.getDeclarationContextType(sigDecls[0], checker);
+        for (let i = 1; i < sigDecls.length; ++i) {
+            if (this.getDeclarationContextType(sigDecls[i], checker) !== context) {
+                return ContextType.Mixed;
+            }
+        }
+        return context;
     }
 }

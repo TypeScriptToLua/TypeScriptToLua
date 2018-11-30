@@ -84,4 +84,16 @@ export class TSTLErrors {
             return new TranspileError(`Unsupported conversion from function to method.`, node);
         }
     }
+
+    public static UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported assignment of mixed function/method overload to "${name}". `
+                                      + `All overloads should either be functions or methods.`,
+                                      node);
+        } else {
+            return new TranspileError(`Unsupported assignment of mixed function/method overload. `
+                                      + `All overloads should either be functions or methods.`,
+                                      node);
+        }
+    }
 }

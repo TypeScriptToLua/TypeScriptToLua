@@ -1,10 +1,13 @@
 x = y;
 x = obj.prop;
 x = arr[(0)+1];
+x = customArr[(0)+1];
 x = ((function() local __TS_tmp = obj.prop; y = __TS_tmp; return __TS_tmp end)());
 x = obj.prop;
 obj.prop = x;
 arr[(0)+1] = x;
+customArr[(0)+1] = x;
+customArr:reset();
 obj.prop = arr[(0)+1];
 obj.prop = ((function() arr[(0)+1] = x; return x end)());
 xTup = getTup();

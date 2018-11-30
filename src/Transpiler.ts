@@ -1213,8 +1213,6 @@ export abstract class LuaTranspiler {
             const transpiledExpression = this.transpileArrayCallExpression(node, true);
             if (transpiledExpression !== "") {
                 return transpiledExpression;
-            } else {
-                // non-array method
             }
         }
 

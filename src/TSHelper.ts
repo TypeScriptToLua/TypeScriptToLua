@@ -247,4 +247,47 @@ export class TSHelper {
         }
         return [false, null, null];
     }
+
+    public static isDefaultArrayCallExpression(node: ts.CallExpression,
+                                               transpileIdentifier: (identifier: ts.Identifier) => string ): boolean {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const expressionName = transpileIdentifier(expression.name);
+        switch (expressionName) {
+            case "concat":
+                return true;
+            case "push":
+                return true;
+            case "reverse":
+                return true;
+            case "shift":
+                return true;
+            case "unshift":
+                return true;
+            case "sort":
+                return true;
+            case "pop":
+                return true;
+            case "forEach":
+                return true;
+            case "indexOf":
+                return true;
+            case "map":
+                return true;
+            case "filter":
+                return true;
+            case "some":
+                return true;
+            case "every":
+                return true;
+            case "slice":
+                return true;
+            case "splice":
+                return true;
+            case "join":
+                return true;
+            default:
+                return false;
+        }
+    }
+
 }

@@ -75,7 +75,7 @@ export class TSHelper {
     }
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker, dontCheckBases?: boolean): boolean {
-        if (! dontCheckBases) {
+        if (!dontCheckBases) {
             // Check if type inherits from Array
             const baseTypes = type.getBaseTypes();
             if (baseTypes) {

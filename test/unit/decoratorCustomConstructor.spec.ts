@@ -9,7 +9,7 @@ export class DecoratorCustomConstructor {
     public customCreate(): void {
         // Transpile
         const lua = util.transpileString(
-            `/** !CustomConstructor Point2DCreate */
+            `/** @customConstructor Point2DCreate */
             class Point2D {
                 x: number;
                 y: number;
@@ -29,7 +29,7 @@ export class DecoratorCustomConstructor {
     public incorrectUsage(): void {
         Expect(() => {
             util.transpileString(
-                `/** !CustomConstructor */
+                `/** @customConstructor */
                 class Point2D {
                     x: number;
                     y: number;

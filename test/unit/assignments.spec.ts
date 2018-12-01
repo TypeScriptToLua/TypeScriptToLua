@@ -76,7 +76,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn assignment")
     public tupleReturnFunction(): void {
-        const code = `/** !TupleReturn */\n`
+        const code = `/** @tupleReturn */\n`
                    + `declare function abc() { return [1,2,3]; }\n`
                    + `let [a,b] = abc();`;
 
@@ -86,7 +86,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment(): void {
-        const code = `/** !TupleReturn */\n`
+        const code = `/** @tupleReturn */\n`
                    + `declare function abc(): [number, string]; }\n`
                    + `let a = abc();`
                    + `a = abc();`;
@@ -98,7 +98,7 @@ export class AssignmentTests {
     @Test("TupleReturn interface assignment")
     public tupleReturnInterface(): void {
         const code = `interface def {\n`
-                   + `/** !TupleReturn */\n`
+                   + `/** @tupleReturn */\n`
                    + `abc();\n`
                    + `} declare const jkl : def;\n`
                    + `let [a,b] = jkl.abc();`;
@@ -110,7 +110,7 @@ export class AssignmentTests {
     @Test("TupleReturn namespace assignment")
     public tupleReturnNameSpace(): void {
         const code = `declare namespace def {\n`
-                   + `/** !TupleReturn */\n`
+                   + `/** @tupleReturn */\n`
                    + `function abc() {}\n`
                    + `}\n`
                    + `let [a,b] = def.abc();`;
@@ -122,7 +122,7 @@ export class AssignmentTests {
     @Test("TupleReturn method assignment")
     public tupleReturnMethod(): void {
         const code = `declare class def {\n`
-                   + `/** !TupleReturn */\n`
+                   + `/** @tupleReturn */\n`
                    + `abc() { return [1,2,3]; }\n`
                    + `} const jkl = new def();\n`
                    + `let [a,b] = jkl.abc();`;
@@ -133,7 +133,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn functional")
     public tupleReturnFunctional(): void {
-        const code = `/** !TupleReturn */
+        const code = `/** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const [a, b] = abc();
         return b + a;`;
@@ -147,7 +147,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn single")
     public tupleReturnSingle(): void {
-        const code = `/** !TupleReturn */
+        const code = `/** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const res = abc();
         return res.length`;
@@ -161,7 +161,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn in expression")
     public tupleReturnInExpression(): void {
-        const code = `/** !TupleReturn */
+        const code = `/** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];`;
 

@@ -42,7 +42,7 @@ export class TSHelperTests {
 
     @Test("GetCustomDecorators single")
     public GetCustomDecoratorsSingle(): void {
-        const source = `/** !CompileMembersOnly */
+        const source = `/** @compileMembersOnly */
             enum TestEnum {
                 val1 = 0,
                 val2 = 2,
@@ -64,8 +64,8 @@ export class TSHelperTests {
 
     @Test("GetCustomDecorators multiple")
     public GetCustomDecoratorsMultiple(): void {
-        const source = `/** !CompileMembersOnly
-            * !Phantom */
+        const source = `/** @compileMembersOnly
+            * @Phantom */
             enum TestEnum {
                 val1 = 0,
                 val2 = 2,
@@ -88,7 +88,7 @@ export class TSHelperTests {
 
     @Test("GetCustomDecorators single jsdoc")
     public GetCustomDecoratorsSingleJSDoc(): void {
-        const source = `/** @CompileMembersOnly */
+        const source = `/** @compileMembersOnly */
             enum TestEnum {
                 val1 = 0,
                 val2 = 2,
@@ -110,7 +110,7 @@ export class TSHelperTests {
 
     @Test("GetCustomDecorators multiple jsdoc")
     public GetCustomDecoratorsMultipleJSDoc(): void {
-        const source = `/** @Phantom
+        const source = `/** @phantom
             * @CompileMembersOnly */
             enum TestEnum {
                 val1 = 0,
@@ -136,8 +136,8 @@ export class TSHelperTests {
     public GetCustomDecoratorsMultipleDefaultJSDoc(): void {
         const source = `/**
             * @description abc
-            * @Phantom
-            * @CompileMembersOnly */
+            * @phantom
+            * @compileMembersOnly */
             enum TestEnum {
                 val1 = 0,
                 val2 = 2,

@@ -10,7 +10,7 @@ declare function getIndex(): number;
 declare let xTup: [number, number];
 declare let yTup: [number, number];
 declare function getTup(): [number, number];
-/** !TupleReturn */
+/** @tupleReturn */
 declare function getTupRet(): [number, number];
 x = y;
 x = obj.prop;

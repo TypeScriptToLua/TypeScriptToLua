@@ -6,9 +6,8 @@ Large projects written in lua can become hard to maintain and make it easy to ma
 [![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/perryvw/typescripttolua?branch=master&svg=true)](https://ci.appveyor.com/project/Perryvw/typescripttolua)
 [![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/TypescriptToLua/Lobby)
 
-You can also find us on Discord: [![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
+You can chat with us on Discord: [![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
 
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).

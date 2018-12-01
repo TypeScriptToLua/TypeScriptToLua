@@ -5,6 +5,7 @@ import {CompilerOptions} from "./CompilerOptions";
 import {DecoratorKind} from "./Decorator";
 import {TSTLErrors} from "./Errors";
 import {TransformHelper as transformHelper} from "./TransformHelper";
+import {LuaTarget} from "./Transpiler";
 import {TSHelper as tsHelper} from "./TSHelper";
 
 export class LuaTransformer {
@@ -24,7 +25,6 @@ export class LuaTransformer {
     public transform(node: ts.SourceFile): ts.SourceFile {
         this.sourceFile = node;
         this.isModule = tsHelper.isFileModule(node);
-        console.log(this.checker.getTypeAtLocation(this.sourceFile).getSymbol().exports);
         return ts
             .transform(node,
                        [(ctx: ts.TransformationContext) => {
@@ -69,6 +69,86 @@ export class LuaTransformer {
                 return this.visitInterfaceDeclaration(node as ts.InterfaceDeclaration);
             // Statements
             case ts.SyntaxKind.VariableStatement:
+            case ts.SyntaxKind.ExpressionStatement:
+            case ts.SyntaxKind.ReturnStatement:
+            case ts.SyntaxKind.IfStatement:
+            case ts.SyntaxKind.WhileStatement:
+            case ts.SyntaxKind.DoStatement:
+            case ts.SyntaxKind.ForStatement:
+            case ts.SyntaxKind.ForOfStatement:
+            case ts.SyntaxKind.ForInStatement:
+            case ts.SyntaxKind.SwitchStatement:
+            case ts.SyntaxKind.BreakStatement:
+            case ts.SyntaxKind.TryStatement:
+            case ts.SyntaxKind.ThrowStatement:
+            case ts.SyntaxKind.ContinueStatement:
+            case ts.SyntaxKind.EmptyStatement:
+                return this.visitStatement(node as ts.Statement);
+            // Expressions
+            case ts.SyntaxKind.BinaryExpression:
+            case ts.SyntaxKind.ConditionalExpression:
+            case ts.SyntaxKind.CallExpression:
+            case ts.SyntaxKind.PropertyAccessExpression:
+            case ts.SyntaxKind.ElementAccessExpression:
+            case ts.SyntaxKind.ParenthesizedExpression:
+            case ts.SyntaxKind.TypeAssertionExpression:
+            case ts.SyntaxKind.AsExpression:
+            case ts.SyntaxKind.TypeOfExpression:
+            case ts.SyntaxKind.SpreadElement:
+            case ts.SyntaxKind.NonNullExpression:
+            case ts.SyntaxKind.ClassExpression:
+            case ts.SyntaxKind.TemplateExpression:
+            case ts.SyntaxKind.PostfixUnaryExpression:
+            case ts.SyntaxKind.PrefixUnaryExpression:
+            case ts.SyntaxKind.ArrayLiteralExpression:
+            case ts.SyntaxKind.ObjectLiteralExpression:
+            case ts.SyntaxKind.DeleteExpression:
+            case ts.SyntaxKind.FunctionExpression:
+            case ts.SyntaxKind.ArrowFunction:
+            case ts.SyntaxKind.NewExpression:
+            case ts.SyntaxKind.Identifier:
+                return this.visitExpression(node as ts.Expression);
+            // Literal
+            case ts.SyntaxKind.StringLiteral:
+                return this.visitStringLiteral(node as ts.StringLiteral);
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+                return this.visitNoSubstitutionTemplateLiteral(node as ts.NoSubstitutionTemplateLiteral);
+            case ts.SyntaxKind.NumericLiteral:
+                return this.visitNumericLiteral(node as ts.NumericLiteral);
+            // Keywords
+            case ts.SyntaxKind.TrueKeyword:
+                return this.visitTrueKeyword(node as ts.BooleanLiteral);
+            case ts.SyntaxKind.FalseKeyword:
+                return this.visitFalseKeyword(node as ts.BooleanLiteral);
+            case ts.SyntaxKind.NullKeyword:
+                return this.visitNullKeyword(node as ts.KeywordTypeNode);
+            case ts.SyntaxKind.UndefinedKeyword:
+                return this.visitUndefinedKeyword(node as ts.KeywordTypeNode);
+            case ts.SyntaxKind.ThisKeyword:
+                return this.visitThisKeyword(node as ts.KeywordTypeNode);
+            case ts.SyntaxKind.SuperKeyword:
+                return this.visitSuperKeyword(node as ts.KeywordTypeNode);
+            // ComputedPropertyName
+            case ts.SyntaxKind.ComputedPropertyName:
+                return this.visitComputedPropertyName(node as ts.ComputedPropertyName);
+            // Blocks
+            case ts.SyntaxKind.Block:
+                return this.visitBlock(node as ts.Block);
+            case ts.SyntaxKind.ModuleBlock:
+                return this.visitModuleBlock(node as ts.ModuleBlock);
+            // EOF TOKEN
+            case ts.SyntaxKind.EndOfFileToken:
+                return this.visitEndOfFileToken(node as ts.EndOfFileToken);
+            default:
+                throw TSTLErrors.UnsupportedKind("Node", node.kind, node);
+        }
+    }
+    public visitStatement(node: ts.Statement): ts.Statement {
+        if (ts.isBlock(node)) {
+            return this.visitBlock(node);
+        }
+        switch (node.kind) {
+            case ts.SyntaxKind.VariableStatement:
                 return this.visitVariableStatement(node as ts.VariableStatement);
             case ts.SyntaxKind.ExpressionStatement:
                 return this.visitExpressionStatement(node as ts.ExpressionStatement);
@@ -98,7 +178,12 @@ export class LuaTransformer {
                 return this.visitContinueStatement(node as ts.ContinueStatement);
             case ts.SyntaxKind.EmptyStatement:
                 return this.visitEmptyStatement(node as ts.EmptyStatement);
-            // Expressions
+            default:
+                throw TSTLErrors.UnsupportedKind("Statement", node.kind, node);
+        }
+    }
+    public visitExpression(node: ts.Expression): ts.Expression {
+        switch (node.kind) {
             case ts.SyntaxKind.BinaryExpression:
                 return this.visitBinaryExpression(node as ts.BinaryExpression);
             case ts.SyntaxKind.ConditionalExpression:
@@ -137,46 +222,14 @@ export class LuaTransformer {
                 return this.visitDeleteExpression(node as ts.DeleteExpression);
             case ts.SyntaxKind.FunctionExpression:
                 return this.visitFunctionExpression(node as ts.FunctionExpression);
-            case ts.SyntaxKind.NewExpression:
-                return this.visitNewExpression(node as ts.NewExpression);
             case ts.SyntaxKind.ArrowFunction:
                 return this.visitArrowFunction(node as ts.ArrowFunction);
-            // Identifier
+            case ts.SyntaxKind.NewExpression:
+                return this.visitNewExpression(node as ts.NewExpression);
             case ts.SyntaxKind.Identifier:
                 return this.visitIdentifier(node as ts.Identifier);
-            // Literal
-            case ts.SyntaxKind.StringLiteral:
-                return this.visitStringLiteral(node as ts.StringLiteral);
-            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-                return this.visitNoSubstitutionTemplateLiteral(node as ts.NoSubstitutionTemplateLiteral);
-            case ts.SyntaxKind.NumericLiteral:
-                return this.visitNumericLiteral(node as ts.NumericLiteral);
-            // Keywords
-            case ts.SyntaxKind.TrueKeyword:
-                return this.visitTrueKeyword(node as ts.BooleanLiteral);
-            case ts.SyntaxKind.FalseKeyword:
-                return this.visitFalseKeyword(node as ts.BooleanLiteral);
-            case ts.SyntaxKind.NullKeyword:
-                return this.visitNullKeyword(node as ts.KeywordTypeNode);
-            case ts.SyntaxKind.UndefinedKeyword:
-                return this.visitUndefinedKeyword(node as ts.KeywordTypeNode);
-            case ts.SyntaxKind.ThisKeyword:
-                return this.visitThisKeyword(node as ts.KeywordTypeNode);
-            case ts.SyntaxKind.SuperKeyword:
-                return this.visitSuperKeyword(node as ts.KeywordTypeNode);
-            // ComputedPropertyName
-            case ts.SyntaxKind.ComputedPropertyName:
-                return this.visitComputedPropertyName(node as ts.ComputedPropertyName);
-            // Blocks
-            case ts.SyntaxKind.Block:
-                return this.visitBlock(node as ts.Block);
-            case ts.SyntaxKind.ModuleBlock:
-                return this.visitModuleBlock(node as ts.ModuleBlock);
-            // EOF TOKEN
-            case ts.SyntaxKind.EndOfFileToken:
-                return this.visitEndOfFileToken(node as ts.EndOfFileToken);
             default:
-                throw TSTLErrors.UnsupportedKind("Node", node.kind, node);
+                throw TSTLErrors.UnsupportedKind("Expression", node.kind, node);
         }
     }
     public visitImportDeclaration(node: ts.ImportDeclaration): ts.VisitResult<ts.Node> {
@@ -304,116 +357,219 @@ export class LuaTransformer {
     public visitInterfaceDeclaration(node: ts.InterfaceDeclaration): ts.VisitResult<ts.InterfaceDeclaration> {
         return undefined;
     }
-    public visitVariableStatement(node: ts.VariableStatement): ts.VisitResult<ts.VariableStatement> {
+    public visitVariableStatement(node: ts.VariableStatement): ts.VariableStatement {
+        return ts.updateVariableStatement(
+            node, node.modifiers, this.visitVariableDeclarationList(node.declarationList));
+    }
+    public visitVariableDeclarationList(node: ts.VariableDeclarationList): ts.VariableDeclarationList {
+        return ts.updateVariableDeclarationList(node,
+                                                node.declarations.map(decl => this.visitVariableDeclaration(decl)));
+    }
+    public visitVariableDeclaration(node: ts.VariableDeclaration): ts.VariableDeclaration {
+        // TODO
         return node;
     }
-    public visitExpressionStatement(node: ts.ExpressionStatement): ts.VisitResult<ts.ExpressionStatement> {
+    public visitExpressionStatement(node: ts.ExpressionStatement): ts.ExpressionStatement {
         return node;
     }
-    public visitReturn(node: ts.ReturnStatement): ts.VisitResult<ts.ReturnStatement> {
+    public visitReturn(node: ts.ReturnStatement): ts.ReturnStatement {
+        return ts.updateReturn(node, this.visitExpression(node.expression));
+    }
+    public visitIfStatement(node: ts.IfStatement): ts.IfStatement {
+        return ts.updateIf(node,
+                           this.visitExpression(node.expression),
+                           this.visitStatement(node.thenStatement),
+                           this.visitStatement(node.elseStatement));
+    }
+    public visitWhileStatement(node: ts.WhileStatement): ts.WhileStatement {
+        return ts.updateWhile(node, this.visitExpression(node.expression), this.visitStatement(node.statement));
+    }
+    public visitDoStatement(node: ts.DoStatement): ts.DoStatement {
+        return ts.updateDo(node, this.visitStatement(node.statement), this.visitExpression(node.expression));
+    }
+    public visitForStatement(node: ts.ForStatement): ts.ForStatement {
+        return ts.updateFor(node,
+                            this.visitForInitializer(node.initializer),
+                            this.visitExpression(node.condition),
+                            this.visitExpression(node.incrementor),
+                            this.visitStatement(node.statement));
+    }
+    public visitForOfStatement(node: ts.ForOfStatement): ts.ForOfStatement {
+        return ts.updateForOf(node,
+                              node.awaitModifier,
+                              this.visitForInitializer(node.initializer),
+                              this.visitExpression(node.expression),
+                              this.visitStatement(node.statement));
+    }
+    public visitForInStatement(node: ts.ForInStatement): ts.ForInStatement {
+        return ts.updateForIn(node,
+                              this.visitForInitializer(node.initializer),
+                              this.visitExpression(node.expression),
+                              this.visitStatement(node.statement));
+    }
+    public visitForInitializer(node: ts.ForInitializer): ts.ForInitializer {
+        let updatedInitializer: ts.ForInitializer;
+        if (ts.isVariableDeclarationList(node)) {
+            updatedInitializer = this.visitVariableDeclarationList(node);
+        } else {
+            updatedInitializer = this.visitExpression(node);
+        }
+        return updatedInitializer;
+    }
+    public visitSwitchStatement(node: ts.SwitchStatement): ts.SwitchStatement {
+        // TODO
         return node;
     }
-    public visitIfStatement(node: ts.IfStatement): ts.VisitResult<ts.IfStatement> {
+    public visitBreakStatement(node: ts.BreakStatement): ts.BreakStatement {
+        // TODO
         return node;
     }
-    public visitWhileStatement(node: ts.WhileStatement): ts.VisitResult<ts.WhileStatement> {
+    public visitTryStatement(node: ts.TryStatement): ts.TryStatement {
+        // TODO
         return node;
     }
-    public visitDoStatement(node: ts.DoStatement): ts.VisitResult<ts.DoStatement> {
+    public visitThrowStatement(node: ts.ThrowStatement): ts.ThrowStatement {
+        // TODO
         return node;
     }
-    public visitForStatement(node: ts.ForStatement): ts.VisitResult<ts.ForStatement> {
+    public visitContinueStatement(node: ts.ContinueStatement): ts.ContinueStatement {
+        // TODO
         return node;
     }
-    public visitForOfStatement(node: ts.ForOfStatement): ts.VisitResult<ts.ForOfStatement> {
-        return node;
-    }
-    public visitForInStatement(node: ts.ForInStatement): ts.VisitResult<ts.ForInStatement> {
-        return node;
-    }
-    public visitSwitchStatement(node: ts.SwitchStatement): ts.VisitResult<ts.SwitchStatement> {
-        return node;
-    }
-    public visitBreakStatement(node: ts.BreakStatement): ts.VisitResult<ts.BreakStatement> {
-        return node;
-    }
-    public visitTryStatement(node: ts.TryStatement): ts.VisitResult<ts.TryStatement> {
-        return node;
-    }
-    public visitThrowStatement(node: ts.ThrowStatement): ts.VisitResult<ts.ThrowStatement> {
-        return node;
-    }
-    public visitContinueStatement(node: ts.ContinueStatement): ts.VisitResult<ts.ContinueStatement> {
-        return node;
-    }
-    public visitEmptyStatement(node: ts.EmptyStatement): ts.VisitResult<ts.EmptyStatement> {
+    public visitEmptyStatement(node: ts.EmptyStatement): ts.EmptyStatement {
         return undefined;
     }
-    public visitBinaryExpression(node: ts.BinaryExpression): ts.VisitResult<ts.BinaryExpression> {
+    public visitBinaryExpression(node: ts.BinaryExpression): ts.BinaryExpression {
+        let operatorToken = node.operatorToken;
+        if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
+            operatorToken = ts.createToken(ts.SyntaxKind.EqualsEqualsToken);
+        }
+        return ts.updateBinary(node, this.visitExpression(node.left), this.visitExpression(node.right), operatorToken);
+    }
+    public visitConditionalExpression(node: ts.ConditionalExpression): ts.ConditionalExpression {
+        return ts.updateConditional(node,
+                                    this.visitExpression(node.condition),
+                                    this.visitExpression(node.whenTrue),
+                                    this.visitExpression(node.whenFalse));
+    }
+    public visitCallExpression(node: ts.CallExpression): ts.CallExpression {
+        return ts.updateCall(node,
+                             this.visitExpression(node.expression),
+                             node.typeArguments,
+                             node.arguments.map(arg => this.visitExpression(arg)));
+    }
+    public visitPropertyAccessExpression(node: ts.PropertyAccessExpression): ts.PropertyAccessExpression {
+        return ts.updatePropertyAccess(node, this.visitExpression(node.expression), node.name);
+    }
+    public visitElementAccessExpression(node: ts.ElementAccessExpression): ts.ElementAccessExpression {
+        return ts.updateElementAccess(
+            node, this.visitExpression(node.expression), this.visitExpression(node.argumentExpression));
+    }
+    public visitParenthesizedExpression(node: ts.ParenthesizedExpression): ts.ParenthesizedExpression {
+        return ts.updateParen(node, this.visitExpression(node.expression));
+    }
+    public visitTypeAssertionExpression(node: ts.TypeAssertion): ts.Expression {
+        return this.visitExpression(node.expression);
+    }
+    public visitAsExpression(node: ts.AsExpression): ts.Expression {
+        return this.visitExpression(node.expression);
+    }
+    public visitTypeOfExpression(node: ts.TypeOfExpression): ts.BinaryExpression {
+        // ((type(${expression}) == "table" and "object") or type(${expression}))
+        const expression = this.visitExpression(node.expression);
+        const typeCall = ts.createCall(
+            ts.createIdentifier("type"), [ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)], [expression]);
+        const comapareExpression =
+            ts.createBinary(typeCall, ts.SyntaxKind.EqualsEqualsToken, ts.createLiteral("table"));
+        const andExpression = ts.createLogicalAnd(comapareExpression, ts.createLiteral("object"));
+        const orExpression = ts.createLogicalOr(andExpression, typeCall);
+        return orExpression;
+    }
+    public visitSpreadElement(node: ts.SpreadElement): ts.CallExpression {
+        // TODO move this to differen targets
+        // table.unpack(expression) / unpack(expression)
+        let functionExpresion: ts.Expression;
+        switch (this.options.luaTarget) {
+            case LuaTarget.Lua51:
+                functionExpresion = ts.createIdentifier("unpack");
+                break;
+            case LuaTarget.Lua52:
+            case LuaTarget.Lua53:
+                functionExpresion =
+                    ts.createPropertyAccess(ts.createIdentifier("table"), ts.createIdentifier("unpack"));
+            case LuaTarget.LuaJIT:
+                functionExpresion = ts.createIdentifier("unpack");
+                break;
+        }
+        return ts.createCall(
+            functionExpresion, [ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)], [node.expression]);
+    }
+    public visitNonNullExpression(node: ts.NonNullExpression): ts.Expression {
+        return this.visitExpression(node.expression);
+    }
+    public visitClassExpression(node: ts.ClassExpression): ts.ClassExpression {
+        // TODO
         return node;
     }
-    public visitConditionalExpression(node: ts.ConditionalExpression): ts.VisitResult<ts.ConditionalExpression> {
+    public visitTemplateExpression(node: ts.TemplateExpression): ts.Expression {
+        let concatExpression: ts.Expression = ts.createLiteral(node.head.text);
+        node.templateSpans.forEach(span => {
+            const expr = ts.createCall(ts.createIdentifier("tostring"),
+                                       [ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)],
+                                       [this.visitExpression(span.expression)]);
+            const text = ts.createLiteral(span.literal.text);
+
+            concatExpression = ts.createAdd(concatExpression, ts.createAdd(expr, ts.createLiteral(text)));
+        });
+        return concatExpression;
+    }
+    public visitPostfixUnaryExpression(node: ts.PostfixUnaryExpression): ts.PostfixUnaryExpression {
+        // TODO
         return node;
     }
-    public visitCallExpression(node: ts.CallExpression): ts.VisitResult<ts.CallExpression> {
+    public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.PrefixUnaryExpression {
+        // TODO
         return node;
     }
-    public visitPropertyAccessExpression(node: ts.PropertyAccessExpression):
-        ts.VisitResult<ts.PropertyAccessExpression> {
+    public visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): ts.ArrayLiteralExpression {
         return node;
     }
-    public visitElementAccessExpression(node: ts.ElementAccessExpression): ts.VisitResult<ts.ElementAccessExpression> {
+    public visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): ts.ObjectLiteralExpression {
         return node;
     }
-    public visitParenthesizedExpression(node: ts.ParenthesizedExpression): ts.VisitResult<ts.ParenthesizedExpression> {
-        throw node;
+    public visitDeleteExpression(node: ts.DeleteExpression): ts.Expression {
+        return ts.createAssignment(this.visitExpression(node.expression), ts.createNull());
     }
-    public visitTypeAssertionExpression(node: ts.TypeAssertion): ts.VisitResult<ts.UnaryExpression> {
-        return node.expression;
+    public visitFunctionExpression(node: ts.FunctionExpression): ts.FunctionExpression {
+        return ts.updateFunctionExpression(node,
+                                           node.modifiers,
+                                           node.asteriskToken,
+                                           node.name,
+                                           node.typeParameters,
+                                           node.parameters,
+                                           node.type,
+                                           this.visitBlock(node.body));
     }
-    public visitAsExpression(node: ts.AsExpression): ts.VisitResult<ts.Expression> {
-        return node.expression;
+    public visitArrowFunction(node: ts.ArrowFunction): ts.ArrowFunction {
+        let newBody: ts.ConciseBody;
+        if (ts.isBlock(node.body)) {
+            newBody = this.visitBlock(node.body);
+        } else {
+            newBody = this.visitExpression(node.body);
+        }
+        return ts.updateArrowFunction(node, node.modifiers, node.typeParameters, node.parameters, node.type, newBody);
     }
-    public visitTypeOfExpression(node: ts.TypeOfExpression): ts.VisitResult<ts.TypeOfExpression> {
+    public visitNewExpression(node: ts.NewExpression): ts.NewExpression {
         return node;
     }
-    public visitSpreadElement(node: ts.SpreadElement): ts.VisitResult<ts.SpreadElement> {
-        return node;
-    }
-    public visitNonNullExpression(node: ts.NonNullExpression): ts.VisitResult<ts.Expression> {
-        return node.expression;
-    }
-    public visitClassExpression(node: ts.ClassExpression): ts.VisitResult<ts.ClassExpression> {
-        return node;
-    }
-    public visitTemplateExpression(node: ts.TemplateExpression): ts.VisitResult<ts.TemplateExpression> {
-        return node;
-    }
-    public visitPostfixUnaryExpression(node: ts.PostfixUnaryExpression): ts.VisitResult<ts.PostfixUnaryExpression> {
-        return node;
-    }
-    public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.VisitResult<ts.PrefixUnaryExpression> {
-        return node;
-    }
-    public visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): ts.VisitResult<ts.ArrayLiteralExpression> {
-        return node;
-    }
-    public visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): ts.VisitResult<ts.ObjectLiteralExpression> {
-        return node;
-    }
-    public visitDeleteExpression(node: ts.DeleteExpression): ts.VisitResult<ts.DeleteExpression> {
-        return node;
-    }
-    public visitFunctionExpression(node: ts.FunctionExpression): ts.VisitResult<ts.FunctionExpression> {
-        return node;
-    }
-    public visitNewExpression(node: ts.NewExpression): ts.VisitResult<ts.NewExpression> {
-        return node;
-    }
-    public visitArrowFunction(node: ts.ArrowFunction): ts.VisitResult<ts.ArrowFunction> {
-        return node;
-    }
-    public visitIdentifier(node: ts.Identifier): ts.VisitResult<ts.Identifier> {
+    public visitIdentifier(node: ts.Identifier): ts.Identifier| ts.PropertyAccessExpression {
+        // If we are in a namespace or a sourcefile that is a module check if this identifier is exported
+        if (this.currentNamespace && tsHelper.isIdentifierExported(node, this.currentNamespace, this.checker)) {
+            return ts.createPropertyAccess(this.currentNamespace.name, node);
+        } else if (this.isModule && tsHelper.isIdentifierExported(node, this.sourceFile, this.checker)) {
+            return ts.createPropertyAccess(ts.createIdentifier("exports"), node);
+        }
+
         return node;
     }
     public visitStringLiteral(node: ts.StringLiteral): ts.VisitResult<ts.StringLiteral> {
@@ -447,9 +603,9 @@ export class LuaTransformer {
     public visitComputedPropertyName(node: ts.ComputedPropertyName): ts.VisitResult<ts.ComputedPropertyName> {
         return node;
     }
-    public visitBlock(node: ts.Block): ts.VisitResult<ts.Block> {
-        return ts.updateBlock(
-            node, transformHelper.flatten(node.statements.map(s => this.visitor(s)) as ts.Statement[]));
+    public visitBlock(node: ts.Block): ts.Block {
+        return ts.updateBlock(node,
+                              transformHelper.flatten(node.statements.map(s => this.visitor(s)) as ts.Statement[]));
     }
     public visitModuleBlock(node: ts.ModuleBlock): ts.VisitResult<ts.Block> {
         return this.visitBlock(ts.createBlock(node.statements));

@@ -646,8 +646,6 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 const text = this.escapeString((node as ts.StringLiteral).text);
                 return `"${text}"`;
-            case ts.SyntaxKind.TemplateExpression:
-                return this.transpileTemplateExpression(node as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
                 return (node as ts.NumericLiteral).text;
             case ts.SyntaxKind.TrueKeyword:
@@ -667,8 +665,6 @@ export abstract class LuaTranspiler {
                 return this.transpileArrayLiteral(node as ts.ArrayLiteralExpression);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transpileObjectLiteral(node as ts.ObjectLiteralExpression);
-            case ts.SyntaxKind.DeleteExpression:
-                return this.transpileExpression((node as ts.DeleteExpression).expression) + "=nil";
             case ts.SyntaxKind.FunctionExpression:
             case ts.SyntaxKind.ArrowFunction:
                 return this.transpileFunctionExpression(node as ts.ArrowFunction);
@@ -680,20 +676,8 @@ export abstract class LuaTranspiler {
                 return "(" + this.transpileExpression((node as ts.ParenthesizedExpression).expression) + ")";
             case ts.SyntaxKind.SuperKeyword:
                 return "self.__base";
-            case ts.SyntaxKind.TypeAssertionExpression:
-                // Simply ignore the type assertion
-                return this.transpileExpression((node as ts.TypeAssertion).expression);
-            case ts.SyntaxKind.AsExpression:
-                // Also ignore as casts
-                return this.transpileExpression((node as ts.AsExpression).expression);
-            case ts.SyntaxKind.TypeOfExpression:
-                return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             case ts.SyntaxKind.EmptyStatement:
                 return "";
-            case ts.SyntaxKind.SpreadElement:
-                return this.transpileSpreadElement(node as ts.SpreadElement);
-            case ts.SyntaxKind.NonNullExpression:
-                return this.transpileExpression((node as ts.NonNullExpression).expression);
             case ts.SyntaxKind.ClassExpression:
                 this.namespace.push("");
                 const classDeclaration =  this.transpileClass(node as ts.ClassExpression, "_");
@@ -705,7 +689,6 @@ export abstract class LuaTranspiler {
                 this.popIndent();
                 return ret;
             default:
-                console.log(node);
                 throw TSTLErrors.UnsupportedKind("expression", node.kind, node);
         }
     }
@@ -860,21 +843,6 @@ export abstract class LuaTranspiler {
 
     public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
         throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
-    }
-
-    public transpileTemplateExpression(node: ts.TemplateExpression): string {
-        const parts = [`"${this.escapeString(node.head.text)}"`];
-        node.templateSpans.forEach(span => {
-            const expr = this.transpileExpression(span.expression, true);
-            const text = this.escapeString(span.literal.text);
-
-            if (ts.isTemplateTail(span.literal)) {
-                parts.push(`tostring(${expr}).."${text}"`);
-            } else {
-                parts.push(`tostring(${expr}).."${text}"`);
-            }
-        });
-        return parts.join("..");
     }
 
     public transpileConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): string {
@@ -1428,10 +1396,6 @@ export abstract class LuaTranspiler {
         return escapedText;
     }
 
-    public transpileSpreadElement(node: ts.SpreadElement): string {
-       return "unpack(" + this.transpileExpression(node.expression) + ")";
-    }
-
     public transpileArrayBindingElement(name: ts.ArrayBindingElement): string {
         if (ts.isOmittedExpression(name)) {
             return "__";
@@ -1442,11 +1406,6 @@ export abstract class LuaTranspiler {
         } else {
             throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
         }
-    }
-
-    public transpileTypeOfExpression(node: ts.TypeOfExpression): string {
-        const expression = this.transpileExpression(node.expression);
-        return `(type(${expression}) == "table" and "object" or type(${expression}))`;
     }
 
     // Transpile a variable statement

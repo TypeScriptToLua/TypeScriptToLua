@@ -1,6 +1,25 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
 
+const defaultArrayCallMethodNames = new Set<string>([
+    "concat",
+    "push",
+    "reverse",
+    "shift",
+    "unshift",
+    "sort",
+    "pop",
+    "forEach",
+    "indexOf",
+    "map",
+    "filter",
+    "some",
+    "every",
+    "slice",
+    "splice",
+    "join",
+]);
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -266,42 +285,7 @@ export class TSHelper {
     }
 
     public static isDefaultArrayCallMethodName(methodName: string): boolean {
-        switch (methodName) {
-            case "concat":
-                return true;
-            case "push":
-                return true;
-            case "reverse":
-                return true;
-            case "shift":
-                return true;
-            case "unshift":
-                return true;
-            case "sort":
-                return true;
-            case "pop":
-                return true;
-            case "forEach":
-                return true;
-            case "indexOf":
-                return true;
-            case "map":
-                return true;
-            case "filter":
-                return true;
-            case "some":
-                return true;
-            case "every":
-                return true;
-            case "slice":
-                return true;
-            case "splice":
-                return true;
-            case "join":
-                return true;
-            default:
-                return false;
-        }
+        return defaultArrayCallMethodNames.has(methodName);
     }
 
 }

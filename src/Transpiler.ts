@@ -1190,25 +1190,26 @@ export abstract class LuaTranspiler {
                 ? `({ ${result} })` : result;
         }
 
-        const sig = this.checker.getResolvedSignature(node);
+        const signature = this.checker.getResolvedSignature(node);
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-            params = this.transpileArguments(node.arguments, sig,
+            params = this.transpileArguments(node.arguments, signature,
                                              ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             const className = this.classStack[this.classStack.length - 1];
             return `${className}.__base.constructor(${params})`;
         }
 
         callPath = this.transpileExpression(node.expression);
-        const sigDecl = sig.getDeclaration();
-        if (sigDecl && tsHelper.getDeclarationContextType(sigDecl, this.checker) === ContextType.NonVoid
+        const signatureDeclaration = signature.getDeclaration();
+        if (signatureDeclaration
+            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
             && !ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)) {
             const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-            params = this.transpileArguments(node.arguments, sig, context);
+            params = this.transpileArguments(node.arguments, signature, context);
         } else {
-            params = this.transpileArguments(node.arguments, sig);
+            params = this.transpileArguments(node.arguments, signature);
         }
         return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
@@ -1251,12 +1252,12 @@ export abstract class LuaTranspiler {
             return this.transpileFunctionCallExpression(node);
         }
 
-        const sig = this.checker.getResolvedSignature(node);
+        const signature = this.checker.getResolvedSignature(node);
 
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
-            params = this.transpileArguments(node.arguments, sig,
+            params = this.transpileArguments(node.arguments, signature,
                                              ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             return `${this.transpileExpression(node.expression)}(${params})`;
         } else {
@@ -1266,14 +1267,15 @@ export abstract class LuaTranspiler {
                 return  `tostring(${this.transpileExpression(node.expression.expression)})`;
             } else if (name === "hasOwnProperty") {
                 const expr = this.transpileExpression(node.expression.expression);
-                params = this.transpileArguments(node.arguments, sig);
+                params = this.transpileArguments(node.arguments, signature);
                 return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
-                const sigDecl = sig.getDeclaration();
-                const op = !sigDecl || tsHelper.getDeclarationContextType(sigDecl, this.checker) !== ContextType.Void
+                const signatureDeclaration = signature.getDeclaration();
+                const op = !signatureDeclaration
+                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
                     ? ":" : ".";
                 callPath = `${this.transpileExpression(node.expression.expression)}${op}${name}`;
-                params = this.transpileArguments(node.arguments, sig);
+                params = this.transpileArguments(node.arguments, signature);
                 return `${callPath}(${params})`;
             }
         }

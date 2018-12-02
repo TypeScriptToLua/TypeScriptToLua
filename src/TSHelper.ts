@@ -256,40 +256,42 @@ export class TSHelper {
         return [false, null, null];
     }
 
-    public static getDeclarationContextType(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): ContextType {
-        const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
-                                                && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+    public static getDeclarationContextType(signatureDeclaration: ts.SignatureDeclaration,
+                                            checker: ts.TypeChecker): ContextType {
+        const thisArg = signatureDeclaration.parameters.find(
+            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
         if (thisArg) {
             // Explicit 'this'
             return thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword
                 ? ContextType.Void : ContextType.NonVoid;
         }
-        if ((ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl))
-            && !(ts.getCombinedModifierFlags(sigDecl) & ts.ModifierFlags.Static)) {
+        if ((ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration))
+            && !(ts.getCombinedModifierFlags(signatureDeclaration) & ts.ModifierFlags.Static)) {
             // Non-static method
             return ContextType.NonVoid;
         }
-        if ((ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent))
-            && !(ts.getCombinedModifierFlags(sigDecl.parent) & ts.ModifierFlags.Static)) {
+        if ((ts.isPropertySignature(signatureDeclaration.parent)
+             || ts.isPropertyDeclaration(signatureDeclaration.parent))
+            && !(ts.getCombinedModifierFlags(signatureDeclaration.parent) & ts.ModifierFlags.Static)) {
             // Non-static lambda property
             return ContextType.NonVoid;
         }
-        if (ts.isBinaryExpression(sigDecl.parent)) {
+        if (ts.isBinaryExpression(signatureDeclaration.parent)) {
             // Function expression: check type being assigned to
-            return this.getFunctionContextType(checker.getTypeAtLocation(sigDecl.parent.left), checker);
+            return this.getFunctionContextType(checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
         }
         return ContextType.Void;
     }
 
     public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
-        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
-        if (sigs.length === 0) {
+        const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        if (signatures.length === 0) {
             return ContextType.None;
         }
-        const sigDecls = sigs.map(s => s.getDeclaration());
-        const context = this.getDeclarationContextType(sigDecls[0], checker);
-        for (let i = 1; i < sigDecls.length; ++i) {
-            if (this.getDeclarationContextType(sigDecls[i], checker) !== context) {
+        const signatureDeclataions = signatures.map(sig => sig.getDeclaration());
+        const context = this.getDeclarationContextType(signatureDeclataions[0], checker);
+        for (let i = 1; i < signatureDeclataions.length; ++i) {
+            if (this.getDeclarationContextType(signatureDeclataions[i], checker) !== context) {
                 return ContextType.Mixed;
             }
         }

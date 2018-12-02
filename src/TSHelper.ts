@@ -80,6 +80,22 @@ export class TSHelper {
             || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
+    // iterate over a type and its bases until the callback returns true.
+    public static forAllTypes(type: ts.Type, callback: (type: ts.Type) => boolean): boolean {
+        if (callback(type)) {
+            return true;
+        }
+        const baseTypes = type.getBaseTypes();
+        if (baseTypes) {
+            for (const baseType of baseTypes) {
+                if (this.forAllTypes(baseType, callback)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static isStringType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.String) !== 0
             || (type.flags & ts.TypeFlags.StringLike) !== 0
@@ -181,22 +197,6 @@ export class TSHelper {
             const field = type.symbol.members.get(name);
             return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
         }
-    }
-
-    // iterate over a type and its bases until the callback returns true.
-    public static forAllTypes(type: ts.Type, callback: (type: ts.Type) => boolean): boolean {
-        if (callback(type)) {
-            return true;
-        }
-        const baseTypes = type.getBaseTypes();
-        if (baseTypes) {
-            for (const baseType of baseTypes) {
-                if (this.forAllTypes(baseType, callback)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {

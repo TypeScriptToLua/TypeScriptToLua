@@ -135,6 +135,7 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedKind("Node", node.kind, node);
         }
     }
+
     public visitStatement(node: ts.Statement): ts.Statement {
         if (ts.isBlock(node)) {
             return this.visitBlock(node);
@@ -174,6 +175,7 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedKind("Statement", node.kind, node);
         }
     }
+
     public visitExpression(node: ts.Expression): ts.Expression {
         switch (node.kind) {
             case ts.SyntaxKind.BinaryExpression:
@@ -242,6 +244,7 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedKind("Expression", node.kind, node);
         }
     }
+
     public visitImportDeclaration(node: ts.ImportDeclaration): ts.VisitResult<ts.Node> {
         if (!node.importClause || !node.importClause.namedBindings) {
             throw TSTLErrors.DefaultImportsNotSupported(node);
@@ -290,6 +293,7 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedImportType(imports);
         }
     }
+
     public visitClassDeclaration(node: ts.ClassDeclaration): ts.ClassDeclaration {
         // TODO this should actually be converted to lua nodes
         return ts.updateClassDeclaration(node,
@@ -301,6 +305,7 @@ export class LuaTransformer {
                                          node.members.map(elem => this.visitClassElement(elem) as ts.ClassElement));
         // TODO make member visitor more specific
     }
+
     public visitClassElement(node: ts.ClassElement): ts.ClassElement {
         switch (node.kind) {
             case ts.SyntaxKind.PropertyDeclaration:
@@ -311,6 +316,7 @@ export class LuaTransformer {
                 return this.visitConstructorDeclaration(node as ts.ConstructorDeclaration);
         }
     }
+
     public visitPropertyDeclaration(node: ts.PropertyDeclaration): ts.PropertyDeclaration {
         let updatedInitializer: ts.Expression;
         if (node.initializer) {
@@ -324,6 +330,7 @@ export class LuaTransformer {
                                  node.type,
                                  updatedInitializer);
     }
+
     public visitMethodDeclaration(node: ts.MethodDeclaration): ts.MethodDeclaration {
         return ts.updateMethod(node,
                                node.decorators,
@@ -336,6 +343,7 @@ export class LuaTransformer {
                                node.type,
                                this.visitBlock(node.body));
     }
+
     public visitConstructorDeclaration(node: ts.ConstructorDeclaration): ts.ConstructorDeclaration {
         return ts.updateConstructor(node, node.decorators, node.modifiers, node.parameters, this.visitBlock(node.body));
     }
@@ -401,9 +409,11 @@ export class LuaTransformer {
 
         return result;
     }
+
     public visitEnumDeclaration(node: ts.EnumDeclaration): ts.VisitResult<ts.EnumDeclaration> {
         return node;
     }
+
     public visitFunctionDeclaration(node: ts.FunctionDeclaration): ts.VisitResult<ts.FunctionDeclaration> {
         return ts.updateFunctionDeclaration(node,
                                             node.decorators,
@@ -415,20 +425,25 @@ export class LuaTransformer {
                                             node.type,
                                             this.visitBlock(node.body));
     }
+
     public visitTypeAliasDeclaration(node: ts.TypeAliasDeclaration): ts.VisitResult<ts.TypeAliasDeclaration> {
         return undefined;
     }
+
     public visitInterfaceDeclaration(node: ts.InterfaceDeclaration): ts.VisitResult<ts.InterfaceDeclaration> {
         return undefined;
     }
+
     public visitVariableStatement(node: ts.VariableStatement): ts.VariableStatement {
         return ts.updateVariableStatement(
             node, node.modifiers, this.visitVariableDeclarationList(node.declarationList));
     }
+
     public visitVariableDeclarationList(node: ts.VariableDeclarationList): ts.VariableDeclarationList {
         return ts.updateVariableDeclarationList(node,
                                                 node.declarations.map(decl => this.visitVariableDeclaration(decl)));
     }
+
     public visitVariableDeclaration(node: ts.VariableDeclaration): ts.VariableDeclaration {
         let initializer: ts.Expression;
         if (node.initializer) {
@@ -436,9 +451,11 @@ export class LuaTransformer {
         }
         return ts.updateVariableDeclaration(node, node.name, node.type, initializer);
     }
+
     public visitExpressionStatement(node: ts.ExpressionStatement): ts.ExpressionStatement {
         return ts.updateStatement(node, this.visitExpression(node.expression));
     }
+
     public visitReturn(node: ts.ReturnStatement): ts.ReturnStatement {
         let updatedExpression: ts.Expression;
         if (node.expression) {
@@ -446,6 +463,7 @@ export class LuaTransformer {
         }
         return ts.updateReturn(node, updatedExpression);
     }
+
     public visitIfStatement(node: ts.IfStatement): ts.IfStatement {
         let elseStatement: ts.Statement;
         if (node.elseStatement) {
@@ -454,12 +472,15 @@ export class LuaTransformer {
         return ts.updateIf(
             node, this.visitExpression(node.expression), this.visitStatement(node.thenStatement), elseStatement);
     }
+
     public visitWhileStatement(node: ts.WhileStatement): ts.WhileStatement {
         return ts.updateWhile(node, this.visitExpression(node.expression), this.visitStatement(node.statement));
     }
+
     public visitDoStatement(node: ts.DoStatement): ts.DoStatement {
         return ts.updateDo(node, this.visitStatement(node.statement), this.visitExpression(node.expression));
     }
+
     public visitForStatement(node: ts.ForStatement): ts.ForStatement {
         return ts.updateFor(node,
                             this.visitForInitializer(node.initializer),
@@ -467,6 +488,7 @@ export class LuaTransformer {
                             this.visitExpression(node.incrementor),
                             this.visitStatement(node.statement));
     }
+
     public visitForOfStatement(node: ts.ForOfStatement): ts.ForOfStatement {
         return ts.updateForOf(node,
                               node.awaitModifier,
@@ -474,12 +496,14 @@ export class LuaTransformer {
                               this.visitExpression(node.expression),
                               this.visitStatement(node.statement));
     }
+
     public visitForInStatement(node: ts.ForInStatement): ts.ForInStatement {
         return ts.updateForIn(node,
                               this.visitForInitializer(node.initializer),
                               this.visitExpression(node.expression),
                               this.visitStatement(node.statement));
     }
+
     public visitForInitializer(node: ts.ForInitializer): ts.ForInitializer {
         let updatedInitializer: ts.ForInitializer;
         if (ts.isVariableDeclarationList(node)) {
@@ -489,29 +513,36 @@ export class LuaTransformer {
         }
         return updatedInitializer;
     }
+
     public visitSwitchStatement(node: ts.SwitchStatement): ts.SwitchStatement {
         // TODO
         return node;
     }
+
     public visitBreakStatement(node: ts.BreakStatement): ts.BreakStatement {
         // TODO
         return node;
     }
+
     public visitTryStatement(node: ts.TryStatement): ts.TryStatement {
         // TODO
         return node;
     }
+
     public visitThrowStatement(node: ts.ThrowStatement): ts.ThrowStatement {
         // TODO
         return node;
     }
+
     public visitContinueStatement(node: ts.ContinueStatement): ts.ContinueStatement {
         // TODO
         return node;
     }
+
     public visitEmptyStatement(node: ts.EmptyStatement): ts.EmptyStatement {
         return undefined;
     }
+
     public visitBinaryExpression(node: ts.BinaryExpression): ts.BinaryExpression {
         let operatorToken = node.operatorToken;
         if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
@@ -519,34 +550,42 @@ export class LuaTransformer {
         }
         return ts.updateBinary(node, this.visitExpression(node.left), this.visitExpression(node.right), operatorToken);
     }
+
     public visitConditionalExpression(node: ts.ConditionalExpression): ts.ConditionalExpression {
         return ts.updateConditional(node,
                                     this.visitExpression(node.condition),
                                     this.visitExpression(node.whenTrue),
                                     this.visitExpression(node.whenFalse));
     }
+
     public visitCallExpression(node: ts.CallExpression): ts.CallExpression {
         return ts.updateCall(node,
                              this.visitExpression(node.expression),
                              node.typeArguments,
                              node.arguments.map(arg => this.visitExpression(arg)));
     }
+
     public visitPropertyAccessExpression(node: ts.PropertyAccessExpression): ts.PropertyAccessExpression {
         return ts.updatePropertyAccess(node, this.visitExpression(node.expression), node.name);
     }
+
     public visitElementAccessExpression(node: ts.ElementAccessExpression): ts.ElementAccessExpression {
         return ts.updateElementAccess(
             node, this.visitExpression(node.expression), this.visitExpression(node.argumentExpression));
     }
+
     public visitParenthesizedExpression(node: ts.ParenthesizedExpression): ts.ParenthesizedExpression {
         return ts.updateParen(node, this.visitExpression(node.expression));
     }
+
     public visitTypeAssertionExpression(node: ts.TypeAssertion): ts.Expression {
         return this.visitExpression(node.expression);
     }
+
     public visitAsExpression(node: ts.AsExpression): ts.Expression {
         return this.visitExpression(node.expression);
     }
+
     public visitTypeOfExpression(node: ts.TypeOfExpression): ts.BinaryExpression {
         // ((type(${expression}) == "table" and "object") or type(${expression}))
         const expression = this.visitExpression(node.expression);
@@ -558,6 +597,7 @@ export class LuaTransformer {
         const orExpression = ts.createLogicalOr(andExpression, typeCall);
         return orExpression;
     }
+
     public visitSpreadElement(node: ts.SpreadElement): ts.CallExpression {
         // TODO move this to differen targets
         // table.unpack(expression) / unpack(expression)
@@ -577,13 +617,16 @@ export class LuaTransformer {
         return ts.createCall(
             functionExpresion, [ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)], [node.expression]);
     }
+
     public visitNonNullExpression(node: ts.NonNullExpression): ts.Expression {
         return this.visitExpression(node.expression);
     }
+
     public visitClassExpression(node: ts.ClassExpression): ts.ClassExpression {
         // TODO
         return node;
     }
+
     public visitTemplateExpression(node: ts.TemplateExpression): ts.Expression {
         let concatExpression: ts.Expression = ts.createLiteral(node.head.text);
         node.templateSpans.forEach(span => {
@@ -596,23 +639,29 @@ export class LuaTransformer {
         });
         return concatExpression;
     }
+
     public visitPostfixUnaryExpression(node: ts.PostfixUnaryExpression): ts.PostfixUnaryExpression {
         // TODO
         return node;
     }
+
     public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.PrefixUnaryExpression {
         // TODO
         return node;
     }
+
     public visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): ts.ArrayLiteralExpression {
         return node;
     }
+
     public visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): ts.ObjectLiteralExpression {
         return node;
     }
+
     public visitDeleteExpression(node: ts.DeleteExpression): ts.Expression {
         return ts.createAssignment(this.visitExpression(node.expression), ts.createNull());
     }
+
     public visitFunctionExpression(node: ts.FunctionExpression): ts.FunctionExpression {
         return ts.updateFunctionExpression(node,
                                            node.modifiers,
@@ -623,6 +672,7 @@ export class LuaTransformer {
                                            node.type,
                                            this.visitBlock(node.body));
     }
+
     public visitArrowFunction(node: ts.ArrowFunction): ts.ArrowFunction {
         let newBody: ts.ConciseBody;
         if (ts.isBlock(node.body)) {
@@ -632,9 +682,11 @@ export class LuaTransformer {
         }
         return ts.updateArrowFunction(node, node.modifiers, node.typeParameters, node.parameters, node.type, newBody);
     }
+
     public visitNewExpression(node: ts.NewExpression): ts.NewExpression {
         return node;
     }
+
     public visitIdentifier(node: ts.Identifier): ts.Identifier| ts.PropertyAccessExpression {
         // If we are in a namespace or a sourcefile that is a module check if this identifier is exported
         if (this.currentNamespace && tsHelper.isIdentifierExported(node, this.currentNamespace, this.checker)) {
@@ -645,37 +697,48 @@ export class LuaTransformer {
 
         return node;
     }
+
     public visitStringLiteral(node: ts.StringLiteral): ts.StringLiteral {
         return node;
     }
+
     public visitNoSubstitutionTemplateLiteral(node: ts.NoSubstitutionTemplateLiteral):
         ts.NoSubstitutionTemplateLiteral {
         return node;
     }
+
     public visitNumericLiteral(node: ts.NumericLiteral): ts.NumericLiteral {
         return node;
     }
+
     public visitTrueKeyword(node: ts.BooleanLiteral): ts.BooleanLiteral {
         return node;
     }
+
     public visitFalseKeyword(node: ts.BooleanLiteral): ts.BooleanLiteral {
         return node;
     }
+
     public visitNullKeyword(node: ts.NullLiteral): ts.NullLiteral {
         return node;
     }
+
     public visitUndefinedKeyword(node: ts.LiteralExpression): ts.LiteralExpression {
         return node;
     }
+
     public visitThisKeyword(node: ts.ThisExpression): ts.ThisExpression {
         return node;
     }
+
     public visitSuperKeyword(node: ts.SuperExpression): ts.SuperExpression {
         return node;
     }
+
     public visitComputedPropertyName(node: ts.ComputedPropertyName): ts.VisitResult<ts.ComputedPropertyName> {
         return node;
     }
+
     public visitBlock(node: ts.Block): ts.Block {
         if (!node) {
             return undefined;
@@ -683,9 +746,11 @@ export class LuaTransformer {
         return ts.updateBlock(node,
                               transformHelper.flatten(node.statements.map(s => this.visitor(s)) as ts.Statement[]));
     }
+
     public visitModuleBlock(node: ts.ModuleBlock): ts.VisitResult<ts.Block> {
         return this.visitBlock(ts.createBlock(node.statements));
     }
+
     public visitEndOfFileToken(node: ts.EndOfFileToken): ts.VisitResult<ts.EndOfFileToken> {
         return node;
     }

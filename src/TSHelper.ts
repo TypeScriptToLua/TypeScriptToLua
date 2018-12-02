@@ -1,6 +1,25 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
 
+const defaultArrayCallMethodNames = new Set<string>([
+    "concat",
+    "push",
+    "reverse",
+    "shift",
+    "unshift",
+    "sort",
+    "pop",
+    "forEach",
+    "indexOf",
+    "map",
+    "filter",
+    "some",
+    "every",
+    "slice",
+    "splice",
+    "join",
+]);
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -74,9 +93,19 @@ export class TSHelper {
                 && (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
     }
 
-    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+    public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && this.isArrayTypeNode(typeNode);
+    }
+
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        const baseTypes = type.getBaseTypes();
+        if (baseTypes) {
+          for (const baseType of baseTypes) {
+            if (this.isExplicitArrayType(baseType, checker)) { return true; }
+          }
+        }
+        return this.isExplicitArrayType(type, checker);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -254,4 +283,9 @@ export class TSHelper {
         }
         return [false, null, null];
     }
+
+    public static isDefaultArrayCallMethodName(methodName: string): boolean {
+        return defaultArrayCallMethodNames.has(methodName);
+    }
+
 }

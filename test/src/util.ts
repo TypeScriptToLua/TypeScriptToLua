@@ -67,6 +67,54 @@ export function transpileAndExecute(tsStr: string): any {
     return executeLua(transpileString(tsStr));
 }
 
+export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)
+    : [ts.SourceFile, ts.TypeChecker] {
+    const compilerHost = {
+        directoryExists: () => true,
+        fileExists: (fileName): boolean => true,
+        getCanonicalFileName: fileName => fileName,
+        getCurrentDirectory: () => "",
+        getDefaultLibFileName: () => "lib.es6.d.ts",
+        getDirectories: () => [],
+        getNewLine: () => "\n",
+
+        getSourceFile: (filename, languageVersion) => {
+            if (filename === "file.ts") {
+                return ts.createSourceFile(filename, typescript, ts.ScriptTarget.Latest, false);
+            }
+            if (filename === "lib.es6.d.ts") {
+                const libPath = path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts");
+                const libSource = fs.readFileSync(libPath).toString();
+                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            }
+            return undefined;
+        },
+
+        readFile: () => "",
+
+        useCaseSensitiveFileNames: () => false,
+        // Don't write output
+        writeFile: (name, text, writeByteOrderMark) => null,
+    };
+
+    const program = ts.createProgram(["file.ts"], { luaTarget: target }, compilerHost);
+    return [program.getSourceFile("file.ts"), program.getTypeChecker()];
+}
+
+export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined {
+    for (const child of node.getChildren()) {
+        if (predicate(child)) {
+            return child;
+        }
+
+        const childChild = findFirstChild(child, predicate);
+        if (childChild !== undefined) {
+            return childChild;
+        }
+    }
+    return undefined;
+}
+
 const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
 
 export const minimalTestLib = jsonlib;

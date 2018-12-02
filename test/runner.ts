@@ -1,5 +1,4 @@
-import { TestRunner, TestSet } from "alsatian";
-import { TapBark } from "tap-bark";
+import { TestRunner, TestSet, TestOutcome } from "alsatian";
 
 import * as fs from "fs";
 import * as path from "path";
@@ -21,21 +20,44 @@ fs.copyFileSync(
 
 // setup the output
 testRunner.outputStream
-          // this will use alsatian's default output if you remove this
-          // you'll get TAP or you can add your favourite TAP reporter in it's place
-          .pipe(TapBark.create().getPipeable())
-          // pipe to the console
-          .pipe(process.stdout);
+    // pipe to the console
+    .pipe(process.stdout);
+
+let success = 0;
+let ignored = 0;
+let run = 0;
+testRunner.onTestComplete(test => {
+    run++;
+
+    if (test.outcome === TestOutcome.Pass) {
+        success++;
+    } else if (test.outcome === TestOutcome.Skip) {
+        ignored++;
+    }
+});
 
 // run the test set
 testRunner.run(testSet)
-          // this will be called after all tests have been run
-          .then(result => {
-              // Remove lualib bundle again
-              fs.unlinkSync("lualib_bundle.lua");
-          })
-          // this will be called if there was a problem
-          .catch(error => {
-              // Remove lualib bundle again
-              fs.unlinkSync("lualib_bundle.lua");
-          });
+    // this will be called after all tests have been run
+    .then(result => {
+        // Remove lualib bundle again
+        fs.unlinkSync("lualib_bundle.lua");
+
+        const nonIgnoredTests = run - ignored;
+        const failedTests = nonIgnoredTests - success;
+        console.log(`Ignored ${ignored}/${run} tests.`);
+        console.log(`Failed ${failedTests}/${nonIgnoredTests} tests.`);
+        console.log(`Passed ${success}/${nonIgnoredTests} tests.`);
+
+        if (failedTests > 0) {
+            process.exit(1);
+        }
+    })
+    // this will be called if there was a problem
+    .catch(error => {
+        // Remove lualib bundle again
+        fs.unlinkSync("lualib_bundle.lua");
+
+        console.error(error);
+        process.exit(1);
+    });

@@ -265,11 +265,8 @@ export class TSHelper {
         return [false, null, null];
     }
 
-    public static isDefaultArrayCallExpression(node: ts.CallExpression,
-                                               transpileIdentifier: (identifier: ts.Identifier) => string ): boolean {
-        const expression = node.expression as ts.PropertyAccessExpression;
-        const expressionName = transpileIdentifier(expression.name);
-        switch (expressionName) {
+    public static isDefaultArrayCallMethodName(methodName: string): boolean {
+        switch (methodName) {
             case "concat":
                 return true;
             case "push":

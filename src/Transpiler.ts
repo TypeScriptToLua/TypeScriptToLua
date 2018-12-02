@@ -1210,7 +1210,7 @@ export abstract class LuaTranspiler {
 
         // if ownerType inherits from an array, use array calls where appropriate
         if (tsHelper.isArrayType(ownerType, this.checker)
-            && tsHelper.isDefaultArrayCallExpression(node, expression => this.transpileIdentifier(expression))) {
+            && tsHelper.isDefaultArrayCallMethodName(this.transpileIdentifier(node.expression.name))) {
             return this.transpileArrayCallExpression(node);
         }
 

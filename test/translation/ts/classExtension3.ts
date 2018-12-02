@@ -1,9 +1,9 @@
-/** !Extension RenamedTestClass */
+/** @extension RenamedTestClass */
 class TestClass {
     public myFunction() {}
 }
 
-/** !Extension RenamedMyClass */
+/** @extension RenamedMyClass */
 class MyClass extends TestClass {
     public myFunction() {}
 }

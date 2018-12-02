@@ -99,13 +99,7 @@ export class TSHelper {
     }
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const baseTypes = type.getBaseTypes();
-        if (baseTypes) {
-          for (const baseType of baseTypes) {
-            if (this.isExplicitArrayType(baseType, checker)) { return true; }
-          }
-        }
-        return this.isExplicitArrayType(type, checker);
+        return this.forAllTypes(type, t => this.isExplicitArrayType(t, checker));
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -182,28 +176,50 @@ export class TSHelper {
         return null;
     }
 
+    public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
+        }
+    }
+
+    // iterate over a type and its bases until the callback returns true.
+    public static forAllTypes(type: ts.Type, callback: (type: ts.Type) => boolean): boolean {
+        if (callback(type)) {
+            return true;
+        }
+        const baseTypes = type.getBaseTypes();
+        if (baseTypes) {
+            for (const baseType of baseTypes) {
+                if (this.forAllTypes(baseType, callback)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
-            }
+            return this.forAllTypes(type, t => this.hasExplicitGetAccessor(t, name));
         }
         return false;
+    }
+
+    public static hasExplicitSetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
+        }
     }
 
     public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
-            }
+            return this.forAllTypes(type, t => this.hasExplicitSetAccessor(t, name));
         }
         return false;
     }

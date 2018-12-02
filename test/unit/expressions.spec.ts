@@ -254,6 +254,37 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase("inst.baseField", 10)
+    @TestCase("inst.field", 8)
+    @TestCase("inst.superField", 6)
+    @Test("Inherited accessors")
+    public inheritedAccessors(expression: string, expected: any): void {
+      const source = `class MyBaseClass {`
+                   + `    public _baseField: number;`
+                   + `    public get baseField(): number { return this._baseField + 6; }`
+                   + `    public set baseField(v: number) { this._baseField = v; }`
+                   + `}`
+                   + `class MyClass extends MyBaseClass {`
+                   + `    public _field: number;`
+                   + `    public get field(): number { return this._field + 4; }`
+                   + `    public set field(v: number) { this._field = v; }`
+                   + `}`                   
+                   + `class MySuperClass extends MyClass {`
+                   + `    public _superField: number;`
+                   + `    public get superField(): number { return this._superField + 2; }`
+                   + `    public set superField(v: number) { this._superField = v; }`
+                   + `}`                   
+                   + `var inst = new MySuperClass();`
+                   + `inst.baseField = 4;`
+                   + `inst.field = 4;`
+                   + `inst.superField = 4;`
+                   + `return ${expression};`;
+
+        const lua = util.transpileString(source);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("i++", 10)
     @TestCase("i--", 10)
     @TestCase("++i", 11)

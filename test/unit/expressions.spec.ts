@@ -1,10 +1,11 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
 
+@FocusTests
 export class ExpressionTests {
 
     @TestCase("i++", "i = (i+1);")
@@ -254,9 +255,9 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
-    @TestCase("inst.baseField", 10)
-    @TestCase("inst.field", 8)
-    @TestCase("inst.superField", 6)
+    @TestCase("inst.baseField", 7)
+    @TestCase("inst.field", 6)
+    @TestCase("inst.superField", 5)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
       const source = `class MyBaseClass {`
@@ -275,9 +276,9 @@ export class ExpressionTests {
                    + `    public set superField(v: number) { this._superField = v; }`
                    + `}`                   
                    + `var inst = new MySuperClass();`
-                   + `inst.baseField = 4;`
-                   + `inst.field = 4;`
-                   + `inst.superField = 4;`
+                   + `inst.baseField = 1;`
+                   + `inst.field = 2;`
+                   + `inst.superField = 3;`
                    + `return ${expression};`;
 
         const lua = util.transpileString(source);

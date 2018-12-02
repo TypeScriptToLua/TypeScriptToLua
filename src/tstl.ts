@@ -19,11 +19,14 @@ export {LuaTranspiler53} from "./targets/Transpiler.53";
 export {LuaTranspilerJIT} from "./targets/Transpiler.JIT";
 
 export {
-    LuaLibFeature,
     LuaLibImportKind,
     LuaTarget,
     LuaTranspiler,
 } from "./Transpiler";
+
+export {
+    LuaLibFeature,
+} from "./LuaLibFeature";
 
 export {
     createTranspiler

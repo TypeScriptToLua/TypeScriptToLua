@@ -56,6 +56,16 @@ export class TSHelper {
         return false;
     }
 
+    public static isIdentifierExported(
+        identifier: ts.Identifier, scope: ts.ModuleDeclaration | ts.SourceFile, checker: ts.TypeChecker): boolean {
+        const identifierSymbol = checker.getTypeAtLocation(scope).getSymbol();
+        if (identifierSymbol.exports) {
+            return identifierSymbol.exports.has(identifier.escapedText);
+        }
+
+        return false;
+    }
+
     public static isInDestructingAssignment(node: ts.Node): boolean {
         return node.parent && ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name))
             || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));

@@ -1,6 +1,13 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
 
+export enum ContextType {
+    None,
+    Void,
+    NonVoid,
+    Mixed,
+}
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -249,37 +256,45 @@ export class TSHelper {
         return [false, null, null];
     }
 
-    public static isDeclarationWithContext(sigDecl: ts.SignatureDeclaration, checker: ts.TypeChecker): boolean {
-        const thisArg = sigDecl.parameters.find(p => ts.isIdentifier(p.name)
-                                                && p.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+    public static getDeclarationContextType(signatureDeclaration: ts.SignatureDeclaration,
+                                            checker: ts.TypeChecker): ContextType {
+        const thisArg = signatureDeclaration.parameters.find(
+            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
         if (thisArg) {
             // Explicit 'this'
-            return !thisArg.type || thisArg.type.kind !== ts.SyntaxKind.VoidKeyword;
+            return thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword
+                ? ContextType.Void : ContextType.NonVoid;
         }
-        if ((ts.isMethodDeclaration(sigDecl) || ts.isMethodSignature(sigDecl))
-            && !(ts.getCombinedModifierFlags(sigDecl) & ts.ModifierFlags.Static)) {
+        if ((ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration))
+            && !(ts.getCombinedModifierFlags(signatureDeclaration) & ts.ModifierFlags.Static)) {
             // Non-static method
-            return true;
+            return ContextType.NonVoid;
         }
-        if ((ts.isPropertySignature(sigDecl.parent) || ts.isPropertyDeclaration(sigDecl.parent))
-            && !(ts.getCombinedModifierFlags(sigDecl.parent) & ts.ModifierFlags.Static)) {
+        if ((ts.isPropertySignature(signatureDeclaration.parent)
+             || ts.isPropertyDeclaration(signatureDeclaration.parent))
+            && !(ts.getCombinedModifierFlags(signatureDeclaration.parent) & ts.ModifierFlags.Static)) {
             // Non-static lambda property
-            return true;
+            return ContextType.NonVoid;
         }
-        if (ts.isBinaryExpression(sigDecl.parent)
-            && this.isFunctionWithContext(checker.getTypeAtLocation(sigDecl.parent.left), checker)) {
+        if (ts.isBinaryExpression(signatureDeclaration.parent)) {
             // Function expression: check type being assigned to
-            return true;
+            return this.getFunctionContextType(checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
         }
-        return false;
+        return ContextType.Void;
     }
 
-    public static isFunctionWithContext(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const sigs = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
-        if (sigs.length === 0) {
-            return false;
+    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
+        const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
+        if (signatures.length === 0) {
+            return ContextType.None;
         }
-        const sigDecls = sigs.map(s => s.getDeclaration());
-        return sigDecls.every(s => this.isDeclarationWithContext(s, checker));
+        const signatureDeclataions = signatures.map(sig => sig.getDeclaration());
+        const context = this.getDeclarationContextType(signatureDeclataions[0], checker);
+        for (let i = 1; i < signatureDeclataions.length; ++i) {
+            if (this.getDeclarationContextType(signatureDeclataions[i], checker) !== context) {
+                return ContextType.Mixed;
+            }
+        }
+        return context;
     }
 }

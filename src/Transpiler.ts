@@ -5,7 +5,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
-import { TSHelper as tsHelper } from "./TSHelper";
+import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 
 /* tslint:disable */
 const packageJSON = require("../package.json");
@@ -1190,25 +1190,26 @@ export abstract class LuaTranspiler {
                 ? `({ ${result} })` : result;
         }
 
-        const sig = this.checker.getResolvedSignature(node);
+        const signature = this.checker.getResolvedSignature(node);
 
         // Handle super calls properly
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
-            params = this.transpileArguments(node.arguments, sig,
+            params = this.transpileArguments(node.arguments, signature,
                                              ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             const className = this.classStack[this.classStack.length - 1];
             return `${className}.__base.constructor(${params})`;
         }
 
-        const type = this.checker.getTypeAtLocation(node.expression);
         callPath = this.transpileExpression(node.expression);
-        if (tsHelper.isFunctionWithContext(type, this.checker)
+        const signatureDeclaration = signature.getDeclaration();
+        if (signatureDeclaration
+            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
             && !ts.isPropertyAccessExpression(node.expression)
             && !ts.isElementAccessExpression(node.expression)) {
             const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
-            params = this.transpileArguments(node.arguments, sig, context);
+            params = this.transpileArguments(node.arguments, signature, context);
         } else {
-            params = this.transpileArguments(node.arguments, sig);
+            params = this.transpileArguments(node.arguments, signature);
         }
         return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
             ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
@@ -1251,12 +1252,12 @@ export abstract class LuaTranspiler {
             return this.transpileFunctionCallExpression(node);
         }
 
-        const sig = this.checker.getResolvedSignature(node);
+        const signature = this.checker.getResolvedSignature(node);
 
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
-            params = this.transpileArguments(node.arguments, sig,
+            params = this.transpileArguments(node.arguments, signature,
                                              ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
             return `${this.transpileExpression(node.expression)}(${params})`;
         } else {
@@ -1266,13 +1267,15 @@ export abstract class LuaTranspiler {
                 return  `tostring(${this.transpileExpression(node.expression.expression)})`;
             } else if (name === "hasOwnProperty") {
                 const expr = this.transpileExpression(node.expression.expression);
-                params = this.transpileArguments(node.arguments, sig);
+                params = this.transpileArguments(node.arguments, signature);
                 return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
-                const type = this.checker.getTypeAtLocation(node.expression);
-                const op = tsHelper.isFunctionWithContext(type, this.checker) ? ":" : ".";
+                const signatureDeclaration = signature.getDeclaration();
+                const op = !signatureDeclaration
+                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
+                    ? ":" : ".";
                 callPath = `${this.transpileExpression(node.expression.expression)}${op}${name}`;
-                params = this.transpileArguments(node.arguments, sig);
+                params = this.transpileArguments(node.arguments, signature);
                 return `${callPath}(${params})`;
             }
         }
@@ -1394,7 +1397,7 @@ export abstract class LuaTranspiler {
     public transpileFunctionCallExpression(node: ts.CallExpression): string {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
-        if (!tsHelper.isFunctionWithContext(callerType, this.checker)) {
+        if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
             throw TSTLErrors.UnsupportedMethodConversion(node);
         }
         const params = this.transpileArguments(node.arguments);
@@ -1435,10 +1438,12 @@ export abstract class LuaTranspiler {
         fromTypeCache.add(toType);
 
         // Check function assignments
-        const fromHasContext = tsHelper.isFunctionWithContext(fromType, this.checker);
-        const toHasContext = tsHelper.isFunctionWithContext(toType, this.checker);
-        if (fromHasContext !== toHasContext) {
-            if (fromHasContext) {
+        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker);
+        const toContext = tsHelper.getFunctionContextType(toType, this.checker);
+        if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
+            throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
+        } else if (fromContext !== toContext) {
+            if (toContext === ContextType.Void) {
                 throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
             } else {
                 throw TSTLErrors.UnsupportedMethodConversion(node, toName);
@@ -1719,7 +1724,7 @@ export abstract class LuaTranspiler {
         const methodName = this.transpileIdentifier(node.name);
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.isFunctionWithContext(type, this.checker) ? "self" : null;
+        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void ? "self" : null;
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         let prefix = this.accessPrefix(node);
@@ -1805,7 +1810,7 @@ export abstract class LuaTranspiler {
         }
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.isFunctionWithContext(type, this.checker) ? "self" : null;
+        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void ? "self" : null;
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         // Build function header
@@ -2078,7 +2083,7 @@ export abstract class LuaTranspiler {
 
     public transpileFunctionExpression(node: ts.FunctionLikeDeclaration, context: string | null): string {
         const type = this.checker.getTypeAtLocation(node);
-        const hasContext = tsHelper.isFunctionWithContext(type, this.checker);
+        const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
         // Build parameter string
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, hasContext ? context : null);
         let result = `function(${paramNames.join(",")})\n`;

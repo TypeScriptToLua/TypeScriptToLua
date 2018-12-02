@@ -1,4 +1,4 @@
-import { Expect, FocusTest, Test, TestCases } from "alsatian";
+import { Expect, Test, TestCases } from "alsatian";
 
 import * as util from "../src/util";
 
@@ -41,7 +41,6 @@ export class FileTests {
 
     @TestCases(files)
     @Test("Transformation Tests")
-    @FocusTest
     public transformationTests(tsFile: string, luaFile: string) {
         Expect(util.transpileString(BufferToTestString(fileContents[tsFile])))
         .toEqual(BufferToTestString(fileContents[luaFile]));

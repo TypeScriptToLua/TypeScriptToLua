@@ -5,6 +5,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
+import { LuaLibFeature } from "./LuaLibFeature";
 import { TSHelper as tsHelper } from "./TSHelper";
 
 import { LuaTransformer } from "./Transformer";
@@ -18,29 +19,6 @@ export enum LuaTarget {
     Lua52 = "5.2",
     Lua53 = "5.3",
     LuaJIT = "jit",
-}
-
-export enum LuaLibFeature {
-    ArrayConcat = "ArrayConcat",
-    ArrayEvery = "ArrayEvery",
-    ArrayFilter = "ArrayFilter",
-    ArrayForEach = "ArrayForEach",
-    ArrayIndexOf = "ArrayIndexOf",
-    ArrayMap = "ArrayMap",
-    ArrayPush = "ArrayPush",
-    ArrayReverse = "ArrayReverse",
-    ArrayShift = "ArrayShift",
-    ArrayUnshift = "ArrayUnshift",
-    ArraySort = "ArraySort",
-    ArraySlice = "ArraySlice",
-    ArraySome = "ArraySome",
-    ArraySplice = "ArraySplice",
-    InstanceOf = "InstanceOf",
-    Map = "Map",
-    Set = "Set",
-    StringReplace = "StringReplace",
-    StringSplit = "StringSplit",
-    Ternary = "Ternary",
 }
 
 export enum LuaLibImportKind {

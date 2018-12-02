@@ -325,10 +325,6 @@ export class LuaTransformer {
                                  updatedInitializer);
     }
     public visitMethodDeclaration(node: ts.MethodDeclaration): ts.MethodDeclaration {
-        let updatedBody: ts.Block;
-        if (node.body) {
-            updatedBody = this.visitBlock(node.body);
-        }
         return ts.updateMethod(node,
                                node.decorators,
                                node.modifiers,
@@ -338,14 +334,10 @@ export class LuaTransformer {
                                node.typeParameters,
                                node.parameters,
                                node.type,
-                               updatedBody);
+                               this.visitBlock(node.body));
     }
     public visitConstructorDeclaration(node: ts.ConstructorDeclaration): ts.ConstructorDeclaration {
-        let updatedBody: ts.Block;
-        if (node.body) {
-            updatedBody = this.visitBlock(node.body);
-        }
-        return ts.updateConstructor(node, node.decorators, node.modifiers, node.parameters, updatedBody);
+        return ts.updateConstructor(node, node.decorators, node.modifiers, node.parameters, this.visitBlock(node.body));
     }
     // previously transpileNamespace
     public visitModuleDeclaration(node: ts.ModuleDeclaration): ts.VisitResult<ts.Node> {
@@ -685,6 +677,9 @@ export class LuaTransformer {
         return node;
     }
     public visitBlock(node: ts.Block): ts.Block {
+        if (!node) {
+            return undefined;
+        }
         return ts.updateBlock(node,
                               transformHelper.flatten(node.statements.map(s => this.visitor(s)) as ts.Statement[]));
     }

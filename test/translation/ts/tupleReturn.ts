@@ -1,4 +1,4 @@
-/** !TupleReturn */
+/** @tupleReturn */
 function tupleReturn(): [number, string] {
     return [0, "foobar"];
 }
@@ -16,19 +16,19 @@ e = tupleReturn();
 f = noTupleReturn();
 foo(tupleReturn());
 foo(noTupleReturn());
-/** !TupleReturn */
+/** @tupleReturn */
 function tupleReturnFromVar(): [number, string] {
     const r: [number, string] = [1, "baz"];
     return r;
 }
-/** !TupleReturn */
+/** @tupleReturn */
 function tupleReturnForward(): [number, string] {
     return tupleReturn();
 }
 function tupleNoForward(): [number, string] {
     return tupleReturn();
 }
-/** !TupleReturn */
+/** @tupleReturn */
 function tupleReturnUnpack(): [number, string] {
     return tupleNoForward();
 }

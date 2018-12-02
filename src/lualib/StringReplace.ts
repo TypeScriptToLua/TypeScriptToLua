@@ -1,5 +1,5 @@
 declare namespace string {
-    /** !TupleReturn */
+    /** @tupleReturn */
     function gsub(source: string, searchValue: string, replaceValue: string): [string, number];
 }
 

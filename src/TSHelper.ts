@@ -119,14 +119,32 @@ export class TSHelper {
             const comments = type.symbol.getDocumentationComment(checker);
             const decorators =
                 comments.filter(comment => comment.kind === "text")
-                        .map(comment => comment.text.trim().split("\n"))
+                        .map(comment => comment.text.split("\n"))
                         .reduce((a, b) => a.concat(b), [])
+                        .map(line => line.trim())
                         .filter(comment => comment[0] === "!");
+
             const decMap = new Map<DecoratorKind, Decorator>();
+
             decorators.forEach(decStr => {
-                const dec = new Decorator(decStr);
-                decMap.set(dec.kind, dec);
+                const [decoratorName, ...decoratorArguments] = decStr.split(" ");
+                if (Decorator.isValid(decoratorName.substr(1))) {
+                    const dec = new Decorator(decoratorName.substr(1), decoratorArguments);
+                    decMap.set(dec.kind, dec);
+                    console.warn(`[Deprecated] Decorators with ! are being deprecated, `
+                        + `use @${decStr.substr(1)} instead`);
+                } else {
+                    console.warn(`Encountered unknown decorator ${decStr}.`);
+                }
             });
+
+            type.symbol.getJsDocTags().forEach(tag => {
+                if (Decorator.isValid(tag.name)) {
+                    const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
+                    decMap.set(dec.kind, dec);
+                }
+            });
+
             return decMap;
         }
         return new Map<DecoratorKind, Decorator>();

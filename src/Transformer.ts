@@ -452,7 +452,42 @@ export class LuaTransformer {
         return ts.updateVariableDeclaration(node, node.name, node.type, initializer);
     }
 
-    public visitExpressionStatement(node: ts.ExpressionStatement): ts.ExpressionStatement {
+    public visitExpressionStatement(node: ts.ExpressionStatement): ts.Statement {
+        if (ts.isBinaryExpression(node.expression)) {
+            // Assignment
+            if (node.expression.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+                return this.visitAssignmentExpressionStatement(node);
+            }
+
+            const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(
+                node.expression.operatorToken.kind);
+            if (isCompound) {
+                // +=, -=, etc...
+                return this.visitCompoundAssignmentExpression(node.expression.left,
+                                                              node.expression.right,
+                                                              replacementOperator,
+                                                              false,
+                                                              true);
+            }
+
+        } else if (ts.isPrefixUnaryExpression(node.expression)
+                   && !tsHelper.isNonCompoundPrefixUnaryOperator(node.expression)) {
+            // ++i, --i
+            return this.visitCompoundAssignmentExpression(node.expression.operand,
+                                                          ts.createLiteral(1),
+                                                          tsHelper.getUnaryCompoundAssignmentOperator(node.expression),
+                                                          false,
+                                                          true);
+
+        } else if (ts.isPostfixUnaryExpression(node.expression)) {
+            // i++, i--
+            return this.visitCompoundAssignmentExpression(node.expression.operand,
+                                                          ts.createLiteral(1),
+                                                          tsHelper.getUnaryCompoundAssignmentOperator(node.expression),
+                                                          true,
+                                                          true);
+        }
+
         return ts.updateStatement(node, this.visitExpression(node.expression));
     }
 
@@ -543,10 +578,287 @@ export class LuaTransformer {
         return undefined;
     }
 
-    public visitBinaryExpression(node: ts.BinaryExpression): ts.BinaryExpression {
+    public visitDestructuringAssignment(node: ts.BinaryExpression,
+                                        left: ts.ArrayLiteralExpression,
+                                        isStatement: boolean): ts.Block {
+        let right = this.visitExpression(node.right);
+        if (!tsHelper.isTupleReturnCall(node.right, this.checker)) {
+            right = this.unpackExpression(right);
+        }
+        // local ${tmps} = ${right}; ${left} = ${tmps}; [return ${tmps}]
+        const tmps = left.elements.map((_, i) => ts.createIdentifier(`____TS_tmp${i}`));
+        const tmpsBindingElements = tmps.map(tmp => ts.createBindingElement(undefined, undefined, tmp));
+        const tmpsBinding = ts.createArrayBindingPattern(tmpsBindingElements);
+        const tmpsArray = ts.createArrayLiteral(tmps);
+        const statements: ts.Statement[] = [
+            ts.createVariableStatement(undefined, [ts.createVariableDeclaration(tmpsBinding, undefined, right)]),
+            ts.createStatement(ts.createAssignment(this.visitExpression(left), tmpsArray)),
+        ];
+        if (!isStatement) {
+            statements.push(ts.createReturn(tmpsArray));
+        }
+        return ts.createBlock(statements);
+    }
+
+    public visitAssignmentExpressionStatement(node: ts.ExpressionStatement): ts.Statement {
+        const expression = node.expression as ts.BinaryExpression;
+        if (tsHelper.hasSetAccessor(expression.left, this.checker)) {
+            // TODO
+        }
+
+        if (ts.isArrayLiteralExpression(expression.left)) {
+            // Destructing assignment
+            return this.visitDestructuringAssignment(expression, expression.left, true);
+        }
+
+        const left = this.visitExpression(expression.left);
+        const right = this.visitExpression(expression.right);
+        return ts.updateStatement(node, ts.updateBinary(expression, left, right));
+    }
+
+    public visitAssignmentExpression(node: ts.BinaryExpression): ts.Expression {
+        if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+            // TODO
+        }
+
+        if (ts.isArrayLiteralExpression(node.left)) {
+            // Destructing assignment
+            const block = this.visitDestructuringAssignment(node, node.left, false);
+            const lambda = ts.createFunctionExpression(undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       block);
+            return ts.createCall(ts.createParen(lambda), undefined, undefined);
+        }
+
+        const left = this.visitExpression(node.left);
+        const right = this.visitExpression(node.right);
+
+        const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
+            node.left, this.checker);
+        if (hasEffects) {
+            // Property/element access expressions need to have individual parts cached
+            // (function(o, i, v) o[i] = v; return v end)(${objExpression}, ${indexExpression}, ${right})
+            const o = ts.createIdentifier("o");
+            const i = ts.createIdentifier("i");
+            const v = ts.createIdentifier("v");
+            const block = ts.createBlock([
+                ts.createStatement(ts.createAssignment(ts.createElementAccess(o, i), v)),
+                ts.createReturn(v),
+            ]);
+            const parameters: ts.ParameterDeclaration[] = [
+                ts.createParameter(undefined, undefined, undefined, o),
+                ts.createParameter(undefined, undefined, undefined, i),
+                ts.createParameter(undefined, undefined, undefined, v),
+            ];
+            const lambda = ts.createFunctionExpression(undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       parameters,
+                                                       undefined,
+                                                       block);
+            return ts.createCall(ts.createParen(lambda), undefined, [objExpression, indexExpression, right]);
+
+        } else if (tsHelper.isExpressionWithEvaluationEffect(right)) {
+            // Cache right-hand express in temp
+            // (function() local __TS_tmp = ${right}; ${left} = __TS_tmp; return __TS_tmp end)()
+            const tmp = ts.createIdentifier("____TS_tmp");
+            const block = ts.createBlock([
+                ts.createVariableStatement(undefined, [ts.createVariableDeclaration(tmp, undefined, right)]),
+                ts.createStatement(ts.createAssignment(left, tmp)),
+                ts.createReturn(tmp),
+            ]);
+            const lambda = ts.createFunctionExpression(undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       block);
+            return ts.createCall(ts.createParen(lambda), undefined, undefined);
+
+        } else {
+            // (function() ${left} = ${right}; return ${right} end)()
+            const block = ts.createBlock([
+                ts.createStatement(ts.createAssignment(left, right)),
+                ts.createReturn(right),
+            ]);
+            const lambda = ts.createFunctionExpression(undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       block);
+            return ts.createCall(ts.createParen(lambda), undefined, undefined);
+        }
+    }
+
+    public visitCompoundAssignmentExpression(left: ts.Expression,
+                                             right: ts.Expression,
+                                             replacementOperator: ts.BinaryOperator,
+                                             isPostfix: boolean,
+                                             isStatement: false): ts.Expression;
+    public visitCompoundAssignmentExpression(left: ts.Expression,
+                                             right: ts.Expression,
+                                             replacementOperator: ts.BinaryOperator,
+                                             isPostfix: boolean,
+                                             isStatement: true): ts.Statement;
+    public visitCompoundAssignmentExpression(left: ts.Expression,
+                                             right: ts.Expression,
+                                             replacementOperator: ts.BinaryOperator,
+                                             isPostfix: boolean,
+                                             isStatement: boolean): ts.Expression | ts.Statement {
+        const pos = left.parent.pos;
+        left = this.visitExpression(left);
+        right = this.visitExpression(right);
+        let statements: ts.Statement[];
+        let resultExpression: ts.Expression;
+        const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
+            left, this.checker);
+        if (hasEffects) {
+            // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
+            // local __TS_obj, __TS_index = objExpression, indexExpression;
+            const obj = ts.createIdentifier("____TS_obj");
+            const index = ts.createIdentifier("____TS_index");
+            const objDeclaration = ts.createVariableDeclaration(obj, undefined, objExpression);
+            const indexDeclaration = ts.createVariableDeclaration(index, undefined, indexExpression);
+            const tmp = ts.createIdentifier("____TS_tmp");
+            const accessExpression = ts.createElementAccess(obj, index);
+            right = ts.createParen(right);
+            let tmpDeclaration: ts.VariableDeclaration;
+            let assignStatement: ts.BinaryExpression;
+            if (isPostfix) {
+                // local ____TS_tmp = ____TS_obj[____TS_index];
+                // ____TS_obj[____TS_index] = ${left} ${replacementOperator} ____TS_obj[____TS_index];
+                tmpDeclaration = ts.createVariableDeclaration(tmp, undefined, accessExpression);
+                const operatorExpression = ts.createBinary(left, replacementOperator, right);
+                operatorExpression.pos = pos; // Needed to get proper error reporting
+                assignStatement = ts.createAssignment(accessExpression, operatorExpression);
+            } else {
+                // local ____TS_tmp = ____TS_obj[____TS_index] ${replacementOperator} ${right};
+                // ____TS_obj[____TS_index] = ____TS_tmp;
+                const operatorExpression = ts.createBinary(accessExpression, replacementOperator, right);
+                operatorExpression.pos = pos; // Needed to get proper error reporting
+                tmpDeclaration = ts.createVariableDeclaration(tmp, undefined, operatorExpression);
+                assignStatement = ts.createAssignment(accessExpression, tmp);
+            }
+            statements = [ts.createVariableStatement(undefined, [objDeclaration, indexDeclaration]),
+                          ts.createVariableStatement(undefined, [tmpDeclaration]),
+                          ts.createStatement(assignStatement)];
+            resultExpression = tmp;
+
+        } else if (!isStatement && isPostfix) {
+            // Postfix expressions need to cache original value in temp
+            // local ____TS_tmp = ${left};
+            // ${left} = ____TS_tmp ${replacementOperator} ${right};
+            const tmpIdentifier = ts.createIdentifier("____TS_tmp");
+            const tmpDeclaration = ts.createVariableDeclaration(tmpIdentifier, undefined, left);
+            const operatorExpression = ts.createBinary(tmpIdentifier, replacementOperator, right);
+            operatorExpression.pos = pos; // Needed to get proper error reporting
+            const assignStatement = ts.createAssignment(left, operatorExpression);
+            statements = [ts.createVariableStatement(undefined, [tmpDeclaration]), ts.createStatement(assignStatement)];
+            resultExpression = tmpIdentifier;
+
+        } else if (!isStatement
+                   && (ts.isPropertyAccessExpression(left) || ts.isElementAccessExpression(left))) {
+            // Simple property/element access expressions need to cache in temp to avoid double-evaluation
+            // local ____TS_tmp = ${left} ${replacementOperator} ${right};
+            // ${left} = ____TS_tmp;
+            const tmpIdentifier = ts.createIdentifier("____TS_tmp");
+            const operatorExpression = ts.createBinary(left, replacementOperator, right);
+            operatorExpression.pos = pos; // Needed to get proper error reporting
+            const tmpDeclaration = ts.createVariableDeclaration(tmpIdentifier, undefined, operatorExpression);
+            const assignStatement = ts.createAssignment(left, tmpIdentifier);
+            statements = [ts.createVariableStatement(undefined, [tmpDeclaration]), ts.createStatement(assignStatement)];
+            resultExpression = tmpIdentifier;
+
+        } else {
+            // Simple statements/expressions
+            const operatorExpression = ts.createBinary(left, replacementOperator, right);
+            operatorExpression.pos = pos; // Needed to get proper error reporting
+            const assignStatement = ts.createAssignment(left, operatorExpression);
+            statements = [ts.createStatement(assignStatement)];
+            resultExpression = left;
+        }
+
+        if (isStatement) {
+            // do ${statements} end
+            return statements.length > 1 ? ts.createBlock(statements) : statements[0];
+        } else {
+            // (function() ${statements} return ${resultExpression} end)()
+            statements.push(ts.createReturn(resultExpression));
+            const lambda = ts.createFunctionExpression(undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       undefined,
+                                                       ts.createBlock(statements));
+            return ts.createCall(ts.createParen(lambda), undefined, undefined);
+        }
+    }
+
+    public visitBinaryExpression(node: ts.BinaryExpression): ts.Expression {
         let operatorToken = node.operatorToken;
-        if (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken) {
-            operatorToken = ts.createToken(ts.SyntaxKind.EqualsEqualsToken);
+
+        const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(operatorToken.kind);
+        if (isCompound) {
+            return this.visitCompoundAssignmentExpression(node.left, node.right, replacementOperator, false, false);
+        }
+
+        switch (operatorToken.kind) {
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                operatorToken = ts.createToken(ts.SyntaxKind.EqualsEqualsToken);
+                break;
+
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                operatorToken = ts.createToken(ts.SyntaxKind.ExclamationEqualsToken);
+                break;
+
+            case ts.SyntaxKind.EqualsToken:
+                return this.visitAssignmentExpression(node);
+
+            case ts.SyntaxKind.AmpersandToken:
+            case ts.SyntaxKind.BarToken:
+            case ts.SyntaxKind.CaretToken:
+            case ts.SyntaxKind.LessThanLessThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                // TODO
+                break;
+
+            case ts.SyntaxKind.InKeyword:
+                // TODO
+                break;
+
+            case ts.SyntaxKind.InstanceOfKeyword:
+                // TODO
+                break;
+
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+            case ts.SyntaxKind.BarBarToken:
+            case ts.SyntaxKind.PlusToken:
+            case ts.SyntaxKind.MinusToken:
+            case ts.SyntaxKind.AsteriskToken:
+            case ts.SyntaxKind.AsteriskAsteriskToken:
+            case ts.SyntaxKind.SlashToken:
+            case ts.SyntaxKind.PercentToken:
+            case ts.SyntaxKind.GreaterThanToken:
+            case ts.SyntaxKind.GreaterThanEqualsToken:
+            case ts.SyntaxKind.LessThanToken:
+            case ts.SyntaxKind.LessThanEqualsToken:
+            case ts.SyntaxKind.EqualsToken:
+            case ts.SyntaxKind.EqualsEqualsToken:
+            case ts.SyntaxKind.ExclamationEqualsToken:
+                break;
+
+            default:
+                throw TSTLErrors.UnsupportedKind("binary operator", operatorToken.kind, node);
         }
         return ts.updateBinary(node, this.visitExpression(node.left), this.visitExpression(node.right), operatorToken);
     }
@@ -558,11 +870,23 @@ export class LuaTransformer {
                                     this.visitExpression(node.whenFalse));
     }
 
-    public visitCallExpression(node: ts.CallExpression): ts.CallExpression {
-        return ts.updateCall(node,
-                             this.visitExpression(node.expression),
-                             node.typeArguments,
-                             node.arguments.map(arg => this.visitExpression(arg)));
+    public visitCallExpression(node: ts.CallExpression): ts.Expression {
+        const call = ts.updateCall(node,
+                                   this.visitExpression(node.expression),
+                                   node.typeArguments,
+                                   node.arguments.map(arg => this.visitExpression(arg)));
+
+        const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
+            && tsHelper.isInTupleReturnFunction(node, this.checker);
+        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
+        if (isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed) {
+            // Wrap tuple result
+            return ts.createArrayLiteral([call]);
+        }
+
+        return call;
     }
 
     public visitPropertyAccessExpression(node: ts.PropertyAccessExpression): ts.PropertyAccessExpression {
@@ -598,11 +922,12 @@ export class LuaTransformer {
         return orExpression;
     }
 
-    public visitSpreadElement(node: ts.SpreadElement): ts.CallExpression {
+    public unpackExpression(expression: ts.Expression): ts.CallExpression {
         // TODO move this to differen targets
         // table.unpack(expression) / unpack(expression)
         let functionExpresion: ts.Expression;
-        switch (this.options.luaTarget) {
+        const target = this.options.luaTarget ? this.options.luaTarget.toLowerCase() : "";
+        switch (target) {
             case LuaTarget.Lua51:
                 functionExpresion = ts.createIdentifier("unpack");
                 break;
@@ -610,12 +935,16 @@ export class LuaTransformer {
             case LuaTarget.Lua53:
                 functionExpresion =
                     ts.createPropertyAccess(ts.createIdentifier("table"), ts.createIdentifier("unpack"));
-            case LuaTarget.LuaJIT:
+                break;
+            default:
                 functionExpresion = ts.createIdentifier("unpack");
                 break;
         }
-        return ts.createCall(
-            functionExpresion, [ts.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword)], [node.expression]);
+        return tsHelper.createLuaCallExpression(functionExpresion, [expression], false);
+    }
+
+    public visitSpreadElement(node: ts.SpreadElement): ts.CallExpression {
+        return this.unpackExpression(node.expression);
     }
 
     public visitNonNullExpression(node: ts.NonNullExpression): ts.Expression {
@@ -635,19 +964,30 @@ export class LuaTransformer {
                                        [this.visitExpression(span.expression)]);
             const text = ts.createLiteral(span.literal.text);
 
-            concatExpression = ts.createAdd(concatExpression, ts.createAdd(expr, ts.createLiteral(text)));
+            concatExpression = tsHelper.createLuaConcatExpression(concatExpression,
+                                                                  ts.createAdd(expr, ts.createLiteral(text)));
         });
         return concatExpression;
     }
 
-    public visitPostfixUnaryExpression(node: ts.PostfixUnaryExpression): ts.PostfixUnaryExpression {
-        // TODO
-        return node;
+    public visitPostfixUnaryExpression(node: ts.PostfixUnaryExpression): ts.Expression {
+        return this.visitCompoundAssignmentExpression(node.operand,
+                                                      ts.createLiteral(1),
+                                                      tsHelper.getUnaryCompoundAssignmentOperator(node),
+                                                      true,
+                                                      false);
     }
 
-    public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.PrefixUnaryExpression {
-        // TODO
-        return node;
+    public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.Expression {
+        if (tsHelper.isNonCompoundPrefixUnaryOperator(node)) {
+            return node;
+        } else {
+            return this.visitCompoundAssignmentExpression(node.operand,
+                                                          ts.createLiteral(1),
+                                                          tsHelper.getUnaryCompoundAssignmentOperator(node),
+                                                          false,
+                                                          false);
+        }
     }
 
     public visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): ts.ArrayLiteralExpression {

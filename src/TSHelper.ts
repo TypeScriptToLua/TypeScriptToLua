@@ -1,5 +1,7 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
+import { TSTLErrors } from "./Errors";
+import { LuaCallExpression, LuaConcatExpression, LuaNode, LuaSyntaxKind } from "./LuaNode";
 
 export class TSHelper {
 
@@ -220,10 +222,48 @@ export class TSHelper {
         return [false, null];
     }
 
+    public static isNonCompoundPrefixUnaryOperator(node: ts.PrefixUnaryExpression): boolean {
+        return node.operator === ts.SyntaxKind.ExclamationToken
+               || node.operator === ts.SyntaxKind.MinusToken
+               || node.operator === ts.SyntaxKind.PlusToken
+               || node.operator === ts.SyntaxKind.TildeToken;
+    }
+
+    public static getUnaryCompoundAssignmentOperator(node: ts.PrefixUnaryExpression | ts.PostfixUnaryExpression)
+        : ts.BinaryOperator {
+        switch (node.operator) {
+            case ts.SyntaxKind.PlusPlusToken:
+                return ts.SyntaxKind.PlusToken;
+            case ts.SyntaxKind.MinusMinusToken:
+                return ts.SyntaxKind.MinusToken;
+            default:
+                throw TSTLErrors.UnsupportedKind(
+                    `unary ${ts.isPrefixUnaryExpression(node) ? "prefix" : "postfix"} operator`, node.operator, node);
+        }
+    }
+
     public static isExpressionStatement(node: ts.Expression): boolean {
         return node.parent === undefined
             || ts.isExpressionStatement(node.parent)
             || ts.isForStatement(node.parent);
+    }
+
+    public static createLuaConcatExpression(left: ts.Expression, right: ts.Expression): LuaConcatExpression {
+        const node = ts.createAdd(left, right) as LuaConcatExpression;
+        node.luaKind = LuaSyntaxKind.ConcatExpression;
+        return node;
+    }
+
+    public static createLuaCallExpression(expression: ts.Expression,
+                                          argumentsArray: ReadonlyArray<ts.Expression>,
+                                          isMethod: boolean): LuaCallExpression {
+        const node = ts.createCall(expression, undefined, argumentsArray) as LuaCallExpression;
+        node.luaKind = isMethod ? LuaSyntaxKind.MethodCallExpression : LuaSyntaxKind.FunctionCallExpression;
+        return node;
+    }
+
+    public static isLuaNode<T extends ts.Node>(node: T): node is LuaNode & T {
+        return (node as LuaNode & T).luaKind !== undefined;
     }
 
     public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {

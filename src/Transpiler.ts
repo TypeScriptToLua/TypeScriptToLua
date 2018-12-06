@@ -6,6 +6,7 @@ import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
 import { LuaLibFeature } from "./LuaLibFeature";
+import { LuaSyntaxKind } from "./LuaNode";
 import { TSHelper as tsHelper } from "./TSHelper";
 
 import { LuaTransformer } from "./Transformer";
@@ -714,7 +715,8 @@ export abstract class LuaTranspiler {
                     // Replace string + with ..
                     const typeLeft = this.checker.getTypeAtLocation(node.left);
                     const typeRight = this.checker.getTypeAtLocation(node.right);
-                    if ((typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
+                    if ((tsHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.ConcatExpression)
+                        || (typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
                         ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.right)) {
                         return lhs + " .. " + rhs;
                     }
@@ -785,12 +787,16 @@ export abstract class LuaTranspiler {
         if (ts.isArrayLiteralExpression(node.left)) {
             // Destructing assignment
             const vars = node.left.elements.map(e => this.transpileExpression(e)).join(",");
-            const vals = tsHelper.isTupleReturnCall(node.right, this.checker)
-                ? rhs : this.transpileDestructingAssignmentValue(node.right);
+            let vals: string;
+            if (tsHelper.isTupleReturnCall(node.right, this.checker)) {
+                vals = rhs;
+            } else if (ts.isArrayLiteralExpression(node.right)) {
+                vals = node.right.elements.map(e => this.transpileExpression(e)).join(",");
+            } else {
+                vals = this.transpileDestructingAssignmentValue(node.right);
+            }
             if (tsHelper.isExpressionStatement(node)) {
-                // In JS, the right side of a destructuring assignment is evaluated before the left
-                const tmps = node.left.elements.map((_, i) => `__TS_tmp${i}`).join(",");
-                return `do local ${tmps} = ${vals}; ${vars} = ${tmps} end`;
+                return `${vars} = ${vals}`;
             } else {
                 return `(function(...) ${vars} = ...; return {...} end)(${vals})`;
             }
@@ -995,16 +1001,8 @@ export abstract class LuaTranspiler {
         let params;
         let callPath;
 
-        const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
-        const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
-            && tsHelper.isInTupleReturnFunction(node, this.checker);
-        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
-        const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
-
         if (ts.isPropertyAccessExpression(node.expression)) {
-            const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
-                ? `({ ${result} })` : result;
+            return this.transpilePropertyCall(node);
         }
 
         // Handle super calls properly
@@ -1016,8 +1014,7 @@ export abstract class LuaTranspiler {
 
         callPath = this.transpileExpression(node.expression);
         params = this.transpileArguments(node.arguments);
-        return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
-            ? `({ ${callPath}(${params}) })` : `${callPath}(${params})`;
+        return `${callPath}(${params})`;
     }
 
     public transpilePropertyCall(node: ts.CallExpression): string {
@@ -1054,30 +1051,32 @@ export abstract class LuaTranspiler {
         }
 
         // Get the type of the function
-        const functionType = this.checker.getTypeAtLocation(node.expression);
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const functionType = this.checker.getTypeAtLocation(expression);
         // Don't replace . with : for namespaces or functions defined as properties with lambdas
         if ((functionType.symbol && !(functionType.symbol.flags & ts.SymbolFlags.Method))
             // Check explicitly for method calls on 'this', since they don't have the Method flag set
-            || (node.expression.expression.kind === ts.SyntaxKind.ThisType)) {
-            callPath = this.transpileExpression(node.expression);
+            || (expression.expression.kind === ts.SyntaxKind.ThisType)
+            || (tsHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.FunctionCallExpression)) {
+            callPath = this.transpileExpression(expression);
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;
-        } else if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
+        } else if (expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
             // Super calls take the format of super.call(self,...)
             params = this.transpileArguments(node.arguments, ts.createNode(ts.SyntaxKind.ThisKeyword) as ts.Expression);
-            return `${this.transpileExpression(node.expression)}(${params})`;
+            return `${this.transpileExpression(expression)}(${params})`;
         } else {
             // Replace last . with : here
-            const name = this.transpileIdentifier(node.expression.name);
+            const name = this.transpileIdentifier(expression.name);
             if (name === "toString") {
-                return  `tostring(${this.transpileExpression(node.expression.expression)})`;
+                return  `tostring(${this.transpileExpression(expression.expression)})`;
             } else if (name === "hasOwnProperty") {
-                const expr = this.transpileExpression(node.expression.expression);
+                const expr = this.transpileExpression(expression.expression);
                 params = this.transpileArguments(node.arguments);
                 return `(rawget(${expr}, ${params} )~=nil)`;
             } else {
                 callPath =
-                `${this.transpileExpression(node.expression.expression)}:${name}`;
+                `${this.transpileExpression(expression.expression)}:${name}`;
                 params = this.transpileArguments(node.arguments);
                 return `${callPath}(${params})`;
             }
@@ -1429,12 +1428,7 @@ export abstract class LuaTranspiler {
 
             const vars = node.name.elements.map(e => this.transpileArrayBindingElement(e)).join(",");
 
-            // Don't unpack TupleReturn decorated functions
-            if (tsHelper.isTupleReturnCall(node.initializer, this.checker)) {
-                return `local ${vars}=${this.transpileExpression(node.initializer)}`;
-            } else {
-                return `local ${vars}=${this.transpileDestructingAssignmentValue(node.initializer)}`;
-            }
+            return `local ${vars}=${this.transpileExpression(node.initializer)}`;
         } else {
             throw TSTLErrors.UnsupportedKind("variable declaration", node.name.kind, node);
         }

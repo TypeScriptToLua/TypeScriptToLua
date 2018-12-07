@@ -81,14 +81,14 @@ export class TSHelper {
     }
 
     // iterate over a type and its bases until the callback returns true.
-    public static forAllTypes(type: ts.Type, callback: (type: ts.Type) => boolean): boolean {
+    public static forTypeOrAnySupertype(type: ts.Type, callback: (type: ts.Type) => boolean): boolean {
         if (callback(type)) {
             return true;
         }
         const baseTypes = type.getBaseTypes();
         if (baseTypes) {
             for (const baseType of baseTypes) {
-                if (this.forAllTypes(baseType, callback)) {
+                if (this.forTypeOrAnySupertype(baseType, callback)) {
                     return true;
                 }
             }
@@ -115,7 +115,7 @@ export class TSHelper {
     }
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return this.forAllTypes(type, t => this.isExplicitArrayType(t, checker));
+        return this.forTypeOrAnySupertype(type, t => this.isExplicitArrayType(t, checker));
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -203,7 +203,7 @@ export class TSHelper {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-            return this.forAllTypes(type, t => this.hasExplicitGetAccessor(t, name));
+            return this.forTypeOrAnySupertype(type, t => this.hasExplicitGetAccessor(t, name));
         }
         return false;
     }
@@ -219,7 +219,7 @@ export class TSHelper {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-            return this.forAllTypes(type, t => this.hasExplicitSetAccessor(t, name));
+            return this.forTypeOrAnySupertype(type, t => this.hasExplicitSetAccessor(t, name));
         }
         return false;
     }

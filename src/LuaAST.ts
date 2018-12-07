@@ -32,6 +32,8 @@ namespace tstl {
         UnaryExpression,
         BinaryExpression,
         ParenthesizedExpression,
+        CallExpression,
+        MethodCallExpression,
         Identifier,
         TableIndexExpression,
         // Operators
@@ -262,8 +264,16 @@ namespace tstl {
     }
 
     interface CallExpression extends Expression {
+        kind: SyntaxKind.CallExpression;
         expression: Expression;
         params?: Expression[];
+    }
+
+    interface MethodCallExpression extends Expression {
+        kind: SyntaxKind.MethodCallExpression;
+        prefixExpression: Expression;
+        params?: Expression[];
+        name: Identifier;
     }
 
     interface Identifier extends Expression {

@@ -33,7 +33,7 @@ namespace tstl {
         BinaryExpression,
         ParenthesizedExpression,
         Identifier,
-        TableAccessExpression,
+        TableIndexExpression,
         // Operators
         // Arithmetic
         AdditionOperator, // Maybe use abreviations for those add, sub, mul ...
@@ -272,7 +272,7 @@ namespace tstl {
     }
 
     interface TableIndexExpression extends Expression {
-        kind: SyntaxKind.TableAccessExpression;
+        kind: SyntaxKind.TableIndexExpression;
         table: Expression;
         index: Expression;
         // TODO maybe add soemthing to handle dot vs [] access

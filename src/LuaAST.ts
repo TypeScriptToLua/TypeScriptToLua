@@ -121,14 +121,14 @@ namespace tstl {
     // `local test1, test2 = 12, 42` or `local test1, test2`
     interface VariableDeclarationStatement extends Statement {
         kind: SyntaxKind.VariableDeclarationStatement;
-        lhs: IdentifierOrTableAccessExpression[];
+        lhs: IdentifierOrTableIndexExpression[];
         rhs?: Expression[];
     }
 
     // `test1, test2 = 12, 42`
     interface VariableAssignmentStatement extends Statement {
         kind: SyntaxKind.VariableAssignmentStatement;
-        left: IdentifierOrTableAccessExpression[];
+        left: IdentifierOrTableIndexExpression[];
         right: Expression[];
     }
 
@@ -271,12 +271,12 @@ namespace tstl {
         text: string;
     }
 
-    interface TableAccessExpression extends Expression {
+    interface TableIndexExpression extends Expression {
         kind: SyntaxKind.TableAccessExpression;
         table: Expression;
         index: Expression;
         // TODO maybe add soemthing to handle dot vs [] access
     }
 
-    type IdentifierOrTableAccessExpression = Identifier | TableAccessExpression;
+    type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
 }

@@ -1789,7 +1789,7 @@ export abstract class LuaTranspiler {
         if (constructor) {
             // Add constructor plus initialization of instance fields
             result += this.transpileConstructor(constructor, className);
-        } else if (!isExtension) {
+        } else if (!isExtension && !extendsType) {
             // Generate a constructor if none was defined
             result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)),
                                                 className);

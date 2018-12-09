@@ -43,8 +43,8 @@ export class ArrayTests {
     public derivedArrayAccess(): void {
         const lua = `local arr = {firstElement=function(self) return self[1]; end};`
         +  util.transpileString(
-            `interface CustomArray extends Array<number>{ firstElement():number; };
-            declare const arr: CustomArray;
+            `interface CustomArray<T> extends Array<T>{ firstElement():number; };
+            declare const arr: CustomArray<number>;
             arr[0] = 3;
             return arr.firstElement();`
         );

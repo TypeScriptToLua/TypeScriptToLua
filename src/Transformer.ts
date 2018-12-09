@@ -471,7 +471,7 @@ export class LuaTransformer {
             }
 
         } else if (ts.isPrefixUnaryExpression(node.expression)
-                   && !tsHelper.isNonCompoundPrefixUnaryOperator(node.expression)) {
+                   && tsHelper.isCompoundPrefixUnaryOperator(node.expression)) {
             // ++i, --i
             return this.visitCompoundAssignmentExpression(node.expression.operand,
                                                           ts.createLiteral(1),
@@ -582,7 +582,8 @@ export class LuaTransformer {
                                         left: ts.ArrayLiteralExpression,
                                         isStatement: boolean): ts.Block {
         let right = this.visitExpression(node.right);
-        if (!tsHelper.isTupleReturnCall(node.right, this.checker)) {
+        if (ts.isArrayLiteralExpression(right)) {
+            // TODO fix this so the tuple isn't packed then unpacked
             right = this.unpackExpression(right);
         }
         // local ${tmps} = ${right}; ${left} = ${tmps}; [return ${tmps}]
@@ -619,6 +620,11 @@ export class LuaTransformer {
     public visitAssignmentExpression(node: ts.BinaryExpression): ts.Expression {
         if (tsHelper.hasSetAccessor(node.left, this.checker)) {
             // TODO
+        }
+
+        if (ts.isForStatement(node.parent)) {
+            // Special case to avoid creating lambda in for loop incrementor
+            return ts.updateBinary(node, this.visitExpression(node.left), this.visitExpression(node.right));
         }
 
         if (ts.isArrayLiteralExpression(node.left)) {
@@ -714,6 +720,7 @@ export class LuaTransformer {
                                              isPostfix: boolean,
                                              isStatement: boolean): ts.Expression | ts.Statement {
         const pos = left.parent.pos;
+        const inForStatement = left.parent && ts.isForStatement(left.parent.parent);
         left = this.visitExpression(left);
         right = this.visitExpression(right);
         let statements: ts.Statement[];
@@ -752,7 +759,7 @@ export class LuaTransformer {
                           ts.createStatement(assignStatement)];
             resultExpression = tmp;
 
-        } else if (!isStatement && isPostfix) {
+        } else if (!isStatement && isPostfix && !inForStatement) {
             // Postfix expressions need to cache original value in temp
             // local ____TS_tmp = ${left};
             // ${left} = ____TS_tmp ${replacementOperator} ${right};
@@ -782,6 +789,10 @@ export class LuaTransformer {
             const operatorExpression = ts.createBinary(left, replacementOperator, right);
             operatorExpression.pos = pos; // Needed to get proper error reporting
             const assignStatement = ts.createAssignment(left, operatorExpression);
+            if (!isStatement && inForStatement) {
+                // Special case to avoid creating lambda in for loop incrementor
+                return assignStatement;
+            }
             statements = [ts.createStatement(assignStatement)];
             resultExpression = left;
         }
@@ -877,13 +888,18 @@ export class LuaTransformer {
                                    node.arguments.map(arg => this.visitExpression(arg)));
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        if (!isTupleReturn && isInDestructingAssignment) {
+            // Unpack for destructuring assignment
+            return this.unpackExpression(call);
+        }
+
         const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
             && tsHelper.isInTupleReturnFunction(node, this.checker);
-        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
         if (isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed) {
             // Wrap tuple result
-            return ts.createArrayLiteral([call]);
+            return ts.createParen(ts.createArrayLiteral([call]));
         }
 
         return call;
@@ -940,7 +956,7 @@ export class LuaTransformer {
                 functionExpresion = ts.createIdentifier("unpack");
                 break;
         }
-        return tsHelper.createLuaCallExpression(functionExpresion, [expression], false);
+        return transformHelper.createLuaCallExpression(functionExpresion, [expression], false);
     }
 
     public visitSpreadElement(node: ts.SpreadElement): ts.CallExpression {
@@ -964,8 +980,8 @@ export class LuaTransformer {
                                        [this.visitExpression(span.expression)]);
             const text = ts.createLiteral(span.literal.text);
 
-            concatExpression = tsHelper.createLuaConcatExpression(concatExpression,
-                                                                  ts.createAdd(expr, ts.createLiteral(text)));
+            concatExpression = transformHelper.createLuaConcatExpression(concatExpression,
+                                                                         ts.createAdd(expr, ts.createLiteral(text)));
         });
         return concatExpression;
     }
@@ -979,7 +995,7 @@ export class LuaTransformer {
     }
 
     public visitPrefixUnaryExpression(node: ts.PrefixUnaryExpression): ts.Expression {
-        if (tsHelper.isNonCompoundPrefixUnaryOperator(node)) {
+        if (!tsHelper.isCompoundPrefixUnaryOperator(node)) {
             return node;
         } else {
             return this.visitCompoundAssignmentExpression(node.operand,
@@ -991,7 +1007,7 @@ export class LuaTransformer {
     }
 
     public visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): ts.ArrayLiteralExpression {
-        return node;
+        return ts.updateArrayLiteral(node, node.elements.map(e => this.visitExpression(e)));
     }
 
     public visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): ts.ObjectLiteralExpression {

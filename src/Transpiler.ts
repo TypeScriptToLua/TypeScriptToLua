@@ -10,6 +10,7 @@ import { LuaSyntaxKind } from "./LuaNode";
 import { TSHelper as tsHelper } from "./TSHelper";
 
 import { LuaTransformer } from "./Transformer";
+import { TransformHelper as transformHelper } from "./TransformHelper";
 
 /* tslint:disable */
 const packageJSON = require("../package.json");
@@ -715,7 +716,7 @@ export abstract class LuaTranspiler {
                     // Replace string + with ..
                     const typeLeft = this.checker.getTypeAtLocation(node.left);
                     const typeRight = this.checker.getTypeAtLocation(node.right);
-                    if ((tsHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.ConcatExpression)
+                    if ((transformHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.ConcatExpression)
                         || (typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.left)
                         ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(node.right)) {
                         return lhs + " .. " + rhs;
@@ -1057,7 +1058,7 @@ export abstract class LuaTranspiler {
         if ((functionType.symbol && !(functionType.symbol.flags & ts.SymbolFlags.Method))
             // Check explicitly for method calls on 'this', since they don't have the Method flag set
             || (expression.expression.kind === ts.SyntaxKind.ThisType)
-            || (tsHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.FunctionCallExpression)) {
+            || (transformHelper.isLuaNode(node) && node.luaKind === LuaSyntaxKind.FunctionCallExpression)) {
             callPath = this.transpileExpression(expression);
             params = this.transpileArguments(node.arguments);
             return `${callPath}(${params})`;

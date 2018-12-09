@@ -257,6 +257,7 @@ export class ExpressionTests {
     @TestCase("inst.baseField", 7)
     @TestCase("inst.field", 6)
     @TestCase("inst.superField", 5)
+    @TestCase("inst.superBaseField", 4)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
       const source = `class MyBaseClass {`
@@ -273,6 +274,7 @@ export class ExpressionTests {
                    + `    public _superField: number;`
                    + `    public get superField(): number { return this._superField + 2; }`
                    + `    public set superField(v: number) { this._superField = v; }`
+                   + `    public get superBaseField() { return this.baseField - 3; }`
                    + `}`                   
                    + `var inst = new MySuperClass();`
                    + `inst.baseField = 1;`

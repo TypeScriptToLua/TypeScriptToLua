@@ -71,17 +71,25 @@ export class TSTLErrors {
 
     public static UnsupportedFunctionConversion = (node: ts.Node, name?: string) => {
         if (name) {
-            return new TranspileError(`Unsupported conversion from method to function "${name}".`, node);
+            return new TranspileError(`Unsupported conversion from method to function "${name}". `
+                                      + `To fix, wrap the method in an arrow function.`,
+                                      node);
         } else {
-            return new TranspileError(`Unsupported conversion from method to function.`, node);
+            return new TranspileError(`Unsupported conversion from method to function. `
+                                      + `To fix, wrap the method in an arrow function.`,
+                                      node);
         }
     }
 
     public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
         if (name) {
-            return new TranspileError(`Unsupported conversion from function to method "${name}".`, node);
+            return new TranspileError(`Unsupported conversion from function to method "${name}". `
+                                      + `To fix, wrap the function in an arrow function.`,
+                                      node);
         } else {
-            return new TranspileError(`Unsupported conversion from function to method.`, node);
+            return new TranspileError(`Unsupported conversion from function to method. `
+                                      + `To fix, wrap the function in an arrow function.`,
+                                      node);
         }
     }
 

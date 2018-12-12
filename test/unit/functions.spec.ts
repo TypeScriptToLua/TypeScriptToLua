@@ -319,4 +319,25 @@ export class FunctionTests {
             `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`);
         Expect(result).toBe(12);
     }
+
+    @TestCase(["bar"], "foobar")
+    @TestCase(["baz", "bar"], "bazbar")
+    @Test("Function overload")
+    public functionOverload(args: string[], expectResult: string): void {
+        const code = `class O {
+                          prop = "foo";
+                          method(s: string): string;
+                          method(this: void, s1: string, s2: string): string;
+                          method(s1: string) {
+                              if (typeof this === "string") {
+                                  return this + s1;
+                              }
+                              return this.prop + s1;
+                          }
+                      };
+                      const o = new O();
+                      return o.method(${args.map(a => "\"" + a + "\"").join(", ")});`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectResult);
+    }
 }

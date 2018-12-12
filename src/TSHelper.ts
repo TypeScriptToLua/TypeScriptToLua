@@ -256,13 +256,37 @@ export class TSHelper {
         return [false, null, null];
     }
 
+    public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {
+        return signatureDeclaration.parameters.find(
+            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+    }
+
+    public static getSignatureDeclarations(signatures: ts.Signature[], checker: ts.TypeChecker)
+        : ts.SignatureDeclaration[] {
+        const signatureDeclarations: ts.SignatureDeclaration[] = [];
+        for (const signature of signatures) {
+            const signatureDeclaration = signature.getDeclaration();
+            if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
+                && !this.getExplicitThisParameter(signatureDeclaration)) {
+                // Function expressions: get signatures of type being assigned to, unless 'this' was explicit
+                const declType = checker.getTypeAtLocation(signatureDeclaration.parent);
+                const declSignatures = declType.getCallSignatures();
+                if (declSignatures.length > 0) {
+                    declSignatures.map(s => s.getDeclaration()).forEach(decl => signatureDeclarations.push(decl));
+                    continue;
+                }
+            }
+            signatureDeclarations.push(signatureDeclaration);
+        }
+        return signatureDeclarations;
+    }
+
     public static getDeclarationContextType(signatureDeclaration: ts.SignatureDeclaration,
                                             checker: ts.TypeChecker): ContextType {
-        const thisArg = signatureDeclaration.parameters.find(
-            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
-        if (thisArg) {
+        const thisParameter = this.getExplicitThisParameter(signatureDeclaration);
+        if (thisParameter) {
             // Explicit 'this'
-            return thisArg.type && thisArg.type.kind === ts.SyntaxKind.VoidKeyword
+            return thisParameter.type && thisParameter.type.kind === ts.SyntaxKind.VoidKeyword
                 ? ContextType.Void : ContextType.NonVoid;
         }
         if ((ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration))
@@ -288,10 +312,10 @@ export class TSHelper {
         if (signatures.length === 0) {
             return ContextType.None;
         }
-        const signatureDeclataions = signatures.map(sig => sig.getDeclaration());
-        const context = this.getDeclarationContextType(signatureDeclataions[0], checker);
-        for (let i = 1; i < signatureDeclataions.length; ++i) {
-            if (this.getDeclarationContextType(signatureDeclataions[i], checker) !== context) {
+        const signatureDeclarations = this.getSignatureDeclarations(signatures, checker);
+        const context = this.getDeclarationContextType(signatureDeclarations[0], checker);
+        for (let i = 1; i < signatureDeclarations.length; ++i) {
+            if (this.getDeclarationContextType(signatureDeclarations[i], checker) !== context) {
                 return ContextType.Mixed;
             }
         }

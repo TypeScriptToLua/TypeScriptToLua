@@ -41,6 +41,9 @@ Changelog can be found in [CHANGELOG.md](https://github.com/Perryvw/TypescriptTo
 }
 ```
 
+## Contributing
+All contributions are welcome, but please read our [contribution guidelines](https://github.com/Perryvw/TypescriptToLua/blob/master/CONTRIBUTING.md)!
+
 ## Declarations
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)

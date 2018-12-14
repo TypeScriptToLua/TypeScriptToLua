@@ -263,6 +263,7 @@ export class AssignmentTests {
     @TestCase("foo.voidLambdaProp", "Foo.staticMethod", "foo+staticMethod")
     @TestCase("foo.voidLambdaProp", "Foo.staticLambdaProp", "foo+staticLambdaProp")
     @TestCase("foo.voidLambdaProp", "foo.voidMethod", "foo+voidMethod")
+    @TestCase("func", "(func as (string | ((s: string) => string)))", "foo+func")
     @Test("Valid function assignment")
     public validFunctionAssignment(func: string, assignTo: string, expectResult: string): void {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo}; return ${func}("foo");`;
@@ -279,10 +280,17 @@ export class AssignmentTests {
     @TestCase("s => s", "foo")
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
+    @TestCase("func", "foo+func", "string | ((s: string) => string)")
+    @TestCase("func", "foo+func", "T")
     @Test("Valid function argument")
-    public validFunctionArgument(func: string, expectResult: string): void {
+    public validFunctionArgument(func: string, expectResult: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(s: string) => s";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function takesFunc(fn: (s: string) => s) { return fn("foo"); }
+                      function takesFunc<T extends ((s: string) => string)>(fn: ${funcType}) {
+                          return (fn as any)("foo");
+                      }
                       return takesFunc(${func});`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
@@ -297,10 +305,17 @@ export class AssignmentTests {
     @TestCase("s => s", "foo")
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
+    @TestCase("func", "foo+func", "string | ((s: string) => string)")
+    @TestCase("func", "foo+func", "T")
     @Test("Valid function return")
-    public validFunctionReturn(func: string, expectResult: string): void {
+    public validFunctionReturn(func: string, expectResult: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(s: string) => s";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsFunc(): (s: string) => string { return ${func}; }
+                      function returnsFunc<T extends ((s: string) => string)>(): ${funcType} {
+                          return ${func};
+                      }
                       const fn = returnsFunc();
                       return fn("foo");`;
         const result = util.transpileAndExecute(code);
@@ -367,6 +382,7 @@ export class AssignmentTests {
     @TestCase("thisLambda", "Foo.thisStaticMethod", "foo+thisStaticMethod")
     @TestCase("thisLambda", "Foo.thisStaticLambdaProp", "foo+thisStaticLambdaProp")
     @TestCase("thisLambda", "thisFunc", "foo+thisFunc")
+    @TestCase("foo.method", "(foo.method as (string | ((this: Foo, s: string) => string))", "foo+method")
     @Test("Valid method assignment")
     public validMethodAssignment(func: string, assignTo: string, expectResult: string): void {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo}; return ${func}("foo");`;
@@ -383,10 +399,17 @@ export class AssignmentTests {
     @TestCase("s => s", "foo")
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: Foo, s: string) { return s; }", "foo")
+    @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
+    @TestCase("foo.method", "foo+method", "T")
     @Test("Valid method argument")
-    public validMethodArgument(func: string, expectResult: string): void {
+    public validMethodArgument(func: string, expectResult: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(this: Foo, s: string) => string";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function takesMethod(meth: (this: Foo, s: string) => string) { foo.method = meth; }
+                      function takesMethod<T extends ((this: Foo, s: string) => string)>(meth: ${funcType}) {
+                          foo.method = meth as any;
+                      }
                       takesMethod(${func});
                       return foo.method("foo");`;
         const result = util.transpileAndExecute(code);
@@ -402,10 +425,17 @@ export class AssignmentTests {
     @TestCase("s => s", "foo")
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: Foo, s: string) { return s; }", "foo")
+    @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
+    @TestCase("foo.method", "foo+method", "T")
     @Test("Valid method return")
-    public validMethodReturn(func: string, expectResult: string): void {
+    public validMethodReturn(func: string, expectResult: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(this: Foo, s: string) => string";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnMethod(): (this: Foo, s: string) => string { return ${func}; }
+                      function returnMethod<T extends ((this: Foo, s: string) => string)>(): ${funcType} {
+                          return ${func};
+                      }
                       foo.method = returnMethod();
                       return foo.method("foo");`;
         const result = util.transpileAndExecute(code);
@@ -442,6 +472,7 @@ export class AssignmentTests {
     @TestCase("Foo.staticLambdaProp", "Foo.thisStaticMethod")
     @TestCase("Foo.staticLambdaProp", "Foo.thisStaticLambdaProp")
     @TestCase("Foo.staticLambdaProp", "function(this: Foo, s: string) { return s; }")
+    @TestCase("func", "(foo.method as (string | ((this: Foo, s: string) => string)))")
     @Test("Invalid function assignment")
     public invalidFunctionAssignment(func: string, assignTo: string): void {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
@@ -457,10 +488,15 @@ export class AssignmentTests {
     @TestCase("thisFunc")
     @TestCase("thisLambda")
     @TestCase("function(this: Foo, s: string) { return s; }")
+    @TestCase("foo.method", "string | ((s: string) => string)")
+    @TestCase("foo.method", "T")
     @Test("Invalid function argument")
-    public invalidFunctionArgument(func: string): void {
+    public invalidFunctionArgument(func: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(s: string) => s";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesFunc(fn: (s: string) => s);
+                      declare function takesFunc<T extends ((s: string) => string)>(fn: ${funcType});
                       takesFunc(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
@@ -474,10 +510,17 @@ export class AssignmentTests {
     @TestCase("thisFunc")
     @TestCase("thisLambda")
     @TestCase("function(this: Foo, s: string) { return s; }")
+    @TestCase("foo.method", "string | ((s: string) => string)")
+    @TestCase("foo.method", "T")
     @Test("Invalid function return")
-    public invalidFunctionReturn(func: string): void {
+    public invalidFunctionReturn(func: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(s: string) => s";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsFunc(): (s: string) => string { return ${func}; }`;
+                      function returnsFunc<T extends ((s: string) => string)>(): ${funcType} {
+                          return ${func};
+                      }`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
             "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
@@ -525,6 +568,7 @@ export class AssignmentTests {
     @TestCase("thisLambda", "foo.voidMethod")
     @TestCase("thisLambda", "foo.voidLambdaProp")
     @TestCase("thisLambda", "function(this: void, s: string) { return s; }")
+    @TestCase("foo.method", "(func as string | ((s: string) => string))")
     @Test("Invalid method assignment")
     public invalidMethodAssignment(func: string, assignTo: string): void {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
@@ -541,10 +585,15 @@ export class AssignmentTests {
     @TestCase("foo.voidMethod")
     @TestCase("foo.voidLambdaProp")
     @TestCase("function(this: void, s: string) { return s; }")
+    @TestCase("func", "string | ((this: Foo, s: string) => string)")
+    @TestCase("func", "T")
     @Test("Invalid method argument")
-    public invalidMethodArgument(func: string): void {
+    public invalidMethodArgument(func: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(this: Foo, s: string) => string";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesMethod(meth: (this: Foo, s: string) => s);
+                      declare function takesMethod<T extends ((this: Foo, s: string) => string)>(meth: ${funcType});
                       takesMethod(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
@@ -559,10 +608,17 @@ export class AssignmentTests {
     @TestCase("foo.voidMethod")
     @TestCase("foo.voidLambdaProp")
     @TestCase("function(this: void, s: string) { return s; }")
+    @TestCase("func", "string | ((this: Foo, s: string) => string)")
+    @TestCase("func", "T")
     @Test("Invalid method return")
-    public invalidMethodReturn(func: string): void {
+    public invalidMethodReturn(func: string, funcType?: string): void {
+        if (!funcType) {
+            funcType = "(this: Foo, s: string) => string";
+        }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsMethod(): (this: Foo, s: string) => s { return ${func}; }`;
+                      function returnsMethod<T extends ((this: Foo, s: string) => string)>(): ${funcType} {
+                          return ${func};
+                      }`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
             "Unsupported conversion from function to method. To fix, wrap the function in an arrow function "
@@ -635,7 +691,7 @@ export class AssignmentTests {
     public validInterfaceMethodAssignment(): void {
         const code = `interface A { fn(this: void, s: string): string; }
                       interface B { fn(this: void, s: string): string; }
-                      const a: A = { fn: s => s };
+                      const a: A = { fn(this: void, s) { return s; } };
                       const b: B = a;
                       return b.fn("foo");`;
         const result = util.transpileAndExecute(code);

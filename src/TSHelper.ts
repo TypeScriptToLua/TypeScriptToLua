@@ -1,5 +1,25 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
+import { TSTLErrors } from "./Errors";
+
+const defaultArrayCallMethodNames = new Set<string>([
+    "concat",
+    "push",
+    "reverse",
+    "shift",
+    "unshift",
+    "sort",
+    "pop",
+    "forEach",
+    "indexOf",
+    "map",
+    "filter",
+    "some",
+    "every",
+    "slice",
+    "splice",
+    "join",
+]);
 
 export class TSHelper {
 
@@ -71,6 +91,26 @@ export class TSHelper {
             || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
+    // iterate over a type and its bases until the callback returns true.
+    public static forTypeOrAnySupertype(type: ts.Type, checker: ts.TypeChecker, callback: (type: ts.Type) => boolean):
+    boolean {
+        if (callback(type)) {
+            return true;
+        }
+        if (!type.isClassOrInterface() && type.symbol) {
+            type = checker.getDeclaredTypeOfSymbol(type.symbol);
+        }
+        const baseTypes = type.getBaseTypes();
+        if (baseTypes) {
+            for (const baseType of baseTypes) {
+                if (this.forTypeOrAnySupertype(baseType, checker, callback)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static isStringType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.String) !== 0
             || (type.flags & ts.TypeFlags.StringLike) !== 0
@@ -84,9 +124,13 @@ export class TSHelper {
                 && (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
     }
 
-    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+    public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && this.isArrayTypeNode(typeNode);
+    }
+
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        return this.forTypeOrAnySupertype(type, checker, t => this.isExplicitArrayType(t, checker));
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -163,28 +207,34 @@ export class TSHelper {
         return null;
     }
 
+    public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
+        }
+    }
+
     public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
-            }
+            return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitGetAccessor(t, name));
         }
         return false;
+    }
+
+    public static hasExplicitSetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
+        }
     }
 
     public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
-            }
+            return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitSetAccessor(t, name));
         }
         return false;
     }
@@ -218,6 +268,26 @@ export class TSHelper {
         }
 
         return [false, null];
+    }
+
+    public static isCompoundPrefixUnaryOperator(node: ts.PrefixUnaryExpression): boolean {
+        return node.operator !== ts.SyntaxKind.ExclamationToken
+               && node.operator !== ts.SyntaxKind.MinusToken
+               && node.operator !== ts.SyntaxKind.PlusToken
+               && node.operator !== ts.SyntaxKind.TildeToken;
+    }
+
+    public static getUnaryCompoundAssignmentOperator(node: ts.PrefixUnaryExpression | ts.PostfixUnaryExpression)
+        : ts.BinaryOperator {
+        switch (node.operator) {
+            case ts.SyntaxKind.PlusPlusToken:
+                return ts.SyntaxKind.PlusToken;
+            case ts.SyntaxKind.MinusMinusToken:
+                return ts.SyntaxKind.MinusToken;
+            default:
+                throw TSTLErrors.UnsupportedKind(
+                    `unary ${ts.isPrefixUnaryExpression(node) ? "prefix" : "postfix"} operator`, node.operator, node);
+        }
     }
 
     public static isExpressionStatement(node: ts.Expression): boolean {
@@ -264,4 +334,9 @@ export class TSHelper {
         }
         return [false, null, null];
     }
+
+    public static isDefaultArrayCallMethodName(methodName: string): boolean {
+        return defaultArrayCallMethodNames.has(methodName);
+    }
+
 }

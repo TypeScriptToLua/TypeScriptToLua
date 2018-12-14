@@ -12,6 +12,7 @@ export enum SyntaxKind {
     DoStatement,
     VariableDeclarationStatement,
     VariableAssignmentStatement,
+    IfStatement,
     WhileStatement,
     RepeatStatement,
     ForStatement,
@@ -29,6 +30,7 @@ export enum SyntaxKind {
     TrueKeyword,
     FalseKeyword,
     FunctionExpression,
+    TableFieldExpression,
     TableExpression,
     UnaryExpression,
     BinaryExpression,
@@ -115,6 +117,17 @@ export function createNode(kind: SyntaxKind, parent?: Node, tsOriginal?: ts.Node
     return {kind, parent, pos, end};
 }
 
+export function setParent(node: Node | Node[] | undefined, parent: Node): void {
+    if (!node) {
+        return;
+    }
+    if (Array.isArray(node)) {
+        node.forEach(n => n.parent = parent);
+    } else {
+        node.parent = parent;
+    }
+}
+
 export interface Block extends Node {
     kind: SyntaxKind.Block;
     statements?: Statement[];
@@ -122,6 +135,7 @@ export interface Block extends Node {
 
 export function createBlock(statements?: Statement[], parent?: Node, tsOriginal?: ts.Node): Block {
     const block = createNode(SyntaxKind.Block, parent, tsOriginal) as Block;
+    setParent(statements, block);
     block.statements = statements;
     return block;
 }
@@ -137,6 +151,7 @@ export interface DoStatement extends Statement {
 
 export function createDoStatement(statements?: Statement[], parent?: Node, tsOriginal?: ts.Node): DoStatement {
     const statement = createNode(SyntaxKind.Block, parent, tsOriginal) as DoStatement;
+    setParent(statements, statement);
     statement.statements = statements;
     return statement;
 }
@@ -156,7 +171,9 @@ export function createVariableDeclarationStatement(
 
     const statement =
         createNode(SyntaxKind.VariableDeclarationStatement, parent, tsOriginal) as VariableDeclarationStatement;
+    setParent(lhs, statement);
     statement.lhs = lhs;
+    setParent(rhs, statement);
     statement.rhs = rhs;
     return statement;
 }
@@ -176,8 +193,34 @@ export function createVariableAssignmentStatement(
 
     const statement =
         createNode(SyntaxKind.VariableAssignmentStatement, parent, tsOriginal) as VariableAssignmentStatement;
+    setParent(left, statement);
     statement.left = left;
+    setParent(right, statement);
     statement.right = right;
+    return statement;
+}
+
+export interface IfStatement extends Statement {
+    kind: SyntaxKind.IfStatement;
+    condtion: Expression;
+    ifBlock: Block;
+    elseBlock?: Block | IfStatement;
+}
+
+export function createIfStatement(
+    condtion: Expression,
+    ifBlock: Block,
+    elseBlock?: Block | IfStatement,
+    parent?: Node,
+    tsOriginal?: ts.Node): IfStatement {
+
+    const statement = createNode(SyntaxKind.IfStatement, parent, tsOriginal) as IfStatement;
+    setParent(condtion, statement);
+    statement.condtion = condtion;
+    setParent(ifBlock, statement);
+    statement.ifBlock = ifBlock;
+    setParent(ifBlock, statement);
+    statement.elseBlock = elseBlock;
     return statement;
 }
 
@@ -194,7 +237,9 @@ export function createWhileStatement(
     body: Block, expression: Expression, parent?: Node, tsOriginal?: ts.Node): WhileStatement {
 
     const statement = createNode(SyntaxKind.WhileStatement, parent, tsOriginal) as WhileStatement;
+    setParent(body, statement);
     statement.body = body;
+    setParent(expression, statement);
     statement.expression = expression;
     return statement;
 }
@@ -208,7 +253,9 @@ export function createRepeatStatement(
     body: Block, expression: Expression, parent?: Node, tsOriginal?: ts.Node): RepeatStatement {
 
     const statement = createNode(SyntaxKind.RepeatStatement, parent, tsOriginal) as RepeatStatement;
+    setParent(body, statement);
     statement.body = body;
+    setParent(expression, statement);
     statement.expression = expression;
     return statement;
 }
@@ -232,10 +279,15 @@ export function createForStatement(
     tsOriginal?: ts.Node): ForStatement {
 
     const statement = createNode(SyntaxKind.ForStatement, parent, tsOriginal) as ForStatement;
+    setParent(body, statement);
     statement.body = body;
+    setParent(controlVariable, statement);
     statement.controlVariable = controlVariable;
+    setParent(controlVariableInitializer, statement);
     statement.controlVariableInitializer = controlVariableInitializer;
+    setParent(limitExpression, statement);
     statement.limitExpression = limitExpression;
+    setParent(stepExpression, statement);
     statement.stepExpression = stepExpression;
     return statement;
 }
@@ -254,8 +306,11 @@ export function createForInStatement(
     tsOriginal?: ts.Node): ForInStatement {
 
     const statement = createNode(SyntaxKind.ForStatement, parent, tsOriginal) as ForInStatement;
+    setParent(body, statement);
     statement.body = body;
+    setParent(names, statement);
     statement.names = names;
+    setParent(expressions, statement);
     statement.expressions = expressions;
     return statement;
 }
@@ -291,6 +346,7 @@ export function createReturnStatement(
     expressions?: Expression[], parent?: Node, tsOriginal?: ts.Node): ReturnStatement {
 
     const statement = createNode(SyntaxKind.ReturnStatement, parent, tsOriginal) as ReturnStatement;
+    setParent(expressions, statement);
     statement.expressions = expressions;
     return statement;
 }
@@ -312,6 +368,7 @@ export function createExpressionStatement(
     expressions: Expression, parent?: Node, tsOriginal?: ts.Node): ExpressionStatement {
 
     const statement = createNode(SyntaxKind.ReturnStatement, parent, tsOriginal) as ExpressionStatement;
+    setParent(expressions, statement);
     statement.expression = expressions;
     return statement;
 }
@@ -401,21 +458,42 @@ export function createFunctionExpression(
     tsOriginal?: ts.Node): FunctionExpression {
 
     const expression = createNode(SyntaxKind.FunctionExpression, parent, tsOriginal) as FunctionExpression;
+    setParent(body, expression);
     expression.body = body;
+    setParent(params, expression);
     expression.params = params;
+    setParent(dots, expression);
     expression.dots = dots;
     return expression;
 }
 
-type FieldList = Array<Expression | [Expression, Expression]>;
+export interface TableFieldExpression extends Expression {
+    kind: SyntaxKind.TableFieldExpression;
+    value: Expression;
+    key?: Expression;
+}
+
+export function createTableFieldExpression(
+    value: Expression, key?: Expression, parent?: Node, tsOriginal?: ts.Node): TableFieldExpression {
+
+    const expression = createNode(SyntaxKind.TableExpression, parent, tsOriginal) as TableFieldExpression;
+    setParent(value, expression);
+    expression.value = value;
+    setParent(key, expression);
+    expression.key = key;
+    return expression;
+}
 
 export interface TableExpression extends Expression {
     kind: SyntaxKind.TableExpression;
-    fields?: FieldList;
+    fields?: TableFieldExpression[];
 }
 
-export function createTableExpression(fields: FieldList, parent?: Node, tsOriginal?: ts.Node): TableExpression {
+export function createTableExpression(
+    fields: TableFieldExpression[], parent?: Node, tsOriginal?: ts.Node): TableExpression {
+
     const expression = createNode(SyntaxKind.TableExpression, parent, tsOriginal) as TableExpression;
+    setParent(fields, expression);
     expression.fields = fields;
     return expression;
 }
@@ -430,6 +508,7 @@ export function createUnaryExpression(
     operand: Expression, operator: UnaryOperator, parent?: Node, tsOriginal?: ts.Node): UnaryExpression {
 
     const expression = createNode(SyntaxKind.UnaryExpression, parent, tsOriginal) as UnaryExpression;
+    setParent(operand, expression);
     expression.operand = operand;
     expression.operator = operator;
     return expression;
@@ -450,7 +529,9 @@ export function createBinaryExpression(
     tsOriginal?: ts.Node): BinaryExpression {
 
     const expression = createNode(SyntaxKind.BinaryExpression, parent, tsOriginal) as BinaryExpression;
+    setParent(left, expression);
     expression.left = left;
+    setParent(right, expression);
     expression.right = right;
     expression.operator = operator;
     return expression;
@@ -466,6 +547,7 @@ export function createParenthesizedExpression(
 
     const expression =
         createNode(SyntaxKind.ParenthesizedExpression, parent, tsOriginal) as ParenthesizedExpression;
+    setParent(innerExpression, expression);
     expression.innerEpxression = innerExpression;
     return expression;
 }
@@ -480,7 +562,9 @@ export function createCallExpression(
     expression: Expression, params?: Expression[], parent?: Node, tsOriginal?: ts.Node): CallExpression {
 
     const callExpression = createNode(SyntaxKind.CallExpression, parent, tsOriginal) as CallExpression;
+    setParent(expression, callExpression);
     callExpression.expression = expression;
+    setParent(params, expression);
     callExpression.params = params;
     return callExpression;
 }
@@ -500,8 +584,11 @@ export function createMethodCallExpression(
     tsOriginal?: ts.Node): MethodCallExpression {
 
     const callExpression = createNode(SyntaxKind.MethodCallExpression, parent, tsOriginal) as MethodCallExpression;
+    setParent(prefixExpression, callExpression);
     callExpression.prefixExpression = prefixExpression;
+    setParent(name, callExpression);
     callExpression.name = name;
+    setParent(params, callExpression);
     callExpression.params = params;
     return callExpression;
 }
@@ -528,7 +615,9 @@ export function createTableIndexExpression(
     table: Expression, index: Expression, parent?: Node, tsOriginal?: ts.Node): TableIndexExpression {
 
     const expression = createNode(SyntaxKind.Identifier, parent, tsOriginal) as TableIndexExpression;
+    setParent(table, expression);
     expression.table = table;
+    setParent(index, expression);
     expression.index = index;
     return expression;
 }

@@ -116,7 +116,7 @@ export class TSHelper {
         }
     }
 
-    public static getFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
+    public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
         const declaration = this.findFirstNodeAbove(node, (n): n is ts.Node => ts.isFunctionLike(n));
         if (declaration) {
             const signature = checker.getSignatureFromDeclaration(declaration as ts.SignatureDeclaration);
@@ -288,7 +288,7 @@ export class TSHelper {
                         declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
                     }
                 } else if (ts.isReturnStatement(signatureDeclaration.parent)) {
-                    declType = this.getFunctionReturnType(signatureDeclaration.parent, checker);
+                    declType = this.getContainingFunctionReturnType(signatureDeclaration.parent, checker);
                 } else {
                     // Function expression being assigned
                     declType = checker.getTypeAtLocation(signatureDeclaration.parent);

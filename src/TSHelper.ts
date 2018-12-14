@@ -116,6 +116,15 @@ export class TSHelper {
         }
     }
 
+    public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
+        const declaration = this.findFirstNodeAbove(node, (n): n is ts.Node => ts.isFunctionLike(n));
+        if (declaration) {
+            const signature = checker.getSignatureFromDeclaration(declaration as ts.SignatureDeclaration);
+            return checker.getReturnTypeOfSignature(signature);
+        }
+        return null;
+    }
+
     public static collectCustomDecorators(symbol: ts.Symbol, checker: ts.TypeChecker,
                                           decMap: Map<DecoratorKind, Decorator>): void {
         const comments = symbol.getDocumentationComment(checker);
@@ -269,11 +278,27 @@ export class TSHelper {
             if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
                 && !this.getExplicitThisParameter(signatureDeclaration)) {
                 // Function expressions: get signatures of type being assigned to, unless 'this' was explicit
-                const declType = checker.getTypeAtLocation(signatureDeclaration.parent);
-                const declSignatures = declType.getCallSignatures();
-                if (declSignatures.length > 0) {
-                    declSignatures.map(s => s.getDeclaration()).forEach(decl => signatureDeclarations.push(decl));
-                    continue;
+                let declType: ts.Type;
+                if (ts.isCallExpression(signatureDeclaration.parent)) {
+                    // Function expression being passed as argument to another function
+                    const i = signatureDeclaration.parent.arguments.indexOf(signatureDeclaration);
+                    if (i >= 0) {
+                        const parentSignature = checker.getResolvedSignature(signatureDeclaration.parent);
+                        const parentSignatureDeclaration = parentSignature.getDeclaration();
+                        declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                    }
+                } else if (ts.isReturnStatement(signatureDeclaration.parent)) {
+                    declType = this.getContainingFunctionReturnType(signatureDeclaration.parent, checker);
+                } else {
+                    // Function expression being assigned
+                    declType = checker.getTypeAtLocation(signatureDeclaration.parent);
+                }
+                if (declType) {
+                    const declSignatures = declType.getCallSignatures();
+                    if (declSignatures.length > 0) {
+                        declSignatures.map(s => s.getDeclaration()).forEach(decl => signatureDeclarations.push(decl));
+                        continue;
+                    }
                 }
             }
             signatureDeclarations.push(signatureDeclaration);

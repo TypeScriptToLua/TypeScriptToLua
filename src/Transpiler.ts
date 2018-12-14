@@ -702,6 +702,11 @@ export abstract class LuaTranspiler {
 
     public transpileReturn(node: ts.ReturnStatement): string {
         if (node.expression) {
+            const returnType = tsHelper.getContainingFunctionReturnType(node, this.checker);
+            if (returnType) {
+                const expressionType = this.checker.getTypeAtLocation(node.expression);
+                this.validateAssignment(node, expressionType, returnType);
+            }
             if (tsHelper.isInTupleReturnFunction(node, this.checker)) {
                 // Parent function is a TupleReturn function
                 if (ts.isArrayLiteralExpression(node.expression)) {

@@ -84,11 +84,13 @@ export class TSTLErrors {
     public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
         if (name) {
             return new TranspileError(`Unsupported conversion from function to method "${name}". `
-                                      + `To fix, wrap the function in an arrow function.`,
+                                      + `To fix, wrap the function in an arrow function or declare the function with`
+                                      + ` an explicit 'this' parameter.`,
                                       node);
         } else {
             return new TranspileError(`Unsupported conversion from function to method. `
-                                      + `To fix, wrap the function in an arrow function.`,
+                                      + `To fix, wrap the function in an arrow function or declare the function with`
+                                      + ` an explicit 'this' parameter.`,
                                       node);
         }
     }

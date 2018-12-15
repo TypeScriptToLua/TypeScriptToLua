@@ -359,4 +359,26 @@ export class FunctionTests {
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foobar");
     }
+
+    @TestCase("abc", "abc")
+    @TestCase("abc", "def")
+    @Test("Dot vs Colon method call")
+    public dotVColonMethodCall(s1: string, s2: string): void {
+        const lua = util.transpileString(
+            `class MyClass {
+                dotMethod(this: void, s: string) {
+                    return s;
+                }
+                colonMethod(s: string) {
+                    return s;
+                }
+            }
+            const inst = new MyClass();
+            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`
+        );
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(s1 === s2);
+    }
 }

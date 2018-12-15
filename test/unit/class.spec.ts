@@ -539,6 +539,7 @@ export class ClassTests {
         // Assert
         Expect(result).toBe(10);
     }
+
     @Test("classExpression")
     public classExpression(): void {
         const lua = util.transpileString(
@@ -562,6 +563,7 @@ export class ClassTests {
         // Assert
         Expect(result).toBe("instance of b");
     }
+
     @Test("classExpressionBaseClassMethod")
     public classExpressionBaseClassMethod(): void {
         const lua = util.transpileString(
@@ -581,5 +583,24 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(42);
+    }
+
+    @Test("Class Method Runtime Override")
+    public classMethodRuntimeOverride(): void {
+        const result = util.transpileAndExecute(
+            `class MyClass {
+                method(): void {
+                    return 4
+              }
+            }
+
+            let inst = new MyClass();
+            inst.method = () => {
+                return 8
+            }
+            return inst.method();`
+        );
+
+        Expect(result).toBe(8);
     }
 }

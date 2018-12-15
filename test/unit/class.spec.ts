@@ -44,7 +44,7 @@ export class ClassTests {
 
     @Test("ClassConstructorAssignment")
     public classConstructorAssignment(): void {
-         // Transpile
+        // Transpile
         const lua = util.transpileString(
             `class a { constructor(public field: number) {} }
             return new a(4).field;`
@@ -55,6 +55,26 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(4);
+    }
+
+    @Test("ClassConstructorDefaultParameter")
+    public classConstructorDefaultParameter(): void {
+        const result = util.transpileAndExecute(
+            `class a { public field: number; constructor(f: number = 3) { this.field = f; } }
+            return new a().field;`
+        );
+
+        Expect(result).toBe(3);
+    }
+
+    @Test("ClassConstructorAssignmentDefault")
+    public classConstructorAssignmentParameterDefault(): void {
+        const result = util.transpileAndExecute(
+            `class a { constructor(public field: number = 3) { } }
+            return new a().field;`
+        );
+
+        Expect(result).toBe(3);
     }
 
     @Test("ClassNewNoBrackets")
@@ -105,6 +125,59 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(4);
+    }
+
+    @Test("SubclassDefaultConstructor")
+    public subclassDefaultConstructor(): void {
+        const result = util.transpileAndExecute(
+            `class a {
+                field: number;
+                constructor(field: number) {
+                    this.field = field;
+                }
+            }
+            class b extends a {}
+            return new b(10).field;`
+        );
+
+        Expect(result).toBe(10);
+    }
+
+    @Test("SubsubclassDefaultConstructor")
+    public subsubclassDefaultConstructor(): void {
+        const result = util.transpileAndExecute(
+            `class a {
+                field: number;
+                constructor(field: number) {
+                    this.field = field;
+                }
+            }
+            class b extends a {}
+            class c extends b {}
+            return new c(10).field;`
+        );
+
+        Expect(result).toBe(10);
+    }
+
+    @Test("SubclassConstructor")
+    public subclassConstructor(): void {
+        const result = util.transpileAndExecute(
+            `class a {
+                field: number;
+                constructor(field: number) {
+                    this.field = field;
+                }
+            }
+            class b extends a {
+                constructor(field: number) {
+                    super(field + 1);
+                }
+            }
+            return new b(10).field;`
+        );
+
+        Expect(result).toBe(11);
     }
 
     @Test("classSuper")

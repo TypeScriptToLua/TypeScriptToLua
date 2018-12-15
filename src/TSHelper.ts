@@ -8,6 +8,25 @@ export enum ContextType {
     Mixed,
 }
 
+const defaultArrayCallMethodNames = new Set<string>([
+    "concat",
+    "push",
+    "reverse",
+    "shift",
+    "unshift",
+    "sort",
+    "pop",
+    "forEach",
+    "indexOf",
+    "map",
+    "filter",
+    "some",
+    "every",
+    "slice",
+    "splice",
+    "join",
+]);
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -68,6 +87,26 @@ export class TSHelper {
             || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
+    // iterate over a type and its bases until the callback returns true.
+    public static forTypeOrAnySupertype(type: ts.Type, checker: ts.TypeChecker, callback: (type: ts.Type) => boolean):
+    boolean {
+        if (callback(type)) {
+            return true;
+        }
+        if (!type.isClassOrInterface() && type.symbol) {
+            type = checker.getDeclaredTypeOfSymbol(type.symbol);
+        }
+        const baseTypes = type.getBaseTypes();
+        if (baseTypes) {
+            for (const baseType of baseTypes) {
+                if (this.forTypeOrAnySupertype(baseType, checker, callback)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static isStringType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.String) !== 0
             || (type.flags & ts.TypeFlags.StringLike) !== 0
@@ -81,7 +120,7 @@ export class TSHelper {
                 && (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
     }
 
-    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+    public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && this.isArrayTypeNode(typeNode);
     }
@@ -89,6 +128,10 @@ export class TSHelper {
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
         return typeNode && ts.isFunctionTypeNode(typeNode);
+    }
+
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
+        return this.forTypeOrAnySupertype(type, checker, t => this.isExplicitArrayType(t, checker));
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -130,12 +173,28 @@ export class TSHelper {
         const comments = symbol.getDocumentationComment(checker);
         const decorators =
             comments.filter(comment => comment.kind === "text")
-                    .map(comment => comment.text.trim().split("\n"))
+                    .map(comment => comment.text.split("\n"))
                     .reduce((a, b) => a.concat(b), [])
+                    .map(line => line.trim())
                     .filter(comment => comment[0] === "!");
+
         decorators.forEach(decStr => {
-            const dec = new Decorator(decStr);
-            decMap.set(dec.kind, dec);
+            const [decoratorName, ...decoratorArguments] = decStr.split(" ");
+            if (Decorator.isValid(decoratorName.substr(1))) {
+                const dec = new Decorator(decoratorName.substr(1), decoratorArguments);
+                decMap.set(dec.kind, dec);
+                console.warn(`[Deprecated] Decorators with ! are being deprecated, `
+                    + `use @${decStr.substr(1)} instead`);
+            } else {
+                console.warn(`Encountered unknown decorator ${decStr}.`);
+            }
+        });
+
+        symbol.getJsDocTags().forEach(tag => {
+            if (Decorator.isValid(tag.name)) {
+                const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
+                decMap.set(dec.kind, dec);
+            }
         });
     }
 
@@ -163,28 +222,34 @@ export class TSHelper {
         return null;
     }
 
+    public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
+        }
+    }
+
     public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
-            }
+            return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitGetAccessor(t, name));
         }
         return false;
+    }
+
+    public static hasExplicitSetAccessor(type: ts.Type, name: ts.__String): boolean {
+        if (type && type.symbol && type.symbol.members) {
+            const field = type.symbol.members.get(name);
+            return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
+        }
     }
 
     public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-
-            if (type && type.symbol && type.symbol.members) {
-                const field = type.symbol.members.get(name);
-                return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
-            }
+            return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitSetAccessor(t, name));
         }
         return false;
     }
@@ -263,6 +328,10 @@ export class TSHelper {
             return [true, node.expression, ts.createStringLiteral(node.name.text)];
         }
         return [false, null, null];
+    }
+
+    public static isDefaultArrayCallMethodName(methodName: string): boolean {
+        return defaultArrayCallMethodNames.has(methodName);
     }
 
     public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {

@@ -16,6 +16,7 @@
         "max-line-length": [true, 120],
         "no-console": [false],
         "no-namespace": false,
+        "no-null-keyword": true,
         "trailing-comma": [
             true,
             {

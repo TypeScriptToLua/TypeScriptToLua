@@ -68,7 +68,7 @@ export class AssignmentTests {
     public nullAssignment(declaration: string): void {
         const lua = util.transpileString(declaration + " return myvar;");
         const result = util.executeLua(lua);
-        Expect(result).toBe(null);
+        Expect(result).toBe(undefined);
     }
 
     @TestCase(["a", "b"], ["e", "f"])

@@ -30,7 +30,7 @@ const defaultArrayCallMethodNames = new Set<string>([
 export class TSHelper {
 
     // Reverse lookup of enum key by value
-    public static enumName(needle, haystack): string {
+    public static enumName<T>(needle: T, haystack: any): string {
         for (const name in haystack) {
             if (haystack[name] === needle) {
                 return name;
@@ -40,7 +40,7 @@ export class TSHelper {
     }
 
     // Breaks down a mask into all flag names.
-    public static enumNames(mask, haystack): string[] {
+    public static enumNames<T>(mask: number, haystack: any): string[] {
         const result = [];
         for (const name in haystack) {
             if ((mask & haystack[name]) !== 0 && mask >= haystack[name]) {
@@ -83,23 +83,27 @@ export class TSHelper {
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
-        return node.parent && ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name))
+        return node.parent && (
+            (ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name))
             || (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
     }
 
     // iterate over a type and its bases until the callback returns true.
-    public static forTypeOrAnySupertype(type: ts.Type, checker: ts.TypeChecker, callback: (type: ts.Type) => boolean):
-    boolean {
-        if (callback(type)) {
+    public static forTypeOrAnySupertype(
+        type: ts.Type,
+        checker: ts.TypeChecker,
+        predicate: (type: ts.Type) => boolean
+    ): boolean {
+        if (predicate(type)) {
             return true;
         }
         if (!type.isClassOrInterface() && type.symbol) {
             type = checker.getDeclaredTypeOfSymbol(type.symbol);
         }
-        const baseTypes = type.getBaseTypes();
-        if (baseTypes) {
-            for (const baseType of baseTypes) {
-                if (this.forTypeOrAnySupertype(baseType, checker, callback)) {
+        const superTypes = type.getBaseTypes();
+        if (superTypes) {
+            for (const superType of superTypes) {
+                if (this.forTypeOrAnySupertype(superType, checker, predicate)) {
                     return true;
                 }
             }
@@ -165,7 +169,7 @@ export class TSHelper {
             const signature = checker.getSignatureFromDeclaration(declaration);
             return checker.getReturnTypeOfSignature(signature);
         }
-        return null;
+        return undefined;
     }
 
     public static collectCustomDecorators(symbol: ts.Symbol, checker: ts.TypeChecker,
@@ -219,7 +223,7 @@ export class TSHelper {
                 current = current.parent;
             }
         }
-        return null;
+        return undefined;
     }
 
     public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
@@ -282,7 +286,7 @@ export class TSHelper {
                 return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
         }
 
-        return [false, null];
+        return [false, undefined];
     }
 
     public static isExpressionStatement(node: ts.Expression): boolean {
@@ -327,7 +331,7 @@ export class TSHelper {
         } else if (ts.isPropertyAccessExpression(node) && this.isExpressionWithEvaluationEffect(node.expression)) {
             return [true, node.expression, ts.createStringLiteral(node.name.text)];
         }
-        return [false, null, null];
+        return [false, undefined, undefined];
     }
 
     public static isDefaultArrayCallMethodName(methodName: string): boolean {
@@ -335,8 +339,8 @@ export class TSHelper {
     }
 
     public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {
-        return signatureDeclaration.parameters.find(
-            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+        return signatureDeclaration.parameters
+            .find(param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
 
     public static getSignatureDeclarations(signatures: ts.Signature[], checker: ts.TypeChecker)

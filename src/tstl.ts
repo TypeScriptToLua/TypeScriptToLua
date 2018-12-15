@@ -9,7 +9,6 @@ export {
 export {
     compile,
     compileFilesWithOptions,
-    transpileFile,
     transpileString,
     watchWithOptions
 } from "./Compiler";

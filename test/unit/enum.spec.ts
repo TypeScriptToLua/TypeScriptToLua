@@ -4,6 +4,63 @@ import * as util from "../src/util";
 import { TranspileError } from "../../src/Errors";
 
 export class EnumTests {
+    @Test("Declare const enum")
+    public declareConstEnum(): void {
+        const testCode = `
+            declare const enum TestEnum {
+                MEMBER_ONE = "test",
+                MEMBER_TWO = "test2"
+            }
+
+            const valueOne = TestEnum.MEMBER_ONE;
+        `;
+
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test";`);
+    }
+
+    @Test("Const enum")
+    public constEnum(): void {
+        const testCode = `
+            const enum TestEnum {
+                MEMBER_ONE = "test",
+                MEMBER_TWO = "test2"
+            }
+
+            const valueOne = TestEnum.MEMBER_ONE;
+        `;
+
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test";`);
+    }
+
+    @Test("Const enum without initializer")
+    public constEnumNoInitializer(): void {
+        const testCode = `
+            const enum TestEnum {
+                MEMBER_ONE,
+                MEMBER_TWO
+            }
+
+            const valueOne = TestEnum.MEMBER_ONE;
+        `;
+
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = 0;`);
+    }
+
+    @Test("Const enum without initializer in some values")
+    public constEnumNoInitializerInSomeValues(): void {
+        const testCode = `
+            const enum TestEnum {
+                MEMBER_ONE = 3,
+                MEMBER_TWO,
+                MEMBER_THREE = 5
+            }
+
+            const valueOne = TestEnum.MEMBER_TWO;
+        `;
+
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = 4;`);
+    }
+
     @Test("Invalid heterogeneous enum")
     public invalidHeterogeneousEnum(): void {
         // Transpile & Assert

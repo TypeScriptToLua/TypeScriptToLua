@@ -1,8 +1,8 @@
-/** !Extension */
+/** @extension */
 class TestClass {
 }
 
-/** !Extension */
+/** @extension */
 class MyClass extends TestClass {
     public myFunction() {}
 }

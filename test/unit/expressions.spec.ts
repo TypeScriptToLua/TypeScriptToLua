@@ -254,6 +254,39 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase("inst.baseField", 7)
+    @TestCase("inst.field", 6)
+    @TestCase("inst.superField", 5)
+    @TestCase("inst.superBaseField", 4)
+    @Test("Inherited accessors")
+    public inheritedAccessors(expression: string, expected: any): void {
+      const source = `class MyBaseClass {`
+                   + `    public _baseField: number;`
+                   + `    public get baseField(): number { return this._baseField + 6; }`
+                   + `    public set baseField(v: number) { this._baseField = v; }`
+                   + `}`
+                   + `class MyClass extends MyBaseClass {`
+                   + `    public _field: number;`
+                   + `    public get field(): number { return this._field + 4; }`
+                   + `    public set field(v: number) { this._field = v; }`
+                   + `}`                   
+                   + `class MySuperClass extends MyClass {`
+                   + `    public _superField: number;`
+                   + `    public get superField(): number { return this._superField + 2; }`
+                   + `    public set superField(v: number) { this._superField = v; }`
+                   + `    public get superBaseField() { return this.baseField - 3; }`
+                   + `}`                   
+                   + `var inst = new MySuperClass();`
+                   + `inst.baseField = 1;`
+                   + `inst.field = 2;`
+                   + `inst.superField = 3;`
+                   + `return ${expression};`;
+
+        const lua = util.transpileString(source);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("i++", 10)
     @TestCase("i--", 10)
     @TestCase("++i", 11)
@@ -324,7 +357,7 @@ export class ExpressionTests {
             `let x: [string, string] = ["x0", "x1"];
             let y: [string, string] = ["y0", "y1"];
             function t(): [string, string] { return ["t0", "t1"] };
-            /** !TupleReturn */
+            /** @tupleReturn */
             function tr(): [string, string] { return ["tr0", "tr1"] };
             const r = ${expression};
             return \`\${r[0]},\${r[1]}\``);

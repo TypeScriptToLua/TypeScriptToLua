@@ -1,4 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
+import { TranspileError } from "../../src/Errors";
+import { LuaTarget } from "../../src/Transpiler";
 import * as util from "../src/util";
 
 export class LuaConditionalsTests {
@@ -325,5 +327,11 @@ export class LuaConditionalsTests {
             `switch ("abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
 
         Expect(result).toBe(5);
+    }
+
+    @Test("switch not allowed in 5.1")
+    public switchThrow51(): void {
+        Expect( () => util.transpileString(`switch ("abc") {}`, {luaTarget: LuaTarget.Lua51}))
+            .toThrowError(TranspileError, "Switch statements is/are not supported for target Lua 5.1.");
     }
 }

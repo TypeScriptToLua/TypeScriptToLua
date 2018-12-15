@@ -82,7 +82,7 @@ export class TupleTests {
     public tupleDestruct(): void {
         // Transpile
         const lua = util.transpileString(
-            `function tuple(): [number, number, number] { return [3,5,1]; }\n
+            `function tuple(): [number, number, number] { return [3,5,1]; }
             const [a,b,c] = tuple();
             return b;`
         );
@@ -113,8 +113,8 @@ export class TupleTests {
     public tupleReturnAccess(): void {
         // Transpile
         const lua = util.transpileString(
-            `/** !TupleReturn */\n
-            function tuple(): [number, number, number] { return [3,5,1]; }\n
+            `/** @tupleReturn */
+            function tuple(): [number, number, number] { return [3,5,1]; }
             return tuple()[2];`
         );
 
@@ -129,8 +129,8 @@ export class TupleTests {
     public tupleReturnDestructDeclaration(): void {
         // Transpile
         const lua = util.transpileString(
-            `/** !TupleReturn */\n
-            function tuple(): [number, number, number] { return [3,5,1]; }\n
+            `/** @tupleReturn */
+            function tuple(): [number, number, number] { return [3,5,1]; }
             const [a,b,c] = tuple();
             return b;`
         );
@@ -146,8 +146,8 @@ export class TupleTests {
     public tupleReturnDestructAssignment(): void {
         // Transpile
         const lua = util.transpileString(
-            `/** !TupleReturn */\n
-            function tuple(): [number, number] { return [3,6]; }\n
+            `/** @tupleReturn */
+            function tuple(): [number, number] { return [3,6]; }
             const [a,b] = [1,2];
             [b,a] = tuple();
             return a - b;`
@@ -164,10 +164,10 @@ export class TupleTests {
     public tupleStaticMethodReturnDestruct(): void {
         // Transpile
         const lua = util.transpileString(
-            `class Test {\n
-                /** !TupleReturn */\n
-                static tuple(): [number, number, number] { return [3,5,1]; }\n
-            }\n
+            `class Test {
+                /** @tupleReturn */
+                static tuple(): [number, number, number] { return [3,5,1]; }
+            }
             const [a,b,c] = Test.tuple();
             return b;`
         );
@@ -183,10 +183,10 @@ export class TupleTests {
     public tupleMethodNonStaticReturnDestruct(): void {
         // Transpile
         const lua = util.transpileString(
-            `class Test {\n
-                /** !TupleReturn */\n
-                tuple(): [number, number, number] { return [3,5,1]; }\n
-            }\n
+            `class Test {
+                /** @tupleReturn */
+                tuple(): [number, number, number] { return [3,5,1]; }
+            }
             const t = new Test();
             const [a,b,c] = t.tuple();
             return b;`

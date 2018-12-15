@@ -34,4 +34,14 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
                 throw TSTLErrors.UnsupportedKind("bitwise operator", node.operatorToken.kind, node);
         }
     }
+
+    /** @override */
+    public transpileDestructingAssignmentValue(node: ts.Expression): string {
+        return `unpack(${this.transpileExpression(node)})`;
+    }
+
+     /** @override */
+    public transpileSpreadElement(node: ts.SpreadElement): string {
+        return "unpack(" + this.transpileExpression(node.expression) + ")";
+    }
 }

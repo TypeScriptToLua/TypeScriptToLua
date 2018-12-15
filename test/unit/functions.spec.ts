@@ -340,4 +340,23 @@ export class FunctionTests {
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
+
+    @Test("Nested Function")
+    public nestedFunction(): void {
+        const code = `class C {
+                          private prop = "bar";
+                          public outer() {
+                              const o = {
+                                  prop: "foo",
+                                  innerFunc: function() { return this.prop; },
+                                  innerArrow: () => this.prop
+                              };
+                              return o.innerFunc() + o.innerArrow();
+                          }
+                      }
+                      let c = new C();
+                      return c.outer();`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foobar");
+    }
 }

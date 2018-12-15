@@ -2,7 +2,7 @@ MergedClass = MergedClass or {}
 MergedClass.__index = MergedClass
 function MergedClass.new(construct, ...)
     local self = setmetatable({}, MergedClass)
-    self.propertyFunc = function(_)
+    self.propertyFunc = function(____)
 end
     if construct and MergedClass.constructor then MergedClass.constructor(self, ...) end
     return self

@@ -800,7 +800,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.FunctionExpression:
                 return this.transpileFunctionExpression(node as ts.ArrowFunction, "self");
             case ts.SyntaxKind.ArrowFunction:
-                return this.transpileFunctionExpression(node as ts.ArrowFunction, "_");
+                return this.transpileFunctionExpression(node as ts.ArrowFunction, "____");
             case ts.SyntaxKind.NewExpression:
                 return this.transpileNewExpression(node as ts.NewExpression);
             case ts.SyntaxKind.ComputedPropertyName:
@@ -1447,7 +1447,7 @@ export abstract class LuaTranspiler {
         const toContext = tsHelper.getFunctionContextType(toType, this.checker);
         if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
-        } else if (fromContext !== toContext) {
+        } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
             if (toContext === ContextType.Void) {
                 throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
             } else {
@@ -1469,10 +1469,12 @@ export abstract class LuaTranspiler {
             toType.symbol.members.forEach(
                 (toMember, memberName) => {
                     const fromMember = fromType.symbol.members.get(memberName);
-                    const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
-                    const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
-                    this.validateAssignment(node, fromMemberType, toMemberType,
-                                            toName ? `${toName}.${memberName}` : memberName.toString());
+                    if (fromMember) {
+                        const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
+                        const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
+                        this.validateAssignment(node, fromMemberType, toMemberType,
+                                                toName ? `${toName}.${memberName}` : memberName.toString());
+                    }
                 }
             );
         }

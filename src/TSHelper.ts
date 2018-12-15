@@ -117,9 +117,9 @@ export class TSHelper {
     }
 
     public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
-        const declaration = this.findFirstNodeAbove(node, (n): n is ts.Node => ts.isFunctionLike(n));
+        const declaration = this.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
-            const signature = checker.getSignatureFromDeclaration(declaration as ts.SignatureDeclaration);
+            const signature = checker.getSignatureFromDeclaration(declaration);
             return checker.getReturnTypeOfSignature(signature);
         }
         return null;
@@ -320,7 +320,8 @@ export class TSHelper {
             return ContextType.NonVoid;
         }
         if ((ts.isPropertySignature(signatureDeclaration.parent)
-             || ts.isPropertyDeclaration(signatureDeclaration.parent))
+             || ts.isPropertyDeclaration(signatureDeclaration.parent)
+             || ts.isPropertyAssignment(signatureDeclaration.parent))
             && !(ts.getCombinedModifierFlags(signatureDeclaration.parent) & ts.ModifierFlags.Static)) {
             // Non-static lambda property
             return ContextType.NonVoid;
@@ -332,18 +333,35 @@ export class TSHelper {
         return ContextType.Void;
     }
 
+    public static reduceContextTypes(contexts: ContextType[]): ContextType {
+        const reducer = (a: ContextType, b: ContextType) => {
+            if (a === ContextType.None) {
+                return b;
+            } else if (b === ContextType.None) {
+                return a;
+            } else if (a !== b) {
+                return ContextType.Mixed;
+            } else {
+                return a;
+            }
+        };
+        return contexts.reduce(reducer, ContextType.None);
+    }
+
     public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
+        if (type.isTypeParameter()) {
+            type = type.getConstraint() || type;
+        }
+
+        if (type.isUnion()) {
+            return this.reduceContextTypes(type.types.map(t => this.getFunctionContextType(t, checker)));
+        }
+
         const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         if (signatures.length === 0) {
             return ContextType.None;
         }
         const signatureDeclarations = this.getSignatureDeclarations(signatures, checker);
-        const context = this.getDeclarationContextType(signatureDeclarations[0], checker);
-        for (let i = 1; i < signatureDeclarations.length; ++i) {
-            if (this.getDeclarationContextType(signatureDeclarations[i], checker) !== context) {
-                return ContextType.Mixed;
-            }
-        }
-        return context;
+        return this.reduceContextTypes(signatureDeclarations.map(s => this.getDeclarationContextType(s, checker)));
     }
 }

@@ -1387,7 +1387,11 @@ export abstract class LuaTranspiler {
             case ts.TypeFlags.StringLiteral:
                 return this.transpileStringProperty(node);
             case ts.TypeFlags.Object:
-                if (tsHelper.isArrayType(type, this.checker)) {
+                if (tsHelper.isExplicitArrayType(type, this.checker)) {
+                    return this.transpileArrayProperty(node);
+                }
+                if (tsHelper.isArrayType(type, this.checker)
+                    && tsHelper.isDefaultArrayPropertyName(this.transpileIdentifier(node.name))) {
                     return this.transpileArrayProperty(node);
                 }
         }

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import * as util from "../src/util";
 
 export class ArrayTests {
@@ -39,8 +39,10 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @FocusTest
     @TestCase("firstElement()", 3)
     @TestCase("name", "array")
+    @TestCase("length", 1)
     @Test("Derived array access")
     public derivedArrayAccess(member: string, expected: any): void {
         const lua = `local arr = {name="array", firstElement=function(self) return self[1]; end};`

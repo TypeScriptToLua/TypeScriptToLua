@@ -38,7 +38,6 @@ export enum LuaLibFeature {
     Set = "Set",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
-    Ternary = "Ternary",
 }
 
 export enum LuaLibImportKind {

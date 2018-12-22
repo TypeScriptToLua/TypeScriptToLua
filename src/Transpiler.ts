@@ -980,7 +980,7 @@ export abstract class LuaTranspiler {
         const condition = this.transpileExpression(node.condition);
         const val1 = this.transpileExpression(node.whenTrue);
         const val2 = this.transpileExpression(node.whenFalse);
-        return `((${condition}) and {${val1}} or {${val2}})[1]`;
+        return `((${condition}) and function() return ${val1}; end or function() return ${val2}; end)()`;
     }
 
     public transpileBinaryAssignmentExpression(

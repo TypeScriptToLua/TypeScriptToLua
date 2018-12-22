@@ -192,6 +192,18 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
+    @TestCase(LuaTarget.Lua51, "true?false:true", false)
+    @TestCase(LuaTarget.Lua51, "false?false:true", true)
+    @TestCase(LuaTarget.LuaJIT, "true?false:true", false)
+    @TestCase(LuaTarget.LuaJIT, "false?false:true", true)
+    @Test("Ternary operator")
+    public ternaryOperator(target: LuaTarget, input: string, expected: any): void {
+        const lua = `return `
+                  + util.transpileString(input, { luaTarget: target });
+        const result = util.executeLua(lua);
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("inst.field", 8)
     @TestCase("inst.field + 3", 8 + 3)
     @TestCase("inst.field * 3", 8 * 3)
@@ -260,7 +272,7 @@ export class ExpressionTests {
     @TestCase("inst.superBaseField", 4)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
-      const source = `class MyBaseClass {`
+        const source = `class MyBaseClass {`
                    + `    public _baseField: number;`
                    + `    public get baseField(): number { return this._baseField + 6; }`
                    + `    public set baseField(v: number) { this._baseField = v; }`
@@ -269,13 +281,13 @@ export class ExpressionTests {
                    + `    public _field: number;`
                    + `    public get field(): number { return this._field + 4; }`
                    + `    public set field(v: number) { this._field = v; }`
-                   + `}`                   
+                   + `}`
                    + `class MySuperClass extends MyClass {`
                    + `    public _superField: number;`
                    + `    public get superField(): number { return this._superField + 2; }`
                    + `    public set superField(v: number) { this._superField = v; }`
                    + `    public get superBaseField() { return this.baseField - 3; }`
-                   + `}`                   
+                   + `}`
                    + `var inst = new MySuperClass();`
                    + `inst.baseField = 1;`
                    + `inst.field = 2;`

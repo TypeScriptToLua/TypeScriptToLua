@@ -122,9 +122,19 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
         return;
     }
     if (Array.isArray(node)) {
-        node.forEach(n => n.parent = parent);
+        node.forEach(n => {
+            n.parent = parent;
+            if (n.pos === -1 || n.end === -1) {
+                n.pos = parent.pos;
+                n.end = parent.end;
+            }
+        });
     } else {
         node.parent = parent;
+        if (node.pos === -1 || node.end === -1) {
+            node.pos = parent.pos;
+            node.end = parent.end;
+        }
     }
 }
 
@@ -159,22 +169,30 @@ export function createDoStatement(statements?: Statement[], parent?: Node, tsOri
 // `local test1, test2 = 12, 42` or `local test1, test2`
 export interface VariableDeclarationStatement extends Statement {
     kind: SyntaxKind.VariableDeclarationStatement;
-    lhs: IdentifierOrTableIndexExpression[];
-    rhs?: Expression[];
+    left: IdentifierOrTableIndexExpression[];
+    right?: Expression[];
 }
 
 export function createVariableDeclarationStatement(
-    lhs: IdentifierOrTableIndexExpression[],
-    rhs?: Expression[],
+    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    right?: Expression | Expression[],
     parent?: Node,
     tsOriginal?: ts.Node): VariableDeclarationStatement {
 
     const statement =
         createNode(SyntaxKind.VariableDeclarationStatement, parent, tsOriginal) as VariableDeclarationStatement;
-    setParent(lhs, statement);
-    statement.lhs = lhs;
-    setParent(rhs, statement);
-    statement.rhs = rhs;
+    setParent(left, statement);
+    if (Array.isArray(left)) {
+        statement.left = left;
+    } else {
+        statement.left = [left];
+    }
+    setParent(right, statement);
+    if (Array.isArray(right)) {
+        statement.right = right;
+    } else {
+        statement.right = [right];
+    }
     return statement;
 }
 
@@ -186,17 +204,25 @@ export interface VariableAssignmentStatement extends Statement {
 }
 
 export function createVariableAssignmentStatement(
-    left: IdentifierOrTableIndexExpression[],
-    right: Expression[],
+    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    right: Expression | Expression[],
     parent?: Node,
     tsOriginal?: ts.Node): VariableAssignmentStatement {
 
     const statement =
         createNode(SyntaxKind.VariableAssignmentStatement, parent, tsOriginal) as VariableAssignmentStatement;
     setParent(left, statement);
-    statement.left = left;
+    if (Array.isArray(left)) {
+        statement.left = left;
+    } else {
+        statement.left = [left];
+    }
     setParent(right, statement);
-    statement.right = right;
+    if (Array.isArray(right)) {
+        statement.right = right;
+    } else {
+        statement.right = [right];
+    }
     return statement;
 }
 
@@ -490,7 +516,7 @@ export interface TableExpression extends Expression {
 }
 
 export function createTableExpression(
-    fields: TableFieldExpression[], parent?: Node, tsOriginal?: ts.Node): TableExpression {
+    fields?: TableFieldExpression[], parent?: Node, tsOriginal?: ts.Node): TableExpression {
 
     const expression = createNode(SyntaxKind.TableExpression, parent, tsOriginal) as TableExpression;
     setParent(fields, expression);

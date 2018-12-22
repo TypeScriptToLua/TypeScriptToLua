@@ -231,6 +231,36 @@ export class FunctionTests {
         Expect(result).toBe(3 * returnValue);
     }
 
+    @Test("Function bind")
+    public functionBind(): void {
+        const source = `const abc = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
+                        return abc.bind({ a: 4 }, "b")("c");`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4bc");
+    }
+
+    @Test("Function apply")
+    public functionApply(): void {
+        const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
+                        return abc.apply({ a: 4 }, ["b"]);`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4b");
+    }
+
+    @Test("Function call")
+    public functionCall(): void {
+        const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
+                        return abc.call({ a: 4 }, "b");`;
+
+        const result = util.transpileAndExecute(source);
+
+        Expect(result).toBe("4b");
+    }
+
     @Test("Invalid property access call transpilation")
     public invalidPropertyCall(): void {
         const transpiler = util.makeTestTranspiler();
@@ -288,5 +318,67 @@ export class FunctionTests {
         const result = util.transpileAndExecute(
             `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`);
         Expect(result).toBe(12);
+    }
+
+    @TestCase(["bar"], "foobar")
+    @TestCase(["baz", "bar"], "bazbar")
+    @Test("Function overload")
+    public functionOverload(args: string[], expectResult: string): void {
+        const code = `class O {
+                          prop = "foo";
+                          method(s: string): string;
+                          method(this: void, s1: string, s2: string): string;
+                          method(s1: string) {
+                              if (typeof this === "string") {
+                                  return this + s1;
+                              }
+                              return this.prop + s1;
+                          }
+                      };
+                      const o = new O();
+                      return o.method(${args.map(a => "\"" + a + "\"").join(", ")});`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectResult);
+    }
+
+    @Test("Nested Function")
+    public nestedFunction(): void {
+        const code = `class C {
+                          private prop = "bar";
+                          public outer() {
+                              const o = {
+                                  prop: "foo",
+                                  innerFunc: function() { return this.prop; },
+                                  innerArrow: () => this.prop
+                              };
+                              return o.innerFunc() + o.innerArrow();
+                          }
+                      }
+                      let c = new C();
+                      return c.outer();`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foobar");
+    }
+
+    @TestCase("abc", "abc")
+    @TestCase("abc", "def")
+    @Test("Dot vs Colon method call")
+    public dotVColonMethodCall(s1: string, s2: string): void {
+        const lua = util.transpileString(
+            `class MyClass {
+                dotMethod(this: void, s: string) {
+                    return s;
+                }
+                colonMethod(s: string) {
+                    return s;
+                }
+            }
+            const inst = new MyClass();
+            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`
+        );
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe(s1 === s2);
     }
 }

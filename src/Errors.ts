@@ -68,4 +68,42 @@ export class TSTLErrors {
 
     public static UnsupportedObjectLiteralElement = (elementKind: ts.SyntaxKind, node: ts.Node) =>
         new TranspileError(`Unsupported object literal element: ${elementKind}.`, node)
+
+    public static UnsupportedFunctionConversion = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported conversion from method to function "${name}". `
+                                      + `To fix, wrap the method in an arrow function.`,
+                                      node);
+        } else {
+            return new TranspileError(`Unsupported conversion from method to function. `
+                                      + `To fix, wrap the method in an arrow function.`,
+                                      node);
+        }
+    }
+
+    public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported conversion from function to method "${name}". `
+                                      + `To fix, wrap the function in an arrow function or declare the function with`
+                                      + ` an explicit 'this' parameter.`,
+                                      node);
+        } else {
+            return new TranspileError(`Unsupported conversion from function to method. `
+                                      + `To fix, wrap the function in an arrow function or declare the function with`
+                                      + ` an explicit 'this' parameter.`,
+                                      node);
+        }
+    }
+
+    public static UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
+        if (name) {
+            return new TranspileError(`Unsupported assignment of mixed function/method overload to "${name}". `
+                                      + `Overloads should either be all functions or all methods, but not both.`,
+                                      node);
+        } else {
+            return new TranspileError(`Unsupported assignment of mixed function/method overload. `
+                                      + `Overloads should either be all functions or all methods, but not both.`,
+                                      node);
+        }
+    }
 }

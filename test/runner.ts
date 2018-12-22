@@ -1,4 +1,4 @@
-import { TestRunner, TestSet, TestOutcome } from "alsatian";
+import { TestOutcome, TestRunner, TestSet } from "alsatian";
 
 import * as fs from "fs";
 import * as path from "path";

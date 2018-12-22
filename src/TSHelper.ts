@@ -27,6 +27,10 @@ const defaultArrayCallMethodNames = new Set<string>([
     "join",
 ]);
 
+const defaultArrayPropertyNames = new Set<string>([
+    "length",
+]);
+
 export class TSHelper {
 
     // Reverse lookup of enum key by value
@@ -436,5 +440,9 @@ export class TSHelper {
         }
         const signatureDeclarations = this.getSignatureDeclarations(signatures, checker);
         return this.reduceContextTypes(signatureDeclarations.map(s => this.getDeclarationContextType(s, checker)));
+    }
+
+    public static isDefaultArrayPropertyName(methodName: string): boolean {
+        return defaultArrayPropertyNames.has(methodName);
     }
 }

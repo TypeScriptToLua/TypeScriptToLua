@@ -39,16 +39,22 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @TestCase("firstElement()", 3)
+    @TestCase("name", "array")
+    @TestCase("length", 1)
     @Test("Derived array access")
-    public derivedArrayAccess(): void {
-        const lua = `local arr = {firstElement=function(self) return self[1]; end};`
+    public derivedArrayAccess(member: string, expected: any): void {
+        const lua = `local arr = {name="array", firstElement=function(self) return self[1]; end};`
         +  util.transpileString(
-            `interface CustomArray<T> extends Array<T>{ firstElement():number; };
+            `interface CustomArray<T> extends Array<T>{
+                name:string,
+                firstElement():number;
+            };
             declare const arr: CustomArray<number>;
             arr[0] = 3;
-            return arr.firstElement();`
+            return arr.${member};`
         );
         const result = util.executeLua(lua);
-        Expect(result).toBe(3);
+        Expect(result).toBe(expected);
     }
 }

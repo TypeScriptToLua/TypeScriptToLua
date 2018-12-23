@@ -312,7 +312,7 @@ export class TSHelper {
 
     // Returns true for expressions that may have effects when evaluated
     public static isExpressionWithEvaluationEffect(node: ts.Expression): boolean {
-        return !(ts.isLiteralExpression(node) || ts.isIdentifier(node));
+        return !(ts.isLiteralExpression(node) || ts.isIdentifier(node) || node.kind === ts.SyntaxKind.ThisKeyword);
     }
 
     // If expression is property/element access with possible effects from being evaluated, returns true along with the

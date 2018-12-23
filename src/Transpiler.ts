@@ -797,11 +797,8 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.SuperKeyword:
                 return "self.__base";
             case ts.SyntaxKind.TypeAssertionExpression:
-                // Simply ignore the type assertion
-                return this.transpileExpression((node as ts.TypeAssertion).expression);
             case ts.SyntaxKind.AsExpression:
-                // Also ignore as casts
-                return this.transpileExpression((node as ts.AsExpression).expression);
+                return this.transpileAssertionExpression(node as ts.AssertionExpression);
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transpileTypeOfExpression(node as ts.TypeOfExpression);
             case ts.SyntaxKind.EmptyStatement:
@@ -1692,6 +1689,13 @@ export abstract class LuaTranspiler {
         } else {
             throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
         }
+    }
+
+    public transpileAssertionExpression(node: ts.AssertionExpression): string {
+        this.validateFunctionAssignment(node,
+                                        this.checker.getTypeAtLocation(node.expression),
+                                        this.checker.getTypeAtLocation(node.type));
+        return this.transpileExpression(node.expression);
     }
 
     public transpileTypeOfExpression(node: ts.TypeOfExpression): string {

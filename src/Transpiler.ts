@@ -1171,11 +1171,16 @@ export abstract class LuaTranspiler {
             && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
+        const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed;
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
-            return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
-                ? `({ ${result} })` : result;
+            return wrapResult ? `({ ${result} })` : result;
+        }
+
+        if (ts.isElementAccessExpression(node.expression)) {
+            const result = this.transpileElementCall(node);
+            return wrapResult ? `({ ${result} })` : result;
         }
 
         const signature = this.checker.getResolvedSignature(node);
@@ -1198,8 +1203,7 @@ export abstract class LuaTranspiler {
         } else {
             parameters = this.transpileArguments(node.arguments, signature);
         }
-        return isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
-            ? `({ ${callPath}(${parameters}) })` : `${callPath}(${parameters})`;
+        return wrapResult ? `({ ${callPath}(${parameters}) })` : `${callPath}(${parameters})`;
     }
 
     public transpilePropertyCall(node: ts.CallExpression): string {
@@ -1218,7 +1222,7 @@ export abstract class LuaTranspiler {
             return this.transpileMathExpression(node.expression.name) + `(${parameters})`;
         }
 
-        if (this.transpileExpression((node.expression as ts.PropertyAccessExpression).expression) === "String") {
+        if (this.transpileExpression(node.expression.expression) === "String") {
             parameters = this.transpileArguments(node.arguments);
             return this.transpileStringExpression(node.expression.name) + `(${parameters})`;
         }
@@ -1232,12 +1236,6 @@ export abstract class LuaTranspiler {
 
         // if ownerType is a array, use only supported functions
         if (tsHelper.isExplicitArrayType(ownerType, this.checker)) {
-            return this.transpileArrayCallExpression(node);
-        }
-
-        // if ownerType inherits from an array, use array calls where appropriate
-        if (tsHelper.isArrayType(ownerType, this.checker)
-            && tsHelper.isDefaultArrayCallMethodName(this.transpileIdentifier(node.expression.name))) {
             return this.transpileArrayCallExpression(node);
         }
 
@@ -1276,6 +1274,39 @@ export abstract class LuaTranspiler {
                 parameters = this.transpileArguments(node.arguments, signature);
                 return `${callPath}(${parameters})`;
             }
+        }
+    }
+
+    public transpileElementCall(node: ts.CallExpression): string {
+        if (!ts.isElementAccessExpression(node.expression)) {
+            throw TSTLErrors.InvalidPropertyCall(node);
+        }
+
+        const signature = this.checker.getResolvedSignature(node);
+        let parameters = this.transpileArguments(node.arguments, signature);
+
+        const signatureDeclaration = signature.getDeclaration();
+        if (!signatureDeclaration
+            || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
+            // Pass left-side as context
+            if (node.arguments.length > 0) {
+                parameters = ", " + parameters;
+            }
+            const context = this.transpileExpression(node.expression.expression);
+            if (tsHelper.isExpressionWithEvaluationEffect(node.expression.expression)) {
+                const argument = this.transpileExpression(node.expression.argumentExpression);
+                if (tsHelper.isExpressionStatement(node)) {
+                    return `do local ____TS_self = ${context}; ____TS_self[${argument}](____TS_self${parameters}); end`;
+                } else {
+                    return `(function() local ____TS_self = ${context}; `
+                        + `return ____TS_self[${argument}](____TS_self${parameters}); end)()`;
+                }
+            } else {
+                return `${this.transpileExpression(node.expression)}(${context}${parameters})`;
+            }
+        } else {
+            // No context
+            return `${this.transpileExpression(node.expression)}(${parameters})`;
         }
     }
 

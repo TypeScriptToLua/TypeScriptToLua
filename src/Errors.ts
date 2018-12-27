@@ -40,6 +40,9 @@ export class TSTLErrors {
     public static InvalidPropertyCall = (node: ts.Node) =>
         new TranspileError(`Tried to transpile a non-property call as property call.`, node)
 
+    public static InvalidElementCall = (node: ts.Node) =>
+        new TranspileError(`Tried to transpile a non-element call as an element call.`, node)
+
     public static InvalidThrowExpression = (node: ts.Node) =>
         new TranspileError(`Invalid throw expression, only strings can be thrown.`, node)
 

@@ -1279,7 +1279,7 @@ export abstract class LuaTranspiler {
 
     public transpileElementCall(node: ts.CallExpression): string {
         if (!ts.isElementAccessExpression(node.expression)) {
-            throw TSTLErrors.InvalidPropertyCall(node);
+            throw TSTLErrors.InvalidElementCall(node);
         }
 
         const signature = this.checker.getResolvedSignature(node);
@@ -1289,17 +1289,25 @@ export abstract class LuaTranspiler {
         if (!signatureDeclaration
             || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
             // Pass left-side as context
+
+            // Inject context parameter
             if (node.arguments.length > 0) {
-                parameters = ", " + parameters;
+                parameters = "____TS_self, " + parameters;
+            } else {
+                parameters = "____TS_self";
             }
+
             const context = this.transpileExpression(node.expression.expression);
             if (tsHelper.isExpressionWithEvaluationEffect(node.expression.expression)) {
+                // Cache left-side if it has effects
                 const argument = this.transpileExpression(node.expression.argumentExpression);
                 if (tsHelper.isExpressionStatement(node)) {
-                    return `do local ____TS_self = ${context}; ____TS_self[${argument}](____TS_self${parameters}); end`;
+                    // Statement version
+                    return `do local ____TS_self = ${context}; ____TS_self[${argument}](${parameters}); end`;
                 } else {
+                    // Expression version
                     return `(function() local ____TS_self = ${context}; `
-                        + `return ____TS_self[${argument}](____TS_self${parameters}); end)()`;
+                        + `return ____TS_self[${argument}](${parameters}); end)()`;
                 }
             } else {
                 return `${this.transpileExpression(node.expression)}(${context}${parameters})`;

@@ -550,7 +550,7 @@ export abstract class LuaTranspiler {
         }
 
         const conditionText = node.condition ? this.transpileExpression(node.condition) : "true";
-        result += this.indent + `while(${conditionText}) do\n`;
+        result += this.indent + `while (${conditionText}) do\n`;
 
         // Add body
         this.pushIndent();

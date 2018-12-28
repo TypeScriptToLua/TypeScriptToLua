@@ -542,15 +542,24 @@ export abstract class LuaTranspiler {
     public transpileFor(node: ts.ForStatement): string {
         // Add header
         let result = "";
-        for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
-            result += this.indent + this.transpileVariableDeclaration(variableDeclaration) + "\n";
+
+        if (node.initializer) {
+            for (const variableDeclaration of (node.initializer as ts.VariableDeclarationList).declarations) {
+                result += this.indent + this.transpileVariableDeclaration(variableDeclaration) + "\n";
+            }
         }
-        result += this.indent + `while(${this.transpileExpression(node.condition)}) do\n`;
+
+        const conditionText = node.condition ? this.transpileExpression(node.condition) : "true";
+        result += this.indent + `while (${conditionText}) do\n`;
 
         // Add body
         this.pushIndent();
         result += this.transpileLoopBody(node);
-        result += this.indent + this.transpileExpression(node.incrementor) + "\n";
+
+        if (node.incrementor) {
+            result += this.indent + this.transpileExpression(node.incrementor) + "\n";
+        }
+
         this.popIndent();
 
         result += this.indent + "end\n";

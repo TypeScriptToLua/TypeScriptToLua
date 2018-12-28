@@ -183,6 +183,76 @@ export class LuaLoopTests {
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("forNoDeclarations")
+    public forNoDeclarations(inp: number[], expected: number[]): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            let i = 0;
+            for (; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("forNoCondition")
+    public forNoCondition(inp: number[], expected: number[]): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            let i = 0;
+            for (;; ++i) {
+                if (i >= arrTest.length) {
+                    break;
+                }
+                
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("forNoPostExpression")
+    public forNoPostExpression(inp: number[], expected: number[]): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let arrTest = ${JSON.stringify(inp)};
+            let i = 0;
+            for (;;) {
+                if (i >= arrTest.length) {
+                    break;
+                }
+                
+                arrTest[i] = arrTest[i] + 1;
+                
+                i++;
+            }
+            return JSONStringify(arrTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i < arrTest.length; i++")
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i <= arrTest.length - 1; i++")
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length > i; i++")

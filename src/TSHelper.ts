@@ -441,7 +441,6 @@ export class TSHelper {
     public static isDefaultArrayPropertyName(methodName: string): boolean {
         return defaultArrayPropertyNames.has(methodName);
     }
-<<<<<<< HEAD
 
     public static isNonFalsible(type: ts.Type): boolean {
         const falsibleFlags = ts.TypeFlags.Boolean
@@ -457,6 +456,4 @@ export class TSHelper {
 
         return false;
     }
-=======
->>>>>>> b84936491d6b039a8eadd1a7a4c26fee3fb98486
 }

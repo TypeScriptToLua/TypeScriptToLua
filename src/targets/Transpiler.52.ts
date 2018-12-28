@@ -14,10 +14,8 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
             | ts.ForInStatement
     ): string {
         this.pushSpecialScope(ScopeType.Loop);
-        this.genVarCounter++;
-
         let result = super.transpileLoopBody(node);
-        result += this.indent + `::__continue${this.popSpecialScope()}::\n`;
+        result += this.indent + `::__continue${this.popSpecialScope().id}::\n`;
         return result;
     }
 
@@ -74,9 +72,8 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
 
         let result = this.indent + "-------Switch statement start-------\n";
 
-        const switchVarName = "____switch" + this.genVarCounter;
         this.pushSpecialScope(ScopeType.Switch);
-        this.genVarCounter++;
+        const switchVarName = "____switch" + this.genVarCounter;
 
         result += this.indent + `local ${switchVarName} = ${expression}\n`;
 

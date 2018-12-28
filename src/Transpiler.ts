@@ -142,11 +142,12 @@ export abstract class LuaTranspiler {
     }
 
     public pushSpecialScope(scopeType: ScopeType): void {
+        this.genVarCounter++;
         this.scopeStack.push({ type: scopeType, id: this.genVarCounter });
     }
 
-    public popSpecialScope(): number {
-        return this.scopeStack.pop().id;
+    public popSpecialScope(): SpecialScope {
+        return this.scopeStack.pop();
     }
 
     public makeExport(name: string, node: ts.Node, dummy?: boolean): string {

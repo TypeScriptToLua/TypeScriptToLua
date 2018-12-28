@@ -316,4 +316,18 @@ export class TSHelper {
         return defaultArrayPropertyNames.has(methodName);
     }
 
+    public static isNonFalsible(type: ts.Type): boolean {
+        const falsibleFlags = ts.TypeFlags.Boolean
+            | ts.TypeFlags.BooleanLiteral
+            | ts.TypeFlags.Undefined
+            | ts.TypeFlags.Any;
+
+        if (type.flags & falsibleFlags) {
+            return false;
+        } else if (type.isLiteral()) {
+            return true;
+        }
+
+        return false;
+    }
 }

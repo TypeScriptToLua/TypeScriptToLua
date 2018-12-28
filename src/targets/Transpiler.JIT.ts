@@ -46,7 +46,7 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
     }
 
     /** @override */
-    public transpileConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): string {
+    public transpileProtectedConditionalExpression(node: ts.ConditionalExpression): string {
         const condition = this.transpileExpression(node.condition);
         const val1 = this.transpileExpression(node.whenTrue);
         const val2 = this.transpileExpression(node.whenFalse);

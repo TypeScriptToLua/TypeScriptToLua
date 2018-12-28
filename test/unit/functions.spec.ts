@@ -381,4 +381,42 @@ export class FunctionTests {
 
         Expect(result).toBe(s1 === s2);
     }
+
+    @Test("Element access call")
+    public elementAccessCall(): void {
+        const code = `class C {
+            method(s: string) { return s; }
+        }
+        const c = new C();
+        return c['method']("foo");
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Complex element access call")
+    public elementAccessCallComplex(): void {
+        const code = `class C {
+            method(s: string) { return s; }
+        }
+        function getC() { return new C(); }
+        return getC()['method']("foo");
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Complex element access call statement")
+    public elementAccessCallComplexStatement(): void {
+        const code = `let foo: string;
+        class C {
+            method(s: string) { foo = s; }
+        }
+        function getC() { return new C(); }
+        getC()['method']("foo");
+        return foo;
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foo");
+    }
 }

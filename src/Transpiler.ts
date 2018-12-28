@@ -57,6 +57,17 @@ interface ExportInfo {
     dummy: boolean;
 }
 
+export enum ScopeType {
+    Function,
+    Switch,
+    Loop,
+}
+
+interface SpecialScope {
+    type: ScopeType;
+    id: number;
+}
+
 export abstract class LuaTranspiler {
     // Lua key words for this Lua target
     // https://www.lua.org/manual/5.0/manual.html#2.1
@@ -70,13 +81,12 @@ export abstract class LuaTranspiler {
     public checker: ts.TypeChecker;
     public options: CompilerOptions;
     public genVarCounter: number;
-    public transpilingSwitch: number;
     public namespace: string[];
     public importCount: number;
     public isModule: boolean;
     public isStrict: boolean;
     public sourceFile: ts.SourceFile;
-    public loopStack: number[];
+    public scopeStack: SpecialScope[];
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
@@ -89,7 +99,6 @@ export abstract class LuaTranspiler {
         this.checker = checker;
         this.options = options;
         this.genVarCounter = 0;
-        this.transpilingSwitch = 0;
         this.namespace = [];
         this.importCount = 0;
         this.sourceFile = sourceFile;
@@ -97,7 +106,7 @@ export abstract class LuaTranspiler {
         this.isStrict = options.alwaysStrict
             || (options.strict && options.alwaysStrict !== false)
             || (this.isModule && options.target && options.target >= ts.ScriptTarget.ES2015);
-        this.loopStack = [];
+        this.scopeStack = [];
         this.classStack = [];
         this.exportStack = [];
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
@@ -126,6 +135,19 @@ export abstract class LuaTranspiler {
 
     public pushExport(nameIn: string, nodeIn: ts.Node, dummyIn: boolean = false): void {
         this.exportStack[this.exportStack.length - 1].push({name: nameIn, node: nodeIn, dummy: dummyIn});
+    }
+
+    public peekSpecialScope(): SpecialScope {
+        return this.scopeStack[this.scopeStack.length - 1];
+    }
+
+    public pushSpecialScope(scopeType: ScopeType): void {
+        this.scopeStack.push({ type: scopeType, id: this.genVarCounter });
+        this.genVarCounter++;
+    }
+
+    public popSpecialScope(): SpecialScope {
+        return this.scopeStack.pop();
     }
 
     public makeExport(name: string, node: ts.Node, dummy?: boolean): string {
@@ -327,7 +349,7 @@ export abstract class LuaTranspiler {
             case ts.SyntaxKind.SwitchStatement:
                 return this.transpileSwitch(node as ts.SwitchStatement);
             case ts.SyntaxKind.BreakStatement:
-                return this.transpileBreak();
+                return this.transpileBreak(node as ts.BreakStatement);
             case ts.SyntaxKind.TryStatement:
                 return this.transpileTry(node as ts.TryStatement);
             case ts.SyntaxKind.ThrowStatement:
@@ -459,12 +481,8 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    public transpileBreak(): string {
-        if (this.transpilingSwitch > 0) {
-            return "";
-        } else {
-            return this.indent + "break\n";
-        }
+    public transpileBreak(node: ts.BreakStatement): string {
+        return this.indent + "break\n";
     }
 
     public transpileContinue(node: ts.ContinueStatement): string {
@@ -506,8 +524,6 @@ export abstract class LuaTranspiler {
             | ts.ForOfStatement
             | ts.ForInStatement
     ): string {
-        this.loopStack.push(this.genVarCounter);
-        this.genVarCounter++;
         let result = this.indent + "do\n";
         this.pushIndent();
         result += this.transpileStatement(node.statement);
@@ -1880,6 +1896,7 @@ export abstract class LuaTranspiler {
         body: ts.Block,
         spreadIdentifier: string = ""
     ): string {
+        this.pushSpecialScope(ScopeType.Function);
         let result = "";
 
         // Add default parameters
@@ -1892,6 +1909,7 @@ export abstract class LuaTranspiler {
         }
 
         result += this.transpileBlock(body);
+        this.popSpecialScope();
 
         return result;
     }

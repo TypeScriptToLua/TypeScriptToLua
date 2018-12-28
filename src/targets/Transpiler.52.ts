@@ -1,5 +1,5 @@
 import { TSTLErrors } from "../Errors";
-import { TSHelper as tsHelper } from "../TSHelper";
+import { ScopeType } from "../Transpiler";
 import { LuaTranspiler51 } from "./Transpiler.51";
 
 import * as ts from "typescript";
@@ -13,20 +13,26 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
             | ts.ForOfStatement
             | ts.ForInStatement
     ): string {
-        this.loopStack.push(this.genVarCounter);
-        this.genVarCounter++;
-        let result = this.indent + "do\n";
-        this.pushIndent();
-        result += this.transpileStatement(node.statement);
-        this.popIndent();
-        result += this.indent + "end\n";
-        result += this.indent + `::__continue${this.loopStack.pop()}::\n`;
+        this.pushSpecialScope(ScopeType.Loop);
+        let result = super.transpileLoopBody(node);
+        result += this.indent + `::__continue${this.popSpecialScope().id}::\n`;
         return result;
     }
 
     /** @override */
     public transpileContinue(node: ts.ContinueStatement): string {
-        return this.indent + `goto __continue${this.loopStack[this.loopStack.length - 1]}\n`;
+        return this.indent + `goto __continue${this.peekSpecialScope().id}\n`;
+    }
+
+    /** @override */
+    public transpileBreak(node: ts.BreakStatement): string {
+        const topScope = this.peekSpecialScope();
+
+        if (topScope.type === ScopeType.Switch) {
+            return this.indent + `goto ____switch${topScope.id}_end\n`;
+        } else {
+            return super.transpileBreak(node);
+        }
     }
 
     /** @override */
@@ -67,7 +73,7 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
         let result = this.indent + "-------Switch statement start-------\n";
 
         const switchVarName = "____switch" + this.genVarCounter;
-        this.genVarCounter++;
+        this.pushSpecialScope(ScopeType.Switch);
 
         result += this.indent + `local ${switchVarName} = ${expression}\n`;
 
@@ -101,13 +107,11 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
         result += "\n";
 
         const transpileClauseBody = (clause: ts.CaseOrDefaultClause) => {
-            this.transpilingSwitch++;
             result += this.indent + "do\n";
             this.pushIndent();
             result += this.transpileBlock(ts.createBlock(clause.statements));
             this.popIndent();
             result += this.indent + "end\n";
-            this.transpilingSwitch--;
         };
 
         clauses.forEach((clause, index) => {
@@ -115,10 +119,6 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
                 result += this.indent + `::${switchVarName}_case_${index}::\n`;
 
                 transpileClauseBody(clause);
-
-                if (tsHelper.containsStatement(clause.statements, ts.SyntaxKind.BreakStatement)) {
-                    result += this.indent + `goto ${switchVarName}_end\n`;
-                }
             } else if (ts.isDefaultClause(clause)) {
                 result += this.indent + `::${switchVarName}_default::\n`;
 
@@ -128,6 +128,8 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
 
         result += this.indent + `::${switchVarName}_end::\n`;
         result += this.indent + "-------Switch statement end-------\n";
+
+        this.popSpecialScope();
 
         return result;
     }

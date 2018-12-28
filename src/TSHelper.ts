@@ -54,10 +54,6 @@ export class TSHelper {
         return result;
     }
 
-    public static containsStatement(statements: ts.NodeArray<ts.Statement>, kind: ts.SyntaxKind): boolean {
-        return statements.some(statement => statement.kind === kind);
-    }
-
     public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {

@@ -183,7 +183,7 @@ export function transpileString(str: string,
 
         useCaseSensitiveFileNames: () => false,
         // Don't write output
-        writeFile: (name, text, writeByteOrderMark) => null,
+        writeFile: (name, text, writeByteOrderMark) => undefined,
     };
     const program = ts.createProgram(["file.ts"], options, compilerHost);
 

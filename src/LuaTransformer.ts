@@ -590,61 +590,134 @@ export class LuaTransformer {
     public transformModuleDeclaration(arg0: ts.ModuleDeclaration, parent: tstl.Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformEnumDeclaration(arg0: ts.EnumDeclaration, parent: tstl.Node): StatementVisitResult {
+
+    public transformEnumDeclaration(enumDeclaration: ts.EnumDeclaration): StatementVisitResult {
+        const type = this.checker.getTypeAtLocation(enumDeclaration);
+
+        // Const enums should never appear in the resulting code
+        if (type.symbol.getFlags() & ts.SymbolFlags.ConstEnum) {
+            return undefined;
+        }
+
+        const membersOnly = tsHelper.getCustomDecorators(type, this.checker)
+                                    .has(DecoratorKind.CompileMembersOnly);
+
+        const result = [];
+
+        if (!membersOnly) {
+            const name = this.transformIdentifier(enumDeclaration.name);
+            const table = tstl.createTableExpression();
+            result.push(this.createLocalOrGlobalDeclaration(name, table, undefined, enumDeclaration));
+        }
+
+        for (const enumMember of this.computeEnumMembers(enumDeclaration)) {
+            if (membersOnly) {
+                result.push(this.createLocalOrGlobalDeclaration(
+                    enumMember.name,
+                    enumMember.value,
+                    undefined,
+                    enumDeclaration)
+                );
+            } else {
+                const table = this.transformIdentifier(enumDeclaration.name);
+                const property = tstl.createTableIndexExpression(table, enumMember.name, undefined);
+                result.push(tstl.createVariableAssignmentStatement(
+                    property,
+                    enumMember.value,
+                    undefined,
+                    enumMember.original
+                ));
+            }
+        }
+
+        return result;
+    }
+
+    public computeEnumMembers(node: ts.EnumDeclaration)
+        : Array<{ name: tstl.Identifier, value: tstl.NumericLiteral | tstl.StringLiteral, original: ts.Node }> {
+        let val: tstl.NumericLiteral | tstl.StringLiteral;
+        let hasStringInitializers = false;
+
+        return node.members.map(member => {
+            if (member.initializer) {
+                if (ts.isNumericLiteral(member.initializer)) {
+                    val = tstl.createNumericLiteral(parseInt(member.initializer.text));
+                } else if (ts.isStringLiteral(member.initializer)) {
+                    hasStringInitializers = true;
+                    val = tstl.createStringLiteral(member.initializer.text);
+                } else {
+                    throw TSTLErrors.InvalidEnumMember(member.initializer);
+                }
+            } else if (hasStringInitializers) {
+                throw TSTLErrors.HeterogeneousEnum(node);
+            }
+
+            const enumMember = {
+                name: this.transformIdentifier(member.name as ts.Identifier),
+                original: member,
+                value: val,
+            };
+
+            if (typeof val === "number") {
+              val++;
+            }
+
+            return enumMember;
+        });
+    }
+
+    public transformFunctionDeclaration(arg0: ts.FunctionDeclaration, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformFunctionDeclaration(arg0: FunctionDeclaration, parent: Node): StatementVisitResult {
+    public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformTypeAliasDeclaration(arg0: TypeAliasDeclaration, parent: Node): StatementVisitResult {
+    public transformInterfaceDeclaration(arg0: ts.InterfaceDeclaration, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformInterfaceDeclaration(arg0: InterfaceDeclaration, parent: Node): StatementVisitResult {
+    public transformVariableStatement(arg0: ts.VariableStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformVariableStatement(arg0: VariableStatement, parent: Node): StatementVisitResult {
+    public transformExpressionStatement(arg0: ts.ExpressionStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformExpressionStatement(arg0: ExpressionStatement, parent: Node): StatementVisitResult {
+    public transformReturn(arg0: ts.ReturnStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformReturn(arg0: ReturnStatement, parent: Node): StatementVisitResult {
+    public transformIfStatement(arg0: ts.IfStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformIfStatement(arg0: IfStatement, parent: Node): StatementVisitResult {
+    public transformWhileStatement(arg0: ts.WhileStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformWhileStatement(arg0: WhileStatement, parent: Node): StatementVisitResult {
+    public transformDoStatement(arg0: ts.DoStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformDoStatement(arg0: DoStatement, parent: Node): StatementVisitResult {
+    public transformForStatement(arg0: ts.ForStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForStatement(arg0: ForStatement, parent: Node): StatementVisitResult {
+    public transformForOfStatement(arg0: ts.ForOfStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForOfStatement(arg0: ForOfStatement, parent: Node): StatementVisitResult {
+    public transformForInStatement(arg0: ts.ForInStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForInStatement(arg0: ForInStatement, parent: Node): StatementVisitResult {
+    public transformSwitchStatement(arg0: ts.SwitchStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformSwitchStatement(arg0: SwitchStatement, parent: Node): StatementVisitResult {
+    public transformBreakStatement(arg0: ts.BreakStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformBreakStatement(arg0: BreakStatement, parent: Node): StatementVisitResult {
+    public transformTryStatement(arg0: ts.TryStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformTryStatement(arg0: TryStatement, parent: Node): StatementVisitResult {
+    public transformThrowStatement(arg0: ts.ThrowStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformThrowStatement(arg0: ThrowStatement, parent: Node): StatementVisitResult {
+    public transformContinueStatement(arg0: ts.ContinueStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformContinueStatement(arg0: ContinueStatement, parent: Node): StatementVisitResult {
-        throw new Error("Method not implemented.");
-    }
-    public transformEmptyStatement(arg0: EmptyStatement, parent: Node): StatementVisitResult {
+    public transformEmptyStatement(arg0: ts.EmptyStatement, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
 

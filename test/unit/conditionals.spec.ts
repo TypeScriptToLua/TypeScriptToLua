@@ -313,6 +313,117 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase(0, 0)
+    @TestCase(1, 1)
+    @TestCase(2, 2)
+    @TestCase(3, -1)
+    @Test("switchWithBrackets")
+    public switchWithBrackets(inp: number, expected: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let result = -1;
+
+            switch (${inp}) {
+                case 0: {
+                    result = 0;
+                    break;
+                }
+                case 1: {
+                    result = 1;
+                    break;
+                }
+                case 2: {
+                    result = 2;
+                    break;
+                }
+            }
+            return result;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+
+    @TestCase(0, 0)
+    @TestCase(1, 1)
+    @TestCase(2, 2)
+    @TestCase(3, -1)
+    @Test("switchWithBracketsBreakInConditional")
+    public switchWithBracketsBreakInConditional(inp: number, expected: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let result = -1;
+
+            switch (${inp}) {
+                case 0: {
+                    result = 0;
+                    break;
+                }
+                case 1: {
+                    result = 1;
+                    
+                    if (result == 1) break;
+                }
+                case 2: {
+                    result = 2;
+                    break;
+                }
+            }
+            return result;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase(0, 4)
+    @TestCase(1, 0)
+    @TestCase(2, 2)
+    @TestCase(3, -1)
+    @Test("switchWithBracketsBreakInInternalLoop")
+    public switchWithBracketsBreakInInternalLoop(inp: number, expected: number): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let result = -1;
+
+            switch (${inp}) {
+                case 0: {
+                    result = 0;
+                    
+                    for (let i = 0; i < 5; i++) {
+                        result++;
+                        
+                        if (i >= 2) {
+                            break;
+                        }
+                    }
+                }
+                case 1: {
+                    result++;
+                    break;
+                }
+                case 2: {
+                    result = 2;
+                    break;
+                }
+            }
+            return result;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
     @Test("If dead code after return")
     public ifDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(

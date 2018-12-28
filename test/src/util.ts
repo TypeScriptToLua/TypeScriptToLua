@@ -4,6 +4,7 @@ import * as ts from "typescript";
 import { Expect } from "alsatian";
 
 import { transpileString } from "../../src/Compiler";
+import { CompilerOptions } from "../../src/CompilerOptions";
 import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
 import { createTranspiler } from "../../src/TranspilerFactory";
 
@@ -27,7 +28,7 @@ export function executeLua(luaStr: string, withLib = true): any {
         if (lua.lua_isboolean(L, -1)) {
             return lua.lua_toboolean(L, -1);
         } else if (lua.lua_isnil(L, -1)) {
-            return null;
+            return undefined;
         } else if (lua.lua_isnumber(L, -1)) {
             return lua.lua_tonumber(L, -1);
         } else if (lua.lua_isstring(L, -1)) {
@@ -94,7 +95,7 @@ export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarge
 
         useCaseSensitiveFileNames: () => false,
         // Don't write output
-        writeFile: (name, text, writeByteOrderMark) => null,
+        writeFile: (name, text, writeByteOrderMark) => undefined,
     };
 
     const program = ts.createProgram(["file.ts"], { luaTarget: target }, compilerHost);

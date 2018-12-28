@@ -5,7 +5,7 @@ export class LuaLibArrayTests {
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("forEach")
-    public forEach(inp: number[], expected: number[]) {
+    public forEach(inp: number[], expected: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
@@ -29,7 +29,7 @@ export class LuaLibArrayTests {
     @TestCase([0, 1, 2, 3], "x => x+2")
     @TestCase([0, 1, 2, 3], "x => x%2 == 0 ? x + 1 : x - 1")
     @Test("array.map")
-    public map<T>(inp: T[], func: string) {
+    public map<T>(inp: T[], func: string): void {
         // Transpile
         const lua = util.transpileString(`return JSONStringify([${inp.toString()}].map(${func}))`);
 
@@ -48,7 +48,7 @@ export class LuaLibArrayTests {
     @TestCase([0, 1, 2, 3], "() => true")
     @TestCase([0, 1, 2, 3], "() => false")
     @Test("array.filter")
-    public filter<T>(inp: T[], func: string) {
+    public filter<T>(inp: T[], func: string): void {
         // Transpile
         const lua = util.transpileString(`return JSONStringify([${inp.toString()}].filter(${func}))`);
 
@@ -64,7 +64,7 @@ export class LuaLibArrayTests {
     @TestCase([false, true, false], "x => x")
     @TestCase([true, true, true], "x => x")
     @Test("array.every")
-    public every<T>(inp: T[], func: string) {
+    public every<T>(inp: T[], func: string): void {
         // Transpile
         const lua = util.transpileString(`return JSONStringify([${inp.toString()}].every(${func})))`);
 
@@ -80,7 +80,7 @@ export class LuaLibArrayTests {
     @TestCase([false, true, false], "x => x")
     @TestCase([true, true, true], "x => x")
     @Test("array.some")
-    public some<T>(inp: T[], func: string) {
+    public some<T>(inp: T[], func: string): void {
         // Transpile
         const lua = util.transpileString(`return JSONStringify([${inp.toString()}].some(${func})))`);
 
@@ -99,7 +99,7 @@ export class LuaLibArrayTests {
     @TestCase([0, 1, 2, 3, 4, 5], 1, 3)
     @TestCase([0, 1, 2, 3, 4, 5], 3)
     @Test("array.slice")
-    public slice<T>(inp: T[], start: number, end?: number) {
+    public slice<T>(inp: T[], start: number, end?: number): void {
         // Transpile
         const lua = util.transpileString(`return JSONStringify([${inp.toString()}].slice(${start}, ${end}))`);
 
@@ -118,7 +118,7 @@ export class LuaLibArrayTests {
     @TestCase([0, 1, 2, 3, 4, 5], 5, 9, 10, 11)
     @TestCase([0, 1, 2, 3, 4, 5], 3, 2, 3, 4, 5)
     @Test("array.splice[Insert]")
-    public spliceInsert<T>(inp: T[], start: number, deleteCount: number, ...newElements: any[]) {
+    public spliceInsert<T>(inp: T[], start: number, deleteCount: number, ...newElements: any[]): void {
         // Transpile
         const lua = util.transpileString(
             `let spliceTestTable = [${inp.toString()}];
@@ -142,7 +142,7 @@ export class LuaLibArrayTests {
     @TestCase([0, 1, 2, 3, 4, 5], 2, 2)
     @TestCase([0, 1, 2, 3, 4, 5, 6, 7, 8], 5, 9, 10, 11)
     @Test("array.splice[Remove]")
-    public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]) {
+    public spliceRemove<T>(inp: T[], start: number, deleteCount?: number, ...newElements: any[]): void {
         // Transpile
         let lua;
         if (deleteCount) {
@@ -183,7 +183,7 @@ export class LuaLibArrayTests {
     @TestCase([1, 2, 3], "test", [5, 6], 7, ["test1", "test2"])
     @TestCase([1, 2, "test"], "test", ["test1", "test2"])
     @Test("array.concat")
-    public concat<T>(arr: T[], ...args: T[]) {
+    public concat<T>(arr: T[], ...args: T[]): void {
         const argStr = args.map(arg => JSON.stringify(arg)).join(",");
         // Transpile
         const lua = util.transpileString(
@@ -205,7 +205,7 @@ export class LuaLibArrayTests {
     @TestCase(["test1", "test2"], "test1;test2", ";")
     @TestCase(["test1", "test2"], "test1test2", "")
     @Test("array.join")
-    public join<T>(inp: T[], expected: string, seperator?: string) {
+    public join<T>(inp: T[], expected: string, seperator?: string): void {
         let seperatorLua;
         if (seperator === "") {
             seperatorLua = "\"\"";
@@ -236,7 +236,7 @@ export class LuaLibArrayTests {
     @TestCase(["test1", "test2", "test3"], "test1", -2)
     @TestCase(["test1", "test2", "test3"], "test1", 12)
     @Test("array.indexOf")
-    public indexOf(inp: string[], element: string, fromIndex?: number) {
+    public indexOf(inp: string[], element: string, fromIndex?: number): void {
         let str = `return ${JSON.stringify(inp)}.indexOf("${element}"))`;
         if (fromIndex) {
             str = `return ${JSON.stringify(inp)}.indexOf("${element}", ${fromIndex}))`;
@@ -256,7 +256,7 @@ export class LuaLibArrayTests {
     @TestCase([1, 2, 3], 3)
     @TestCase([1, 2, 3, 4, 5], 3)
     @Test("array.destructuring.simple")
-    public arrayDestructuringSimple(inp: number[], expected: number) {
+    public arrayDestructuringSimple(inp: number[], expected: number): void {
         // Transpile
         const lua = util.transpileString(
             `let [x, y, z] = ${JSON.stringify(inp)}
@@ -273,7 +273,7 @@ export class LuaLibArrayTests {
     @TestCase([1])
     @TestCase([1, 2, 3])
     @Test("array.push")
-    public arrayPush(inp: number[]) {
+    public arrayPush(inp: number[]): void {
         // Transpile
         const lua = util.transpileString(
             `let testArray = [0];
@@ -292,7 +292,7 @@ export class LuaLibArrayTests {
     @TestCase("[1, 2, 3]", [3, 2])
     @TestCase("[1, 2, 3, null]", [3, 2])
     @Test("array.pop")
-    public arrayPop(array: string, expected) {
+    public arrayPop(array: string, expected): void {
         {
             // Transpile
             const lua = util.transpileString(
@@ -342,7 +342,7 @@ export class LuaLibArrayTests {
     }
     @TestCase("[1, 2, 3]", [2, 3], 1)
     @TestCase("[1]", [], 1)
-    @TestCase("[]", [], null)
+    @TestCase("[]", [], undefined)
     @Test("array.shift")
     public arrayShift(array: string, expectedArray: number[], expectedValue: number): void {
         {
@@ -416,7 +416,7 @@ export class LuaLibArrayTests {
     @TestCase("false", "4", "5", 5)
     @TestCase("3", "4", "5", 4)
     @Test("Ternary Conditional")
-    public ternaryConditional(condition: string, lhs: string, rhs: string, expected: any) {
+    public ternaryConditional(condition: string, lhs: string, rhs: string, expected: any): void {
         // Transpile
         const lua = util.transpileString(`return ${condition} ? ${lhs} : ${rhs};`);
 
@@ -432,7 +432,7 @@ export class LuaLibArrayTests {
     @TestCase("a < 4", 13)
     @TestCase("a == 8", 11)
     @Test("Ternary Conditional Delayed")
-    public ternaryConditionalDelayed(condition: string, expected: any) {
+    public ternaryConditionalDelayed(condition: string, expected: any): void {
         // Transpile
         const lua = util.transpileString(
             `let a = 3;

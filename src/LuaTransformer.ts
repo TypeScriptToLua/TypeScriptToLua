@@ -27,6 +27,7 @@ export class LuaTransformer {
     private isModule: boolean;
 
     private currentNamespace: ts.ModuleDeclaration;
+    private classStack: tstl.Identifier[];
 
     public transformSourceFile(node: ts.SourceFile): tstl.Block {
         return tstl.createBlock(this.transformStatements(node.statements), undefined, node);
@@ -277,7 +278,7 @@ export class LuaTransformer {
 
         // Find first constructor with body
         const constructor =
-            node.members.filter(n => ts.isConstructorDeclaration(n) && n.body)[0] as ts.ConstructorDeclaration;
+            statement.members.filter(n => ts.isConstructorDeclaration(n) && n.body)[0] as ts.ConstructorDeclaration;
         if (constructor) {
             // Add constructor plus initialization of instance fields
             result += this.transpileConstructor(constructor, className);
@@ -338,7 +339,7 @@ export class LuaTransformer {
             // (local) className = className or baseName.new()
             // (local) className = baseName.new()
             // exports.className = baseName.new()
-            const classVar = this.createLocalOrGlobalDeclaration(className, rhs, parent, statement);
+            const classVar = this.createLocalOrGlobalDeclaration(className, rhs, undefined, statement);
 
             result.push(classVar);
         } else {
@@ -353,7 +354,7 @@ export class LuaTransformer {
             // (local) className = className or {}
             // (local) className = {}
             // exports.className = {}
-            const classVar = this.createLocalOrGlobalDeclaration(className, rhs, parent,  statement);
+            const classVar = this.createLocalOrGlobalDeclaration(className, rhs, undefined,  statement);
 
             result.push(classVar);
         }
@@ -361,7 +362,7 @@ export class LuaTransformer {
         // className.__index
         const classIndex = tstl.createTableIndexExpression(className, tstl.createIdentifier("__index"));
         // className.__index = className
-        const assignClassIndex = tstl.createVariableAssignmentStatement(classIndex, className, parent, statement);
+        const assignClassIndex = tstl.createVariableAssignmentStatement(classIndex, className, undefined, statement);
 
         result.push(assignClassIndex);
 
@@ -371,7 +372,7 @@ export class LuaTransformer {
             const classBase =
                 tstl.createTableIndexExpression(className, tstl.createIdentifier("__base"));
 
-            const assignClassBase = tstl.createVariableAssignmentStatement(classBase, baseName, parent, statement);
+            const assignClassBase = tstl.createVariableAssignmentStatement(classBase, baseName, undefined, statement);
 
             result.push(assignClassBase);
         }
@@ -433,7 +434,7 @@ export class LuaTransformer {
 
         newFuncStatements.push(returnSelf);
 
-        // function className.new(construct, ...)
+        // function className.new(construct, ...) ... end
         const newFunc = tstl.createVariableAssignmentStatement(
             tstl.createTableIndexExpression(className, tstl.createIdentifier("new")),
             tstl.createFunctionExpression(
@@ -441,11 +442,147 @@ export class LuaTransformer {
                 [tstl.createIdentifier("construct")],
                 tstl.createDotsLiteral(),
                 undefined,
+                undefined,
                 statement
             )
         );
 
         result.push(newFunc);
+
+        return result;
+    }
+
+    public transformConstructor(
+        statement: ts.ConstructorDeclaration, className: tstl.Identifier): StatementVisitResult {
+
+        // Don't transpile methods without body (overload declarations)
+        if (!statement.body) {
+            return undefined;
+        }
+
+        // Check for field declarations in constructor
+        const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
+
+        // Transpile constructor body
+        this.classStack.push(className);
+
+        const bodyStatements: tstl.Statement[] = [];
+        const body: tstl.Block = tstl.createBlock(bodyStatements);
+
+        // Add in instance field declarations
+        for (const declaration of constructorFieldsDeclarations) {
+            const declarationName = this.transformIdentifier(declaration.name as ts.Identifier);
+            if (declaration.initializer) {
+                // self.declarationName = declarationName or initializer
+                const assignement =
+                    tstl.createVariableAssignmentStatement(
+                        tstl.createTableIndexExpression(
+                            this.selfIdentifier,
+                            declarationName
+                        ),
+                        tstl.createBinaryExpression(
+                            declarationName,
+                            this.transformExpression(declaration.initializer),
+                            tstl.SyntaxKind.OrOperator
+                        )
+                    );
+                bodyStatements.push(assignement);
+            } else {
+                // self.declarationName = declarationName
+                const assignement =
+                tstl.createVariableAssignmentStatement(
+                    tstl.createTableIndexExpression(
+                        this.selfIdentifier,
+                        declarationName
+                    ),
+                    declarationName
+                );
+                bodyStatements.push(assignement);
+            }
+        }
+
+        // function className.constructor(params) ... end
+
+        const [params, dotsLiteral, restParamName] =
+            this.transformParameters(statement.parameters, this.selfIdentifier);
+
+        bodyStatements.concat(this.transformFunctionBody(statement.parameters, statement.body, restParamName));
+
+        const result =
+            tstl.createVariableAssignmentStatement(
+                tstl.createTableIndexExpression(
+                    this.selfIdentifier,
+                    className
+                ),
+                tstl.createFunctionExpression(
+                    body,
+                    params,
+                    dotsLiteral,
+                    restParamName,
+                    undefined,
+                    undefined
+                ),
+                undefined,
+                statement
+            );
+
+        this.classStack.pop();
+
+        return result;
+    }
+
+    public transformParameters(
+        parameters: ts.NodeArray<ts.ParameterDeclaration>,
+        context: tstl.Identifier): [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
+
+        // Build parameter string
+        const paramNames: tstl.Identifier[] = [];
+        if (context) {
+            paramNames.push(context);
+        }
+
+        let restParamName: tstl.Identifier;
+        let dotsLiteral: tstl.DotsLiteral;
+
+        // Only push parameter name to paramName array if it isn't a spread parameter
+        for (const param of parameters) {
+            if (ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
+                continue;
+            }
+            const paramName = this.transformIdentifier(param.name as ts.Identifier);
+
+            // This parameter is a spread parameter (...param)
+            if (!param.dotDotDotToken) {
+                paramNames.push(paramName);
+            } else {
+                restParamName = paramName;
+                // Push the spread operator into the paramNames array
+                dotsLiteral = tstl.createDotsLiteral();
+            }
+        }
+
+        return [paramNames, dotsLiteral, restParamName];
+    }
+
+    public transformFunctionBody(
+        parameters: ts.NodeArray<ts.ParameterDeclaration>,
+        body: ts.Block,
+        spreadIdentifier?: tstl.Identifier
+    ): tstl.Statement[] {
+        this.pushSpecialScope(ScopeType.Function);
+        let result = "";
+
+        // Add default parameters
+        const defaultValueParams = parameters.filter(declaration => declaration.initializer !== undefined);
+        result += this.transpileParameterDefaultValues(defaultValueParams);
+
+        // Push spread operator here
+        if (spreadIdentifier !== "") {
+            result += this.indent + `local ${spreadIdentifier} = { ... }\n`;
+        }
+
+        result += this.transpileBlock(body);
+        this.popSpecialScope();
 
         return result;
     }

@@ -472,7 +472,8 @@ export function createStringLiteral(value: string, parent?: Node, tsOriginal?: t
 export interface FunctionExpression extends Expression {
     kind: SyntaxKind.FunctionStatement;
     params?: Identifier[];
-    dots?: DotsLiteral; // Maybe combine params and dot?
+    dots?: DotsLiteral;
+    restParamName?: Identifier;
     body: Block;
 }
 
@@ -480,6 +481,7 @@ export function createFunctionExpression(
     body: Block,
     params?: Identifier[],
     dots?: DotsLiteral,
+    restParamName?: Identifier;
     parent?: Node,
     tsOriginal?: ts.Node): FunctionExpression {
 
@@ -490,6 +492,8 @@ export function createFunctionExpression(
     expression.params = params;
     setParent(dots, expression);
     expression.dots = dots;
+    setParent(restParamName, expression);
+    expression.restParamName = restParamName;
     return expression;
 }
 

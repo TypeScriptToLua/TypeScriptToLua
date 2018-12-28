@@ -72,8 +72,8 @@ export class LuaTranspiler52 extends LuaTranspiler51 {
 
         let result = this.indent + "-------Switch statement start-------\n";
 
-        this.pushSpecialScope(ScopeType.Switch);
         const switchVarName = "____switch" + this.genVarCounter;
+        this.pushSpecialScope(ScopeType.Switch);
 
         result += this.indent + `local ${switchVarName} = ${expression}\n`;
 

@@ -46,7 +46,7 @@ function getYargOptionsWithoutDefaults(options: YargsOptions): [YargsOptions, ya
     // options is a deep object, Object.assign or {...options} still keeps the referece
     const copy = JSON.parse(JSON.stringify(options));
 
-    const optionDefaults: yargs.Arguments = {_: null, $0: null};
+    const optionDefaults: yargs.Arguments = {_: undefined, $0: undefined};
     for (const optionName in copy) {
         const section = copy[optionName];
 

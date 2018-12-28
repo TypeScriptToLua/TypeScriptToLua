@@ -95,7 +95,7 @@ export class MapTests {
     public mapGetMissing(): void {
         const lua = util.transpileString(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");`);
         const result = util.executeLua(lua);
-        Expect(result).toBe(null);
+        Expect(result).toBe(undefined);
     }
 
     @Test("map has")

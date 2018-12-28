@@ -1,5 +1,5 @@
 local i = 0
-while(i<10) do
+while (i<10) do
     do
         if i<5 then
             goto __continue0

@@ -414,7 +414,8 @@ export class LuaTransformer {
             tstl.createBinaryExpression(
                 tstl.createIdentifier("construct"),
                 tstl.createTableIndexExpression(className, tstl.createIdentifier("constructor")),
-                tstl.SyntaxKind.AndOperator),
+                tstl.SyntaxKind.AndOperator
+            ),
             tstl.createBlock([
                 tstl.createExpressionStatement(
                     tstl.createCallExpression(

@@ -194,8 +194,10 @@ export class ExpressionTests {
 
     @TestCase(LuaTarget.Lua51, "true?false:true", false)
     @TestCase(LuaTarget.Lua51, "false?false:true", true)
+    @TestCase(LuaTarget.Lua51, "true?undefined:true", undefined)
     @TestCase(LuaTarget.LuaJIT, "true?false:true", false)
     @TestCase(LuaTarget.LuaJIT, "false?false:true", true)
+    @TestCase(LuaTarget.LuaJIT, "true?undefined:true", undefined)
     @Test("Ternary operator")
     public ternaryOperator(target: LuaTarget, input: string, expected: any): void {
         const lua = `return `

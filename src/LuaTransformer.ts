@@ -4,6 +4,7 @@ import * as ts from "typescript";
 
 import * as tstl from "./LuaAST";
 
+import { TcpSocketConnectOpts } from "net";
 import {CompilerOptions} from "./CompilerOptions";
 import {DecoratorKind} from "./Decorator";
 import {TSTLErrors} from "./Errors";
@@ -37,7 +38,7 @@ export class LuaTransformer {
         switch (node.kind) {
             // Blocm
             case ts.SyntaxKind.Block:
-                return this.transformBlock(node as ts.Block);
+                return this.transformScopeBlock(node as ts.Block);
             // Declaration Statements
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
@@ -89,7 +90,7 @@ export class LuaTransformer {
         }
     }
 
-    /** Convers an array of ts.Statements into an array of ts.Statements */
+    /** Convers an array of ts.Statements into an array of tstl.Statements */
     public transformStatements(
         statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
 
@@ -100,7 +101,11 @@ export class LuaTransformer {
         return flat(statements).map(statement => this.transformStatement(statement)) as tstl.Statement[];
     }
 
-    public transformBlock(block: ts.Block): tstl.DoStatement {
+    public transformBlock(block: ts.Block): tstl.Block {
+        return tstl.createBlock(this.transformStatements(block.statements), undefined, block);
+    }
+
+    public transformScopeBlock(block: ts.Block): tstl.DoStatement {
         return tstl.createDoStatement(this.transformStatements(block.statements), undefined, block);
     }
 
@@ -200,7 +205,7 @@ export class LuaTransformer {
         const staticFields = properties.filter(isStatic);
         const instanceFields = properties.filter(prop => !isStatic(prop));
 
-        let result: tstl.Statement[] = [];
+        const result: tstl.Statement[] = [];
 
         // Overwrite the original className with the class we are overriding for extensions
         if (isMetaExtension) {
@@ -281,26 +286,26 @@ export class LuaTransformer {
             statement.members.filter(n => ts.isConstructorDeclaration(n) && n.body)[0] as ts.ConstructorDeclaration;
         if (constructor) {
             // Add constructor plus initialization of instance fields
-            result += this.transpileConstructor(constructor, className);
+            result.push(this.transformConstructor(constructor, className));
         } else if (!isExtension && !extendsType) {
             // Generate a constructor if none was defined
-            result += this.transpileConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)),
-                                                className);
+            result.push(this.transformConstructor(ts.createConstructor([], [], [], ts.createBlock([], true)),
+                                                  className));
         }
 
         // Transpile get accessors
         statement.members.filter(ts.isGetAccessor).forEach(getAccessor => {
-            result += this.transpileGetAccessorDeclaration(getAccessor, className);
+            result.push(this.transformGetAccessorDeclaration(getAccessor, className));
         });
 
         // Transpile set accessors
         statement.members.filter(ts.isSetAccessor).forEach(setAccessor => {
-            result += this.transpileSetAccessorDeclaration(setAccessor, className);
+            result.push(this.transformSetAccessorDeclaration(setAccessor, className));
         });
 
         // Transpile methods
         statement.members.filter(ts.isMethodDeclaration).forEach(method => {
-            result += this.transpileMethodDeclaration(method, `${className}.`);
+            result.push(this.transformMethodDeclaration(method, className));
         });
 
         return result;
@@ -453,7 +458,7 @@ export class LuaTransformer {
     }
 
     public transformConstructor(
-        statement: ts.ConstructorDeclaration, className: tstl.Identifier): StatementVisitResult {
+        statement: ts.ConstructorDeclaration, className: tstl.Identifier): tstl.VariableAssignmentStatement {
 
         // Don't transpile methods without body (overload declarations)
         if (!statement.body) {
@@ -467,7 +472,6 @@ export class LuaTransformer {
         this.classStack.push(className);
 
         const bodyStatements: tstl.Statement[] = [];
-        const body: tstl.Block = tstl.createBlock(bodyStatements);
 
         // Add in instance field declarations
         for (const declaration of constructorFieldsDeclarations) {
@@ -508,6 +512,8 @@ export class LuaTransformer {
 
         bodyStatements.concat(this.transformFunctionBody(statement.parameters, statement.body, restParamName));
 
+        const body: tstl.Block = tstl.createBlock(bodyStatements);
+
         const result =
             tstl.createVariableAssignmentStatement(
                 tstl.createTableIndexExpression(
@@ -531,9 +537,80 @@ export class LuaTransformer {
         return result;
     }
 
+    public transformGetAccessorDeclaration(
+        getAccessor: ts.GetAccessorDeclaration, className: tstl.Identifier): tstl.VariableAssignmentStatement {
+
+        const name = this.transformIdentifier(getAccessor.name as ts.Identifier);
+
+        const accessorFunction =
+            tstl.createFunctionExpression(
+                tstl.createBlock(this.transformFunctionBody(getAccessor.parameters, getAccessor.body)),
+                [this.selfIdentifier]
+            );
+
+        return tstl.createVariableAssignmentStatement(
+            tstl.createTableIndexExpression(className, tstl.createIdentifier("get__" + name.text)),
+            accessorFunction
+        );
+
+    }
+
+    public transformSetAccessorDeclaration(
+        setAccessor: ts.SetAccessorDeclaration, className: tstl.Identifier): tstl.VariableAssignmentStatement {
+
+        const name = this.transformIdentifier(setAccessor.name as ts.Identifier);
+
+        const [params, dot, restParam] = this.transformParameters(setAccessor.parameters, this.selfIdentifier);
+
+        const accessorFunction =
+            tstl.createFunctionExpression(
+                tstl.createBlock(this.transformFunctionBody(setAccessor.parameters, setAccessor.body, restParam)),
+                params,
+                dot,
+                restParam
+            );
+
+        return tstl.createVariableAssignmentStatement(
+            tstl.createTableIndexExpression(className, tstl.createIdentifier("set__" + name.text)),
+            accessorFunction
+        );
+    }
+
+    public transformMethodDeclaration(
+        node: ts.MethodDeclaration, className: tstl.Identifier): tstl.VariableAssignmentStatement {
+
+        // Don't transpile methods without body (overload declarations)
+        if (!node.body) {
+            return undefined;
+        }
+
+        const methodName = this.transformIdentifier(node.name as ts.Identifier);
+        if (methodName.text === "toString") {
+            methodName.text = "__tostring";
+        }
+
+        const type = this.checker.getTypeAtLocation(node);
+        const context =
+            tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void ? this.selfIdentifier : undefined;
+        const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
+
+        const functionExpression =
+            tstl.createFunctionExpression(
+                tstl.createBlock(this.transformFunctionBody(node.parameters, node.body, restParamName)),
+                paramNames,
+                dots,
+                restParamName
+            );
+
+        return tstl.createVariableAssignmentStatement(
+            tstl.createTableIndexExpression(className, methodName),
+            functionExpression
+        );
+    }
+
     public transformParameters(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
-        context: tstl.Identifier): [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
+        context?: tstl.Identifier): [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
 
         // Build parameter string
         const paramNames: tstl.Identifier[] = [];
@@ -585,7 +662,7 @@ export class LuaTransformer {
             headerStatements.push(this.createLocalOrGlobalDeclaration(spreadIdentifier, spreadTable));
         }
 
-        const bodyStatements = body.statements.map(this.transformStatement);
+        const bodyStatements = this.transformStatements(body.statements);
 
         return headerStatements.concat(bodyStatements);
     }

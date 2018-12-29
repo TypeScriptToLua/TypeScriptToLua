@@ -7,7 +7,7 @@ import * as tstl from "./LuaAST";
 import {CompilerOptions} from "./CompilerOptions";
 import {DecoratorKind} from "./Decorator";
 import {TSTLErrors} from "./Errors";
-import {TSHelper as tsHelper} from "./TSHelper";
+import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 
 type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 type ExpressionVisitResult = tstl.Expression | undefined;
@@ -569,22 +569,42 @@ export class LuaTransformer {
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
     ): tstl.Statement[] {
-        this.pushSpecialScope(ScopeType.Function);
-        let result = "";
+        const headerStatements = [];
 
         // Add default parameters
-        const defaultValueParams = parameters.filter(declaration => declaration.initializer !== undefined);
-        result += this.transpileParameterDefaultValues(defaultValueParams);
+        const defaultValueDeclarations = parameters
+            .filter(declaration => declaration.initializer !== undefined)
+            .map(this.transformParameterDefaultValueDeclaration);
+
+        headerStatements.push(...defaultValueDeclarations);
 
         // Push spread operator here
-        if (spreadIdentifier !== "") {
-            result += this.indent + `local ${spreadIdentifier} = { ... }\n`;
+        if (spreadIdentifier) {
+            const fieldExpression = tstl.createTableFieldExpression(tstl.createDotsLiteral());
+            const spreadTable = tstl.createTableExpression([fieldExpression]);
+            headerStatements.push(this.createLocalOrGlobalDeclaration(spreadIdentifier, spreadTable));
         }
 
-        result += this.transpileBlock(body);
-        this.popSpecialScope();
+        const bodyStatements = body.statements.map(this.transformStatement);
 
-        return result;
+        return headerStatements.concat(bodyStatements);
+    }
+
+    public transformParameterDefaultValueDeclaration(declaration: ts.ParameterDeclaration): tstl.Statement {
+
+        const parameterName = this.transformIdentifier(declaration.name as ts.Identifier);
+        const parameterValue = this.transformExpression(declaration.initializer);
+        const assignment = tstl.createVariableAssignmentStatement(parameterName, parameterValue);
+
+        const nilCondition = tstl.createBinaryExpression(
+            parameterName,
+            tstl.createNilLiteral(),
+            tstl.SyntaxKind.EqualityOperator
+        );
+
+        const ifBlock = tstl.createBlock([assignment]);
+
+        return tstl.createIfStatement(nilCondition, ifBlock, undefined, undefined, declaration);
     }
 
     public transformModuleDeclaration(arg0: ts.ModuleDeclaration, parent: tstl.Node): StatementVisitResult {
@@ -666,9 +686,27 @@ export class LuaTransformer {
         });
     }
 
-    public transformFunctionDeclaration(arg0: ts.FunctionDeclaration, parent: Node): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformFunctionDeclaration(functionDeclaration: ts.FunctionDeclaration): StatementVisitResult {
+        // Don't transpile functions without body (overload declarations)
+        if (!functionDeclaration.body) { return undefined; }
+
+        const type = this.checker.getTypeAtLocation(functionDeclaration);
+        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
+            ? this.selfIdentifier
+            : undefined;
+        const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
+
+        const name = this.transformIdentifier(functionDeclaration.name);
+        const body = tstl.createBlock(this.transformFunctionBody(
+            functionDeclaration.parameters,
+            functionDeclaration.body,
+            restParamName
+        ));
+        const functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
+
+        return this.createLocalOrGlobalDeclaration(name, functionExpression, undefined, functionDeclaration);
     }
+
     public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration, parent: Node): StatementVisitResult {
         throw new Error("Method not implemented.");
     }

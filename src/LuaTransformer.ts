@@ -4,7 +4,6 @@ import * as ts from "typescript";
 
 import * as tstl from "./LuaAST";
 
-import { TcpSocketConnectOpts } from "net";
 import {CompilerOptions} from "./CompilerOptions";
 import {DecoratorKind} from "./Decorator";
 import {TSTLErrors} from "./Errors";

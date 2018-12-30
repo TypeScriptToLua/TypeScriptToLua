@@ -12,6 +12,17 @@ import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 type ExpressionVisitResult = tstl.Expression | undefined;
 
+export enum ScopeType {
+    Function,
+    Switch,
+    Loop,
+}
+
+interface Scope {
+    type: ScopeType;
+    id: number;
+}
+
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set(
         ["and", "break", "do", "else", "elseif",
@@ -28,6 +39,14 @@ export class LuaTransformer {
 
     private currentNamespace: ts.ModuleDeclaration;
     private classStack: tstl.Identifier[];
+
+    private scopeStack: Scope[];
+    private genVarCounter: number;
+
+    public constructor() {
+        this.scopeStack = [];
+        this.genVarCounter = 0;
+    }
 
     public transformSourceFile(node: ts.SourceFile): tstl.Block {
         return tstl.createBlock(this.transformStatements(node.statements), undefined, node);
@@ -645,6 +664,8 @@ export class LuaTransformer {
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
     ): tstl.Statement[] {
+        this.pushScope(ScopeType.Function);
+
         const headerStatements = [];
 
         // Add default parameters
@@ -662,6 +683,8 @@ export class LuaTransformer {
         }
 
         const bodyStatements = this.transformStatements(body.statements);
+
+        this.popScope();
 
         return headerStatements.concat(bodyStatements);
     }
@@ -890,5 +913,18 @@ export class LuaTransformer {
         } else {
             return tstl.createVariableAssignmentStatement(lhs, rhs, parent, tsOriginal);
         }
+    }
+
+    private peekScope(): Scope {
+        return this.scopeStack[this.scopeStack.length - 1];
+    }
+
+    private pushScope(scopeType: ScopeType): void {
+        this.scopeStack.push({ type: scopeType, id: this.genVarCounter });
+        this.genVarCounter++;
+    }
+
+    private popScope(): Scope {
+        return this.scopeStack.pop();
     }
 }

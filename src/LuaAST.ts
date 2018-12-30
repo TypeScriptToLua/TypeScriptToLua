@@ -17,11 +17,11 @@ export enum SyntaxKind {
     RepeatStatement,
     ForStatement,
     ForInStatement,
-    FunctionStatement,
     GotoStatement,
     LabelStatement,
     ReturnStatement,
     BreakStatement,
+    ExpressionStatement,
     // Expression
     StringLiteral,
     NumericLiteral,
@@ -96,6 +96,8 @@ export type BinaryOperator =
     SyntaxKind.BitwiseExclusiveOrOperator | SyntaxKind.BitwiseRightShiftOperator |
     SyntaxKind.BitwiseLeftShiftOperator  | SyntaxKind.BitwiseNotOperator;
 
+export type Operator = UnaryOperator | BinaryOperator;
+
 // TODO For future sourcemap support?
 export interface TextRange {
     pos: number;
@@ -143,6 +145,10 @@ export interface Block extends Node {
     statements?: Statement[];
 }
 
+export function isBlock(node: Node): node is Block {
+    return node.kind === SyntaxKind.Block;
+}
+
 export function createBlock(statements?: Statement[], parent?: Node, tsOriginal?: ts.Node): Block {
     const block = createNode(SyntaxKind.Block, parent, tsOriginal) as Block;
     setParent(statements, block);
@@ -159,6 +165,10 @@ export interface DoStatement extends Statement {
     statements?: Statement[];
 }
 
+export function isDoStatement(node: Node): node is DoStatement {
+    return node.kind === SyntaxKind.DoStatement;
+}
+
 export function createDoStatement(statements?: Statement[], parent?: Node, tsOriginal?: ts.Node): DoStatement {
     const statement = createNode(SyntaxKind.Block, parent, tsOriginal) as DoStatement;
     setParent(statements, statement);
@@ -171,6 +181,10 @@ export interface VariableDeclarationStatement extends Statement {
     kind: SyntaxKind.VariableDeclarationStatement;
     left: IdentifierOrTableIndexExpression[];
     right?: Expression[];
+}
+
+export function isVariableDeclarationStatement(node: Node): node is VariableDeclarationStatement {
+    return node.kind === SyntaxKind.VariableDeclarationStatement;
 }
 
 export function createVariableDeclarationStatement(
@@ -203,6 +217,10 @@ export interface VariableAssignmentStatement extends Statement {
     right: Expression[];
 }
 
+export function isVariableAssignmentStatement(node: Node): node is VariableAssignmentStatement {
+    return node.kind === SyntaxKind.VariableAssignmentStatement;
+}
+
 export function createVariableAssignmentStatement(
     left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
     right: Expression | Expression[],
@@ -233,6 +251,10 @@ export interface IfStatement extends Statement {
     elseBlock?: Block | IfStatement;
 }
 
+export function isIfStatement(node: Node): node is IfStatement {
+    return node.kind === SyntaxKind.IfStatement;
+}
+
 export function createIfStatement(
     condtion: Expression,
     ifBlock: Block,
@@ -254,35 +276,50 @@ export interface IterationStatement extends Statement {
     body: Block;
 }
 
+export function isIterationStatement(node: Node): node is WhileStatement {
+    return node.kind === SyntaxKind.WhileStatement ||
+           node.kind === SyntaxKind.RepeatStatement ||
+           node.kind === SyntaxKind.ForStatement ||
+           node.kind === SyntaxKind.ForInStatement;
+}
+
 export interface WhileStatement extends IterationStatement {
     kind: SyntaxKind.WhileStatement;
-    expression: Expression;
+    condtion: Expression;
+}
+
+export function isWhileStatement(node: Node): node is WhileStatement {
+    return node.kind === SyntaxKind.WhileStatement;
 }
 
 export function createWhileStatement(
-    body: Block, expression: Expression, parent?: Node, tsOriginal?: ts.Node): WhileStatement {
+    body: Block, condtion: Expression, parent?: Node, tsOriginal?: ts.Node): WhileStatement {
 
     const statement = createNode(SyntaxKind.WhileStatement, parent, tsOriginal) as WhileStatement;
     setParent(body, statement);
     statement.body = body;
-    setParent(expression, statement);
-    statement.expression = expression;
+    setParent(condtion, statement);
+    statement.condtion = condtion;
     return statement;
 }
 
 export interface RepeatStatement extends IterationStatement {
     kind: SyntaxKind.RepeatStatement;
-    expression: Expression;
+    condtion: Expression;
+}
+
+export function isRepeatStatement(node: Node): node is RepeatStatement {
+    return node.kind === SyntaxKind.RepeatStatement;
 }
 
 export function createRepeatStatement(
-    body: Block, expression: Expression, parent?: Node, tsOriginal?: ts.Node): RepeatStatement {
+    body: Block, condtion: Expression, parent?: Node, tsOriginal?: ts.Node): RepeatStatement {
 
     const statement = createNode(SyntaxKind.RepeatStatement, parent, tsOriginal) as RepeatStatement;
     setParent(body, statement);
     statement.body = body;
-    setParent(expression, statement);
-    statement.expression = expression;
+    setParent(condtion, statement);
+    statement.condtion = condtion;
     return statement;
 }
 
@@ -293,6 +330,10 @@ export interface ForStatement extends IterationStatement {
     controlVariableInitializer: Expression;
     limitExpression: Expression;
     stepExpression?: Expression;
+}
+
+export function isForStatement(node: Node): node is ForStatement {
+    return node.kind === SyntaxKind.ForStatement;
 }
 
 export function createForStatement(
@@ -324,6 +365,10 @@ export interface ForInStatement extends IterationStatement {
     expressions: Expression[];
 }
 
+export function isForInStatement(node: Node): node is ForInStatement {
+    return node.kind === SyntaxKind.ForInStatement;
+}
+
 export function createForInStatement(
     body: Block,
     names: Identifier[],
@@ -346,6 +391,10 @@ export interface GotoStatement extends Statement {
     label: string; // or identifier ?
 }
 
+export function isGotoStatement(node: Node): node is GotoStatement {
+    return node.kind === SyntaxKind.GotoStatement;
+}
+
 export function createGotoStatement(label: string, parent?: Node, tsOriginal?: ts.Node): GotoStatement {
     const statement = createNode(SyntaxKind.GotoStatement, parent, tsOriginal) as GotoStatement;
     statement.label = label;
@@ -357,6 +406,10 @@ export interface LabelStatement extends Statement {
     name: string; // or identifier ?
 }
 
+export function isLabelStatement(node: Node): node is LabelStatement {
+    return node.kind === SyntaxKind.LabelStatement;
+}
+
 export function createLabelStatement(name: string, parent?: Node, tsOriginal?: ts.Node): LabelStatement {
     const statement = createNode(SyntaxKind.LabelStatement, parent, tsOriginal) as LabelStatement;
     statement.name = name;
@@ -366,6 +419,10 @@ export function createLabelStatement(name: string, parent?: Node, tsOriginal?: t
 export interface ReturnStatement extends Statement {
     kind: SyntaxKind.ReturnStatement;
     expressions?: Expression[];
+}
+
+export function isReturnStatement(node: Node): node is ReturnStatement {
+    return node.kind === SyntaxKind.ReturnStatement;
 }
 
 export function createReturnStatement(
@@ -381,19 +438,27 @@ export interface BreakStatement extends Statement {
     kind: SyntaxKind.BreakStatement;
 }
 
+export function isBreakStatement(node: Node): node is BreakStatement {
+    return node.kind === SyntaxKind.BreakStatement;
+}
+
 export function createBreakStatement(parent?: Node, tsOriginal?: ts.Node): BreakStatement {
     return createNode(SyntaxKind.BreakStatement, parent, tsOriginal) as BreakStatement;
 }
 
-// TODO used for export function calls, or shoudl export function calls inherit from both expression and statement?
 export interface ExpressionStatement extends Statement {
+    kind: SyntaxKind.ExpressionStatement;
     expression: Expression;
+}
+
+export function isExpressionStatement(node: Node): node is ExpressionStatement {
+    return node.kind === SyntaxKind.ExpressionStatement;
 }
 
 export function createExpressionStatement(
     expressions: Expression, parent?: Node, tsOriginal?: ts.Node): ExpressionStatement {
 
-    const statement = createNode(SyntaxKind.ReturnStatement, parent, tsOriginal) as ExpressionStatement;
+    const statement = createNode(SyntaxKind.ExpressionStatement, parent, tsOriginal) as ExpressionStatement;
     setParent(expressions, statement);
     statement.expression = expressions;
     return statement;
@@ -409,12 +474,20 @@ export interface NilLiteral extends Expression {
     kind: SyntaxKind.NilKeyword;
 }
 
+export function isNilLiteral(node: Node): node is NilLiteral {
+    return node.kind === SyntaxKind.NilKeyword;
+}
+
 export function createNilLiteral(parent?: Node, tsOriginal?: ts.Node): NilLiteral {
     return createNode(SyntaxKind.NilKeyword, parent, tsOriginal) as NilLiteral;
 }
 
 export interface BooleanLiteral extends Expression {
     kind: SyntaxKind.TrueKeyword | SyntaxKind.FalseKeyword;
+}
+
+export function isBooleanLiteral(node: Node): node is BooleanLiteral {
+    return node.kind === SyntaxKind.TrueKeyword || node.kind === SyntaxKind.FalseKeyword;
 }
 
 export function createBooleanLiteral(value: boolean, parent?: Node, tsOriginal?: ts.Node): BooleanLiteral {
@@ -428,6 +501,10 @@ export function createBooleanLiteral(value: boolean, parent?: Node, tsOriginal?:
 // TODO Call this DotsLiteral or DotsKeyword?
 export interface DotsLiteral extends Expression {
     kind: SyntaxKind.DotsKeyword;
+}
+
+export function isDotsLiteral(node: Node): node is DotsLiteral {
+    return node.kind === SyntaxKind.DotsKeyword;
 }
 
 export function createDotsLiteral(parent?: Node, tsOriginal?: ts.Node): DotsLiteral {
@@ -444,6 +521,10 @@ export interface NumericLiteral extends Expression {
     value: number;
 }
 
+export function isNumericLiteral(node: Node): node is NumericLiteral {
+    return node.kind === SyntaxKind.NumericLiteral;
+}
+
 export function createNumericLiteral(value: number, parent?: Node, tsOriginal?: ts.Node): NumericLiteral {
     const expression = createNode(SyntaxKind.NumericLiteral, parent, tsOriginal) as NumericLiteral;
     expression.value = value;
@@ -453,6 +534,10 @@ export function createNumericLiteral(value: number, parent?: Node, tsOriginal?: 
 export interface StringLiteral extends Expression {
     kind: SyntaxKind.StringLiteral;
     value: string;
+}
+
+export function isStringLiteral(node: Node): node is StringLiteral {
+    return node.kind === SyntaxKind.StringLiteral;
 }
 
 export function createStringLiteral(value: string, parent?: Node, tsOriginal?: ts.Node): StringLiteral {
@@ -470,11 +555,15 @@ export function createStringLiteral(value: string, parent?: Node, tsOriginal?: t
 //
 // We should probably create helper functions to create the different export function declarations
 export interface FunctionExpression extends Expression {
-    kind: SyntaxKind.FunctionStatement;
+    kind: SyntaxKind.FunctionExpression;
     params?: Identifier[];
     dots?: DotsLiteral;
     restParamName?: Identifier;
     body: Block;
+}
+
+export function isFunctionExpression(node: Node): node is FunctionExpression {
+    return node.kind === SyntaxKind.FunctionExpression;
 }
 
 export function createFunctionExpression(
@@ -503,6 +592,10 @@ export interface TableFieldExpression extends Expression {
     key?: Expression;
 }
 
+export function isTableFieldExpression(node: Node): node is TableFieldExpression {
+    return node.kind === SyntaxKind.TableFieldExpression;
+}
+
 export function createTableFieldExpression(
     value: Expression, key?: Expression, parent?: Node, tsOriginal?: ts.Node): TableFieldExpression {
 
@@ -517,6 +610,10 @@ export function createTableFieldExpression(
 export interface TableExpression extends Expression {
     kind: SyntaxKind.TableExpression;
     fields?: TableFieldExpression[];
+}
+
+export function isTableExpression(node: Node): node is TableExpression {
+    return node.kind === SyntaxKind.TableExpression;
 }
 
 export function createTableExpression(
@@ -534,6 +631,10 @@ export interface UnaryExpression extends Expression {
     operator: UnaryOperator;
 }
 
+export function isUnaryExpression(node: Node): node is UnaryExpression {
+    return node.kind === SyntaxKind.UnaryExpression;
+}
+
 export function createUnaryExpression(
     operand: Expression, operator: UnaryOperator, parent?: Node, tsOriginal?: ts.Node): UnaryExpression {
 
@@ -549,6 +650,10 @@ export interface BinaryExpression extends Expression {
     operator: BinaryOperator;
     left: Expression;
     right: Expression;
+}
+
+export function isBinaryExpression(node: Node): node is BinaryExpression {
+    return node.kind === SyntaxKind.BinaryExpression;
 }
 
 export function createBinaryExpression(
@@ -572,6 +677,10 @@ export interface ParenthesizedExpression extends Expression {
     innerEpxression: Expression;
 }
 
+export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
+    return node.kind === SyntaxKind.ParenthesizedExpression;
+}
+
 export function createParenthesizedExpression(
     innerExpression: Expression, parent?: Node, tsOriginal?: ts.Node): ParenthesizedExpression {
 
@@ -586,6 +695,10 @@ export interface CallExpression extends Expression {
     kind: SyntaxKind.CallExpression;
     expression: Expression;
     params?: Expression[];
+}
+
+export function isCallExpression(node: Node): node is CallExpression {
+    return node.kind === SyntaxKind.CallExpression;
 }
 
 export function createCallExpression(
@@ -604,6 +717,10 @@ export interface MethodCallExpression extends Expression {
     prefixExpression: Expression;
     name: Identifier;
     params?: Expression[];
+}
+
+export function isMethodCallExpression(node: Node): node is MethodCallExpression {
+    return node.kind === SyntaxKind.MethodCallExpression;
 }
 
 export function createMethodCallExpression(
@@ -628,6 +745,10 @@ export interface Identifier extends Expression {
     text: string;
 }
 
+export function isIdentifier(node: Node): node is Identifier {
+    return node.kind === SyntaxKind.Identifier;
+}
+
 export function createIdentifier(text: string, parent?: Node, tsOriginal?: ts.Node): Identifier {
     const expression = createNode(SyntaxKind.Identifier, parent, tsOriginal) as Identifier;
     expression.text = text;
@@ -641,6 +762,10 @@ export interface TableIndexExpression extends Expression {
     // TODO maybe add soemthing to handle dot vs [] access
 }
 
+export function isTableIndexExpression(node: Node): node is TableIndexExpression {
+    return node.kind === SyntaxKind.TableIndexExpression;
+}
+
 export function createTableIndexExpression(
     table: Expression, index: Expression, parent?: Node, tsOriginal?: ts.Node): TableIndexExpression {
 
@@ -652,4 +777,4 @@ export function createTableIndexExpression(
     return expression;
 }
 
-type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
+export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;

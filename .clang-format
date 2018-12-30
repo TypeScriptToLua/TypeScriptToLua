@@ -17,7 +17,7 @@ BinPackParameters: false
 BreakBeforeBraces: Allman
 BreakBeforeInheritanceComma: false
 BreakConstructorInitializersBeforeComma: true
-ColumnLimit: 140
+ColumnLimit: 120
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 4
 ContinuationIndentWidth: 4
@@ -37,7 +37,7 @@ PenaltyBreakComment: 400
 PenaltyBreakFirstLessLess: 200
 PenaltyBreakString: 1000
 PenaltyExcessCharacter: 1000000
-PenaltyReturnTypeOnItsOwnLine: 50
+PenaltyReturnTypeOnItsOwnLine: 1000000
 PointerAlignment: Left
 SortIncludes: true
 SpaceAfterCStyleCast: false

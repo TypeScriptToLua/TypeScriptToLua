@@ -48,7 +48,7 @@
         "prefer-const": true,
         "radix": true,
         "semicolon": [true, "always", "ignore-bound-class-methods"],
-        "switch-default": true,
+        "switch-default": false,
         "trailing-comma": [
             true,
             {

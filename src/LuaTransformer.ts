@@ -57,7 +57,7 @@ export class LuaTransformer {
 
     private selfIdentifier = tstl.createIdentifier("self");
 
-    private isStrict: boolean = true;
+    private isStrict = true;
 
     private checker: ts.TypeChecker;
     private options: CompilerOptions;
@@ -790,7 +790,7 @@ export class LuaTransformer {
         return node.members.map(member => {
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
-                    val = tstl.createNumericLiteral(parseInt(member.initializer.text));
+                    val = tstl.createNumericLiteral(Number(member.initializer.text));
                 } else if (ts.isStringLiteral(member.initializer)) {
                     hasStringInitializers = true;
                     val = tstl.createStringLiteral(member.initializer.text);
@@ -914,7 +914,7 @@ export class LuaTransformer {
                 return tstl.createStringLiteral(escapedText, undefined, expression);
             case ts.SyntaxKind.NumericLiteral:
                 return tstl.createNumericLiteral(
-                    parseFloat((expression as ts.NumericLiteral).text),
+                    Number((expression as ts.NumericLiteral).text),
                     undefined,
                     expression
                 );

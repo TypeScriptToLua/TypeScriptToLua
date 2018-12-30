@@ -472,4 +472,28 @@ export class TSHelper {
     public static isDefaultArrayPropertyName(methodName: string): boolean {
         return defaultArrayPropertyNames.has(methodName);
     }
+
+    public static escapeString(text: string): string {
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
+        const escapeSequences: Array<[RegExp, string]> = [
+            [/[\\]/g, "\\\\"],
+            [/[\']/g, "\\\'"],
+            [/[\`]/g, "\\\`"],
+            [/[\"]/g, "\\\""],
+            [/[\n]/g, "\\n"],
+            [/[\r]/g, "\\r"],
+            [/[\v]/g, "\\v"],
+            [/[\t]/g, "\\t"],
+            [/[\b]/g, "\\b"],
+            [/[\f]/g, "\\f"],
+            [/[\0]/g, "\\0"],
+        ];
+
+        if (text.length > 0) {
+            for (const [regex, replacement] of escapeSequences) {
+                text = text.replace(regex, replacement);
+            }
+        }
+        return text;
+    }
 }

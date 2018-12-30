@@ -17,6 +17,7 @@
         "no-console": [false],
         "no-namespace": false,
         "no-null-keyword": true,
+        "one-line": false,
         "trailing-comma": [
             true,
             {

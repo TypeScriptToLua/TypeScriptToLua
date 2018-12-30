@@ -1,4 +1,3 @@
-
 import * as path from "path";
 import * as ts from "typescript";
 
@@ -11,6 +10,32 @@ import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 
 type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 type ExpressionVisitResult = tstl.Expression | undefined;
+
+export enum LuaLibFeature {
+    ArrayConcat = "ArrayConcat",
+    ArrayEvery = "ArrayEvery",
+    ArrayFilter = "ArrayFilter",
+    ArrayForEach = "ArrayForEach",
+    ArrayIndexOf = "ArrayIndexOf",
+    ArrayMap = "ArrayMap",
+    ArrayPush = "ArrayPush",
+    ArrayReverse = "ArrayReverse",
+    ArrayShift = "ArrayShift",
+    ArrayUnshift = "ArrayUnshift",
+    ArraySort = "ArraySort",
+    ArraySlice = "ArraySlice",
+    ArraySome = "ArraySome",
+    ArraySplice = "ArraySplice",
+    FunctionApply = "FunctionApply",
+    FunctionBind = "FunctionBind",
+    FunctionCall = "FunctionCall",
+    InstanceOf = "InstanceOf",
+    Map = "Map",
+    Set = "Set",
+    StringReplace = "StringReplace",
+    StringSplit = "StringSplit",
+    Ternary = "Ternary",
+}
 
 export enum ScopeType {
     Function,
@@ -32,6 +57,8 @@ export class LuaTransformer {
 
     private selfIdentifier = tstl.createIdentifier("self");
 
+    private isStrict: boolean = true;
+
     private checker: ts.TypeChecker;
     private options: CompilerOptions;
     private sourceFile: ts.SourceFile;
@@ -42,6 +69,10 @@ export class LuaTransformer {
 
     private scopeStack: Scope[];
     private genVarCounter: number;
+
+    private luaLibFeatureSet: Set<LuaLibFeature>;
+
+    private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
     public constructor() {
         this.scopeStack = [];
@@ -677,8 +708,7 @@ export class LuaTransformer {
 
         // Push spread operator here
         if (spreadIdentifier) {
-            const fieldExpression = tstl.createTableFieldExpression(tstl.createDotsLiteral());
-            const spreadTable = tstl.createTableExpression([fieldExpression]);
+            const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(this.createLocalOrGlobalDeclaration(spreadIdentifier, spreadTable));
         }
 
@@ -706,7 +736,7 @@ export class LuaTransformer {
         return tstl.createIfStatement(nilCondition, ifBlock, undefined, undefined, declaration);
     }
 
-    public transformModuleDeclaration(arg0: ts.ModuleDeclaration, parent: tstl.Node): StatementVisitResult {
+    public transformModuleDeclaration(arg0: ts.ModuleDeclaration): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
 
@@ -806,62 +836,946 @@ export class LuaTransformer {
         return this.createLocalOrGlobalDeclaration(name, functionExpression, undefined, functionDeclaration);
     }
 
-    public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration, parent: Node): StatementVisitResult {
+    public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformInterfaceDeclaration(arg0: ts.InterfaceDeclaration, parent: Node): StatementVisitResult {
+    public transformInterfaceDeclaration(arg0: ts.InterfaceDeclaration): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformVariableStatement(arg0: ts.VariableStatement, parent: Node): StatementVisitResult {
+    public transformVariableStatement(arg0: ts.VariableStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformExpressionStatement(arg0: ts.ExpressionStatement, parent: Node): StatementVisitResult {
+    public transformExpressionStatement(arg0: ts.ExpressionStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformReturn(arg0: ts.ReturnStatement, parent: Node): StatementVisitResult {
+    public transformReturn(arg0: ts.ReturnStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformIfStatement(arg0: ts.IfStatement, parent: Node): StatementVisitResult {
+    public transformIfStatement(arg0: ts.IfStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformWhileStatement(arg0: ts.WhileStatement, parent: Node): StatementVisitResult {
+    public transformWhileStatement(arg0: ts.WhileStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformDoStatement(arg0: ts.DoStatement, parent: Node): StatementVisitResult {
+    public transformDoStatement(arg0: ts.DoStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForStatement(arg0: ts.ForStatement, parent: Node): StatementVisitResult {
+    public transformForStatement(arg0: ts.ForStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForOfStatement(arg0: ts.ForOfStatement, parent: Node): StatementVisitResult {
+    public transformForOfStatement(arg0: ts.ForOfStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformForInStatement(arg0: ts.ForInStatement, parent: Node): StatementVisitResult {
+    public transformForInStatement(arg0: ts.ForInStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformSwitchStatement(arg0: ts.SwitchStatement, parent: Node): StatementVisitResult {
+    public transformSwitchStatement(arg0: ts.SwitchStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformBreakStatement(arg0: ts.BreakStatement, parent: Node): StatementVisitResult {
+    public transformBreakStatement(arg0: ts.BreakStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformTryStatement(arg0: ts.TryStatement, parent: Node): StatementVisitResult {
+    public transformTryStatement(arg0: ts.TryStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformThrowStatement(arg0: ts.ThrowStatement, parent: Node): StatementVisitResult {
+    public transformThrowStatement(arg0: ts.ThrowStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformContinueStatement(arg0: ts.ContinueStatement, parent: Node): StatementVisitResult {
+    public transformContinueStatement(arg0: ts.ContinueStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformEmptyStatement(arg0: ts.EmptyStatement, parent: Node): StatementVisitResult {
+    public transformEmptyStatement(arg0: ts.EmptyStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
 
     // Expressions
-    public transformExpression(expression: ts.Expression, parent?: tstl.Node): ExpressionVisitResult {
-        // TODO
-        return undefined;
+    public transformExpression(expression: ts.Expression): ExpressionVisitResult {
+        switch (expression.kind) {
+            case ts.SyntaxKind.BinaryExpression:
+                return this.transformBinaryExpression(expression as ts.BinaryExpression);
+            case ts.SyntaxKind.ConditionalExpression:
+                return this.transformConditionalExpression(expression as ts.ConditionalExpression);
+            case ts.SyntaxKind.CallExpression:
+                return this.transformCallExpression(expression as ts.CallExpression);
+            case ts.SyntaxKind.PropertyAccessExpression:
+                return this.transformPropertyAccessExpression(expression as ts.PropertyAccessExpression);
+            case ts.SyntaxKind.ElementAccessExpression:
+                return this.transformElementAccessExpression(expression as ts.ElementAccessExpression);
+            case ts.SyntaxKind.Identifier:
+                // Catch undefined which is passed as identifier
+                if ((expression as ts.Identifier).originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+                    return tstl.createNilLiteral();
+                }
+                // Otherwise simply return the name
+                return this.transformIdentifier(expression as ts.Identifier);
+            case ts.SyntaxKind.StringLiteral:
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+                const escapedText = tsHelper.escapeString((expression as ts.StringLiteral).text);
+                return tstl.createStringLiteral(escapedText, undefined, expression);
+            case ts.SyntaxKind.NumericLiteral:
+                return tstl.createNumericLiteral(
+                    parseFloat((expression as ts.NumericLiteral).text),
+                    undefined,
+                    expression
+                );
+            case ts.SyntaxKind.TrueKeyword:
+                return tstl.createBooleanLiteral(true, undefined, expression);
+            case ts.SyntaxKind.FalseKeyword:
+                return tstl.createBooleanLiteral(false, undefined, expression);
+            case ts.SyntaxKind.NullKeyword:
+            case ts.SyntaxKind.UndefinedKeyword:
+                return tstl.createNilLiteral(undefined, expression);
+            case ts.SyntaxKind.ThisKeyword:
+                return this.selfIdentifier;
+            case ts.SyntaxKind.PostfixUnaryExpression:
+                // return this.transpilePostfixUnaryExpression(node as ts.PostfixUnaryExpression);
+                throw new Error("Not implemented yet");
+            case ts.SyntaxKind.PrefixUnaryExpression:
+                // return this.transpilePrefixUnaryExpression(node as ts.PrefixUnaryExpression);
+                throw new Error("Not implemented yet");
+            case ts.SyntaxKind.ArrayLiteralExpression:
+                return this.transpileArrayLiteral(expression as ts.ArrayLiteralExpression);
+            case ts.SyntaxKind.ObjectLiteralExpression:
+                return this.transpileObjectLiteral(expression as ts.ObjectLiteralExpression);
+            case ts.SyntaxKind.FunctionExpression:
+                return this.transpileFunctionExpression(expression as ts.ArrowFunction, this.selfIdentifier);
+            case ts.SyntaxKind.ArrowFunction:
+                return this.transpileFunctionExpression(expression as ts.ArrowFunction, tstl.createIdentifier("____"));
+            case ts.SyntaxKind.NewExpression:
+                return this.transpileNewExpression(expression as ts.NewExpression);
+            case ts.SyntaxKind.ComputedPropertyName:
+                // return "[" + this.transpileExpression((node as ts.ComputedPropertyName).expression) + "]";
+            case ts.SyntaxKind.ParenthesizedExpression:
+                return tstl.createParenthesizedExpression(
+                    this.transformExpression((expression as ts.ParenthesizedExpression).expression),
+                    undefined,
+                    expression
+                );
+            case ts.SyntaxKind.SuperKeyword:
+                return tstl.createTableIndexExpression(
+                    this.selfIdentifier,
+                    tstl.createStringLiteral("__base"),
+                    undefined,
+                    expression
+                );
+            case ts.SyntaxKind.TypeAssertionExpression:
+            case ts.SyntaxKind.AsExpression:
+                return this.transpileAssertionExpression(expression as ts.AssertionExpression);
+            case ts.SyntaxKind.TypeOfExpression:
+                return this.transpileTypeOfExpression(expression as ts.TypeOfExpression);
+            case ts.SyntaxKind.EmptyStatement:
+                return undefined;
+            case ts.SyntaxKind.ClassExpression:
+                /*this.namespace.push("");
+                const classDeclaration =  this.transformClassDeclaration(node as ts.ClassExpression, "_");
+                this.namespace.pop();
+                return `(function() ${classDeclaration}; return _ end)()`;*/
+                throw new Error("Not yet implemented");
+            default:
+                throw TSTLErrors.UnsupportedKind("expression", expression.kind, expression);
+        }
+    }
+
+    public transformBinaryExpression(expression: ts.BinaryExpression): ExpressionVisitResult {
+        // Check if this is an assignment token, then handle accordingly
+        /*const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);
+        if (isAssignment) {
+            return this.transpileAssignmentExpression(
+                expression.left,
+                operator,
+                expression.right,
+                tsHelper.isExpressionStatement(expression),
+                false
+            );
+        }*/
+
+        const lhs = this.transformExpression(expression.left);
+        const rhs = this.transformExpression(expression.right);
+
+        // Transpile Bitops
+        switch (expression.operatorToken.kind) {
+            case ts.SyntaxKind.AmpersandToken:
+            case ts.SyntaxKind.BarToken:
+            case ts.SyntaxKind.CaretToken:
+            case ts.SyntaxKind.LessThanLessThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                return this.transformBitOperation(expression, lhs, rhs);
+        }
+
+        // Transpile operators
+        switch (expression.operatorToken.kind) {
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.AndOperator);
+            case ts.SyntaxKind.BarBarToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.OrOperator);
+            case ts.SyntaxKind.PlusToken:
+                // Replace string + with ..
+                const typeLeft = this.checker.getTypeAtLocation(expression.left);
+                const typeRight = this.checker.getTypeAtLocation(expression.right);
+                if ((typeLeft.flags & ts.TypeFlags.String) || ts.isStringLiteral(expression.left)
+                    ||  (typeRight.flags & ts.TypeFlags.String) || ts.isStringLiteral(expression.right)) {
+                    return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.ConcatOperator);
+                }
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.AdditionOperator);
+            case ts.SyntaxKind.MinusToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.SubractionOperator);
+            case ts.SyntaxKind.AsteriskToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.MultiplicationOperator);
+            case ts.SyntaxKind.AsteriskAsteriskToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.PowerOperator);
+            case ts.SyntaxKind.SlashToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.DivisionOperator);
+            case ts.SyntaxKind.PercentToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.ModuloOperator);
+            case ts.SyntaxKind.GreaterThanToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.GreaterThanOperator);
+            case ts.SyntaxKind.GreaterThanEqualsToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.GreaterEqualOperator);
+            case ts.SyntaxKind.LessThanToken:
+            return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.LessThanOperator);
+            case ts.SyntaxKind.LessThanEqualsToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.LessEqualOperator);
+            case ts.SyntaxKind.EqualsToken:
+                const assignment = tstl.createVariableAssignmentStatement(
+                    lhs as tstl.IdentifierOrTableIndexExpression,
+                    rhs
+                );
+                const returnStatement = tstl.createReturnStatement([this.transformExpression(expression.right)]);
+                return tstl.createFunctionExpression(tstl.createBlock([assignment, returnStatement]));
+            case ts.SyntaxKind.EqualsEqualsToken:
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.EqualityOperator);
+            case ts.SyntaxKind.ExclamationEqualsToken:
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.InequalityOperator);
+            case ts.SyntaxKind.InKeyword:
+                const indexExpression = tstl.createTableIndexExpression(rhs, lhs);
+                return tstl.createBinaryExpression(
+                    indexExpression,
+                    tstl.createNilLiteral(),
+                    tstl.SyntaxKind.InequalityOperator
+                );
+            case ts.SyntaxKind.InstanceOfKeyword:
+                return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
+            default:
+                throw TSTLErrors.UnsupportedKind("binary operator", expression.kind, expression);
+        }
+    }
+
+    public transformBitOperation(
+        node: ts.BinaryExpression,
+        lhs: tstl.Expression,
+        rhs: tstl.Expression
+    ): ExpressionVisitResult {
+        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+    }
+
+    public transformConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): ExpressionVisitResult {
+        const condition = this.transformExpression(node.condition);
+        const val1 = this.transformExpression(node.whenTrue);
+        const val2 = this.transformExpression(node.whenFalse);
+
+        return this.transformLuaLibFunction(
+            LuaLibFeature.Ternary,
+            condition, this.wrapInFunctionCall(val1), this.wrapInFunctionCall(val2)
+        );
+    }
+
+    public transpileArrayLiteral(node: ts.ArrayLiteralExpression): ExpressionVisitResult {
+        const values: tstl.TableFieldExpression[] = [];
+
+        node.elements.forEach(child => {
+            values.push(tstl.createTableFieldExpression(this.transformExpression(child), undefined, undefined, child));
+        });
+
+        return tstl.createTableExpression(values, undefined, node);
+    }
+
+    public transpileObjectLiteral(node: ts.ObjectLiteralExpression): ExpressionVisitResult {
+        const properties: tstl.TableFieldExpression[] = [];
+        // Add all property assignments
+        node.properties.forEach(element => {
+            let name: tstl.Identifier;
+            if (ts.isIdentifier(element.name)) {
+                name = this.transformIdentifier(element.name);
+            } else {/*if (ts.isComputedPropertyName(element.name)) {
+                //name = this.transformIdentifier(element.name);
+            } else {
+                //name = `[${this.transpileExpression(element.name)}]`;*/
+                throw new Error("Not yet implemented");
+            }
+
+            if (ts.isPropertyAssignment(element)) {
+                const expression = this.transformExpression(element.initializer);
+                properties.push(tstl.createTableFieldExpression(expression, name, undefined, element));
+            } else if (ts.isShorthandPropertyAssignment(element)) {
+                properties.push(tstl.createTableFieldExpression(name, name, undefined, element));
+            } else if (ts.isMethodDeclaration(element)) {
+                const expression = this.transpileFunctionExpression(element, this.selfIdentifier);
+                properties.push(tstl.createTableFieldExpression(expression, name, undefined, element));
+            } else {
+                throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
+            }
+        });
+
+        return tstl.createTableExpression(
+            properties,
+            undefined,
+            node
+        );
+    }
+
+    public transpileFunctionExpression(node: ts.FunctionLikeDeclaration, context: tstl.Identifier | undefined)
+        : ExpressionVisitResult {
+        const type = this.checker.getTypeAtLocation(node);
+        const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
+        // Build parameter string
+        const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(
+            node.parameters,
+            hasContext ? context : undefined
+        );
+
+        const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
+        const transformedBody = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
+
+        return tstl.createFunctionExpression(
+            tstl.createBlock(transformedBody),
+            paramNames,
+            dotsLiteral,
+            spreadIdentifier,
+            undefined,
+            node
+        );
+    }
+
+    public transpileNewExpression(node: ts.NewExpression): ExpressionVisitResult {
+        const name = this.transformExpression(node.expression);
+        const sig = this.checker.getResolvedSignature(node);
+        const params = node.arguments
+            ? this.transformArguments(node.arguments, sig, ts.createTrue())
+            : [tstl.createBooleanLiteral(true)];
+
+        const type = this.checker.getTypeAtLocation(node);
+        const classDecorators = tsHelper.getCustomDecorators(type, this.checker);
+
+        this.checkForLuaLibType(type);
+
+        if (classDecorators.has(DecoratorKind.Extension) || classDecorators.has(DecoratorKind.MetaExtension)) {
+            throw TSTLErrors.InvalidNewExpressionOnExtension(node);
+        }
+
+        if (classDecorators.has(DecoratorKind.CustomConstructor)) {
+            const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
+            if (!customDecorator.args[0]) {
+                throw TSTLErrors.InvalidDecoratorArgumentNumber("!CustomConstructor", 0, 1, node);
+            }
+            return tstl.createCallExpression(
+                tstl.createIdentifier(customDecorator.args[0]),
+                this.transformArguments(node.arguments),
+                undefined,
+                node
+            );
+        }
+
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(name, tstl.createStringLiteral("new")),
+            params,
+            undefined,
+            node
+        );
+    }
+
+    public transformCallExpression(node: ts.CallExpression): ExpressionVisitResult {
+        // Check for calls on primitives to override
+        let parameters: tstl.Expression[] = [];
+
+        const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
+        const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
+            && tsHelper.isInTupleReturnFunction(node, this.checker);
+        const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
+        const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed;
+
+        if (ts.isPropertyAccessExpression(node.expression)) {
+            const result = this.transformPropertyCall(node);
+            return wrapResult ? this.wrapInTable(result) : result;
+        }
+
+        if (ts.isElementAccessExpression(node.expression)) {
+            const result = this.transformElementCall(node);
+            return wrapResult ? this.wrapInTable(result) : result;
+        }
+
+        const signature = this.checker.getResolvedSignature(node);
+
+        // Handle super calls properly
+        if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
+            parameters = this.transformArguments(node.arguments, signature, ts.createThis());
+            const classIdentifier = this.classStack[this.classStack.length - 1];
+            const baseIdentifier = tstl.createIdentifier("__base");
+            const constructorIdentifier = tstl.createIdentifier("constructor");
+
+            return tstl.createCallExpression(
+                tstl.createTableIndexExpression(
+                    tstl.createTableIndexExpression(classIdentifier, baseIdentifier),
+                    constructorIdentifier
+                ),
+                parameters
+            );
+        }
+
+        const callPath = this.transformExpression(node.expression);
+        const signatureDeclaration = signature.getDeclaration();
+        if (signatureDeclaration
+            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
+            && !ts.isPropertyAccessExpression(node.expression)
+            && !ts.isElementAccessExpression(node.expression)) {
+            const context = this.isStrict ? ts.createNull() :  ts.createIdentifier("_G");
+            parameters = this.transformArguments(node.arguments, signature, context);
+        } else {
+            parameters = this.transformArguments(node.arguments, signature);
+        }
+
+        const callExpression = tstl.createCallExpression(callPath, parameters);
+        return wrapResult ? this.wrapInTable(callExpression) : callExpression;
+    }
+
+    public transformPropertyCall(node: ts.CallExpression): ExpressionVisitResult {
+        let parameters: tstl.Expression[] = [];
+
+        // Check if call is actually on a property access expression
+        if (!ts.isPropertyAccessExpression(node.expression)) {
+            throw TSTLErrors.InvalidPropertyCall(node);
+        }
+
+        // If the function being called is of type owner.func, get the type of owner
+        const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
+
+        if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
+            parameters = this.transformArguments(node.arguments);
+            return tstl.createCallExpression(
+                this.transformMathExpression(node.expression.name),
+                parameters,
+                undefined,
+                node
+            );
+        }
+
+        if (ownerType.symbol && ownerType.symbol.escapedName === "String") {
+            parameters = this.transformArguments(node.arguments);
+            return tstl.createCallExpression(
+                this.transformStringExpression(node.expression.name),
+                parameters,
+                undefined,
+                node
+            );
+        }
+
+        switch (ownerType.flags) {
+            case ts.TypeFlags.String:
+            case ts.TypeFlags.StringLiteral:
+                return this.transpileStringCallExpression(node);
+        }
+
+        // if ownerType is a array, use only supported functions
+        if (tsHelper.isExplicitArrayType(ownerType, this.checker)) {
+            return this.transpileArrayCallExpression(node);
+        }
+
+        // if ownerType inherits from an array, use array calls where appropriate
+        if (tsHelper.isArrayType(ownerType, this.checker)
+            && tsHelper.isDefaultArrayCallMethodName(node.expression.name.escapedText as string)) {
+            return this.transpileArrayCallExpression(node);
+        }
+
+        if (tsHelper.isFunctionType(ownerType, this.checker)) {
+            // TODO - Is this even right?
+            // return this.transformFunctionCallExpression(node);
+        }
+
+        const signature = this.checker.getResolvedSignature(node);
+
+        // Get the type of the function
+        if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
+            // Super calls take the format of super.call(self,...)
+            parameters = this.transformArguments(node.arguments, signature, ts.createThis());
+            return tstl.createCallExpression(this.transformExpression(node.expression), parameters);
+        } else {
+            // Replace last . with : here
+            const name = node.expression.name.escapedText;
+            if (name === "toString") {
+                const toStringIdentifier = tstl.createIdentifier("toString");
+                return tstl.createCallExpression(
+                    toStringIdentifier,
+                    [this.transformExpression(node.expression.expression)],
+                    undefined,
+                    node
+                );
+            } else if (name === "hasOwnProperty") {
+                const expr = this.transformExpression(node.expression.expression);
+                parameters = this.transformArguments(node.arguments, signature);
+                const rawGetIdentifier = tstl.createIdentifier("rawget");
+                const rawGetCall = tstl.createCallExpression(rawGetIdentifier, [expr, ...parameters]);
+                return tstl.createBinaryExpression(
+                    rawGetCall,
+                    tstl.createNilLiteral(),
+                    tstl.SyntaxKind.InequalityOperator,
+                    undefined,
+                    node
+                );
+            } else {
+                /*const signatureDeclaration = signature.getDeclaration();
+                const op = !signatureDeclaration
+                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
+                    ? ":" : ".";
+                const callPath = `${this.transpileExpression(node.expression.expression)}${op}${name}`;
+                parameters = this.transpileArguments(node.arguments, signature);
+                return `${callPath}(${parameters})`;*/
+                throw new Error("Not implemented");
+            }
+        }
+    }
+
+    public transformElementCall(node: ts.CallExpression): ExpressionVisitResult {
+        if (!ts.isElementAccessExpression(node.expression)) {
+            throw TSTLErrors.InvalidElementCall(node);
+        }
+
+        const signature = this.checker.getResolvedSignature(node);
+        let parameters = this.transformArguments(node.arguments, signature);
+
+        const signatureDeclaration = signature.getDeclaration();
+        if (!signatureDeclaration
+            || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
+            // Pass left-side as context
+
+            // Inject context parameter
+            if (node.arguments.length > 0) {
+                parameters.unshift(tstl.createIdentifier("____TS_self"));
+            } else {
+                parameters = [tstl.createIdentifier("____TS_self")];
+            }
+
+            const context = this.transformExpression(node.expression.expression);
+            if (tsHelper.isExpressionWithEvaluationEffect(node.expression.expression)) {
+                // Cache left-side if it has effects
+                const argument = this.transformExpression(node.expression.argumentExpression);
+                if (tsHelper.isExpressionStatement(node)) {
+                    // Statement version
+                    const selfIdentifier = tstl.createIdentifier("____TS_self");
+                    const selfAssignment = this.createLocalOrGlobalDeclaration(selfIdentifier, context);
+                    const index = tstl.createTableIndexExpression(selfIdentifier, argument);
+                    const callExpression = tstl.createExpressionStatement(tstl.createCallExpression(index, parameters));
+                    // return tstl.createDoStatement([selfAssignment, callExpression]);
+                    throw new Error("Not implemented yet");
+                } else {
+                    // Expression version
+                    /*return `(function() local ____TS_self = ${context}; `
+                        + `return ____TS_self[${argument}](${parameters}); end)()`;*/
+                    throw new Error("Not implemented yet");
+                }
+            } else {
+                return tstl.createCallExpression(this.transformExpression(node.expression), [context, ...parameters]);
+            }
+        } else {
+            // No context
+            return tstl.createCallExpression(this.transformExpression(node.expression), parameters);
+        }
+    }
+
+    public transformArguments<T extends ts.Expression>(
+        params: ts.NodeArray<ts.Expression>,
+        sig?: ts.Signature,
+        context?: T
+    ): tstl.Expression[] {
+        const parameters: tstl.Expression[] = [];
+
+        // Add context as first param if present
+        if (context) {
+            parameters.push(this.transformExpression(context));
+        }
+
+        if (sig && sig.parameters.length >= params.length) {
+            for (let i = 0; i < params.length; ++i) {
+                const param = params[i];
+                const paramType = this.checker.getTypeAtLocation(param);
+                const sigType = this.checker.getTypeAtLocation(sig.parameters[i].valueDeclaration);
+                this.validateFunctionAssignment(param, paramType, sigType, sig.parameters[i].name);
+                parameters.push(this.transformExpression(param));
+            }
+        } else {
+            params.forEach(param => {
+                parameters.push(this.transformExpression(param));
+            });
+        }
+
+        return parameters;
+    }
+
+    public transformPropertyAccessExpression(node: ts.PropertyAccessExpression): ExpressionVisitResult {
+        const property = node.name.text;
+
+        if (tsHelper.hasGetAccessor(node, this.checker)) {
+            return this.transformGetAccessor(node);
+        }
+
+        // Check for primitive types to override
+        const type = this.checker.getTypeAtLocation(node.expression);
+        switch (type.flags) {
+            case ts.TypeFlags.String:
+            case ts.TypeFlags.StringLiteral:
+                return this.transformStringProperty(node);
+            case ts.TypeFlags.Object:
+                if (tsHelper.isExplicitArrayType(type, this.checker)) {
+                    return this.transformArrayProperty(node);
+                }
+                if (tsHelper.isArrayType(type, this.checker)
+                    && tsHelper.isDefaultArrayPropertyName(node.name.escapedText as string)) {
+                    return this.transformArrayProperty(node);
+                }
+        }
+
+        if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
+            const propertyValueDeclaration = this.checker.getTypeAtLocation(node).symbol.valueDeclaration;
+
+            if (propertyValueDeclaration && propertyValueDeclaration.kind === ts.SyntaxKind.EnumMember) {
+                const enumMember = propertyValueDeclaration as ts.EnumMember;
+
+                if (enumMember.initializer) {
+                    return this.transformExpression(enumMember.initializer);
+                } else {
+                    const enumMembers = this.computeEnumMembers(enumMember.parent);
+                    const memberPosition = enumMember.parent.members.indexOf(enumMember);
+
+                    if (memberPosition === -1) {
+                        throw TSTLErrors.UnsupportedProperty(type.symbol.name, property, node);
+                    }
+
+                    const value = enumMembers[memberPosition].value;
+
+                    if (typeof value === "string") {
+                        return tstl.createStringLiteral(value, undefined, node);
+                    }
+
+                    return tstl.createIdentifier(value.toString(), undefined, node);
+                }
+            }
+        }
+
+        this.checkForLuaLibType(type);
+
+        const decorators = tsHelper.getCustomDecorators(type, this.checker);
+        // Do not output path for member only enums
+        if (decorators.has(DecoratorKind.CompileMembersOnly)) {
+            return tstl.createIdentifier(property, undefined, node);
+        }
+
+        // Catch math expressions
+        if (ts.isIdentifier(node.expression) && node.expression.escapedText === "Math") {
+            return this.transformMathExpression(node.name);
+        }
+
+        const callPath = this.transformExpression(node.expression);
+        return tstl.createTableIndexExpression(callPath, tstl.createIdentifier(property), undefined, node);
+    }
+
+    public transformGetAccessor(node: ts.PropertyAccessExpression): ExpressionVisitResult {
+        const name = tstl.createIdentifier(`get__${node.name.escapedText}`);
+        const expression = this.transformExpression(node.expression);
+        return tstl.createMethodCallExpression(expression, name, [], undefined, node);
+    }
+
+    public transformSetAccessor(node: ts.PropertyAccessExpression, value: tstl.Expression): ExpressionVisitResult {
+        const name = tstl.createIdentifier(`set__${node.name.escapedText}`);
+        const expression = this.transformExpression(node.expression);
+        return tstl.createMethodCallExpression(expression, name, [value], undefined, node);
+    }
+
+    // Transpile a Math._ property
+    public transformMathExpression(identifier: ts.Identifier): ExpressionVisitResult {
+        const translation = {
+            PI: "pi",
+            abs: "abs",
+            acos: "acos",
+            asin: "asin",
+            atan: "atan",
+            ceil: "ceil",
+            cos: "cos",
+            exp: "exp",
+            floor: "floor",
+            log: "log",
+            max: "max",
+            min: "min",
+            pow: "pow",
+            random: "random",
+            round: "round",
+            sin: "sin",
+            sqrt: "sqrt",
+            tan: "tan",
+        };
+
+        if (translation[identifier.escapedText as string]) {
+            const property = tstl.createIdentifier(translation[identifier.escapedText as string]);
+            const math = tstl.createIdentifier("math");
+            return tstl.createTableIndexExpression(math, property, undefined, identifier);
+        } else {
+            throw TSTLErrors.UnsupportedProperty("math", identifier.escapedText as string, identifier);
+        }
+    }
+
+    // Transpile access of string properties, only supported properties are allowed
+    public transformStringProperty(node: ts.PropertyAccessExpression): ExpressionVisitResult {
+        switch (node.name.escapedText) {
+            case "length":
+                return tstl.createUnaryExpression(
+                    this.transformExpression(node.expression),
+                    tstl.SyntaxKind.LengthOperator,
+                    undefined,
+                    node
+                );
+            default:
+                throw TSTLErrors.UnsupportedProperty("string", node.name.escapedText as string, node);
+        }
+    }
+
+    // Transpile access of array properties, only supported properties are allowed
+    public transformArrayProperty(node: ts.PropertyAccessExpression): ExpressionVisitResult {
+        switch (node.name.escapedText) {
+            case "length":
+                return tstl.createUnaryExpression(
+                    this.transformExpression(node.expression),
+                    tstl.SyntaxKind.LengthOperator,
+                    undefined,
+                    node
+                );
+            default:
+                throw TSTLErrors.UnsupportedProperty("array", node.name.escapedText as string, node);
+        }
+    }
+
+    public transformElementAccessExpression(node: ts.ElementAccessExpression): ExpressionVisitResult {
+        const table = this.transformExpression(node.expression);
+        const index = this.transformExpression(node.argumentExpression);
+
+        const type = this.checker.getTypeAtLocation(node.expression);
+        if (tsHelper.isArrayType(type, this.checker)) {
+            return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), undefined, node);
+        } else if (tsHelper.isStringType(type)) {
+            return tstl.createCallExpression(
+                tstl.createTableIndexExpression(
+                    tstl.createIdentifier("string"),
+                    tstl.createStringLiteral("sub")
+                ),
+                [table, this.expressionPlusOne(index), this.expressionPlusOne(index)],
+                undefined,
+                node
+            );
+        } else {
+            return tstl.createTableIndexExpression(table, index, undefined, node);
+        }
+    }
+
+    public transpileStringCallExpression(node: ts.CallExpression): ExpressionVisitResult {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const params = this.transformArguments(node.arguments);
+        const caller = this.transformExpression(expression.expression);
+
+        const expressionName = expression.name.escapedText as string;
+        switch (expressionName) {
+            case "replace":
+                return this.transformLuaLibFunction(LuaLibFeature.StringReplace, caller, ...params);
+            case "indexOf":
+                const stringExpression = node.arguments.length === 1
+                    ? this.createStringCall("find", node, caller, params[0])
+                    : this.createStringCall("find", node, caller, params[0],
+                                            this.expressionPlusOne(params[1]), tstl.createBooleanLiteral(true));
+
+                return tstl.createBinaryExpression(
+                    tstl.createBinaryExpression(
+                        stringExpression,
+                        tstl.createNumericLiteral(0),
+                        tstl.SyntaxKind.OrOperator
+                    ),
+                    tstl.createNumericLiteral(1),
+                    tstl.SyntaxKind.SubractionOperator,
+                    undefined,
+                    node
+                );
+            case "substr":
+                if (node.arguments.length === 1) {
+                    const arg1 = this.expressionPlusOne(this.transformExpression(node.arguments[0]));
+                    return this.createStringCall("sub", node, caller, arg1);
+                } else {
+                    const arg1 = params[0];
+                    const arg2 = params[1];
+                    const sumArg = tstl.createBinaryExpression(arg1, arg2, tstl.SyntaxKind.AdditionOperator);
+                    return this.createStringCall("sub", node, caller, this.expressionPlusOne(arg1), sumArg);
+                }
+            case "substring":
+                if (node.arguments.length === 1) {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    return this.createStringCall("sub", node, caller, arg1);
+                } else {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg2 = this.expressionPlusOne(params[1]);
+                    return this.createStringCall("sub", node, caller, arg1, arg2);
+                }
+            case "toLowerCase":
+                return this.createStringCall("lower", node, caller);
+            case "toUpperCase":
+                return this.createStringCall("upper", node, caller);
+            case "split":
+                return this.transformLuaLibFunction(LuaLibFeature.StringSplit, caller, ...params);
+            case "charAt":
+                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
+            default:
+                throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
+        }
+    }
+
+    public createStringCall(methodName: string, tsOriginal: ts.Node, ...params: tstl.Expression[])
+        : ExpressionVisitResult {
+        const stringIdentifier = tstl.createIdentifier("string");
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(
+                stringIdentifier,
+                tstl.createStringLiteral(methodName)
+            ),
+            params,
+            undefined,
+            tsOriginal
+        );
+    }
+
+    // Transpile a String._ property
+    public transformStringExpression(identifier: ts.Identifier): tstl.Expression {
+        const identifierString = identifier.escapedText as string;
+
+        switch (identifierString) {
+            case "fromCharCode":
+                return tstl.createTableIndexExpression(
+                    tstl.createIdentifier("string"),
+                    tstl.createStringLiteral("char")
+                );
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `string property ${identifierString}`,
+                    this.options.luaTarget,
+                    identifier
+                );
+        }
+    }
+
+    public transpileArrayCallExpression(node: ts.CallExpression): ExpressionVisitResult {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const params = this.transformArguments(node.arguments);
+        const caller = this.transformExpression(expression.expression);
+        const expressionName = expression.name.escapedText;
+        switch (expressionName) {
+            case "concat":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayConcat, caller, ...params);
+            case "push":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayPush, caller, ...params);
+            case "reverse":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReverse, caller);
+            case "shift":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayShift, caller);
+            case "unshift":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayUnshift, caller, ...params);
+            case "sort":
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, caller);
+            case "pop":
+                return tstl.createCallExpression(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("table"),
+                        tstl.createStringLiteral("remove")
+                    ),
+                    [caller],
+                    undefined,
+                    node
+                );
+            case "forEach":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayForEach, caller, ...params);
+            case "indexOf":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayIndexOf, caller, ...params);
+            case "map":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, caller, ...params);
+            case "filter":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, caller, ...params);
+            case "some":
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySome, caller, ...params);
+            case "every":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayEvery, caller, ...params);
+            case "slice":
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySlice, caller, ...params);
+            case "splice":
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, caller, ...params);
+            case "join":
+                const parameters = node.arguments.length === 0
+                    ? [caller, tstl.createStringLiteral(",")]
+                    : [caller].concat(params);
+
+                return tstl.createCallExpression(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("table"),
+                        tstl.createStringLiteral("concat")
+                    ),
+                    parameters,
+                    undefined,
+                    node
+                );
+            default:
+                throw TSTLErrors.UnsupportedProperty("array", expressionName as string, node);
+        }
+    }
+
+    public transpileFunctionCallExpression(node: ts.CallExpression): ExpressionVisitResult {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const callerType = this.checker.getTypeAtLocation(expression.expression);
+        if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
+            throw TSTLErrors.UnsupportedMethodConversion(node);
+        }
+        const params = this.transformArguments(node.arguments);
+        const caller = this.transformExpression(expression.expression);
+        const expressionName = expression.name.escapedText;
+        switch (expressionName) {
+            case "apply":
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionApply, caller, ...params);
+            case "bind":
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionBind, caller, ...params);
+            case "call":
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionCall, caller, ...params);
+            default:
+                throw TSTLErrors.UnsupportedProperty("function", expressionName as string, node);
+        }
+    }
+
+    public transpileArrayBindingElement(name: ts.ArrayBindingElement): ExpressionVisitResult {
+        if (ts.isOmittedExpression(name)) {
+            return tstl.createIdentifier("__", undefined, name);
+        } else if (ts.isIdentifier(name)) {
+            return this.transformIdentifier(name);
+        } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
+            return this.transformIdentifier(name.name);
+        } else {
+            throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
+        }
+    }
+
+    public transpileAssertionExpression(node: ts.AssertionExpression): ExpressionVisitResult {
+        this.validateFunctionAssignment(node,
+                                        this.checker.getTypeAtLocation(node.expression),
+                                        this.checker.getTypeAtLocation(node.type));
+        return this.transformExpression(node.expression);
+    }
+
+    public transpileTypeOfExpression(node: ts.TypeOfExpression): ExpressionVisitResult {
+        const expression = this.transformExpression(node.expression);
+        // TODO - Is this even right?
+        // return `(type(${expression}) == "table" and "object" or type(${expression}))`;
+        throw new Error("Not yet implemented");
     }
 
     public transformIdentifier(epxression: ts.Identifier, parent?: tstl.Node): tstl.Identifier {
@@ -878,6 +1792,35 @@ export class LuaTransformer {
             throw TSTLErrors.KeywordIdentifier(epxression);
         }
         return tstl.createIdentifier(escapedText, parent, epxression);
+    }
+
+    public transformLuaLibFunction(func: LuaLibFeature, ...params: tstl.Expression[]): ExpressionVisitResult {
+        this.importLuaLibFeature(func);
+        const functionIdentifier = tstl.createIdentifier(`__TS__${func}`);
+        return tstl.createCallExpression(functionIdentifier, params);
+    }
+
+    public checkForLuaLibType(type: ts.Type): void {
+        if (type.symbol) {
+            switch (this.checker.getFullyQualifiedName(type.symbol)) {
+                case "Map":
+                    this.importLuaLibFeature(LuaLibFeature.Map);
+                    return;
+                case "Set":
+                    this.importLuaLibFeature(LuaLibFeature.Set);
+                    return;
+            }
+        }
+    }
+
+    public importLuaLibFeature(feature: LuaLibFeature): void {
+        // Add additional lib requirements
+        if (feature === LuaLibFeature.Map || feature === LuaLibFeature.Set) {
+            this.luaLibFeatureSet.add(LuaLibFeature.InstanceOf);
+        }
+
+        // TODO inline imported features in output i option set
+        this.luaLibFeatureSet.add(feature);
     }
 
     private getAbsoluteImportPath(relativePath: string): string {
@@ -913,6 +1856,91 @@ export class LuaTransformer {
         } else {
             return tstl.createVariableAssignmentStatement(lhs, rhs, parent, tsOriginal);
         }
+    }
+
+    private validateFunctionAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type, toName?: string): void {
+        if (toType === fromType) {
+            return;
+        }
+
+        if ((toType.flags & ts.TypeFlags.Any) !== 0) {
+            // Assigning to un-typed variable
+            return;
+        }
+
+        // Use cache to avoid repeating check for same types (protects against infinite loop in recursive types)
+        let fromTypeCache = this.typeValidationCache.get(fromType);
+        if (fromTypeCache) {
+            if (fromTypeCache.has(toType)) {
+                return;
+            }
+        } else {
+            fromTypeCache = new Set();
+            this.typeValidationCache.set(fromType, fromTypeCache);
+        }
+        fromTypeCache.add(toType);
+
+        // Check function assignments
+        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker);
+        const toContext = tsHelper.getFunctionContextType(toType, this.checker);
+
+        if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
+            throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
+        } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
+            if (toContext === ContextType.Void) {
+                throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
+            } else {
+                throw TSTLErrors.UnsupportedMethodConversion(node, toName);
+            }
+        }
+
+        const fromTypeReference = fromType as ts.TypeReference;
+        const toTypeReference = toType as ts.TypeReference;
+        if (fromTypeReference.typeArguments && toTypeReference.typeArguments) {
+            // Recurse into tuples/arrays
+            toTypeReference.typeArguments.forEach((t, i) => {
+                this.validateFunctionAssignment(node, fromTypeReference.typeArguments[i], t, toName);
+            });
+        }
+
+        if ((toType.flags & ts.TypeFlags.Object) !== 0
+            && ((toType as ts.ObjectType).objectFlags & ts.ObjectFlags.ClassOrInterface) !== 0
+            && toType.symbol && toType.symbol.members && fromType.symbol && fromType.symbol.members) {
+            // Recurse into interfaces
+            toType.symbol.members.forEach(
+                (toMember, memberName) => {
+                    const fromMember = fromType.symbol.members.get(memberName);
+                    if (fromMember) {
+                        const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
+                        const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
+                        this.validateFunctionAssignment(
+                            node,
+                            fromMemberType,
+                            toMemberType,
+                            toName ? `${toName}.${memberName}` : memberName.toString()
+                        );
+                    }
+                }
+            );
+        }
+    }
+
+    private wrapInFunctionCall(expression: tstl.Expression): tstl.FunctionExpression {
+        const returnStatement = tstl.createReturnStatement([expression]);
+        return tstl.createFunctionExpression(tstl.createBlock([returnStatement]));
+    }
+
+    private wrapInTable(...expressions: tstl.Expression[]): tstl.ParenthesizedExpression {
+        const fields = expressions.map(e => tstl.createTableFieldExpression(e));
+        return tstl.createParenthesizedExpression(tstl.createTableExpression(fields));
+    }
+
+    private expressionPlusOne(expression: tstl.Expression): tstl.BinaryExpression {
+        return tstl.createBinaryExpression(
+            expression,
+            tstl.createNumericLiteral(1),
+            tstl.SyntaxKind.AdditionOperator
+        );
     }
 
     private peekScope(): Scope {

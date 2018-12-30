@@ -3,7 +3,6 @@
     "extends": [
         "tslint-override"
     ],
-    "jsRules": {},
     "rules": {
         "array-type": [true, "array-simple"],
         "arrow-parens": [true, "ban-single-arg-parens"],
@@ -75,7 +74,7 @@
           "ban-keywords",
           "allow-leading-underscore",
           "allow-trailing-underscore"
-        ],
+        ]
     },
     "rulesDirectory": []
 }

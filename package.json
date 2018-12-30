@@ -22,7 +22,10 @@
         "release-minor": "npm version minor",
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
-        "postversion": "git push && git push --tags"
+        "postversion": "git push && git push --tags",
+        "check": "gts check",
+        "clean": "gts clean",
+        "fix": "gts fix"
     },
     "bin": {
         "tstl": "./dist/index.js"
@@ -56,6 +59,7 @@
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
         "glob": "^7.1.2",
+        "gts": "^0.9.0",
         "nyc": "^11.9.0",
         "threads": "^0.12.0",
         "ts-node": "^7.0.0",

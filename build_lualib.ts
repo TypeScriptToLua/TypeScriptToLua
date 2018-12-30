@@ -21,8 +21,9 @@ if (fs.existsSync(bundlePath)) {
   fs.unlinkSync(bundlePath);
 }
 
-let bundle = "";
+let bundle = fs.readFileSync("./dist/lualib/Symbol.lua").toString();
 
-glob.sync("./dist/lualib/*.lua").forEach(fileName => bundle += fs.readFileSync(fileName));
+glob.sync("./dist/lualib/*.lua").filter(fileName => fileName !== "Symbol.lua")
+  .forEach(fileName => bundle += fs.readFileSync(fileName));
 
 fs.writeFileSync(bundlePath, bundle);

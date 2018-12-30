@@ -1,3 +1,6 @@
+/** @tupleReturn */
+declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+
 class Map<TKey, TValue> {
     public size: number;
 
@@ -9,9 +12,7 @@ class Map<TKey, TValue> {
 
         if (other instanceof Map) {
             this.size = other.size;
-            for (const kvp of other.entries()) {
-                this.items[kvp[0] as any] = kvp[1];
-            }
+            other.forEach((v, k) => { this.items[k as any] = v; });
         } else if (other !== undefined) {
             this.size = other.length;
             for (const kvp of other) {
@@ -35,12 +36,21 @@ class Map<TKey, TValue> {
         return contains;
     }
 
-    public entries(): Array<[TKey, TValue]> {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = [key, this.items[key]];
-        }
-        return out;
+    public [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
+        return this.entries();
+    }
+
+    public entries(): IterableIterator<[TKey, TValue]> {
+        const items = this.items;
+        let key: TKey;
+        let value: TValue;
+        return {
+            [Symbol.iterator](): IterableIterator<[TKey, TValue]> { return this; },
+            next(): IteratorResult<[TKey, TValue]> {
+                [key, value] = next(items, key);
+                return {done: !key, value: [key, value]};
+            },
+        };
     }
 
     public forEach(callback: (value: TValue, key: TKey, map: Map<TKey, TValue>) => any): void {
@@ -58,12 +68,16 @@ class Map<TKey, TValue> {
         return this.items[key as any] !== undefined;
     }
 
-    public keys(): TKey[] {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = key;
-        }
-        return out;
+    public keys(): IterableIterator<TKey> {
+        const items = this.items;
+        let key: TKey;
+        return {
+            [Symbol.iterator](): IterableIterator<TKey> { return this; },
+            next(): IteratorResult<TKey> {
+                [key] = next(items, key);
+                return {done: !key, value: key};
+            },
+        };
     }
 
     public set(key: TKey, value: TValue): Map<TKey, TValue> {
@@ -74,11 +88,16 @@ class Map<TKey, TValue> {
         return this;
     }
 
-    public values(): TValue[] {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = this.items[key];
-        }
-        return out;
+    public values(): IterableIterator<TValue> {
+        const items = this.items;
+        let key: TKey;
+        let value: TValue;
+        return {
+            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            next(): IteratorResult<TValue> {
+                [key, value] = next(items, key);
+                return {done: !key, value};
+            },
+        };
     }
 }

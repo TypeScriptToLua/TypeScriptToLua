@@ -1,3 +1,6 @@
+/** @tupleReturn */
+declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+
 class Set<TValue> {
     public size: number;
 
@@ -9,9 +12,7 @@ class Set<TValue> {
 
         if (other instanceof Set) {
             this.size = other.size;
-            for (const value of other.values()) {
-                this.items[value as any] = true as any;
-            }
+            other.forEach(v => { this.items[v as any] = true; });
         } else if (other !== undefined) {
             this.size = other.length;
             for (const value of other) {
@@ -43,12 +44,20 @@ class Set<TValue> {
         return contains;
     }
 
-    public entries(): Array<[TValue, TValue]> {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = [key, key];
-        }
-        return out;
+    public [Symbol.iterator](): IterableIterator<TValue> {
+        return this.values();
+    }
+
+    public entries(): IterableIterator<[TValue, TValue]> {
+        const items = this.items;
+        let key: TValue;
+        return {
+            [Symbol.iterator](): IterableIterator<[TValue, TValue]> { return this; },
+            next(): IteratorResult<[TValue, TValue]> {
+                [key] = next(items, key);
+                return {done: !key, value: [key, key]};
+            },
+        };
     }
 
     public forEach(callback: (value: TValue, key: TValue, set: Set<TValue>) => any): void {
@@ -62,19 +71,27 @@ class Set<TValue> {
         return this.items[value as any] === true;
     }
 
-    public keys(): TValue[] {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = key;
-        }
-        return out;
+    public keys(): IterableIterator<TValue> {
+        const items = this.items;
+        let key: TValue;
+        return {
+            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            next(): IteratorResult<TValue> {
+                [key] = next(items, key);
+                return {done: !key, value: key};
+            },
+        };
     }
 
-    public values(): TValue[] {
-        const out = [];
-        for (const key in this.items) {
-            out[out.length] = key;
-        }
-        return out;
+    public values(): IterableIterator<TValue> {
+        const items = this.items;
+        let key: TValue;
+        return {
+            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            next(): IteratorResult<TValue> {
+                [key] = next(items, key);
+                return {done: !key, value: key};
+            },
+        };
     }
 }

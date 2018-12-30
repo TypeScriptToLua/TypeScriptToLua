@@ -37,10 +37,12 @@ export enum LuaLibFeature {
     FunctionBind = "FunctionBind",
     FunctionCall = "FunctionCall",
     InstanceOf = "InstanceOf",
+    Iterator = "Iterator",
     Map = "Map",
     Set = "Set",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
+    Symbol = "Symbol",
     Ternary = "Ternary",
 }
 
@@ -90,7 +92,7 @@ export abstract class LuaTranspiler {
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
-    public luaLibFeatureSet: Set<LuaLibFeature>;
+    public luaLibFeatureSet: LuaLibFeature[];
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
@@ -109,7 +111,7 @@ export abstract class LuaTranspiler {
         this.scopeStack = [];
         this.classStack = [];
         this.exportStack = [];
-        this.luaLibFeatureSet = new Set<LuaLibFeature>();
+        this.luaLibFeatureSet = [];
 
         if (!this.options.luaTarget) {
             this.options.luaTarget = LuaTarget.LuaJIT;
@@ -180,14 +182,24 @@ export abstract class LuaTranspiler {
         return result;
     }
 
+    public addLuaLibFeature(feature: LuaLibFeature): void {
+        if (this.luaLibFeatureSet.indexOf(feature) < 0) {
+            this.luaLibFeatureSet.push(feature);
+        }
+    }
+
     public importLuaLibFeature(feature: LuaLibFeature): void {
         // Add additional lib requirements
         if (feature === LuaLibFeature.Map || feature === LuaLibFeature.Set) {
-            this.luaLibFeatureSet.add(LuaLibFeature.InstanceOf);
+            this.addLuaLibFeature(LuaLibFeature.InstanceOf);
+            this.addLuaLibFeature(LuaLibFeature.Iterator);
+            this.addLuaLibFeature(LuaLibFeature.Symbol);
+        } else if (feature === LuaLibFeature.Iterator) {
+            this.addLuaLibFeature(LuaLibFeature.Symbol);
         }
 
         // TODO inline imported features in output i option set
-        this.luaLibFeatureSet.add(feature);
+        this.addLuaLibFeature(feature);
     }
 
     public getAbsoluteImportPath(relativePath: string): string {
@@ -257,14 +269,14 @@ export abstract class LuaTranspiler {
         this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => fileStatements += this.transpileNode(s));
 
-        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.size > 0)
+        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.length > 0)
             || this.options.luaLibImport === LuaLibImportKind.Always) {
             // require helper functions
             result += `require("lualib_bundle")\n`;
         }
 
         // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
+        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.length > 0) {
             result += "\n" + "-- Lua Library Imports\n";
             for (const feature of this.luaLibFeatureSet) {
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
@@ -584,35 +596,80 @@ export abstract class LuaTranspiler {
     }
 
     public transpileForOf(node: ts.ForOfStatement): string {
-        // Get variable identifier
-        const variable = (node.initializer as ts.VariableDeclarationList).declarations[0];
-
         // Transpile expression
         const iterable = this.transpileExpression(node.expression);
 
-        // Use ipairs for array types, pairs otherwise
-        const isArray = tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker);
-
         let result = "";
 
-        if (!isArray && ts.isIdentifier(variable.name)) {
-            result = this.indent + `for _, ${this.transpileIdentifier(variable.name)} in pairs(${iterable}) do\n`;
-        } else {
-            let itemVariable: ts.Identifier;
-            if (isArray) {
-                // Cache the expression result
-                result += this.indent + `local __loopVariable${this.genVarCounter} = ${iterable};\n`;
-                result += this.indent + `for i${this.genVarCounter}=1, #__loopVariable${this.genVarCounter} do\n`;
-                itemVariable = ts.createIdentifier(`__loopVariable${this.genVarCounter}[i${this.genVarCounter}]`);
+        let itemVariable: ts.Expression;
+        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(node.expression), this.checker)) {
+            // Arrays use numeric for loop (performs better than ipairs)
+            const indexVariable = `____TS_index`;
+            if (!ts.isIdentifier(node.expression)) {
+                // Cache expression
+                const arrayVariable = `____TS_array`;
+                result += this.indent + `local ${arrayVariable} = ${iterable};\n`;
+                result += this.indent + `for ${indexVariable}=1, #${arrayVariable} do\n`;
+                itemVariable = ts.createIdentifier(`${arrayVariable}[${indexVariable}]`);
             } else {
-                const variableName = `__forOfValue${this.genVarCounter}`;
-                itemVariable =  ts.createIdentifier(variableName);
-                result += this.indent + `for _, ${variableName} in pairs(${iterable}) do\n`;
+                result += this.indent + `for ${indexVariable}=1, #${iterable} do\n`;
+                itemVariable = ts.createIdentifier(`${iterable}[${indexVariable}]`);
             }
 
-            const declaration = ts.createVariableDeclaration(variable.name, undefined, itemVariable);
+        } else {
+            // Custom iterators
+            let variableName: string;
+            const isLuaIterator = tsHelper.isLuaIteratorCall(node.expression, this.checker);
+            if (isLuaIterator && tsHelper.isTupleReturnCall(node.expression, this.checker)) {
+                if (ts.isVariableDeclarationList(node.initializer)) {
+                    // Variables declared in for loop
+                    if (!ts.isIdentifier(node.initializer.declarations[0].name)) {
+                        variableName = (node.initializer.declarations[0].name as ts.ArrayBindingPattern).elements
+                            .map(e => this.transpileArrayBindingElement(e)).join(", ");
+                    } else {
+                        // Single variable is not allowed
+                        throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(node.initializer);
+                    }
+                } else {
+                    // Variables NOT declared in for loop - catch iterator values in temps and assign
+                    if (ts.isArrayLiteralExpression(node.initializer)) {
+                        const tmps = node.initializer.elements.map((_, i) => `____TS_value${i}`);
+                        itemVariable = ts.createArrayLiteral(tmps.map(tmp => ts.createIdentifier(tmp)));
+                        variableName = tmps.join(", ");
+                    } else {
+                        // Single variable is not allowed
+                        throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(node.initializer);
+                    }
+                }
+            } else {
+                if (ts.isVariableDeclarationList(node.initializer)
+                    && ts.isIdentifier(node.initializer.declarations[0].name)) {
+                    // Single variable declared in for loop
+                    variableName = this.transpileExpression(node.initializer.declarations[0].name);
+                } else {
+                    // Destructuring or variable NOT declared in for loop
+                    variableName = "____TS_value";
+                    itemVariable =  ts.createIdentifier(variableName);
+                }
+            }
+
+            const iterator = isLuaIterator ? iterable : this.transpileLuaLibFunction(LuaLibFeature.Iterator, iterable);
+            result = this.indent + `for ${variableName} in ${iterator} do\n`;
+        }
+
+        if (itemVariable) {
             this.pushIndent();
-            result += this.indent + this.transpileVariableDeclaration(declaration) + ";\n";
+            if (ts.isVariableDeclarationList(node.initializer)) {
+                // Declare item variable
+                const declaration = ts.createVariableDeclaration(node.initializer.declarations[0].name,
+                                                                 undefined,
+                                                                 itemVariable);
+                result += this.indent + this.transpileVariableDeclaration(declaration) + ";\n";
+            } else {
+                // Assign item variable
+                const assignment = ts.createAssignment(node.initializer, itemVariable);
+                result += this.indent + this.transpileBinaryExpression(assignment) + ";\n";
+            }
             this.popIndent();
         }
 
@@ -620,8 +677,6 @@ export abstract class LuaTranspiler {
         this.pushIndent();
         result += this.transpileLoopBody(node);
         this.popIndent();
-
-        this.genVarCounter++;
 
         return result + this.indent + "end\n";
     }
@@ -1191,12 +1246,14 @@ export abstract class LuaTranspiler {
         // Check for calls on primitives to override
         let parameters = "";
 
+        const isLuaIterator = tsHelper.isLuaIteratorCall(node, this.checker);
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
         const isTupleReturnForward = node.parent && ts.isReturnStatement(node.parent)
             && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
-        const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed;
+        const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment && returnValueIsUsed
+            && !isLuaIterator;
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transpilePropertyCall(node);
@@ -1315,15 +1372,15 @@ export abstract class LuaTranspiler {
             || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
             // Pass left-side as context
 
-            // Inject context parameter
-            if (node.arguments.length > 0) {
-                parameters = "____TS_self, " + parameters;
-            } else {
-                parameters = "____TS_self";
-            }
-
             const context = this.transpileExpression(node.expression.expression);
             if (tsHelper.isExpressionWithEvaluationEffect(node.expression.expression)) {
+                // Inject context parameter
+                if (node.arguments.length > 0) {
+                    parameters = "____TS_self, " + parameters;
+                } else {
+                    parameters = "____TS_self";
+                }
+
                 // Cache left-side if it has effects
                 const argument = this.transpileExpression(node.expression.argumentExpression);
                 if (tsHelper.isExpressionStatement(node)) {
@@ -1335,6 +1392,9 @@ export abstract class LuaTranspiler {
                         + `return ____TS_self[${argument}](${parameters}); end)()`;
                 }
             } else {
+                if (node.arguments.length > 0) {
+                    parameters = ", " + parameters;
+                }
                 return `${this.transpileExpression(node.expression)}(${context}${parameters})`;
             }
         } else {
@@ -1723,6 +1783,14 @@ export abstract class LuaTranspiler {
     // Counter-act typescript's identifier escaping:
     // https://github.com/Microsoft/TypeScript/blob/master/src/compiler/utilities.ts#L556
     public transpileIdentifier(identifier: ts.Identifier): string {
+        if (ts.isComputedPropertyName(identifier)) {
+            return `[${this.transpileExpression(identifier.expression)}]`;
+        }
+
+        if (identifier.text === "Symbol") {
+            this.importLuaLibFeature(LuaLibFeature.Symbol);
+        }
+
         let escapedText = identifier.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3
@@ -1929,7 +1997,11 @@ export abstract class LuaTranspiler {
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         // Build function header
-        result += this.indent + `function ${callPath}${methodName}(${paramNames.join(",")})\n`;
+        if (ts.isComputedPropertyName(node.name)) {
+            result += this.indent + `${callPath}${methodName} = function(${paramNames.join(",")})\n`;
+        } else {
+            result += this.indent + `function ${callPath}.${methodName}(${paramNames.join(",")})\n`;
+        }
 
         this.pushIndent();
         result += this.transpileFunctionBody(node.parameters, node.body, spreadIdentifier);
@@ -2037,7 +2109,7 @@ export abstract class LuaTranspiler {
 
         // Transpile methods
         node.members.filter(ts.isMethodDeclaration).forEach(method => {
-            result += this.transpileMethodDeclaration(method, `${className}.`);
+            result += this.transpileMethodDeclaration(method, className);
         });
 
         return result;

@@ -263,13 +263,13 @@ export class FunctionTests {
 
     @Test("Invalid property access call transpilation")
     public invalidPropertyCall(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockObject: any = {
             expression: ts.createLiteral("abc"),
         };
 
-        Expect(() => transpiler.transpilePropertyCall(mockObject as ts.CallExpression))
+        Expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression))
             .toThrowError(Error, "Tried to transpile a non-property call as property call.");
     }
 

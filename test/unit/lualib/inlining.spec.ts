@@ -1,7 +1,7 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test } from "alsatian";
 import * as util from "../../src/util";
 
-import { LuaLibImportKind, LuaTarget } from "../../../src/Transpiler";
+import { LuaLibImportKind, LuaTarget } from "../../../src/CompilerOptions";
 
 export class InliningTests {
     @Test("map constructor")

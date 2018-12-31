@@ -570,7 +570,7 @@ export function createFunctionExpression(
     body: Block,
     params?: Identifier[],
     dots?: DotsLiteral,
-    restParamName?: Identifier;
+    restParamName?: Identifier,
     parent?: Node,
     tsOriginal?: ts.Node): FunctionExpression {
 

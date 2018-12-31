@@ -34,6 +34,10 @@ export class LuaPrinter {
 
     private currentIndent: string;
 
+    public print(block: tstl.Block): string {
+        return this.printBlock(block);
+    }
+
     private pushIndent(): void {
         this.currentIndent = this.currentIndent + "    ";
     }
@@ -80,6 +84,7 @@ export class LuaPrinter {
                 return this.printExpressionStatement(statement as tstl.ExpressionStatement);
         }
     }
+
     private printDoStatement(statement: tstl.DoStatement): string {
         let result = this.indent("do\n");
         this.pushIndent();
@@ -89,14 +94,17 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): string {
         return this.indent(`"local" ${statement.left.map(e => this.printExpression(e)).join(", ")} =` +
                            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }
+
     private printVariableAssignmentStatement(statement: tstl.VariableAssignmentStatement): string {
         return this.indent(`${statement.left.map(e => this.printExpression(e)).join(", ")} =` +
                            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }
+
     private printIfStatement(statement: tstl.IfStatement): string {
         let result = this.indent(`if ${this.printExpression(statement.condtion)} then\n`);
         this.pushIndent();
@@ -116,6 +124,7 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printWhileStatement(statement: tstl.WhileStatement): string {
         let result = this.indent(`while ${this.printExpression(statement.condtion)} do\n`);
         this.pushIndent();
@@ -125,6 +134,7 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printRepeatStatement(statement: tstl.RepeatStatement): string {
         let result = this.indent(`repeat\n`);
         this.pushIndent();
@@ -134,6 +144,7 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printForStatement(statement: tstl.ForStatement): string {
         const ctrlVar = this.printExpression(statement.controlVariable);
         const ctrlVarInit = this.printExpression(statement.controlVariableInitializer);
@@ -153,6 +164,7 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printForInStatement(statement: tstl.ForInStatement): string {
         const names = statement.names.map(i => this.printIdentifier(i)).join(", ");
         const expressions =  statement.names.map(e => this.printExpression(e)).join(", ");
@@ -165,24 +177,30 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printGotoStatement(statement: tstl.GotoStatement): string {
         return this.indent(`goto ${statement.label};\n`);
     }
+
     private printLabelStatement(statement: tstl.LabelStatement): string {
         return this.indent(`::${statement.name}::\n`);
     }
+
     private printReturnStatement(statement: tstl.ReturnStatement): string {
         if (!statement.expressions) {
             return this.indent(`return;\n`);
         }
         return this.indent(`return ${statement.expressions.map(e => this.printExpression(e)).join(", ")};\n`);
     }
+
     private printBreakStatement(statement: tstl.BreakStatement): string {
         return this.indent("break;\n");
     }
+
     private printExpressionStatement(statement: tstl.ExpressionStatement): string {
         return this.indent(`${this.printExpression(statement.expression)};\n`);
     }
+
     // Expressions
     private printExpression(expression: tstl.Expression): string {
         switch (expression.kind) {
@@ -219,18 +237,23 @@ export class LuaPrinter {
                 return this.printTableIndexExpression(expression as tstl.TableIndexExpression);
         }
     }
+
     private printStringLiteral(expression: tstl.StringLiteral): string {
         return `"${expression.value}"`;
     }
+
     private printNumericLiteral(expression: tstl.NumericLiteral): string {
         return `${expression.value}`;
     }
+
     private printNilLiteral(expression: tstl.NilLiteral): string {
         return "nil";
     }
+
     private printDotsLiteral(expression: tstl.DotsLiteral): string {
         return "...";
     }
+
     private printBooleanLiteral(expression: tstl.BooleanLiteral): string {
         if (expression.kind === tstl.SyntaxKind.TrueKeyword) {
             return "true";
@@ -238,6 +261,7 @@ export class LuaPrinter {
             return "false";
         }
     }
+
     private printFunctionExpression(expression: tstl.FunctionExpression): string {
         const paramterArr: string[] = expression.params.map(i => this.printIdentifier(i));
         if (expression.dots) {
@@ -252,6 +276,7 @@ export class LuaPrinter {
 
         return result;
     }
+
     private printTableFieldExpression(expression: tstl.TableFieldExpression): string {
         const value = this.printExpression(expression.value);
 
@@ -261,34 +286,42 @@ export class LuaPrinter {
             return value;
         }
     }
+
     private printTableExpression(expression: tstl.TableExpression): string {
         return `{${expression.fields.map(f => this.printTableFieldExpression(f)).join(", ")}}`;
     }
+
     private printUnaryExpression(expression: tstl.UnaryExpression): string {
         return `${this.printOperator(expression.operator)}${this.printExpression(expression.operand)}`;
     }
+
     private printBinaryExpression(expression: tstl.BinaryExpression): string {
         const left = this.printExpression(expression.left);
         const operator = this.printOperator(expression.operator);
         const right = this.printExpression(expression.right);
         return `${left} ${operator} ${right}`;
     }
+
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): string {
         return `(${this.printExpression(expression.innerEpxression)})`;
     }
+
     private printCallExpression(expression: tstl.CallExpression): string {
         const params = expression.params.map(e => this.printExpression(e)).join(", ");
         return `${this.printExpression(expression.expression)}(${params}))`;
     }
+
     private printMethodCallExpression(expression: tstl.MethodCallExpression): string {
         const params = expression.params.map(e => this.printExpression(e)).join(", ");
         const prefix = this.printExpression(expression.prefixExpression);
         const name = this.printIdentifier(expression.name);
         return `${prefix}:${name}(${params}))`;
     }
+
     private printIdentifier(expression: tstl.Identifier): string {
         return expression.text;
     }
+
     private printTableIndexExpression(expression: tstl.TableIndexExpression): string {
         const table = this.printExpression(expression.table);
         if (tstl.isIdentifier(expression.index)) {
@@ -296,6 +329,7 @@ export class LuaPrinter {
         }
         return `${table}[${this.printExpression(expression.index)}]`;
     }
+
     private printOperator(kind: tstl.Operator): string {
         return LuaPrinter.operatorMap[kind];
     }

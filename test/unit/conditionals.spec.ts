@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/Errors";
-import { LuaTarget } from "../../src/Transpiler";
+import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class LuaConditionalsTests {

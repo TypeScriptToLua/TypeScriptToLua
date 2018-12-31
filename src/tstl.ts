@@ -3,7 +3,9 @@ export {
 } from "./CommandLineParser";
 
 export {
-    CompilerOptions
+    CompilerOptions,
+    LuaLibImportKind,
+    LuaTarget,
 } from "./CompilerOptions";
 
 export {
@@ -13,21 +15,19 @@ export {
     watchWithOptions
 } from "./Compiler";
 
-export {LuaTranspiler51} from "./targets/Transpiler.51";
-export {LuaTranspiler52} from "./targets/Transpiler.52";
-export {LuaTranspiler53} from "./targets/Transpiler.53";
-export {LuaTranspilerJIT} from "./targets/Transpiler.JIT";
+export {LuaTransformer51} from "./targets/LuaTransformer.51";
+export {LuaTransformer52} from "./targets/LuaTransformer.52";
+export {LuaTransformer53} from "./targets/LuaTransformer.53";
+export {LuaTransformerJIT} from "./targets/LuaTransformer.JIT";
 
 export {
-    LuaLibImportKind,
-    LuaTarget,
     LuaTranspiler,
-} from "./Transpiler";
+} from "./LuaTranspiler";
 
 export {
     LuaLibFeature,
 } from "./LuaLibFeature";
 
 export {
-    createTranspiler
-} from "./TranspilerFactory";
+    createTransformer
+} from "./TransformerFactory";

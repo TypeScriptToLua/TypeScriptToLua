@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { LuaLibImportKind, LuaTarget } from "../../src/Transpiler";
+import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";
 import * as util from "../src/util";

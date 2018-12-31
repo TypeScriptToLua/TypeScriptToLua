@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/Errors";
-import { LuaTarget } from "../../src/Transpiler";
+import { LuaTarget } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -383,52 +383,52 @@ export class ExpressionTests {
 
     @Test("Unknown unary postfix error")
     public unknownUnaryPostfixError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockExpression: any = {
             operand: ts.createLiteral(false),
             operator: ts.SyntaxKind.AsteriskToken,
         };
 
-        Expect(() => transpiler.transpilePostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
+        Expect(() => transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
             .toThrowError(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
     }
 
     @Test("Unknown unary postfix error")
     public unknownUnaryPrefixError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockExpression: any = {
             operand: ts.createLiteral(false),
             operator: ts.SyntaxKind.AsteriskToken,
         };
 
-        Expect(() => transpiler.transpilePrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
+        Expect(() => transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
             .toThrowError(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
     }
 
     @Test("Incompatible fromCodePoint expression error")
     public incompatibleFromCodePointExpression(): void {
-        const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
+        const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("fromCodePoint");
-        Expect(() => transpiler.transpileStringExpression(identifier))
+        Expect(() => transformer.transformStringExpression(identifier))
             .toThrowError(TranspileError, "string property fromCodePoint is/are not supported " +
                           "for target Lua jit.");
     }
 
     @Test("Unknown string expression error")
     public unknownStringExpression(): void {
-        const transpiler = util.makeTestTranspiler(LuaTarget.LuaJIT);
+        const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("abcd");
-        Expect(() => transpiler.transpileStringExpression(identifier))
+        Expect(() => transformer.transformStringExpression(identifier))
             .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua jit.");
     }
 
     @Test("Unsupported array function error")
     public unsupportedArrayFunctionError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockNode: any = {
             arguments: [],
@@ -436,43 +436,43 @@ export class ExpressionTests {
             expression: {name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false)},
         };
 
-        Expect(() => transpiler.transpileArrayCallExpression(mockNode as ts.CallExpression))
+        Expect(() => transformer.transformArrayCallExpression(mockNode as ts.CallExpression))
             .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
     }
 
     @Test("Unsupported array property error")
     public unsupportedArrayPropertyError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockNode: any = {
             name: ts.createIdentifier("unknownProperty"),
         };
 
-        Expect(() => transpiler.transpileArrayProperty(mockNode as ts.PropertyAccessExpression))
+        Expect(() => transformer.transformArrayProperty(mockNode as ts.PropertyAccessExpression))
             .toThrowError(TranspileError, "Unsupported property on array: unknownProperty");
     }
 
     @Test("Unsupported math property error")
     public unsupportedMathPropertyError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
-        Expect(() => transpiler.transpileMathExpression(ts.createIdentifier("unknownProperty")))
+        Expect(() => transformer.transformMathExpression(ts.createIdentifier("unknownProperty")))
             .toThrowError(TranspileError, "Unsupported property on math: unknownProperty");
     }
 
     @Test("Unsupported variable declaration type error")
     public unsupportedVariableDeclarationType(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockNode: any = {name: ts.createLiteral(false)};
 
-        Expect(() => transpiler.transpileVariableDeclaration(mockNode as ts.VariableDeclaration))
+        Expect(() => transformer.transformVariableDeclaration(mockNode as ts.VariableDeclaration))
             .toThrowError(TranspileError, "Unsupported variable declaration kind: FalseKeyword");
     }
 
     @Test("Unsupported object literal element error")
     public unsupportedObjectLiteralElementError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
         const mockObject: any = {
             properties: [{
@@ -481,7 +481,7 @@ export class ExpressionTests {
             }],
         };
 
-        Expect(() => transpiler.transpileObjectLiteral(mockObject as ts.ObjectLiteralExpression))
+        Expect(() => transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression))
             .toThrowError(TranspileError, "Unsupported object literal element kind: FalseKeyword");
     }
 }

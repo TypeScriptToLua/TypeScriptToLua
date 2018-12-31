@@ -470,9 +470,9 @@ export class ClassTests {
 
     @Test("Class without name error")
     public classWithoutNameError(): void {
-        const transpiler = util.makeTestTranspiler();
+        const transformer = util.makeTestTransformer();
 
-        Expect(() => transpiler.transpileClass({} as ts.ClassDeclaration))
+        Expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration))
             .toThrowError(Error, "Class declarations must have a name.");
     }
 

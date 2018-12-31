@@ -4,13 +4,13 @@ import * as ts from "typescript";
 import { Expect } from "alsatian";
 
 import { transpileString } from "../../src/Compiler";
-import { CompilerOptions } from "../../src/CompilerOptions";
-import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
-import { createTranspiler } from "../../src/TranspilerFactory";
+import { LuaTarget } from "../../src/CompilerOptions";
+import { createTransformer } from "../../src/TransformerFactory";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 import * as fs from "fs";
+import { LuaTransformer } from "../../src/LuaTransformer";
 
 export { transpileString };
 
@@ -57,11 +57,9 @@ export function expectCodeEqual(code1: string, code2: string): void {
     Expect(c1).toBe(c2);
 }
 
-// Get a mock transpiler to use for testing
-export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53): LuaTranspiler {
-    return createTranspiler({} as ts.TypeChecker,
-                            { luaLibImport: "none", luaTarget: target } as any,
-                            { statements: [] } as any as ts.SourceFile);
+// Get a mock transformer to use for testing
+export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
+    return createTransformer(ts.createProgram([], {luaTarget: target}));
 }
 
 export function transpileAndExecute(tsStr: string): any {

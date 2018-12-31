@@ -6,17 +6,28 @@ class Set<TValue> {
 
     private items: {[key: string]: boolean}; // Key type is actually TValue
 
-    constructor(other: Set<TValue> | TValue[]) {
+    constructor(other: Iterable<TValue> | TValue[]) {
         this.items = {};
         this.size = 0;
 
-        if (other instanceof Set) {
-            this.size = other.size;
-            other.forEach(v => { this.items[v as any] = true; });
-        } else if (other !== undefined) {
-            this.size = other.length;
-            for (const value of other) {
-                this.items[value as any] = true as any;
+        if (other) {
+            const iterable = other as Iterable<TValue>;
+            if (iterable[Symbol.iterator]) {
+                // Iterate manually because Set is compiled with ES5 which doesn't support Iterables in for...of
+                const iterator = iterable[Symbol.iterator]();
+                while (true) {
+                    const result = iterator.next();
+                    if (result.done) {
+                        break;
+                    }
+                    this.add(result.value);
+                }
+            } else {
+                const arr = other as TValue[];
+                this.size = arr.length;
+                for (const value of arr) {
+                    this.items[value as any] = true as any;
+                }
             }
         }
     }

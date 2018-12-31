@@ -22,6 +22,58 @@ export class ClassTests {
         Expect(result).toBe(4);
     }
 
+    @Test("ClassNumericLiteralFieldInitializer")
+    public classNumericLiteralFieldInitializer(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                1: number = 4;
+            }
+            return new a()[1];`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassStringLiteralFieldInitializer")
+    public classStringLiteralFieldInitializer(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                "field": number = 4;
+            }
+            return new a()["field"];`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassComputedFieldInitializer")
+    public classComputedFieldInitializer(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `const field: "field" = "field";
+            class a {
+                [field]: number = 4;
+            }
+            return new a()[field];`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
     @Test("ClassConstructor")
     public classConstructor(): void {
         // Transpile
@@ -102,6 +154,52 @@ export class ClassTests {
         const lua = util.transpileString(
             `class a { static field: number = 4; }
             return a.field;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassStaticNumericLiteralFields")
+    public classStaticNumericLiteralFields(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a { static 1: number = 4; }
+            return a[1];`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassStaticStringLiteralFields")
+    public classStaticStringLiteralFields(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a { static "field": number = 4; }
+            return a["field"];`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassStaticComputedFields")
+    public classStaticComputedFields(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `const field: "field" = "field";
+            class a { static [field]: number = 4; }
+            return a[field];`
         );
 
         // Execute
@@ -246,6 +344,67 @@ export class ClassTests {
             }
             let inst = new a();
             return inst.method();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassNumericLiteralMethodCall")
+    public classNumericLiteralMethodCall(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public 1(): number {
+                    return 4;
+                }
+            }
+            let inst = new a();
+            return inst[1]();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassStringLiteralMethodCall")
+    public classStringLiteralMethodCall(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `class a {
+                public "method"(): number {
+                    return 4;
+                }
+            }
+            let inst = new a();
+            return inst["method"]();`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(4);
+    }
+
+    @Test("ClassComputedMethodCall")
+    public classComputedMethodCall(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `const method: "method" = "method";
+            class a {
+                public [method](): number {
+                    return 4;
+                }
+            }
+            let inst = new a();
+            return inst[method]();`
         );
 
         // Execute

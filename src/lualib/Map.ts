@@ -6,17 +6,29 @@ class Map<TKey, TValue> {
 
     private items: {[key: string]: TValue}; // Type of key is actually TKey
 
-    constructor(other: Map<TKey, TValue> | Array<[TKey, TValue]>) {
+    constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
         this.items = {};
         this.size = 0;
 
-        if (other instanceof Map) {
-            this.size = other.size;
-            other.forEach((v, k) => { this.items[k as any] = v; });
-        } else if (other !== undefined) {
-            this.size = other.length;
-            for (const kvp of other) {
-                this.items[kvp[0] as any] = kvp[1];
+        if (other) {
+            const iterable = other as Iterable<[TKey, TValue]>;
+            if (iterable[Symbol.iterator]) {
+                // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
+                const iterator = iterable[Symbol.iterator]();
+                while (true) {
+                    const result = iterator.next();
+                    if (result.done) {
+                        break;
+                    }
+                    const value: [TKey, TValue] = result.value; // Ensures index is offset when tuple is accessed
+                    this.set(value[0], value[1]);
+                }
+            } else {
+                const arr = other as Array<[TKey, TValue]>;
+                this.size = arr.length;
+                for (const kvp of arr) {
+                    this.items[kvp[0] as any] = kvp[1];
+                }
             }
         }
     }

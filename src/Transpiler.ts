@@ -1,10 +1,10 @@
-import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
 import { CompilerOptions } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
+import { LuaLib as luaLib, LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 
 /* tslint:disable */
@@ -16,34 +16,6 @@ export enum LuaTarget {
     Lua52 = "5.2",
     Lua53 = "5.3",
     LuaJIT = "jit",
-}
-
-export enum LuaLibFeature {
-    ArrayConcat = "ArrayConcat",
-    ArrayEvery = "ArrayEvery",
-    ArrayFilter = "ArrayFilter",
-    ArrayForEach = "ArrayForEach",
-    ArrayIndexOf = "ArrayIndexOf",
-    ArrayMap = "ArrayMap",
-    ArrayPush = "ArrayPush",
-    ArrayReverse = "ArrayReverse",
-    ArrayShift = "ArrayShift",
-    ArrayUnshift = "ArrayUnshift",
-    ArraySort = "ArraySort",
-    ArraySlice = "ArraySlice",
-    ArraySome = "ArraySome",
-    ArraySplice = "ArraySplice",
-    FunctionApply = "FunctionApply",
-    FunctionBind = "FunctionBind",
-    FunctionCall = "FunctionCall",
-    InstanceOf = "InstanceOf",
-    Iterator = "Iterator",
-    Map = "Map",
-    Set = "Set",
-    StringReplace = "StringReplace",
-    StringSplit = "StringSplit",
-    Symbol = "Symbol",
-    Ternary = "Ternary",
 }
 
 export enum LuaLibImportKind {
@@ -92,7 +64,7 @@ export abstract class LuaTranspiler {
     public classStack: string[];
     public exportStack: ExportInfo[][];
 
-    public luaLibFeatureSet: LuaLibFeature[];
+    public luaLibFeatureSet: Set<LuaLibFeature>;
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
@@ -111,7 +83,7 @@ export abstract class LuaTranspiler {
         this.scopeStack = [];
         this.classStack = [];
         this.exportStack = [];
-        this.luaLibFeatureSet = [];
+        this.luaLibFeatureSet = new Set<LuaLibFeature>();
 
         if (!this.options.luaTarget) {
             this.options.luaTarget = LuaTarget.LuaJIT;
@@ -182,24 +154,9 @@ export abstract class LuaTranspiler {
         return result;
     }
 
-    public addLuaLibFeature(feature: LuaLibFeature): void {
-        if (this.luaLibFeatureSet.indexOf(feature) < 0) {
-            this.luaLibFeatureSet.push(feature);
-        }
-    }
-
     public importLuaLibFeature(feature: LuaLibFeature): void {
-        // Add additional lib requirements
-        if (feature === LuaLibFeature.Map || feature === LuaLibFeature.Set) {
-            this.addLuaLibFeature(LuaLibFeature.InstanceOf);
-            this.addLuaLibFeature(LuaLibFeature.Iterator);
-            this.addLuaLibFeature(LuaLibFeature.Symbol);
-        } else if (feature === LuaLibFeature.Iterator) {
-            this.addLuaLibFeature(LuaLibFeature.Symbol);
-        }
-
         // TODO inline imported features in output i option set
-        this.addLuaLibFeature(feature);
+        this.luaLibFeatureSet.add(feature);
     }
 
     public getAbsoluteImportPath(relativePath: string): string {
@@ -227,7 +184,8 @@ export abstract class LuaTranspiler {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
-    public computeEnumMembers(node: ts.EnumDeclaration): Array<{ name: string, value: string | number }> {
+    public computeEnumMembers(node: ts.EnumDeclaration)
+        : Array<{ name: string, value: string | number, isIdentifier: boolean }> {
         let val: number | string = 0;
         let hasStringInitializers = false;
 
@@ -245,7 +203,11 @@ export abstract class LuaTranspiler {
                 throw TSTLErrors.HeterogeneousEnum(node);
             }
 
-            const enumMember = { name: this.transpileIdentifier(member.name as ts.Identifier), value: val };
+            const enumMember = {
+                isIdentifier: ts.isIdentifier(member.name),
+                name: this.transpilePropertyName(member.name),
+                value: val,
+            };
 
             if (typeof val === "number") {
               val++;
@@ -269,19 +231,16 @@ export abstract class LuaTranspiler {
         this.exportStack.push([]);
         this.sourceFile.statements.forEach(s => fileStatements += this.transpileNode(s));
 
-        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.length > 0)
+        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.size > 0)
             || this.options.luaLibImport === LuaLibImportKind.Always) {
             // require helper functions
             result += `require("lualib_bundle")\n`;
         }
 
         // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.length > 0) {
+        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
             result += "\n" + "-- Lua Library Imports\n";
-            for (const feature of this.luaLibFeatureSet) {
-                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-                result += fs.readFileSync(featureFile).toString() + "\n";
-            }
+            result += luaLib.loadFeatures(this.luaLibFeatureSet);
         }
 
         if (this.isModule) {
@@ -485,7 +444,9 @@ export abstract class LuaTranspiler {
                 const defName = this.definitionName(enumMember.name);
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             } else {
-                const defName = `${this.transpileIdentifier(node.name)}.${enumMember.name}`;
+                const defName = enumMember.isIdentifier
+                    ? `${this.transpileIdentifier(node.name)}.${enumMember.name}`
+                    : `${this.transpileIdentifier(node.name)}[${enumMember.name}]`;
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             }
         });
@@ -839,8 +800,7 @@ export abstract class LuaTranspiler {
                 return this.transpileIdentifier(node as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-                const text = this.escapeString((node as ts.StringLiteral).text);
-                return `"${text}"`;
+                return this.transpileStringLiteral(node as (ts.StringLiteral | ts.NoSubstitutionTemplateLiteral));
             case ts.SyntaxKind.TemplateExpression:
                 return this.transpileTemplateExpression(node as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
@@ -1691,9 +1651,16 @@ export abstract class LuaTranspiler {
             return property;
         }
 
-        // Catch math expressions
-        if (ts.isIdentifier(node.expression) && this.transpileIdentifier(node.expression) === "Math") {
-            return this.transpileMathExpression(node.name);
+        if (ts.isIdentifier(node.expression)) {
+            const name = this.transpileIdentifier(node.expression);
+            if (name === "Math") {
+                // Catch math expressions
+                return this.transpileMathExpression(node.name);
+
+            } else if (name === "Symbol") {
+                // Pull in Symbol lib
+                this.importLuaLibFeature(LuaLibFeature.Symbol);
+            }
         }
 
         const callPath = this.transpileExpression(node.expression);
@@ -1780,17 +1747,26 @@ export abstract class LuaTranspiler {
         }
     }
 
+    public transpileStringLiteral(literal: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral): string {
+        const text = this.escapeString(literal.text);
+        return `"${text}"`;
+    }
+
+    public transpilePropertyName(propertyName: ts.PropertyName): string {
+        if (ts.isComputedPropertyName(propertyName)) {
+            return this.transpileExpression(propertyName.expression);
+        } else if (ts.isStringLiteral(propertyName)) {
+            return this.transpileStringLiteral(propertyName);
+        } else if (ts.isNumericLiteral(propertyName)) {
+            return propertyName.text;
+        } else {
+            return this.transpileIdentifier(propertyName);
+        }
+    }
+
     // Counter-act typescript's identifier escaping:
     // https://github.com/Microsoft/TypeScript/blob/master/src/compiler/utilities.ts#L556
     public transpileIdentifier(identifier: ts.Identifier): string {
-        if (ts.isComputedPropertyName(identifier)) {
-            return `[${this.transpileExpression(identifier.expression)}]`;
-        }
-
-        if (identifier.text === "Symbol") {
-            this.importLuaLibFeature(LuaLibFeature.Symbol);
-        }
-
         let escapedText = identifier.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3
@@ -1842,7 +1818,7 @@ export abstract class LuaTranspiler {
         node.declarationList.declarations.forEach(declaration => {
             result += this.transpileVariableDeclaration(declaration as ts.VariableDeclaration) + ";\n";
             if (ts.isIdentifier(declaration.name)) {
-                this.pushExport(this.transpileIdentifier(declaration.name as ts.Identifier), node);
+                this.pushExport(this.transpileIdentifier(declaration.name), node);
             }
         });
 
@@ -1987,7 +1963,7 @@ export abstract class LuaTranspiler {
         if (!node.body) { return ""; }
 
         let result = "";
-        let methodName = this.transpileIdentifier(node.name as ts.Identifier);
+        let methodName = this.transpilePropertyName(node.name);
         if (methodName === "toString") {
             methodName = "__tostring";
         }
@@ -1997,8 +1973,8 @@ export abstract class LuaTranspiler {
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
 
         // Build function header
-        if (ts.isComputedPropertyName(node.name)) {
-            result += this.indent + `${callPath}${methodName} = function(${paramNames.join(",")})\n`;
+        if (!ts.isIdentifier(node.name)) {
+            result += this.indent + `${callPath}[${methodName}] = function(${paramNames.join(",")})\n`;
         } else {
             result += this.indent + `function ${callPath}.${methodName}(${paramNames.join(",")})\n`;
         }
@@ -2069,20 +2045,25 @@ export abstract class LuaTranspiler {
         } else {
             for (const f of instanceFields) {
                 // Get identifier
-                const fieldIdentifier = f.name as ts.Identifier;
-                const fieldName = this.transpileIdentifier(fieldIdentifier);
-
+                const fieldName = this.transpilePropertyName(f.name);
                 const value = this.transpileExpression(f.initializer);
-
-                result += this.indent + `${className}.${fieldName} = ${value}\n`;
+                if (ts.isIdentifier(f.name)) {
+                    result += this.indent + `${className}.${fieldName} = ${value}\n`;
+                } else {
+                    result += this.indent + `${className}[${fieldName}] = ${value}\n`;
+                }
             }
         }
 
         // Add static declarations
         for (const field of staticFields) {
-            const fieldName = this.transpileIdentifier(field.name as ts.Identifier);
+            const fieldName = this.transpilePropertyName(field.name);
             const value = this.transpileExpression(field.initializer);
-            result += this.indent + `${className}.${fieldName} = ${value}\n`;
+            if (ts.isIdentifier(field.name)) {
+                result += this.indent + `${className}.${fieldName} = ${value}\n`;
+            } else {
+                result += this.indent + `${className}[${fieldName}] = ${value}\n`;
+            }
         }
 
         // Find first constructor with body
@@ -2146,12 +2127,13 @@ export abstract class LuaTranspiler {
 
         for (const f of instanceFields) {
             // Get identifier
-            const fieldIdentifier = f.name as ts.Identifier;
-            const fieldName = this.transpileIdentifier(fieldIdentifier);
-
+            const fieldName = this.transpilePropertyName(f.name);
             const value = this.transpileExpression(f.initializer);
-
-            result += this.indent + `    self.${fieldName} = ${value}\n`;
+            if (ts.isIdentifier(f.name)) {
+                result += this.indent + `    self.${fieldName} = ${value}\n`;
+            } else {
+                result += this.indent + `    self[${fieldName}] = ${value}\n`;
+            }
         }
 
         result += this.indent + `    if construct and ${className}.constructor then `
@@ -2164,7 +2146,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileGetAccessorDeclaration(getAccessor: ts.GetAccessorDeclaration, className: string): string {
-        const name = this.transpileIdentifier(getAccessor.name as ts.Identifier);
+        const name = this.transpilePropertyName(getAccessor.name);
 
         let result = this.indent + `function ${className}.get__${name}(self)\n`;
 
@@ -2178,7 +2160,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileSetAccessorDeclaration(setAccessor: ts.SetAccessorDeclaration, className: string): string {
-        const name = this.transpileIdentifier(setAccessor.name as ts.Identifier);
+        const name = this.transpilePropertyName(setAccessor.name);
 
         const paramNames: string[] = ["self"];
         setAccessor.parameters.forEach(param => {

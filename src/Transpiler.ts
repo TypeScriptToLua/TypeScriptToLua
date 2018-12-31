@@ -184,8 +184,7 @@ export abstract class LuaTranspiler {
         return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
-    public computeEnumMembers(node: ts.EnumDeclaration)
-        : Array<{ name: string, value: string | number, isIdentifier: boolean }> {
+    public computeEnumMembers(node: ts.EnumDeclaration): Array<{ name: ts.PropertyName, value: string | number }> {
         let val: number | string = 0;
         let hasStringInitializers = false;
 
@@ -203,11 +202,7 @@ export abstract class LuaTranspiler {
                 throw TSTLErrors.HeterogeneousEnum(node);
             }
 
-            const enumMember = {
-                isIdentifier: ts.isIdentifier(member.name),
-                name: this.transpilePropertyName(member.name),
-                value: val,
-            };
+            const enumMember = { name: member.name, value: val };
 
             if (typeof val === "number") {
               val++;
@@ -440,13 +435,14 @@ export abstract class LuaTranspiler {
         }
 
         this.computeEnumMembers(node).forEach(enumMember => {
+            const name = this.transpilePropertyName(enumMember.name);
             if (membersOnly) {
-                const defName = this.definitionName(enumMember.name);
+                const defName = this.definitionName(name);
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             } else {
-                const defName = enumMember.isIdentifier
-                    ? `${this.transpileIdentifier(node.name)}.${enumMember.name}`
-                    : `${this.transpileIdentifier(node.name)}[${enumMember.name}]`;
+                const defName = ts.isIdentifier(enumMember.name)
+                    ? `${this.transpileIdentifier(node.name)}.${name}`
+                    : `${this.transpileIdentifier(node.name)}[${name}]`;
                 result += this.indent + `${defName}=${enumMember.value}\n`;
             }
         });
@@ -800,7 +796,7 @@ export abstract class LuaTranspiler {
                 return this.transpileIdentifier(node as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
-                return this.transpileStringLiteral(node as (ts.StringLiteral | ts.NoSubstitutionTemplateLiteral));
+                return this.transpileStringLiteral(node as ts.StringLiteralLike);
             case ts.SyntaxKind.TemplateExpression:
                 return this.transpileTemplateExpression(node as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
@@ -1747,7 +1743,7 @@ export abstract class LuaTranspiler {
         }
     }
 
-    public transpileStringLiteral(literal: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral): string {
+    public transpileStringLiteral(literal: ts.StringLiteralLike): string {
         const text = this.escapeString(literal.text);
         return `"${text}"`;
     }

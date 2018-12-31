@@ -34,6 +34,10 @@ export class LuaPrinter {
 
     private currentIndent: string;
 
+    public constructor() {
+        this.currentIndent = "";
+    }
+
     public print(block: tstl.Block): string {
         return this.printBlock(block);
     }
@@ -96,12 +100,16 @@ export class LuaPrinter {
     }
 
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): string {
-        return this.indent(`"local" ${statement.left.map(e => this.printExpression(e)).join(", ")} =` +
-                           `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
+        const left = this.indent(`local ${statement.left.map(e => this.printExpression(e)).join(", ")}`);
+        if (statement.right) {
+            return left + ` = ${statement.right.map(e => this.printExpression(e)).join(", ")};\n`;
+        } else {
+            return left + ";\n";
+        }
     }
 
     private printVariableAssignmentStatement(statement: tstl.VariableAssignmentStatement): string {
-        return this.indent(`${statement.left.map(e => this.printExpression(e)).join(", ")} =` +
+        return this.indent(`${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
                            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }
 
@@ -272,7 +280,7 @@ export class LuaPrinter {
         this.pushIndent();
         result += this.printBlock(expression.body);
         this.popIndent();
-        result += this.indent("end\n");
+        result += this.indent("end");
 
         return result;
     }

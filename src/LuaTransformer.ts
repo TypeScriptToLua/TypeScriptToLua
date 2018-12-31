@@ -112,7 +112,7 @@ export class LuaTransformer {
 
     public transformStatement(node: ts.Statement): StatementVisitResult {
         switch (node.kind) {
-            // Blocm
+            // Block
             case ts.SyntaxKind.Block:
                 return this.transformScopeBlock(node as ts.Block);
             // Declaration Statements
@@ -170,11 +170,12 @@ export class LuaTransformer {
     public transformStatements(
         statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
 
-        function flat<T>(arr: T[] | ReadonlyArray<T>): T[] {
-            const flatArr = [].concat(...arr);
-            return flatArr.some(Array.isArray) ? flat(flatArr) : flatArr;
-        }
-        return flat(statements).map(statement => this.transformStatement(statement)) as tstl.Statement[];
+        const tstlStatements = (statements as ts.Statement[]).map(statement => this.transformStatement(statement) as tstl.Statement);
+        
+        const flat = this.flat(tstlStatements);
+
+        // TODO this is somewhat hacky and not typesafe 
+        return flat;
     }
 
     public transformBlock(block: ts.Block): tstl.Block {
@@ -866,54 +867,138 @@ export class LuaTransformer {
     public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformInterfaceDeclaration(arg0: ts.InterfaceDeclaration): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
-    public transformVariableDeclaration(arg0: ts.VariableDeclaration): StatementVisitResult {
-        throw new Error("Method not implemented.");
+
+    public transformVariableDeclaration(statement: ts.VariableDeclaration): StatementVisitResult {
+        if (statement.initializer) {
+            // Validate assignment
+            const initializerType = this.checker.getTypeAtLocation(statement.initializer);
+            const varType = this.checker.getTypeFromTypeNode(statement.type);
+            this.validateFunctionAssignment(statement.initializer, initializerType, varType);
+        }
+
+        if (ts.isIdentifier(statement.name)) {
+            // Find variable identifier
+            const identifierName = this.transformIdentifier(statement.name);
+            if (statement.initializer) {
+                const value = this.transformExpression(statement.initializer);
+                if (ts.isFunctionExpression(statement.initializer) || ts.isArrowFunction(statement.initializer)) {
+                    // Separate declaration and assignment for functions to allow recursion
+
+                    // local identifierName; identifierName = value;
+                    return [tstl.createVariableDeclarationStatement(identifierName), tstl.createVariableAssignmentStatement(identifierName, value)];
+                } else {
+                    // local identifierName = value;
+                    return tstl.createVariableDeclarationStatement(identifierName, value);
+                }
+            } else {
+                // local identifierName = nil;
+                return tstl.createVariableDeclarationStatement(identifierName, tstl.createNilLiteral());
+            }
+        } else if (ts.isArrayBindingPattern(statement.name)) {
+            // Destructuring type
+
+            // Disallow ellipsis destruction
+            if (statement.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
+                throw TSTLErrors.ForbiddenEllipsisDestruction(statement);
+            }
+
+            const vars = statement.name.elements.map(e => this.transformArrayBindingElement(e));
+
+            // Don't unpack TupleReturn decorated functions
+            if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
+                // local vars = initializer;
+                return tstl.createVariableDeclarationStatement(vars, this.transformExpression(statement.initializer));
+            } else {
+                // local vars = this.transpileDestructingAssignmentValue(node.initializer);
+                return tstl.createVariableDeclarationStatement(vars, this.createDestructingDestructingAssignmentValue(statement.initializer));
+            }
+        } else {
+            throw TSTLErrors.UnsupportedKind("variable declaration", statement.name.kind, statement);
+        }
     }
-    public transformVariableStatement(arg0: ts.VariableStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+
+    public transformVariableStatement(statement: ts.VariableStatement): StatementVisitResult {
+        return this.flat(
+            statement.declarationList.declarations.map(declaration => this.transformVariableDeclaration(declaration)) as tstl.Statement[]
+        );
     }
-    public transformExpressionStatement(arg0: ts.ExpressionStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+
+    public transformExpressionStatement(statement: ts.ExpressionStatement): StatementVisitResult {
+        return tstl.createExpressionStatement(this.transformExpression(statement.expression));
     }
-    public transformReturn(arg0: ts.ReturnStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+
+    public transformReturn(statement: ts.ReturnStatement): StatementVisitResult {
+        if (statement.expression) {
+            const returnType = tsHelper.getContainingFunctionReturnType(statement, this.checker);
+            if (returnType) {
+                const expressionType = this.checker.getTypeAtLocation(statement.expression);
+                this.validateFunctionAssignment(statement, expressionType, returnType);
+            }
+            if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
+                // Parent function is a TupleReturn function
+                if (ts.isArrayLiteralExpression(statement.expression)) {
+                    // If return expression is an array literal, leave out brackets.
+                    return tstl.createReturnStatement(statement.expression.elements.map(elem => this.transformExpression(elem)));
+                } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
+                    // If return expression is not another TupleReturn call, unpack it
+                    return tstl.createReturnStatement([this.createDestructingDestructingAssignmentValue(statement.expression)]);
+                }
+            }
+            return tstl.createReturnStatement([this.transformExpression(statement.expression)]);
+        } else {
+            // Empty return
+            return tstl.createReturnStatement();
+        }
     }
+
     public transformIfStatement(arg0: ts.IfStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformWhileStatement(arg0: ts.WhileStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformDoStatement(arg0: ts.DoStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformForStatement(arg0: ts.ForStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformForOfStatement(arg0: ts.ForOfStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformForInStatement(arg0: ts.ForInStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformSwitchStatement(arg0: ts.SwitchStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformBreakStatement(arg0: ts.BreakStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformTryStatement(arg0: ts.TryStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformThrowStatement(arg0: ts.ThrowStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformContinueStatement(arg0: ts.ContinueStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
+
     public transformEmptyStatement(arg0: ts.EmptyStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
@@ -1087,7 +1172,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.InstanceOfKeyword:
                 return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
             default:
-                throw TSTLErrors.UnsupportedKind("binary operator", expression.kind, expression);
+                throw TSTLErrors.UnsupportedKind("binary operator", expression.operatorToken.kind, expression);
         }
     }
 
@@ -1788,7 +1873,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformArrayBindingElement(name: ts.ArrayBindingElement): ExpressionVisitResult {
+    public transformArrayBindingElement(name: ts.ArrayBindingElement): tstl.Identifier {
         if (ts.isOmittedExpression(name)) {
             return tstl.createIdentifier("__", undefined, name);
         } else if (ts.isIdentifier(name)) {
@@ -1857,6 +1942,16 @@ export class LuaTransformer {
 
         // TODO inline imported features in output i option set
         this.luaLibFeatureSet.add(feature);
+    }
+
+    public createDestructingDestructingAssignmentValue(expression: ts.Expression): tstl.Expression {
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(
+                tstl.createIdentifier("table"),
+                tstl.createIdentifier("unpack")
+            ),
+            [this.transformExpression(expression)]
+        );
     }
 
     private getAbsoluteImportPath(relativePath: string): string {
@@ -1990,5 +2085,20 @@ export class LuaTransformer {
 
     private popScope(): Scope {
         return this.scopeStack.pop();
+    }
+
+    private flat<T>(arr: T[] | ReadonlyArray<T>): T[] {
+        const flatten = (arr, result = []) => {
+            for (let i = 0, length = arr.length; i < length; i++) {
+                const value = arr[i];
+                if (Array.isArray(value)) {
+                    flatten(value, result);
+                } else {
+                    result.push(value);
+                }
+            }
+            return result;
+        };
+        return flatten(arr);
     }
 }

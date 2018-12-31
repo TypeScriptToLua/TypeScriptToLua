@@ -170,7 +170,7 @@ export function isDoStatement(node: Node): node is DoStatement {
 }
 
 export function createDoStatement(statements?: Statement[], parent?: Node, tsOriginal?: ts.Node): DoStatement {
-    const statement = createNode(SyntaxKind.Block, parent, tsOriginal) as DoStatement;
+    const statement = createNode(SyntaxKind.DoStatement, parent, tsOriginal) as DoStatement;
     setParent(statements, statement);
     statement.statements = statements;
     return statement;
@@ -376,7 +376,7 @@ export function createForInStatement(
     parent?: Node,
     tsOriginal?: ts.Node): ForInStatement {
 
-    const statement = createNode(SyntaxKind.ForStatement, parent, tsOriginal) as ForInStatement;
+    const statement = createNode(SyntaxKind.ForInStatement, parent, tsOriginal) as ForInStatement;
     setParent(body, statement);
     statement.body = body;
     setParent(names, statement);
@@ -769,7 +769,7 @@ export function isTableIndexExpression(node: Node): node is TableIndexExpression
 export function createTableIndexExpression(
     table: Expression, index: Expression, parent?: Node, tsOriginal?: ts.Node): TableIndexExpression {
 
-    const expression = createNode(SyntaxKind.Identifier, parent, tsOriginal) as TableIndexExpression;
+    const expression = createNode(SyntaxKind.TableIndexExpression, parent, tsOriginal) as TableIndexExpression;
     setParent(table, expression);
     expression.table = table;
     setParent(index, expression);

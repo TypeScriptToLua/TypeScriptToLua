@@ -12,51 +12,51 @@ export class TranspileError extends Error {
 
 export class TSTLErrors {
     public static DefaultImportsNotSupported = (node: ts.Node) =>
-        new TranspileError(`Default Imports are not supported, please use named imports instead!`, node)
+        new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 
     public static ForbiddenEllipsisDestruction = (node: ts.Node) =>
-        new TranspileError(`Ellipsis destruction is not allowed.`, node)
+        new TranspileError(`Ellipsis destruction is not allowed.`, node);
 
     public static ForbiddenForIn = (node: ts.Node) =>
-        new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node)
+        new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
     public static HeterogeneousEnum = (node: ts.Node) =>
         new TranspileError(`Invalid heterogeneous enum. Enums should either specify no member values, ` +
                            `or specify values (of the same type) for all members.`,
-                           node)
+                           node);
 
     public static InvalidEnumMember = (node: ts.Node) =>
-        new TranspileError(`Only numeric or string initializers allowed for enums.`, node)
+        new TranspileError(`Only numeric or string initializers allowed for enums.`, node);
 
     public static InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
-        new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node)
+        new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
 
     public static InvalidExtensionMetaExtension = (node: ts.Node) =>
-        new TranspileError(`Cannot use both '!Extension' and '!MetaExtension' decorators on the same class.`, node)
+        new TranspileError(`Cannot use both '!Extension' and '!MetaExtension' decorators on the same class.`, node);
 
     public static InvalidNewExpressionOnExtension = (node: ts.Node) =>
-        new TranspileError(`Cannot construct classes with decorator '!Extension' or '!MetaExtension'.`, node)
+        new TranspileError(`Cannot construct classes with decorator '!Extension' or '!MetaExtension'.`, node);
 
     public static InvalidPropertyCall = (node: ts.Node) =>
-        new TranspileError(`Tried to transpile a non-property call as property call.`, node)
+        new TranspileError(`Tried to transpile a non-property call as property call.`, node);
 
     public static InvalidElementCall = (node: ts.Node) =>
-        new TranspileError(`Tried to transpile a non-element call as an element call.`, node)
+        new TranspileError(`Tried to transpile a non-element call as an element call.`, node);
 
     public static InvalidThrowExpression = (node: ts.Node) =>
-        new TranspileError(`Invalid throw expression, only strings can be thrown.`, node)
+        new TranspileError(`Invalid throw expression, only strings can be thrown.`, node);
 
     public static KeywordIdentifier = (node: ts.Identifier) =>
-        new TranspileError(`Cannot use Lua keyword ${node.escapedText} as identifier.`, node)
+        new TranspileError(`Cannot use Lua keyword ${node.escapedText} as identifier.`, node);
 
     public static MissingClassName = (node: ts.Node) =>
-        new TranspileError(`Class declarations must have a name.`, node)
+        new TranspileError(`Class declarations must have a name.`, node);
 
     public static MissingMetaExtension = (node: ts.Node) =>
-        new TranspileError(`!MetaExtension requires the extension of the metatable class.`, node)
+        new TranspileError(`!MetaExtension requires the extension of the metatable class.`, node);
 
     public static UnsupportedImportType = (node: ts.Node) =>
-        new TranspileError(`Unsupported import type.`, node)
+        new TranspileError(`Unsupported import type.`, node);
 
     public static UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) => {
         const kindName = tsHelper.enumName(kind, ts.SyntaxKind);
@@ -64,13 +64,13 @@ export class TSTLErrors {
     }
 
     public static UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
-        new TranspileError(`Unsupported property on ${parentName}: ${property}`, node)
+        new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
 
     public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
-        new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node)
+        new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
 
     public static UnsupportedObjectLiteralElement = (elementKind: ts.SyntaxKind, node: ts.Node) =>
-        new TranspileError(`Unsupported object literal element: ${elementKind}.`, node)
+        new TranspileError(`Unsupported object literal element: ${elementKind}.`, node);
 
     public static UnsupportedFunctionConversion = (node: ts.Node, name?: string) => {
         if (name) {
@@ -82,7 +82,7 @@ export class TSTLErrors {
                                       + `To fix, wrap the method in an arrow function.`,
                                       node);
         }
-    }
+    };
 
     public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
         if (name) {
@@ -96,7 +96,7 @@ export class TSTLErrors {
                                       + ` an explicit 'this' parameter.`,
                                       node);
         }
-    }
+    };
 
     public static UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
         if (name) {
@@ -108,5 +108,5 @@ export class TSTLErrors {
                                       + `Overloads should either be all functions or all methods, but not both.`,
                                       node);
         }
-    }
+    };
 }

@@ -326,7 +326,7 @@ export class LuaTransformer {
         if (!isExtension && !isMetaExtension) {
             const classCreationMethods =
                 this.createClassCreationMethods(statement, className, instanceFields, extendsType);
-            result.concat(classCreationMethods);
+            result.push(...classCreationMethods);
         } else {
             for (const f of instanceFields) {
                 // Get identifier
@@ -587,15 +587,15 @@ export class LuaTransformer {
         const [params, dotsLiteral, restParamName] =
             this.transformParameters(statement.parameters, this.selfIdentifier);
 
-        bodyStatements.concat(this.transformFunctionBody(statement.parameters, statement.body, restParamName));
+        bodyStatements.push(...this.transformFunctionBody(statement.parameters, statement.body, restParamName));
 
         const body: tstl.Block = tstl.createBlock(bodyStatements);
 
         const result =
             tstl.createVariableAssignmentStatement(
                 tstl.createTableIndexExpression(
-                    this.selfIdentifier,
-                    className
+                    className,
+                    tstl.createIdentifier("constructor")
                 ),
                 tstl.createFunctionExpression(
                     body,
@@ -1091,6 +1091,8 @@ export class LuaTransformer {
 
     public transformBinaryExpression(expression: ts.BinaryExpression): ExpressionVisitResult {
         // Check if this is an assignment token, then handle accordingly
+
+        // TODO NYI @tomb
         /*const [isAssignment, operator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);
         if (isAssignment) {
             return this.transpileAssignmentExpression(
@@ -1150,12 +1152,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.LessThanEqualsToken:
                 return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.LessEqualOperator);
             case ts.SyntaxKind.EqualsToken:
-                const assignment = tstl.createVariableAssignmentStatement(
-                    lhs as tstl.IdentifierOrTableIndexExpression,
-                    rhs
-                );
-                const returnStatement = tstl.createReturnStatement([this.transformExpression(expression.right)]);
-                return tstl.createFunctionExpression(tstl.createBlock([assignment, returnStatement]));
+                // TODO rework this @see tstl.SyntaxKind.AssignmentOperator declaration
+                return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.AssignmentOperator);
             case ts.SyntaxKind.EqualsEqualsToken:
             case ts.SyntaxKind.EqualsEqualsEqualsToken:
                 return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.EqualityOperator);

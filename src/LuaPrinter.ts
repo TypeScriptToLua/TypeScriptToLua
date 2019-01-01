@@ -4,6 +4,7 @@ export class LuaPrinter {
 
     /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
+        [tstl.SyntaxKind.AssignmentOperator]: "=",
         [tstl.SyntaxKind.AdditionOperator]: "+",
         [tstl.SyntaxKind.SubractionOperator]: "-",
         [tstl.SyntaxKind.MultiplicationOperator]: "*",
@@ -55,7 +56,7 @@ export class LuaPrinter {
     }
 
     private printBlock(block: tstl.Block): string {
-        return block.statements.map(s => this.printStatement(s)).join();
+        return block.statements.map(s => this.printStatement(s)).join("");
     }
 
     private printStatement(statement: tstl.Statement): string {
@@ -92,7 +93,7 @@ export class LuaPrinter {
     private printDoStatement(statement: tstl.DoStatement): string {
         let result = this.indent("do\n");
         this.pushIndent();
-        result += statement.statements.map(s => this.printStatement(s)).join();
+        result += statement.statements.map(s => this.printStatement(s)).join("");
         this.popIndent();
         result += this.indent("end\n");
 
@@ -296,7 +297,11 @@ export class LuaPrinter {
     }
 
     private printTableExpression(expression: tstl.TableExpression): string {
-        return `{${expression.fields.map(f => this.printTableFieldExpression(f)).join(", ")}}`;
+        let fields = "";
+        if (expression.fields) {
+            fields = expression.fields.map(f => this.printTableFieldExpression(f)).join(", ");
+        }
+        return `{${fields}}`;
     }
 
     private printUnaryExpression(expression: tstl.UnaryExpression): string {
@@ -316,7 +321,7 @@ export class LuaPrinter {
 
     private printCallExpression(expression: tstl.CallExpression): string {
         const params = expression.params.map(e => this.printExpression(e)).join(", ");
-        return `${this.printExpression(expression.expression)}(${params}))`;
+        return `${this.printExpression(expression.expression)}(${params})`;
     }
 
     private printMethodCallExpression(expression: tstl.MethodCallExpression): string {

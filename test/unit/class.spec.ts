@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -34,7 +34,6 @@ export class ClassTests {
             }
             return new a(4).field;`
         );
-
         // Execute
         const result = util.executeLua(lua);
 

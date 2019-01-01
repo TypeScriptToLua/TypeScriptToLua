@@ -40,6 +40,8 @@ export enum SyntaxKind {
     Identifier,
     TableIndexExpression,
     // Operators
+    AssignmentOperator, // TODO maybe remove this once we figure out the correct way to transform a assignment in a binary expression
+                        // or maybe move change Assignment statement to contain a binaryExpression with an AssignmentOperator somehow?
     // Arithmetic
     AdditionOperator, // Maybe use abreviations for those add, sub, mul ...
     SubractionOperator,
@@ -80,6 +82,7 @@ export type UnaryOperator = SyntaxKind.NegationOperator | SyntaxKind.LengthOpera
                         SyntaxKind.NotOperator | SyntaxKind.BitwiseNotOperator;
 
 export type BinaryOperator =
+    SyntaxKind.AssignmentOperator | // TODO @see above 
     // Arithmetic
     SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator |
     SyntaxKind.DivisionOperator | SyntaxKind.FloorDivisionOperator |
@@ -204,7 +207,7 @@ export function createVariableDeclarationStatement(
     setParent(right, statement);
     if (Array.isArray(right)) {
         statement.right = right;
-    } else {
+    } else if (right) {
         statement.right = [right];
     }
     return statement;

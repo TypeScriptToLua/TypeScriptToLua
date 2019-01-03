@@ -89,4 +89,14 @@ export class EnumTests {
             );
         }).toThrowError(TranspileError, "Only numeric or string initializers allowed for enums.");
     }
+
+    @Test("String literal name in enum")
+    public stringLiteralNameEnum(): void {
+        const code = `enum TestEnum {
+                ["name"] = "foo"
+            }
+            return TestEnum["name"];`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foo");
+    }
 }

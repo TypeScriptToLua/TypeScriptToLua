@@ -1,6 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
+import * as ts from "typescript";
 import { TranspileError } from "../../src/Errors";
-import { LuaTarget } from "../../src/Transpiler";
+import { LuaLibImportKind, LuaTarget } from "../../src/Transpiler";
 import * as util from "../src/util";
 
 const deepEqual = require("deep-equal");
@@ -356,6 +357,27 @@ export class LuaLoopTests {
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 1, 2], [1, 2, 3])
+    @Test("forof existing variable")
+    public forofExistingVar(inp: any, expected: any): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let objTest = ${JSON.stringify(inp)};
+            let arrResultTest = [];
+            let value: number;
+            for (value of objTest) {
+                arrResultTest.push(value + 1)
+            }
+            return JSONStringify(arrResultTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([[1, 2], [2, 3], [3, 4]], [3, 5, 7])
     @Test("forof destructing")
     public forofDestructing(inp: number[][], expected: any): void {
@@ -364,6 +386,28 @@ export class LuaLoopTests {
             `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
             for (let [a,b] of objTest) {
+                arrResultTest.push(a + b)
+            }
+            return JSONStringify(arrResultTest);`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([[1, 2], [2, 3], [3, 4]], [3, 5, 7])
+    @Test("forof destructing with existing variables")
+    public forofDestructingExistingVars(inp: number[][], expected: any): void {
+        // Transpile
+        const lua = util.transpileString(
+            `let objTest = ${JSON.stringify(inp)};
+            let arrResultTest = [];
+            let a: number;
+            let b: number;
+            for ([a,b] of objTest) {
                 arrResultTest.push(a + b)
             }
             return JSONStringify(arrResultTest);`
@@ -405,6 +449,283 @@ export class LuaLoopTests {
 
         // Assert
         Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @Test("forof with iterator")
+    public forofWithIterator(): void {
+        const code = `const arr = ["a", "b", "c"];
+            function iter(): IterableIterator<string> {
+                let i = 0;
+                return {
+                    [Symbol.iterator]() { return this; },
+                    next() { return {value: arr[i], done: i++ >= arr.length} },
+                }
+            }
+            let result = "";
+            for (let e of iter()) {
+                result += e;
+            }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof with iterator and existing variable")
+    public forofWithIteratorExistingVar(): void {
+        const code = `const arr = ["a", "b", "c"];
+            function iter(): IterableIterator<string> {
+                let i = 0;
+                return {
+                    [Symbol.iterator]() { return this; },
+                    next() { return {value: arr[i], done: i++ >= arr.length} },
+                }
+            }
+            let result = "";
+            let e: string;
+            for (e of iter()) {
+                result += e;
+            }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof destructuring with iterator")
+    public forofDestructuringWithIterator(): void {
+        const code = `const arr = ["a", "b", "c"];
+            function iter(): IterableIterator<[string, string]> {
+                let i = 0;
+                return {
+                    [Symbol.iterator]() { return this; },
+                    next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
+                }
+            }
+            let result = "";
+            for (let [a, b] of iter()) {
+                result += a + b;
+            }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof destructuring with iterator and existing variables")
+    public forofDestructuringWithIteratorExistingVars(): void {
+        const code = `const arr = ["a", "b", "c"];
+            function iter(): IterableIterator<[string, string]> {
+                let i = 0;
+                return {
+                    [Symbol.iterator]() { return this; },
+                    next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
+                }
+            }
+            let result = "";
+            let a: string;
+            let b: string;
+            for ([a, b] of iter()) {
+                result += a + b;
+            }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof lua iterator")
+    public forofLuaIterator(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<string> {
+                let i = 0;
+                return (() => arr[i++]) as any;
+            }
+            let result = "";
+            for (let e of luaIter()) { result += e; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof lua iterator with existing variable")
+    public forofLuaIteratorExistingVar(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<string> {
+                let i = 0;
+                return (() => arr[i++]) as any;
+            }
+            let result = "";
+            let e: string;
+            for (e of luaIter()) { result += e; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof lua iterator destructuring")
+    public forofLuaIteratorDestructuring(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                return (() => arr[i] && [i.toString(), arr[i++]]) as any;
+            }
+            let result = "";
+            for (let [a, b] of luaIter()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof lua iterator destructuring with existing variables")
+    public forofLuaIteratorDestructuringExistingVar(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                return (() => arr[i] && [i.toString(), arr[i++]]) as any;
+            }
+            let result = "";
+            let a: string;
+            let b: string;
+            for ([a, b] of luaIter()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof lua iterator tuple-return")
+    public forofLuaIteratorTupleReturn(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            /** @tupleReturn */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                /** @tupleReturn */
+                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+                return iter as any;
+            }
+            let result = "";
+            for (let [a, b] of luaIter()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof lua iterator tuple-return with existing variables")
+    public forofLuaIteratorTupleReturnExistingVars(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            /** @tupleReturn */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                /** @tupleReturn */
+                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+                return iter as any;
+            }
+            let result = "";
+            let a: string;
+            let b: string;
+            for ([a, b] of luaIter()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const lua = util.transpileString(code, compilerOptions);
+        const result = util.executeLua(lua);
+        Expect(result).toBe("0a1b2c");
+    }
+
+    @Test("forof lua iterator tuple-return single variable")
+    public forofLuaIteratorTupleReturnSingleVar(): void {
+        const code = `/** @luaIterator */
+            /** @tupleReturn */
+            declare function luaIter(): Iterable<[string, string]>;
+            for (let x of luaIter()) {}`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
+            TranspileError,
+            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
+            + "You must use a destructuring statement to catch results from a lua iterator with "
+            + "the TupleReturn decorator.");
+    }
+
+    @Test("forof lua iterator tuple-return single existing variable")
+    public forofLuaIteratorTupleReturnSingleExistingVar(): void {
+        const code = `/** @luaIterator */
+            /** @tupleReturn */
+            declare function luaIter(): Iterable<[string, string]>;
+            let x: [string, string];
+            for (x of luaIter()) {}`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
+            TranspileError,
+            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
+            + "You must use a destructuring statement to catch results from a lua iterator with "
+            + "the TupleReturn decorator.");
     }
 
     @TestCase("while (a < b) { i++; }")

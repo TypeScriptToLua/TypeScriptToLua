@@ -198,15 +198,17 @@ export class LuaTransformer {
 
             filteredElements.forEach(importSpecifier => {
                 if (importSpecifier.propertyName) {
-                    const propertyName = this.transformIdentifier(importSpecifier.propertyName);
+                    const propertyIdentifier = this.transformIdentifier(importSpecifier.propertyName);
+                    const propertyName = tstl.createStringLiteral(propertyIdentifier.text);
                     const renamedImport = tstl.createVariableDeclarationStatement(
                         this.transformIdentifier(importSpecifier.name),
                         tstl.createTableIndexExpression(importUniqueName, propertyName), undefined, importSpecifier);
                     result.push(renamedImport);
                 } else {
-                    const name = this.transformIdentifier(importSpecifier.name);
+                    const nameIdentifier = this.transformIdentifier(importSpecifier.name);
+                    const name = tstl.createStringLiteral(nameIdentifier.text);
                     const namedImport = tstl.createVariableDeclarationStatement(
-                        name,
+                        nameIdentifier,
                         tstl.createTableIndexExpression(importUniqueName, name), undefined, importSpecifier);
                     result.push(namedImport);
                 }
@@ -265,8 +267,8 @@ export class LuaTransformer {
                 throw TSTLErrors.MissingMetaExtension(statement);
             }
 
-            const extendsName = tstl.createIdentifier(extendsType.symbol.escapedName as string);
-            className = tstl.createIdentifier("__meta__" + extendsName.text);
+            const extendsName = tstl.createStringLiteral(extendsType.symbol.escapedName as string);
+            className = tstl.createIdentifier("__meta__" + extendsName.value);
 
             // local className = debug.getregistry()["extendsName"]
             const assignDebugCallIndex =
@@ -276,7 +278,7 @@ export class LuaTransformer {
                         tstl.createCallExpression(
                             tstl.createTableIndexExpression(
                                 tstl.createIdentifier("debug"),
-                                tstl.createIdentifier("getregistry")
+                                tstl.createStringLiteral("getregistry")
                             ),
                             []
                         ),
@@ -381,7 +383,7 @@ export class LuaTransformer {
 
             // baseName.new
             const newIndex =
-                tstl.createTableIndexExpression(baseName, tstl.createIdentifier("new"));
+                tstl.createTableIndexExpression(baseName, tstl.createStringLiteral("new"));
 
             // baseName.new()
             let rhs: tstl.Expression = tstl.createCallExpression(newIndex, []);
@@ -415,7 +417,7 @@ export class LuaTransformer {
         }
 
         // className.__index
-        const classIndex = tstl.createTableIndexExpression(className, tstl.createIdentifier("__index"));
+        const classIndex = tstl.createTableIndexExpression(className, tstl.createStringLiteral("__index"));
         // className.__index = className
         const assignClassIndex = tstl.createAssignmentStatement(classIndex, className, undefined, statement);
 
@@ -425,7 +427,7 @@ export class LuaTransformer {
             const baseName = tstl.createIdentifier(extendsType.symbol.escapedName as string);
             // className.__base = baseName
             const classBase =
-                tstl.createTableIndexExpression(className, tstl.createIdentifier("__base"));
+                tstl.createTableIndexExpression(className, tstl.createStringLiteral("__base"));
 
             const assignClassBase = tstl.createAssignmentStatement(classBase, baseName, undefined, statement);
 
@@ -468,13 +470,13 @@ export class LuaTransformer {
         const ifConstructor = tstl.createIfStatement(
             tstl.createBinaryExpression(
                 tstl.createIdentifier("construct"),
-                tstl.createTableIndexExpression(className, tstl.createIdentifier("constructor")),
+                tstl.createTableIndexExpression(className, tstl.createStringLiteral("constructor")),
                 tstl.SyntaxKind.AndOperator
             ),
             tstl.createBlock([
                 tstl.createExpressionStatement(
                     tstl.createCallExpression(
-                        tstl.createTableIndexExpression(className, tstl.createIdentifier("constructor")),
+                        tstl.createTableIndexExpression(className, tstl.createStringLiteral("constructor")),
                         [this.selfIdentifier, tstl.createDotsLiteral()]
                     )
                 ),
@@ -490,7 +492,7 @@ export class LuaTransformer {
 
         // function className.new(construct, ...) ... end
         const newFunc = tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(className, tstl.createIdentifier("new")),
+            tstl.createTableIndexExpression(className, tstl.createStringLiteral("new")),
             tstl.createFunctionExpression(
                 tstl.createBlock(newFuncStatements),
                 [tstl.createIdentifier("construct")],
@@ -531,7 +533,7 @@ export class LuaTransformer {
                     tstl.createAssignmentStatement(
                         tstl.createTableIndexExpression(
                             this.selfIdentifier,
-                            declarationName
+                            tstl.createStringLiteral(declarationName.text)
                         ),
                         tstl.createBinaryExpression(
                             declarationName,
@@ -546,7 +548,7 @@ export class LuaTransformer {
                 tstl.createAssignmentStatement(
                     tstl.createTableIndexExpression(
                         this.selfIdentifier,
-                        declarationName
+                        tstl.createStringLiteral(declarationName.text)
                     ),
                     declarationName
                 );
@@ -567,7 +569,7 @@ export class LuaTransformer {
             tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(
                     className,
-                    tstl.createIdentifier("constructor")
+                    tstl.createStringLiteral("constructor")
                 ),
                 tstl.createFunctionExpression(
                     body,
@@ -598,7 +600,7 @@ export class LuaTransformer {
             );
 
         return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(className, tstl.createIdentifier("get__" + name.text)),
+            tstl.createTableIndexExpression(className, tstl.createStringLiteral("get__" + name.text)),
             accessorFunction
         );
 
@@ -620,7 +622,7 @@ export class LuaTransformer {
             );
 
         return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(className, tstl.createIdentifier("set__" + name.text)),
+            tstl.createTableIndexExpression(className, tstl.createStringLiteral("set__" + name.text)),
             accessorFunction
         );
     }
@@ -1702,8 +1704,8 @@ export class LuaTransformer {
         if (node.expression.kind === ts.SyntaxKind.SuperKeyword) {
             parameters = this.transformArguments(node.arguments, signature, ts.createThis());
             const classIdentifier = this.classStack[this.classStack.length - 1];
-            const baseIdentifier = tstl.createIdentifier("__base");
-            const constructorIdentifier = tstl.createIdentifier("constructor");
+            const baseIdentifier = tstl.createStringLiteral("__base");
+            const constructorIdentifier = tstl.createStringLiteral("constructor");
 
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(
@@ -2012,7 +2014,7 @@ export class LuaTransformer {
         };
 
         if (translation[identifier.escapedText as string]) {
-            const property = tstl.createIdentifier(translation[identifier.escapedText as string]);
+            const property = tstl.createStringLiteral(translation[identifier.escapedText as string]);
             const math = tstl.createIdentifier("math");
             return tstl.createTableIndexExpression(math, property, undefined, identifier);
         } else {
@@ -2288,7 +2290,7 @@ export class LuaTransformer {
             const value = +propertyName.text;
             return tstl.createNumericLiteral(value, undefined, propertyName);
         } else {
-            return this.transformIdentifier(propertyName);
+            return tstl.createStringLiteral(this.transformIdentifier(propertyName).text);
         }
     }
 

@@ -26,7 +26,7 @@ export {
 
 export {
     LuaLibFeature,
-} from "./LuaLibFeature";
+} from "./LuaLib";
 
 export {
     createTransformer

@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as glob from "glob";
 import {compile} from "./src/Compiler";
+import {LuaLib as luaLib, LuaLibFeature} from "./src/LuaLib";
 
 const bundlePath = "./dist/lualib/lualib_bundle.lua";
 
@@ -15,14 +16,11 @@ compile([
     "--rootDir",
     "./src/lualib",
     ...glob.sync("./src/lualib/*.ts"),
-  ]);
+]);
 
 if (fs.existsSync(bundlePath)) {
-  fs.unlinkSync(bundlePath);
+    fs.unlinkSync(bundlePath);
 }
 
-let bundle = "";
-
-glob.sync("./dist/lualib/*.lua").forEach(fileName => bundle += fs.readFileSync(fileName));
-
+const bundle = luaLib.loadFeatures(Object.keys(LuaLibFeature).map(lib => LuaLibFeature[lib]));
 fs.writeFileSync(bundlePath, bundle);

@@ -11,7 +11,7 @@ export enum SyntaxKind {
     // Statements
     DoStatement,
     VariableDeclarationStatement,
-    VariableAssignmentStatement,
+    AssignmentStatement,
     IfStatement,
     WhileStatement,
     RepeatStatement,
@@ -40,8 +40,6 @@ export enum SyntaxKind {
     Identifier,
     TableIndexExpression,
     // Operators
-    AssignmentOperator, // TODO maybe remove this once we figure out the correct way to transform a assignment in a binary expression
-                        // or maybe move change Assignment statement to contain a binaryExpression with an AssignmentOperator somehow?
     // Arithmetic
     AdditionOperator, // Maybe use abreviations for those add, sub, mul ...
     SubractionOperator,
@@ -82,7 +80,6 @@ export type UnaryOperator = SyntaxKind.NegationOperator | SyntaxKind.LengthOpera
                         SyntaxKind.NotOperator | SyntaxKind.BitwiseNotOperator;
 
 export type BinaryOperator =
-    SyntaxKind.AssignmentOperator | // TODO @see above 
     // Arithmetic
     SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator |
     SyntaxKind.DivisionOperator | SyntaxKind.FloorDivisionOperator |
@@ -214,24 +211,24 @@ export function createVariableDeclarationStatement(
 }
 
 // `test1, test2 = 12, 42`
-export interface VariableAssignmentStatement extends Statement {
-    kind: SyntaxKind.VariableAssignmentStatement;
+export interface AssignmentStatement extends Statement {
+    kind: SyntaxKind.AssignmentStatement;
     left: IdentifierOrTableIndexExpression[];
     right: Expression[];
 }
 
-export function isVariableAssignmentStatement(node: Node): node is VariableAssignmentStatement {
-    return node.kind === SyntaxKind.VariableAssignmentStatement;
+export function isAssignmentStatement(node: Node): node is AssignmentStatement {
+    return node.kind === SyntaxKind.AssignmentStatement;
 }
 
-export function createVariableAssignmentStatement(
+export function createAssignmentStatement(
     left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
     right: Expression | Expression[],
     parent?: Node,
-    tsOriginal?: ts.Node): VariableAssignmentStatement {
+    tsOriginal?: ts.Node): AssignmentStatement {
 
     const statement =
-        createNode(SyntaxKind.VariableAssignmentStatement, parent, tsOriginal) as VariableAssignmentStatement;
+        createNode(SyntaxKind.AssignmentStatement, parent, tsOriginal) as AssignmentStatement;
     setParent(left, statement);
     if (Array.isArray(left)) {
         statement.left = left;

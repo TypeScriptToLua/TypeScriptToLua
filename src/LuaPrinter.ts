@@ -6,7 +6,6 @@ export class LuaPrinter {
 
     /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
-        [tstl.SyntaxKind.AssignmentOperator]: "=",
         [tstl.SyntaxKind.AdditionOperator]: "+",
         [tstl.SyntaxKind.SubractionOperator]: "-",
         [tstl.SyntaxKind.MultiplicationOperator]: "*",
@@ -67,8 +66,8 @@ export class LuaPrinter {
                 return this.printDoStatement(statement as tstl.DoStatement);
             case tstl.SyntaxKind.VariableDeclarationStatement:
                 return this.printVariableDeclarationStatement(statement as tstl.VariableDeclarationStatement);
-            case tstl.SyntaxKind.VariableAssignmentStatement:
-                return this.printVariableAssignmentStatement(statement as tstl.VariableAssignmentStatement);
+            case tstl.SyntaxKind.AssignmentStatement:
+                return this.printVariableAssignmentStatement(statement as tstl.AssignmentStatement);
             case tstl.SyntaxKind.IfStatement:
                 return this.printIfStatement(statement as tstl.IfStatement);
             case tstl.SyntaxKind.WhileStatement:
@@ -111,7 +110,7 @@ export class LuaPrinter {
         }
     }
 
-    private printVariableAssignmentStatement(statement: tstl.VariableAssignmentStatement): string {
+    private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): string {
         return this.indent(`${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
                            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }

@@ -149,6 +149,16 @@ export class TSHelper {
         return this.forTypeOrAnySupertype(type, checker, t => this.isExplicitArrayType(t, checker));
     }
 
+    public static isLuaIteratorCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+        if (ts.isCallExpression(node) && node.parent && ts.isForOfStatement(node.parent)) {
+            const type = checker.getTypeAtLocation(node.expression);
+            return this.getCustomDecorators(type, checker)
+                       .has(DecoratorKind.LuaIterator);
+        } else {
+            return false;
+        }
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const type = checker.getTypeAtLocation(node.expression);
@@ -168,7 +178,9 @@ export class TSHelper {
                 checker.getTypeAtLocation(declaration),
                 checker
             );
-            return decorators.has(DecoratorKind.TupleReturn);
+            return decorators.has(DecoratorKind.TupleReturn)
+                // Lua iterators are not 'true' tupleReturn functions as they actually return a function
+                && !decorators.has(DecoratorKind.LuaIterator);
         } else {
             return false;
         }

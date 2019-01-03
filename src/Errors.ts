@@ -109,4 +109,11 @@ export class TSTLErrors {
                                       node);
         }
     };
+
+    public static UnsupportedNonDestructuringLuaIterator = (node: ts.Node) => {
+        return new TranspileError("Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
+                                  + "You must use a destructuring statement to catch results from a lua iterator with "
+                                  + "the TupleReturn decorator.",
+                                  node);
+    };
 }

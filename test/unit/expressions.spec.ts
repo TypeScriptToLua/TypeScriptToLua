@@ -202,6 +202,8 @@ export class ExpressionTests {
     @TestCase("true ? maybeBooleanValue : true", false)
     @TestCase("true ? maybeUndefinedValue : true", undefined, { strictNullChecks: true })
     @TestCase("true ? maybeBooleanValue : true", false, { strictNullChecks: true })
+    @TestCase("true ? undefined : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? null : true", undefined, { strictNullChecks: true })
     @TestCase("true ? false : true", false, { luaTarget: LuaTarget.Lua51 })
     @TestCase("false ? false : true", true, { luaTarget: LuaTarget.Lua51 })
     @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.Lua51 })

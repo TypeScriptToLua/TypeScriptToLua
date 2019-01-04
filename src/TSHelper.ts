@@ -458,6 +458,7 @@ export class TSHelper {
         const falsibleFlags = ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral
             | ts.TypeFlags.Undefined
+            | ts.TypeFlags.Null
             | ts.TypeFlags.Any;
 
         if (type.flags & falsibleFlags) {

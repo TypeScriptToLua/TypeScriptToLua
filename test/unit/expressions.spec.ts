@@ -192,6 +192,8 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
+    @TestCase("true ? 'a' : 'b'", "a")
+    @TestCase("false ? 'a' : 'b'", "b")
     @TestCase("true ? false : true", false)
     @TestCase("false ? false : true", true)
     @TestCase("true ? literalValue : true", "literal")

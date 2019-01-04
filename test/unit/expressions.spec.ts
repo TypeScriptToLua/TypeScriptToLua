@@ -192,16 +192,22 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
-    @TestCase(LuaTarget.Lua51, "true?false:true", false)
-    @TestCase(LuaTarget.Lua51, "false?false:true", true)
-    @TestCase(LuaTarget.Lua51, "true?undefined:true", undefined)
-    @TestCase(LuaTarget.LuaJIT, "true?false:true", false)
-    @TestCase(LuaTarget.LuaJIT, "false?false:true", true)
-    @TestCase(LuaTarget.LuaJIT, "true?undefined:true", undefined)
+    @TestCase("true ? false : true", false)
+    @TestCase("false ? false : true", true)
+    @TestCase("true ? false : true", false, LuaTarget.Lua51)
+    @TestCase("false ? false : true", true, LuaTarget.Lua51)
+    @TestCase("true ? undefined : true", undefined, LuaTarget.Lua51)
+    @TestCase("true ? false : true", false, LuaTarget.LuaJIT)
+    @TestCase("false ? false : true", true, LuaTarget.LuaJIT)
+    @TestCase("true ? undefined : true", undefined, LuaTarget.LuaJIT)
+    @TestCase("true ? literalValue : variableValue", "literal")
+    @TestCase("true ? variableValue : literalValue", undefined)
     @Test("Ternary operator")
-    public ternaryOperator(target: LuaTarget, input: string, expected: any): void {
-        const lua = `return `
-                  + util.transpileString(input, { luaTarget: target });
+    public ternaryOperator(input: string, expected: any, target?: LuaTarget): void {
+        const source = `const literalValue = 'literal';`
+                     + `let variableValue:string;`
+                     + `return ${input};`;
+        const lua = util.transpileString(source, { luaTarget: target });
         const result = util.executeLua(lua);
         Expect(result).toBe(expected);
     }

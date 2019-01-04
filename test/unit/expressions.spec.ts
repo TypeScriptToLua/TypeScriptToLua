@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 
@@ -192,7 +192,6 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
-    @FocusTest
     @TestCase("true ? false : true", false)
     @TestCase("false ? false : true", true)
     @TestCase("true ? literalValue : true", "literal")

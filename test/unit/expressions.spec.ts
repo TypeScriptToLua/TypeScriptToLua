@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import { TranspileError } from "../../src/Errors";
 import { LuaTarget } from "../../src/Transpiler";
 
@@ -192,22 +192,29 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
+    @FocusTest
     @TestCase("true ? false : true", false)
     @TestCase("false ? false : true", true)
-    @TestCase("true ? false : true", false, LuaTarget.Lua51)
-    @TestCase("false ? false : true", true, LuaTarget.Lua51)
-    @TestCase("true ? undefined : true", undefined, LuaTarget.Lua51)
-    @TestCase("true ? false : true", false, LuaTarget.LuaJIT)
-    @TestCase("false ? false : true", true, LuaTarget.LuaJIT)
-    @TestCase("true ? undefined : true", undefined, LuaTarget.LuaJIT)
-    @TestCase("true ? literalValue : variableValue", "literal")
-    @TestCase("true ? variableValue : literalValue", undefined)
+    @TestCase("true ? literalValue : true", "literal")
+    @TestCase("true ? variableValue : true", undefined)
+    @TestCase("true ? maybeUndefinedValue : true", undefined)
+    @TestCase("true ? maybeBooleanValue : true", false)
+    @TestCase("true ? maybeUndefinedValue : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? maybeBooleanValue : true", false, { strictNullChecks: true })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.LuaJIT })
     @Test("Ternary operator")
-    public ternaryOperator(input: string, expected: any, target?: LuaTarget): void {
+    public ternaryOperator(input: string, expected: any, options?: ts.CompilerOptions): void {
         const source = `const literalValue = 'literal';`
                      + `let variableValue:string;`
+                     + `let maybeBooleanValue:string|boolean = false;`
+                     + `let maybeUndefinedValue:string|undefined;`
                      + `return ${input};`;
-        const lua = util.transpileString(source, { luaTarget: target });
+        const lua = util.transpileString(source, options);
         const result = util.executeLua(lua);
         Expect(result).toBe(expected);
     }

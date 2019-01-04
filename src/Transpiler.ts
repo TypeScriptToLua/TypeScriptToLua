@@ -1038,7 +1038,7 @@ export abstract class LuaTranspiler {
     }
 
     public transpileConditionalExpression(node: ts.ConditionalExpression): string {
-        if (tsHelper.isNonFalsible(this.checker.getTypeAtLocation(node.whenTrue))) {
+        if (tsHelper.isNonFalsible(this.checker.getTypeAtLocation(node.whenTrue), this.options.strictNullChecks)) {
             const condition = this.transpileExpression(node.condition);
             const val1 = this.transpileExpression(node.whenTrue);
             const val2 = this.transpileExpression(node.whenFalse);

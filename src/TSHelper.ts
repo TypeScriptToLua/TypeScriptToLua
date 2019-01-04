@@ -454,7 +454,7 @@ export class TSHelper {
         return defaultArrayPropertyNames.has(methodName);
     }
 
-    public static isNonFalsible(type: ts.Type): boolean {
+    public static isNonFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
         const falsibleFlags = ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral
             | ts.TypeFlags.Undefined
@@ -462,10 +462,10 @@ export class TSHelper {
 
         if (type.flags & falsibleFlags) {
             return false;
-        } else if (type.isLiteral()) {
-            return true;
+        } else if (!strictNullChecks && !type.isLiteral()) {
+            return false;
         }
 
-        return false;
+        return true;
     }
 }

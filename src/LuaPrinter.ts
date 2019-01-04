@@ -115,22 +115,25 @@ export class LuaPrinter {
                            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }
 
-    private printIfStatement(statement: tstl.IfStatement): string {
-        let result = this.indent(`if ${this.printExpression(statement.condtion)} then\n`);
+    private printIfStatement(statement: tstl.IfStatement, isElseIf?: boolean): string {
+        const prefix = isElseIf ? "elseif" : "if"; 
+        let result = this.indent(`${prefix} ${this.printExpression(statement.condtion)} then\n`);
         this.pushIndent();
         result += this.printBlock(statement.ifBlock);
         this.popIndent();
         if (statement.elseBlock) {
             if (tstl.isIfStatement(statement.elseBlock)) {
-                result += this.printIfStatement(statement.elseBlock);
+                result += this.printIfStatement(statement.elseBlock, true);
             } else {
                 result += this.indent("else\n");
                 this.pushIndent();
                 result += this.printBlock(statement.elseBlock);
                 this.popIndent();
+                result += this.indent("end\n");
             }
+        } else {
+            result += this.indent("end\n");
         }
-        result += this.indent("end\n");
 
         return result;
     }

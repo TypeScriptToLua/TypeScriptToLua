@@ -145,12 +145,11 @@ export class LuaTransformer {
     public transformStatements(
         statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
 
-        const tstlStatements = (statements as ts.Statement[]).map(statement => this.transformStatement(statement) as tstl.Statement);
-
-        const flat = this.flat(tstlStatements);
-
-        // TODO this is somewhat hacky and not typesafe
-        return flat;
+        const tstlStatements: tstl.Statement[] = [];
+        (statements as ts.Statement[]).forEach(statement => {
+            tstlStatements.push(...this.statementVisitResultToStatementArray(this.transformStatement(statement)));
+        });
+        return tstlStatements;
     }
 
     public transformBlock(block: ts.Block): tstl.Block {
@@ -850,15 +849,15 @@ export class LuaTransformer {
         return this.createLocalOrGlobalDeclaration(name, functionExpression, undefined, functionDeclaration);
     }
 
-    public transformTypeAliasDeclaration(arg0: ts.TypeAliasDeclaration): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformTypeAliasDeclaration(statement: ts.TypeAliasDeclaration): StatementVisitResult {
+        return undefined;
     }
 
-    public transformInterfaceDeclaration(arg0: ts.InterfaceDeclaration): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformInterfaceDeclaration(statement: ts.InterfaceDeclaration): StatementVisitResult {
+        return undefined;
     }
 
-    public transformVariableDeclaration(statement: ts.VariableDeclaration): StatementVisitResult {
+    public transformVariableDeclaration(statement: ts.VariableDeclaration): tstl.Statement[] {
         if (statement.initializer) {
             // Validate assignment
             const initializerType = this.checker.getTypeAtLocation(statement.initializer);
@@ -878,11 +877,11 @@ export class LuaTransformer {
                     return [tstl.createVariableDeclarationStatement(identifierName), tstl.createAssignmentStatement(identifierName, value)];
                 } else {
                     // local identifierName = value;
-                    return tstl.createVariableDeclarationStatement(identifierName, value);
+                    return [tstl.createVariableDeclarationStatement(identifierName, value)];
                 }
             } else {
                 // local identifierName = nil;
-                return tstl.createVariableDeclarationStatement(identifierName, tstl.createNilLiteral());
+                return [tstl.createVariableDeclarationStatement(identifierName, tstl.createNilLiteral())];
             }
         } else if (ts.isArrayBindingPattern(statement.name)) {
             // Destructuring type
@@ -897,10 +896,10 @@ export class LuaTransformer {
             // Don't unpack TupleReturn decorated functions
             if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
                 // local vars = initializer;
-                return tstl.createVariableDeclarationStatement(vars, this.transformExpression(statement.initializer));
+                return [tstl.createVariableDeclarationStatement(vars, this.transformExpression(statement.initializer))];
             } else {
                 // local vars = this.transpileDestructingAssignmentValue(node.initializer);
-                return tstl.createVariableDeclarationStatement(vars, this.createUnpackCall(statement.initializer));
+                return [tstl.createVariableDeclarationStatement(vars, this.createUnpackCall(statement.initializer))];
             }
         } else {
             throw TSTLErrors.UnsupportedKind("variable declaration", statement.name.kind, statement);
@@ -908,12 +907,12 @@ export class LuaTransformer {
     }
 
     public transformVariableStatement(statement: ts.VariableStatement): StatementVisitResult {
-        return this.flat(
-            statement.declarationList.declarations.map(declaration => this.transformVariableDeclaration(declaration)) as tstl.Statement[]
-        );
+        const result: tstl.Statement[] = [];
+        statement.declarationList.declarations.forEach(declaration => result.push(...this.transformVariableDeclaration(declaration)));
+        return result;
     }
 
-    public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): StatementVisitResult {
+    public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): tstl.Statement {
         const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(
@@ -965,7 +964,7 @@ export class LuaTransformer {
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
 
-    public transformReturn(statement: ts.ReturnStatement): StatementVisitResult {
+    public transformReturn(statement: ts.ReturnStatement): tstl.Statement {
         if (statement.expression) {
             const returnType = tsHelper.getContainingFunctionReturnType(statement, this.checker);
             if (returnType) {
@@ -989,22 +988,58 @@ export class LuaTransformer {
         }
     }
 
-    public transformIfStatement(arg0: ts.IfStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformIfStatement(statement: ts.IfStatement): tstl.IfStatement {
+        const condition = this.transformExpression(statement.expression);
+        const ifBlock = tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.thenStatement)));
+        if (statement.elseStatement) {
+            if (ts.isIfStatement(statement.elseStatement)) {
+                return tstl.createIfStatement(condition, ifBlock, this.transformIfStatement(statement.elseStatement));
+            } else {
+                const elseBlock = tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.elseStatement)));
+                return tstl.createIfStatement(condition, ifBlock, elseBlock);
+            }
+        }
+        return tstl.createIfStatement(condition, ifBlock);
     }
 
-    public transformWhileStatement(arg0: ts.WhileStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformWhileStatement(statement: ts.WhileStatement): StatementVisitResult {
+        return tstl.createWhileStatement(
+            tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.statement))),
+            this.transformExpression(statement.expression)
+        );
     }
 
-    public transformDoStatement(arg0: ts.DoStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformDoStatement(statement: ts.DoStatement): StatementVisitResult {
+        return tstl.createRepeatStatement(
+            tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.statement))),
+            tstl.createUnaryExpression(this.transformExpression(statement.expression), tstl.SyntaxKind.NotOperator)
+        );
     }
 
-    public transformForStatement(arg0: ts.ForStatement): StatementVisitResult {
-        // NOTE : When implementing, make sure incrementor is transformed with transformExpressionStatement
-        //        to ensure it is not wrapped in an iife.
-        throw new Error("Method not implemented.");
+    public transformForStatement(statement: ts.ForStatement): StatementVisitResult {
+        const result: tstl.Statement[] = [];
+
+        if (statement.initializer) {
+            for (const variableDeclaration of (statement.initializer as ts.VariableDeclarationList).declarations) {
+                // local initializer = value
+                result.push(...this.transformVariableDeclaration(variableDeclaration));
+            }
+        }
+
+        const condition = statement.condition ? this.transformExpression(statement.condition) : tstl.createBooleanLiteral(true);
+
+        // Add body
+        const body: tstl.Statement[] = [];
+        body.push(...this.statementVisitResultToStatementArray(this.transformStatement(statement.statement)));
+
+        if (statement.incrementor) {
+            body.push(this.transformExpressionStatement(statement.incrementor));
+        }
+    
+        // while (condition) do ... end
+        result.push(tstl.createWhileStatement(tstl.createBlock(body), condition));
+
+        return result;
     }
 
     public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
@@ -1079,10 +1114,12 @@ export class LuaTransformer {
                     undefined,
                     itemVariable
                 );
+                // TODO ????? 
                 this.transformVariableDeclaration(declaration);
             } else {
                 // Assign item variable
                 const assignment = ts.createAssignment(statement.initializer, itemVariable);
+                // TODO ??? this does nothing
                 this.transformExpression(assignment);
             }
         }
@@ -1126,7 +1163,7 @@ export class LuaTransformer {
     }
 
     public transformEmptyStatement(arg0: ts.EmptyStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+        return undefined;
     }
 
     // Expressions
@@ -1152,6 +1189,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 return this.transformStringLiteral(expression as ts.StringLiteral);
+            case ts.SyntaxKind.TemplateExpression:
+                return this.transformTemplateExpression(expression as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
                 return tstl.createNumericLiteral(
                     Number((expression as ts.NumericLiteral).text),
@@ -1468,7 +1507,7 @@ export class LuaTransformer {
         lhs: ts.Expression,
         rhs: ts.Expression,
         replacementOperator: tstl.BinaryOperator
-    ): StatementVisitResult {
+    ): tstl.Statement {
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         const right = this.transformExpression(rhs);
 
@@ -2285,6 +2324,18 @@ export class LuaTransformer {
         return tstl.createStringLiteral(text);
     }
 
+    public transformTemplateExpression(expression: ts.TemplateExpression): tstl.BinaryExpression {
+        const parts: tstl.Expression[] = [tstl.createStringLiteral(this.escapeString(expression.head.text))];
+        expression.templateSpans.forEach(span => {
+            const expr = this.transformExpression(span.expression);
+            const text = tstl.createStringLiteral(this.escapeString(span.literal.text));
+
+            // tostring(expr).."text"
+            parts.push(tstl.createBinaryExpression(tstl.createCallExpression(tstl.createIdentifier("tostring"), [expr]), text, tstl.SyntaxKind.ConcatOperator));
+        });
+        return parts.reduce((prev, current) => tstl.createBinaryExpression(prev, current, tstl.SyntaxKind.ConcatOperator)) as tstl.BinaryExpression;
+    }
+
     public transformPropertyName(propertyName: ts.PropertyName): ExpressionVisitResult {
         if (ts.isComputedPropertyName(propertyName)) {
             return this.transformExpression(propertyName.expression);
@@ -2520,18 +2571,25 @@ export class LuaTransformer {
         return this.scopeStack.pop();
     }
 
-    private flat<T>(arr: T[] | ReadonlyArray<T>): T[] {
+    private statementVisitResultToStatementArray(visitResult: StatementVisitResult): tstl.Statement[] {
+        if (!Array.isArray(visitResult)) {
+            if (visitResult) {
+                return [visitResult];
+            }
+            return [];
+        }
         const flatten = (arr, result = []) => {
             for (let i = 0, length = arr.length; i < length; i++) {
                 const value = arr[i];
                 if (Array.isArray(value)) {
                     flatten(value, result);
-                } else {
+                } else if (value) {
+                    // ignore value if undefined
                     result.push(value);
                 }
             }
             return result;
         };
-        return flatten(arr);
+        return flatten(visitResult);
     }
 }

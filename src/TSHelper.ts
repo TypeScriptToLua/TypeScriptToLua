@@ -455,7 +455,8 @@ export class TSHelper {
     }
 
     public static isNonFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
-        const falsibleFlags = ts.TypeFlags.Boolean
+        const falsibleFlags = ts.TypeFlags.PossiblyFalsy
+            | ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral
             | ts.TypeFlags.Undefined
             | ts.TypeFlags.Any;
@@ -464,6 +465,12 @@ export class TSHelper {
             return false;
         } else if (!strictNullChecks && !type.isLiteral()) {
             return false;
+        } else if (type.isUnion()) {
+            for (const subType of type.types) {
+                if (!this.isNonFalsible(subType, strictNullChecks)) {
+                    return false;
+                }
+            }
         }
 
         return true;

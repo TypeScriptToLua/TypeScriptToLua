@@ -455,8 +455,7 @@ export class TSHelper {
     }
 
     public static isNonFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
-        const falsibleFlags = ts.TypeFlags.PossiblyFalsy
-            | ts.TypeFlags.Boolean
+        const falsibleFlags = ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral
             | ts.TypeFlags.Undefined
             | ts.TypeFlags.Any;

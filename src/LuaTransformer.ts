@@ -1278,11 +1278,6 @@ export class LuaTransformer {
             case ts.SyntaxKind.ElementAccessExpression:
                 return this.transformElementAccessExpression(expression as ts.ElementAccessExpression);
             case ts.SyntaxKind.Identifier:
-                // Catch undefined which is passed as identifier
-                if ((expression as ts.Identifier).originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
-                    return tstl.createNilLiteral();
-                }
-                // Otherwise simply return the name
                 return this.transformIdentifier(expression as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
@@ -1290,19 +1285,24 @@ export class LuaTransformer {
             case ts.SyntaxKind.TemplateExpression:
                 return this.transformTemplateExpression(expression as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
+                // TODO move to extra function (consistency)
                 return tstl.createNumericLiteral(
                     Number((expression as ts.NumericLiteral).text),
                     undefined,
                     expression
                 );
             case ts.SyntaxKind.TrueKeyword:
+                // TODO move to extra function (consistency)
                 return tstl.createBooleanLiteral(true, undefined, expression);
             case ts.SyntaxKind.FalseKeyword:
+                // TODO move to extra function (consistency)
                 return tstl.createBooleanLiteral(false, undefined, expression);
             case ts.SyntaxKind.NullKeyword:
             case ts.SyntaxKind.UndefinedKeyword:
+                // TODO move to extra function (consistency)
                 return tstl.createNilLiteral(undefined, expression);
             case ts.SyntaxKind.ThisKeyword:
+                // TODO move to extra function (consistency)
                 return this.selfIdentifier;
             case ts.SyntaxKind.PostfixUnaryExpression:
                 return this.transformPostfixUnaryExpression(expression as ts.PostfixUnaryExpression);
@@ -1321,12 +1321,14 @@ export class LuaTransformer {
             case ts.SyntaxKind.ComputedPropertyName:
                 // return "[" + this.transpileExpression((node as ts.ComputedPropertyName).expression) + "]";
             case ts.SyntaxKind.ParenthesizedExpression:
+                // TODO move to extra function (consistency)
                 return tstl.createParenthesizedExpression(
                     this.transformExpression((expression as ts.ParenthesizedExpression).expression),
                     undefined,
                     expression
                 );
             case ts.SyntaxKind.SuperKeyword:
+                // TODO move to extra function (consistency)
                 return tstl.createTableIndexExpression(
                     this.selfIdentifier,
                     tstl.createStringLiteral("__base"),
@@ -1339,6 +1341,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transformTypeOfExpression(expression as ts.TypeOfExpression);
             case ts.SyntaxKind.EmptyStatement:
+                // TODO move to extra function (consistency)
                 return undefined;
             case ts.SyntaxKind.ClassExpression:
                 /*this.namespace.push("");
@@ -2448,6 +2451,11 @@ export class LuaTransformer {
     }
 
     public transformIdentifier(epxression: ts.Identifier, parent?: tstl.Node): tstl.Identifier {
+        if (epxression.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+            return tstl.createIdentifier("nil"); // TODO this is a hack that allows use to keep Identifier as return time
+                                                 // as changing that would break a lot of stuff.
+                                                 // But this should be changed to retunr tstl.createNilLiteral() at somepoint
+        }
         let escapedText = epxression.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3

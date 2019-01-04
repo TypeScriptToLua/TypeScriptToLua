@@ -109,7 +109,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.VariableStatement:
                 return this.transformVariableStatement(node as ts.VariableStatement);
             case ts.SyntaxKind.ExpressionStatement:
-                return this.transformExpressionStatement((node as ts.ExpressionStatement).expression);
+                return this.transformExpressionStatement(node as ts.ExpressionStatement);
             case ts.SyntaxKind.ReturnStatement:
                 return this.transformReturn(node as ts.ReturnStatement);
             case ts.SyntaxKind.IfStatement:
@@ -913,7 +913,8 @@ export class LuaTransformer {
         );
     }
 
-    public transformExpressionStatement(expression: ts.Expression): StatementVisitResult {
+    public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): StatementVisitResult {
+        const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(
                 expression.operatorToken.kind
@@ -939,23 +940,25 @@ export class LuaTransformer {
             )
         ) {
             // ++i, --i
+            const replacementOperator = expression.operator === ts.SyntaxKind.PlusPlusToken
+                ? tstl.SyntaxKind.AdditionOperator
+                : tstl.SyntaxKind.SubractionOperator;
             return this.transformCompoundAssignmentStatement(
                 expression.operand,
                 ts.createLiteral(1),
-                expression.operator === ts.SyntaxKind.PlusPlusToken
-                    ? tstl.SyntaxKind.AdditionOperator
-                    : tstl.SyntaxKind.SubractionOperator
+                replacementOperator
             );
         }
 
         else if (ts.isPostfixUnaryExpression(expression)) {
             // i++, i--
+            const replacementOperator = expression.operator === ts.SyntaxKind.PlusPlusToken
+                ? tstl.SyntaxKind.AdditionOperator
+                : tstl.SyntaxKind.SubractionOperator;
             return this.transformCompoundAssignmentStatement(
                 expression.operand,
                 ts.createLiteral(1),
-                expression.operator === ts.SyntaxKind.PlusPlusToken
-                    ? tstl.SyntaxKind.AdditionOperator
-                    : tstl.SyntaxKind.SubractionOperator
+                replacementOperator
             );
         }
 
@@ -1520,12 +1523,13 @@ export class LuaTransformer {
     }
 
     public transformPostfixUnaryExpression(expression: ts.PostfixUnaryExpression): tstl.Expression {
+        const replacementOperator = expression.operator === ts.SyntaxKind.PlusPlusToken
+            ? tstl.SyntaxKind.AdditionOperator
+            : tstl.SyntaxKind.SubractionOperator;
         return this.transformCompoundAssignmentExpression(
             expression.operand,
             ts.createLiteral(1),
-            expression.operator === ts.SyntaxKind.PlusPlusToken
-                ? tstl.SyntaxKind.AdditionOperator
-                : tstl.SyntaxKind.SubractionOperator,
+            replacementOperator,
             true
         );
     }

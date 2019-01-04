@@ -385,38 +385,41 @@ export class FunctionTests {
     @Test("Element access call")
     public elementAccessCall(): void {
         const code = `class C {
-            method(s: string) { return s; }
+            prop = "bar";
+            method(s: string) { return s + this.prop; }
         }
         const c = new C();
         return c['method']("foo");
         `;
         const result = util.transpileAndExecute(code);
-        Expect(result).toBe("foo");
+        Expect(result).toBe("foobar");
     }
 
     @Test("Complex element access call")
     public elementAccessCallComplex(): void {
         const code = `class C {
-            method(s: string) { return s; }
+            prop = "bar";
+            method(s: string) { return s + this.prop; }
         }
         function getC() { return new C(); }
         return getC()['method']("foo");
         `;
         const result = util.transpileAndExecute(code);
-        Expect(result).toBe("foo");
+        Expect(result).toBe("foobar");
     }
 
     @Test("Complex element access call statement")
     public elementAccessCallComplexStatement(): void {
         const code = `let foo: string;
         class C {
-            method(s: string) { foo = s; }
+            prop = "bar";
+            method(s: string) { foo = s + this.prop; }
         }
         function getC() { return new C(); }
         getC()['method']("foo");
         return foo;
         `;
         const result = util.transpileAndExecute(code);
-        Expect(result).toBe("foo");
+        Expect(result).toBe("foobar");
     }
 }

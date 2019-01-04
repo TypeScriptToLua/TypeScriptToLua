@@ -1,0 +1,3 @@
+Symbol = {
+    iterator: {},
+} as any;

@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
 import { TSTLErrors } from "./Errors";
+import * as tstl from "./LuaAST";
 
 export enum ContextType {
     None,
@@ -281,32 +282,33 @@ export class TSHelper {
         return false;
     }
 
-    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, ts.BinaryOperator] {
+    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, tstl.BinaryOperator] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
-                return [true, ts.SyntaxKind.BarToken];
+                return [true, tstl.SyntaxKind.BitwiseOrOperator];
             case ts.SyntaxKind.PlusEqualsToken:
-                return [true, ts.SyntaxKind.PlusToken];
+                return [true, tstl.SyntaxKind.AdditionOperator];
             case ts.SyntaxKind.CaretEqualsToken:
-                return [true, ts.SyntaxKind.CaretToken];
+                return [true, tstl.SyntaxKind.BitwiseExclusiveOrOperator];
             case ts.SyntaxKind.MinusEqualsToken:
-                return [true, ts.SyntaxKind.MinusToken];
+                return [true, tstl.SyntaxKind.SubractionOperator];
             case ts.SyntaxKind.SlashEqualsToken:
-                return [true, ts.SyntaxKind.SlashToken];
+                return [true, tstl.SyntaxKind.DivisionOperator];
             case ts.SyntaxKind.PercentEqualsToken:
-                return [true, ts.SyntaxKind.PercentToken];
+                return [true, tstl.SyntaxKind.ModuloOperator];
             case ts.SyntaxKind.AsteriskEqualsToken:
-                return [true, ts.SyntaxKind.AsteriskToken];
+                return [true, tstl.SyntaxKind.MultiplicationOperator];
             case ts.SyntaxKind.AmpersandEqualsToken:
-                return [true, ts.SyntaxKind.AmpersandToken];
+                return [true, tstl.SyntaxKind.BitwiseAndOperator];
             case ts.SyntaxKind.AsteriskAsteriskEqualsToken:
-                return [true, ts.SyntaxKind.AsteriskAsteriskToken];
+                return [true, tstl.SyntaxKind.PowerOperator];
             case ts.SyntaxKind.LessThanLessThanEqualsToken:
-                return [true, ts.SyntaxKind.LessThanLessThanToken];
+                return [true, tstl.SyntaxKind.BitwiseLeftShiftOperator];
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                return [true, ts.SyntaxKind.GreaterThanGreaterThanToken];
+                return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
+                // return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
+                throw new Error("Not yet implemented in lua AST"); //TODO
         }
 
         return [false, undefined];
@@ -507,5 +509,9 @@ export class TSHelper {
             }
         }
         return text;
+    }
+
+    public static isValidLuaIdentifier(str: string): boolean {
+        return str.match(/[a-zA-Z_][a-zA-Z0-9_]*/) !== null;
     }
 }

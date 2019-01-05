@@ -1780,7 +1780,7 @@ export class LuaTransformer {
             // Replace last . with : here
             const name = node.expression.name.escapedText;
             if (name === "toString") {
-                const toStringIdentifier = tstl.createIdentifier("toString");
+                const toStringIdentifier = tstl.createIdentifier("tostring");
                 return tstl.createCallExpression(
                     toStringIdentifier, [this.transformExpression(node.expression.expression)], undefined, node);
             } else if (name === "hasOwnProperty") {

@@ -505,9 +505,9 @@ export function isStringLiteral(node: Node): node is StringLiteral {
     return node.kind === SyntaxKind.StringLiteral;
 }
 
-export function createStringLiteral(value: string, parent?: Node, tsOriginal?: ts.Node): StringLiteral {
+export function createStringLiteral(value: string | ts.__String, parent?: Node, tsOriginal?: ts.Node): StringLiteral {
     const expression = createNode(SyntaxKind.StringLiteral, parent, tsOriginal) as StringLiteral;
-    expression.value = value;
+    expression.value = value as string;
     return expression;
 }
 

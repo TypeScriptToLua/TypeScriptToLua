@@ -1050,16 +1050,37 @@ export class LuaTransformer {
         return tstl.createForInStatement(body, iterableVariables, iterables, undefined, statement);
     }
 
-    public transformForInStatement(arg0: ts.ForInStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
+        // Get variable identifier
+        const variable = (statement.initializer as ts.VariableDeclarationList).declarations[0] as ts.VariableDeclaration;
+        const identifier = variable.name as ts.Identifier;
+
+        // Transpile expression
+        const expression = this.transformExpression(statement.expression);
+
+        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
+            throw TSTLErrors.ForbiddenForIn(statement);
+        }
+
+        const body = ts.isBlock(statement.statement)
+            ? this.transformBlock(statement.statement)
+            : tstl.createBlock(this.transformStatements([statement.statement]));
+
+        return tstl.createForInStatement(
+            body,
+            [this.transformIdentifier(identifier)],
+            [expression],
+            undefined,
+            statement
+        );
     }
 
     public transformSwitchStatement(arg0: ts.SwitchStatement): StatementVisitResult {
         throw new Error("Method not implemented.");
     }
 
-    public transformBreakStatement(arg0: ts.BreakStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformBreakStatement(breakStatement: ts.BreakStatement): StatementVisitResult {
+        return tstl.createBreakStatement(undefined, breakStatement);
     }
 
     public transformTryStatement(arg0: ts.TryStatement): StatementVisitResult {
@@ -1465,14 +1486,14 @@ export class LuaTransformer {
         const properties: tstl.TableFieldExpression[] = [];
         // Add all property assignments
         node.properties.forEach(element => {
-            let name: tstl.Identifier;
+            let name: tstl.Expression;
             if (ts.isIdentifier(element.name)) {
                 name = this.transformIdentifier(element.name);
-            } else { /*if (ts.isComputedPropertyName(element.name)) {
-                 //name = this.transformIdentifier(element.name);
+            } else if (ts.isComputedPropertyName(element.name)) {
+                name = this.transformPropertyName(element.name);
              } else {
-                 //name = `[${this.transpileExpression(element.name)}]`;*/
-                throw new Error("Not yet implemented");
+                // Numeric or string literal
+                name = tstl.createTableFieldExpression(this.transformExpression(element.name));
             }
 
             if (ts.isPropertyAssignment(element)) {
@@ -1644,14 +1665,21 @@ export class LuaTransformer {
                 return tstl.createBinaryExpression(
                     rawGetCall, tstl.createNilLiteral(), tstl.SyntaxKind.InequalityOperator, undefined, node);
             } else {
-                /*const signatureDeclaration = signature.getDeclaration();
-                const op = !signatureDeclaration
-                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
-                    ? ":" : ".";
-                const callPath = `${this.transpileExpression(node.expression.expression)}${op}${name}`;
-                parameters = this.transpileArguments(node.arguments, signature);
-                return `${callPath}(${parameters})`;*/
-                throw new Error("Not implemented");
+                const signatureDeclaration = signature.getDeclaration();
+                const addContextParameter = !signatureDeclaration
+                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void;
+
+                const parameters = this.transformArguments(node.arguments, signature);
+
+                const table = this.transformExpression(node.expression.expression);
+                const callPath = tstl.createTableIndexExpression(table, tstl.createStringLiteral(name));
+                
+                return tstl.createCallExpression(
+                    callPath,
+                    addContextParameter ? [callPath, ...parameters] : parameters,
+                    undefined,
+                    node
+                );
             }
         }
     }
@@ -1678,21 +1706,13 @@ export class LuaTransformer {
                 }
 
                 // Cache left-side if it has effects
+                //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
                 const argument = this.transformExpression(node.expression.argumentExpression);
-                if (tsHelper.isExpressionStatement(node)) {
-                    // Statement version
-                    const selfIdentifier = tstl.createIdentifier("____TS_self");
-                    const selfAssignment = this.createLocalOrGlobalDeclaration(selfIdentifier, context);
-                    const index = tstl.createTableIndexExpression(selfIdentifier, argument);
-                    const callExpression = tstl.createExpressionStatement(tstl.createCallExpression(index, parameters));
-                    // return tstl.createDoStatement([selfAssignment, callExpression]);
-                    throw new Error("Not implemented yet");
-                } else {
-                    // Expression version
-                    /*return `(function() local ____TS_self = ${context}; `
-                        + `return ____TS_self[${argument}](${parameters}); end)()`;*/
-                    throw new Error("Not implemented yet");
-                }
+                const selfIdentifier = tstl.createIdentifier("____TS_self");
+                const selfAssignment = this.createLocalOrGlobalDeclaration(selfIdentifier, context);
+                const index = tstl.createTableIndexExpression(selfIdentifier, argument);
+                const callExpression = tstl.createCallExpression(index, parameters);
+                return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression);
             } else {
                 return tstl.createCallExpression(this.transformExpression(node.expression), [context, ...parameters]);
             }

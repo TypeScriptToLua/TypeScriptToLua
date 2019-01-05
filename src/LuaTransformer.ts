@@ -8,8 +8,8 @@ import {LuaLibFeature} from "./LuaLib";
 import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 import {TSTLErrors} from "./TSTLErrors";
 
-type StatementVisitResult = tstl.Statement|tstl.Statement[]|undefined;
-type ExpressionVisitResult = tstl.Expression|undefined;
+type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
+type ExpressionVisitResult = tstl.Expression | undefined;
 
 export enum ScopeType {
     Function,
@@ -138,7 +138,7 @@ export class LuaTransformer {
     }
 
     /** Convers an array of ts.Statements into an array of tstl.Statements */
-    public transformStatements(statements: ts.Statement[]| ReadonlyArray<ts.Statement>): tstl.Statement[] {
+    public transformStatements(statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
         const tstlStatements: tstl.Statement[] = [];
         (statements as ts.Statement[]).forEach(statement => {
             tstlStatements.push(...this.statementVisitResultToStatementArray(this.transformStatement(statement)));
@@ -558,7 +558,7 @@ export class LuaTransformer {
     }
 
     public transformParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>, context?: tstl.Identifier):
-        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier|undefined] {
+        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
         // Build parameter string
         const paramNames: tstl.Identifier[] = [];
         if (context) {
@@ -744,8 +744,8 @@ export class LuaTransformer {
     }
 
     public computeEnumMembers(node: ts.EnumDeclaration):
-        Array<{name: ts.PropertyName, value: tstl.NumericLiteral|tstl.StringLiteral, original: ts.Node}> {
-        let val: tstl.NumericLiteral|tstl.StringLiteral;
+        Array<{name: ts.PropertyName, value: tstl.NumericLiteral | tstl.StringLiteral, original: ts.Node}> {
+        let val: tstl.NumericLiteral | tstl.StringLiteral;
         let hasStringInitializers = false;
 
         return node.members.map(member => {
@@ -856,7 +856,7 @@ export class LuaTransformer {
         return result;
     }
 
-    public transformExpressionStatement(statement: ts.ExpressionStatement|ts.Expression): tstl.Statement {
+    public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): tstl.Statement {
         const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);
@@ -1491,7 +1491,7 @@ export class LuaTransformer {
         return tstl.createTableExpression(properties, undefined, node);
     }
 
-    public transformFunctionExpression(node: ts.FunctionLikeDeclaration, context: tstl.Identifier|undefined): ExpressionVisitResult {
+    public transformFunctionExpression(node: ts.FunctionLikeDeclaration, context: tstl.Identifier | undefined): ExpressionVisitResult {
         const type = this.checker.getTypeAtLocation(node);
         const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
         // Build parameter string
@@ -2158,7 +2158,7 @@ export class LuaTransformer {
         this.luaLibFeatureSet.add(feature);
     }
 
-    public createImmediatelyInvokedFunctionExpression(statements: tstl.Statement[], result: tstl.Expression|tstl.Expression[]):
+    public createImmediatelyInvokedFunctionExpression(statements: tstl.Statement[], result: tstl.Expression | tstl.Expression[]):
         tstl.CallExpression {
         const body = statements ? statements.slice(0) : [];
         body.push(tstl.createReturnStatement(Array.isArray(result) ? result : [result]));

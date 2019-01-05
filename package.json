@@ -23,8 +23,8 @@
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "style-check": "gts check",
-        "style-fix": "gts fix"
+        "style-check": "tslint -p .",
+        "style-fix": "gts fix && tslint -p . --fix"
     },
     "bin": {
         "tstl": "./dist/index.js"

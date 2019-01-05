@@ -56,7 +56,7 @@ export class TSHelper {
         return result;
     }
 
-    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type|undefined {
+    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
@@ -83,7 +83,7 @@ export class TSHelper {
         return false;
     }
 
-    public static isIdentifierExported(identifier: ts.Identifier, scope: ts.ModuleDeclaration|ts.SourceFile, checker: ts.TypeChecker):
+    public static isIdentifierExported(identifier: ts.Identifier, scope: ts.ModuleDeclaration | ts.SourceFile, checker: ts.TypeChecker):
         boolean {
         const identifierSymbol = checker.getTypeAtLocation(scope).getSymbol();
         if (identifierSymbol.exports)
@@ -305,7 +305,7 @@ export class TSHelper {
                node.operator !== ts.SyntaxKind.PlusToken && node.operator !== ts.SyntaxKind.TildeToken;
     }
 
-    public static getUnaryCompoundAssignmentOperator(node: ts.PrefixUnaryExpression|ts.PostfixUnaryExpression): ts.BinaryOperator {
+    public static getUnaryCompoundAssignmentOperator(node: ts.PrefixUnaryExpression | ts.PostfixUnaryExpression): ts.BinaryOperator {
         switch (node.operator) {
             case ts.SyntaxKind.PlusPlusToken:
                 return ts.SyntaxKind.PlusToken;

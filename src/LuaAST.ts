@@ -76,17 +76,17 @@ export enum SyntaxKind {
 }
 
 // TODO maybe name this PrefixUnary? not sure it makes sense to do so, because all unary ops in Lua are prefix
-export type UnaryOperator = SyntaxKind.NegationOperator|SyntaxKind.LengthOperator|SyntaxKind.NotOperator|SyntaxKind.BitwiseNotOperator;
+export type UnaryOperator = SyntaxKind.NegationOperator | SyntaxKind.LengthOperator | SyntaxKind.NotOperator | SyntaxKind.BitwiseNotOperator;
 
 export type BinaryOperator =
-    SyntaxKind.AdditionOperator|SyntaxKind.SubractionOperator|SyntaxKind.MultiplicationOperator|SyntaxKind.DivisionOperator|
-    SyntaxKind.FloorDivisionOperator|SyntaxKind.ModuloOperator|SyntaxKind.PowerOperator|SyntaxKind.ConcatOperator|
-    SyntaxKind.EqualityOperator|SyntaxKind.InequalityOperator|SyntaxKind.LessThanOperator|SyntaxKind.LessEqualOperator|
-    SyntaxKind.GreaterThanOperator|SyntaxKind.GreaterEqualOperator|SyntaxKind.AndOperator|SyntaxKind.OrOperator|
-    SyntaxKind.BitwiseAndOperator|SyntaxKind.BitwiseOrOperator|SyntaxKind.BitwiseExclusiveOrOperator|
-    SyntaxKind.BitwiseRightShiftOperator|SyntaxKind.BitwiseLeftShiftOperator|SyntaxKind.BitwiseNotOperator;
+    SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator | SyntaxKind.DivisionOperator |
+    SyntaxKind.FloorDivisionOperator | SyntaxKind.ModuloOperator | SyntaxKind.PowerOperator | SyntaxKind.ConcatOperator |
+    SyntaxKind.EqualityOperator | SyntaxKind.InequalityOperator | SyntaxKind.LessThanOperator | SyntaxKind.LessEqualOperator |
+    SyntaxKind.GreaterThanOperator | SyntaxKind.GreaterEqualOperator | SyntaxKind.AndOperator | SyntaxKind.OrOperator |
+    SyntaxKind.BitwiseAndOperator | SyntaxKind.BitwiseOrOperator | SyntaxKind.BitwiseExclusiveOrOperator |
+    SyntaxKind.BitwiseRightShiftOperator | SyntaxKind.BitwiseLeftShiftOperator | SyntaxKind.BitwiseNotOperator;
 
-export type Operator = UnaryOperator|BinaryOperator;
+export type Operator = UnaryOperator | BinaryOperator;
 
 // TODO For future sourcemap support?
 export interface TextRange {
@@ -109,7 +109,7 @@ export function createNode(kind: SyntaxKind, parent?: Node, tsOriginal?: ts.Node
     return {kind, parent, pos, end};
 }
 
-export function setParent(node: Node|Node[]| undefined, parent: Node): void {
+export function setParent(node: Node | Node[] | undefined, parent: Node): void {
     if (!node) {
         return;
     }
@@ -178,8 +178,8 @@ export function isVariableDeclarationStatement(node: Node): node is VariableDecl
 }
 
 export function createVariableDeclarationStatement(
-    left: IdentifierOrTableIndexExpression|IdentifierOrTableIndexExpression[],
-    right?: Expression|Expression[],
+    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    right?: Expression | Expression[],
     parent?: Node,
     tsOriginal?: ts.Node): VariableDeclarationStatement {
     const statement = createNode(SyntaxKind.VariableDeclarationStatement, parent, tsOriginal) as VariableDeclarationStatement;
@@ -210,8 +210,8 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 }
 
 export function createAssignmentStatement(
-    left: IdentifierOrTableIndexExpression|IdentifierOrTableIndexExpression[],
-    right: Expression| Expression[],
+    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    right: Expression | Expression[],
     parent?: Node,
     tsOriginal?: ts.Node): AssignmentStatement {
     const statement = createNode(SyntaxKind.AssignmentStatement, parent, tsOriginal) as AssignmentStatement;
@@ -234,7 +234,7 @@ export interface IfStatement extends Statement {
     kind: SyntaxKind.IfStatement;
     condtion: Expression;
     ifBlock: Block;
-    elseBlock?: Block|IfStatement;
+    elseBlock?: Block | IfStatement;
 }
 
 export function isIfStatement(node: Node): node is IfStatement {
@@ -242,7 +242,7 @@ export function isIfStatement(node: Node): node is IfStatement {
 }
 
 export function createIfStatement(
-    condtion: Expression, ifBlock: Block, elseBlock?: Block|IfStatement, parent?: Node, tsOriginal?: ts.Node): IfStatement {
+    condtion: Expression, ifBlock: Block, elseBlock?: Block | IfStatement, parent?: Node, tsOriginal?: ts.Node): IfStatement {
     const statement = createNode(SyntaxKind.IfStatement, parent, tsOriginal) as IfStatement;
     setParent(condtion, statement);
     statement.condtion = condtion;
@@ -448,7 +448,7 @@ export function createNilLiteral(parent?: Node, tsOriginal?: ts.Node): NilLitera
 }
 
 export interface BooleanLiteral extends Expression {
-    kind: SyntaxKind.TrueKeyword|SyntaxKind.FalseKeyword;
+    kind: SyntaxKind.TrueKeyword | SyntaxKind.FalseKeyword;
 }
 
 export function isBooleanLiteral(node: Node): node is BooleanLiteral {
@@ -715,4 +715,4 @@ export function createTableIndexExpression(
     return expression;
 }
 
-export type IdentifierOrTableIndexExpression = Identifier|TableIndexExpression;
+export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;

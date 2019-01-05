@@ -75,7 +75,8 @@
           "ban-keywords",
           "allow-leading-underscore",
           "allow-pascal-case"
-        ]
+        ],
+        "whitespace": [true, "check-type-operator", "check-decl", "check-rest-spread", "check-typecast"]
     },
     "rulesDirectory": []
 }

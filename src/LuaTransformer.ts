@@ -1,10 +1,10 @@
 import * as path from "path";
 import * as ts from "typescript";
 
-import {CompilerOptions, LuaTarget} from "./CompilerOptions";
+import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {DecoratorKind} from "./Decorator";
 import * as tstl from "./LuaAST";
-import {LuaLibFeature} from "./LuaLib";
+import {LuaLib, LuaLibFeature} from "./LuaLib";
 import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 import {TSTLErrors} from "./TSTLErrors";
 
@@ -78,7 +78,26 @@ export class LuaTransformer {
         this.currentSourceFile = node;
         this.isModule = tsHelper.isFileModule(node);
 
-        return tstl.createBlock(this.transformStatements(node.statements), undefined, node);
+        const statements = this.transformStatements(node.statements);
+
+        const luaLibStatements = [];
+        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.size > 0)
+            || this.options.luaLibImport === LuaLibImportKind.Always) {
+            // require helper functions
+            const requireStatement = tstl.createExpressionStatement((tstl.createCallExpression(
+                tstl.createIdentifier("require"),
+                [tstl.createStringLiteral("lualib_bundle")]
+            )));
+            luaLibStatements.push(requireStatement);
+        }
+
+        // Inline lualib features
+        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
+            //result += "\n" + "-- Lua Library Imports\n";
+            luaLibStatements.push(tstl.createIdentifier(LuaLib.loadFeatures(this.luaLibFeatureSet)));
+        }
+
+        return tstl.createBlock(luaLibStatements.concat(statements), undefined, node);
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {
@@ -975,20 +994,9 @@ export class LuaTransformer {
 
         const itemVariable: ts.Expression = undefined;
         /*if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
-            // Arrays use numeric for loop (performs better than ipairs)
-            const indexVariable = `____TS_index`;
-            if (!ts.isIdentifier(node.expression)) {
-                // Cache expression
-                const arrayVariable = `____TS_array`;
-                result += this.indent + `local ${arrayVariable} = ${iterable};\n`;
-                result += this.indent + `for ${indexVariable}=1, #${arrayVariable} do\n`;
-                itemVariable = ts.createIdentifier(`${arrayVariable}[${indexVariable}]`);
-            } else {
-                result += this.indent + `for ${indexVariable}=1, #${iterable} do\n`;
-                itemVariable = ts.createIdentifier(`${iterable}[${indexVariable}]`);
-            }
-
+           // Implemented below
         } else {
+            // TODO
             // Custom iterators
             let variableName: string;
             const isLuaIterator = tsHelper.isLuaIteratorCall(node.expression, this.checker);
@@ -1042,12 +1050,43 @@ export class LuaTransformer {
                 this.transformExpression(assignment);
             }
         }
+        
+        const indexVariable = tstl.createIdentifier("____TS_index");
 
-        // For body
         const body = ts.isBlock(statement.statement) ? this.transformBlock(statement.statement)
                                                      : this.transformBlock(ts.createBlock([statement.statement]));
 
-        return tstl.createForInStatement(body, iterableVariables, iterables, undefined, statement);
+        if (ts.isIdentifier(statement.expression)) {
+            return tstl.createForStatement(
+                body,
+                indexVariable,
+                tstl.createNumericLiteral(1),
+                tstl.createUnaryExpression(iterable, tstl.SyntaxKind.LengthOperator),
+                tstl.createBinaryExpression(indexVariable, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator),
+                undefined,
+                statement
+            );
+        } else {
+            // Cache expression
+            const arrayVariable = tstl.createIdentifier("____TS_array");
+            const arrayVariableInitialize = this.createLocalOrGlobalDeclaration(
+                tstl.createIdentifier("____TS_array"),
+                iterable
+            );
+
+            return [
+                arrayVariableInitialize,
+                tstl.createForStatement(
+                    body,
+                    indexVariable,
+                    tstl.createNumericLiteral(1),
+                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator),
+                    tstl.createBinaryExpression(indexVariable, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator),
+                    undefined,
+                    statement
+                ),
+            ];
+        }
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {

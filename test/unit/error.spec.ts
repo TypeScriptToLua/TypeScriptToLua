@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-import { TranspileError } from "../../src/Errors";
+import { TranspileError } from "../../src/TranspileError";
 
 export class LuaErrorTests {
 

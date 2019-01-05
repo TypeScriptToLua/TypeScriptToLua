@@ -1,7 +1,7 @@
-import { TSHelper as tsHelper } from "../TSHelper";
-
 import * as ts from "typescript";
-import { LuaTransformer } from "../LuaTransformer";
+
+import {LuaTransformer} from "../LuaTransformer";
+import {TSHelper as tsHelper} from "../TSHelper";
 
 export class LuaTransformer52 extends LuaTransformer {
     // TODO

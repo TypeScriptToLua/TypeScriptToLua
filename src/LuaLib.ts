@@ -29,7 +29,7 @@ export enum LuaLibFeature {
     Ternary = "Ternary",
 }
 
-const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
+const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
     Iterator: [LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],

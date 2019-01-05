@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { TranspileError } from "../../src/Errors";
+import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";

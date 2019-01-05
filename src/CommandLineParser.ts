@@ -1,9 +1,9 @@
-import { CompilerOptions } from "./CompilerOptions";
-
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as yargs from "yargs";
+
+import {CompilerOptions} from "./CompilerOptions";
 
 interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -34,9 +34,7 @@ export const optionDeclarations: YargsOptions = {
     },
 };
 
-class CLIError extends Error {
-
-}
+class CLIError extends Error {}
 
 /**
  * Removes defaults from the arguments.
@@ -66,18 +64,19 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     const [tstlOptions, tstlDefaults] = getYargOptionsWithoutDefaults(optionDeclarations);
 
     const parsedArgs = yargs
-        .usage("Syntax: tstl [options] [files...]\n\n" +
-            "In addition to the options listed below you can also pass options" +
-            "for the typescript compiler (For a list of options use tsc -h).\n" +
-            "Some tsc options might have no effect.")
-        .example("tstl path/to/file.ts [...]", "Compile files")
-        .example("tstl -p path/to/tsconfig.json", "Compile project")
-        .wrap(yargs.terminalWidth())
-        .options(tstlOptions)
-        .fail((msg, err) => {
-            throw new CLIError(msg);
-        })
-        .parse(args);
+                           .usage(
+                               "Syntax: tstl [options] [files...]\n\n" +
+                               "In addition to the options listed below you can also pass options" +
+                               "for the typescript compiler (For a list of options use tsc -h).\n" +
+                               "Some tsc options might have no effect.")
+                           .example("tstl path/to/file.ts [...]", "Compile files")
+                           .example("tstl -p path/to/tsconfig.json", "Compile project")
+                           .wrap(yargs.terminalWidth())
+                           .options(tstlOptions)
+                           .fail((msg, err) => {
+                               throw new CLIError(msg);
+                           })
+                           .parse(args);
 
     let commandLine = ts.parseCommandLine(args);
 
@@ -93,12 +92,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
         const configPath = commandLine.options.project;
         const configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
-        commandLine = ts.parseJsonConfigFileContent(
-            configJson.config,
-            ts.sys,
-            path.dirname(configPath),
-            commandLine.options
-        );
+        commandLine = ts.parseJsonConfigFileContent(configJson.config, ts.sys, path.dirname(configPath), commandLine.options);
     }
 
     // Add TSTL options from tsconfig
@@ -125,9 +119,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     return commandLine as ParsedCommandLine;
 }
 
-function addTSTLOptions(commandLine: ts.ParsedCommandLine,
-                        additionalArgs?: yargs.Arguments,
-                        forceOverride?: boolean): void {
+function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments, forceOverride?: boolean): void {
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw;
     // Add compiler options that are ignored by TS parsers
     if (additionalArgs) {

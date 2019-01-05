@@ -3,7 +3,6 @@ import * as tstl from "./LuaAST";
 import {TSHelper as tsHelper} from "./TSHelper";
 
 export class LuaPrinter {
-
     /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
         [tstl.SyntaxKind.AdditionOperator]: "+",
@@ -111,12 +110,13 @@ export class LuaPrinter {
     }
 
     private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): string {
-        return this.indent(`${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
-                           `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
+        return this.indent(
+            `${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
+            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
     }
 
     private printIfStatement(statement: tstl.IfStatement, isElseIf?: boolean): string {
-        const prefix = isElseIf ? "elseif" : "if"; 
+        const prefix = isElseIf ? "elseif" : "if";
         let result = this.indent(`${prefix} ${this.printExpression(statement.condtion)} then\n`);
         this.pushIndent();
         result += this.printBlock(statement.ifBlock);
@@ -180,7 +180,7 @@ export class LuaPrinter {
 
     private printForInStatement(statement: tstl.ForInStatement): string {
         const names = statement.names.map(i => this.printIdentifier(i)).join(", ");
-        const expressions =  statement.names.map(e => this.printExpression(e)).join(", ");
+        const expressions = statement.names.map(e => this.printExpression(e)).join(", ");
 
         let result = this.indent(`for ${names} in ${expressions} do`);
         this.pushIndent();

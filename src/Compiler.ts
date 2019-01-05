@@ -2,11 +2,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import { parseCommandLine } from "./CommandLineParser";
-import { CompilerOptions, LuaLibImportKind, LuaTarget  } from "./CompilerOptions";
-import { createTransformer } from "./TransformerFactory";
-import { LuaTranspiler } from "./LuaTranspiler";
-
+import {parseCommandLine} from "./CommandLineParser";
+import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
+import {LuaTranspiler} from "./LuaTranspiler";
+import {createTransformer} from "./TransformerFactory";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
@@ -24,19 +23,9 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
     let config = false;
     if (options.project) {
         config = true;
-        host = ts.createWatchCompilerHost(
-            options.project,
-            options,
-            ts.sys,
-            ts.createSemanticDiagnosticsBuilderProgram
-        );
+        host = ts.createWatchCompilerHost(options.project, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
     } else {
-        host = ts.createWatchCompilerHost(
-            fileNames,
-            options,
-            ts.sys,
-            ts.createSemanticDiagnosticsBuilderProgram
-        );
+        host = ts.createWatchCompilerHost(fileNames, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
     }
 
     host.afterProgramCreate = program => {
@@ -55,19 +44,13 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
             errorDiagnostic.messageText = "Found Errors. Watching for file changes.";
             errorDiagnostic.code = 6193;
         }
-        host.onWatchStatusChange(
-            errorDiagnostic,
-            host.getNewLine(),
-            program.getCompilerOptions()
-        );
+        host.onWatchStatusChange(errorDiagnostic, host.getNewLine(), program.getCompilerOptions());
     };
 
     if (config) {
-        ts.createWatchProgram(
-            host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
+        ts.createWatchProgram(host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
     } else {
-        ts.createWatchProgram(
-            host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>);
+        ts.createWatchProgram(host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>);
     }
 }
 
@@ -81,11 +64,10 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
 
-export function transpileString(str: string,
-                                options: CompilerOptions = {
-                                    luaLibImport: LuaLibImportKind.Require,
-                                    luaTarget: LuaTarget.Lua53,
-                                }): string {
+export function transpileString(str: string, options: CompilerOptions = {
+    luaLibImport: LuaLibImportKind.Require,
+    luaTarget: LuaTarget.Lua53,
+}): string {
     const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,

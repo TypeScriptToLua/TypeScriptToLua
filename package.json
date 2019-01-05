@@ -14,18 +14,17 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "test": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts && npm run build-lualib && ts-node ./test/runner.ts",
+        "test": "style-check && tslint -c ./tslint.json src/lualib/*.ts && npm run build-lualib && ts-node ./test/runner.ts",
         "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
         "coverage-html": "nyc npm test && nyc report --reporter=html",
-        "test-threaded": "tslint -p . && npm run build && ts-node ./test/threaded_runner.ts",
+        "test-threaded": "style-check && npm run build && ts-node ./test/threaded_runner.ts",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "check": "gts check",
-        "clean": "gts clean",
-        "fix": "gts fix"
+        "style-check": "gts check",
+        "style-fix": "gts fix"
     },
     "bin": {
         "tstl": "./dist/index.js"

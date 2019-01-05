@@ -1,17 +1,13 @@
+import * as fs from "fs";
+import * as path from "path";
 import * as ts from "typescript";
 
-import * as path from "path";
-import * as fs from "fs";
-
-import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import { createTransformer } from "./TransformerFactory";
-import { LuaPrinter } from "./LuaPrinter";
-import { LuaTransformer } from "./LuaTransformer";
-
-
+import {CompilerOptions, LuaLibImportKind} from "./CompilerOptions";
+import {LuaPrinter} from "./LuaPrinter";
+import {LuaTransformer} from "./LuaTransformer";
+import {createTransformer} from "./TransformerFactory";
 
 export class LuaTranspiler {
-
     private program: ts.Program;
 
     private options: CompilerOptions;
@@ -31,7 +27,7 @@ export class LuaTranspiler {
         // Get all diagnostics, ignore unsupported extension
         const diagnostics = ts.getPreEmitDiagnostics(this.program).filter(diag => diag.code !== 6054);
         diagnostics.forEach(diag => this.reportDiagnostic(diag));
-    
+
         // If there are errors dont emit
         if (diagnostics.filter(diag => diag.category === ts.DiagnosticCategory.Error).length > 0) {
             if (!this.options.watch) {
@@ -51,15 +47,13 @@ export class LuaTranspiler {
         }
 
         this.program.getSourceFiles().forEach(sourceFile => this.emitSourceFile(sourceFile));
-    
+
         // Copy lualib to target dir
         if (this.options.luaLibImport === LuaLibImportKind.Require || this.options.luaLibImport === LuaLibImportKind.Always) {
             fs.copyFileSync(
-                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-                path.join(this.options.outDir, "lualib_bundle.lua")
-            );
+                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), path.join(this.options.outDir, "lualib_bundle.lua"));
         }
-    
+
         return 0;
     }
 
@@ -72,8 +66,7 @@ export class LuaTranspiler {
 
                 let outPath = sourceFile.fileName;
                 if (this.options.outDir !== this.options.rootDir) {
-                    const relativeSourcePath = path.resolve(sourceFile.fileName)
-                                                   .replace(path.resolve(rootDir), "");
+                    const relativeSourcePath = path.resolve(sourceFile.fileName).replace(path.resolve(rootDir), "");
                     outPath = path.join(this.options.outDir, relativeSourcePath);
                 }
 
@@ -98,10 +91,7 @@ export class LuaTranspiler {
                     const pos = ts.getLineAndCharacterOfPosition(sourceFile, exception.node.pos);
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
-                    console.error(
-                        sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character + "\n" +
-                        exception.stack
-                    );
+                    console.error(sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character + "\n" + exception.stack);
                     process.exit(1);
                 } else {
                     throw exception;
@@ -119,16 +109,11 @@ export class LuaTranspiler {
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {
         if (diagnostic.file) {
-            const { line, character } =
-                diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+            const {line, character} = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
             const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
-            console.log(
-                `${diagnostic.code}: ${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`
-            );
+            console.log(`${diagnostic.code}: ${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
         } else {
-            console.log(
-                `${diagnostic.code}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`
-            );
+            console.log(`${diagnostic.code}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")}`);
         }
     }
 }

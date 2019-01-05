@@ -14,7 +14,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "test": "style-check && tslint -c ./tslint.json src/lualib/*.ts && npm run build-lualib && ts-node ./test/runner.ts",
+        "test": "npm run style-check && tslint -c ./tslint.json src/lualib/*.ts && npm run build-lualib && ts-node ./test/runner.ts",
         "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
         "coverage-html": "nyc npm test && nyc report --reporter=html",
         "test-threaded": "style-check && npm run build && ts-node ./test/threaded_runner.ts",

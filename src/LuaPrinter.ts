@@ -317,10 +317,20 @@ export class LuaPrinter {
     }
 
     private printBinaryExpression(expression: tstl.BinaryExpression): string {
-        const left = this.printExpression(expression.left);
+        const left = this.needsParentheses(expression.left)
+            ? `(${this.printExpression(expression.left)})`
+            : this.printExpression(expression.left);
+
+        const right = this.needsParentheses(expression.right)
+            ? `(${this.printExpression(expression.right)})`
+            : this.printExpression(expression.right);
+
         const operator = this.printOperator(expression.operator);
-        const right = this.printExpression(expression.right);
         return `${left} ${operator} ${right}`;
+    }
+
+    private needsParentheses(expression: tstl.Expression): boolean {
+        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression);
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): string {

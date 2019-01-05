@@ -988,11 +988,6 @@ export class LuaTransformer {
         // Transpile expression
         const iterable = this.transformExpression(statement.expression);
 
-        // Fill these
-        const iterableVariables: tstl.Identifier[] = [];
-        const iterables: tstl.Expression[] = [iterable];
-
-        const itemVariable: ts.Expression = undefined;
         /*if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
            // Implemented below
         } else {
@@ -1036,57 +1031,46 @@ export class LuaTransformer {
             const iterator = isLuaIterator ? iterable : this.transpileLuaLibFunction(LuaLibFeature.Iterator, iterable);
             result = this.indent + `for ${variableName} in ${iterator} do\n`;
         }*/
-
-        if (itemVariable) {
-            if (ts.isVariableDeclarationList(statement.initializer)) {
-                // Declare item variable
-                const declaration = ts.createVariableDeclaration(statement.initializer.declarations[0].name, undefined, itemVariable);
-                // TODO ?????
-                this.transformVariableDeclaration(declaration);
-            } else {
-                // Assign item variable
-                const assignment = ts.createAssignment(statement.initializer, itemVariable);
-                // TODO ??? this does nothing
-                this.transformExpression(assignment);
-            }
-        }
         
         const indexVariable = tstl.createIdentifier("____TS_index");
+        let arrayVariable = iterable;
+        const bodyStatements = [];
 
-        const body = ts.isBlock(statement.statement) ? this.transformBlock(statement.statement)
-                                                     : this.transformBlock(ts.createBlock([statement.statement]));
-
-        if (ts.isIdentifier(statement.expression)) {
-            return tstl.createForStatement(
-                body,
-                indexVariable,
-                tstl.createNumericLiteral(1),
-                tstl.createUnaryExpression(iterable, tstl.SyntaxKind.LengthOperator),
-                tstl.createBinaryExpression(indexVariable, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator),
-                undefined,
-                statement
-            );
-        } else {
+        if (!ts.isIdentifier) {
             // Cache expression
-            const arrayVariable = tstl.createIdentifier("____TS_array");
+            arrayVariable = tstl.createIdentifier("____TS_array");
             const arrayVariableInitialize = this.createLocalOrGlobalDeclaration(
                 tstl.createIdentifier("____TS_array"),
                 iterable
             );
-
-            return [
-                arrayVariableInitialize,
-                tstl.createForStatement(
-                    body,
-                    indexVariable,
-                    tstl.createNumericLiteral(1),
-                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator),
-                    tstl.createBinaryExpression(indexVariable, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator),
-                    undefined,
-                    statement
-                ),
-            ];
+            bodyStatements.push(arrayVariableInitialize);
         }
+
+        if (!ts.isVariableDeclarationList(statement.initializer)) {
+            throw new Error("Anything other than a variable declaration list as loop initializer is not supported.");
+        }
+
+        const valueVariable = this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier);
+
+        const valueAssignment = this.createLocalOrGlobalDeclaration(
+            valueVariable,
+            tstl.createTableIndexExpression(arrayVariable, indexVariable)
+        );
+        bodyStatements.push(valueAssignment);
+
+        const statements = ts.isBlock(statement.statement)
+            ? [...bodyStatements, ...this.transformStatements(statement.statement.statements)]
+            : this.transformStatements([statement.statement]);
+
+        return tstl.createForStatement(
+            tstl.createBlock(statements),
+            indexVariable,
+            tstl.createNumericLiteral(1),
+            tstl.createUnaryExpression(iterable, tstl.SyntaxKind.LengthOperator),
+            tstl.createNumericLiteral(1),
+            undefined,
+            statement
+        );
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
@@ -1980,7 +1964,7 @@ export class LuaTransformer {
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
                     const arg1 = this.expressionPlusOne(params[0]);
-                    const arg2 = this.expressionPlusOne(params[1]);
+                    const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
             case "toLowerCase":

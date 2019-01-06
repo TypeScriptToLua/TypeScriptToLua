@@ -2199,9 +2199,20 @@ export class LuaTransformer {
 
     public transformTypeOfExpression(node: ts.TypeOfExpression): ExpressionVisitResult {
         const expression = this.transformExpression(node.expression);
-        // TODO - Is this even right?
-        // return `(type(${expression}) == "table" and "object" or type(${expression}))`;
-        throw new Error("Not yet implemented");
+        const typeFunctionIdentifier = tstl.createIdentifier("type");
+        const typeCall = tstl.createCallExpression(typeFunctionIdentifier, [expression]);
+        const tableString = tstl.createStringLiteral("table");
+        const objectString = tstl.createStringLiteral("object");
+        const condition = tstl.createBinaryExpression(typeCall, tableString, tstl.SyntaxKind.EqualityOperator);
+        const andClause = tstl.createBinaryExpression(condition, objectString, tstl.SyntaxKind.AndOperator);
+        
+        return tstl.createBinaryExpression(
+            andClause,
+            tstl.cloneNode(typeCall),
+            tstl.SyntaxKind.OrOperator,
+            undefined,
+            node
+        );        
     }
 
     public transformStringLiteral(literal: ts.StringLiteralLike): tstl.StringLiteral {

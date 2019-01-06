@@ -2,13 +2,13 @@ import { Expect, Test, TestCase } from "alsatian";
 
 import * as util from "../src/util";
 
-export class OverloadTests {
+export class TypeCheckingTests {
     @TestCase("0")
     @TestCase("30")
     @TestCase("30_000")
     @TestCase("30.00")
     @Test("typeof number")
-    public typeofNumberTest(inp: string) {
+    public typeofNumberTest(inp: string): void {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
@@ -18,7 +18,7 @@ export class OverloadTests {
     @TestCase("\"abc\"")
     @TestCase("`abc`")
     @Test("typeof string")
-    public typeofStringTest(inp: string) {
+    public typeofStringTest(inp: string): void {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
@@ -28,7 +28,7 @@ export class OverloadTests {
     @TestCase("false")
     @TestCase("true")
     @Test("typeof boolean")
-    public typeofBooleanTest(inp: string) {
+    public typeofBooleanTest(inp: string): void {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
@@ -38,7 +38,7 @@ export class OverloadTests {
     @TestCase("{}")
     @TestCase("[]")
     @Test("typeof object literal")
-    public typeofObjectLiteral(inp: string) {
+    public typeofObjectLiteral(inp: string): void {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
@@ -46,7 +46,7 @@ export class OverloadTests {
     }
 
     @Test("typeof class instance")
-    public typeofClassInstance() {
+    public typeofClassInstance(): void {
         const lua = util.transpileString(`class myClass {} let inst = new myClass(); return typeof inst;`);
         const result = util.executeLua(lua);
 
@@ -54,7 +54,7 @@ export class OverloadTests {
     }
 
     @Test("typeof function")
-    public typeofFunction() {
+    public typeofFunction(): void {
         const lua = util.transpileString(`return typeof (() => 3);`);
         const result = util.executeLua(lua);
 
@@ -64,7 +64,7 @@ export class OverloadTests {
     @TestCase("null")
     @TestCase("undefined")
     @Test("typeof undefined")
-    public typeofUndefinedTest(inp: string) {
+    public typeofUndefinedTest(inp: string): void {
         const lua = util.transpileString(`return typeof ${inp};`);
         const result = util.executeLua(lua);
 
@@ -72,7 +72,7 @@ export class OverloadTests {
     }
 
     @Test("instanceof")
-    public instanceOf() {
+    public instanceOf(): void {
         const lua = util.transpileString("class myClass {} let inst = new myClass(); return inst instanceof myClass;");
         const result = util.executeLua(lua);
 
@@ -80,7 +80,7 @@ export class OverloadTests {
     }
 
     @Test("instanceof inheritance")
-    public instanceOfInheritance() {
+    public instanceOfInheritance(): void {
         const lua = util.transpileString("class myClass {}\n"
             + "class childClass extends myClass{}\n"
             + "let inst = new childClass(); return inst instanceof myClass;");
@@ -90,7 +90,7 @@ export class OverloadTests {
     }
 
     @Test("instanceof inheritance false")
-    public instanceOfInheritanceFalse() {
+    public instanceOfInheritanceFalse(): void {
         const lua = util.transpileString("class myClass {}\n"
             + "class childClass extends myClass{}\n"
             + "let inst = new myClass(); return inst instanceof childClass;");
@@ -100,7 +100,7 @@ export class OverloadTests {
     }
 
     @Test("null instanceof Object")
-    public nullInstanceOf() {
+    public nullInstanceOf(): void {
         const lua = util.transpileString("return null instanceof Object;");
         const result = util.executeLua(lua);
 
@@ -108,7 +108,7 @@ export class OverloadTests {
     }
 
     @Test("null instanceof Class")
-    public nullInstanceOfClass() {
+    public nullInstanceOfClass(): void {
         const lua = util.transpileString("class myClass {} return null instanceof myClass;");
         const result = util.executeLua(lua);
 

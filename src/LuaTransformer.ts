@@ -1639,7 +1639,8 @@ export class LuaTransformer {
                 const expression = this.transformExpression(element.initializer);
                 properties.push(tstl.createTableFieldExpression(expression, name, undefined, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
-                properties.push(tstl.createTableFieldExpression(name, name, undefined, element));
+                const identifier = this.transformIdentifier(element.name);
+                properties.push(tstl.createTableFieldExpression(identifier, name, undefined, element));
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.transformFunctionExpression(element, this.selfIdentifier);
                 properties.push(tstl.createTableFieldExpression(expression, name, undefined, element));

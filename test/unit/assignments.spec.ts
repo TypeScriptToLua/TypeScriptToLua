@@ -300,6 +300,20 @@ export class AssignmentTests {
         Expect(result).toBe(expectResult);
     }
 
+    @TestCase("s => s", "foo")
+    @TestCase("function(s) { return s; }", "foo")
+    @TestCase("function(this: void, s: string) { return s; }", "foo")
+    @Test("Valid function expression argument with no signature")
+    public validFunctionExpressionArgumentNoSignature(func: string, expectResult: string): void {
+        const code = `${AssignmentTests.funcAssignTestCode}
+                      const takesFunc: any = (fn: (s: string) => string) => {
+                          return (fn as any)("foo");
+                      }
+                      return takesFunc(${func});`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectResult);
+    }
+
     @TestCase("func", "foo+func")
     @TestCase("lambda", "foo+lambda")
     @TestCase("Foo.staticMethod", "foo+staticMethod")

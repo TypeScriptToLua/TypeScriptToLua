@@ -1382,6 +1382,11 @@ export class LuaTransformer {
     }
 
     public transformAssignmentStatement(expression: ts.BinaryExpression): tstl.Statement {
+        // Validate assignment
+        const rightType = this.checker.getTypeAtLocation(expression.right);
+        const leftType = this.checker.getTypeAtLocation(expression.left);
+        this.validateFunctionAssignment(expression.right, rightType, leftType);
+
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
             const left = expression.left.elements.map(e => this.transformExpression(e));
@@ -1403,6 +1408,11 @@ export class LuaTransformer {
     }
 
     public transformAssignmentExpression(expression: ts.BinaryExpression): tstl.CallExpression {
+        // Validate assignment
+        const rightType = this.checker.getTypeAtLocation(expression.right);
+        const leftType = this.checker.getTypeAtLocation(expression.left);
+        this.validateFunctionAssignment(expression.right, rightType, leftType);
+
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
             // (function() local ${tmps} = ${right}; ${left} = ${tmps}; return {${tmps}} end)()

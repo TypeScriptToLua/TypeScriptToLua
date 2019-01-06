@@ -2,8 +2,9 @@ import * as ts from "typescript";
 
 import {LuaTransformer} from "../LuaTransformer";
 import {TSHelper as tsHelper} from "../TSHelper";
+import { LuaTransformer52 } from "./LuaTransformer.52";
 
-export class LuaTransformer53 extends LuaTransformer {
+export class LuaTransformer53 extends LuaTransformer52 {
     // TODO
     // /** @override */
     // public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {

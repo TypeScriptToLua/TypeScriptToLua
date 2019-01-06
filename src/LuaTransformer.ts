@@ -8,8 +8,8 @@ import {LuaLib, LuaLibFeature} from "./LuaLib";
 import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 import {TSTLErrors} from "./TSTLErrors";
 
-type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
-type ExpressionVisitResult = tstl.Expression | undefined;
+export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
+export type ExpressionVisitResult = tstl.Expression | undefined;
 
 export enum ScopeType {
     Function,
@@ -963,14 +963,20 @@ export class LuaTransformer {
 
     public transformWhileStatement(statement: ts.WhileStatement): tstl.WhileStatement {
         return tstl.createWhileStatement(
-            tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.statement))),
-            this.transformExpression(statement.expression));
+            tstl.createBlock(this.transformLoopBody(statement)),
+            this.transformExpression(statement.expression),
+            undefined,
+            statement            
+        );
     }
 
     public transformDoStatement(statement: ts.DoStatement): tstl.RepeatStatement {
         return tstl.createRepeatStatement(
-            tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.statement))),
-            tstl.createUnaryExpression(this.transformExpression(statement.expression), tstl.SyntaxKind.NotOperator));
+            tstl.createBlock(this.transformLoopBody(statement)),
+            tstl.createUnaryExpression(this.transformExpression(statement.expression), tstl.SyntaxKind.NotOperator),
+            undefined,
+            statement
+        );
     }
 
     public transformForStatement(statement: ts.ForStatement): tstl.Statement[] {
@@ -986,8 +992,7 @@ export class LuaTransformer {
         const condition = statement.condition ? this.transformExpression(statement.condition) : tstl.createBooleanLiteral(true);
 
         // Add body
-        const body: tstl.Statement[] = [];
-        body.push(...this.statementVisitResultToStatementArray(this.transformStatement(statement.statement)));
+        const body: tstl.Statement[] = this.transformLoopBody(statement);
 
         if (statement.incrementor) {
             body.push(this.transformExpressionStatement(statement.incrementor));
@@ -1019,6 +1024,13 @@ export class LuaTransformer {
             }
             return tstl.createAssignmentStatement(variables, expression);
         }
+    }
+
+    public transformLoopBody(
+        loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
+    ): tstl.Statement[]
+    {
+        return this.statementVisitResultToStatementArray(this.transformStatement(loop.statement));
     }
 
     public transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
@@ -1154,26 +1166,20 @@ export class LuaTransformer {
     }
 
     public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
-        // Transpile block
-        let block: tstl.Block;
-        if (ts.isBlock(statement.statement)) {
-            block = this.transformBlock(statement.statement);
-        } else {
-            const statements = this.transformStatement(statement.statement);
-            block = tstl.createBlock(Array.isArray(statements) ? statements : [statements]);
-        }
+        // Transpile body
+        const body = tstl.createBlock(this.transformLoopBody(statement));
 
         if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
             // Arrays
-            return this.transformForOfArrayStatement(statement, block);
+            return this.transformForOfArrayStatement(statement, body);
 
         } else if (tsHelper.isLuaIteratorCall(statement.expression, this.checker)) {
             // LuaIterators
-            return this.transformForOfLuaIteratorStatement(statement, block);
+            return this.transformForOfLuaIteratorStatement(statement, body);
 
         } else {
             // TS Iterables
-            return this.transformForOfIteratorStatement(statement, block);
+            return this.transformForOfIteratorStatement(statement, body);
         }
     }
 
@@ -1183,15 +1189,14 @@ export class LuaTransformer {
         const identifier = variable.name as ts.Identifier;
 
         // Transpile expression
-        const expression = this.transformExpression(statement.expression);
+        const pairsIdentifier = tstl.createIdentifier("pairs");
+        const expression = tstl.createCallExpression(pairsIdentifier, [this.transformExpression(statement.expression)]);
 
         if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
             throw TSTLErrors.ForbiddenForIn(statement);
         }
 
-        const body = ts.isBlock(statement.statement)
-            ? this.transformBlock(statement.statement)
-            : tstl.createBlock(this.transformStatements([statement.statement]));
+        const body = tstl.createBlock(this.transformLoopBody(statement));
 
         return tstl.createForInStatement(
             body,
@@ -1218,8 +1223,8 @@ export class LuaTransformer {
         throw new Error("Method not implemented.");
     }
 
-    public transformContinueStatement(arg0: ts.ContinueStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
+        throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, statement);
     }
 
     public transformEmptyStatement(arg0: ts.EmptyStatement): StatementVisitResult {
@@ -2440,16 +2445,16 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
-    private peekScope(): Scope {
+    protected peekScope(): Scope {
         return this.scopeStack[this.scopeStack.length - 1];
     }
 
-    private pushScope(scopeType: ScopeType): void {
+    protected pushScope(scopeType: ScopeType): void {
         this.scopeStack.push({type: scopeType, id: this.genVarCounter});
         this.genVarCounter++;
     }
 
-    private popScope(): Scope {
+    protected popScope(): Scope {
         return this.scopeStack.pop();
     }
 

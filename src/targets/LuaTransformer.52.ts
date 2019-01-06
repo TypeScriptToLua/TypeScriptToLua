@@ -1,28 +1,35 @@
 import * as ts from "typescript";
 
-import {LuaTransformer} from "../LuaTransformer";
+import * as tstl from "../LuaAST";
+import {LuaTransformer, StatementVisitResult, ScopeType} from "../LuaTransformer";
 import {TSHelper as tsHelper} from "../TSHelper";
+import { LuaTransformer51 } from "./LuaTransformer.51";
 
-export class LuaTransformer52 extends LuaTransformer {
-    // TODO
-    // /** @override */
-    // public transpileLoopBody(
-    //     node: ts.WhileStatement
-    //         | ts.DoStatement
-    //         | ts.ForStatement
-    //         | ts.ForOfStatement
-    //         | ts.ForInStatement
-    // ): string {
-    //     this.pushSpecialScope(ScopeType.Loop);
-    //     let result = super.transpileLoopBody(node);
-    //     result += this.indent + `::__continue${this.popSpecialScope().id}::\n`;
-    //     return result;
-    // }
+export class LuaTransformer52 extends LuaTransformer51
+{
+    /** @override */
+    public transformLoopBody(
+        loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
+    ): tstl.Statement[]
+    {
+        this.pushScope(ScopeType.Loop);
+        const baseResult = super.transformLoopBody(loop);
+        const scopeId = this.popScope().id;
 
-    // /** @override */
-    // public transpileContinue(node: ts.ContinueStatement): string {
-    //     return this.indent + `goto __continue${this.peekSpecialScope().id}\n`;
-    // }
+        const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
+        baseResult.push(continueLabel);
+
+        return baseResult;
+    }
+
+    /** @override */
+    public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
+        return tstl.createGotoStatement(
+            `__continue${this.peekScope().id}`,
+            undefined,
+            statement
+        );
+    }
 
     // /** @override */
     // public transpileBreak(node: ts.BreakStatement): string {

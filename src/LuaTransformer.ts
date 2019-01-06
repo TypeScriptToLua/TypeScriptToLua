@@ -820,7 +820,8 @@ export class LuaTransformer {
         return undefined;
     }
 
-    public transformVariableDeclaration(statement: ts.VariableDeclaration): tstl.Statement[] {
+    public transformVariableDeclaration(statement: ts.VariableDeclaration)
+        : [tstl.VariableDeclarationStatement] | [tstl.VariableDeclarationStatement, tstl.AssignmentStatement] {
         if (statement.initializer) {
             // Validate assignment
             const initializerType = this.checker.getTypeAtLocation(statement.initializer);
@@ -857,12 +858,17 @@ export class LuaTransformer {
             const vars = statement.name.elements.map(e => this.transformArrayBindingElement(e));
 
             // Don't unpack TupleReturn decorated functions
-            if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
-                // local vars = initializer;
-                return [tstl.createVariableDeclarationStatement(vars, this.transformExpression(statement.initializer))];
+            if (statement.initializer) {
+                if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
+                    // local vars = initializer;
+                    return [tstl.createVariableDeclarationStatement(vars, this.transformExpression(statement.initializer))];
+                } else {
+                    // local vars = this.transpileDestructingAssignmentValue(node.initializer);
+                    const initializer = this.createUnpackCall(this.transformExpression(statement.initializer));
+                    return [tstl.createVariableDeclarationStatement(vars, initializer)];
+                }
             } else {
-                // local vars = this.transpileDestructingAssignmentValue(node.initializer);
-                return [tstl.createVariableDeclarationStatement(vars, this.createUnpackCall(statement.initializer))];
+                return [tstl.createVariableDeclarationStatement(vars)];
             }
         } else {
             throw TSTLErrors.UnsupportedKind("variable declaration", statement.name.kind, statement);
@@ -921,7 +927,8 @@ export class LuaTransformer {
                     return tstl.createReturnStatement(statement.expression.elements.map(elem => this.transformExpression(elem)));
                 } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
                     // If return expression is not another TupleReturn call, unpack it
-                    return tstl.createReturnStatement([this.createUnpackCall(statement.expression)]);
+                    const expression = this.createUnpackCall(this.transformExpression(statement.expression));
+                    return tstl.createReturnStatement([expression]);
                 }
             }
             return tstl.createReturnStatement([this.transformExpression(statement.expression)]);
@@ -984,93 +991,182 @@ export class LuaTransformer {
         return result;
     }
 
-    public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
-        // Transpile expression
-        const iterable = this.transformExpression(statement.expression);
+    public transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {
+        if (ts.isVariableDeclarationList(initializer)) {
+            // Declaration of new variable
+            const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
+            if (ts.isArrayBindingPattern(initializer.declarations[0].name)) {
+                expression = this.createUnpackCall(expression);
+            }
+            return tstl.createVariableDeclarationStatement(variableDeclarations[0].left, expression);
 
-        /*if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
-           // Implemented below
         } else {
-            // TODO
-            // Custom iterators
-            let variableName: string;
-            const isLuaIterator = tsHelper.isLuaIteratorCall(node.expression, this.checker);
-            if (isLuaIterator && tsHelper.isTupleReturnCall(node.expression, this.checker)) {
-                if (ts.isVariableDeclarationList(node.initializer)) {
-                    // Variables declared in for loop
-                    if (!ts.isIdentifier(node.initializer.declarations[0].name)) {
-                        variableName = (node.initializer.declarations[0].name as ts.ArrayBindingPattern).elements
-                            .map(e => this.transpileArrayBindingElement(e)).join(", ");
-                    } else {
-                        // Single variable is not allowed
-                        throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(node.initializer);
-                    }
-                } else {
-                    // Variables NOT declared in for loop - catch iterator values in temps and assign
-                    if (ts.isArrayLiteralExpression(node.initializer)) {
-                        const tmps = node.initializer.elements.map((_, i) => `____TS_value${i}`);
-                        itemVariable = ts.createArrayLiteral(tmps.map(tmp => ts.createIdentifier(tmp)));
-                        variableName = tmps.join(", ");
-                    } else {
-                        // Single variable is not allowed
-                        throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(node.initializer);
-                    }
-                }
+            // Assignment to existing variable
+            let variables: tstl.IdentifierOrTableIndexExpression | tstl.IdentifierOrTableIndexExpression[];
+            if (ts.isArrayLiteralExpression(initializer)) {
+                expression = this.createUnpackCall(expression);
+                variables = initializer.elements.map(e => this.transformExpression(e)) as tstl.IdentifierOrTableIndexExpression[];
             } else {
-                if (ts.isVariableDeclarationList(node.initializer)
-                    && ts.isIdentifier(node.initializer.declarations[0].name)) {
-                    // Single variable declared in for loop
-                    variableName = this.transpileExpression(node.initializer.declarations[0].name);
+                variables = this.transformExpression(initializer) as tstl.IdentifierOrTableIndexExpression;
+            }
+            return tstl.createAssignmentStatement(variables, expression);
+        }
+    }
+
+    public transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+        const arrayExpression = this.transformExpression(statement.expression);
+
+        // Arrays use numeric for loop (performs better than ipairs)
+        const indexVariable = tstl.createIdentifier("____TS_index");
+        if (!ts.isIdentifier(statement.expression)) {
+            // Cache iterable expression if it's not a simple identifier
+            // local ____TS_array = ${iterable};
+            // for ____TS_index = 1, #____TS_array do
+            //     local ${initializer} = ____TS_array[____TS_index]
+            const arrayVariable = tstl.createIdentifier("____TS_array");
+            const arrayAccess = tstl.createTableIndexExpression(arrayVariable, indexVariable);
+            const initializer = this.transformForOfInitializer(statement.initializer, arrayAccess);
+            block.statements.splice(0, 0, initializer);
+            return [
+                tstl.createVariableDeclarationStatement(arrayVariable, arrayExpression),
+                tstl.createForStatement(
+                    block,
+                    indexVariable,
+                    tstl.createNumericLiteral(1),
+                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator)
+                ),
+            ];
+
+        } else {
+            // Simple identifier version
+            // for ____TS_index = 1, #${iterable} do
+            //     local ${initializer} = ${iterable}[____TS_index]
+            const iterableAccess = tstl.createTableIndexExpression(arrayExpression, indexVariable);
+            const initializer = this.transformForOfInitializer(statement.initializer, iterableAccess);
+            block.statements.splice(0, 0, initializer);
+            return tstl.createForStatement(
+                block,
+                indexVariable,
+                tstl.createNumericLiteral(1),
+                tstl.createUnaryExpression(arrayExpression, tstl.SyntaxKind.LengthOperator)
+            );
+        }
+    }
+
+    public transformForOfLuaIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+        const luaIterator = this.transformExpression(statement.expression);
+        if (tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
+            // LuaIterator + TupleReturn
+            if (ts.isVariableDeclarationList(statement.initializer)) {
+                // Variables declared in for loop
+                // for ${initializer} in ${iterable} do
+                const initializerVariable = statement.initializer.declarations[0].name;
+                if (ts.isArrayBindingPattern(initializerVariable)) {
+                    return tstl.createForInStatement(
+                        block,
+                        initializerVariable.elements.map(e => this.transformArrayBindingElement(e)),
+                        [luaIterator]
+                    );
+
                 } else {
-                    // Destructuring or variable NOT declared in for loop
-                    variableName = "____TS_value";
-                    itemVariable =  ts.createIdentifier(variableName);
+                    // Single variable is not allowed
+                    throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(statement.initializer);
+                }
+
+            } else {
+                // Variables NOT declared in for loop - catch iterator values in temps and assign
+                // for ____TS_value0 in ${iterable} do
+                //     ${initializer} = ____TS_value0
+                if (ts.isArrayLiteralExpression(statement.initializer)) {
+                    const tmps = statement.initializer.elements.map((_, i) => tstl.createIdentifier(`____TS_value${i}`));
+                    const assign = tstl.createAssignmentStatement(
+                        statement.initializer.elements.map(e => this.transformExpression(e)) as tstl.IdentifierOrTableIndexExpression[],
+                        tmps
+                    );
+                    block.statements.splice(0, 0, assign);
+                    return tstl.createForInStatement(block, tmps, [luaIterator]);
+
+                } else {
+                    // Single variable is not allowed
+                    throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(statement.initializer);
                 }
             }
 
-            const iterator = isLuaIterator ? iterable : this.transpileLuaLibFunction(LuaLibFeature.Iterator, iterable);
-            result = this.indent + `for ${variableName} in ${iterator} do\n`;
-        }*/
-        
-        const indexVariable = tstl.createIdentifier("____TS_index");
-        let arrayVariable = iterable;
-        const bodyStatements = [];
+        } else {
+            // LuaIterator (no TupleReturn)
+            if (ts.isVariableDeclarationList(statement.initializer) && ts.isIdentifier(statement.initializer.declarations[0].name)) {
+                // Single variable declared in for loop
+                // for ${initializer} in ${iterator} do
+                return tstl.createForInStatement(
+                    block,
+                    [this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier)],
+                    [luaIterator]
+                );
 
-        if (!ts.isIdentifier) {
-            // Cache expression
-            arrayVariable = tstl.createIdentifier("____TS_array");
-            const arrayVariableInitialize = this.createLocalOrGlobalDeclaration(
-                tstl.createIdentifier("____TS_array"),
-                iterable
+            } else {
+                // Destructuring or variable NOT declared in for loop
+                // for ____TS_value in ${iterator} do
+                //     local ${initializer} = unpack(____TS_value)
+                const valueVariable = tstl.createIdentifier("____TS_value");
+                const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
+                block.statements.splice(0, 0, initializer);
+                return tstl.createForInStatement(
+                    block,
+                    [valueVariable],
+                    [luaIterator]
+                );
+            }
+        }
+    }
+
+    public transformForOfIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+        const iterable = this.transformExpression(statement.expression);
+        if (ts.isVariableDeclarationList(statement.initializer) && ts.isIdentifier(statement.initializer.declarations[0].name)) {
+            // Single variable declared in for loop
+            // for ${initializer} in __TS__iterator(${iterator}) do
+            return tstl.createForInStatement(
+                block,
+                [this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier)],
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, iterable)]
             );
-            bodyStatements.push(arrayVariableInitialize);
+
+        } else {
+            // Destructuring or variable NOT declared in for loop
+            // for ____TS_value in __TS__iterator(${iterator}) do
+            //     local ${initializer} = ____TS_value
+            const valueVariable = tstl.createIdentifier("____TS_value");
+            const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
+            block.statements.splice(0, 0, initializer);
+            return tstl.createForInStatement(
+                block,
+                [valueVariable],
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, iterable)]
+            );
+        }
+    }
+
+    public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
+        // Transpile block
+        let block: tstl.Block;
+        if (ts.isBlock(statement.statement)) {
+            block = this.transformBlock(statement.statement);
+        } else {
+            const statements = this.transformStatement(statement.statement);
+            block = tstl.createBlock(Array.isArray(statements) ? statements : [statements]);
         }
 
-        if (!ts.isVariableDeclarationList(statement.initializer)) {
-            throw new Error("Anything other than a variable declaration list as loop initializer is not supported.");
+        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
+            // Arrays
+            return this.transformForOfArrayStatement(statement, block);
+
+        } else if (tsHelper.isLuaIteratorCall(statement.expression, this.checker)) {
+            // LuaIterators
+            return this.transformForOfLuaIteratorStatement(statement, block);
+
+        } else {
+            // TS Iterables
+            return this.transformForOfIteratorStatement(statement, block);
         }
-
-        const valueVariable = this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier);
-
-        const valueAssignment = this.createLocalOrGlobalDeclaration(
-            valueVariable,
-            tstl.createTableIndexExpression(arrayVariable, indexVariable)
-        );
-        bodyStatements.push(valueAssignment);
-
-        const statements = ts.isBlock(statement.statement)
-            ? [...bodyStatements, ...this.transformStatements(statement.statement.statements)]
-            : this.transformStatements([statement.statement]);
-
-        return tstl.createForStatement(
-            tstl.createBlock(statements),
-            indexVariable,
-            tstl.createNumericLiteral(1),
-            tstl.createUnaryExpression(iterable, tstl.SyntaxKind.LengthOperator),
-            tstl.createNumericLiteral(1),
-            undefined,
-            statement
-        );
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
@@ -1232,9 +1328,7 @@ export class LuaTransformer {
                 // Replace string + with ..
                 const typeLeft = this.checker.getTypeAtLocation(expression.left);
                 const typeRight = this.checker.getTypeAtLocation(expression.right);
-                if ((typeLeft.flags & ts.TypeFlags.String) ||
-                    ts.isStringLiteral(expression.left) ||  (typeRight.flags & ts.TypeFlags.String) ||
-                    ts.isStringLiteral(expression.right)) {
+                if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
                     return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.ConcatOperator);
                 }
                 return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.AdditionOperator);
@@ -1284,7 +1378,7 @@ export class LuaTransformer {
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
-                right = [this.createUnpackCall(expression.right)];
+                right = [this.createUnpackCall(this.transformExpression(expression.right))];
             }
             return tstl.createAssignmentStatement(left as tstl.IdentifierOrTableIndexExpression[], right);
         } else {
@@ -1306,7 +1400,7 @@ export class LuaTransformer {
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
-                right = [this.createUnpackCall(expression.right)];
+                right = [this.createUnpackCall(this.transformExpression(expression.right))];
             }
             const tmps = expression.left.elements.map((_, i) => tstl.createIdentifier(`____TS_tmp${i}`));
             const statements: tstl.Statement[] = [
@@ -1361,6 +1455,15 @@ export class LuaTransformer {
         rhs: ts.Expression,
         replacementOperator: tstl.BinaryOperator,
         isPostfix: boolean): tstl.CallExpression {
+        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
+            // Check is we need to use string concat operator
+            const typeLeft = this.checker.getTypeAtLocation(lhs);
+            const typeRight = this.checker.getTypeAtLocation(rhs);
+            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                replacementOperator = tstl.SyntaxKind.ConcatOperator;
+            }
+        }
+
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         let right = this.transformExpression(rhs);
 
@@ -1427,6 +1530,15 @@ export class LuaTransformer {
 
     public transformCompoundAssignmentStatement(lhs: ts.Expression, rhs: ts.Expression, replacementOperator: tstl.BinaryOperator):
         tstl.Statement {
+        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
+            // Check is we need to use string concat operator
+            const typeLeft = this.checker.getTypeAtLocation(lhs);
+            const typeRight = this.checker.getTypeAtLocation(rhs);
+            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                replacementOperator = tstl.SyntaxKind.ConcatOperator;
+            }
+        }
+
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         const right = this.transformExpression(rhs);
 
@@ -1509,16 +1621,7 @@ export class LuaTransformer {
         const properties: tstl.TableFieldExpression[] = [];
         // Add all property assignments
         node.properties.forEach(element => {
-            let name: tstl.Expression;
-            if (ts.isIdentifier(element.name)) {
-                name = this.transformIdentifier(element.name);
-            } else if (ts.isComputedPropertyName(element.name)) {
-                name = this.transformPropertyName(element.name);
-             } else {
-                // Numeric or string literal
-                name = tstl.createTableFieldExpression(this.transformExpression(element.name));
-            }
-
+            const name = this.transformPropertyName(element.name);
             if (ts.isPropertyAssignment(element)) {
                 const expression = this.transformExpression(element.initializer);
                 properties.push(tstl.createTableFieldExpression(expression, name, undefined, element));
@@ -1677,7 +1780,7 @@ export class LuaTransformer {
             // Replace last . with : here
             const name = node.expression.name.escapedText;
             if (name === "toString") {
-                const toStringIdentifier = tstl.createIdentifier("toString");
+                const toStringIdentifier = tstl.createIdentifier("tostring");
                 return tstl.createCallExpression(
                     toStringIdentifier, [this.transformExpression(node.expression.expression)], undefined, node);
             } else if (name === "hasOwnProperty") {
@@ -1696,7 +1799,7 @@ export class LuaTransformer {
 
                 const table = this.transformExpression(node.expression.expression);
                 const callPath = tstl.createTableIndexExpression(table, tstl.createStringLiteral(name));
-                
+
                 return tstl.createCallExpression(
                     callPath,
                     addContextParameter ? [callPath, ...parameters] : parameters,
@@ -2209,10 +2312,10 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createParenthesizedExpression(iife));
     }
 
-    public createUnpackCall(expression: ts.Expression): tstl.Expression {
+    public createUnpackCall(expression: tstl.Expression): tstl.Expression {
         return tstl.createCallExpression(
             tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-            [this.transformExpression(expression)]);
+            [expression]);
     }
 
     private getAbsoluteImportPath(relativePath: string): string {

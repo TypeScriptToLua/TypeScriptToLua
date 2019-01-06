@@ -316,7 +316,7 @@ export function createForStatement(
     controlVariable: Identifier,
     controlVariableInitializer: Expression,
     limitExpression: Expression,
-    stepExpression: Expression,
+    stepExpression?: Expression,
     parent?: Node,
     tsOriginal?: ts.Node): ForStatement {
     const statement = createNode(SyntaxKind.ForStatement, parent, tsOriginal) as ForStatement;

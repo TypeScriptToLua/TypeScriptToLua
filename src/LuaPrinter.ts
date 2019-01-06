@@ -180,9 +180,9 @@ export class LuaPrinter {
 
     private printForInStatement(statement: tstl.ForInStatement): string {
         const names = statement.names.map(i => this.printIdentifier(i)).join(", ");
-        const expressions = statement.names.map(e => this.printExpression(e)).join(", ");
+        const expressions = statement.expressions.map(e => this.printExpression(e)).join(", ");
 
-        let result = this.indent(`for ${names} in ${expressions} do`);
+        let result = this.indent(`for ${names} in ${expressions} do\n`);
         this.pushIndent();
         result += this.printBlock(statement.body);
         this.popIndent();
@@ -294,8 +294,8 @@ export class LuaPrinter {
         const value = this.printExpression(expression.value);
 
         if (expression.key) {
-            if (tstl.isIdentifier(expression.key)) {
-                return `${this.printExpression(expression.key)} = ${value}`;
+            if (tstl.isStringLiteral(expression.key) && tsHelper.isValidLuaIdentifier(expression.key.value)) {
+                return `${expression.key.value} = ${value}`;
             } else {
                 return `[${this.printExpression(expression.key)}] = ${value}`;
             }

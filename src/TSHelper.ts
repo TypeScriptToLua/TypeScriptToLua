@@ -370,7 +370,9 @@ export class TSHelper {
                     if (i >= 0) {
                         const parentSignature = checker.getResolvedSignature(signatureDeclaration.parent);
                         const parentSignatureDeclaration = parentSignature.getDeclaration();
-                        declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                        if (parentSignatureDeclaration) {
+                            declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                        }
                     }
                 } else if (ts.isReturnStatement(signatureDeclaration.parent)) {
                     declType = this.getContainingFunctionReturnType(signatureDeclaration.parent, checker);

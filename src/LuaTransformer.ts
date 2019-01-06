@@ -948,13 +948,12 @@ export class LuaTransformer {
 
     public transformIfStatement(statement: ts.IfStatement): tstl.IfStatement {
         const condition = this.transformExpression(statement.expression);
-        const ifBlock = tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.thenStatement)));
+        const ifBlock = tstl.createBlock(this.transformBlockOrStatement(statement.thenStatement));
         if (statement.elseStatement) {
             if (ts.isIfStatement(statement.elseStatement)) {
                 return tstl.createIfStatement(condition, ifBlock, this.transformIfStatement(statement.elseStatement));
             } else {
-                const elseBlock =
-                    tstl.createBlock(this.statementVisitResultToStatementArray(this.transformStatement(statement.elseStatement)));
+                const elseBlock = tstl.createBlock(this.transformBlockOrStatement(statement.elseStatement));
                 return tstl.createIfStatement(condition, ifBlock, elseBlock);
             }
         }
@@ -1030,7 +1029,13 @@ export class LuaTransformer {
         loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
     ): tstl.Statement[]
     {
-        return this.statementVisitResultToStatementArray(this.transformStatement(loop.statement));
+        return this.transformBlockOrStatement(loop.statement);
+    }
+
+    public transformBlockOrStatement(statement: ts.Statement): tstl.Statement[] {
+        return ts.isBlock(statement)
+            ? this.transformStatements(statement.statements)
+            : this.statementVisitResultToStatementArray(this.transformStatement(statement));
     }
 
     public transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {

@@ -13,7 +13,7 @@ export class LuaTransformer52 extends LuaTransformer51
     ): tstl.Statement[]
     {
         this.pushScope(ScopeType.Loop);
-        const baseResult = super.transformLoopBody(loop);
+        const baseResult: tstl.Statement[] = [tstl.createDoStatement(super.transformLoopBody(loop))];
         const scopeId = this.popScope().id;
 
         const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);

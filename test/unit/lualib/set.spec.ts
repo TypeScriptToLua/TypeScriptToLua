@@ -3,7 +3,7 @@ import * as util from "../../src/util";
 
 export class SetTests {
     @Test("set constructor")
-    public setConstructor() {
+    public setConstructor(): void {
         const lua = util.transpileString(`let myset = new Set(); return myset.size;`);
         const result = util.executeLua(lua);
 
@@ -11,7 +11,7 @@ export class SetTests {
     }
 
     @Test("set iterable constructor")
-    public setIterableConstructor() {
+    public setIterableConstructor(): void {
         const lua = util.transpileString(`let myset = new Set(["a", "b"]);
                                           return myset.has("a") || myset.has("b");`);
         const result = util.executeLua(lua);
@@ -20,7 +20,7 @@ export class SetTests {
     }
 
     @Test("set iterable constructor set")
-    public setIterableConstructorSet() {
+    public setIterableConstructorSet(): void {
         const lua = util.transpileString(`let myset = new Set(new Set(["a", "b"]));
                                           return myset.has("a") || myset.has("b");`);
         const result = util.executeLua(lua);
@@ -29,14 +29,14 @@ export class SetTests {
     }
 
     @Test("set add")
-    public setAdd() {
+    public setAdd(): void {
         const lua = util.transpileString(`let myset = new Set(); myset.add("a"); return myset.has("a");`);
         const has = util.executeLua(lua);
         Expect(has).toBe(true);
     }
 
     @Test("set clear")
-    public setClear() {
+    public setClear(): void {
         const setTS = `let myset = new Set(["a", "b"]; myset.clear();`;
         const lua = util.transpileString(setTS + `return myset.size;`);
         const size = util.executeLua(lua);
@@ -48,7 +48,7 @@ export class SetTests {
     }
 
     @Test("set delete")
-    public setDelete() {
+    public setDelete(): void {
         const setTS = `let myset = new Set(["a", "b"]); myset.delete("a");`;
         const lua = util.transpileString(setTS + `return myset.has("b") && !myset.has("a");`);
         const contains = util.executeLua(lua);
@@ -56,7 +56,7 @@ export class SetTests {
     }
 
     @Test("set entries")
-    public setEntries() {
+    public setEntries(): void {
         const lua = util.transpileString(`let myset = new Set([5, 6, 7]);
                                           let count = 0;
                                           for (var [key, value] of myset.entries()) { count += key + value; }
@@ -66,7 +66,7 @@ export class SetTests {
     }
 
     @Test("set foreach")
-    public setForEach() {
+    public setForEach(): void {
         const lua = util.transpileString(
             `let myset = new Set([2, 3, 4]);
             let count = 0;
@@ -79,7 +79,7 @@ export class SetTests {
     }
 
     @Test("set foreach keys")
-    public setForEachKeys() {
+    public setForEachKeys(): void {
         const lua = util.transpileString(
             `let myset = new Set([2, 3, 4]);
             let count = 0;
@@ -92,28 +92,28 @@ export class SetTests {
     }
 
     @Test("set has")
-    public setHas() {
+    public setHas(): void {
         const lua = util.transpileString(`let myset = new Set(["a", "c"]); return myset.has("a");`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(true);
     }
 
     @Test("set has false")
-    public setHasFalse() {
+    public setHasFalse(): void {
         const lua = util.transpileString(`let myset = new Set(); return myset.has("a");`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(false);
     }
 
     @Test("set has null")
-    public setHasNull() {
+    public setHasNull(): void {
         const lua = util.transpileString(`let myset = new Set(["a", "c"]); return myset.has(null);`);
         const contains = util.executeLua(lua);
         Expect(contains).toBe(false);
     }
 
     @Test("set keys")
-    public setKeys() {
+    public setKeys(): void {
         const lua = util.transpileString(`let myset = new Set([5, 6, 7]);
                                           let count = 0;
                                           for (var key of myset.keys()) { count += key; }
@@ -123,7 +123,7 @@ export class SetTests {
     }
 
     @Test("set values")
-    public setValues() {
+    public setValues(): void {
         const lua = util.transpileString(`let myset = new Set([5, 6, 7]);
                                           let count = 0;
                                           for (var value of myset.values()) { count += value; }
@@ -133,7 +133,7 @@ export class SetTests {
     }
 
     @Test("set size")
-    public setSize() {
+    public setSize(): void {
         Expect(util.transpileAndExecute(`let m = new Set(); return m.size;`)).toBe(0);
         Expect(util.transpileAndExecute(`let m = new Set(); m.add(1); return m.size;`)).toBe(1);
         Expect(util.transpileAndExecute(`let m = new Set([1, 2]); return m.size;`)).toBe(2);

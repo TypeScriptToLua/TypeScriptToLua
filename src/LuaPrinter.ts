@@ -23,7 +23,7 @@ export class LuaPrinter {
         [tstl.SyntaxKind.GreaterEqualOperator]: ">=",
         [tstl.SyntaxKind.AndOperator]: "and",
         [tstl.SyntaxKind.OrOperator]: "or",
-        [tstl.SyntaxKind.NotOperator]: "not",
+        [tstl.SyntaxKind.NotOperator]: "not ",
         [tstl.SyntaxKind.BitwiseAndOperator]: "&",
         [tstl.SyntaxKind.BitwiseOrOperator]: "|",
         [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
@@ -313,7 +313,10 @@ export class LuaPrinter {
     }
 
     private printUnaryExpression(expression: tstl.UnaryExpression): string {
-        return `${this.printOperator(expression.operator)}${this.printExpression(expression.operand)}`;
+        const operand = this.needsParentheses(expression.operand)
+            ? `(${this.printExpression(expression.operand)})`
+            : this.printExpression(expression.operand);
+        return `${this.printOperator(expression.operator)}${operand}`;
     }
 
     private printBinaryExpression(expression: tstl.BinaryExpression): string {

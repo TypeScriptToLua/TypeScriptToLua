@@ -101,6 +101,11 @@ export class LuaTransformer {
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {
+        // Ignore declarations
+        if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+            return undefined;
+        }
+
         switch (node.kind) {
             // Block
             case ts.SyntaxKind.Block:
@@ -614,8 +619,9 @@ export class LuaTransformer {
         const headerStatements = [];
 
         // Add default parameters
-        const defaultValueDeclarations =
-            parameters.filter(declaration => declaration.initializer !== undefined).map(this.transformParameterDefaultValueDeclaration);
+        const defaultValueDeclarations = parameters
+            .filter(declaration => declaration.initializer !== undefined)
+            .map(declaration => this.transformParameterDefaultValueDeclaration(declaration));
 
         headerStatements.push(...defaultValueDeclarations);
 
@@ -764,32 +770,34 @@ export class LuaTransformer {
 
     public computeEnumMembers(node: ts.EnumDeclaration):
         Array<{name: ts.PropertyName, value: tstl.NumericLiteral | tstl.StringLiteral, original: ts.Node}> {
-        let val: tstl.NumericLiteral | tstl.StringLiteral;
+        let numericValue = 0;
         let hasStringInitializers = false;
 
         return node.members.map(member => {
+            let valueLiteral: tstl.NumericLiteral | tstl.StringLiteral;
             if (member.initializer) {
                 if (ts.isNumericLiteral(member.initializer)) {
-                    val = tstl.createNumericLiteral(Number(member.initializer.text));
+                    numericValue = Number(member.initializer.text);
+                    valueLiteral = tstl.createNumericLiteral(numericValue);
                 } else if (ts.isStringLiteral(member.initializer)) {
                     hasStringInitializers = true;
-                    val = tstl.createStringLiteral(member.initializer.text);
+                    valueLiteral = tstl.createStringLiteral(member.initializer.text);
                 } else {
                     throw TSTLErrors.InvalidEnumMember(member.initializer);
                 }
             } else if (hasStringInitializers) {
                 throw TSTLErrors.HeterogeneousEnum(node);
+            } else {
+                valueLiteral = tstl.createNumericLiteral(numericValue);
             }
 
             const enumMember = {
                 name: member.name,
                 original: member,
-                value: val,
+                value: valueLiteral,
             };
 
-            if (typeof val === "number") {
-                val++;
-            }
+            numericValue++;
 
             return enumMember;
         });
@@ -1802,7 +1810,7 @@ export class LuaTransformer {
 
                 return tstl.createCallExpression(
                     callPath,
-                    addContextParameter ? [callPath, ...parameters] : parameters,
+                    addContextParameter ? [table, ...parameters] : parameters,
                     undefined,
                     node
                 );
@@ -1912,13 +1920,9 @@ export class LuaTransformer {
                         throw TSTLErrors.UnsupportedProperty(type.symbol.name, property, node);
                     }
 
-                    const value = enumMembers[memberPosition].value;
-
-                    if (typeof value === "string") {
-                        return tstl.createStringLiteral(value, undefined, node);
-                    }
-
-                    return tstl.createIdentifier(value.toString(), undefined, node);
+                    const value = tstl.cloneNode(enumMembers[memberPosition].value);
+                    tstl.setNodeOriginal(value, enumMember);
+                    return value;
                 }
             }
         }

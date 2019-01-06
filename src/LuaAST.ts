@@ -109,6 +109,16 @@ export function createNode(kind: SyntaxKind, parent?: Node, tsOriginal?: ts.Node
     return {kind, parent, pos, end};
 }
 
+export function cloneNode<T extends Node>(node: T): T {
+    return Object.assign({}, node);
+}
+
+export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
+    node.pos = tsOriginal.pos;
+    node.end = tsOriginal.end;
+    return node;
+}
+
 export function setParent(node: Node | Node[] | undefined, parent: Node): void {
     if (!node) {
         return;

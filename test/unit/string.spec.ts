@@ -2,8 +2,8 @@ import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 import * as util from "../src/util";
 
-export class StringTests {
-
+export class StringTests
+{
     @Test("Unsuported string function")
     public stringUnsuportedFunction(): void {
         // Assert

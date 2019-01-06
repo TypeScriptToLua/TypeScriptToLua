@@ -1755,7 +1755,7 @@ export class LuaTransformer {
             return tstl.createCallExpression(this.transformMathExpression(node.expression.name), parameters, undefined, node);
         }
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "String") {
+        if (ownerType.symbol && ownerType.symbol.escapedName === "StringConstructor") {
             parameters = this.transformArguments(node.arguments);
             return tstl.createCallExpression(this.transformStringExpression(node.expression.name), parameters, undefined, node);
         }

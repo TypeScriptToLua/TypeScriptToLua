@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import * as ts from "typescript";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
@@ -6,7 +6,6 @@ import * as util from "../src/util";
 
 const deepEqual = require("deep-equal");
 
-@FocusTests
 export class LuaLoopTests
 {
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])

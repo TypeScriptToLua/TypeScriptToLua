@@ -56,7 +56,7 @@ export class LuaPrinter {
     }
 
     private printBlock(block: tstl.Block): string {
-        return block.statements.map(s => this.printStatement(s)).join("");
+        return this.ignoreDeadStatements(block.statements).map(s => this.printStatement(s)).join("");
     }
 
     private printStatement(statement: tstl.Statement): string {
@@ -93,7 +93,7 @@ export class LuaPrinter {
     private printDoStatement(statement: tstl.DoStatement): string {
         let result = this.indent("do\n");
         this.pushIndent();
-        result += statement.statements.map(s => this.printStatement(s)).join("");
+        result += this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)).join("");
         this.popIndent();
         result += this.indent("end\n");
 
@@ -366,5 +366,16 @@ export class LuaPrinter {
 
     private printOperator(kind: tstl.Operator): string {
         return LuaPrinter.operatorMap[kind];
+    }
+
+    private ignoreDeadStatements(statements: tstl.Statement[]): tstl.Statement[] {
+        const aliveStatements = [];
+        for (const statement of statements) {
+            aliveStatements.push(statement);
+            if (tstl.isReturnStatement(statement)) {
+                break;
+            }
+        }
+        return aliveStatements;
     }
 }

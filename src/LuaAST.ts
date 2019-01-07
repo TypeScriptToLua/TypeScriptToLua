@@ -698,9 +698,9 @@ export function isIdentifier(node: Node): node is Identifier {
     return node.kind === SyntaxKind.Identifier;
 }
 
-export function createIdentifier(text: string, parent?: Node, tsOriginal?: ts.Node): Identifier {
+export function createIdentifier(text: string | ts.__String, parent?: Node, tsOriginal?: ts.Node): Identifier {
     const expression = createNode(SyntaxKind.Identifier, parent, tsOriginal) as Identifier;
-    expression.text = text;
+    expression.text = text as string;
     return expression;
 }
 

@@ -965,7 +965,7 @@ export class LuaTransformer {
             tstl.createBlock(this.transformLoopBody(statement)),
             this.transformExpression(statement.expression),
             undefined,
-            statement            
+            statement
         );
     }
 
@@ -1820,21 +1820,18 @@ export class LuaTransformer {
                 return tstl.createBinaryExpression(
                     rawGetCall, tstl.createNilLiteral(), tstl.SyntaxKind.InequalityOperator, undefined, node);
             } else {
-                const signatureDeclaration = signature.getDeclaration();
-                const addContextParameter = !signatureDeclaration
-                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void;
-
                 const parameters = this.transformArguments(node.arguments, signature);
-
                 const table = this.transformExpression(node.expression.expression);
-                const callPath = tstl.createTableIndexExpression(table, tstl.createStringLiteral(name));
+                const signatureDeclaration = signature.getDeclaration();
+                if (!signatureDeclaration || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
+                    // table:name()
+                    return tstl.createMethodCallExpression(table, tstl.createIdentifier(name), parameters, undefined, node);
 
-                return tstl.createCallExpression(
-                    callPath,
-                    addContextParameter ? [table, ...parameters] : parameters,
-                    undefined,
-                    node
-                );
+                } else {
+                    // table.name()
+                    const callPath = tstl.createTableIndexExpression(table, tstl.createStringLiteral(name));
+                    return tstl.createCallExpression(callPath, parameters, undefined, node);
+                }
             }
         }
     }
@@ -2226,14 +2223,14 @@ export class LuaTransformer {
         const objectString = tstl.createStringLiteral("object");
         const condition = tstl.createBinaryExpression(typeCall, tableString, tstl.SyntaxKind.EqualityOperator);
         const andClause = tstl.createBinaryExpression(condition, objectString, tstl.SyntaxKind.AndOperator);
-        
+
         return tstl.createBinaryExpression(
             andClause,
             tstl.cloneNode(typeCall),
             tstl.SyntaxKind.OrOperator,
             undefined,
             node
-        );        
+        );
     }
 
     public transformStringLiteral(literal: ts.StringLiteralLike): tstl.StringLiteral {

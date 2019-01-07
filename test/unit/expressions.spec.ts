@@ -7,11 +7,11 @@ import * as util from "../src/util";
 
 export class ExpressionTests {
 
-    @TestCase("i++", "i = (i+1);")
-    @TestCase("++i", "i = (i+1);")
-    @TestCase("i--", "i = (i-1);")
-    @TestCase("--i", "i = (i-1);")
-    @TestCase("!a", "(not a);")
+    @TestCase("i++", "i = i + 1;")
+    @TestCase("++i", "i = i + 1;")
+    @TestCase("i--", "i = i - 1;")
+    @TestCase("--i", "i = i - 1;")
+    @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
     @TestCase("delete tbl['test']", "tbl[\"test\"]=nil;")
     @TestCase("delete tbl.test", "tbl.test=nil;")
@@ -172,11 +172,11 @@ export class ExpressionTests {
             .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
     }
 
-    @TestCase("1+1", "1+1;")
-    @TestCase("-1+1", "-1+1;")
-    @TestCase("1*30+4", "(1*30)+4;")
-    @TestCase("1*(3+4)", "1*(3+4);")
-    @TestCase("1*(3+4*2)", "1*(3+(4*2));")
+    @TestCase("1+1", "1 + 1;")
+    @TestCase("-1+1", "(-1) + 1;")
+    @TestCase("1*30+4", "(1 * 30) + 4;")
+    @TestCase("1*(3+4)", "1 * (3 + 4);")
+    @TestCase("1*(3+4*2)", "1 * (3 + (4 * 2));")
     @Test("Binary expressions ordering parentheses")
     public binaryParentheses(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
@@ -269,13 +269,13 @@ export class ExpressionTests {
                    + `    public _field: number;`
                    + `    public get field(): number { return this._field + 4; }`
                    + `    public set field(v: number) { this._field = v; }`
-                   + `}`                   
+                   + `}`
                    + `class MySuperClass extends MyClass {`
                    + `    public _superField: number;`
                    + `    public get superField(): number { return this._superField + 2; }`
                    + `    public set superField(v: number) { this._superField = v; }`
                    + `    public get superBaseField() { return this.baseField - 3; }`
-                   + `}`                   
+                   + `}`
                    + `var inst = new MySuperClass();`
                    + `inst.baseField = 1;`
                    + `inst.field = 2;`

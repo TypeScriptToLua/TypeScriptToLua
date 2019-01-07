@@ -1,13 +1,13 @@
-local i = 0
-while (i<10) do
+local i = 0;
+while i < 10 do
     do
-        if i<5 then
-            goto __continue0
+        if i < 5 then
+            goto __continue0;
         end
-        if i==7 then
-            goto __continue0
+        if i == 7 then
+            goto __continue0;
         end
     end
     ::__continue0::
-    i = (i+1)
+    i = i + 1;
 end

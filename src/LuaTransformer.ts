@@ -1794,8 +1794,7 @@ export class LuaTransformer {
         }
 
         if (tsHelper.isFunctionType(ownerType, this.checker)) {
-            // TODO - Is this even right?
-            // return this.transformFunctionCallExpression(node);
+            return this.transformFunctionCallExpression(node);
         }
 
         const signature = this.checker.getResolvedSignature(node);

@@ -349,7 +349,7 @@ export class LuaPrinter {
         const params = expression.params.map(e => this.printExpression(e)).join(", ");
         const prefix = this.printExpression(expression.prefixExpression);
         const name = this.printIdentifier(expression.name);
-        return `${prefix}:${name}(${params}))`;
+        return `${prefix}:${name}(${params})`;
     }
 
     private printIdentifier(expression: tstl.Identifier): string {

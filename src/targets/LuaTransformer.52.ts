@@ -31,6 +31,13 @@ export class LuaTransformer52 extends LuaTransformer51
         );
     }
 
+    /** @override */
+    public createUnpackCall(expression: tstl.Expression): tstl.Expression {
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
+            [expression]);
+    }
+
     // /** @override */
     // public transpileBreak(node: ts.BreakStatement): string {
     //     const topScope = this.peekSpecialScope();

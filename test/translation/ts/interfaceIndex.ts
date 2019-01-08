@@ -1,5 +1,5 @@
 declare interface Dictionary<T> {
-    [index: number]: T;
+    [index: string]: T;
 }
 
 let a: Dictionary<string> = {};

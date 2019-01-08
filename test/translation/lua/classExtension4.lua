@@ -1,4 +1,4 @@
-MyClass.test = "test"
-MyClass.testP = "testP"
-function MyClass.myFunction(self)
-end
+MyClass.test = "test";
+MyClass.testP = "testP";
+MyClass.myFunction = function (self)
+end;

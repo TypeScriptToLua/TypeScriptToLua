@@ -29,7 +29,7 @@ export class LuaModuleTests {
         const lua = util.transpileString(``, { luaLibImport: LuaLibImportKind.Always, luaTarget: LuaTarget.LuaJIT });
 
         // Assert
-        Expect(lua).toBe(`require("lualib_bundle")`);
+        Expect(lua).toBe(`require("lualib_bundle");`);
     }
 
     @Test("Non-exported module")

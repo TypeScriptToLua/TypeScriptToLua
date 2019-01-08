@@ -1,3 +1,3 @@
-function varargsFunction(a,...)
-    local b = { ... }
-end
+varargsFunction = function (a, ...)
+    b = ({...});
+end;

@@ -2355,9 +2355,7 @@ export class LuaTransformer {
     }
 
     public createUnpackCall(expression: tstl.Expression): tstl.Expression {
-        return tstl.createCallExpression(
-            tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-            [expression]);
+		return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression]);
     }
 
     private getAbsoluteImportPath(relativePath: string): string {

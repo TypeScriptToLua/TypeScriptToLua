@@ -72,7 +72,7 @@ export class LuaTransformer {
     }
 
     // TODO make all other methods private???
-    public transformSourceFile(node: ts.SourceFile): tstl.Block {
+    public transformSourceFile(node: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
 
         this.currentSourceFile = node;
@@ -80,24 +80,7 @@ export class LuaTransformer {
 
         const statements = this.transformStatements(node.statements);
 
-        const luaLibStatements = [];
-        if ((this.options.luaLibImport === LuaLibImportKind.Require && this.luaLibFeatureSet.size > 0)
-            || this.options.luaLibImport === LuaLibImportKind.Always) {
-            // require helper functions
-            const requireStatement = tstl.createExpressionStatement((tstl.createCallExpression(
-                tstl.createIdentifier("require"),
-                [tstl.createStringLiteral("lualib_bundle")]
-            )));
-            luaLibStatements.push(requireStatement);
-        }
-
-        // Inline lualib features
-        if (this.options.luaLibImport === LuaLibImportKind.Inline && this.luaLibFeatureSet.size > 0) {
-            //result += "\n" + "-- Lua Library Imports\n";
-            luaLibStatements.push(tstl.createIdentifier(LuaLib.loadFeatures(this.luaLibFeatureSet)));
-        }
-
-        return tstl.createBlock(luaLibStatements.concat(statements), undefined, node);
+        return [tstl.createBlock(statements, undefined, node), this.luaLibFeatureSet];
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {

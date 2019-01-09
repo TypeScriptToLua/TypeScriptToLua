@@ -401,16 +401,14 @@ export class TSHelper {
             return thisParameter.type && thisParameter.type.kind === ts.SyntaxKind.VoidKeyword
                 ? ContextType.Void : ContextType.NonVoid;
         }
-        if ((ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration))
-            && !(ts.getCombinedModifierFlags(signatureDeclaration) & ts.ModifierFlags.Static)) {
-            // Non-static method
+        if (ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration)) {
+            // Method
             return ContextType.NonVoid;
         }
-        if ((ts.isPropertySignature(signatureDeclaration.parent)
-             || ts.isPropertyDeclaration(signatureDeclaration.parent)
-             || ts.isPropertyAssignment(signatureDeclaration.parent))
-            && !(ts.getCombinedModifierFlags(signatureDeclaration.parent) & ts.ModifierFlags.Static)) {
-            // Non-static lambda property
+        if (ts.isPropertySignature(signatureDeclaration.parent)
+            || ts.isPropertyDeclaration(signatureDeclaration.parent)
+            || ts.isPropertyAssignment(signatureDeclaration.parent)) {
+            // Lambda property
             return ContextType.NonVoid;
         }
         if (ts.isBinaryExpression(signatureDeclaration.parent)) {

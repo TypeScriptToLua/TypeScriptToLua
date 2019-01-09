@@ -20,7 +20,7 @@ export class LuaTranspiler {
         this.program = program;
         this.options = this.program.getCompilerOptions() as CompilerOptions;
         this.luaTransformer = createTransformer(this.program);
-        this.luaPrinter = new LuaPrinter();
+        this.luaPrinter = new LuaPrinter(this.options);
     }
 
     private reportErrors(): number {
@@ -102,9 +102,9 @@ export class LuaTranspiler {
 
     public transpileSourceFile(sourceFile: ts.SourceFile): string {
         // Transform AST
-        const luaAST = this.luaTransformer.transformSourceFile(sourceFile);
+        const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        return this.luaPrinter.print(luaAST);
+        return this.luaPrinter.print(luaAST, lualibFeatureSet);
     }
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {

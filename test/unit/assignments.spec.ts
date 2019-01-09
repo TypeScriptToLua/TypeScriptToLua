@@ -91,12 +91,20 @@ export class AssignmentTests {
             .toThrowError(Error, "Ellipsis destruction is not allowed.");
     }
 
+    @Test("Tuple Assignment")
+    public tupleAssignment(): void {
+        const code = `function abc() { return [1, 2]; };
+                      let t: [number, number] = abc();
+                      return t[0] + t[1];`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(3);
+    }
+
     @Test("TupleReturn assignment")
     public tupleReturnFunction(): void {
         const code = `/** @tupleReturn */\n`
-                   + `function abc() { return [1,2,3]; }\n`
-                   + `let [a,b] = abc();`
-                   + `[a, b] = abc();`;
+                   + `declare function abc(): number[]\n`
+                   + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a,b=abc();");
@@ -105,7 +113,7 @@ export class AssignmentTests {
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment(): void {
         const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): [number, string]; }\n`
+                   + `declare function abc(): [number, string];\n`
                    + `let a = abc();`
                    + `a = abc();`;
 

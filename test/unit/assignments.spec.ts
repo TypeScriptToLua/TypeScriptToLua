@@ -94,7 +94,7 @@ export class AssignmentTests {
     @Test("TupleReturn assignment")
     public tupleReturnFunction(): void {
         const code = `/** @tupleReturn */\n`
-                   + `declare function abc() { return [1,2,3]; }\n`
+                   + `function abc() { return [1,2,3]; }\n`
                    + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
@@ -104,7 +104,7 @@ export class AssignmentTests {
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment(): void {
         const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): [number, string]; }\n`
+                   + `function abc(): [number, string]; }\n`
                    + `let a = abc();`
                    + `a = abc();`;
 

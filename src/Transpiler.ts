@@ -1529,13 +1529,23 @@ export abstract class LuaTranspiler {
             }
         }
 
-        const fromTypeReference = fromType as ts.TypeReference;
-        const toTypeReference = toType as ts.TypeReference;
-        if (fromTypeReference.typeArguments && toTypeReference.typeArguments) {
-            // Recurse into tuples/arrays
-            toTypeReference.typeArguments.forEach((t, i) => {
-                this.validateFunctionAssignment(node, fromTypeReference.typeArguments[i], t, toName);
-            });
+        const fromTypeNode = this.checker.typeToTypeNode(fromType);
+        const toTypeNode = this.checker.typeToTypeNode(toType);
+
+        if ((ts.isArrayTypeNode(toTypeNode) || ts.isTupleTypeNode(toTypeNode))
+            && (ts.isArrayTypeNode(fromTypeNode) || ts.isTupleTypeNode(fromTypeNode))) {
+            // Recurse into arrays/tuples
+            const fromTypeReference = fromType as ts.TypeReference;
+            const toTypeReference = toType as ts.TypeReference;
+            const count = Math.min(fromTypeReference.typeArguments.length, toTypeReference.typeArguments.length);
+            for (let i = 0; i < count; ++i) {
+                this.validateFunctionAssignment(
+                    node,
+                    fromTypeReference.typeArguments[i],
+                    toTypeReference.typeArguments[i],
+                    toName
+                );
+            }
         }
 
         if ((toType.flags & ts.TypeFlags.Object) !== 0

@@ -57,4 +57,17 @@ export class ArrayTests {
         const result = util.executeLua(lua);
         Expect(result).toBe(expected);
     }
+
+    @Test("Array delete")
+    public arrayDelete(): void {
+        const lua = util.transpileString(
+            `const myarray = [1,2,3,4];
+            delete myarray[2];
+            return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
+        );
+
+        const result = util.executeLua(lua);
+
+        Expect(result).toBe("1,2,nil,4");
+    }
 }

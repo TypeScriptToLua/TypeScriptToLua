@@ -1280,6 +1280,8 @@ export class LuaTransformer {
                 return this.transformArrayLiteral(expression as ts.ArrayLiteralExpression);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transformObjectLiteral(expression as ts.ObjectLiteralExpression);
+            case ts.SyntaxKind.DeleteExpression:
+                return this.transformDeleteExpression(expression as ts.DeleteExpression);
             case ts.SyntaxKind.FunctionExpression:
                 return this.transformFunctionExpression(expression as ts.ArrowFunction, this.selfIdentifier);
             case ts.SyntaxKind.ArrowFunction:
@@ -1300,6 +1302,10 @@ export class LuaTransformer {
                 return this.transformAssertionExpression(expression as ts.AssertionExpression);
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transformTypeOfExpression(expression as ts.TypeOfExpression);
+            case ts.SyntaxKind.SpreadElement:
+                throw new Error("Not yet implemented");
+            case ts.SyntaxKind.NonNullExpression:
+                return this.transformExpression((expression as ts.NonNullExpression).expression);
             case ts.SyntaxKind.EmptyStatement:
                 // TODO move to extra function (consistency)
                 return undefined;
@@ -1675,6 +1681,18 @@ export class LuaTransformer {
         });
 
         return tstl.createTableExpression(properties, undefined, node);
+    }
+
+    public transformDeleteExpression(expression: ts.DeleteExpression): tstl.CallExpression {
+        const lhs = this.transformExpression(expression.expression) as tstl.IdentifierOrTableIndexExpression;
+        const assignment = tstl.createAssignmentStatement(
+            lhs,
+            tstl.createNilLiteral(),
+            undefined,
+            expression
+        );
+
+        return this.createImmediatelyInvokedFunctionExpression([assignment], []);
     }
 
     public transformFunctionExpression(node: ts.FunctionLikeDeclaration, context: tstl.Identifier | undefined): ExpressionVisitResult {

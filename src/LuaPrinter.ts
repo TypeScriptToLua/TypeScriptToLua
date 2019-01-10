@@ -57,7 +57,7 @@ export class LuaPrinter {
                 || this.options.luaLibImport === LuaLibImportKind.Always)
             {
                 header += `require("lualib_bundle");\n`;
-            }    
+            }
             // Inline lualib features
             else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
             {

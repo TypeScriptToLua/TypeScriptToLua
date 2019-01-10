@@ -92,7 +92,12 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
         const configPath = commandLine.options.project;
         const configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
-        commandLine = ts.parseJsonConfigFileContent(configJson.config, ts.sys, path.dirname(configPath), commandLine.options);
+        commandLine = ts.parseJsonConfigFileContent(
+            configJson.config,
+            ts.sys,
+            path.dirname(configPath),
+            commandLine.options
+        );
     }
 
     // Add TSTL options from tsconfig
@@ -119,7 +124,12 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     return commandLine as ParsedCommandLine;
 }
 
-function addTSTLOptions(commandLine: ts.ParsedCommandLine, additionalArgs?: yargs.Arguments, forceOverride?: boolean): void {
+function addTSTLOptions(
+    commandLine: ts.ParsedCommandLine,
+    additionalArgs?: yargs.Arguments,
+    forceOverride?: boolean
+): void
+{
     additionalArgs = additionalArgs ? additionalArgs : commandLine.raw;
     // Add compiler options that are ignored by TS parsers
     if (additionalArgs) {

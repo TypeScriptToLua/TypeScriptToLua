@@ -49,9 +49,13 @@ export class LuaTranspiler {
         this.program.getSourceFiles().forEach(sourceFile => this.emitSourceFile(sourceFile));
 
         // Copy lualib to target dir
-        if (this.options.luaLibImport === LuaLibImportKind.Require || this.options.luaLibImport === LuaLibImportKind.Always) {
+        if (this.options.luaLibImport === LuaLibImportKind.Require
+            || this.options.luaLibImport === LuaLibImportKind.Always
+        ) {
             fs.copyFileSync(
-                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), path.join(this.options.outDir, "lualib_bundle.lua"));
+                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
+                path.join(this.options.outDir, "lualib_bundle.lua")
+            );
         }
 
         return 0;
@@ -91,7 +95,7 @@ export class LuaTranspiler {
                     const pos = ts.getLineAndCharacterOfPosition(sourceFile, exception.node.pos);
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
-                    console.error(sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character + "\n" + exception.stack);
+                    console.error(`${sourceFile.fileName} (${1 + pos.line},${pos.character})\n${exception.stack}`);
                     process.exit(1);
                 } else {
                     throw exception;

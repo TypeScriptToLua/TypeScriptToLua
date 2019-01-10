@@ -131,7 +131,7 @@ function emitFilesAndReportErrors(program: ts.Program): number {
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(
-                        sourceFile.fileName + " line: " + (1 + pos.line) + " column: " + pos.character + "\n" +
+                        sourceFile.fileName + " (" + (1 + pos.line) + "," + pos.character + ")\n" +
                         exception.stack
                     );
                     process.exit(1);

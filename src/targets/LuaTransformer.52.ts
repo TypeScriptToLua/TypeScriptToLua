@@ -31,13 +31,6 @@ export class LuaTransformer52 extends LuaTransformer51
         );
     }
 
-    /** @override */
-    public createUnpackCall(expression: tstl.Expression): tstl.Expression {
-        return tstl.createCallExpression(
-            tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-            [expression]);
-    }
-
     // /** @override */
     // public transpileBreak(node: ts.BreakStatement): string {
     //     const topScope = this.peekSpecialScope();
@@ -48,25 +41,6 @@ export class LuaTransformer52 extends LuaTransformer51
     //         return super.transpileBreak(node);
     //     }
     // }
-
-    /** @override */
-    public transformUnaryBitOperation(
-        node: ts.Node,
-        expression: tstl.Expression,
-        operator: tstl.UnaryBitwiseOperator
-    ): ExpressionVisitResult {
-        return tstl.createUnaryExpression(expression, operator, undefined, node);
-    }
-
-    /** @override */
-    public transformBinaryBitOperation(
-        node: ts.Node,
-        left: tstl.Expression,
-        right: tstl.Expression,
-        operator: tstl.BinaryBitwiseOperator
-    ): ExpressionVisitResult {
-        return tstl.createBinaryExpression(left, right, operator, undefined, node);
-    }
 
     // /** @override */
     // public transpileSwitch(node: ts.SwitchStatement): string {

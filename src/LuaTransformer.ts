@@ -1309,7 +1309,7 @@ export class LuaTransformer {
             case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
             case tstl.SyntaxKind.BitwiseLeftShiftOperator:
             case tstl.SyntaxKind.BitwiseRightShiftOperator:
-            case tstl.SyntaxKind.BitwiseArithmaticRightShift:
+            case tstl.SyntaxKind.BitwiseArithmeticRightShift:
                 return this.transformBinaryBitOperation(node, left, right, operator);
             default:
                 return tstl.createBinaryExpression(left, right, operator, undefined, node);
@@ -1340,7 +1340,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
                 return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseRightShiftOperator);
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseArithmaticRightShift);
+                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseArithmeticRightShift);
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.AndOperator);
             case ts.SyntaxKind.BarBarToken:
@@ -1626,16 +1626,34 @@ export class LuaTransformer {
         expression: tstl.Expression,
         operator: tstl.UnaryBitwiseOperator
     ): ExpressionVisitResult {
-        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+        switch (this.options.luaTarget) {
+            case LuaTarget.Lua51:
+                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+            case LuaTarget.Lua52:
+            case LuaTarget.LuaJIT:
+            default:
+                return tstl.createUnaryExpression(expression, operator, undefined, node);
+        }
     }
 
     public transformBinaryBitOperation(
         node: ts.Node,
-        lhs: tstl.Expression,
-        rhs: tstl.Expression,
+        left: tstl.Expression,
+        right: tstl.Expression,
         operator: tstl.BinaryBitwiseOperator
     ): ExpressionVisitResult {
-        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+        switch (this.options.luaTarget) {
+            case LuaTarget.Lua51:
+                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+            case LuaTarget.Lua52:
+            case LuaTarget.LuaJIT:
+                return tstl.createBinaryExpression(left, right, operator, undefined, node);
+            default:
+                if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {
+                    throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);
+                }
+                return tstl.createBinaryExpression(left, right, operator, undefined, node);
+        }
     }
 
     public transformConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): tstl.CallExpression {
@@ -1647,9 +1665,28 @@ export class LuaTransformer {
     }
 
     public transformPostfixUnaryExpression(expression: ts.PostfixUnaryExpression): tstl.Expression {
-        const replacementOperator =
-            expression.operator === ts.SyntaxKind.PlusPlusToken ? tstl.SyntaxKind.AdditionOperator : tstl.SyntaxKind.SubractionOperator;
-        return this.transformCompoundAssignmentExpression(expression, expression.operand, ts.createLiteral(1), replacementOperator, true);
+        switch (expression.operator) {
+            case ts.SyntaxKind.PlusPlusToken:
+                return this.transformCompoundAssignmentExpression(
+                    expression,
+                    expression.operand,
+                    ts.createLiteral(1),
+                    tstl.SyntaxKind.AdditionOperator,
+                    true
+                );
+
+            case ts.SyntaxKind.MinusMinusToken:
+                return this.transformCompoundAssignmentExpression(
+                    expression,
+                    expression.operand,
+                    ts.createLiteral(1),
+                    tstl.SyntaxKind.SubractionOperator,
+                    true
+                );
+
+            default:
+                throw TSTLErrors.UnsupportedKind("unary postfix operator", expression.operator, expression);
+        }
     }
 
     public transformPrefixUnaryExpression(expression: ts.PrefixUnaryExpression): tstl.Expression {
@@ -1687,6 +1724,9 @@ export class LuaTransformer {
                     this.transformExpression(expression.operand),
                     tstl.SyntaxKind.BitwiseNotOperator
                 );
+
+            default:
+                throw TSTLErrors.UnsupportedKind("unary prefix operator", expression.operator, expression);
         }
     }
 
@@ -2400,7 +2440,19 @@ export class LuaTransformer {
     }
 
     public createUnpackCall(expression: tstl.Expression): tstl.Expression {
-		return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression]);
+        switch (this.options.luaTarget) {
+            case LuaTarget.Lua51:
+            case LuaTarget.LuaJIT:
+                return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression]);
+
+            case LuaTarget.Lua52:
+            case LuaTarget.Lua53:
+            default:
+                return tstl.createCallExpression(
+                    tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
+                    [expression]
+                );
+        }
     }
 
     private getAbsoluteImportPath(relativePath: string): string {

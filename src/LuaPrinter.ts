@@ -4,6 +4,7 @@ import { TSHelper as tsHelper } from "./TSHelper";
 import { LuaLibFeature, LuaLib } from "./LuaLib";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { LuaLibImportKind } from "./CompilerOptions";
+import { TSTLErrors } from "./TSTLErrors";
 
 export class LuaPrinter {
     private options: CompilerOptions;
@@ -322,6 +323,8 @@ export class LuaPrinter {
                 return `not ${operand}`;
             case tstl.SyntaxKind.BitwiseNotOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.bnot(${operand})`;
                     case LuaTarget.LuaJIT:
@@ -378,6 +381,8 @@ export class LuaPrinter {
                 return `${left} or ${right}`;
             case tstl.SyntaxKind.BitwiseAndOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.band(${left}, ${right})`;
                     case LuaTarget.LuaJIT:
@@ -387,6 +392,8 @@ export class LuaPrinter {
                 }
             case tstl.SyntaxKind.BitwiseOrOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.bor(${left}, ${right})`;
                     case LuaTarget.LuaJIT:
@@ -396,6 +403,8 @@ export class LuaPrinter {
                 }
             case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.bxor(${left}, ${right})`;
                     case LuaTarget.LuaJIT:
@@ -405,6 +414,8 @@ export class LuaPrinter {
                 }
             case tstl.SyntaxKind.BitwiseRightShiftOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.rshift(${left}, ${right})`;
                     case LuaTarget.LuaJIT:
@@ -412,14 +423,21 @@ export class LuaPrinter {
                     default:
                         return `${left} >> ${right}`;
                 }
-            case tstl.SyntaxKind.BitwiseArithmaticRightShift:
-                if (this.options.luaTarget === LuaTarget.LuaJIT) {
-                    return `bit.arshift(${left}, ${right})`;
-                } else {
-                    return `bit32.arshift(${left}, ${right})`;
+            case tstl.SyntaxKind.BitwiseArithmeticRightShift:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
+                    case LuaTarget.Lua52:
+                        return `bit32.arshift(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.arshift(${left}, ${right})`;
+                    default:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, undefined);
                 }
             case tstl.SyntaxKind.BitwiseLeftShiftOperator:
                 switch (this.options.luaTarget) {
+                    case LuaTarget.Lua51:
+                        throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, undefined);
                     case LuaTarget.Lua52:
                         return `bit32.lshift(${left}, ${right})`;
                     case LuaTarget.LuaJIT:

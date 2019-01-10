@@ -293,8 +293,7 @@ export class TSHelper {
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
                 return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                // return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
-                throw new Error("Not yet implemented in lua AST");  // TODO
+                return [true, tstl.SyntaxKind.BitwiseArithmaticRightShift];
         }
 
         return [false, undefined];

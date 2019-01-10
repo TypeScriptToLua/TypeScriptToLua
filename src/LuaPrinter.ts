@@ -2,40 +2,10 @@ import * as tstl from "./LuaAST";
 
 import { TSHelper as tsHelper } from "./TSHelper";
 import { LuaLibFeature, LuaLib } from "./LuaLib";
-import { CompilerOptions } from "./CompilerOptions";
+import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { LuaLibImportKind } from "./CompilerOptions";
 
 export class LuaPrinter {
-    /* tslint:disable:object-literal-sort-keys */
-    private static operatorMap: {[key in tstl.Operator]: string} = {
-        [tstl.SyntaxKind.AdditionOperator]: "+",
-        [tstl.SyntaxKind.SubractionOperator]: "-",
-        [tstl.SyntaxKind.MultiplicationOperator]: "*",
-        [tstl.SyntaxKind.DivisionOperator]: "/",
-        [tstl.SyntaxKind.FloorDivisionOperator]: "//",
-        [tstl.SyntaxKind.ModuloOperator]: "%",
-        [tstl.SyntaxKind.PowerOperator]: "^",
-        [tstl.SyntaxKind.NegationOperator]: "-",
-        [tstl.SyntaxKind.ConcatOperator]: "..",
-        [tstl.SyntaxKind.LengthOperator]: "#",
-        [tstl.SyntaxKind.EqualityOperator]: "==",
-        [tstl.SyntaxKind.InequalityOperator]: "~=",
-        [tstl.SyntaxKind.LessThanOperator]: "<",
-        [tstl.SyntaxKind.LessEqualOperator]: "<=",
-        [tstl.SyntaxKind.GreaterThanOperator]: ">",
-        [tstl.SyntaxKind.GreaterEqualOperator]: ">=",
-        [tstl.SyntaxKind.AndOperator]: "and",
-        [tstl.SyntaxKind.OrOperator]: "or",
-        [tstl.SyntaxKind.NotOperator]: "not ",
-        [tstl.SyntaxKind.BitwiseAndOperator]: "&",
-        [tstl.SyntaxKind.BitwiseOrOperator]: "|",
-        [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
-        [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>",
-        [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
-        [tstl.SyntaxKind.BitwiseNotOperator]: "~",
-    };
-    /* tslint:enable:object-literal-sort-keys */
-
     private options: CompilerOptions;
     private currentIndent: string;
 
@@ -57,7 +27,7 @@ export class LuaPrinter {
                 || this.options.luaLibImport === LuaLibImportKind.Always)
             {
                 header += `require("lualib_bundle");\n`;
-            }    
+            }
             // Inline lualib features
             else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
             {
@@ -342,7 +312,26 @@ export class LuaPrinter {
         const operand = this.needsParentheses(expression.operand)
             ? `(${this.printExpression(expression.operand)})`
             : this.printExpression(expression.operand);
-        return `${this.printOperator(expression.operator)}${operand}`;
+
+        switch (expression.operator) {
+            case tstl.SyntaxKind.NegationOperator:
+                return `-${operand}`;
+            case tstl.SyntaxKind.LengthOperator:
+                return `#${operand}`;
+            case tstl.SyntaxKind.NotOperator:
+                return `not ${operand}`;
+            case tstl.SyntaxKind.BitwiseNotOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.bnot(${operand})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.bnot(${operand})`;
+                    default:
+                        return `~${operand}`;
+                }
+            default:
+                return operand;
+        }
     }
 
     private printBinaryExpression(expression: tstl.BinaryExpression): string {
@@ -354,8 +343,91 @@ export class LuaPrinter {
             ? `(${this.printExpression(expression.right)})`
             : this.printExpression(expression.right);
 
-        const operator = this.printOperator(expression.operator);
-        return `${left} ${operator} ${right}`;
+        switch (expression.operator) {
+            case tstl.SyntaxKind.AdditionOperator:
+                return `${left} + ${right}`;
+            case tstl.SyntaxKind.SubractionOperator:
+                return `${left} - ${right}`;
+            case tstl.SyntaxKind.MultiplicationOperator:
+                return `${left} * ${right}`;
+            case tstl.SyntaxKind.DivisionOperator:
+                return `${left} / ${right}`;
+            case tstl.SyntaxKind.FloorDivisionOperator:
+                return `${left} // ${right}`;
+            case tstl.SyntaxKind.ModuloOperator:
+                return `${left} % ${right}`;
+            case tstl.SyntaxKind.PowerOperator:
+                return `${left} ^ ${right}`;
+            case tstl.SyntaxKind.ConcatOperator:
+                return `${left} .. ${right}`;
+            case tstl.SyntaxKind.EqualityOperator:
+                return `${left} == ${right}`;
+            case tstl.SyntaxKind.InequalityOperator:
+                return `${left} ~= ${right}`;
+            case tstl.SyntaxKind.LessThanOperator:
+                return `${left} < ${right}`;
+            case tstl.SyntaxKind.LessEqualOperator:
+                return `${left} <= ${right}`;
+            case tstl.SyntaxKind.GreaterThanOperator:
+                return `${left} > ${right}`;
+            case tstl.SyntaxKind.GreaterEqualOperator:
+                return `${left} >= ${right}`;
+            case tstl.SyntaxKind.AndOperator:
+                return `${left} and ${right}`;
+            case tstl.SyntaxKind.OrOperator:
+                return `${left} or ${right}`;
+            case tstl.SyntaxKind.BitwiseAndOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.band(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.band(${left}, ${right})`;
+                    default:
+                        return `${left} & ${right}`;
+                }
+            case tstl.SyntaxKind.BitwiseOrOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.bor(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.bor(${left}, ${right})`;
+                    default:
+                        return `${left} | ${right}`;
+                }
+            case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.bxor(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.bxor(${left}, ${right})`;
+                    default:
+                        return `${left} ~ ${right}`;
+                }
+            case tstl.SyntaxKind.BitwiseRightShiftOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.rshift(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.rshift(${left}, ${right})`;
+                    default:
+                        return `${left} >> ${right}`;
+                }
+            case tstl.SyntaxKind.BitwiseArithmaticRightShift:
+                if (this.options.luaTarget === LuaTarget.LuaJIT) {
+                    return `bit.arshift(${left}, ${right})`;
+                } else {
+                    return `bit32.arshift(${left}, ${right})`;
+                }
+            case tstl.SyntaxKind.BitwiseLeftShiftOperator:
+                switch (this.options.luaTarget) {
+                    case LuaTarget.Lua52:
+                        return `bit32.lshift(${left}, ${right})`;
+                    case LuaTarget.LuaJIT:
+                        return `bit.lshift(${left}, ${right})`;
+                    default:
+                        return `${left} << ${right}`;
+                }
+        }
     }
 
     private needsParentheses(expression: tstl.Expression): boolean {
@@ -388,10 +460,6 @@ export class LuaPrinter {
             return `${table}.${expression.index.value}`;
         }
         return `${table}[${this.printExpression(expression.index)}]`;
-    }
-
-    private printOperator(kind: tstl.Operator): string {
-        return LuaPrinter.operatorMap[kind];
     }
 
     private ignoreDeadStatements(statements: tstl.Statement[]): tstl.Statement[] {

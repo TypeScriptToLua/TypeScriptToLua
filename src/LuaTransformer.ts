@@ -1453,7 +1453,10 @@ export class LuaTransformer {
                 tstl.createAssignmentStatement(left as tstl.IdentifierOrTableIndexExpression[], tmps),
             ];
             return this.createImmediatelyInvokedFunctionExpression(
-                statements, tstl.createTableExpression(tmps.map(t => tstl.createTableFieldExpression(t))));
+                statements, 
+                tstl.createTableExpression(tmps.map(t => tstl.createTableFieldExpression(t))),
+                expression
+            );
         }
 
         if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
@@ -1490,7 +1493,7 @@ export class LuaTransformer {
             // (function() ${left} = ${right}; return ${left} end)()
             const left = this.transformExpression(expression.left);
             const right = this.transformExpression(expression.right);
-            return this.createImmediatelyInvokedFunctionExpression([this.transformAssignment(expression.left, right)], left);
+            return this.createImmediatelyInvokedFunctionExpression([this.transformAssignment(expression.left, right)], left, expression);
         }
     }
 
@@ -1539,7 +1542,11 @@ export class LuaTransformer {
                 assignStatement = tstl.createAssignmentStatement(accessExpression, tmp);
             }
             // return ____TS_tmp
-            return this.createImmediatelyInvokedFunctionExpression([objAndIndexDeclaration, tmpDeclaration, assignStatement], tmp);
+            return this.createImmediatelyInvokedFunctionExpression(
+                [objAndIndexDeclaration, tmpDeclaration, assignStatement], 
+                tmp, 
+                lhs.parent
+            );
 
         } else if (isPostfix) {
             // Postfix expressions need to cache original value in temp
@@ -1550,7 +1557,7 @@ export class LuaTransformer {
             const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, left);
             const operatorExpression = tstl.createBinaryExpression(tmpIdentifier, right, replacementOperator);
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
-            return this.createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier);
+            return this.createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, lhs.parent);
 
         } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
             // Simple property/element access expressions need to cache in temp to avoid double-evaluation
@@ -1561,14 +1568,14 @@ export class LuaTransformer {
             const operatorExpression = tstl.createBinaryExpression(left, right, replacementOperator);
             const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
             const assignStatement = this.transformAssignment(lhs, tmpIdentifier);
-            return this.createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier);
+            return this.createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, lhs.parent);
 
         } else {
             // Simple expressions
             // ${left} = ${right}; return ${right}
             const operatorExpression = tstl.createBinaryExpression(left, right, replacementOperator);
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
-            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left);
+            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, lhs.parent);
         }
     }
 
@@ -1692,7 +1699,7 @@ export class LuaTransformer {
             expression
         );
 
-        return this.createImmediatelyInvokedFunctionExpression([assignment], []);
+        return this.createImmediatelyInvokedFunctionExpression([assignment], [tstl.createBooleanLiteral(true)], expression);
     }
 
     public transformFunctionExpression(node: ts.FunctionLikeDeclaration, context: tstl.Identifier | undefined): ExpressionVisitResult {
@@ -1891,7 +1898,7 @@ export class LuaTransformer {
                 const selfAssignment = this.createLocalOrGlobalDeclaration(selfIdentifier, context);
                 const index = tstl.createTableIndexExpression(selfIdentifier, argument);
                 const callExpression = tstl.createCallExpression(index, parameters);
-                return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression);
+                return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression, node);
             } else {
                 return tstl.createCallExpression(this.transformExpression(node.expression), [context, ...parameters]);
             }
@@ -2364,12 +2371,16 @@ export class LuaTransformer {
         this.luaLibFeatureSet.add(feature);
     }
 
-    public createImmediatelyInvokedFunctionExpression(statements: tstl.Statement[], result: tstl.Expression | tstl.Expression[]):
-        tstl.CallExpression {
+    public createImmediatelyInvokedFunctionExpression(
+        statements: tstl.Statement[],
+        result: tstl.Expression | tstl.Expression[],
+        tsOriginal: ts.Node
+    ): tstl.CallExpression 
+    {
         const body = statements ? statements.slice(0) : [];
         body.push(tstl.createReturnStatement(Array.isArray(result) ? result : [result]));
         const iife = tstl.createFunctionExpression(tstl.createBlock(body));
-        return tstl.createCallExpression(tstl.createParenthesizedExpression(iife));
+        return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), [], undefined, tsOriginal);
     }
 
     public createUnpackCall(expression: tstl.Expression): tstl.Expression {

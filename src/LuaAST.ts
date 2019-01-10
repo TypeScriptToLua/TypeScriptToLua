@@ -76,7 +76,10 @@ export enum SyntaxKind {
 }
 
 // TODO maybe name this PrefixUnary? not sure it makes sense to do so, because all unary ops in Lua are prefix
-export type UnaryOperator = SyntaxKind.NegationOperator | SyntaxKind.LengthOperator | SyntaxKind.NotOperator | SyntaxKind.BitwiseNotOperator;
+export type UnaryOperator = SyntaxKind.NegationOperator 
+    | SyntaxKind.LengthOperator 
+    | SyntaxKind.NotOperator 
+    | SyntaxKind.BitwiseNotOperator;
 
 export type BinaryOperator =
     SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator | SyntaxKind.DivisionOperator |

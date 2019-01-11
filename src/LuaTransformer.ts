@@ -1624,6 +1624,28 @@ export class LuaTransformer {
         }
     }
 
+    public transformUnaryBitLibOperation(
+        node: ts.Node,
+        expression: tstl.Expression,
+        operator: tstl.UnaryBitwiseOperator,
+        lib: string
+    ): ExpressionVisitResult {
+        let bitFunction: string;
+        switch (operator) {
+            case tstl.SyntaxKind.BitwiseNotOperator:
+                bitFunction = "bnot";
+                break;
+            default:
+                throw TSTLErrors.UnsupportedKind("unary bitwise operator", operator, node);
+        }
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(tstl.createIdentifier(lib), tstl.createStringLiteral(bitFunction)),
+            [expression],
+            undefined,
+            node
+        );
+    }
+
     public transformUnaryBitOperation(
         node: ts.Node,
         expression: tstl.Expression,
@@ -1634,26 +1656,52 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
 
             case LuaTarget.Lua52:
+                return this.transformUnaryBitLibOperation(node, expression, operator, "bit32");
+
             case LuaTarget.LuaJIT:
-                const bitTable = tstl.createIdentifier(this.options.luaTarget === LuaTarget.LuaJIT ? "bit" : "bit32");
-                let bitFunction: string;
-                switch (operator) {
-                    case tstl.SyntaxKind.BitwiseNotOperator:
-                        bitFunction = "bnot";
-                        break;
-                    default:
-                        throw TSTLErrors.UnsupportedKind("unary bitwise operator", operator, node);
-                }
-                return tstl.createCallExpression(
-                    tstl.createTableIndexExpression(bitTable, tstl.createStringLiteral(bitFunction)),
-                    [expression],
-                    undefined,
-                    node
-                );
+                return this.transformUnaryBitLibOperation(node, expression, operator, "bit");
 
             default:
                 return tstl.createUnaryExpression(expression, operator, undefined, node);
         }
+    }
+
+    public transformBinaryBitLibOperation(
+        node: ts.Node,
+        left: tstl.Expression,
+        right: tstl.Expression,
+        operator: tstl.BinaryBitwiseOperator,
+        lib: string
+    ): ExpressionVisitResult {
+        let bitFunction: string;
+        switch (operator) {
+            case tstl.SyntaxKind.BitwiseAndOperator:
+                bitFunction = "band";
+                break;
+            case tstl.SyntaxKind.BitwiseOrOperator:
+                bitFunction = "bor";
+                break;
+            case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
+                bitFunction = "bxor";
+                break;
+            case tstl.SyntaxKind.BitwiseLeftShiftOperator:
+                bitFunction = "lshift";
+                break;
+            case tstl.SyntaxKind.BitwiseRightShiftOperator:
+                bitFunction = "rshift";
+                break;
+            case tstl.SyntaxKind.BitwiseArithmeticRightShift:
+                bitFunction = "arshift";
+                break;
+            default:
+                throw TSTLErrors.UnsupportedKind("binary bitwise operator", operator, node);
+        }
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(tstl.createIdentifier(lib), tstl.createStringLiteral(bitFunction)),
+            [left, right],
+            undefined,
+            node
+        );
     }
 
     public transformBinaryBitOperation(
@@ -1667,37 +1715,10 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
 
             case LuaTarget.Lua52:
+                return this.transformBinaryBitLibOperation(node, left, right, operator, "bit32");
+
             case LuaTarget.LuaJIT:
-                const bitTable = tstl.createIdentifier(this.options.luaTarget === LuaTarget.LuaJIT ? "bit" : "bit32");
-                let bitFunction: string;
-                switch (operator) {
-                    case tstl.SyntaxKind.BitwiseAndOperator:
-                        bitFunction = "band";
-                        break;
-                    case tstl.SyntaxKind.BitwiseOrOperator:
-                        bitFunction = "bor";
-                        break;
-                    case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
-                        bitFunction = "bxor";
-                        break;
-                    case tstl.SyntaxKind.BitwiseLeftShiftOperator:
-                        bitFunction = "lshift";
-                        break;
-                    case tstl.SyntaxKind.BitwiseRightShiftOperator:
-                        bitFunction = "rshift";
-                        break;
-                    case tstl.SyntaxKind.BitwiseArithmeticRightShift:
-                        bitFunction = "arshift";
-                        break;
-                    default:
-                        throw TSTLErrors.UnsupportedKind("binary bitwise operator", operator, node);
-                }
-                return tstl.createCallExpression(
-                    tstl.createTableIndexExpression(bitTable, tstl.createStringLiteral(bitFunction)),
-                    [left, right],
-                    undefined,
-                    node
-                );
+                return this.transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
             default:
                 if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {

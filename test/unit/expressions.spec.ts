@@ -13,8 +13,8 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
-    @TestCase("delete tbl['test']", "tbl[\"test\"]=nil;")
-    @TestCase("delete tbl.test", "tbl.test=nil;")
+    @TestCase("delete tbl['test']", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
+    @TestCase("delete tbl.test", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);

@@ -1311,6 +1311,7 @@ export class LuaTransformer {
             case tstl.SyntaxKind.BitwiseRightShiftOperator:
             case tstl.SyntaxKind.BitwiseArithmeticRightShift:
                 return this.transformBinaryBitOperation(node, left, right, operator);
+
             default:
                 return tstl.createBinaryExpression(left, right, operator, undefined, node);
         }
@@ -1388,8 +1389,10 @@ export class LuaTransformer {
                     undefined,
                     expression
                 );
+
             case ts.SyntaxKind.InstanceOfKeyword:
                 return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
+
             default:
                 throw TSTLErrors.UnsupportedKind("binary operator", expression.operatorToken.kind, expression);
         }
@@ -1629,8 +1632,25 @@ export class LuaTransformer {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+
             case LuaTarget.Lua52:
             case LuaTarget.LuaJIT:
+                const bitTable = tstl.createIdentifier(this.options.luaTarget === LuaTarget.LuaJIT ? "bit" : "bit32");
+                let bitFunction: string;
+                switch (operator) {
+                    case tstl.SyntaxKind.BitwiseNotOperator:
+                        bitFunction = "bnot";
+                        break;
+                    default:
+                        throw TSTLErrors.UnsupportedKind("unary bitwise operator", operator, node);
+                }
+                return tstl.createCallExpression(
+                    tstl.createTableIndexExpression(bitTable, tstl.createStringLiteral(bitFunction)),
+                    [expression],
+                    undefined,
+                    node
+                );
+
             default:
                 return tstl.createUnaryExpression(expression, operator, undefined, node);
         }
@@ -1645,9 +1665,40 @@ export class LuaTransformer {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+
             case LuaTarget.Lua52:
             case LuaTarget.LuaJIT:
-                return tstl.createBinaryExpression(left, right, operator, undefined, node);
+                const bitTable = tstl.createIdentifier(this.options.luaTarget === LuaTarget.LuaJIT ? "bit" : "bit32");
+                let bitFunction: string;
+                switch (operator) {
+                    case tstl.SyntaxKind.BitwiseAndOperator:
+                        bitFunction = "band";
+                        break;
+                    case tstl.SyntaxKind.BitwiseOrOperator:
+                        bitFunction = "bor";
+                        break;
+                    case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
+                        bitFunction = "bxor";
+                        break;
+                    case tstl.SyntaxKind.BitwiseLeftShiftOperator:
+                        bitFunction = "lshift";
+                        break;
+                    case tstl.SyntaxKind.BitwiseRightShiftOperator:
+                        bitFunction = "rshift";
+                        break;
+                    case tstl.SyntaxKind.BitwiseArithmeticRightShift:
+                        bitFunction = "arshift";
+                        break;
+                    default:
+                        throw TSTLErrors.UnsupportedKind("binary bitwise operator", operator, node);
+                }
+                return tstl.createCallExpression(
+                    tstl.createTableIndexExpression(bitTable, tstl.createStringLiteral(bitFunction)),
+                    [left, right],
+                    undefined,
+                    node
+                );
+
             default:
                 if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {
                     throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);

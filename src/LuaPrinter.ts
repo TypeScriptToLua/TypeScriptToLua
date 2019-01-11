@@ -1,6 +1,9 @@
 import * as tstl from "./LuaAST";
 
-import {TSHelper as tsHelper} from "./TSHelper";
+import { TSHelper as tsHelper } from "./TSHelper";
+import { LuaLibFeature, LuaLib } from "./LuaLib";
+import { CompilerOptions } from "./CompilerOptions";
+import { LuaLibImportKind } from "./CompilerOptions";
 
 export class LuaPrinter {
     /* tslint:disable:object-literal-sort-keys */
@@ -28,19 +31,43 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseOrOperator]: "|",
         [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
         [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>",
+        [tstl.SyntaxKind.BitwiseArithmeticRightShift]: ">>>",
         [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };
     /* tslint:enable:object-literal-sort-keys */
 
+    private options: CompilerOptions;
     private currentIndent: string;
 
-    public constructor() {
+    public constructor(options: CompilerOptions) {
+        this.options = options;
         this.currentIndent = "";
     }
 
-    public print(block: tstl.Block): string {
-        return this.printBlock(block);
+    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>): string {
+        let header = "";
+
+        if (this.options.addHeader === undefined || this.options.addHeader === true) {
+            header += `--[[ Generated with https://github.com/Perryvw/TypescriptToLua ]]\n`;
+        }
+
+        if (luaLibFeatures) {
+            // Require lualib bundle
+            if ((this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
+                || this.options.luaLibImport === LuaLibImportKind.Always)
+            {
+                header += `require("lualib_bundle");\n`;
+            }
+            // Inline lualib features
+            else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
+            {
+                header += "-- Lua Library inline imports\n";
+                header += LuaLib.loadFeatures(luaLibFeatures);
+            }
+        }
+
+        return header + this.printBlock(block);
     }
 
     private pushIndent(): void {

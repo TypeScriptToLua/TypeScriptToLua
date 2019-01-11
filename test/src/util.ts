@@ -3,8 +3,8 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { transpileString } from "../../src/Compiler";
-import { LuaTarget } from "../../src/CompilerOptions";
+import { transpileString as compilerTranspileString } from "../../src/Compiler";
+import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 import { createTransformer } from "../../src/TransformerFactory";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
@@ -12,7 +12,20 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
-export { transpileString };
+export function transpileString(str: string, options?: CompilerOptions): string {
+    if (options) {
+        if (options.addHeader === undefined) {
+            options.addHeader = false;
+        }
+        return compilerTranspileString(str, options);
+    } else {
+        return compilerTranspileString(str, {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            addHeader: false,
+        });
+    }
+}
 
 export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {

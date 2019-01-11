@@ -48,9 +48,13 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
     };
 
     if (config) {
-        ts.createWatchProgram(host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>
+        );
     } else {
-        ts.createWatchProgram(host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>);
+        ts.createWatchProgram(
+            host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
+        );
     }
 }
 

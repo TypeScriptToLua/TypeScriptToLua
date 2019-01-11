@@ -9,10 +9,10 @@ end
 end
 function MergedClass.constructor(self)
 end
-function MergedClass.staticMethodA()
+function MergedClass.staticMethodA(self)
 end
-function MergedClass.staticMethodB()
-    self.staticMethodA();
+function MergedClass.staticMethodB(self)
+    self:staticMethodA();
 end
 function MergedClass.methodA(self)
 end
@@ -29,5 +29,5 @@ end
 local mergedClass = MergedClass.new(true);
 mergedClass:methodB();
 mergedClass:propertyFunc();
-MergedClass.staticMethodB();
+MergedClass:staticMethodB();
 MergedClass.namespaceFunc();

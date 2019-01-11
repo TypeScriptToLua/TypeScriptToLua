@@ -13,10 +13,18 @@ import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
 export function transpileString(str: string, options?: CompilerOptions): string {
-    if (options && options.addHeader === undefined) {
-        options.addHeader = false;
+    if (options) {
+        if (options.addHeader === undefined) {
+            options.addHeader = false;
+        }
+        return compilerTranspileString(str, options);
+    } else {
+        return compilerTranspileString(str, {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            addHeader: false,
+        });
     }
-    return compilerTranspileString(str, options);
 }
 
 export function executeLua(luaStr: string, withLib = true): any {

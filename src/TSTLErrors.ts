@@ -7,16 +7,19 @@ export class TSTLErrors {
     public static DefaultImportsNotSupported = (node: ts.Node) =>
         new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 
-    public static ForbiddenEllipsisDestruction = (node: ts.Node) => new TranspileError(`Ellipsis destruction is not allowed.`, node);
+    public static ForbiddenEllipsisDestruction =
+        (node: ts.Node) => new TranspileError(`Ellipsis destruction is not allowed.`, node);
 
-    public static ForbiddenForIn = (node: ts.Node) => new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
+    public static ForbiddenForIn =
+        (node: ts.Node) => new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
     public static HeterogeneousEnum = (node: ts.Node) => new TranspileError(
         `Invalid heterogeneous enum. Enums should either specify no member values, ` +
             `or specify values (of the same type) for all members.`,
         node);
 
-    public static InvalidEnumMember = (node: ts.Node) => new TranspileError(`Only numeric or string initializers allowed for enums.`, node);
+    public static InvalidEnumMember =
+        (node: ts.Node) => new TranspileError(`Only numeric or string initializers allowed for enums.`, node);
 
     public static InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
         new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
@@ -39,7 +42,8 @@ export class TSTLErrors {
     public static KeywordIdentifier = (node: ts.Identifier) =>
         new TranspileError(`Cannot use Lua keyword ${node.escapedText} as identifier.`, node);
 
-    public static MissingClassName = (node: ts.Node) => new TranspileError(`Class declarations must have a name.`, node);
+    public static MissingClassName =
+        (node: ts.Node) => new TranspileError(`Class declarations must have a name.`, node);
 
     public static MissingMetaExtension = (node: ts.Node) =>
         new TranspileError(`!MetaExtension requires the extension of the metatable class.`, node);

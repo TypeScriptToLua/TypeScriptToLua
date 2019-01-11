@@ -1031,6 +1031,15 @@ export class LuaTransformer {
             );
         }
 
+        else if (ts.isDeleteExpression(expression)) {
+            return tstl.createAssignmentStatement(
+                this.transformExpression(expression.expression) as tstl.IdentifierOrTableIndexExpression,
+                tstl.createNilLiteral(),
+                undefined,
+                expression
+            );
+        }
+
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
 

@@ -71,15 +71,22 @@ export enum SyntaxKind {
     BitwiseOrOperator,
     BitwiseExclusiveOrOperator,
     BitwiseRightShiftOperator,
+    BitwiseArithmeticRightShift,
     BitwiseLeftShiftOperator,
     BitwiseNotOperator,  // Unary
 }
 
 // TODO maybe name this PrefixUnary? not sure it makes sense to do so, because all unary ops in Lua are prefix
+export type UnaryBitwiseOperator = SyntaxKind.BitwiseNotOperator;
+
 export type UnaryOperator = SyntaxKind.NegationOperator
     | SyntaxKind.LengthOperator
     | SyntaxKind.NotOperator
-    | SyntaxKind.BitwiseNotOperator;
+    | UnaryBitwiseOperator;
+
+export type BinaryBitwiseOperator = SyntaxKind.BitwiseAndOperator | SyntaxKind.BitwiseOrOperator
+    | SyntaxKind.BitwiseExclusiveOrOperator | SyntaxKind.BitwiseRightShiftOperator
+    | SyntaxKind.BitwiseArithmeticRightShift | SyntaxKind.BitwiseLeftShiftOperator;
 
 export type BinaryOperator =
     SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator
@@ -87,9 +94,7 @@ export type BinaryOperator =
     | SyntaxKind.PowerOperator | SyntaxKind.ConcatOperator | SyntaxKind.EqualityOperator
     | SyntaxKind.InequalityOperator | SyntaxKind.LessThanOperator | SyntaxKind.LessEqualOperator
     | SyntaxKind.GreaterThanOperator | SyntaxKind.GreaterEqualOperator | SyntaxKind.AndOperator
-    | SyntaxKind.OrOperator | SyntaxKind.BitwiseAndOperator | SyntaxKind.BitwiseOrOperator
-    | SyntaxKind.BitwiseExclusiveOrOperator | SyntaxKind.BitwiseRightShiftOperator | SyntaxKind.BitwiseLeftShiftOperator
-    | SyntaxKind.BitwiseNotOperator;
+    | SyntaxKind.OrOperator | BinaryBitwiseOperator;
 
 export type Operator = UnaryOperator | BinaryOperator;
 

@@ -31,6 +31,7 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseOrOperator]: "|",
         [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
         [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>",
+        [tstl.SyntaxKind.BitwiseArithmeticRightShift]: ">>>",
         [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };

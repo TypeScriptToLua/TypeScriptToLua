@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 
 import * as tstl from "../LuaAST";
-import {LuaTransformer, StatementVisitResult, ScopeType} from "../LuaTransformer";
+import {ExpressionVisitResult, StatementVisitResult, ScopeType} from "../LuaTransformer";
 import {TSHelper as tsHelper} from "../TSHelper";
 import { LuaTransformer51 } from "./LuaTransformer.51";
 
@@ -31,13 +31,6 @@ export class LuaTransformer52 extends LuaTransformer51
         );
     }
 
-    /** @override */
-    public createUnpackCall(expression: tstl.Expression): tstl.Expression {
-        return tstl.createCallExpression(
-            tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-            [expression]);
-    }
-
     // /** @override */
     // public transpileBreak(node: ts.BreakStatement): string {
     //     const topScope = this.peekSpecialScope();
@@ -46,36 +39,6 @@ export class LuaTransformer52 extends LuaTransformer51
     //         return this.indent + `goto ____switch${topScope.id}_end\n`;
     //     } else {
     //         return super.transpileBreak(node);
-    //     }
-    // }
-
-    // /** @override */
-    // public transpileUnaryBitOperation(node: ts.PrefixUnaryExpression, operand: string): string {
-    //     switch (node.operator) {
-    //         case ts.SyntaxKind.TildeToken:
-    //             return `bit32.bnot(${operand})`;
-    //         default:
-    //             throw TSTLErrors.UnsupportedKind("bitwise operator", node.operator, node);
-    //     }
-    // }
-
-    // /** @override */
-    // public transpileBitOperation(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-    //     switch (node.operatorToken.kind) {
-    //         case ts.SyntaxKind.AmpersandToken:
-    //             return `bit32.band(${lhs},${rhs})`;
-    //         case ts.SyntaxKind.BarToken:
-    //             return `bit32.bor(${lhs},${rhs})`;
-    //         case ts.SyntaxKind.CaretToken:
-    //             return `bit32.bxor(${lhs},${rhs})`;
-    //         case ts.SyntaxKind.LessThanLessThanToken:
-    //             return `bit32.lshift(${lhs},${rhs})`;
-    //         case ts.SyntaxKind.GreaterThanGreaterThanToken:
-    //             return `bit32.rshift(${lhs},${rhs})`;
-    //         case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-    //             return `bit32.arshift(${lhs},${rhs})`;
-    //         default:
-    //             throw TSTLErrors.UnsupportedKind("bitwise operator", node.operatorToken.kind, node);
     //     }
     // }
 

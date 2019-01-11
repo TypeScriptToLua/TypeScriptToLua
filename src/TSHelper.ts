@@ -312,31 +312,10 @@ export class TSHelper {
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
                 return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                // return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
-                throw new Error("Not yet implemented in lua AST");  // TODO
+                return [true, tstl.SyntaxKind.BitwiseArithmeticRightShift];
         }
 
         return [false, undefined];
-    }
-
-    public static isCompoundPrefixUnaryOperator(node: ts.PrefixUnaryExpression): boolean {
-        return node.operator !== ts.SyntaxKind.ExclamationToken && node.operator !== ts.SyntaxKind.MinusToken &&
-               node.operator !== ts.SyntaxKind.PlusToken && node.operator !== ts.SyntaxKind.TildeToken;
-    }
-
-    public static getUnaryCompoundAssignmentOperator(
-        node: ts.PrefixUnaryExpression | ts.PostfixUnaryExpression
-    ): ts.BinaryOperator
-    {
-        switch (node.operator) {
-            case ts.SyntaxKind.PlusPlusToken:
-                return ts.SyntaxKind.PlusToken;
-            case ts.SyntaxKind.MinusMinusToken:
-                return ts.SyntaxKind.MinusToken;
-            default:
-                throw TSTLErrors.UnsupportedKind(
-                    `unary ${ts.isPrefixUnaryExpression(node) ? "prefix" : "postfix"} operator`, node.operator, node);
-        }
     }
 
     public static isExpressionStatement(node: ts.Expression): boolean {

@@ -10,7 +10,7 @@ export class LuaConditionalsTests {
     @Test("if")
     public if(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let input = ${inp}
+            `let input: input = ${inp};
             if (input === 0) {
                 return 0;
             }
@@ -26,7 +26,7 @@ export class LuaConditionalsTests {
     @Test("ifelse")
     public ifelse(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let input = ${inp}
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else {
@@ -45,7 +45,7 @@ export class LuaConditionalsTests {
     @Test("ifelseif")
     public ifelseif(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let input = ${inp}
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else if (input === 1){
@@ -67,7 +67,7 @@ export class LuaConditionalsTests {
     @Test("ifelseifelse")
     public ifelseifelse(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let input = ${inp}
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else if (input === 1){
@@ -90,7 +90,7 @@ export class LuaConditionalsTests {
     @Test("switch")
     public switch(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0:
@@ -117,7 +117,7 @@ export class LuaConditionalsTests {
     @Test("switchdefault")
     public switchdefault(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0:
@@ -150,7 +150,7 @@ export class LuaConditionalsTests {
     @Test("switchfallthrough")
     public switchfallthrough(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0:
@@ -189,7 +189,7 @@ export class LuaConditionalsTests {
     @Test("nestedSwitch")
     public nestedSwitch(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0:
@@ -228,7 +228,7 @@ export class LuaConditionalsTests {
     @TestCase(2, 2)
     public switchLocalScope(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0:
@@ -280,7 +280,7 @@ export class LuaConditionalsTests {
     @Test("switchWithBrackets")
     public switchWithBrackets(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0: {
@@ -311,7 +311,7 @@ export class LuaConditionalsTests {
     @Test("switchWithBracketsBreakInConditional")
     public switchWithBracketsBreakInConditional(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0: {
@@ -342,7 +342,7 @@ export class LuaConditionalsTests {
     @Test("switchWithBracketsBreakInInternalLoop")
     public switchWithBracketsBreakInInternalLoop(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let result = -1;
+            `let result: number = -1;
 
             switch (${inp}) {
                 case 0: {

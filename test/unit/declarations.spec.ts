@@ -1,7 +1,8 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-export class DeclarationTests {
+export class DeclarationTests
+{
     @Test("Declaration function call")
     public declarationFunctionCall(): void {
         // Arrange
@@ -13,8 +14,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe(10);
@@ -34,8 +34,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe("5,12");
@@ -55,8 +54,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe(10);
@@ -80,8 +78,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe(19);
@@ -98,8 +95,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe(8);
@@ -122,8 +118,7 @@ export class DeclarationTests {
         `;
 
         // Act
-        const lua = util.transpileString(source);
-        const result = util.executeLua(`${libLua}\n${lua}`);
+        const result = util.transpileAndExecute(source, undefined, libLua);
 
         // Assert
         Expect(result).toBe(20);

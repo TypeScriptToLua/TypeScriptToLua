@@ -24,6 +24,7 @@ export function transpileString(str: string, options?: CompilerOptions, ignoreDi
             {
                 luaLibImport: LuaLibImportKind.Require,
                 luaTarget: LuaTarget.Lua53,
+                target: ts.ScriptTarget.ES2015,
                 addHeader: false,
             },
             ignoreDiagnostics
@@ -79,9 +80,17 @@ export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTra
     return createTransformer(ts.createProgram([], {luaTarget: target}));
 }
 
-export function transpileAndExecute(tsStr: string, compilerOptions?: CompilerOptions): any {
-    const wrappedTsString = `function __runTest() {${tsStr}}`;
-    return executeLua("return " + transpileString(wrappedTsString, compilerOptions, false));
+export function transpileAndExecute(
+    tsStr: string,
+    compilerOptions?: CompilerOptions,
+    luaHeader?: string,
+    tsHeader?: string
+): any
+{
+    const wrappedTsString = `${tsHeader ? tsHeader : ""}\n function __runTest() {${tsStr}}`;
+    const lua = transpileString(wrappedTsString, compilerOptions, false) + "\nreturn __runTest();";
+
+    return executeLua(luaHeader ? `${luaHeader}\n${lua}` : lua);
 }
 
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)

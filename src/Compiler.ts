@@ -105,13 +105,13 @@ export function transpileString(
     };
     const program = ts.createProgram(["file.ts"], options, compilerHost);
 
-    if (ignoreDiagnostics) {
+    if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);
         const typeScriptErrors = diagnostics.filter(diag => diag.category === ts.DiagnosticCategory.Error);
 
         if (typeScriptErrors.length > 0) {
-            typeScriptErrors.forEach(e => console.error(e.messageText));
-            throw new Error("Encountered a typescript error.");
+            typeScriptErrors.forEach(e => console.warn(e.messageText));
+            throw new Error("Encountered invalid TypeScript.");
         }
     }
 

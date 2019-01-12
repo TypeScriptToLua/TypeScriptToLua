@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
 
@@ -13,8 +13,10 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
-    @TestCase("delete tbl['test']", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
-    @TestCase("delete tbl.test", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
+    @TestCase("let a = delete tbl['test']", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("delete tbl['test']", "tbl.test = nil;")
+    @TestCase("let a = delete tbl.test", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("delete tbl.test", "tbl.test = nil;")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
@@ -58,15 +60,15 @@ export class ExpressionTests {
     @TestCase("0 in obj")
     @TestCase("9 in obj")
     @Test("Binary expression in")
-    public binaryIn(input: string): void {
-        // Transpile
-        const lua = util.transpileString(input);
-
-        // Execute
-        //const result = util.executeLua(`obj = { existingKey = 1 }\nreturn ${lua}`);
+    public binaryIn(input: string): void
+    {
+        const tsHeader = "declare var obj: any;";
+        const tsSource = `return ${input}`;
+        const luaHeader = "obj = { existingKey = 1 }";
+        const result = util.transpileAndExecute(tsSource, undefined, luaHeader, tsHeader);
 
         // Assert
-        //Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
+        Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
     }
 
     @TestCase("a+=b", 5 + 3)

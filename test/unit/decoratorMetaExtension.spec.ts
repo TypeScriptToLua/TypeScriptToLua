@@ -48,7 +48,7 @@ export class DecoratorMetaExtension {
         Expect(() => {
             util.transpileString(
                 `
-                declare class _LOADED;
+                declare class _LOADED {}
                 /** @metaExtension */
                 class Ext extends _LOADED {
                 }

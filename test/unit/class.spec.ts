@@ -587,7 +587,7 @@ export class ClassTests {
                     return "instance of a";
                 }
             }
-            b = class extends a {
+            const b = class extends a {
                 public method() {
                     return "instance of b";
                 }
@@ -608,7 +608,7 @@ export class ClassTests {
                     return 42;
                 }
             }
-            b = class extends a {
+            const b = class extends a {
             }
             let inst = new b();
             return inst.method();`
@@ -622,14 +622,14 @@ export class ClassTests {
     public classMethodRuntimeOverride(): void {
         const result = util.transpileAndExecute(
             `class MyClass {
-                method(): void {
-                    return 4
+                method(): number {
+                    return 4;
               }
             }
 
             let inst = new MyClass();
             inst.method = () => {
-                return 8
+                return 8;
             }
             return inst.method();`
         );

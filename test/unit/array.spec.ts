@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 import * as util from "../src/util";
 
 export class ArrayTests {
@@ -41,18 +41,21 @@ export class ArrayTests {
     @TestCase("length", 1)
     @Test("Derived array access")
     public derivedArrayAccess(member: string, expected: any): void {
-        const lua = `local arr = {name="array", firstElement=function(self) return self[1]; end};`
-        +  util.transpileString(
+        const luaHeader = `local arr = {name="array", firstElement=function(self) return self[1]; end};`;
+
+        const result = util.transpileAndExecute(
             `interface CustomArray<T> extends Array<T>{
                 name:string,
                 firstElement():number;
             };
             declare const arr: CustomArray<number>;
             arr[0] = 3;
-            return arr.${member};`
+            return arr.${member};`,
+            undefined,
+            luaHeader
         );
-        //const result = util.executeLua(lua);
-        //Expect(result).toBe(expected);
+
+        Expect(result).toBe(expected);
     }
 
     @Test("Array delete")

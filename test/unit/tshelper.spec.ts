@@ -37,7 +37,7 @@ export class TSHelperTests {
 
     @Test("IsFileModuleNull")
     public isFileModuleNull(): void {
-        Expect(tsHelper.isFileModule(null)).toEqual(false);
+        Expect(tsHelper.isFileModule(undefined)).toEqual(false);
     }
 
     @Test("GetCustomDecorators single")

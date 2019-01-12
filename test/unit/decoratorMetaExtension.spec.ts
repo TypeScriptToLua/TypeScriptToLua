@@ -7,8 +7,7 @@ export class DecoratorMetaExtension {
 
     @Test("MetaExtension")
     public metaExtension(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `
             declare class _LOADED;
             declare namespace debug {
@@ -23,7 +22,6 @@ export class DecoratorMetaExtension {
             return debug.getregistry()["_LOADED"].test();
             `
         );
-        const result = util.executeLua(lua);
         // Assert
         Expect(result).toBe(5);
     }

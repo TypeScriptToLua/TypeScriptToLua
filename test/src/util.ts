@@ -12,22 +12,26 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
-export function transpileString(str: string, options?: CompilerOptions): string {
+export function transpileString(str: string, options?: CompilerOptions, ignoreDiagnostics = true): string {
     if (options) {
         if (options.addHeader === undefined) {
             options.addHeader = false;
         }
-        return compilerTranspileString(str, options);
+        return compilerTranspileString(str, options, ignoreDiagnostics);
     } else {
-        return compilerTranspileString(str, {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            addHeader: false,
-        });
+        return compilerTranspileString(
+            str,
+            {
+                luaLibImport: LuaLibImportKind.Require,
+                luaTarget: LuaTarget.Lua53,
+                addHeader: false,
+            },
+            ignoreDiagnostics
+        );
     }
 }
 
-export function executeLua(luaStr: string, withLib = true): any {
+function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
     }
@@ -75,8 +79,9 @@ export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTra
     return createTransformer(ts.createProgram([], {luaTarget: target}));
 }
 
-export function transpileAndExecute(tsStr: string): any {
-    return executeLua(transpileString(tsStr));
+export function transpileAndExecute(tsStr: string, compilerOptions?: CompilerOptions): any {
+    const wrappedTsString = `function __runTest() {${tsStr}}`;
+    return executeLua("return " + transpileString(wrappedTsString, compilerOptions, false));
 }
 
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)

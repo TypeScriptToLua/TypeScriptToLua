@@ -6,12 +6,9 @@ import * as util from "../src/util";
 export class FunctionTests {
 
     @Test("Arrow Function Expression")
-    public arrowFunctionExpression(): void {
-        // Transpile
-        const lua = util.transpileString(`let add = (a, b) => a+b; return add(1,2);`);
-
-        // Execute
-        const result = util.executeLua(lua);
+    public arrowFunctionExpression(): void
+    {
+        const result = util.transpileAndExecute(`let add = (a, b) => a+b; return add(1,2);`);
 
         // Assert
         Expect(result).toBe(3);
@@ -36,13 +33,10 @@ export class FunctionTests {
     @TestCase("b => a **= b", 100000)
     @TestCase("b => a %= b", 0)
     @Test("Arrow function assignment")
-    public arrowFunctionAssignment(lambda: string, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(`let a = 10; let lambda = ${lambda};
+    public arrowFunctionAssignment(lambda: string, expected: number): void
+    {
+        const result = util.transpileAndExecute(`let a = 10; let lambda = ${lambda};
                                           lambda(5); return a;`);
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -60,51 +54,39 @@ export class FunctionTests {
 
         const callArgs = inp.join(",");
 
-        // Transpile
-        const lua = util.transpileString(`let add = (a: number = 3, b: number = 4) => { return a+b; }`
+        // Transpile/Execute
+        const result = util.transpileAndExecute(`let add = (a: number = 3, b: number = 4) => { return a+b; }`
                                        + `return add(${callArgs});`);
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(v1 + v2);
     }
 
     @Test("Function Expression")
-    public functionExpression(): void {
-        // Transpile
-        const lua = util.transpileString(`let add = function(a, b) {return a+b}; return add(1,2);`);
-
-        // Execute
-        const result = util.executeLua(lua);
+    public functionExpression(): void
+    {
+        const result = util.transpileAndExecute(`let add = function(a, b) {return a+b}; return add(1,2);`);
 
         // Assert
         Expect(result).toBe(3);
     }
 
     @Test("Function definition scope")
-    public functionDefinitionScope(): void {
-        // Transpile
-        const lua = util.transpileString(`function abc() { function xyz() { return 5; } }\n
+    public functionDefinitionScope(): void
+    {
+        const result = util.transpileAndExecute(`function abc() { function xyz() { return 5; } }\n
             function def() { function xyz() { return 3; } abc(); return xyz(); }\n
             return def();`);
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(3);
     }
 
     @Test("Function default parameter")
-    public functionDefaultParameter(): void {
-        // Transpile
-        const lua = util.transpileString(`function abc(defaultParam: string = "abc") { return defaultParam; }\n
+    public functionDefaultParameter(): void
+    {
+        const result = util.transpileAndExecute(`function abc(defaultParam: string = "abc") { return defaultParam; }\n
             return abc() + abc("def");`);
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe("abcdef");
@@ -122,12 +104,9 @@ export class FunctionTests {
 
         const callArgs = inp.join(",");
 
-        // Transpile
-        const lua = util.transpileString(`let add = function(a: number = 3, b: number = 4) { return a+b; }`
+        // Transpile/Execute
+        const result = util.transpileAndExecute(`let add = function(a: number = 3, b: number = 4) { return a+b; }`
                                        + `return add(${callArgs});`);
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(v1 + v2);
@@ -143,11 +122,8 @@ export class FunctionTests {
                         const classInstance = new TestClass();
                         return classInstance.classMethod();`;
 
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        // Transpile/Execute
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(returnValue);
@@ -163,11 +139,8 @@ export class FunctionTests {
                         const classInstance = new TestClass();
                         return classInstance.dotMethod();`;
 
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        // Transpile/Execute
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(returnValue);
@@ -184,10 +157,7 @@ export class FunctionTests {
                         return classInstance.dotMethod(${returnValue});`;
 
         // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(3 * returnValue);
@@ -202,11 +172,8 @@ export class FunctionTests {
 
                         return TestClass.dotMethod();`;
 
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        // Transpile/Execute
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(returnValue);
@@ -222,10 +189,7 @@ export class FunctionTests {
                         return TestClass.dotMethod(${returnValue});`;
 
         // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(3 * returnValue);
@@ -363,8 +327,9 @@ export class FunctionTests {
     @TestCase("abc", "abc")
     @TestCase("abc", "def")
     @Test("Dot vs Colon method call")
-    public dotVColonMethodCall(s1: string, s2: string): void {
-        const lua = util.transpileString(
+    public dotVColonMethodCall(s1: string, s2: string): void
+    {
+        const result = util.transpileAndExecute(
             `class MyClass {
                 dotMethod(this: void, s: string) {
                     return s;
@@ -376,9 +341,6 @@ export class FunctionTests {
             const inst = new MyClass();
             return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`
         );
-
-        const result = util.executeLua(lua);
-
         Expect(result).toBe(s1 === s2);
     }
 

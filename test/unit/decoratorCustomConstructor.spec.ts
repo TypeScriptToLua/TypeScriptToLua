@@ -7,8 +7,7 @@ export class DecoratorCustomConstructor {
 
     @Test("CustomCreate")
     public customCreate(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `/** @customConstructor Point2DCreate */
             class Point2D {
                 x: number;
@@ -20,7 +19,6 @@ export class DecoratorCustomConstructor {
             return new Point2D(1, 2).x;
             `
         );
-        const result = util.executeLua(lua);
         // Assert
         Expect(result).toBe(1);
     }

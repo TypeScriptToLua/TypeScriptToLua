@@ -12,16 +12,15 @@ export class ObjectLiteralTests {
     @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc()] = 3, b = "4"};`)
     @TestCase(`{x}`, `{x = x};`)
     @Test("Object Literal")
-    public objectLiteral(inp: string, out: string) {
-        var lua = util.transpileString(`const myvar = ${inp};`)
+    public objectLiteral(inp: string, out: string): void {
+        const lua = util.transpileString(`const myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out}`);
     }
 
     @TestCase("3", 3)
     @Test("Shorthand Property Assignment")
     public ShorthandPropertyAssignment(input: string, expected: number): void {
-        const lua = util.transpileString(`const x = ${input}; const o = {x}; return o.x;`);
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(`const x = ${input}; const o = {x}; return o.x;`);
         Expect(result).toBe(expected);
     }
 }

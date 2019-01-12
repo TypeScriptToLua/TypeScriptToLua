@@ -66,8 +66,7 @@ export class AssignmentTests {
     @TestCase("const myvar = undefined;")
     @Test("Null assignments")
     public nullAssignment(declaration: string): void {
-        const lua = util.transpileString(declaration + " return myvar;");
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(declaration + " return myvar;");
         Expect(result).toBe(undefined);
     }
 
@@ -79,8 +78,8 @@ export class AssignmentTests {
         const pattern = input.join(",");
         const initializer = values.map(v => `"${v}"`).join(",");
 
-        const lua = util.transpileString(`const [${pattern}] = [${initializer}]; return [${pattern}].join("-");`);
-        const result = util.executeLua(lua);
+        const tsCode = `const [${pattern}] = [${initializer}]; return [${pattern}].join("-");`;
+        const result = util.transpileAndExecute(tsCode);
 
         Expect(result).toBe(values.slice(0, input.length).join("-"));
     }
@@ -164,9 +163,7 @@ export class AssignmentTests {
         const [a, b] = abc();
         return b + a;`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe("a3");
     }
@@ -178,9 +175,7 @@ export class AssignmentTests {
         const res = abc();
         return res.length`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe(2);
     }
@@ -191,9 +186,7 @@ export class AssignmentTests {
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe("a3");
     }

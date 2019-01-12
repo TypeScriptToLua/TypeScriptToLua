@@ -10,5 +10,5 @@ end;
 MyClass.constructor = function (self)
 end;
 MyClass.varargsFunction = function (self, a, ...)
-    b = ({...});
+    local b = ({...});
 end;

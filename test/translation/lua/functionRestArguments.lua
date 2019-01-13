@@ -1,3 +1,3 @@
 varargsFunction = function (a, ...)
-    b = ({...});
+    local b = ({...});
 end;

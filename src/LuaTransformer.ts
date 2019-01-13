@@ -694,7 +694,7 @@ export class LuaTransformer {
         // Push spread operator here
         if (spreadIdentifier) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
-            headerStatements.push(this.createLocalOrGlobalDeclaration(spreadIdentifier, spreadTable));
+            headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
 
         const bodyStatements = this.transformStatements(body.statements);
@@ -2316,7 +2316,7 @@ export class LuaTransformer {
                 //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
                 const argument = this.transformExpression(node.expression.argumentExpression);
                 const selfIdentifier = tstl.createIdentifier("____TS_self");
-                const selfAssignment = this.createLocalOrGlobalDeclaration(selfIdentifier, context);
+                const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
                 const index = tstl.createTableIndexExpression(selfIdentifier, argument);
                 const callExpression = tstl.createCallExpression(index, parameters);
                 return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression, node);
@@ -2895,7 +2895,10 @@ export class LuaTransformer {
         tsOriginal?: ts.Node
     ): tstl.Statement
     {
-        if (this.isModule || this.currentNamespace) {
+        if (this.isModule
+            || this.currentNamespace
+            || (tsOriginal && tsHelper.findFirstNodeAbove(tsOriginal, ts.isFunctionLike))
+        ) {
             return tstl.createVariableDeclarationStatement(lhs, rhs, parent, tsOriginal);
         } else {
             return tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal);

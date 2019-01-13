@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
 export class ArrayTests {

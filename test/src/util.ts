@@ -90,9 +90,12 @@ export function transpileAndExecute(
     const wrappedTsString = `declare function JSONStringify(p: any): string;
         ${tsHeader ? tsHeader : ""}
         function __runTest(): any {${tsStr}}`;
-    const lua = transpileString(wrappedTsString, compilerOptions, false) + "\nreturn __runTest();";
 
-    return executeLua(luaHeader ? `${luaHeader}\n${lua}` : lua);
+    const lua = `${luaHeader ? luaHeader : ""}
+        ${transpileString(wrappedTsString, compilerOptions, false)}
+        return __runTest();`;
+
+    return executeLua(lua);
 }
 
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)

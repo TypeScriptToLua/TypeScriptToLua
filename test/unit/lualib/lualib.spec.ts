@@ -1,8 +1,8 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../../src/util";
 
-export class LuaLibArrayTests {
-
+export class LuaLibArrayTests
+{
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("forEach")
     public forEach(inp: number[], expected: number[]): void

@@ -1350,12 +1350,50 @@ export class LuaTransformer {
         return tstl.createBreakStatement(undefined, breakStatement);
     }
 
-    public transformTryStatement(arg0: ts.TryStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
+        const pCall = tstl.createIdentifier("pcall");
+        const tryBlock = this.transformBlock(statement.tryBlock);
+        const tryResult = tstl.createIdentifier("____TS_try");
+
+        const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
+            ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
+            : [tryResult];
+
+        const catchAssignment = tstl.createVariableDeclarationStatement(
+                returnVariables,
+                tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)])
+            );
+
+        const result: tstl.Statement[] = [catchAssignment];
+
+        if (statement.catchClause) {
+            const notTryResult = tstl.createUnaryExpression(tryResult, tstl.SyntaxKind.NotOperator);
+            result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
+        }
+
+        if (statement.finallyBlock) {
+            result.push(...this.transformBlock(statement.finallyBlock).statements);
+        }
+
+        return tstl.createDoStatement(
+            result,
+            undefined,
+            statement
+        );
     }
 
-    public transformThrowStatement(arg0: ts.ThrowStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
+        const type = this.checker.getTypeAtLocation(statement.expression);
+        if (tsHelper.isStringType(type)) {
+            const error = tstl.createIdentifier("error");
+            return tstl.createExpressionStatement(
+                tstl.createCallExpression(error, [this.transformExpression(statement.expression)]),
+                undefined,
+                statement
+            );
+        } else {
+            throw TSTLErrors.InvalidThrowExpression(statement.expression);
+        }
     }
 
     public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
@@ -2889,7 +2927,7 @@ export class LuaTransformer {
     }
 
     private createLocalOrGlobalDeclaration(
-        lhs: tstl.Identifier,
+        lhs: tstl.Identifier | tstl.Identifier[],
         rhs: tstl.Expression,
         parent?: tstl.Node,
         tsOriginal?: ts.Node

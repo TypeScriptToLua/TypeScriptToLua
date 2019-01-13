@@ -61,7 +61,6 @@ export class AssignmentTests {
 
     @TestCase("var myvar;")
     @TestCase("let myvar;")
-    @TestCase("const myvar;")
     @TestCase("const myvar = null;")
     @TestCase("const myvar = undefined;")
     @Test("Null assignments")
@@ -86,7 +85,7 @@ export class AssignmentTests {
 
     @Test("Ellipsis binding pattern")
     public ellipsisBindingPattern(): void {
-        Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];"))
+        Expect(() => util.transpileString("let [a,b,...c]: number[] = [1,2,3];"))
             .toThrowError(Error, "Ellipsis destruction is not allowed.");
     }
 

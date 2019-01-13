@@ -87,9 +87,9 @@ export class OverloadTests {
                 num: number;
                 str: string;
 
-                constructor(def: number): string;
-                constructor(def: string): string;
-                constructor(def: number | string): string {
+                constructor(def: number);
+                constructor(def: string);
+                constructor(def: number | string) {
                     if (typeof def == "number") {
                         this.num = def;
                     } else {
@@ -111,9 +111,9 @@ export class OverloadTests {
                 num: number;
                 str: string;
 
-                constructor(def: number): string;
-                constructor(def: string): string;
-                constructor(def: number | string): string {
+                constructor(def: number);
+                constructor(def: string);
+                constructor(def: number | string) {
                     if (typeof def == "number") {
                         this.num = def;
                     } else {

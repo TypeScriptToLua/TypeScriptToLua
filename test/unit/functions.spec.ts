@@ -92,10 +92,10 @@ export class FunctionTests {
         Expect(result).toBe("abcdef");
     }
 
-    @TestCase([], 7)
-    @TestCase([5], 9)
-    @TestCase([1, 2], 3)
-    @Test("Arrow Default Values")
+    @TestCase([])
+    @TestCase([5])
+    @TestCase([1, 2])
+    @Test("Function Default Values")
     public functionExpressionDefaultValues(inp: number[]): void {
         // Default value is 3 for v1
         const v1 = inp.length > 0 ? inp[0] : 3;
@@ -105,8 +105,32 @@ export class FunctionTests {
         const callArgs = inp.join(",");
 
         // Transpile/Execute
-        const result = util.transpileAndExecute(`let add = function(a: number = 3, b: number = 4) { return a+b; }`
-                                       + `return add(${callArgs});`);
+        const result = util.transpileAndExecute(
+            `let add = function(a: number = 3, b: number = 4) { return a+b; };
+            return add(${callArgs});`
+        );
+
+        // Assert
+        Expect(result).toBe(v1 + v2);
+    }
+
+    @TestCase([])
+    @TestCase([5])
+    @TestCase([1, 2])
+    @Test("Arrow Default Values")
+    public arrowExpressionDefaultValues(inp: number[]): void {
+        // Default value is 3 for v1
+        const v1 = inp.length > 0 ? inp[0] : 3;
+        // Default value is 4 for v2
+        const v2 = inp.length > 1 ? inp[1] : 4;
+
+        const callArgs = inp.join(",");
+
+        // Transpile/Execute
+        const result = util.transpileAndExecute(
+            `let add = (a: number = 3, b: number = 4) => a+b;
+            return add(${callArgs});`
+        );
 
         // Assert
         Expect(result).toBe(v1 + v2);
@@ -256,7 +280,7 @@ export class FunctionTests {
     @Test("Recursive function definition")
     public recursiveFunctionDefinition(): void {
         const result = util.transpileAndExecute(
-            `function f() { return typeof f; } return f();`);
+            `function f() { return typeof f; }; return f();`);
 
         Expect(result).toBe("function");
     }
@@ -264,7 +288,7 @@ export class FunctionTests {
     @Test("Recursive function expression")
     public recursiveFunctionExpression(): void {
         const result = util.transpileAndExecute(
-            `let f = function() { return typeof f; } return f();`);
+            `let f = function() { return typeof f; }; return f();`);
 
         Expect(result).toBe("function");
     }

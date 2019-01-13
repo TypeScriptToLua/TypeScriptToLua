@@ -40,7 +40,7 @@ export class SetTests {
     @Test("set clear")
     public setClear(): void
     {
-        const setTS = `let myset = new Set(["a", "b"]; myset.clear();`;
+        const setTS = `let myset = new Set(["a", "b"]); myset.clear();`;
         const size = util.transpileAndExecute(setTS + `return myset.size;`);
         Expect(size).toBe(0);
 

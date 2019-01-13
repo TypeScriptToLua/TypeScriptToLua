@@ -57,7 +57,7 @@ export class LuaLibArrayTests {
     @Test("array.every")
     public every<T>(inp: T[], func: string): void
     {
-        const result = util.transpileAndExecute(`return JSONStringify([${inp.toString()}].every(${func})))`);
+        const result = util.transpileAndExecute(`return JSONStringify([${inp.toString()}].every(${func}))`);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.every(eval(func))));
@@ -70,7 +70,7 @@ export class LuaLibArrayTests {
     @Test("array.some")
     public some<T>(inp: T[], func: string): void
     {
-        const result = util.transpileAndExecute(`return JSONStringify([${inp.toString()}].some(${func})))`);
+        const result = util.transpileAndExecute(`return JSONStringify([${inp.toString()}].some(${func}))`);
 
         // Assert
         Expect(result).toBe(JSON.stringify(inp.some(eval(func))));
@@ -164,7 +164,7 @@ export class LuaLibArrayTests {
         const argStr = args.map(arg => JSON.stringify(arg)).join(",");
 
         const result = util.transpileAndExecute(
-            `let concatTestTable = ${JSON.stringify(arr)};
+            `let concatTestTable: any[] = ${JSON.stringify(arr)};
             return JSONStringify(concatTestTable.concat(${argStr}));`
         );
 
@@ -209,9 +209,9 @@ export class LuaLibArrayTests {
     @Test("array.indexOf")
     public indexOf(inp: string[], element: string, fromIndex?: number): void
     {
-        let str = `return ${JSON.stringify(inp)}.indexOf("${element}"))`;
+        let str = `return ${JSON.stringify(inp)}.indexOf("${element}");`;
         if (fromIndex) {
-            str = `return ${JSON.stringify(inp)}.indexOf("${element}", ${fromIndex}))`;
+            str = `return ${JSON.stringify(inp)}.indexOf("${element}", ${fromIndex});`;
         }
 
         // Transpile/Execute

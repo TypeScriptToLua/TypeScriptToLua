@@ -8,10 +8,9 @@ export class DeclarationTests
         // Arrange
         const libLua = `function declaredFunction(x) return 3*x end`;
 
-        const source = `
-            declare function declaredFunction(x: number): number;
-            return declaredFunction(2) + 4;
-        `;
+        const tsHeader = `declare function declaredFunction(x: number): number;`;
+
+        const source = `return declaredFunction(2) + 4;`;
 
         // Act
         const result = util.transpileAndExecute(source, undefined, libLua);
@@ -25,16 +24,17 @@ export class DeclarationTests
         // Arrange
         const libLua = `function declaredFunction(x) return x, 2*x + 1 end`;
 
-        const source = `
+        const tsHeader = `
             /** @tupleReturn */
-            declare function declaredFunction(x: number): [number, number];
+            declare function declaredFunction(x: number): [number, number];`;
+
+        const source = `
             const tuple = declaredFunction(3);
             const [destructedLeft, destructedRight] = declaredFunction(2);
-            return \`\${tuple[0] + destructedLeft},\${tuple[1] + destructedRight}\`;
-        `;
+            return \`\${tuple[0] + destructedLeft},\${tuple[1] + destructedRight}\`;`;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe("5,12");
@@ -48,13 +48,12 @@ export class DeclarationTests
             function myNameSpace.declaredFunction(x) return 3*x end
         `;
 
-        const source = `
-            declare namespace myNameSpace { function declaredFunction(x: number): number; }
-            return myNameSpace.declaredFunction(2) + 4;
-        `;
+        const tsHeader = `declare namespace myNameSpace { function declaredFunction(x: number): number; }`;
+
+        const source = `return myNameSpace.declaredFunction(2) + 4;`;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe(10);
@@ -69,16 +68,16 @@ export class DeclarationTests
             function myInterfaceInstance:declaredFunction(x) return self.x + 3*x end
         `;
 
-        const source = `
+        const tsHeader = `
             declare interface MyInterface {
                 declaredFunction(x: number): number;
             }
-            declare var myInterfaceInstance: MyInterface;
-            return myInterfaceInstance.declaredFunction(3);
-        `;
+            declare var myInterfaceInstance: MyInterface;`;
+
+        const source = `return myInterfaceInstance.declaredFunction(3);`;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe(19);
@@ -88,14 +87,12 @@ export class DeclarationTests
     public declarationFunctionCallback(): void {
         // Arrange
         const libLua = `function declaredFunction(callback) return callback(4) end`;
+        const tsHeader = `declare function declaredFunction(callback: (x: number) => number): number;`;
 
-        const source = `
-            declare function declaredFunction(callback: (x: number) => number): number;
-            return declaredFunction(x => 2 * x);
-        `;
+        const source = `return declaredFunction(x => 2 * x);`;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe(8);
@@ -109,16 +106,18 @@ export class DeclarationTests
             myInstance.x = 10
             function myInstance:declaredFunction(callback) return callback(self.x) end`;
 
-        const source = `
-            declare interface MyInterface {
+        const tsHeader =
+            `declare interface MyInterface {
                 declaredFunction(callback: (x: number) => number): number;
-            }
-            declare var myInstance: MyInterface;
+            }`;
+
+        const source =
+            `declare var myInstance: MyInterface;
             return myInstance.declaredFunction(x => 2 * x);
         `;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe(20);

@@ -10,7 +10,7 @@ export class LuaConditionalsTests {
     @Test("if")
     public if(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `let input: input = ${inp};
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             }
@@ -92,7 +92,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
@@ -119,7 +119,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
@@ -152,7 +152,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                 case 1:
@@ -191,12 +191,12 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
                 case 1:
-                    switch(${inp}) {
+                    switch(<number>${inp}) {
                         case 0:
                             result = 0;
                             break;
@@ -230,7 +230,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     let x = 0;
                     result = 0;
@@ -282,7 +282,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
                     break;
@@ -313,7 +313,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
                     break;
@@ -344,7 +344,7 @@ export class LuaConditionalsTests {
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
 
@@ -383,7 +383,7 @@ export class LuaConditionalsTests {
     @Test("switch dead code after return")
     public whileDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(
-            `switch ("abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
+            `switch (<string>"abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
 
         Expect(result).toBe(5);
     }

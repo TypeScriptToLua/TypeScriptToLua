@@ -7,9 +7,8 @@ export class DecoratorMetaExtension {
 
     @Test("MetaExtension")
     public metaExtension(): void {
-        const result = util.transpileAndExecute(
-            `
-            declare class _LOADED;
+        const tsHeader = `
+            declare class _LOADED {}
             declare namespace debug {
                 function getregistry(): any;
             }
@@ -18,10 +17,12 @@ export class DecoratorMetaExtension {
                 public static test() {
                     return 5;
                 }
-            }
-            return debug.getregistry()["_LOADED"].test();
-            `
-        );
+            }`;
+
+        const result = util.transpileAndExecute(
+            `return debug.getregistry()["_LOADED"].test();`,
+            undefined, undefined, tsHeader);
+
         // Assert
         Expect(result).toBe(5);
     }

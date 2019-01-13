@@ -127,7 +127,7 @@ export class TupleTests {
         const result = util.transpileAndExecute(
             `/** @tupleReturn */
             function tuple(): [number, number] { return [3,6]; }
-            const [a,b] = [1,2];
+            let [a,b] = [1,2];
             [b,a] = tuple();
             return a - b;`
         );

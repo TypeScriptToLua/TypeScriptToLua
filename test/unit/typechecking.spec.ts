@@ -104,7 +104,7 @@ export class TypeCheckingTests {
     @Test("null instanceof Object")
     public nullInstanceOf(): void
     {
-        const result = util.transpileAndExecute("return null instanceof Object;");
+        const result = util.transpileAndExecute("return (<any>null) instanceof Object;");
 
         Expect(result).toBe(false);
     }
@@ -112,7 +112,7 @@ export class TypeCheckingTests {
     @Test("null instanceof Class")
     public nullInstanceOfClass(): void
     {
-        const result = util.transpileAndExecute("class myClass {} return null instanceof myClass;");
+        const result = util.transpileAndExecute("class myClass {} return (<any>null) instanceof myClass;");
 
         Expect(result).toBe(false);
     }

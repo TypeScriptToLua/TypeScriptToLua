@@ -42,17 +42,19 @@ export class ArrayTests {
     @Test("Derived array access")
     public derivedArrayAccess(member: string, expected: any): void {
         const luaHeader = `local arr = {name="array", firstElement=function(self) return self[1]; end};`;
-
-        const result = util.transpileAndExecute(
+        const typeScriptHeader =
             `interface CustomArray<T> extends Array<T>{
                 name:string,
                 firstElement():number;
-            };
-            declare const arr: CustomArray<number>;
+            };`;
+
+        const result = util.transpileAndExecute(
+            `declare const arr: CustomArray<number>;
             arr[0] = 3;
             return arr.${member};`,
             undefined,
-            luaHeader
+            luaHeader,
+            typeScriptHeader
         );
 
         Expect(result).toBe(expected);

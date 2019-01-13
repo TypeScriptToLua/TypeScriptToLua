@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 
 import * as util from "../src/util";

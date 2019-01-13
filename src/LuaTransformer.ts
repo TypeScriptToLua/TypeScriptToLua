@@ -1353,13 +1353,13 @@ export class LuaTransformer {
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
         const pCall = tstl.createIdentifier("pcall");
         const tryBlock = this.transformBlock(statement.tryBlock);
-        const tryResult = tstl.createIdentifier("__TS_try");
+        const tryResult = tstl.createIdentifier("____TS_try");
 
         const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
             ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
             : [tryResult];
 
-        const catchAssignment = this.createLocalOrGlobalDeclaration(
+        const catchAssignment = tstl.createVariableDeclarationStatement(
                 returnVariables,
                 tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)])
             );

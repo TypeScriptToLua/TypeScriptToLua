@@ -13,7 +13,7 @@ export class DeclarationTests
         const source = `return declaredFunction(2) + 4;`;
 
         // Act
-        const result = util.transpileAndExecute(source, undefined, libLua);
+        const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
 
         // Assert
         Expect(result).toBe(10);
@@ -109,12 +109,10 @@ export class DeclarationTests
         const tsHeader =
             `declare interface MyInterface {
                 declaredFunction(callback: (x: number) => number): number;
-            }`;
+            }
+            declare var myInstance: MyInterface;`;
 
-        const source =
-            `declare var myInstance: MyInterface;
-            return myInstance.declaredFunction(x => 2 * x);
-        `;
+        const source = `return myInstance.declaredFunction(x => 2 * x);`;
 
         // Act
         const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);

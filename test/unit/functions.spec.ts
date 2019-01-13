@@ -46,7 +46,7 @@ export class FunctionTests {
     @TestCase([5])
     @TestCase([1, 2])
     @Test("Arrow Default Values")
-    public arrowFunctionDefaultValues(inp: number[]): void {
+    public arrowExpressionDefaultValues(inp: number[]): void {
         // Default value is 3 for v1
         const v1 = inp.length > 0 ? inp[0] : 3;
         // Default value is 4 for v2
@@ -55,8 +55,10 @@ export class FunctionTests {
         const callArgs = inp.join(",");
 
         // Transpile/Execute
-        const result = util.transpileAndExecute(`let add = (a: number = 3, b: number = 4) => { return a+b; }`
-                                       + `return add(${callArgs});`);
+        const result = util.transpileAndExecute(
+            `let add = (a: number = 3, b: number = 4) => a+b;
+            return add(${callArgs});`
+        );
 
         // Assert
         Expect(result).toBe(v1 + v2);
@@ -107,28 +109,6 @@ export class FunctionTests {
         // Transpile/Execute
         const result = util.transpileAndExecute(
             `let add = function(a: number = 3, b: number = 4) { return a+b; };
-            return add(${callArgs});`
-        );
-
-        // Assert
-        Expect(result).toBe(v1 + v2);
-    }
-
-    @TestCase([])
-    @TestCase([5])
-    @TestCase([1, 2])
-    @Test("Arrow Default Values")
-    public arrowExpressionDefaultValues(inp: number[]): void {
-        // Default value is 3 for v1
-        const v1 = inp.length > 0 ? inp[0] : 3;
-        // Default value is 4 for v2
-        const v2 = inp.length > 1 ? inp[1] : 4;
-
-        const callArgs = inp.join(",");
-
-        // Transpile/Execute
-        const result = util.transpileAndExecute(
-            `let add = (a: number = 3, b: number = 4) => a+b;
             return add(${callArgs});`
         );
 

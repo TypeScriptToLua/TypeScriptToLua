@@ -46,10 +46,11 @@ export class ArrayTests {
             `interface CustomArray<T> extends Array<T>{
                 name:string,
                 firstElement():number;
-            };`;
+            };
+            declare const arr: CustomArray<number>;`;
 
         const result = util.transpileAndExecute(
-            `declare const arr: CustomArray<number>;
+            `
             arr[0] = 3;
             return arr.${member};`,
             undefined,

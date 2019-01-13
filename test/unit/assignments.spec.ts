@@ -85,7 +85,7 @@ export class AssignmentTests {
 
     @Test("Ellipsis binding pattern")
     public ellipsisBindingPattern(): void {
-        Expect(() => util.transpileString("let [a,b,...c]: number[] = [1,2,3];"))
+        Expect(() => util.transpileString("let [a,b,...c] = <[number, number, number]>[1,2,3];"))
             .toThrowError(Error, "Ellipsis destruction is not allowed.");
     }
 

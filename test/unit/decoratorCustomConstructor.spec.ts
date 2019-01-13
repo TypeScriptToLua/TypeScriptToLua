@@ -10,8 +10,10 @@ export class DecoratorCustomConstructor {
         const result = util.transpileAndExecute(
             `/** @customConstructor Point2DCreate */
             class Point2D {
-                x: number;
-                y: number;
+                constructor(
+                    public x: number,
+                    public y: number
+                ) {}
             }
             function Point2DCreate(x: number, y: number) {
                 return {x: x, y: y};
@@ -29,8 +31,10 @@ export class DecoratorCustomConstructor {
             util.transpileString(
                 `/** @customConstructor */
                 class Point2D {
-                    x: number;
-                    y: number;
+                    constructor(
+                        public x: number,
+                        public y: number
+                    ) {}
                 }
                 return new Point2D(1, 2).x;
                 `

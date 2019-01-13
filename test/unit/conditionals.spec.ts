@@ -231,17 +231,20 @@ export class LuaConditionalsTests {
             `let result: number = -1;
 
             switch (<number>${inp}) {
-                case 0:
+                case 0: {
                     let x = 0;
                     result = 0;
                     break;
-                case 1:
+                }
+                case 1: {
                     let x = 1;
                     result = x;
-                case 2:
+                }
+                case 2: {
                     let x = 2;
                     result = x;
                     break;
+                }
             }
             return result;`
         );

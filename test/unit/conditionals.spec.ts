@@ -259,7 +259,7 @@ export class LuaConditionalsTests {
     @TestCase(2, 2)
     public switchReturn(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `switch (${inp}) {
+            `switch (<number>${inp}) {
                 case 0:
                     return 0;
                     break;

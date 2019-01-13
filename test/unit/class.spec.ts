@@ -592,7 +592,7 @@ export class ClassTests {
                     return "instance of b";
                 }
             }
-            let inst = new b(6);
+            let inst = new b();
             return inst.method();`
         );
 

@@ -1,9 +1,8 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
-@FocusTests
 export class SpreadElementTest {
 
     @TestCase([])

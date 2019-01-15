@@ -1479,7 +1479,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transformTypeOfExpression(expression as ts.TypeOfExpression);
             case ts.SyntaxKind.SpreadElement:
-                throw new Error("Not yet implemented");
+                return this.transformSpreadElement(expression as ts.SpreadElement);
             case ts.SyntaxKind.NonNullExpression:
                 return this.transformExpression((expression as ts.NonNullExpression).expression);
             case ts.SyntaxKind.EmptyStatement:
@@ -2758,6 +2758,25 @@ export class LuaTransformer {
             tstl.SyntaxKind.OrOperator,
             undefined,
             node
+        );
+    }
+
+    public transformSpreadElement(expression: ts.SpreadElement): ExpressionVisitResult {
+        const useNakedUnpack =
+            this.options.luaTarget <= LuaTarget.Lua51
+            || this.options.luaTarget === LuaTarget.LuaJIT;
+
+        const callPath = useNakedUnpack
+            ? tstl.createIdentifier("unpack")
+            : tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack"));
+
+        const innerExpression = this.transformExpression(expression.expression);
+
+        return tstl.createCallExpression(
+            callPath,
+            [innerExpression],
+            undefined,
+            expression
         );
     }
 

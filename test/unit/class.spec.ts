@@ -7,16 +7,12 @@ export class ClassTests {
 
     @Test("ClassFieldInitializer")
     public classFieldInitializer(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 field: number = 4;
             }
             return new a().field;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -24,16 +20,12 @@ export class ClassTests {
 
     @Test("ClassNumericLiteralFieldInitializer")
     public classNumericLiteralFieldInitializer(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 1: number = 4;
             }
             return new a()[1];`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -41,16 +33,12 @@ export class ClassTests {
 
     @Test("ClassStringLiteralFieldInitializer")
     public classStringLiteralFieldInitializer(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 "field": number = 4;
             }
             return new a()["field"];`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -58,8 +46,7 @@ export class ClassTests {
 
     @Test("ClassComputedFieldInitializer")
     public classComputedFieldInitializer(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `const field: "field" = "field";
             class a {
                 [field]: number = 4;
@@ -67,17 +54,13 @@ export class ClassTests {
             return new a()[field];`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassConstructor")
     public classConstructor(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 field: number = 3;
                 constructor(n: number) {
@@ -86,8 +69,6 @@ export class ClassTests {
             }
             return new a(4).field;`
         );
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(8);
@@ -95,14 +76,10 @@ export class ClassTests {
 
     @Test("ClassConstructorAssignment")
     public classConstructorAssignment(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a { constructor(public field: number) {} }
             return new a(4).field;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -130,8 +107,7 @@ export class ClassTests {
 
     @Test("ClassNewNoBrackets")
     public classNewNoBrackets(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public field: number = 4;
                 constructor() {}
@@ -140,23 +116,16 @@ export class ClassTests {
             return inst.field;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassStaticFields")
     public classStaticFields(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a { static field: number = 4; }
             return a.field;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -164,14 +133,10 @@ export class ClassTests {
 
     @Test("ClassStaticNumericLiteralFields")
     public classStaticNumericLiteralFields(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a { static 1: number = 4; }
             return a[1];`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -179,14 +144,10 @@ export class ClassTests {
 
     @Test("ClassStaticStringLiteralFields")
     public classStaticStringLiteralFields(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a { static "field": number = 4; }
             return a["field"];`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -194,15 +155,11 @@ export class ClassTests {
 
     @Test("ClassStaticComputedFields")
     public classStaticComputedFields(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `const field: "field" = "field";
             class a { static [field]: number = 4; }
             return a[field];`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -210,15 +167,11 @@ export class ClassTests {
 
     @Test("classExtends")
     public classExtends(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a { field: number = 4; }
             class b extends a {}
             return new b().field;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(4);
@@ -279,8 +232,7 @@ export class ClassTests {
 
     @Test("classSuper")
     public classSuper(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public field: number = 4;
                 constructor(n: number) {
@@ -295,17 +247,13 @@ export class ClassTests {
             return new b().field;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(5);
     }
 
     @Test("classSuperSuper")
     public classSuperSuper(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public field: number = 4;
                 constructor(n: number) {
@@ -325,17 +273,13 @@ export class ClassTests {
             return new c().field;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(10);
     }
 
     @Test("ClassMethodCall")
     public classMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method(): number {
                     return 4;
@@ -345,17 +289,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassNumericLiteralMethodCall")
     public classNumericLiteralMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public 1(): number {
                     return 4;
@@ -365,17 +305,13 @@ export class ClassTests {
             return inst[1]();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassStringLiteralMethodCall")
     public classStringLiteralMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public "method"(): number {
                     return 4;
@@ -385,17 +321,13 @@ export class ClassTests {
             return inst["method"]();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassComputedMethodCall")
     public classComputedMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `const method: "method" = "method";
             class a {
                 public [method](): number {
@@ -406,17 +338,13 @@ export class ClassTests {
             return inst[method]();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassToString")
     public classToString(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public toString(): string {
                     return "instance of a";
@@ -426,16 +354,12 @@ export class ClassTests {
             return inst.toString();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe("instance of a");
     }
     @Test("HasOwnProperty true")
     public hasOwnProperty1(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public test(): void {
                 }
@@ -445,16 +369,12 @@ export class ClassTests {
             return inst.hasOwnProperty("prop");`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(true);
     }
     @Test("HasOwnProperty false")
     public hasOwnProperty2(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public test(): void {
                 }
@@ -464,16 +384,12 @@ export class ClassTests {
             return inst.hasOwnProperty("test");`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(false);
     }
     @Test("CastClassMethodCall")
     public extraParenthesisAssignment(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `interface result
             {
                 val : number;
@@ -490,17 +406,13 @@ export class ClassTests {
             return result.val;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassPropertyFunctionThis")
     public classPropertyFunctionThis(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 constructor(private n: number) {}
                 public method: () => number = () => this.n;
@@ -509,17 +421,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassInheritedMethodCall")
     public classInheritedMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method(): number {
                     return 4;
@@ -530,17 +438,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassDoubleInheritedMethodCall")
     public classDoubleInheritedMethodCall(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method(): number {
                     return 4;
@@ -552,17 +456,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassInheritedMethodCall2")
     public classInheritedMethodCall2(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {}
             class b extends a {
                 public method(): number {
@@ -574,17 +474,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("ClassMethodOverride")
     public classMethodOverride(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method(): number {
                     return 2;
@@ -599,17 +495,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(4);
     }
 
     @Test("methodDefaultParameters")
     public methodInheritedParameters(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method(b: number, c: number = 5): number {
                     return b + c;
@@ -618,9 +510,6 @@ export class ClassTests {
             let inst = new a();
             return inst.method(4);`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(9);
@@ -636,8 +525,7 @@ export class ClassTests {
 
     @Test("CallSuperMethodNoArgs")
     public callSuperMethodNoArgs(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 a: number
                 constructor(n: number) {
@@ -659,17 +547,13 @@ export class ClassTests {
             return inst.method();`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(6);
     }
 
     @Test("CallSuperMethodArgs")
     public callSuperMethodArgs(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 a: number
                 constructor(n: number) {
@@ -691,32 +575,26 @@ export class ClassTests {
             return inst.method(4);`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(10);
     }
 
     @Test("classExpression")
     public classExpression(): void {
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method() {
                     return "instance of a";
                 }
             }
-            b = class extends a {
+            const b = class extends a {
                 public method() {
                     return "instance of b";
                 }
             }
-            let inst = new b(6);
+            let inst = new b();
             return inst.method();`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe("instance of b");
@@ -724,20 +602,17 @@ export class ClassTests {
 
     @Test("classExpressionBaseClassMethod")
     public classExpressionBaseClassMethod(): void {
-        const lua = util.transpileString(
+        const result = util.transpileAndExecute(
             `class a {
                 public method() {
                     return 42;
                 }
             }
-            b = class extends a {
+            const b = class extends a {
             }
             let inst = new b();
             return inst.method();`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(42);
@@ -747,14 +622,14 @@ export class ClassTests {
     public classMethodRuntimeOverride(): void {
         const result = util.transpileAndExecute(
             `class MyClass {
-                method(): void {
-                    return 4
+                method(): number {
+                    return 4;
               }
             }
 
             let inst = new MyClass();
             inst.method = () => {
-                return 8
+                return 8;
             }
             return inst.method();`
         );

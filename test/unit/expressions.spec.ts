@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTests } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
 
@@ -13,8 +13,10 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
-    @TestCase("delete tbl['test']", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
-    @TestCase("delete tbl.test", "(function ()\n    tbl.test = nil;\n    return ;\nend)();")
+    @TestCase("let a = delete tbl['test']", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("delete tbl['test']", "tbl.test = nil;")
+    @TestCase("let a = delete tbl.test", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("delete tbl.test", "tbl.test = nil;")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {
         Expect(util.transpileString(input)).toBe(lua);
@@ -29,11 +31,7 @@ export class ExpressionTests {
     @TestCase("15%3", 15 % 3)
     @Test("Binary expressions basic numeric")
     public binaryNum(input: string, output: number): void {
-        // Transpile
-        const lua = util.transpileString(input);
-
-        // Execute
-        const result = util.executeLua(`return ${lua}`);
+        const result = util.transpileAndExecute(`return ${input}`);
 
         // Assert
         Expect(result).toBe(output);
@@ -51,11 +49,7 @@ export class ExpressionTests {
     @TestCase("1||1", 1)
     @Test("Binary expressions basic boolean")
     public binaryBool(input: string, expected: any): void {
-        // Transpile
-        const lua = util.transpileString(input);
-
-        // Execute
-        const result = util.executeLua(`return ${lua}`);
+        const result = util.transpileAndExecute(`return ${input}`);
 
         // Assert
         Expect(result).toBe(expected);
@@ -66,12 +60,12 @@ export class ExpressionTests {
     @TestCase("0 in obj")
     @TestCase("9 in obj")
     @Test("Binary expression in")
-    public binaryIn(input: string): void {
-        // Transpile
-        const lua = util.transpileString(input);
-
-        // Execute
-        const result = util.executeLua(`obj = { existingKey = 1 }\nreturn ${lua}`);
+    public binaryIn(input: string): void
+    {
+        const tsHeader = "declare var obj: any;";
+        const tsSource = `return ${input}`;
+        const luaHeader = "obj = { existingKey = 1 }";
+        const result = util.transpileAndExecute(tsSource, undefined, luaHeader, tsHeader);
 
         // Assert
         Expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
@@ -85,9 +79,7 @@ export class ExpressionTests {
     @TestCase("a**=b", 5 ** 3)
     @Test("Binary expressions overridden operators")
     public binaryOperatorOverride(input: string, expected: number): void {
-        const lua = util.transpileString(`let a = 5; let b = 3; ${input}; return a;`);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(`let a = 5; let b = 3; ${input}; return a;`);
 
         Expect(result).toBe(expected);
     }
@@ -214,11 +206,8 @@ export class ExpressionTests {
                      + `inst._field = 4;`
                      + `return ${expression};`;
 
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        // Transpile/Execute
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(expected);
@@ -244,11 +233,8 @@ export class ExpressionTests {
                      + `inst.field ${expression};`
                      + `return inst._field;`;
 
-        // Transpile
-        const lua = util.transpileString(source);
-
-        // Execute
-        const result = util.executeLua(lua);
+        // Transpile/Execute
+        const result = util.transpileAndExecute(source);
 
         // Assert
         Expect(result).toBe(expected);
@@ -282,8 +268,7 @@ export class ExpressionTests {
                    + `inst.superField = 3;`
                    + `return ${expression};`;
 
-        const lua = util.transpileString(source);
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(source);
         Expect(result).toBe(expected);
     }
 

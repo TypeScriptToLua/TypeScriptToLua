@@ -7,10 +7,8 @@ export class DecoratorMetaExtension {
 
     @Test("MetaExtension")
     public metaExtension(): void {
-        // Transpile
-        const lua = util.transpileString(
-            `
-            declare class _LOADED;
+        const tsHeader = `
+            declare class _LOADED {}
             declare namespace debug {
                 function getregistry(): any;
             }
@@ -19,11 +17,12 @@ export class DecoratorMetaExtension {
                 public static test() {
                     return 5;
                 }
-            }
-            return debug.getregistry()["_LOADED"].test();
-            `
-        );
-        const result = util.executeLua(lua);
+            }`;
+
+        const result = util.transpileAndExecute(
+            `return debug.getregistry()["_LOADED"].test();`,
+            undefined, undefined, tsHeader);
+
         // Assert
         Expect(result).toBe(5);
     }
@@ -50,7 +49,7 @@ export class DecoratorMetaExtension {
         Expect(() => {
             util.transpileString(
                 `
-                declare class _LOADED;
+                declare class _LOADED {}
                 /** @metaExtension */
                 class Ext extends _LOADED {
                 }

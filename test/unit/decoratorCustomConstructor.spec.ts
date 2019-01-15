@@ -3,24 +3,32 @@ import * as util from "../src/util";
 
 import { TranspileError } from "../../src/TranspileError";
 
-export class DecoratorCustomConstructor {
-
+export class DecoratorCustomConstructor
+{
     @Test("CustomCreate")
     public customCreate(): void {
-        // Transpile
-        const lua = util.transpileString(
+        const luaHeader =
+            `function Point2DCreate(x, y)
+                return {x = x, y = y}
+            end`;
+
+        const tsHeader =
             `/** @customConstructor Point2DCreate */
             class Point2D {
-                x: number;
-                y: number;
-            }
-            function Point2DCreate(x: number, y: number) {
-                return {x: x, y: y};
-            }
-            return new Point2D(1, 2).x;
-            `
+                public x: number;
+                public y: number;
+                constructor(x: number, y: number) {
+                    // No values assigned
+                }
+            }`;
+
+        const result = util.transpileAndExecute(
+            `return new Point2D(1, 2).x;`,
+            undefined,
+            luaHeader,
+            tsHeader
         );
-        const result = util.executeLua(lua);
+
         // Assert
         Expect(result).toBe(1);
     }
@@ -31,8 +39,10 @@ export class DecoratorCustomConstructor {
             util.transpileString(
                 `/** @customConstructor */
                 class Point2D {
-                    x: number;
-                    y: number;
+                    constructor(
+                        public x: number,
+                        public y: number
+                    ) {}
                 }
                 return new Point2D(1, 2).x;
                 `

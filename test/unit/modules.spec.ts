@@ -34,9 +34,12 @@ export class LuaModuleTests {
 
     @Test("Non-exported module")
     public nonExportedModule(): void {
-        const lua = util.transpileString("module g { export function test() { return 3; } } return g.test();");
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(
+            "return g.test();",
+            undefined,
+            undefined,
+            "module g { export function test() { return 3; } }" // Typescript header
+        );
 
         Expect(result).toBe(3);
     }

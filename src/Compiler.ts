@@ -68,10 +68,16 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
 
 const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
 
-export function transpileString(str: string, options: CompilerOptions = {
+const defaultCompilerOptions: CompilerOptions = {
     luaLibImport: LuaLibImportKind.Require,
     luaTarget: LuaTarget.Lua53,
-}): string {
+};
+
+export function transpileString(
+    str: string,
+    options: CompilerOptions = defaultCompilerOptions,
+    ignoreDiagnostics = false
+): string {
     const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -98,6 +104,16 @@ export function transpileString(str: string, options: CompilerOptions = {
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
     const program = ts.createProgram(["file.ts"], options, compilerHost);
+
+    if (!ignoreDiagnostics) {
+        const diagnostics = ts.getPreEmitDiagnostics(program);
+        const typeScriptErrors = diagnostics.filter(diag => diag.category === ts.DiagnosticCategory.Error);
+
+        if (typeScriptErrors.length > 0) {
+            typeScriptErrors.forEach(e => console.warn(e.messageText));
+            throw new Error("Encountered invalid TypeScript.");
+        }
+    }
 
     const transpiler = new LuaTranspiler(program);
 

@@ -31,7 +31,7 @@ export class LuaErrorTests {
     @Test("re-throw")
     public reThrow(i: number, expected: any): void {
         const source =
-            `const i = ${i};
+            `const i: number = ${i};
             function foo() {
                 try {
                     try {
@@ -47,7 +47,7 @@ export class LuaErrorTests {
                     throw "C";
                 }
             }
-            let result = "x";
+            let result: string = "x";
             try {
                 foo();
             } catch (e) {

@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
+import * as tstl from "./LuaAST";
+
 import {CompilerOptions, LuaLibImportKind} from "./CompilerOptions";
 import {LuaPrinter} from "./LuaPrinter";
 import {LuaTransformer} from "./LuaTransformer";
@@ -109,6 +111,13 @@ export class LuaTranspiler {
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
         return this.luaPrinter.print(luaAST, lualibFeatureSet);
+    }
+
+    public transpileSourceFileKeepAST(sourceFile: ts.SourceFile): [tstl.Block, string] {
+        // Transform AST
+        const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
+        // Print AST
+        return [luaAST, this.luaPrinter.print(luaAST, lualibFeatureSet)];
     }
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {

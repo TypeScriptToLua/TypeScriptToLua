@@ -1038,13 +1038,13 @@ export abstract class LuaTranspiler {
     }
 
     public transpileConditionalExpression(node: ts.ConditionalExpression): string {
-        if (tsHelper.isNonFalsible(this.checker.getTypeAtLocation(node.whenTrue), this.options.strictNullChecks)) {
-            const condition = this.transpileExpression(node.condition);
-            const val1 = this.transpileExpression(node.whenTrue);
-            const val2 = this.transpileExpression(node.whenFalse);
-            return `((${condition}) and (${val1}) or (${val2}))`;
+        if (tsHelper.isFalsible(this.checker.getTypeAtLocation(node.whenTrue), this.options.strictNullChecks)) {
+          return this.transpileProtectedConditionalExpression(node);
         }
-        return this.transpileProtectedConditionalExpression(node);
+        const condition = this.transpileExpression(node.condition);
+        const val1 = this.transpileExpression(node.whenTrue);
+        const val2 = this.transpileExpression(node.whenFalse);
+        return `((${condition}) and (${val1}) or (${val2}))`;
     }
 
     public transpileBinaryAssignmentExpression(

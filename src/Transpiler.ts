@@ -780,7 +780,7 @@ export abstract class LuaTranspiler {
                 return this.transpileBinaryExpression(node as ts.BinaryExpression, brackets);
             case ts.SyntaxKind.ConditionalExpression:
                 // Add brackets to preserve ordering
-                return this.transpileConditionalExpression(node as ts.ConditionalExpression, brackets);
+                return this.transpileConditionalExpression(node as ts.ConditionalExpression);
             case ts.SyntaxKind.CallExpression:
                 return this.transpileCallExpression(node as ts.CallExpression);
             case ts.SyntaxKind.PropertyAccessExpression:
@@ -1030,13 +1030,22 @@ export abstract class LuaTranspiler {
         return parts.join("..");
     }
 
-    public transpileConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): string {
+    public transpileProtectedConditionalExpression(node: ts.ConditionalExpression): string {
         const condition = this.transpileExpression(node.condition);
         const val1 = this.transpileExpression(node.whenTrue);
         const val2 = this.transpileExpression(node.whenFalse);
+        return `((${condition}) and function() return ${val1}; end or function() return ${val2}; end)()`;
+    }
 
-        return this.transpileLuaLibFunction(LuaLibFeature.Ternary, condition,
-                                            `function() return ${val1} end`, `function() return ${val2} end`);
+    public transpileConditionalExpression(node: ts.ConditionalExpression): string {
+        const isStrict = this.options.strict || this.options.strictNullChecks;
+        if (tsHelper.isFalsible(this.checker.getTypeAtLocation(node.whenTrue), isStrict)) {
+          return this.transpileProtectedConditionalExpression(node);
+        }
+        const condition = this.transpileExpression(node.condition);
+        const val1 = this.transpileExpression(node.whenTrue);
+        const val2 = this.transpileExpression(node.whenFalse);
+        return `((${condition}) and (${val1}) or (${val2}))`;
     }
 
     public transpileBinaryAssignmentExpression(

@@ -192,6 +192,36 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
+    @TestCase("true ? 'a' : 'b'", "a")
+    @TestCase("false ? 'a' : 'b'", "b")
+    @TestCase("true ? false : true", false)
+    @TestCase("false ? false : true", true)
+    @TestCase("true ? literalValue : true", "literal")
+    @TestCase("true ? variableValue : true", undefined)
+    @TestCase("true ? maybeUndefinedValue : true", undefined)
+    @TestCase("true ? maybeBooleanValue : true", false)
+    @TestCase("true ? maybeUndefinedValue : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? maybeBooleanValue : true", false, { strictNullChecks: true })
+    @TestCase("true ? undefined : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? null : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.LuaJIT })
+    @Test("Ternary operator")
+    public ternaryOperator(input: string, expected: any, options?: ts.CompilerOptions): void {
+        const source = `const literalValue = 'literal';`
+                     + `let variableValue:string;`
+                     + `let maybeBooleanValue:string|boolean = false;`
+                     + `let maybeUndefinedValue:string|undefined;`
+                     + `return ${input};`;
+        const lua = util.transpileString(source, options);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("inst.field", 8)
     @TestCase("inst.field + 3", 8 + 3)
     @TestCase("inst.field * 3", 8 * 3)
@@ -260,7 +290,7 @@ export class ExpressionTests {
     @TestCase("inst.superBaseField", 4)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
-      const source = `class MyBaseClass {`
+        const source = `class MyBaseClass {`
                    + `    public _baseField: number;`
                    + `    public get baseField(): number { return this._baseField + 6; }`
                    + `    public set baseField(v: number) { this._baseField = v; }`
@@ -269,13 +299,13 @@ export class ExpressionTests {
                    + `    public _field: number;`
                    + `    public get field(): number { return this._field + 4; }`
                    + `    public set field(v: number) { this._field = v; }`
-                   + `}`                   
+                   + `}`
                    + `class MySuperClass extends MyClass {`
                    + `    public _superField: number;`
                    + `    public get superField(): number { return this._superField + 2; }`
                    + `    public set superField(v: number) { this._superField = v; }`
                    + `    public get superBaseField() { return this.baseField - 3; }`
-                   + `}`                   
+                   + `}`
                    + `var inst = new MySuperClass();`
                    + `inst.baseField = 1;`
                    + `inst.field = 2;`

@@ -453,4 +453,28 @@ export class TSHelper {
     public static isDefaultArrayPropertyName(methodName: string): boolean {
         return defaultArrayPropertyNames.has(methodName);
     }
+
+    public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
+        const falsibleFlags = ts.TypeFlags.Boolean
+            | ts.TypeFlags.BooleanLiteral
+            | ts.TypeFlags.Undefined
+            | ts.TypeFlags.Null
+            | ts.TypeFlags.Never
+            | ts.TypeFlags.Void
+            | ts.TypeFlags.Any;
+
+        if (type.flags & falsibleFlags) {
+            return true;
+        } else if (!strictNullChecks && !type.isLiteral()) {
+            return true;
+        } else if (type.isUnion()) {
+            for (const subType of type.types) {
+                if (this.isFalsible(subType, strictNullChecks)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

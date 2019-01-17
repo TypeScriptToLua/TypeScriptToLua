@@ -44,4 +44,12 @@ export class LuaTranspilerJIT extends LuaTranspiler52 {
     public transpileSpreadElement(node: ts.SpreadElement): string {
         return "unpack(" + this.transpileExpression(node.expression) + ")";
     }
+
+    /** @override */
+    public transpileProtectedConditionalExpression(node: ts.ConditionalExpression): string {
+        const condition = this.transpileExpression(node.condition);
+        const val1 = this.transpileExpression(node.whenTrue);
+        const val2 = this.transpileExpression(node.whenFalse);
+        return `((${condition}) and {${val1}} or {${val2}})[1]`;
+    }
 }

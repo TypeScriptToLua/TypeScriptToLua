@@ -2128,7 +2128,7 @@ export abstract class LuaTranspiler {
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
             this.pushExport(className, node);
         } else {
-            const extendedTypeNode = tsHelper.getExtendedTypeNode(node,this.checker);
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(node, this.checker);
             const baseName = this.transpileNode(extendedTypeNode.expression);
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`;
             this.pushExport(className, node);

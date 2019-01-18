@@ -1353,26 +1353,30 @@ export class LuaTransformer {
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
         const pCall = tstl.createIdentifier("pcall");
         const tryBlock = this.transformBlock(statement.tryBlock);
-        const tryResult = tstl.createIdentifier("____TS_try");
+        const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
 
-        const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
-            ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
-            : [tryResult];
-
-        const catchAssignment = tstl.createVariableDeclarationStatement(
-                returnVariables,
-                tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)])
-            );
-
-        const result: tstl.Statement[] = [catchAssignment];
+        const result: tstl.Statement[] = [];
 
         if (statement.catchClause) {
+            const tryResult = tstl.createIdentifier("____TS_try");
+
+            const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
+                ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
+                : [tryResult];
+
+            const catchAssignment = tstl.createVariableDeclarationStatement(returnVariables, tryCall);
+
+            result.push(catchAssignment);
+
             const notTryResult = tstl.createUnaryExpression(tryResult, tstl.SyntaxKind.NotOperator);
             result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
+
+        } else {
+            result.push(tstl.createExpressionStatement(tryCall));
         }
 
         if (statement.finallyBlock) {
-            result.push(...this.transformBlock(statement.finallyBlock).statements);
+            result.push(tstl.createDoStatement(this.transformBlock(statement.finallyBlock).statements));
         }
 
         return tstl.createDoStatement(

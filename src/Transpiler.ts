@@ -965,8 +965,11 @@ export abstract class LuaTranspiler {
     }
 
     public transpileAssignment(node: ts.BinaryExpression, lhs: string, rhs: string): string {
-        if (tsHelper.hasSetAccessor(node.left, this.checker)) {
+        const hasSetAccessor = tsHelper.hasSetAccessor(node.left, this.checker);
+        if (hasSetAccessor) {
             return this.transpileSetAccessor(node.left as ts.PropertyAccessExpression, rhs);
+        } else if (hasSetAccessor === undefined) {
+            throw TSTLErrors.UnsupportedUnionAccessor(node);
         }
 
         // Validate assignment
@@ -1612,10 +1615,10 @@ export abstract class LuaTranspiler {
         const property = node.name.text;
 
         const hasGetAccessor = tsHelper.hasGetAccessor(node, this.checker);
-        if (hasGetAccessor === undefined) {
-          throw TSTLErrors.UnsupporteUnionAccessor(node);
-        } else if (hasGetAccessor) {
+        if (hasGetAccessor) {
             return this.transpileGetAccessor(node);
+        } else if (hasGetAccessor === undefined) {
+            throw TSTLErrors.UnsupportedUnionAccessor(node);
         }
 
         // Check for primitive types to override

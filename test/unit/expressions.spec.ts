@@ -322,7 +322,6 @@ export class ExpressionTests {
     public unionAccessors(expression: string, expected: any): void {
         const source = `class A{ get value(){ return 1; } }
                         class B{ get value(){ return 2; } }
-                        class C{ value:number = 3; }
                         let x: A|B = new A();
                         return ${expression};`;
 

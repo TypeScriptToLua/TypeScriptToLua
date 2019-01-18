@@ -321,8 +321,8 @@ export class ExpressionTests {
     @TestCase("x.value = 3; return x.value;", 3)
     @Test("Union accessors")
     public unionAccessors(expression: string, expected: any): void {
-        const source = `class A{ get value(){ return this.v || 1; } set value(v){ this.v = v; } v: number = 1; }
-                        class B{ get value(){ return this.v || 2; } set value(v){ this.v = v; } v: number = 2; }
+        const source = `class A{ get value(){ return this.v || 1; } set value(v){ this.v = v; } v: number; }
+                        class B{ get value(){ return this.v || 2; } set value(v){ this.v = v; } v: number; }
                         let x: A|B = new A();
                         ${expression}`;
 

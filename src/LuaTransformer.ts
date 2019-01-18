@@ -229,7 +229,10 @@ export class LuaTransformer {
         }
     }
 
-    public transformClassDeclaration(statement: ts.ClassDeclaration, nameOverride?: tstl.Identifier): tstl.Statement[] {
+    public transformClassDeclaration(
+        statement: ts.ClassLikeDeclaration,
+        nameOverride?: tstl.Identifier
+    ): tstl.Statement[] {
         let className = statement.name ? this.transformIdentifier(statement.name) : nameOverride;
         if (!className) {
             throw TSTLErrors.MissingClassName(statement);
@@ -1490,11 +1493,9 @@ export class LuaTransformer {
                 // TODO move to extra function (consistency)
                 return undefined;
             case ts.SyntaxKind.ClassExpression:
-                /*this.namespace.push("");
-                const classDeclaration =  this.transformClassDeclaration(node as ts.ClassExpression, "_");
-                this.namespace.pop();
-                return `(function() ${classDeclaration}; return _ end)()`;*/
-                throw new Error("Not yet implemented");
+                const className = tstl.createIdentifier("____");
+                const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
+                return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
             default:
                 throw TSTLErrors.UnsupportedKind("expression", expression.kind, expression);
         }

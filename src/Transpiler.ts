@@ -2135,9 +2135,9 @@ export abstract class LuaTranspiler {
         }
         result += this.indent + `${className}.__index = ${className}\n`;
         if (extendsType) {
-          const extendedTypeNode = tsHelper.getExtendedTypeNode(node, this.checker);
-          const baseName = this.transpileNode(extendedTypeNode.expression);
-          result += this.indent + `${className}.__base = ${baseName}\n`;
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(node, this.checker);
+            const baseName = this.transpileNode(extendedTypeNode.expression);
+            result += this.indent + `${className}.__base = ${baseName}\n`;
         }
         result += this.indent + `function ${className}.new(construct, ...)\n`;
         result += this.indent + `    local self = setmetatable({}, ${className})\n`;

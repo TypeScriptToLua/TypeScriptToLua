@@ -397,7 +397,7 @@ export class LuaTransformer {
             // exports.className = baseName.new()
             const classVar = this.createLocalOrGlobalDeclaration(className, rhs, undefined, statement);
 
-            result.push(classVar);
+            result.push(...classVar);
         } else {
             // {}
             let rhs: tstl.Expression = tstl.createTableExpression();
@@ -412,7 +412,7 @@ export class LuaTransformer {
             // exports.className = {}
             const classVar = this.createLocalOrGlobalDeclaration(className, rhs, undefined, statement);
 
-            result.push(classVar);
+            result.push(...classVar);
         }
 
         // className.__index
@@ -815,26 +815,26 @@ export class LuaTransformer {
 
         const membersOnly = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.CompileMembersOnly);
 
-        const result = [];
+        const result: tstl.Statement[] = [];
 
         if (!membersOnly) {
             const name = this.transformIdentifier(enumDeclaration.name);
             const table = tstl.createTableExpression();
-            result.push(this.createLocalOrGlobalDeclaration(name, table, undefined, enumDeclaration));
+            result.push(...this.createLocalOrGlobalDeclaration(name, table, undefined, enumDeclaration));
         }
 
         for (const enumMember of this.computeEnumMembers(enumDeclaration)) {
             const memberName = this.transformPropertyName(enumMember.name);
             if (membersOnly) {
                 if (tstl.isIdentifier(memberName)) {
-                    result.push(this.createLocalOrGlobalDeclaration(
+                    result.push(...this.createLocalOrGlobalDeclaration(
                         memberName,
                         enumMember.value,
                         undefined,
                         enumDeclaration
                     ));
                 } else {
-                    result.push(this.createLocalOrGlobalDeclaration(
+                    result.push(...this.createLocalOrGlobalDeclaration(
                         tstl.createIdentifier(enumMember.name.getText(), undefined, enumMember.name),
                         enumMember.value,
                         undefined,
@@ -886,7 +886,7 @@ export class LuaTransformer {
         });
     }
 
-    public transformFunctionDeclaration(functionDeclaration: ts.FunctionDeclaration): tstl.Statement {
+    public transformFunctionDeclaration(functionDeclaration: ts.FunctionDeclaration): StatementVisitResult {
         // Don't transform functions without body (overload declarations)
         if (!functionDeclaration.body) {
             return undefined;
@@ -1353,26 +1353,30 @@ export class LuaTransformer {
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
         const pCall = tstl.createIdentifier("pcall");
         const tryBlock = this.transformBlock(statement.tryBlock);
-        const tryResult = tstl.createIdentifier("____TS_try");
+        const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
 
-        const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
-            ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
-            : [tryResult];
-
-        const catchAssignment = tstl.createVariableDeclarationStatement(
-                returnVariables,
-                tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)])
-            );
-
-        const result: tstl.Statement[] = [catchAssignment];
+        const result: tstl.Statement[] = [];
 
         if (statement.catchClause) {
+            const tryResult = tstl.createIdentifier("____TS_try");
+
+            const returnVariables = statement.catchClause && statement.catchClause.variableDeclaration
+                ? [tryResult, this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier)]
+                : [tryResult];
+
+            const catchAssignment = tstl.createVariableDeclarationStatement(returnVariables, tryCall);
+
+            result.push(catchAssignment);
+
             const notTryResult = tstl.createUnaryExpression(tryResult, tstl.SyntaxKind.NotOperator);
             result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
+
+        } else {
+            result.push(tstl.createExpressionStatement(tryCall));
         }
 
         if (statement.finallyBlock) {
-            result.push(...this.transformBlock(statement.finallyBlock).statements);
+            result.push(tstl.createDoStatement(this.transformBlock(statement.finallyBlock).statements));
         }
 
         return tstl.createDoStatement(
@@ -2931,16 +2935,17 @@ export class LuaTransformer {
         rhs: tstl.Expression,
         parent?: tstl.Node,
         tsOriginal?: ts.Node
-    ): tstl.Statement
+    ): tstl.Statement[]
     {
+        const statements: tstl.Statement[] = [];
         if (this.isModule
             || this.currentNamespace
             || (tsOriginal && tsHelper.findFirstNodeAbove(tsOriginal, ts.isFunctionLike))
         ) {
-            return tstl.createVariableDeclarationStatement(lhs, rhs, parent, tsOriginal);
-        } else {
-            return tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal);
+            statements.push(tstl.createVariableDeclarationStatement(lhs, undefined, parent));
         }
+        statements.push(tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal));
+        return statements;
     }
 
     private validateFunctionAssignment(node: ts.Node, fromType: ts.Type, toType: ts.Type, toName?: string): void {

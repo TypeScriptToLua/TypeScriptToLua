@@ -1611,7 +1611,10 @@ export abstract class LuaTranspiler {
     public transpilePropertyAccessExpression(node: ts.PropertyAccessExpression): string {
         const property = node.name.text;
 
-        if (tsHelper.hasGetAccessor(node, this.checker)) {
+        const hasGetAccessor = tsHelper.hasGetAccessor(node, this.checker);
+        if (hasGetAccessor === undefined) {
+          throw TSTLErrors.UnsupporteUnionAccessor(node);
+        } else if (hasGetAccessor) {
             return this.transpileGetAccessor(node);
         }
 

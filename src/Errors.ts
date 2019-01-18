@@ -116,4 +116,7 @@ export class TSTLErrors {
                                   + "the TupleReturn decorator.",
                                   node);
     }
+
+    public static UnsupporteUnionAccessor = (node: ts.Node) =>
+    new TranspileError(`Unsupported union of accessor with non-accessor types.`, node)
 }

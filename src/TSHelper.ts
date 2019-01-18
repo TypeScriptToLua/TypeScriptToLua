@@ -245,11 +245,22 @@ export class TSHelper {
         }
     }
 
-    public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
+    public static typeHasGetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
+        if (type.isUnion()) {
+            if (type.types.some(t => this.typeHasGetAccessor(t, name, checker))) {
+                // undefined if only a subset of types implements the accessor
+                return type.types.every(t => this.typeHasGetAccessor(t, name, checker)) ? true : undefined;
+            }
+            return false;
+        }
+        return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitGetAccessor(t, name));
+    }
+
+    public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean | undefined {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-            return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitGetAccessor(t, name));
+            return this.typeHasGetAccessor(type, name, checker);
         }
         return false;
     }

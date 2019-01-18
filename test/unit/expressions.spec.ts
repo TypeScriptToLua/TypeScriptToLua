@@ -317,6 +317,33 @@ export class ExpressionTests {
         Expect(result).toBe(expected);
     }
 
+    @TestCase("x.value", 1)
+    @Test("Union accessors")
+    public unionAccessors(expression: string, expected: any): void {
+        const source = `class A{ get value(){ return 1; } }
+                        class B{ get value(){ return 2; } }
+                        class C{ value:number = 3; }
+                        let x: A|B = new A();
+                        return ${expression};`;
+
+        const lua = util.transpileString(source);
+        const result = util.executeLua(lua);
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase("x.value")
+    @Test("Unsupported Union accessors")
+    public unsupportedUnionAccessors(expression: string): void {
+        const source = `class A{ get value(){ return 1; } }
+                        class B{ value:number = 3; }
+                        let x: A|B = new A();
+                        return ${expression};`;
+        Expect(() => { util.transpileString(source); }).toThrowError(
+            TranspileError,
+            "Unsupported union of accessor with non-accessor types."
+        );
+    }
+
     @TestCase("i++", 10)
     @TestCase("i--", 10)
     @TestCase("++i", 11)

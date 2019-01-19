@@ -333,6 +333,31 @@ export class ClassTests {
         Expect(result).toBe(10);
     }
 
+    @Test("renamedClassExtends")
+    public renamedClassExtends(): void {
+        // Transpile
+        const lua = util.transpileString(
+            `namespace Classes{
+              export class Base{
+                value:number;
+                constructor(){ this.value = 3; }
+              }
+            }
+            const A = Classes.Base;
+            class B extends A{
+              constructor(){ super(); }
+            };
+            const b = new B();
+            return b.value;`
+        );
+
+        // Execute
+        const result = util.executeLua(lua);
+
+        // Assert
+        Expect(result).toBe(3);
+    }
+
     @Test("ClassMethodCall")
     public classMethodCall(): void {
         // Transpile

@@ -1352,7 +1352,7 @@ export class LuaTransformer {
     }
 
     public transformSwitchStatement(statement: ts.SwitchStatement): StatementVisitResult {
-        if (this.options.luaTarget <= LuaTarget.Lua51) {
+        if (this.options.luaTarget == LuaTarget.Lua51) {
             throw TSTLErrors.UnsupportedForTarget("Switch statements", this.options.luaTarget, statement);
         }
 

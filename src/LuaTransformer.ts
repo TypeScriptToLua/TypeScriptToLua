@@ -1351,12 +1351,67 @@ export class LuaTransformer {
         );
     }
 
-    public transformSwitchStatement(arg0: ts.SwitchStatement): StatementVisitResult {
-        throw new Error("Method not implemented.");
+    public transformSwitchStatement(statement: ts.SwitchStatement): StatementVisitResult {
+        if (this.options.luaTarget <= LuaTarget.Lua51) {
+            throw TSTLErrors.UnsupportedForTarget("Switch statements", this.options.luaTarget, statement);
+        }
+
+        this.pushScope(ScopeType.Switch);
+
+        // Give the switch a unique name to prevent nested switches from acting up.
+        const switchName = `____TS_switch${this.scopeStack.length}`;
+
+        const expression = this.transformExpression(statement.expression);
+        const switchVariable = tstl.createIdentifier(switchName);
+        const switchVariableDeclaration = tstl.createVariableDeclarationStatement(switchVariable, expression);
+
+        const statements: tstl.Statement[] = [switchVariableDeclaration];
+
+        const caseClauses = statement.caseBlock.clauses.filter(c => ts.isCaseClause(c)) as ts.CaseClause[];
+
+        for (let i = 0; i < caseClauses.length; i++) {
+            const clause = caseClauses[i];
+            // If the clause condition holds, go to the correct label
+            const condition = tstl.createBinaryExpression(
+                switchVariable,
+                this.transformExpression(clause.expression),
+                tstl.SyntaxKind.EqualityOperator
+            );
+            const goto = tstl.createGotoStatement(`${switchName}_case_${i}`);
+            const conditionalGoto = tstl.createIfStatement(condition, tstl.createBlock([goto]));
+            statements.push(conditionalGoto);
+        }
+
+        const hasDefaultCase = statement.caseBlock.clauses.some(c => ts.isDefaultClause(c));
+        if (hasDefaultCase) {
+            statements.push(tstl.createGotoStatement(`${switchName}_case_default`));
+        } else {
+            statements.push(tstl.createGotoStatement(`${switchName}_end`));
+        }
+
+        for (let i = 0; i < statement.caseBlock.clauses.length; i++) {
+            const clause = statement.caseBlock.clauses[i];
+            const label = ts.isCaseClause(clause)
+                ? tstl.createLabelStatement(`${switchName}_case_${i}`)
+                : tstl.createLabelStatement(`${switchName}_case_default`);
+
+            const body = tstl.createDoStatement(this.transformStatements(clause.statements));
+            statements.push(label, body);
+        }
+
+        statements.push(tstl.createLabelStatement(`${switchName}_end`));
+
+        this.popScope();
+
+        return statements;
     }
 
     public transformBreakStatement(breakStatement: ts.BreakStatement): StatementVisitResult {
-        return tstl.createBreakStatement(undefined, breakStatement);
+        if (this.peekScope().type === ScopeType.Switch) {
+            return tstl.createGotoStatement(`____TS_switch${this.scopeStack.length}_end`);
+        } else {
+            return tstl.createBreakStatement(undefined, breakStatement);
+        }
     }
 
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {

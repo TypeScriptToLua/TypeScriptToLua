@@ -222,10 +222,10 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
-    @Test("switchLocalScope")
     @TestCase(0, 0)
     @TestCase(1, 2)
     @TestCase(2, 2)
+    @Test("switchLocalScope")
     public switchLocalScope(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
             `let result: number = -1;
@@ -253,13 +253,16 @@ export class LuaConditionalsTests {
         Expect(result).toBe(expected);
     }
 
-    @Test("switchReturn")
     @TestCase(0, 0)
     @TestCase(1, 1)
     @TestCase(2, 2)
+    @TestCase(3, -1)
+    @Test("switchReturn")
     public switchReturn(inp: number, expected: number): void {
         const result = util.transpileAndExecute(
-            `switch (<number>${inp}) {
+            `const result: number = -1;
+
+            switch (<number>${inp}) {
                 case 0:
                     return 0;
                     break;

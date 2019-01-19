@@ -26,7 +26,6 @@ export enum LuaLibFeature {
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
     Symbol = "Symbol",
-    Ternary = "Ternary",
 }
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {

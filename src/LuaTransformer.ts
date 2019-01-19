@@ -2045,16 +2045,37 @@ export class LuaTransformer {
         }
     }
 
-    public transformConditionalExpression(node: ts.ConditionalExpression, brackets?: boolean): tstl.CallExpression {
-        const condition = this.transformExpression(node.condition);
-        const val1 = this.transformExpression(node.whenTrue);
-        const val2 = this.transformExpression(node.whenFalse);
+    public transformProtectedConditionalExpression(expression: ts.ConditionalExpression): tstl.CallExpression {
+        const condition = this.transformExpression(expression.condition);
+        const val1 = this.transformExpression(expression.whenTrue);
+        const val2 = this.transformExpression(expression.whenFalse);
 
-        return this.transformLuaLibFunction(
-            LuaLibFeature.Ternary,
-            condition,
-            this.wrapInFunctionCall(val1),
-            this.wrapInFunctionCall(val2)
+        const val1Function = this.wrapInFunctionCall(val1);
+        const val2Function = this.wrapInFunctionCall(val2);
+
+        // ((condition and (() => v1)) or (() => v2))()
+        const conditionAnd = tstl.createBinaryExpression(condition, val1Function, tstl.SyntaxKind.AndOperator);
+        const orExpression = tstl.createBinaryExpression(conditionAnd, val2Function, tstl.SyntaxKind.OrOperator);
+        return tstl.createCallExpression(orExpression, [], undefined, expression);
+    }
+
+    public transformConditionalExpression(expression: ts.ConditionalExpression): tstl.Expression {
+        const isStrict = this.options.strict || this.options.strictNullChecks;
+        if (tsHelper.isFalsible(this.checker.getTypeAtLocation(expression.whenTrue), isStrict)) {
+          return this.transformProtectedConditionalExpression(expression);
+        }
+        const condition = this.transformExpression(expression.condition);
+        const val1 = this.transformExpression(expression.whenTrue);
+        const val2 = this.transformExpression(expression.whenFalse);
+
+        // (condition and v1) or v2
+        const conditionAnd = tstl.createBinaryExpression(condition, val1, tstl.SyntaxKind.AndOperator);
+        return tstl.createBinaryExpression(
+            conditionAnd,
+            val2,
+            tstl.SyntaxKind.OrOperator,
+            undefined,
+            expression
         );
     }
 

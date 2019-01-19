@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTests } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
 
@@ -184,6 +184,44 @@ export class ExpressionTests {
         Expect(util.transpileString("undefined")).toBe("nil;");
     }
 
+    @TestCase("true ? 'a' : 'b'", "a")
+    @TestCase("false ? 'a' : 'b'", "b")
+    @TestCase("true ? false : true", false)
+    @TestCase("false ? false : true", true)
+    @TestCase("true ? literalValue : true", "literal")
+    @TestCase("true ? variableValue : true", undefined)
+    @TestCase("true ? maybeUndefinedValue : true", undefined)
+    @TestCase("true ? maybeBooleanValue : true", false)
+    @TestCase("true ? maybeUndefinedValue : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? maybeBooleanValue : true", false, { strictNullChecks: true })
+    @TestCase("true ? undefined : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? null : true", undefined, { strictNullChecks: true })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.Lua51 })
+    @TestCase("true ? false : true", false, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("false ? false : true", true, { luaTarget: LuaTarget.LuaJIT })
+    @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.LuaJIT })
+    @Test("Ternary operator")
+    public ternaryOperator(input: string, expected: any, options?: ts.CompilerOptions): void {
+        console.log(util.transpileString(
+            `const literalValue = 'literal';
+            let variableValue:string;
+            let maybeBooleanValue:string|boolean = false;
+            let maybeUndefinedValue:string|undefined;
+            return ${input};`, options
+
+        ));
+        const result = util.transpileAndExecute(
+            `const literalValue = 'literal';
+            let variableValue:string;
+            let maybeBooleanValue:string|boolean = false;
+            let maybeUndefinedValue:string|undefined;
+            return ${input};`, options);
+
+        Expect(result).toBe(expected);
+    }
+
     @TestCase("inst.field", 8)
     @TestCase("inst.field + 3", 8 + 3)
     @TestCase("inst.field * 3", 8 * 3)
@@ -246,7 +284,7 @@ export class ExpressionTests {
     @TestCase("inst.superBaseField", 4)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
-      const source = `class MyBaseClass {`
+        const source = `class MyBaseClass {`
                    + `    public _baseField: number;`
                    + `    public get baseField(): number { return this._baseField + 6; }`
                    + `    public set baseField(v: number) { this._baseField = v; }`

@@ -360,7 +360,8 @@ export class LuaPrinter {
     }
 
     private needsParentheses(expression: tstl.Expression): boolean {
-        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression);
+        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression)
+            || tstl.isFunctionExpression(expression);
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): string {
@@ -369,7 +370,9 @@ export class LuaPrinter {
 
     private printCallExpression(expression: tstl.CallExpression): string {
         const params = expression.params ? expression.params.map(e => this.printExpression(e)).join(", ") : "";
-        return `${this.printExpression(expression.expression)}(${params})`;
+        return this.needsParentheses(expression.expression)
+            ? `(${this.printExpression(expression.expression)})(${params})`
+            : `${this.printExpression(expression.expression)}(${params})`;
     }
 
     private printMethodCallExpression(expression: tstl.MethodCallExpression): string {

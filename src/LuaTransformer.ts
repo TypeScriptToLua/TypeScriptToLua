@@ -964,7 +964,10 @@ export class LuaTransformer {
                     )];
                 } else {
                     // local vars = this.transpileDestructingAssignmentValue(node.initializer);
-                    const initializer = this.createUnpackCall(this.transformExpression(statement.initializer));
+                    const initializer = this.createUnpackCall(
+                        this.transformExpression(statement.initializer),
+                        statement.initializer
+                    );
                     return [tstl.createVariableDeclarationStatement(vars, initializer)];
                 }
             } else {
@@ -1058,7 +1061,10 @@ export class LuaTransformer {
                         .map(elem => this.transformExpression(elem)));
                 } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
                     // If return expression is not another TupleReturn call, unpack it
-                    const expression = this.createUnpackCall(this.transformExpression(statement.expression));
+                    const expression = this.createUnpackCall(
+                        this.transformExpression(statement.expression),
+                        statement.expression
+                    );
                     return tstl.createReturnStatement([expression]);
                 }
             }
@@ -1133,7 +1139,7 @@ export class LuaTransformer {
             // Declaration of new variable
             const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
             if (ts.isArrayBindingPattern(initializer.declarations[0].name)) {
-                expression = this.createUnpackCall(expression);
+                expression = this.createUnpackCall(expression, initializer);
             }
             return tstl.createVariableDeclarationStatement(variableDeclarations[0].left, expression);
 
@@ -1141,7 +1147,7 @@ export class LuaTransformer {
             // Assignment to existing variable
             let variables: tstl.IdentifierOrTableIndexExpression | tstl.IdentifierOrTableIndexExpression[];
             if (ts.isArrayLiteralExpression(initializer)) {
-                expression = this.createUnpackCall(expression);
+                expression = this.createUnpackCall(expression, initializer);
                 variables = initializer.elements
                     .map(e => this.transformExpression(e)) as tstl.IdentifierOrTableIndexExpression[];
             } else {
@@ -1483,7 +1489,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.TypeOfExpression:
                 return this.transformTypeOfExpression(expression as ts.TypeOfExpression);
             case ts.SyntaxKind.SpreadElement:
-                throw new Error("Not yet implemented");
+                return this.transformSpreadElement(expression as ts.SpreadElement);
             case ts.SyntaxKind.NonNullExpression:
                 return this.transformExpression((expression as ts.NonNullExpression).expression);
             case ts.SyntaxKind.EmptyStatement:
@@ -1635,7 +1641,7 @@ export class LuaTransformer {
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
-                right = [this.createUnpackCall(this.transformExpression(expression.right))];
+                right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
             return tstl.createAssignmentStatement(
                 left as tstl.IdentifierOrTableIndexExpression[],
@@ -1667,7 +1673,7 @@ export class LuaTransformer {
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
-                right = [this.createUnpackCall(this.transformExpression(expression.right))];
+                right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
             const tmps = expression.left.elements.map((_, i) => tstl.createIdentifier(`____TS_tmp${i}`));
             const statements: tstl.Statement[] = [
@@ -2765,6 +2771,12 @@ export class LuaTransformer {
         );
     }
 
+    public transformSpreadElement(expression: ts.SpreadElement): ExpressionVisitResult {
+        const innerExpression = this.transformExpression(expression.expression);
+
+        return this.createUnpackCall(innerExpression, expression);
+    }
+
     public transformStringLiteral(literal: ts.StringLiteralLike): tstl.StringLiteral {
         const text = this.escapeString(literal.text);
         return tstl.createStringLiteral(text);
@@ -2888,18 +2900,20 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), [], undefined, tsOriginal);
     }
 
-    public createUnpackCall(expression: tstl.Expression): tstl.Expression {
+    public createUnpackCall(expression: tstl.Expression, tsOriginal: ts.Node): tstl.Expression {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
             case LuaTarget.LuaJIT:
-                return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression]);
+                return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression], undefined, tsOriginal);
 
             case LuaTarget.Lua52:
             case LuaTarget.Lua53:
             default:
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-                    [expression]
+                    [expression],
+                    undefined,
+                    tsOriginal
                 );
         }
     }

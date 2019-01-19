@@ -117,6 +117,8 @@ export class TSTLErrors {
                                   node);
     }
 
-    public static UnsupportedUnionAccessor = (node: ts.Node) =>
-    new TranspileError(`Unsupported union of accessor with non-accessor types.`, node)
+    public static UnsupportedUnionAccessor = (node: ts.Node) => {
+        return new TranspileError(`Unsupported union of accessor with non-accessor types.`,
+                                  node);
+    }
 }

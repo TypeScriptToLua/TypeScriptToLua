@@ -3001,6 +3001,7 @@ export class LuaTransformer {
         const exportTable = this.currentNamespace
             ? this.transformIdentifier(this.currentNamespace.name as ts.Identifier)
             : tstl.createIdentifier("exports");
+
         return tstl.createTableIndexExpression(
             exportTable,
             tstl.createStringLiteral(identifier.text));
@@ -3133,12 +3134,13 @@ export class LuaTransformer {
             const shouldExport = lhs.some(i => this.isIdentifierExported(i.text));
             if (shouldExport) {
                 statements.push(
-                    tstl.createAssignmentStatement(lhs.map(i => this.createExportedIdentifier(i)), undefined, parent));
+                    tstl.createAssignmentStatement(lhs.map(i => this.createExportedIdentifier(i)), rhs, parent));
             } else {
-                statements.push(tstl.createVariableDeclarationStatement(lhs, undefined, parent));
+                statements.push(tstl.createVariableDeclarationStatement(lhs, rhs, parent));
             }
+        } else {
+            statements.push(tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal));
         }
-        statements.push(tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal));
         return statements;
     }
 

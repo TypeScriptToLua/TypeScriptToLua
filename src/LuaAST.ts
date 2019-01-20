@@ -189,7 +189,7 @@ export function createDoStatement(statements?: Statement[], parent?: Node, tsOri
 // `local test1, test2 = 12, 42` or `local test1, test2`
 export interface VariableDeclarationStatement extends Statement {
     kind: SyntaxKind.VariableDeclarationStatement;
-    left: IdentifierOrTableIndexExpression[];
+    left: Identifier[];
     right?: Expression[];
 }
 
@@ -198,7 +198,7 @@ export function isVariableDeclarationStatement(node: Node): node is VariableDecl
 }
 
 export function createVariableDeclarationStatement(
-    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    left: Identifier | Identifier[],
     right?: Expression | Expression[],
     parent?: Node,
     tsOriginal?: ts.Node): VariableDeclarationStatement {

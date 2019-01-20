@@ -934,14 +934,16 @@ export class LuaTransformer {
 
                     // local identifierName; identifierName = value;
                     if (isVariableExported) {
-                        return [tstl.createVariableDeclarationStatement(identifierName),
-                            tstl.createAssignmentStatement(
-                                this.createExportedIdentifier(identifierName),
-                                value),
+                        return [
+                            tstl.createVariableDeclarationStatement(identifierName),
+                                tstl.createAssignmentStatement(
+                                    this.createExportedIdentifier(identifierName),
+                                    value),
                             ];
                     } else {
-                        return [tstl.createVariableDeclarationStatement(identifierName),
-                            tstl.createAssignmentStatement(
+                        return [
+                            tstl.createVariableDeclarationStatement(identifierName),
+                                tstl.createAssignmentStatement(
                                 identifierName,
                                 value),
                             ];
@@ -949,8 +951,11 @@ export class LuaTransformer {
                 } else {
                     // local identifierName = value;
                     if (isVariableExported) {
-                        return [tstl.createAssignmentStatement(
-                            this.createExportedIdentifier(identifierName), value)];
+                        return [
+                            tstl.createAssignmentStatement(
+                                this.createExportedIdentifier(identifierName),
+                                value),
+                            ];
                     } else {
                         return [tstl.createVariableDeclarationStatement(identifierName, value)];
                     }
@@ -958,11 +963,14 @@ export class LuaTransformer {
             } else {
                 // local identifierName = nil;
                 if (isVariableExported) {
-                    return [tstl.createAssignmentStatement(
-                        this.createExportedIdentifier(identifierName), tstl.createNilLiteral())];
+                    return [
+                        tstl.createAssignmentStatement(
+                            this.createExportedIdentifier(identifierName), tstl.createNilLiteral()),
+                        ];
                 } else {
-                    return [tstl.createVariableDeclarationStatement(
-                        identifierName, tstl.createNilLiteral()),
+                    return [
+                        tstl.createVariableDeclarationStatement(
+                            identifierName, tstl.createNilLiteral()),
                     ];
                 }
             }

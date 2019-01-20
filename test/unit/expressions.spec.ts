@@ -13,9 +13,9 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
-    @TestCase("let a = delete tbl['test']", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("let a = delete tbl['test']", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
     @TestCase("delete tbl['test']", "tbl.test = nil;")
-    @TestCase("let a = delete tbl.test", "local a = (function ()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("let a = delete tbl.test", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
     @TestCase("delete tbl.test", "tbl.test = nil;")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {
@@ -204,14 +204,6 @@ export class ExpressionTests {
     @TestCase("true ? undefined : true", undefined, { luaTarget: LuaTarget.LuaJIT })
     @Test("Ternary operator")
     public ternaryOperator(input: string, expected: any, options?: ts.CompilerOptions): void {
-        console.log(util.transpileString(
-            `const literalValue = 'literal';
-            let variableValue:string;
-            let maybeBooleanValue:string|boolean = false;
-            let maybeUndefinedValue:string|undefined;
-            return ${input};`, options
-
-        ));
         const result = util.transpileAndExecute(
             `const literalValue = 'literal';
             let variableValue:string;

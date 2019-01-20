@@ -1,7 +1,7 @@
 MergedClass = MergedClass or {};
 MergedClass.__index = MergedClass;
 MergedClass.new = function(construct, ...)
-    local self =setmetatable({}, MergedClass);
+    local self = setmetatable({}, MergedClass);
     self.propertyFunc = function(____)
     end;
     if construct and MergedClass.constructor then

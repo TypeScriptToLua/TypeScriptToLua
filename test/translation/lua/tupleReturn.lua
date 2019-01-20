@@ -1,4 +1,4 @@
-tupleReturn = function ()
+tupleReturn = function()
     return 0, "foobar";
 end;
 tupleReturn();
@@ -13,16 +13,16 @@ e = ({tupleReturn()});
 f = noTupleReturn();
 foo(({tupleReturn()}));
 foo(noTupleReturn());
-tupleReturnFromVar = function ()
+tupleReturnFromVar = function()
     local r = {1, "baz"};
     return table.unpack(r);
 end;
-tupleReturnForward = function ()
+tupleReturnForward = function()
     return tupleReturn();
 end;
-tupleNoForward = function ()
+tupleNoForward = function()
     return ({tupleReturn()});
 end;
-tupleReturnUnpack = function ()
+tupleReturnUnpack = function()
     return table.unpack(tupleNoForward());
 end;

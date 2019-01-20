@@ -1,8 +1,9 @@
-local exports = exports or {}
-local TestSpace = exports.TestSpace or TestSpace or {}
+local exports = exports or {};
+exports.TestSpace = exports.TestSpace or {};
+local TestSpace = exports.TestSpace;
 do
-    local function innerFunc()
-    end
+    local innerFunc;
+    innerFunc = function()
+    end;
 end
-exports.TestSpace = TestSpace
-return exports
+return exports;

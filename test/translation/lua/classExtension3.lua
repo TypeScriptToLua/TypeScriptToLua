@@ -1,4 +1,4 @@
-RenamedTestClass.myFunction = function (self)
+RenamedTestClass.myFunction = function(self)
 end;
-RenamedMyClass.myFunction = function (self)
+RenamedMyClass.myFunction = function(self)
 end;

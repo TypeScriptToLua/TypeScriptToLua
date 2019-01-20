@@ -1,30 +1,32 @@
-MergedClass = MergedClass or {}
-MergedClass.__index = MergedClass
-function MergedClass.new(construct, ...)
-    local self = setmetatable({}, MergedClass)
+MergedClass = MergedClass or {};
+MergedClass.__index = MergedClass;
+MergedClass.new = function(construct, ...)
+    local self =setmetatable({}, MergedClass);
     self.propertyFunc = function(____)
-end
-    if construct and MergedClass.constructor then MergedClass.constructor(self, ...) end
-    return self
-end
-function MergedClass.constructor(self)
-end
-function MergedClass.staticMethodA(self)
-end
-function MergedClass.staticMethodB(self)
+    end;
+    if construct and MergedClass.constructor then
+        MergedClass.constructor(self, ...);
+    end
+    return self;
+end;
+MergedClass.constructor = function(self)
+end;
+MergedClass.staticMethodA = function(self)
+end;
+MergedClass.staticMethodB = function(self)
     self:staticMethodA();
-end
-function MergedClass.methodA(self)
-end
-function MergedClass.methodB(self)
+end;
+MergedClass.methodA = function(self)
+end;
+MergedClass.methodB = function(self)
     self:methodA();
     self:propertyFunc();
-end
-MergedClass = MergedClass or {}
+end;
+MergedClass = MergedClass or {};
 do
-    local function namespaceFunc()
-    end
-    MergedClass.namespaceFunc = namespaceFunc
+    local namespaceFunc;
+    namespaceFunc = function()
+    end;
 end
 local mergedClass = MergedClass.new(true);
 mergedClass:methodB();

@@ -308,7 +308,7 @@ export class LuaPrinter {
             paramterArr.push(this.printDotsLiteral(expression.dots));
         }
 
-        let result = `function (${paramterArr.join(", ")})\n`;
+        let result = `function(${paramterArr.join(", ")})\n`;
         this.pushIndent();
         result += this.printBlock(expression.body);
         this.popIndent();

@@ -80,6 +80,20 @@ export class LuaTransformer {
         this.isModule = tsHelper.isFileModule(node);
 
         const statements = this.transformStatements(node.statements);
+        if (this.isModule) {
+            statements.unshift(
+                tstl.createVariableDeclarationStatement(
+                    tstl.createIdentifier("exports"),
+                    tstl.createBinaryExpression(
+                        tstl.createIdentifier("exports"),
+                        tstl.createTableExpression(),
+                        tstl.SyntaxKind.OrOperator
+                    )));
+            statements.push(
+                tstl.createReturnStatement(
+                    [tstl.createIdentifier("exports")]
+                ));
+        }
 
         return [tstl.createBlock(statements, undefined, node), this.luaLibFeatureSet];
     }
@@ -738,11 +752,11 @@ export class LuaTransformer {
             const namespaceDeclaration = tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(
                     this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
-                    this.transformIdentifier(statement.name as ts.Identifier)),
+                    tstl.createStringLiteral(this.transformIdentifier(statement.name as ts.Identifier).text)),
                 tstl.createBinaryExpression(
                     tstl.createTableIndexExpression(
                         this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
-                        this.transformIdentifier(statement.name as ts.Identifier)),
+                        tstl.createStringLiteral(this.transformIdentifier(statement.name as ts.Identifier).text)),
                     tstl.createTableExpression(),
                     tstl.SyntaxKind.OrOperator));
 
@@ -753,7 +767,7 @@ export class LuaTransformer {
                 this.transformIdentifier(statement.name as ts.Identifier),
                 tstl.createTableIndexExpression(
                     this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
-                    this.transformIdentifier(statement.name as ts.Identifier)));
+                    tstl.createStringLiteral(this.transformIdentifier(statement.name as ts.Identifier).text)));
 
             result.push(localDeclaration);
         } else if (this.isModule && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export)) {
@@ -775,16 +789,17 @@ export class LuaTransformer {
             result.push(localDeclaration);
         } else {
             // local NS = NS or {}
-            const localDeclaration = tstl.createVariableDeclarationStatement(
+            // TODO this is somewhat redundant since createLocalOrGlobalDeclaration also handles exports
+            const localDeclaration = this.createLocalOrGlobalDeclaration(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 tstl.createBinaryExpression(
-                    tstl.createIdentifier("NS"),
+                    this.transformIdentifier(statement.name as ts.Identifier),
                     tstl.createTableExpression(),
                     tstl.SyntaxKind.OrOperator
                 )
             );
 
-            result.push(localDeclaration);
+            result.push(...localDeclaration);
         }
 
         // Set current namespace for nested NS
@@ -794,7 +809,7 @@ export class LuaTransformer {
 
         // Transform moduleblock to block and visit it
         if (statement.body && ts.isModuleBlock(statement.body)) {
-            result.push(...this.transformStatements(statement.body.statements));
+            result.push(tstl.createDoStatement(this.transformStatements(statement.body.statements)));
         }
 
         this.currentNamespace = previousNamespace;

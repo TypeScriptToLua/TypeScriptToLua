@@ -1,18 +1,18 @@
 MyClass = MyClass or {};
 MyClass.__index = MyClass;
-MyClass.new = function (construct, ...)
+MyClass.new = function(construct, ...)
     local self = setmetatable({}, MyClass);
     if construct and MyClass.constructor then
         MyClass.constructor(self, ...);
     end
     return self;
 end;
-MyClass.constructor = function (self)
+MyClass.constructor = function(self)
 end;
-MyClass.get__field = function (self)
+MyClass.get__field = function(self)
     return self._field + 4;
 end;
-MyClass.set__field = function (self, v)
+MyClass.set__field = function(self, v)
     self._field = v * 2;
 end;
 local instance = MyClass.new(true);

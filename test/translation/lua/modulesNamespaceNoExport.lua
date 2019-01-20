@@ -1,3 +1,3 @@
-TestSpace = TestSpace or {}
+TestSpace = TestSpace or {};
 do
 end

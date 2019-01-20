@@ -7,7 +7,6 @@ import * as tstl from "./LuaAST";
 import {LuaLib, LuaLibFeature} from "./LuaLib";
 import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 import {TSTLErrors} from "./TSTLErrors";
-import { isArray } from "util";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;
@@ -3128,7 +3127,7 @@ export class LuaTransformer {
             || this.currentNamespace
             || (tsOriginal && tsHelper.findFirstNodeAbove(tsOriginal, ts.isFunctionLike))
         ) {
-            if (!isArray(lhs)) {
+            if (!Array.isArray(lhs)) {
                 lhs = [lhs];
             }
             const shouldExport = lhs.some(i => this.isIdentifierExported(i.text));

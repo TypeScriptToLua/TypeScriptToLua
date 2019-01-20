@@ -139,6 +139,8 @@ export class LuaTransformer {
                 return this.transformContinueStatement(node as ts.ContinueStatement);
             case ts.SyntaxKind.EmptyStatement:
                 return this.transformEmptyStatement(node as ts.EmptyStatement);
+            case ts.SyntaxKind.NotEmittedStatement:
+                return undefined;
             default:
                 throw TSTLErrors.UnsupportedKind("Statement", node.kind, node);
         }
@@ -1553,10 +1555,14 @@ export class LuaTransformer {
             case ts.SyntaxKind.EmptyStatement:
                 // TODO move to extra function (consistency)
                 return undefined;
+            case ts.SyntaxKind.NotEmittedStatement:
+                return undefined;
             case ts.SyntaxKind.ClassExpression:
                 const className = tstl.createIdentifier("____");
                 const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
                 return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
+            case ts.SyntaxKind.PartiallyEmittedExpression:
+                return this.transformExpression((expression as ts.PartiallyEmittedExpression).expression);
             default:
                 throw TSTLErrors.UnsupportedKind("expression", expression.kind, expression);
         }

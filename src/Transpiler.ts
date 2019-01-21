@@ -2128,13 +2128,15 @@ export abstract class LuaTranspiler {
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}{}\n`;
             this.pushExport(className, node);
         } else {
-            const baseName = extendsType.symbol.escapedName;
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(node, this.checker);
+            const baseName = this.transpileNode(extendedTypeNode.expression);
             result += this.indent + this.accessPrefix(node) + `${className} = ${classOr}${baseName}.new()\n`;
             this.pushExport(className, node);
         }
         result += this.indent + `${className}.__index = ${className}\n`;
         if (extendsType) {
-            const baseName = extendsType.symbol.escapedName;
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(node, this.checker);
+            const baseName = this.transpileNode(extendedTypeNode.expression);
             result += this.indent + `${className}.__base = ${baseName}\n`;
         }
         result += this.indent + `function ${className}.new(construct, ...)\n`;

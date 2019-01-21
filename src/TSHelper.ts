@@ -56,19 +56,25 @@ export class TSHelper {
         return result;
     }
 
-    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
+    public static getExtendedTypeNode(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker):
+    ts.ExpressionWithTypeArguments | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                     const superType = checker.getTypeAtLocation(clause.types[0]);
                     const decorators = this.getCustomDecorators(superType, checker);
                     if (!decorators.has(DecoratorKind.PureAbstract)) {
-                        return superType;
+                        return clause.types[0];
                     }
                 }
             }
         }
         return undefined;
+    }
+
+    public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
+        const extendedTypeNode = this.getExtendedTypeNode(node, checker);
+        return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
     }
 
     public static isFileModule(sourceFile: ts.SourceFile): boolean {

@@ -277,6 +277,30 @@ export class ClassTests {
         Expect(result).toBe(10);
     }
 
+    @Test("renamedClassExtends")
+    public renamedClassExtends(): void
+    {
+        const result = util.transpileAndExecute(
+            `const b = new B();
+            return b.value;`,
+            undefined, undefined,
+            `namespace Classes {
+                export class Base {
+                    public value: number;
+                    constructor(){ this.value = 3; }
+                }
+            }
+
+            const A = Classes.Base;
+            class B extends A {
+                constructor(){ super(); }
+            };`
+        );
+
+        // Assert
+        Expect(result).toBe(3);
+    }
+
     @Test("ClassMethodCall")
     public classMethodCall(): void {
         const result = util.transpileAndExecute(

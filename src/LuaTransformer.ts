@@ -384,7 +384,8 @@ export class LuaTransformer {
 
         // Write class declaration
         if (extendsType) {
-            const baseName = tstl.createIdentifier(extendsType.symbol.escapedName as string);
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(statement, this.checker);
+            const baseName = this.transformExpression(extendedTypeNode.expression);
 
             // baseName.new
             const newIndex = tstl.createTableIndexExpression(baseName, tstl.createStringLiteral("new"));
@@ -428,7 +429,9 @@ export class LuaTransformer {
         result.push(assignClassIndex);
 
         if (extendsType) {
-            const baseName = tstl.createIdentifier(extendsType.symbol.escapedName as string);
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(statement, this.checker);
+            const baseName = this.transformExpression(extendedTypeNode.expression);
+
             // className.__base = baseName
             const classBase = tstl.createTableIndexExpression(className, tstl.createStringLiteral("__base"));
 

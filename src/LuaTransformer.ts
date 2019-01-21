@@ -853,7 +853,10 @@ export class LuaTransformer {
                     ));
                 }
             } else {
-                const table = this.transformIdentifier(enumDeclaration.name);
+                let table: tstl.Identifier | tstl.TableIndexExpression = this.transformIdentifier(enumDeclaration.name);
+                if (this.isIdentifierExported(enumDeclaration.name.text)) {
+                    table = this.createExportedIdentifier(table);
+                }
                 const property = tstl.createTableIndexExpression(table, memberName, undefined);
                 result.push(tstl.createAssignmentStatement(property, enumMember.value, undefined, enumMember.original));
             }
@@ -2987,7 +2990,7 @@ export class LuaTransformer {
     }
 
     public isIdentifierExported(identifierName: string | ts.__String): boolean {
-        if (!this.isModule) {
+        if (!this.isModule && !this.currentNamespace) {
             return false;
         }
         const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
@@ -3136,7 +3139,9 @@ export class LuaTransformer {
                 statements.push(
                     tstl.createAssignmentStatement(lhs.map(i => this.createExportedIdentifier(i)), rhs, parent));
             } else {
-                statements.push(tstl.createVariableDeclarationStatement(lhs, rhs, parent));
+                // Separate declaration from assignment to allow for recursion
+                statements.push(tstl.createVariableDeclarationStatement(lhs, undefined, parent));
+                statements.push(tstl.createAssignmentStatement(lhs, rhs, parent));
             }
         } else {
             statements.push(tstl.createAssignmentStatement(lhs, rhs, parent, tsOriginal));

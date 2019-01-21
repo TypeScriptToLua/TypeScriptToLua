@@ -1679,16 +1679,23 @@ export class LuaTransformer {
     }
 
     public transformAssignment(lhs: ts.Expression, right: tstl.Expression): tstl.Statement {
-        if (ts.isPropertyAccessExpression(lhs) && tsHelper.hasSetAccessor(lhs, this.checker)) {
-            return tstl.createExpressionStatement(this.transformSetAccessor(lhs, right), undefined, lhs.parent);
-        } else {
-            return tstl.createAssignmentStatement(
-                this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,
-                right,
-                undefined,
-                lhs.parent
-            );
+        if (ts.isPropertyAccessExpression(lhs)) {
+            const hasSetAccessor = tsHelper.hasSetAccessor(lhs, this.checker);
+            if (hasSetAccessor) {
+                return tstl.createExpressionStatement(this.transformSetAccessor(lhs, right), undefined, lhs.parent);
+            } else if (hasSetAccessor === undefined) {
+                // Undefined hasSetAccessor indicates a union with both set accessors and no accessors
+                // on the same field.
+                throw TSTLErrors.UnsupportedUnionAccessor(lhs);
+            }
         }
+
+        return tstl.createAssignmentStatement(
+            this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,
+            right,
+            undefined,
+            lhs.parent
+        );
     }
 
     public transformAssignmentStatement(expression: ts.BinaryExpression): tstl.Statement {
@@ -2495,8 +2502,12 @@ export class LuaTransformer {
     public transformPropertyAccessExpression(node: ts.PropertyAccessExpression): tstl.Expression {
         const property = node.name.text;
 
-        if (tsHelper.hasGetAccessor(node, this.checker)) {
+        const hasGetAccessor = tsHelper.hasGetAccessor(node, this.checker);
+        if (hasGetAccessor) {
             return this.transformGetAccessor(node);
+        } else if (hasGetAccessor === undefined) {
+            // Undefined hasGetAccessor indicates a union with both get accessors and no accessors on the same field.
+            throw TSTLErrors.UnsupportedUnionAccessor(node);
         }
 
         // Check for primitive types to override

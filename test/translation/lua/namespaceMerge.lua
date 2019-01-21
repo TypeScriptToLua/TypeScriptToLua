@@ -24,8 +24,7 @@ MergedClass.methodB = function(self)
 end;
 MergedClass = MergedClass or {};
 do
-    local namespaceFunc;
-    namespaceFunc = function()
+    MergedClass.namespaceFunc = function()
     end;
 end
 local mergedClass = MergedClass.new(true);

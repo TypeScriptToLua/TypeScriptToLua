@@ -1,10 +1,9 @@
-local exports = exports or {}
-local test = exports.test or test or {}
+local exports = exports or {};
+exports.test = exports.test or {};
+local test = exports.test;
 do
-    local TestEnum={}
-    TestEnum.foo="foo"
-    TestEnum.bar="bar"
-    test.TestEnum = TestEnum
+    test.TestEnum = {};
+    test.TestEnum.foo = "foo";
+    test.TestEnum.bar = "bar";
 end
-exports.test = test
-return exports
+return exports;

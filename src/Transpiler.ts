@@ -2004,6 +2004,9 @@ export abstract class LuaTranspiler {
             methodName = "__tostring";
         }
 
+        const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        this.importLuaLibFeature( LuaLibFeature.Async );
+
         const type = this.checker.getTypeAtLocation(node);
         const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void ? "self" : undefined;
         const [paramNames, spreadIdentifier] = this.transpileParameters(node.parameters, context);
@@ -2012,7 +2015,11 @@ export abstract class LuaTranspiler {
         if (!ts.isIdentifier(node.name)) {
             result += this.indent + `${callPath}[${methodName}] = function(${paramNames.join(",")})\n`;
         } else {
-            result += this.indent + `function ${callPath}.${methodName}(${paramNames.join(",")})\n`;
+            if ( isAsync ) {
+              result += this.indent + `${callPath}.${methodName} = __TS__Async(function(${paramNames.join(",")})\n`;
+            } else {
+              result += this.indent + `function ${callPath}.${methodName}(${paramNames.join(",")})\n`;
+            }
         }
 
         this.pushIndent();
@@ -2020,7 +2027,7 @@ export abstract class LuaTranspiler {
         this.popIndent();
 
         // Close function block
-        result += this.indent + "end\n";
+        result += this.indent + ( isAsync ? "end)\n" : "end\n");
 
         return result;
     }

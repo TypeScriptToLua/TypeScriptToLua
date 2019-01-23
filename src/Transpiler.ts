@@ -775,6 +775,11 @@ export abstract class LuaTranspiler {
 
     public transpileExpression(node: ts.Node, brackets?: boolean): string {
         switch (node.kind) {
+            case ts.SyntaxKind.AwaitExpression:
+                return this.transpileLuaLibFunction(
+                  LuaLibFeature.Await,
+                  this.transpileExpression( (node as ts.ParenthesizedExpression).expression )
+                );
             case ts.SyntaxKind.BinaryExpression:
                 // Add brackets to preserve ordering
                 return this.transpileBinaryExpression(node as ts.BinaryExpression, brackets);

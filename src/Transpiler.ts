@@ -2288,12 +2288,17 @@ export abstract class LuaTranspiler {
             node.parameters,
             hasContext ? context : undefined
         );
-        let result = `function(${paramNames.join(",")})\n`;
+
+        const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        this.importLuaLibFeature( LuaLibFeature.Async );
+
+        let result = isAsync ? "__TS__Async(" : "";
+        result = result + `function(${paramNames.join(",")})\n`;
         this.pushIndent();
         const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
         result += this.transpileFunctionBody(node.parameters, body, spreadIdentifier);
         this.popIndent();
-        return result + this.indent + "end";
+        return result + this.indent + ( isAsync ? "end)" : "end");
     }
 
     public transpileParameterDefaultValues(params: ts.ParameterDeclaration[]): string {

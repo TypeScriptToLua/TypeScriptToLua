@@ -944,7 +944,7 @@ export class LuaTransformer {
         );
         const functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
 
-        return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, undefined, functionDeclaration);
+        return this.createLocalOrExportedDeclaration(name, functionExpression, undefined, functionDeclaration);
     }
 
     public transformTypeAliasDeclaration(statement: ts.TypeAliasDeclaration): undefined {

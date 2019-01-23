@@ -3115,7 +3115,9 @@ export class LuaTransformer {
             statements.push(
                 tstl.createAssignmentStatement(lhs.map(i => this.createExportedIdentifier(i)), rhs, parent));
         } else {
-            if (tsOriginal && tsHelper.findFirstNodeAbove(tsOriginal, ts.isFunctionLike)) {
+            // TODO this check probably should be moved out of this function or be improved?
+            if (tsOriginal &&
+                (ts.isFunctionLike(tsOriginal) || tsHelper.findFirstNodeAbove(tsOriginal, ts.isFunctionLike))) {
                 // Separate declaration from assignment to allow for recursion
                 statements.push(tstl.createVariableDeclarationStatement(lhs, undefined, parent));
                 statements.push(tstl.createAssignmentStatement(lhs, rhs, parent));

@@ -14,16 +14,16 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "test": "npm run style-check && tslint -c ./tslint.json src/lualib/*.ts && npm run build-lualib && ts-node ./test/runner.ts",
-        "coverage": "nyc npm test && nyc report --reporter=text-lcov > coverage.lcov",
-        "coverage-html": "nyc npm test && nyc report --reporter=html",
-        "test-threaded": "style-check && npm run build && ts-node ./test/threaded_runner.ts",
+        "test": "npm run style-check && npm run build-lualib && tsc -p ./test/tsconfig.json && node ./test/runner.js",
+        "coverage": "nyc --source-map=true npm test && nyc report --reporter=text-lcov > coverage.lcov",
+        "coverage-html": "nyc --source-map=true npm test && nyc report --reporter=html",
+        "test-threaded": "npm run style-check && npm run build && node ./test/threaded_runner.js",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "style-check": "tslint -p .",
+        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts",
         "style-fix": "gts fix && tslint -p . --fix"
     },
     "bin": {

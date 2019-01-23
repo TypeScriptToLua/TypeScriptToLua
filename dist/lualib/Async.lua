@@ -18,7 +18,7 @@ function __TS__Async( f )
     end
 
     local args = {...}
-    return promise.resolve():next(function()
+    return Promise.resolve():next(function()
       return handleNext(table.unpack(args))
     end )
   end

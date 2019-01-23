@@ -1902,6 +1902,9 @@ export abstract class LuaTranspiler {
         // Don't transpile functions without body (overload declarations)
         if (!node.body) { return ""; }
 
+        const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        this.importLuaLibFeature( LuaLibFeature.Async );
+
         let result = "";
         const methodName = this.transpileIdentifier(node.name);
 
@@ -1913,17 +1916,24 @@ export abstract class LuaTranspiler {
 
         if (!tsHelper.isInGlobalScope(node)) {
             prefix = "local ";
+            if ( isAsync ) {
+              prefix = prefix + methodName + ";";
+            }
         }
 
         // Build function header
-        result += this.indent + prefix + `function ${methodName}(${paramNames.join(",")})\n`;
+        if ( isAsync ) {
+          result += this.indent + prefix + `${methodName} = __TS__Async(function(${paramNames.join(",")})\n`;
+        } else {
+          result += this.indent + prefix + `function ${methodName}(${paramNames.join(",")})\n`;
+        }
 
         this.pushIndent();
         result += this.transpileFunctionBody(node.parameters, node.body, spreadIdentifier);
         this.popIndent();
 
         // Close function block
-        result += this.indent + "end\n";
+        result += this.indent + (isAsync ? "end)\n" : "end\n" );
 
         this.pushExport(methodName, node);
 

@@ -14,8 +14,8 @@ import { LuaTransformer } from "../../src/LuaTransformer";
 
 export function transpileString(str: string, options?: CompilerOptions, ignoreDiagnostics = true): string {
     if (options) {
-        if (options.addHeader === undefined) {
-            options.addHeader = false;
+        if (options.noHeader === undefined) {
+            options.noHeader = true;
         }
         return compilerTranspileString(str, options, ignoreDiagnostics);
     } else {
@@ -25,7 +25,7 @@ export function transpileString(str: string, options?: CompilerOptions, ignoreDi
                 luaLibImport: LuaLibImportKind.Require,
                 luaTarget: LuaTarget.Lua53,
                 target: ts.ScriptTarget.ES2015,
-                addHeader: false,
+                noHeader: true,
             },
             ignoreDiagnostics
         );

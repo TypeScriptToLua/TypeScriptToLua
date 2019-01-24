@@ -1,5 +1,4 @@
-local exports = exports or {}
-local test = nil;
-test = 1;
-exports.test = test
-return exports
+local exports = exports or {};
+exports.test = nil;
+exports.test = 1;
+return exports;

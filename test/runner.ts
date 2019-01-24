@@ -7,7 +7,7 @@ import * as path from "path";
 const testSet = TestSet.create();
 
 // add your tests
-testSet.addTestsFromFiles("./test/**/*.spec.ts");
+testSet.addTestsFromFiles("./test/**/*.spec.js");
 
 // create a test runner
 const testRunner = new TestRunner();

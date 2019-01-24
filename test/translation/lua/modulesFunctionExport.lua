@@ -1,5 +1,4 @@
-local exports = exports or {}
-local function publicFunc()
-end
-exports.publicFunc = publicFunc
-return exports
+local exports = exports or {};
+exports.publicFunc = function()
+end;
+return exports;

@@ -1,3 +1,3 @@
-myFunc = function ()
+myFunc = function()
     return;
 end;

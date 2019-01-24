@@ -41,7 +41,7 @@ export class AssignmentTests {
     @TestCase("true", "true")
     @TestCase("false", "false")
     @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"}`)
-    @Test("Const assignment")
+    @Test("Let assignment")
     public letAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`let myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out};`);
@@ -53,10 +53,10 @@ export class AssignmentTests {
     @TestCase("true", "true")
     @TestCase("false", "false")
     @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"}`)
-    @Test("Const assignment")
+    @Test("Var assignment")
     public varAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`var myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out};`);
+        Expect(lua).toBe(`myvar = ${out};`);
     }
 
     @TestCase("var myvar;")

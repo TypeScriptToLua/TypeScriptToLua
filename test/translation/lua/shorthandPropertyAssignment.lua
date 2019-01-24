@@ -1,4 +1,4 @@
 local f;
-f = function (x)
+f = function(x)
     return ({x = x});
 end;

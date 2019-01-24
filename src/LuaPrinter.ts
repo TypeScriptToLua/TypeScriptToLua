@@ -48,7 +48,7 @@ export class LuaPrinter {
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>): string {
         let header = "";
 
-        if (this.options.addHeader === undefined || this.options.addHeader === true) {
+        if (this.options.noHeader === undefined || this.options.noHeader === false) {
             header += `--[[ Generated with https://github.com/Perryvw/TypescriptToLua ]]\n`;
         }
 
@@ -308,7 +308,7 @@ export class LuaPrinter {
             paramterArr.push(this.printDotsLiteral(expression.dots));
         }
 
-        let result = `function (${paramterArr.join(", ")})\n`;
+        let result = `function(${paramterArr.join(", ")})\n`;
         this.pushIndent();
         result += this.printBlock(expression.body);
         this.popIndent();

@@ -1,2 +1,2 @@
-TestClass.myFunction = function (self)
+TestClass.myFunction = function(self)
 end;

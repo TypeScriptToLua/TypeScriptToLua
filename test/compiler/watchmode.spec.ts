@@ -15,7 +15,7 @@ export class CompilerWatchModeTest {
         fileToChange = fileToChange;
         const fileToChangeOut = fileToChange.replace(".ts", ".lua");
 
-        const child = fork(path.join(__dirname, "watcher_proccess.ts"));
+        const child = fork(path.join(__dirname, "watcher_proccess.js"));
         child.send(args);
 
         await this.waitForFileExists(fileToChangeOut, 9000)

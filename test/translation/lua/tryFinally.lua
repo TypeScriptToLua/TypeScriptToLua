@@ -1,5 +1,5 @@
 do
-    pcall(function ()
+    pcall(function()
         local a = 42;
     end);
     do

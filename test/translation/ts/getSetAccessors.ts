@@ -8,7 +8,7 @@ class MyClass {
     }
 }
 
-var instance = new MyClass();
+let instance = new MyClass();
 instance.field = 4;
 const b = instance.field;
 const c = (4 + instance.field)*3;

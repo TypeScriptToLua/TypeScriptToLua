@@ -14,7 +14,7 @@ export class LuaTransformer52 extends LuaTransformer51
     {
         this.pushScope(ScopeType.Loop);
         const baseResult: tstl.Statement[] = [tstl.createDoStatement(super.transformLoopBody(loop))];
-        const scopeId = this.popScope().id;
+        const scopeId = this.popScope(baseResult).id;
 
         const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
         baseResult.push(continueLabel);

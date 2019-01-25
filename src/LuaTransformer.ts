@@ -1470,7 +1470,8 @@ export class LuaTransformer {
     }
 
     public transformBreakStatement(breakStatement: ts.BreakStatement): StatementVisitResult {
-        if (this.peekScope().type === ScopeType.Switch) {
+        const breakableScopes = [ScopeType.Loop, ScopeType.Switch];
+        if (this.findScope(...breakableScopes).type === ScopeType.Switch) {
             return tstl.createGotoStatement(`____TS_switch${this.scopeStack.length}_end`);
         } else {
             return tstl.createBreakStatement(undefined, breakStatement);
@@ -3154,14 +3155,16 @@ export class LuaTransformer {
     {
         if (this.shouldExportIdentifier(lhs)) {
             // exported
-            if (Array.isArray(lhs)) {
+            if (!rhs) {
+                return [];
+            } else if (Array.isArray(lhs)) {
                 return [tstl.createAssignmentStatement(lhs.map(i => this.createExportedIdentifier(i)), rhs, parent)];
             } else {
                 return [tstl.createAssignmentStatement(this.createExportedIdentifier(lhs), rhs, parent)];
             }
         }
 
-        const insideFunction = this.scopeStack.some(s => s.type === ScopeType.Function);
+        const insideFunction = this.findScope(ScopeType.Function) !== undefined;
         const isLetOrConst = tsOriginal && ts.isVariableDeclaration(tsOriginal)
             && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
         if (this.isModule || this.currentNamespace || insideFunction || isLetOrConst) {
@@ -3265,6 +3268,15 @@ export class LuaTransformer {
 
     private expressionPlusOne(expression: tstl.Expression): tstl.BinaryExpression {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
+    }
+
+    protected findScope(...scopeTypes: ScopeType[]): Scope | undefined {
+        for (let i = this.scopeStack.length - 1; i >= 0; --i) {
+            if (scopeTypes.indexOf(this.scopeStack[i].type) >= 0) {
+                return this.scopeStack[i];
+            }
+        }
+        return undefined;
     }
 
     protected peekScope(): Scope {

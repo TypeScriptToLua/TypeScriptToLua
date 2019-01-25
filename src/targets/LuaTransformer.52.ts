@@ -13,7 +13,7 @@ export class LuaTransformer52 extends LuaTransformer51
     ): tstl.Statement[]
     {
         this.pushScope(ScopeType.Loop);
-        const baseResult: tstl.Statement[] = [tstl.createDoStatement(super.transformLoopBody(loop))];
+        const baseResult: tstl.Statement[] = [tstl.createDoStatement(this.transformBlockOrStatement(loop.statement))];
         const scopeId = this.popScope(baseResult).id;
 
         const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
@@ -25,7 +25,7 @@ export class LuaTransformer52 extends LuaTransformer51
     /** @override */
     public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
         return tstl.createGotoStatement(
-            `__continue${this.peekScope().id}`,
+            `__continue${this.findScope(ScopeType.Loop).id}`,
             undefined,
             statement
         );

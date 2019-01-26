@@ -3,8 +3,3 @@ export {compile, compileFilesWithOptions, transpileString, watchWithOptions} fro
 export {CompilerOptions, LuaLibImportKind, LuaTarget,} from "./CompilerOptions";
 export {LuaLibFeature,} from "./LuaLib";
 export {LuaTranspiler,} from "./LuaTranspiler";
-export {LuaTransformer51} from "./targets/LuaTransformer.51";
-export {LuaTransformer52} from "./targets/LuaTransformer.52";
-export {LuaTransformer53} from "./targets/LuaTransformer.53";
-export {LuaTransformerJIT} from "./targets/LuaTransformer.JIT";
-export {createTransformer} from "./TransformerFactory";

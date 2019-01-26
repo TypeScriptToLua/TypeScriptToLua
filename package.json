@@ -19,7 +19,7 @@
         "posttest": "npm run clean",
         "coverage": "nyc --source-map=true npm test && nyc report --reporter=text-lcov > coverage.lcov",
         "coverage-html": "nyc --source-map=true npm test && nyc report --reporter=html",
-        "test-threaded": "npm run pretest && ./test/threaded_runner.js && npm run posttest",
+        "test-threaded": "npm run pretest && node ./test/threaded_runner.js && npm run posttest",
         "clean": "rimraf \"src/**/*.js\" \"src/**/*.js.map\" \"test/**/*.js\" \"test/**/*.js.map\"",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",

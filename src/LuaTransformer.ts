@@ -2348,7 +2348,7 @@ export class LuaTransformer {
 
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(
-                    tstl.createTableIndexExpression(classIdentifier, baseIdentifier),
+                    tstl.createTableIndexExpression(this.addExportToIdentifier(classIdentifier), baseIdentifier),
                     constructorIdentifier
                 ),
                 parameters

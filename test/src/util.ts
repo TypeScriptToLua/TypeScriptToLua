@@ -5,7 +5,6 @@ import { Expect } from "alsatian";
 
 import { transpileString as compilerTranspileString } from "../../src/Compiler";
 import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
-import { createTransformer } from "../../src/TransformerFactory";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
@@ -77,7 +76,7 @@ export function expectCodeEqual(code1: string, code2: string): void {
 
 // Get a mock transformer to use for testing
 export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
-    return createTransformer(ts.createProgram([], {luaTarget: target}));
+    return new LuaTransformer(ts.createProgram([], {luaTarget: target}));
 }
 
 export function transpileAndExecute(

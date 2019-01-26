@@ -1207,7 +1207,19 @@ export class LuaTransformer {
         loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
     ): tstl.Statement[]
     {
-        return this.transformBlockOrStatement(loop.statement);
+        this.pushScope(ScopeType.Loop);
+        const body = this.transformBlockOrStatement(loop.statement);
+        const scopeId = this.popScope().id;
+
+        if (this.options.luaTarget === LuaTarget.Lua51) {
+            return body;
+        }
+
+        const baseResult: tstl.Statement[] = [tstl.createDoStatement(body)];
+        const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
+        baseResult.push(continueLabel);
+
+        return baseResult;
     }
 
     public transformBlockOrStatement(statement: ts.Statement): tstl.Statement[] {
@@ -1508,7 +1520,15 @@ export class LuaTransformer {
     }
 
     public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
-        throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, statement);
+        if (this.options.luaTarget === LuaTarget.Lua51) {
+            throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, statement);
+        }
+
+        return tstl.createGotoStatement(
+            `__continue${this.peekScope().id}`,
+            undefined,
+            statement
+        );
     }
 
     public transformEmptyStatement(arg0: ts.EmptyStatement): StatementVisitResult {

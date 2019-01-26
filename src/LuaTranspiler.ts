@@ -7,7 +7,6 @@ import * as tstl from "./LuaAST";
 import {CompilerOptions, LuaLibImportKind} from "./CompilerOptions";
 import {LuaPrinter} from "./LuaPrinter";
 import {LuaTransformer} from "./LuaTransformer";
-import {createTransformer} from "./TransformerFactory";
 
 export class LuaTranspiler {
     private program: ts.Program;
@@ -21,7 +20,7 @@ export class LuaTranspiler {
     constructor(program: ts.Program) {
         this.program = program;
         this.options = this.program.getCompilerOptions() as CompilerOptions;
-        this.luaTransformer = createTransformer(this.program);
+        this.luaTransformer = new LuaTransformer(this.program);
         this.luaPrinter = new LuaPrinter(this.options);
     }
 

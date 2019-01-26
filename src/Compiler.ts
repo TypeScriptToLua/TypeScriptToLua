@@ -5,7 +5,6 @@ import * as ts from "typescript";
 import {parseCommandLine} from "./CommandLineParser";
 import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaTranspiler} from "./LuaTranspiler";
-import {createTransformer} from "./TransformerFactory";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);

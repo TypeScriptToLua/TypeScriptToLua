@@ -1798,7 +1798,7 @@ export class LuaTransformer {
         }
 
         if (
-            ts.isPropertyAccessExpression(expression.left) && !tsHelper.hasSetAccessor(expression.left, this.checker)
+            (ts.isPropertyAccessExpression(expression.left) && !tsHelper.hasSetAccessor(expression.left, this.checker))
             || ts.isElementAccessExpression(expression.left)
         ) {
             // Left is property/element access: cache result while maintaining order of evaluation

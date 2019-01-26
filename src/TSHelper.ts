@@ -514,7 +514,8 @@ export class TSHelper {
     }
 
     public static isValidLuaIdentifier(str: string): boolean {
-        return str.match(/[a-zA-Z_][a-zA-Z0-9_]*/) !== null;
+        const match = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
+        return match && match[0] === str;
     }
 
     public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {

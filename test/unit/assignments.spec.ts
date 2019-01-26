@@ -803,4 +803,14 @@ export class AssignmentTests {
             "Unsupported assignment of mixed function/method overload. "
             + "Overloads should either be all functions or all methods, but not both.");
     }
+
+    @Test("String table access")
+    public stringTableAccess(assignType: string): void {
+        const code = `const dict : {[key:string]:any} = {};
+                      dict["a b"] = 3;
+                      return dict["a b"];`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(3);
+    }
+
 }

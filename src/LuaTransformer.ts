@@ -160,7 +160,7 @@ export class LuaTransformer {
         }
     }
 
-    /** Convers an array of ts.Statements into an array of tstl.Statements */
+    /** Converts an array of ts.Statements into an array of tstl.Statements */
     public transformStatements(statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
         const tstlStatements: tstl.Statement[] = [];
         (statements as ts.Statement[]).forEach(statement => {
@@ -1614,7 +1614,8 @@ export class LuaTransformer {
         left: tstl.Expression,
         right: tstl.Expression,
         operator: tstl.BinaryOperator
-    ): tstl.Expression {
+    ): tstl.Expression
+    {
         switch (operator) {
             case tstl.SyntaxKind.BitwiseAndOperator:
             case tstl.SyntaxKind.BitwiseOrOperator:
@@ -1847,7 +1848,9 @@ export class LuaTransformer {
         lhs: ts.Expression,
         rhs: ts.Expression,
         replacementOperator: tstl.BinaryOperator,
-        isPostfix: boolean): tstl.CallExpression {
+        isPostfix: boolean
+    ): tstl.CallExpression
+    {
         if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
             // Check is we need to use string concat operator
             const typeLeft = this.checker.getTypeAtLocation(lhs);
@@ -2000,7 +2003,8 @@ export class LuaTransformer {
         expression: tstl.Expression,
         operator: tstl.UnaryBitwiseOperator,
         lib: string
-    ): ExpressionVisitResult {
+    ): ExpressionVisitResult
+    {
         let bitFunction: string;
         switch (operator) {
             case tstl.SyntaxKind.BitwiseNotOperator:
@@ -2021,7 +2025,8 @@ export class LuaTransformer {
         node: ts.Node,
         expression: tstl.Expression,
         operator: tstl.UnaryBitwiseOperator
-    ): ExpressionVisitResult {
+    ): ExpressionVisitResult
+    {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
@@ -2043,7 +2048,8 @@ export class LuaTransformer {
         right: tstl.Expression,
         operator: tstl.BinaryBitwiseOperator,
         lib: string
-    ): ExpressionVisitResult {
+    ): ExpressionVisitResult
+    {
         let bitFunction: string;
         switch (operator) {
             case tstl.SyntaxKind.BitwiseAndOperator:
@@ -2080,7 +2086,8 @@ export class LuaTransformer {
         left: tstl.Expression,
         right: tstl.Expression,
         operator: tstl.BinaryBitwiseOperator
-    ): ExpressionVisitResult {
+    ): ExpressionVisitResult
+    {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
                 throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);

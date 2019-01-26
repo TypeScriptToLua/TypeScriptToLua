@@ -1797,7 +1797,10 @@ export class LuaTransformer {
             );
         }
 
-        if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
+        if (
+            (ts.isPropertyAccessExpression(expression.left) && !tsHelper.hasSetAccessor(expression.left, this.checker))
+            || ts.isElementAccessExpression(expression.left)
+        ) {
             // Left is property/element access: cache result while maintaining order of evaluation
             // (function(o, i, v) o[i] = v; return v end)(${objExpression}, ${indexExpression}, ${right})
             const objParameter = tstl.createIdentifier("o");

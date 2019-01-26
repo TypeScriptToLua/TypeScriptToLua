@@ -224,6 +224,7 @@ export class ExpressionTests {
     @TestCase("inst.field | 3", 8 | 3)
     @TestCase("inst.field << 3", 8 << 3)
     @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase("inst.field = 3", 7)
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
     public getAccessorBinary(expression: string, expected: any): void {

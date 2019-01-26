@@ -203,9 +203,14 @@ export class LuaTransformer {
                 return undefined;
             }
 
-            const importUniqueName = tstl.createIdentifier(path.basename((importPath)));
+            const tstlIdentifier = (name: string) => "__TSTL_" + name;
+            const importUniqueName = tstl.createIdentifier(tstlIdentifier(path.basename((importPath))));
             const requireStatement = tstl.createVariableDeclarationStatement(
-                tstl.createIdentifier(path.basename(importPath)), requireCall, undefined, statement);
+                tstl.createIdentifier(tstlIdentifier(path.basename((importPath)))),
+                requireCall,
+                undefined,
+                statement
+            );
             result.push(requireStatement);
 
             filteredElements.forEach(importSpecifier => {

@@ -177,6 +177,10 @@ export class LuaTransformer {
         return tstl.createDoStatement(this.transformStatements(block.statements), undefined, block);
     }
 
+    public tstlIdentifier(name: string): string {
+        return "__TSTL_" + name;
+    }
+
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
         if (!statement.importClause || !statement.importClause.namedBindings) {
             throw TSTLErrors.DefaultImportsNotSupported(statement);
@@ -203,9 +207,13 @@ export class LuaTransformer {
                 return undefined;
             }
 
-            const importUniqueName = tstl.createIdentifier(path.basename((importPath)));
+            const importUniqueName = tstl.createIdentifier(this.tstlIdentifier(path.basename((importPath))));
             const requireStatement = tstl.createVariableDeclarationStatement(
-                tstl.createIdentifier(path.basename(importPath)), requireCall, undefined, statement);
+                tstl.createIdentifier(this.tstlIdentifier(path.basename((importPath)))),
+                requireCall,
+                undefined,
+                statement
+            );
             result.push(requireStatement);
 
             filteredElements.forEach(importSpecifier => {

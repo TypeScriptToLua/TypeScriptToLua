@@ -14,20 +14,19 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "pretest": "npm run style-check && npm run build && tsc -p ./test/tsconfig.json",
+        "pretest": "npm run clean && npm run style-check && npm run build && tsc -p ./test/tsconfig.json",
         "test": "node ./test/runner.js",
-        "posttest": "npm run clean-tests",
+        "posttest": "npm run clean",
         "coverage": "nyc --source-map=true npm test && nyc report --reporter=text-lcov > coverage.lcov",
         "coverage-html": "nyc --source-map=true npm test && nyc report --reporter=html",
         "test-threaded": "npm run pretest && ./test/threaded_runner.js && npm run posttest",
-        "clean-tests": "npx del \"src/**/*.js\" \"src/**/*.js.map\" \"test/**/*.js\" \"test/**/*.js.map\"",
+        "clean": "rimraf \"src/**/*.js\" \"src/**/*.js.map\" \"test/**/*.js\" \"test/**/*.js.map\"",
         "release-patch": "npm version patch",
         "release-minor": "npm version minor",
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts",
-        "style-fix": "gts fix && tslint -p . --fix"
+        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
     },
     "bin": {
         "tstl": "./dist/index.js"
@@ -62,6 +61,7 @@
         "fengari": "^0.1.2",
         "glob": "^7.1.2",
         "nyc": "^11.9.0",
+        "rimraf": "^2.6.3",
         "threads": "^0.12.0",
         "ts-node": "^7.0.0",
         "tslint": "^5.10.0",

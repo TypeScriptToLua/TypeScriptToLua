@@ -3142,7 +3142,7 @@ export class LuaTransformer {
 
         const insideFunction = this.scopeStack.some(s => s.type === ScopeType.Function);
         const isLetOrConst = tsOriginal && ts.isVariableDeclaration(tsOriginal)
-            && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
+            && tsOriginal.parent && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
         if (this.isModule || this.currentNamespace || insideFunction || isLetOrConst) {
             // local
             const isFunction =

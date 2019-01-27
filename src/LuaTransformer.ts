@@ -251,7 +251,8 @@ export class LuaTransformer {
     public transformClassDeclaration(
         statement: ts.ClassLikeDeclaration,
         nameOverride?: tstl.Identifier
-    ): tstl.Statement[] {
+    ): tstl.Statement[]
+    {
         let className = statement.name ? this.transformIdentifier(statement.name) : nameOverride;
         if (!className) {
             throw TSTLErrors.MissingClassName(statement);
@@ -2946,15 +2947,15 @@ export class LuaTransformer {
     }
 
     public transformStringLiteral(literal: ts.StringLiteralLike): tstl.StringLiteral {
-        const text = this.escapeString(literal.text);
+        const text = tsHelper.escapeString(literal.text);
         return tstl.createStringLiteral(text);
     }
 
     public transformTemplateExpression(expression: ts.TemplateExpression): tstl.BinaryExpression {
-        const parts: tstl.Expression[] = [tstl.createStringLiteral(this.escapeString(expression.head.text))];
+        const parts: tstl.Expression[] = [tstl.createStringLiteral(tsHelper.escapeString(expression.head.text))];
         expression.templateSpans.forEach(span => {
             const expr = this.transformExpression(span.expression);
-            const text = tstl.createStringLiteral(this.escapeString(span.literal.text));
+            const text = tstl.createStringLiteral(tsHelper.escapeString(span.literal.text));
 
             // tostring(expr).."text"
             parts.push(tstl.createBinaryExpression(
@@ -3036,30 +3037,6 @@ export class LuaTransformer {
         return tstl.createTableIndexExpression(
             exportTable,
             tstl.createStringLiteral(identifier.text));
-    }
-
-    public escapeString(text: string): string {
-        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
-        const escapeSequences: Array<[RegExp, string]> = [
-            [/[\\]/g, "\\\\"],
-            [/[\']/g, "\\\'"],
-            [/[\`]/g, "\\\`"],
-            [/[\"]/g, "\\\""],
-            [/[\n]/g, "\\n"],
-            [/[\r]/g, "\\r"],
-            [/[\v]/g, "\\v"],
-            [/[\t]/g, "\\t"],
-            [/[\b]/g, "\\b"],
-            [/[\f]/g, "\\f"],
-            [/[\0]/g, "\\0"],
-        ];
-
-        if (text.length > 0) {
-            for (const [regex, replacement] of escapeSequences) {
-                text = text.replace(regex, replacement);
-            }
-        }
-        return text;
     }
 
     public transformLuaLibFunction(func: LuaLibFeature, ...params: tstl.Expression[]): tstl.CallExpression {

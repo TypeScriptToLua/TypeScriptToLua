@@ -5,8 +5,7 @@ import * as util from "../src/util";
 export class HoistingTests {
 
     @Test("Var Hoisting")
-    public varHoisting(): void
-    {
+    public varHoisting(): void {
         const code =
             `foo = "foo";
             var foo;
@@ -16,8 +15,7 @@ export class HoistingTests {
     }
 
     @Test("Exported Var Hoisting")
-    public exportedVarHoisting(): void
-    {
+    public exportedVarHoisting(): void {
         const code =
             `foo = "foo";
             export var foo;`;
@@ -28,8 +26,7 @@ export class HoistingTests {
     @TestCase("let")
     @TestCase("const")
     @Test("Let/Const Hoisting")
-    public letConstHoisting(varType: string): void
-    {
+    public letConstHoisting(varType: string): void {
         const code =
             `let bar: string;
             function setBar() { bar = foo; }
@@ -43,8 +40,7 @@ export class HoistingTests {
     @TestCase("let")
     @TestCase("const")
     @Test("Exported Let/Const Hoisting")
-    public exportedLetConstHoisting(varType: string): void
-    {
+    public exportedLetConstHoisting(varType: string): void {
         const code =
             `let bar: string;
             function setBar() { bar = foo; }
@@ -55,8 +51,7 @@ export class HoistingTests {
     }
 
     @Test("Global Function Hoisting")
-    public globalFunctionHoisting(): void
-    {
+    public globalFunctionHoisting(): void {
         const code =
             `const foo = bar();
             function bar() { return "bar"; }
@@ -66,8 +61,7 @@ export class HoistingTests {
     }
 
     @Test("Local Function Hoisting")
-    public localFunctionHoisting(): void
-    {
+    public localFunctionHoisting(): void {
         const code =
             `export const foo = bar();
             function bar() { return "bar"; }`;
@@ -76,8 +70,7 @@ export class HoistingTests {
     }
 
     @Test("Exported Function Hoisting")
-    public exportedFunctionHoisting(): void
-    {
+    public exportedFunctionHoisting(): void {
         const code =
             `const foo = bar();
             export function bar() { return "bar"; }
@@ -87,8 +80,7 @@ export class HoistingTests {
     }
 
     @Test("Namespace Function Hoisting")
-    public namespaceFunctionHoisting(): void
-    {
+    public namespaceFunctionHoisting(): void {
         const code =
             `let foo: string;
             namespace NS {
@@ -100,8 +92,7 @@ export class HoistingTests {
     }
 
     @Test("Exported Namespace Function Hoisting")
-    public exportedNamespaceFunctionHoisting(): void
-    {
+    public exportedNamespaceFunctionHoisting(): void {
         const code =
             `let foo: string;
             namespace NS {
@@ -116,8 +107,7 @@ export class HoistingTests {
     @TestCase("let", "bar")
     @TestCase("const", "bar")
     @Test("Hoisting in Non-Function Scope")
-    public hoistingInNonFunctionScope(varType: string, expectResult: string): void
-    {
+    public hoistingInNonFunctionScope(varType: string, expectResult: string): void {
         const code =
             `function foo() {
                 ${varType} bar = "bar";
@@ -129,5 +119,77 @@ export class HoistingTests {
             return foo();`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
+    }
+
+    @Test("Namespace Hoisting")
+    public namespaceHoisting(): void {
+        const code =
+            `function bar() {
+                return NS.foo;
+            }
+            namespace NS {
+                export let foo = "foo";
+            }
+            export const foo = bar();`;
+        const result = util.transpileAndExecuteWithExport(code, "foo");
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Exported Namespace Hoisting")
+    public exportedNamespaceHoisting(): void {
+        const code =
+            `function bar() {
+                return NS.foo;
+            }
+            export namespace NS {
+                export let foo = "foo";
+            }
+            export const foo = bar();`;
+        const result = util.transpileAndExecuteWithExport(code, "foo");
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Nested Namespace Hoisting")
+    public nestedNamespaceHoisting(): void {
+        const code =
+            `export namespace Outer {
+                export function bar() {
+                    return Inner.foo;
+                }
+                namespace Inner {
+                    export let foo = "foo";
+                }
+            }
+            export const foo = Outer.bar();`;
+        const result = util.transpileAndExecuteWithExport(code, "foo");
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Class Hoisting")
+    public classHoisting(): void {
+        const code =
+            `function makeFoo() {
+                return new Foo();
+            }
+            class Foo {
+                public bar = "foo";
+            }
+            export const foo = makeFoo().bar;`;
+        const result = util.transpileAndExecuteWithExport(code, "foo");
+        Expect(result).toBe("foo");
+    }
+
+    @Test("Enum Hoisting")
+    public enumHoisting(): void {
+        const code =
+            `function bar() {
+                return E.A;
+            }
+            enum E {
+                A = "foo"
+            }
+            export const foo = bar();`;
+        const result = util.transpileAndExecuteWithExport(code, "foo");
+        Expect(result).toBe("foo");
     }
 }

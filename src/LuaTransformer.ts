@@ -809,7 +809,8 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local innerNS = outerNS.innerNS
-            const localDeclaration = tstl.createVariableDeclarationStatement(
+            this.addScopeLocals(this.transformIdentifier(statement.name as ts.Identifier));
+            const localDeclaration = tstl.createAssignmentStatement(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 tstl.createTableIndexExpression(
                     this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
@@ -829,7 +830,8 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local NS = exports.NS
-            const localDeclaration = tstl.createVariableDeclarationStatement(
+            this.addScopeLocals(this.transformIdentifier(statement.name as ts.Identifier));
+            const localDeclaration = tstl.createAssignmentStatement(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 this.createExportedIdentifier(this.transformIdentifier(statement.name as ts.Identifier)));
 

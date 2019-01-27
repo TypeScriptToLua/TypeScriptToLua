@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.14.0
+* Reworked internal transpiler structure to be more suited for future extension.
+* Reworked module and exports system.
+* Added support for custom iterators.
+* Improved formatting consistency.
+* Errors are now reported with location `(line, column)` instead of `line: line, column: column`.
+* Added back default lua header: `--[[ Generated with https://github.com/Perryvw/TypescriptToLua ]]`.
+* Fixed some bugs with switches and breaks.
+* Fixed several bugs with functions and context parameters.
+
+## 0.13.0
+* Reworked how functions are transpiled, see https://github.com/Perryvw/TypescriptToLua/wiki/Differences-Between-Functions-and-Methods
+* Improved handling of types extending Array.
+* Fixed several bugs with classes.
+* Fixed issues with inherited accessors.
+
+## 0.12.0
+* Added detection of types extending Array.
+* Added new JSDoc-style compiler directives, deprecated the old `!` decorators, see https://github.com/Perryvw/TypescriptToLua/wiki/Compiler-Directives
+* Fixed bug with constructor default values.
+* The Lualib is no longer included when not used.
+* Fixed bug with unpack in LuaJIT.
+
 ## 0.11.0
 * Fixed bug when throwing anything that was not a string. (@tomblind)
 * Added support for object literal method declarations. (@tomblind)

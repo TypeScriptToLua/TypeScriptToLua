@@ -2304,7 +2304,7 @@ export class LuaTransformer {
 
     public transformParenthesizedExpression(expression: ts.ParenthesizedExpression): tstl.Expression {
         return tstl.createParenthesizedExpression(
-            this.transformExpression((expression as ts.ParenthesizedExpression).expression),
+            this.transformExpression(expression.expression),
             expression
         );
     }
@@ -2916,7 +2916,7 @@ export class LuaTransformer {
     }
 
     public transformNumericLiteral(literal: ts.NumericLiteral): tstl.NumericLiteral {
-        const value = Number((literal as ts.NumericLiteral).text);
+        const value = Number(literal.text);
         return tstl.createNumericLiteral(value, literal);
     }
 

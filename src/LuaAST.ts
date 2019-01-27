@@ -66,7 +66,6 @@ export enum SyntaxKind {
     OrOperator,
     NotOperator,  // Unary
     // Bitwise
-    // Not sure we need those since we always used the lib functions bit.bor, bit.band ... irrc
     BitwiseAndOperator,
     BitwiseOrOperator,
     BitwiseExclusiveOrOperator,
@@ -201,7 +200,9 @@ export function createVariableDeclarationStatement(
     left: Identifier | Identifier[],
     right?: Expression | Expression[],
     parent?: Node,
-    tsOriginal?: ts.Node): VariableDeclarationStatement {
+    tsOriginal?: ts.Node
+): VariableDeclarationStatement
+{
     const statement = createNode(
         SyntaxKind.VariableDeclarationStatement,
         parent,
@@ -237,7 +238,9 @@ export function createAssignmentStatement(
     left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
     right: Expression | Expression[],
     parent?: Node,
-    tsOriginal?: ts.Node): AssignmentStatement {
+    tsOriginal?: ts.Node
+): AssignmentStatement
+{
     const statement = createNode(SyntaxKind.AssignmentStatement, parent, tsOriginal) as AssignmentStatement;
     setParent(left, statement);
     if (Array.isArray(left)) {
@@ -287,7 +290,7 @@ export interface IterationStatement extends Statement {
     body: Block;
 }
 
-export function isIterationStatement(node: Node): node is WhileStatement {
+export function isIterationStatement(node: Node): node is IterationStatement {
     return node.kind === SyntaxKind.WhileStatement || node.kind === SyntaxKind.RepeatStatement
         || node.kind === SyntaxKind.ForStatement || node.kind === SyntaxKind.ForInStatement;
 }
@@ -360,7 +363,9 @@ export function createForStatement(
     limitExpression: Expression,
     stepExpression?: Expression,
     parent?: Node,
-    tsOriginal?: ts.Node): ForStatement {
+    tsOriginal?: ts.Node
+): ForStatement
+{
     const statement = createNode(SyntaxKind.ForStatement, parent, tsOriginal) as ForStatement;
     setParent(body, statement);
     statement.body = body;
@@ -386,7 +391,13 @@ export function isForInStatement(node: Node): node is ForInStatement {
 }
 
 export function createForInStatement(
-    body: Block, names: Identifier[], expressions: Expression[], parent?: Node, tsOriginal?: ts.Node): ForInStatement {
+    body: Block,
+    names: Identifier[],
+    expressions: Expression[],
+    parent?: Node,
+    tsOriginal?: ts.Node
+): ForInStatement
+{
     const statement = createNode(SyntaxKind.ForInStatement, parent, tsOriginal) as ForInStatement;
     setParent(body, statement);
     statement.body = body;
@@ -804,7 +815,12 @@ export function isTableIndexExpression(node: Node): node is TableIndexExpression
 }
 
 export function createTableIndexExpression(
-    table: Expression, index: Expression, parent?: Node, tsOriginal?: ts.Node): TableIndexExpression {
+    table: Expression,
+    index: Expression,
+    parent?: Node,
+    tsOriginal?: ts.Node
+): TableIndexExpression
+{
     const expression = createNode(SyntaxKind.TableIndexExpression, parent, tsOriginal) as TableIndexExpression;
     setParent(table, expression);
     expression.table = table;

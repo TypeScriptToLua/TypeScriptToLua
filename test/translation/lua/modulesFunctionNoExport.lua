@@ -1,2 +1,2 @@
-function publicFunc()
-end
+publicFunc = function()
+end;

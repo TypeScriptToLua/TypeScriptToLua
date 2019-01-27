@@ -1,15 +1,18 @@
 import { MatchError, TestRunner, TestSet, TestOutcome } from "alsatian";
 import * as JSON from "circular-json";
 
-module.exports = function(input, done) {
+module.exports = (input, done) => {
     const testSet = TestSet.create();
     testSet.addTestsFromFiles(input.files);
     const testRunner = new TestRunner();
 
-    testRunner.onTestComplete((result) => {
+    let testCount = 0;
+    let failedTestCount = 0;
+
+    testRunner.onTestComplete(result => {
         if (result.outcome === TestOutcome.Fail) {
             if (result.error instanceof MatchError) {
-                console.log(`Test ${result.testFixture.description}, ${result.test.key}(${JSON.stringify(result.testCase.caseArguments)}) Failed!`)
+                console.log(`Test ${result.testFixture.description}, ${result.test.key}(${JSON.stringify(result.testCase.caseArguments)}) Failed!`);
                 console.log(" ---\n" +
                 '   message: "' +
                 result.error.message +
@@ -23,9 +26,11 @@ module.exports = function(input, done) {
                 result.error.expected +
                 "\n");
             }
+            failedTestCount++;
         }
-    })
+        testCount++;
+    });
 
     testRunner.run(testSet)
-              .then((results) => done(results, input))
+              .then(() => done(testCount, failedTestCount));
 };

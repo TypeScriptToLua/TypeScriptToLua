@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { LuaTarget } from "../../src/Transpiler";
+import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class AssignmentDestructuringTests {
@@ -15,7 +15,7 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua51, luaLibImport: "none"}
         );
         // Assert
-        Expect(lua).toBe(`local a,b=unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
 
     @Test("Assignment destructuring [5.2]")
@@ -25,7 +25,7 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua52, luaLibImport: "none"}
         );
         // Assert
-        Expect(lua).toBe(`local a,b=table.unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = table.unpack(myFunc());`);
     }
 
     @Test("Assignment destructuring [JIT]")
@@ -35,6 +35,6 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: "none"}
         );
         // Assert
-        Expect(lua).toBe(`local a,b=unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
 }

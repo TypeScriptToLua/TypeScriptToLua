@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { TranspileError } from "../../src/Errors";
+import { TranspileError } from "../../src/TranspileError";
 
 import * as util from "../src/util";
 const fs = require("fs");
@@ -25,10 +25,10 @@ export class AssignmentTests {
 
     @TestCase(`"abc"`, `"abc"`)
     @TestCase("3", "3")
-    @TestCase("[1,2,3]", "{1,2,3}")
+    @TestCase("[1,2,3]", "{1, 2, 3}")
     @TestCase("true", "true")
     @TestCase("false", "false")
-    @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
+    @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"}`)
     @Test("Const assignment")
     public constAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`const myvar = ${inp};`);
@@ -37,11 +37,11 @@ export class AssignmentTests {
 
     @TestCase(`"abc"`, `"abc"`)
     @TestCase("3", "3")
-    @TestCase("[1,2,3]", "{1,2,3}")
+    @TestCase("[1,2,3]", "{1, 2, 3}")
     @TestCase("true", "true")
     @TestCase("false", "false")
-    @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
-    @Test("Const assignment")
+    @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"}`)
+    @Test("Let assignment")
     public letAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`let myvar = ${inp};`);
         Expect(lua).toBe(`local myvar = ${out};`);
@@ -49,25 +49,23 @@ export class AssignmentTests {
 
     @TestCase(`"abc"`, `"abc"`)
     @TestCase("3", "3")
-    @TestCase("[1,2,3]", "{1,2,3}")
+    @TestCase("[1,2,3]", "{1, 2, 3}")
     @TestCase("true", "true")
     @TestCase("false", "false")
-    @TestCase(`{a:3,b:"4"}`, `{a = 3,b = "4"}`)
-    @Test("Const assignment")
+    @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"}`)
+    @Test("Var assignment")
     public varAssignment(inp: string, out: string): void {
         const lua = util.transpileString(`var myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out};`);
+        Expect(lua).toBe(`myvar = ${out};`);
     }
 
     @TestCase("var myvar;")
     @TestCase("let myvar;")
-    @TestCase("const myvar;")
     @TestCase("const myvar = null;")
     @TestCase("const myvar = undefined;")
     @Test("Null assignments")
     public nullAssignment(declaration: string): void {
-        const lua = util.transpileString(declaration + " return myvar;");
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(declaration + " return myvar;");
         Expect(result).toBe(undefined);
     }
 
@@ -79,8 +77,8 @@ export class AssignmentTests {
         const pattern = input.join(",");
         const initializer = values.map(v => `"${v}"`).join(",");
 
-        const lua = util.transpileString(`const [${pattern}] = [${initializer}]; return [${pattern}].join("-");`);
-        const result = util.executeLua(lua);
+        const tsCode = `const [${pattern}] = [${initializer}]; return [${pattern}].join("-");`;
+        const result = util.transpileAndExecute(tsCode);
 
         Expect(result).toBe(values.slice(0, input.length).join("-"));
     }
@@ -93,7 +91,7 @@ export class AssignmentTests {
 
     @Test("Tuple Assignment")
     public tupleAssignment(): void {
-        const code = `function abc() { return [1, 2]; };
+        const code = `function abc(): [number, number] { return [1, 2]; };
                       let t: [number, number] = abc();
                       return t[0] + t[1];`;
         const result = util.transpileAndExecute(code);
@@ -107,7 +105,7 @@ export class AssignmentTests {
                    + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=abc();");
+        Expect(lua).toBe("local a, b = abc();");
     }
 
     @Test("TupleReturn Single assignment")
@@ -118,7 +116,7 @@ export class AssignmentTests {
                    + `a = abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a = ({ abc() });\na = ({ abc() });");
+        Expect(lua).toBe("local a = ({abc()});\na = ({abc()});");
     }
 
     @Test("TupleReturn interface assignment")
@@ -130,7 +128,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=jkl:abc();");
+        Expect(lua).toBe("local a, b = jkl:abc();");
     }
 
     @Test("TupleReturn namespace assignment")
@@ -142,7 +140,7 @@ export class AssignmentTests {
                    + `let [a,b] = def.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local a,b=def.abc();");
+        Expect(lua).toBe("local a, b = def.abc();");
     }
 
     @Test("TupleReturn method assignment")
@@ -154,7 +152,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local jkl = def.new(true);\nlocal a,b=jkl:abc();");
+        Expect(lua).toBe("local jkl = def.new(true);\nlocal a, b = jkl:abc();");
     }
 
     @Test("TupleReturn functional")
@@ -164,9 +162,7 @@ export class AssignmentTests {
         const [a, b] = abc();
         return b + a;`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe("a3");
     }
@@ -178,9 +174,7 @@ export class AssignmentTests {
         const res = abc();
         return res.length`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe(2);
     }
@@ -191,9 +185,7 @@ export class AssignmentTests {
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];`;
 
-        const lua = util.transpileString(code);
-
-        const result = util.executeLua(lua);
+        const result = util.transpileAndExecute(code);
 
         Expect(result).toBe("a3");
     }
@@ -272,7 +264,6 @@ export class AssignmentTests {
     @TestCase("foo.voidLambdaProp", "Foo.voidStaticMethod", "foo+voidStaticMethod")
     @TestCase("foo.voidLambdaProp", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
     @TestCase("foo.voidLambdaProp", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("func", "(func as (string | ((s: string) => string)))", "foo+func")
     @TestCase("func", "<(s: string) => string>lambda", "foo+lambda")
     @TestCase("func", "lambda as ((s: string) => string)", "foo+lambda")
     @Test("Valid function assignment")
@@ -333,7 +324,6 @@ export class AssignmentTests {
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
     @TestCase("func", "foo+func", "string | ((s: string) => string)")
-    @TestCase("func", "foo+func", "T")
     @TestCase("<(s: string) => string>func", "foo+func")
     @TestCase("func as ((s: string) => string)", "foo+func")
     @Test("Valid function return")
@@ -342,11 +332,11 @@ export class AssignmentTests {
             funcType = "(s: string) => string";
         }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsFunc<T extends ((s: string) => string)>(): ${funcType} {
+                      function returnsFunc(): ${funcType} {
                           return ${func};
                       }
                       const fn = returnsFunc();
-                      return fn("foo");`;
+                      return (fn as any)("foo");`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
@@ -375,7 +365,7 @@ export class AssignmentTests {
     @TestCase("Foo.staticMethod", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("Foo.staticMethod", "s => s", "foo")
     @TestCase("Foo.staticMethod", "function(s) { return s; }", "foo")
-    @TestCase("foo.staticMethod", "function(this: Foo, s: string) { return s; }", "foo")
+    @TestCase("Foo.staticMethod", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("Foo.staticMethod", "s => func(s)", "foo+func")
     @TestCase("Foo.staticMethod", "s => lambda(s)", "foo+lambda")
     @TestCase("Foo.staticMethod", "Foo.staticLambdaProp", "foo+staticLambdaProp")
@@ -385,7 +375,7 @@ export class AssignmentTests {
     @TestCase("Foo.staticLambdaProp", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("Foo.staticLambdaProp", "s => s", "foo")
     @TestCase("Foo.staticLambdaProp", "function(s) { return s; }", "foo")
-    @TestCase("foo.staticLambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
+    @TestCase("Foo.staticLambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("Foo.staticLambdaProp", "s => func(s)", "foo+func")
     @TestCase("Foo.staticLambdaProp", "s => lambda(s)", "foo+lambda")
     @TestCase("Foo.staticLambdaProp", "Foo.staticMethod", "foo+staticMethod")
@@ -411,12 +401,14 @@ export class AssignmentTests {
     @TestCase("thisLambda", "Foo.staticMethod", "foo+staticMethod")
     @TestCase("thisLambda", "Foo.staticLambdaProp", "foo+staticLambdaProp")
     @TestCase("thisLambda", "thisFunc", "foo+thisFunc")
-    @TestCase("foo.method", "(foo.method as (string | ((this: Foo, s: string) => string))", "foo+method")
     @TestCase("foo.method", "<(this: Foo, s: string) => string>foo.lambdaProp", "foo+lambdaProp")
     @TestCase("foo.method", "foo.lambdaProp as ((this: Foo, s: string) => string)", "foo+lambdaProp")
     @Test("Valid method assignment")
     public validMethodAssignment(func: string, assignTo: string, expectResult: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo}; return ${func}("foo");`;
+        const code = `${AssignmentTests.funcAssignTestCode}
+                      ${func} = ${assignTo};
+                      foo.method = ${func};
+                      return foo.method("foo");`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
@@ -459,7 +451,6 @@ export class AssignmentTests {
     @TestCase("function(s) { return s; }", "foo")
     @TestCase("function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
-    @TestCase("foo.method", "foo+method", "T")
     @TestCase("<(this: Foo, s: string) => string>foo.method", "foo+method")
     @TestCase("foo.method as ((this: Foo, s: string) => string)", "foo+method")
     @Test("Valid method return")
@@ -468,10 +459,10 @@ export class AssignmentTests {
             funcType = "(this: Foo, s: string) => string";
         }
         const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnMethod<T extends ((this: Foo, s: string) => string)>(): ${funcType} {
+                      function returnMethod(): ${funcType} {
                           return ${func};
                       }
-                      foo.method = returnMethod();
+                      foo.method = returnMethod() as any;
                       return foo.method("foo");`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
@@ -812,4 +803,14 @@ export class AssignmentTests {
             "Unsupported assignment of mixed function/method overload. "
             + "Overloads should either be all functions or all methods, but not both.");
     }
+
+    @Test("String table access")
+    public stringTableAccess(assignType: string): void {
+        const code = `const dict : {[key:string]:any} = {};
+                      dict["a b"] = 3;
+                      return dict["a b"];`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(3);
+    }
+
 }

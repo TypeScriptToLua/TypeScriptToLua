@@ -3,18 +3,35 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { transpileString } from "../../src/Compiler";
-import { CompilerOptions } from "../../src/CompilerOptions";
-import { LuaTarget, LuaTranspiler } from "../../src/Transpiler";
-import { createTranspiler } from "../../src/TranspilerFactory";
+import { transpileString as compilerTranspileString } from "../../src/Compiler";
+import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 import * as fs from "fs";
+import { LuaTransformer } from "../../src/LuaTransformer";
 
-export { transpileString };
+export function transpileString(str: string, options?: CompilerOptions, ignoreDiagnostics = true): string {
+    if (options) {
+        if (options.noHeader === undefined) {
+            options.noHeader = true;
+        }
+        return compilerTranspileString(str, options, ignoreDiagnostics);
+    } else {
+        return compilerTranspileString(
+            str,
+            {
+                luaLibImport: LuaLibImportKind.Require,
+                luaTarget: LuaTarget.Lua53,
+                target: ts.ScriptTarget.ES2015,
+                noHeader: true,
+            },
+            ignoreDiagnostics
+        );
+    }
+}
 
-export function executeLua(luaStr: string, withLib = true): any {
+function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
     }
@@ -57,15 +74,27 @@ export function expectCodeEqual(code1: string, code2: string): void {
     Expect(c1).toBe(c2);
 }
 
-// Get a mock transpiler to use for testing
-export function makeTestTranspiler(target: LuaTarget = LuaTarget.Lua53): LuaTranspiler {
-    return createTranspiler({} as ts.TypeChecker,
-                            { luaLibImport: "none", luaTarget: target } as any,
-                            { statements: [] } as any as ts.SourceFile);
+// Get a mock transformer to use for testing
+export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
+    return new LuaTransformer(ts.createProgram([], {luaTarget: target}));
 }
 
-export function transpileAndExecute(tsStr: string): any {
-    return executeLua(transpileString(tsStr));
+export function transpileAndExecute(
+    tsStr: string,
+    compilerOptions?: CompilerOptions,
+    luaHeader?: string,
+    tsHeader?: string
+): any
+{
+    const wrappedTsString = `declare function JSONStringify(p: any): string;
+        ${tsHeader ? tsHeader : ""}
+        function __runTest(): any {${tsStr}}`;
+
+    const lua = `${luaHeader ? luaHeader : ""}
+        ${transpileString(wrappedTsString, compilerOptions, false)}
+        return __runTest();`;
+
+    return executeLua(lua);
 }
 
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)

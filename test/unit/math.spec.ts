@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase, IgnoreTest } from "alsatian";
-import * as util from "../src/util"
+import * as util from "../src/util";
 
 export class MathTests {
 
@@ -10,11 +10,9 @@ export class MathTests {
     @TestCase("Math.min()", "math.min();")
     @TestCase("Math.PI", "math.pi;")
     @Test("Math")
-    public math(inp: string, expected: string) {
+    public math(inp: string, expected: string): void {
         // Transpile
-        let lua = util.transpileString(
-            inp,
-        );
+        const lua = util.transpileString(inp);
 
         // Assert
         Expect(lua).toBe(expected);

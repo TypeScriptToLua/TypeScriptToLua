@@ -3,9 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import { CompilerOptions } from "../../../../../src/CompilerOptions";
+import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
-import { LuaLibImportKind } from "../../../../../src/Transpiler";
 
 export class MixedConfigurationTests {
 
@@ -35,7 +34,7 @@ export class MixedConfigurationTests {
             luaTarget: "5.1",
             // Only present in TSTL dfaults
             noHeader: optionDeclarations["noHeader"].default,
-            project: tsConfigPath
+            project: tsConfigPath,
         } as CompilerOptions);
     }
 }

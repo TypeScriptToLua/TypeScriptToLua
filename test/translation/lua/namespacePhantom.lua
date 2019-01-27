@@ -1,2 +1,2 @@
-function nsMember()
-end
+nsMember = function()
+end;

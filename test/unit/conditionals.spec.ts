@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { TranspileError } from "../../src/Errors";
-import { LuaTarget } from "../../src/Transpiler";
+import { TranspileError } from "../../src/TranspileError";
+import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class LuaConditionalsTests {
@@ -9,17 +9,13 @@ export class LuaConditionalsTests {
     @TestCase(1, 1)
     @Test("if")
     public if(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let input = ${inp}
+        const result = util.transpileAndExecute(
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             }
             return 1;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -29,18 +25,14 @@ export class LuaConditionalsTests {
     @TestCase(1, 1)
     @Test("ifelse")
     public ifelse(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let input = ${inp}
+        const result = util.transpileAndExecute(
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else {
                 return 1;
             }`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -52,9 +44,8 @@ export class LuaConditionalsTests {
     @TestCase(3, 3)
     @Test("ifelseif")
     public ifelseif(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let input = ${inp}
+        const result = util.transpileAndExecute(
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else if (input === 1){
@@ -64,9 +55,6 @@ export class LuaConditionalsTests {
             }
             return 3;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -78,9 +66,8 @@ export class LuaConditionalsTests {
     @TestCase(3, 3)
     @Test("ifelseifelse")
     public ifelseifelse(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let input = ${inp}
+        const result = util.transpileAndExecute(
+            `let input: number = ${inp};
             if (input === 0) {
                 return 0;
             } else if (input === 1){
@@ -92,9 +79,6 @@ export class LuaConditionalsTests {
             }`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -105,11 +89,10 @@ export class LuaConditionalsTests {
     @TestCase(3, -1)
     @Test("switch")
     public switch(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
@@ -123,9 +106,6 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -136,11 +116,10 @@ export class LuaConditionalsTests {
     @TestCase(3, -2)
     @Test("switchdefault")
     public switchdefault(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
@@ -157,9 +136,6 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -173,11 +149,10 @@ export class LuaConditionalsTests {
     @TestCase(7, -2)
     @Test("switchfallthrough")
     public switchfallthrough(inp: number, expected: number): void {
-        /// Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                 case 1:
@@ -203,9 +178,6 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -216,16 +188,15 @@ export class LuaConditionalsTests {
     @TestCase(3, -2)
     @Test("nestedSwitch")
     public nestedSwitch(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0:
                     result = 0;
                     break;
                 case 1:
-                    switch(${inp}) {
+                    switch(<number>${inp}) {
                         case 0:
                             result = 0;
                             break;
@@ -247,53 +218,51 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
 
-    @Test("switchLocalScope")
     @TestCase(0, 0)
     @TestCase(1, 2)
     @TestCase(2, 2)
+    @Test("switchLocalScope")
     public switchLocalScope(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
-                case 0:
+            switch (<number>${inp}) {
+                case 0: {
                     let x = 0;
                     result = 0;
                     break;
-                case 1:
+                }
+                case 1: {
                     let x = 1;
                     result = x;
-                case 2:
+                }
+                case 2: {
                     let x = 2;
                     result = x;
                     break;
+                }
             }
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
 
-    @Test("switchReturn")
     @TestCase(0, 0)
     @TestCase(1, 1)
     @TestCase(2, 2)
+    @TestCase(3, -1)
+    @Test("switchReturn")
     public switchReturn(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `switch (${inp}) {
+        const result = util.transpileAndExecute(
+            `const result: number = -1;
+
+            switch (<number>${inp}) {
                 case 0:
                     return 0;
                     break;
@@ -306,9 +275,6 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -319,11 +285,10 @@ export class LuaConditionalsTests {
     @TestCase(3, -1)
     @Test("switchWithBrackets")
     public switchWithBrackets(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
                     break;
@@ -339,9 +304,6 @@ export class LuaConditionalsTests {
             }
             return result;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -354,18 +316,17 @@ export class LuaConditionalsTests {
     @TestCase(3, -1)
     @Test("switchWithBracketsBreakInConditional")
     public switchWithBracketsBreakInConditional(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
                     break;
                 }
                 case 1: {
                     result = 1;
-                    
+
                     if (result == 1) break;
                 }
                 case 2: {
@@ -375,9 +336,6 @@ export class LuaConditionalsTests {
             }
             return result;`
         );
-
-        // Execute
-        const result = util.executeLua(lua);
 
         // Assert
         Expect(result).toBe(expected);
@@ -389,17 +347,16 @@ export class LuaConditionalsTests {
     @TestCase(3, -1)
     @Test("switchWithBracketsBreakInInternalLoop")
     public switchWithBracketsBreakInInternalLoop(inp: number, expected: number): void {
-        // Transpile
-        const lua = util.transpileString(
-            `let result = -1;
+        const result = util.transpileAndExecute(
+            `let result: number = -1;
 
-            switch (${inp}) {
+            switch (<number>${inp}) {
                 case 0: {
                     result = 0;
-                    
+
                     for (let i = 0; i < 5; i++) {
                         result++;
-                        
+
                         if (i >= 2) {
                             break;
                         }
@@ -417,9 +374,6 @@ export class LuaConditionalsTests {
             return result;`
         );
 
-        // Execute
-        const result = util.executeLua(lua);
-
         // Assert
         Expect(result).toBe(expected);
     }
@@ -435,7 +389,7 @@ export class LuaConditionalsTests {
     @Test("switch dead code after return")
     public whileDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(
-            `switch ("abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
+            `switch (<string>"abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
 
         Expect(result).toBe(5);
     }

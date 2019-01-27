@@ -823,7 +823,6 @@ export class LuaTransformer {
             result.push(localDeclaration);
         } else {
             // local NS = NS or {}
-            // TODO this is somewhat redundant since createLocalOrGlobalDeclaration also handles exports
             const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 tstl.createBinaryExpression(
@@ -1560,21 +1559,16 @@ export class LuaTransformer {
             case ts.SyntaxKind.TemplateExpression:
                 return this.transformTemplateExpression(expression as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
-                // TODO move to extra function (consistency)
-                return tstl.createNumericLiteral(Number((expression as ts.NumericLiteral).text), undefined, expression);
+                return this.transformNumericLiteral(expression as ts.NumericLiteral);
             case ts.SyntaxKind.TrueKeyword:
-                // TODO move to extra function (consistency)
-                return tstl.createBooleanLiteral(true, undefined, expression);
+                return this.transformTrueKeyword(expression as ts.BooleanLiteral);
             case ts.SyntaxKind.FalseKeyword:
-                // TODO move to extra function (consistency)
-                return tstl.createBooleanLiteral(false, undefined, expression);
+                return this.transformFalseKeyword(expression as ts.BooleanLiteral);
             case ts.SyntaxKind.NullKeyword:
             case ts.SyntaxKind.UndefinedKeyword:
-                // TODO move to extra function (consistency)
-                return tstl.createNilLiteral(undefined, expression);
+                return this.transformNullOrUndefinedKeyword(expression);
             case ts.SyntaxKind.ThisKeyword:
-                // TODO move to extra function (consistency)
-                return this.createSelfIdentifier(expression);
+                return this.transformThisKeyword(expression as ts.ThisExpression);
             case ts.SyntaxKind.PostfixUnaryExpression:
                 return this.transformPostfixUnaryExpression(expression as ts.PostfixUnaryExpression);
             case ts.SyntaxKind.PrefixUnaryExpression:
@@ -1591,23 +1585,10 @@ export class LuaTransformer {
                 return this.transformFunctionExpression(expression as ts.ArrowFunction, tstl.createIdentifier("____"));
             case ts.SyntaxKind.NewExpression:
                 return this.transformNewExpression(expression as ts.NewExpression);
-            case ts.SyntaxKind.ComputedPropertyName:
-                // return "[" + this.transpileExpression((node as ts.ComputedPropertyName).expression) + "]";
             case ts.SyntaxKind.ParenthesizedExpression:
-                // TODO move to extra function (consistency)
-                return tstl.createParenthesizedExpression(
-                    this.transformExpression((expression as ts.ParenthesizedExpression).expression),
-                    undefined,
-                    expression
-                );
+                return this.transformParenthesizedExpression(expression as ts.ParenthesizedExpression);
             case ts.SyntaxKind.SuperKeyword:
-                // TODO move to extra function (consistency)
-                return tstl.createTableIndexExpression(
-                    this.createSelfIdentifier(),
-                    tstl.createStringLiteral("__base"),
-                    undefined,
-                    expression
-                );
+                return this.transformSuperKeyword(expression as ts.SuperExpression);
             case ts.SyntaxKind.TypeAssertionExpression:
             case ts.SyntaxKind.AsExpression:
                 return this.transformAssertionExpression(expression as ts.AssertionExpression);
@@ -1618,7 +1599,6 @@ export class LuaTransformer {
             case ts.SyntaxKind.NonNullExpression:
                 return this.transformExpression((expression as ts.NonNullExpression).expression);
             case ts.SyntaxKind.EmptyStatement:
-                // TODO move to extra function (consistency)
                 return undefined;
             case ts.SyntaxKind.NotEmittedStatement:
                 return undefined;
@@ -2348,6 +2328,23 @@ export class LuaTransformer {
         );
     }
 
+    public transformParenthesizedExpression(expression: ts.ParenthesizedExpression): tstl.Expression {
+        return tstl.createParenthesizedExpression(
+            this.transformExpression((expression as ts.ParenthesizedExpression).expression),
+            undefined,
+            expression
+        );
+    }
+
+    public transformSuperKeyword(expression: ts.SuperExpression): tstl.Expression {
+        return tstl.createTableIndexExpression(
+            this.createSelfIdentifier(),
+            tstl.createStringLiteral("__base"),
+            undefined,
+            expression
+        );
+    }
+
     public transformCallExpression(node: ts.CallExpression): tstl.Expression {
         // Check for calls on primitives to override
         let parameters: tstl.Expression[] = [];
@@ -2951,6 +2948,27 @@ export class LuaTransformer {
         return tstl.createStringLiteral(text);
     }
 
+    public transformNumericLiteral(literal: ts.NumericLiteral): tstl.NumericLiteral {
+        const value = Number((literal as ts.NumericLiteral).text);
+        return tstl.createNumericLiteral(value, undefined, literal);
+    }
+
+    public transformTrueKeyword(trueKeyword: ts.BooleanLiteral): tstl.BooleanLiteral {
+        return tstl.createBooleanLiteral(true, undefined, trueKeyword);
+    }
+
+    public transformFalseKeyword(falseKeyword: ts.BooleanLiteral): tstl.BooleanLiteral {
+        return tstl.createBooleanLiteral(false, undefined, falseKeyword);
+    }
+
+    public transformNullOrUndefinedKeyword(originalNode: ts.Node): tstl.NilLiteral {
+        return tstl.createNilLiteral(undefined, originalNode);
+    }
+
+    public transformThisKeyword(thisKeyword: ts.ThisExpression): tstl.Expression {
+        return this.createSelfIdentifier(thisKeyword);
+    }
+
     public transformTemplateExpression(expression: ts.TemplateExpression): tstl.BinaryExpression {
         const parts: tstl.Expression[] = [tstl.createStringLiteral(tsHelper.escapeString(expression.head.text))];
         expression.templateSpans.forEach(span => {
@@ -3064,7 +3082,6 @@ export class LuaTransformer {
             this.luaLibFeatureSet.add(LuaLibFeature.InstanceOf);
         }
 
-        // TODO inline imported features in output i option set
         this.luaLibFeatureSet.add(feature);
     }
 

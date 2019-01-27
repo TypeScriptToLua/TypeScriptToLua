@@ -678,10 +678,10 @@ export class LuaLoopTests
         const luajit = util.transpileString(loop, { luaTarget: LuaTarget.LuaJIT });
 
         // Assert
-        Expect(lua51.indexOf("::__continue0::") !== -1).toBe(false); // No labels in 5.1
-        Expect(lua52.indexOf("::__continue0::") !== -1).toBe(true); // Labels from 5.2 onwards
-        Expect(lua53.indexOf("::__continue0::") !== -1).toBe(true);
-        Expect(luajit.indexOf("::__continue0::") !== -1).toBe(true);
+        Expect(lua51.indexOf("::__continue1::") !== -1).toBe(false); // No labels in 5.1
+        Expect(lua52.indexOf("::__continue1::") !== -1).toBe(true); // Labels from 5.2 onwards
+        Expect(lua53.indexOf("::__continue1::") !== -1).toBe(true);
+        Expect(luajit.indexOf("::__continue1::") !== -1).toBe(true);
     }
 
     @Test("for dead code after return")

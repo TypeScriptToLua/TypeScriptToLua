@@ -2,8 +2,8 @@ import * as ts from "typescript";
 
 export interface CompilerOptions extends ts.CompilerOptions {
     noHeader?: boolean;
-    luaTarget?: string;
-    luaLibImport?: string;
+    luaTarget?: LuaTarget;
+    luaLibImport?: LuaLibImportKind;
 }
 
 export enum LuaLibImportKind {

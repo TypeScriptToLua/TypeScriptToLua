@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 
-import { LuaTarget } from "../../src/CompilerOptions";
+import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class SpreadElementTest {
@@ -26,19 +26,24 @@ export class SpreadElementTest {
     @Test("Spread Element Lua 5.2")
     public spreadElement52(): void
     {
-        const lua = util.transpileString(`[...[0, 1, 2]]`, {luaTarget: LuaTarget.Lua52, luaLibImport: "none"});
+        const options = {luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None};
+        const lua = util.transpileString(`[...[0, 1, 2]]`, options);
         Expect(lua).toBe("{table.unpack({0, 1, 2})};");
     }
-     @Test("Spread Element Lua 5.3")
+
+    @Test("Spread Element Lua 5.3")
     public spreadElement53(): void
     {
-        const lua = util.transpileString(`[...[0, 1, 2]]`, {luaTarget: LuaTarget.Lua53, luaLibImport: "none"});
+        const options = {luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None};
+        const lua = util.transpileString(`[...[0, 1, 2]]`, options);
         Expect(lua).toBe("{table.unpack({0, 1, 2})};");
     }
-     @Test("Spread Element Lua JIT")
+
+    @Test("Spread Element Lua JIT")
     public spreadElementJIT(): void
     {
-        const lua = util.transpileString(`[...[0, 1, 2]]`, {luaTarget: LuaTarget.LuaJIT, luaLibImport: "none"});
+        const options = {luaTarget: "JiT" as LuaTarget, luaLibImport: LuaLibImportKind.None};
+        const lua = util.transpileString(`[...[0, 1, 2]]`, options);
         Expect(lua).toBe("{unpack({0, 1, 2})};");
     }
 }

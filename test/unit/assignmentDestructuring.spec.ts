@@ -1,5 +1,5 @@
 import { Expect, Test, TestCase } from "alsatian";
-import { LuaTarget } from "../../src/CompilerOptions";
+import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class AssignmentDestructuringTests {
@@ -12,7 +12,7 @@ export class AssignmentDestructuringTests {
     public assignmentDestructuring51(): void {
         // Transpile
         const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua51, luaLibImport: "none"}
+            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);
@@ -22,7 +22,7 @@ export class AssignmentDestructuringTests {
     public tupleDestructing52(): void {
         // Transpile
         const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua52, luaLibImport: "none"}
+            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
         Expect(lua).toBe(`local a, b = table.unpack(myFunc());`);
@@ -32,7 +32,7 @@ export class AssignmentDestructuringTests {
     public assignmentDestructuringJIT(): void {
         // Transpile
         const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: "none"}
+            this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);

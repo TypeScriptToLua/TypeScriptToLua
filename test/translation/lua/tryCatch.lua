@@ -1,8 +1,9 @@
+local a, b;
 do
     local ____TS_try, er = pcall(function()
-        local a = 42;
+        a = 42;
     end);
     if not ____TS_try then
-        local b = "fail";
+        b = "fail";
     end
 end

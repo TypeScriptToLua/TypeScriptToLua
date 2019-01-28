@@ -1,10 +1,11 @@
-local i = 0;
+local i;
+i = 0;
 while i < 10 do
     do
         if i < 5 then
-            goto __continue0;
+            goto __continue1;
         end
     end
-    ::__continue0::
+    ::__continue1::
     i = i + 1;
 end

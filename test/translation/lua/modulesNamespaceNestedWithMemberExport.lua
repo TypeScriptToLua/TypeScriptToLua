@@ -1,9 +1,11 @@
 local exports = exports or {};
+local TestSpace;
 exports.TestSpace = exports.TestSpace or {};
-local TestSpace = exports.TestSpace;
+TestSpace = exports.TestSpace;
 do
+    local TestNestedSpace;
     TestSpace.TestNestedSpace = TestSpace.TestNestedSpace or {};
-    local TestNestedSpace = TestSpace.TestNestedSpace;
+    TestNestedSpace = TestSpace.TestNestedSpace;
     do
         TestNestedSpace.innerFunc = function()
         end;

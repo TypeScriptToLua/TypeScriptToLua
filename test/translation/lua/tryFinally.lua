@@ -1,8 +1,9 @@
+local a, b;
 do
     pcall(function()
-        local a = 42;
+        a = 42;
     end);
     do
-        local b = "finally";
+        b = "finally";
     end
 end

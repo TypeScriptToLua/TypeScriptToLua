@@ -1,7 +1,8 @@
-local d = 10;
+local d;
+d = 10;
 while d > 0 do
     do
         d = d - 1;
     end
-    ::__continue0::
+    ::__continue1::
 end

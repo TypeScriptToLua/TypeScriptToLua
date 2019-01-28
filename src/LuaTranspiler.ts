@@ -4,7 +4,7 @@ import * as ts from "typescript";
 
 import * as tstl from "./LuaAST";
 
-import {CompilerOptions, LuaLibImportKind} from "./CompilerOptions";
+import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaPrinter} from "./LuaPrinter";
 import {LuaTransformer} from "./LuaTransformer";
 
@@ -19,9 +19,23 @@ export class LuaTranspiler {
 
     constructor(program: ts.Program) {
         this.program = program;
-        this.options = this.program.getCompilerOptions() as CompilerOptions;
-        this.luaTransformer = new LuaTransformer(this.program);
+        this.options = this.getOptions(program);
+        this.luaTransformer = new LuaTransformer(this.program, this.options);
         this.luaPrinter = new LuaPrinter(this.options);
+    }
+
+    private getOptions(program: ts.Program): CompilerOptions {
+        const options = program.getCompilerOptions() as CompilerOptions;
+
+        // Make options case-insenstive
+        if (options.luaTarget) {
+            options.luaTarget = options.luaTarget.toLowerCase() as LuaTarget;
+        }
+        if (options.luaLibImport) {
+            options.luaLibImport = options.luaLibImport.toLocaleLowerCase() as LuaLibImportKind;
+        }
+
+        return options;
     }
 
     private reportErrors(): number {

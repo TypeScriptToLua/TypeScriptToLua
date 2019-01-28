@@ -51,9 +51,9 @@ export class LuaTransformer {
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
-    public constructor(program: ts.Program) {
+    public constructor(program: ts.Program, options: CompilerOptions) {
         this.checker = program.getTypeChecker();
-        this.options = program.getCompilerOptions();
+        this.options = options;
         this.isStrict = this.options.alwaysStrict || (this.options.strict && this.options.alwaysStrict !== false) ||
                         (this.isModule && this.options.target && this.options.target >= ts.ScriptTarget.ES2015);
 

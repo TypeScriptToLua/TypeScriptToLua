@@ -76,7 +76,8 @@ export function expectCodeEqual(code1: string, code2: string): void {
 
 // Get a mock transformer to use for testing
 export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
-    return new LuaTransformer(ts.createProgram([], {luaTarget: target}));
+    const options = {luaTarget: target};
+    return new LuaTransformer(ts.createProgram([], options), options);
 }
 
 export function transpileAndExecute(

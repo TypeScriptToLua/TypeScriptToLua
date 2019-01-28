@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
-import { LuaTarget } from "../../src/CompilerOptions";
+import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -100,7 +100,7 @@ export class ExpressionTests {
     @Test("Bitop [5.1]")
     public bitOperatorOverride51(input: string, lua: string): void {
         // Bit operations not supported in 5.1, expect an exception
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: "none" }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None }))
             .toThrow();
     }
 
@@ -119,7 +119,8 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a = bit.arshift(a, b);")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string): void {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.LuaJIT, luaLibImport: "none" })).toBe(lua);
+        const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
+        Expect(util.transpileString(input, options)).toBe(lua);
     }
 
     @TestCase("~a", "bit32.bnot(a);")
@@ -137,7 +138,8 @@ export class ExpressionTests {
     @TestCase("a>>>=b", "a = bit32.arshift(a, b);")
     @Test("Bitop [5.2]")
     public bitOperatorOverride52(input: string, lua: string): void {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua52, luaLibImport: "none" })).toBe(lua);
+        const options = { luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None };
+        Expect(util.transpileString(input, options)).toBe(lua);
     }
 
     @TestCase("~a", "~a;")
@@ -153,14 +155,15 @@ export class ExpressionTests {
     @TestCase("a>>=b", "a = a >> b;")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string): void {
-        Expect(util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" })).toBe(lua);
+        const options = { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None };
+        Expect(util.transpileString(input, options)).toBe(lua);
     }
 
     @TestCase("a>>>b")
     @TestCase("a>>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: "none" }))
+        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
             .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
     }
 

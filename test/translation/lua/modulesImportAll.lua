@@ -1,1 +1,2 @@
-local Test = require("test");
+local Test;
+Test = require("test");

@@ -1,2 +1,3 @@
+local TestClass;
 local __TSTL_test = require("test");
-local TestClass = __TSTL_test.TestClass;
+TestClass = __TSTL_test.TestClass;

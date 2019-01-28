@@ -13,9 +13,9 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
-    @TestCase("let a = delete tbl['test']", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("let a = delete tbl['test']", "local a;\na = (function()\n    tbl.test = nil;\n    return true;\nend)();")
     @TestCase("delete tbl['test']", "tbl.test = nil;")
-    @TestCase("let a = delete tbl.test", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
+    @TestCase("let a = delete tbl.test", "local a;\na = (function()\n    tbl.test = nil;\n    return true;\nend)();")
     @TestCase("delete tbl.test", "tbl.test = nil;")
     @Test("Unary expressions basic")
     public unaryBasic(input: string, lua: string): void {

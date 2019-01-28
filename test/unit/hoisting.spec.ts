@@ -19,7 +19,7 @@ export class HoistingTests {
         const code =
             `foo = "foo";
             export var foo;`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -46,7 +46,7 @@ export class HoistingTests {
             function setBar() { bar = foo; }
             export ${varType} foo = "foo";
             setBar();`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -65,7 +65,7 @@ export class HoistingTests {
         const code =
             `export const foo = bar();
             function bar() { return "bar"; }`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("bar");
     }
 
@@ -75,7 +75,7 @@ export class HoistingTests {
             `const foo = bar();
             export function bar() { return "bar"; }
             export const baz = foo;`;
-        const result = util.transpileAndExecuteWithExport(code, "baz");
+        const result = util.transpileExecuteAndReturnExport(code, "baz");
         Expect(result).toBe("bar");
     }
 
@@ -131,7 +131,7 @@ export class HoistingTests {
                 export let foo = "foo";
             }
             export const foo = bar();`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -145,7 +145,7 @@ export class HoistingTests {
                 export let foo = "foo";
             }
             export const foo = bar();`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -161,7 +161,7 @@ export class HoistingTests {
                 }
             }
             export const foo = Outer.bar();`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -175,7 +175,7 @@ export class HoistingTests {
                 public bar = "foo";
             }
             export const foo = makeFoo().bar;`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 
@@ -189,7 +189,7 @@ export class HoistingTests {
                 A = "foo"
             }
             export const foo = bar();`;
-        const result = util.transpileAndExecuteWithExport(code, "foo");
+        const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
     }
 }

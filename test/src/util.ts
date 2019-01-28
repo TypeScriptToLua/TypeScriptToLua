@@ -98,7 +98,7 @@ export function transpileAndExecute(
     return executeLua(lua);
 }
 
-export function transpileAndExecuteWithExport(
+export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
     compilerOptions?: CompilerOptions,

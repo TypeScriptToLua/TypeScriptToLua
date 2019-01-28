@@ -174,8 +174,15 @@ export class LuaTransformer {
         return tstlStatements;
     }
 
-    public transformBlock(block: ts.Block): tstl.Block {
-        return tstl.createBlock(this.transformStatements(block.statements), block);
+    public transformBlock(block: ts.Block, pushScope?: boolean): tstl.Block {
+        if (pushScope) {
+            this.pushScope(ScopeType.Block);
+        }
+        const statements = this.transformStatements(block.statements);
+        if (pushScope) {
+            this.popScope(statements);
+        }
+        return tstl.createBlock(statements, block);
     }
 
     public transformScopeBlock(block: ts.Block): tstl.DoStatement {
@@ -222,18 +229,17 @@ export class LuaTransformer {
 
             filteredElements.forEach(importSpecifier => {
                 const nameIdentifier = this.transformIdentifier(importSpecifier.name);
-                this.addScopeLocals(nameIdentifier);
                 if (importSpecifier.propertyName) {
                     const propertyIdentifier = this.transformIdentifier(importSpecifier.propertyName);
                     const propertyName = tstl.createStringLiteral(propertyIdentifier.text);
-                    const renamedImport = tstl.createAssignmentStatement(
+                    const renamedImport = this.createHoistedVariableDeclaration(
                         nameIdentifier,
                         tstl.createTableIndexExpression(importUniqueName, propertyName),
                         importSpecifier);
                     result.push(renamedImport);
                 } else {
                     const name = tstl.createStringLiteral(nameIdentifier.text);
-                    const namedImport = tstl.createAssignmentStatement(
+                    const namedImport = this.createHoistedVariableDeclaration(
                         nameIdentifier,
                         tstl.createTableIndexExpression(importUniqueName, name),
                         importSpecifier
@@ -243,10 +249,8 @@ export class LuaTransformer {
             });
             return result;
         } else if (ts.isNamespaceImport(imports)) {
-            const nameIdentifier = this.transformIdentifier(imports.name);
-            this.addScopeLocals(nameIdentifier);
-            const requireStatement = tstl.createAssignmentStatement(
-                nameIdentifier,
+            const requireStatement = this.createHoistedVariableDeclaration(
+                this.transformIdentifier(imports.name),
                 requireCall,
                 statement
             );
@@ -804,8 +808,7 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local innerNS = outerNS.innerNS
-            this.addScopeLocals(this.transformIdentifier(statement.name as ts.Identifier));
-            const localDeclaration = tstl.createAssignmentStatement(
+            const localDeclaration = this.createHoistedVariableDeclaration(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 tstl.createTableIndexExpression(
                     this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
@@ -825,8 +828,7 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local NS = exports.NS
-            this.addScopeLocals(this.transformIdentifier(statement.name as ts.Identifier));
-            const localDeclaration = tstl.createAssignmentStatement(
+            const localDeclaration = this.createHoistedVariableDeclaration(
                 this.transformIdentifier(statement.name as ts.Identifier),
                 this.createExportedIdentifier(this.transformIdentifier(statement.name as ts.Identifier)));
 
@@ -1488,7 +1490,7 @@ export class LuaTransformer {
 
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
         const pCall = tstl.createIdentifier("pcall");
-        const tryBlock = this.transformBlock(statement.tryBlock);
+        const tryBlock = this.transformBlock(statement.tryBlock, true);
         const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
 
         const result: tstl.Statement[] = [];
@@ -1505,14 +1507,14 @@ export class LuaTransformer {
             result.push(catchAssignment);
 
             const notTryResult = tstl.createUnaryExpression(tryResult, tstl.SyntaxKind.NotOperator);
-            result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
+            result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block, true)));
 
         } else {
             result.push(tstl.createExpressionStatement(tryCall));
         }
 
         if (statement.finallyBlock) {
-            result.push(tstl.createDoStatement(this.transformBlock(statement.finallyBlock).statements));
+            result.push(tstl.createDoStatement(this.transformBlock(statement.finallyBlock, true).statements));
         }
 
         return tstl.createDoStatement(
@@ -3280,12 +3282,7 @@ export class LuaTransformer {
     }
 
     protected findScope(...scopeTypes: ScopeType[]): Scope | undefined {
-        for (let i = this.scopeStack.length - 1; i >= 0; --i) {
-            if (scopeTypes.indexOf(this.scopeStack[i].type) >= 0) {
-                return this.scopeStack[i];
-            }
-        }
-        return undefined;
+        return this.scopeStack.slice().reverse().find(s => scopeTypes.find(t => s.type === t) !== undefined);
     }
 
     protected peekScope(): Scope {
@@ -3297,12 +3294,18 @@ export class LuaTransformer {
         this.genVarCounter++;
     }
 
+    // prepends hoisted declarations to statements
     protected popScope(statements: tstl.Statement[]): Scope {
         const scope = this.scopeStack.pop();
+
+        // hoisted function declarations
         statements.unshift(...scope.functions);
+
+        // hoisted locals
         if (scope.locals.length > 0) {
             statements.unshift(tstl.createVariableDeclarationStatement(scope.locals));
         }
+
         return scope;
     }
 
@@ -3310,15 +3313,12 @@ export class LuaTransformer {
         let scope: Scope;
         if (!scopeType) {
             scope = this.peekScope();
+
         } else {
-            for (let i = this.scopeStack.length - 1; i >= 0; --i) {
-                if (this.scopeStack[i].type === scopeType) {
-                    scope = this.scopeStack[i];
-                    break;
-                }
-            }
-            scope = scope || this.scopeStack[0]; // Default to file scope
+            // find first scope with desired type (default to file scope)
+            scope = this.scopeStack.slice().reverse().find(s => s.type === scopeType) || this.scopeStack[0];
         }
+
         if (Array.isArray(locals)) {
             scope.locals.push(...locals);
         } else {
@@ -3326,9 +3326,20 @@ export class LuaTransformer {
         }
     }
 
-    protected addScopeFunction(func: tstl.AssignmentStatement): void {
+    protected addScopeFunction(func: tstl.Statement): void {
         const scope = this.peekScope();
         scope.functions.push(func);
+    }
+
+    protected createHoistedVariableDeclaration(
+        variable: tstl.Identifier,
+        initializer?: tstl.Expression,
+        tsOriginal?: ts.Node,
+        parent?: tstl.Node
+    ): tstl.AssignmentStatement
+    {
+        this.addScopeLocals(variable);
+        return tstl.createAssignmentStatement(variable, initializer, tsOriginal, parent);
     }
 
     private statementVisitResultToStatementArray(visitResult: StatementVisitResult): tstl.Statement[] {

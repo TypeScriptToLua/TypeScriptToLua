@@ -24,6 +24,6 @@ export class ObjectLiteralTests
         const options = {LuaLibImportKind: importKind};
         const result = util.transpileString("const a = new Map<string, string>();", options);
 
-        Expect(result).toBe("local a = Map.new(true);");
+        Expect(result).toBe("local a;\na = Map.new(true);");
     }
 }

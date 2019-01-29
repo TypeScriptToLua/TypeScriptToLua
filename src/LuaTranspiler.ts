@@ -79,14 +79,20 @@ export class LuaTranspiler {
     public emitSourceFile(sourceFile: ts.SourceFile): void {
         if (!sourceFile.isDeclarationFile) {
             try {
-                const rootDir = this.options.rootDir;
-
                 const lua = this.transpileSourceFile(sourceFile);
 
                 let outPath = sourceFile.fileName;
-                if (this.options.outDir !== this.options.rootDir) {
-                    const relativeSourcePath = path.resolve(sourceFile.fileName).replace(path.resolve(rootDir), "");
-                    outPath = path.join(this.options.outDir, relativeSourcePath);
+                const rootDirs = [this.options.rootDir].concat(this.options.rootDirs),
+                      absoluteFileName = path.resolve(sourceFile.fileName);
+
+                for (const rootDir of rootDirs) {
+                    if (rootDir && this.options.outDir !== rootDir) {
+                        const relativeSourcePath = absoluteFileName.replace(path.resolve(rootDir), "");
+                        if (relativeSourcePath !== absoluteFileName) {
+                            outPath = path.join(this.options.outDir, relativeSourcePath);
+                            break;
+                        }
+                    }
                 }
 
                 // change extension or rename to outFile

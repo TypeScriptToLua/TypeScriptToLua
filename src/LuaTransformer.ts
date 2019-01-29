@@ -3095,13 +3095,17 @@ export class LuaTransformer {
     private getImportPath(relativePath: string): string {
         // Calculate absolute path to import
         const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = this.pathToLuaRequirePath(
-                absolutePathToImport.replace(this.options.rootDir, "").slice(1)
-            );
-            return relativePathToRoot;
+        const rootDirs = [this.options.rootDir].concat(this.options.rootDirs);
+        for (const rootDir of rootDirs) {
+            if (rootDir) {
+                // Calculate path relative to project root
+                // and replace path.sep with dots (lua doesn't know paths)
+                const clippedPath = absolutePathToImport.replace(rootDir, "");
+                if (clippedPath !== absolutePathToImport) {
+                    const relativePathToRoot = this.pathToLuaRequirePath(clippedPath.slice(1));
+                    return relativePathToRoot;
+                }
+            }
         }
 
         return this.pathToLuaRequirePath(relativePath);

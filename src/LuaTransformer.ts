@@ -41,6 +41,7 @@ export class LuaTransformer {
 
     private scopeStack: Scope[];
     private genVarCounter: number;
+    private parameterIndex: number;
 
     private luaLibFeatureSet: Set<LuaLibFeature>;
 
@@ -690,7 +691,7 @@ export class LuaTransformer {
     }
 
     public transformParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>, context?: tstl.Identifier):
-        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
+        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined, tstl.VariableDeclarationStatement[] | undefined] {
         // Build parameter string
         const paramNames: tstl.Identifier[] = [];
         if (context) {
@@ -699,13 +700,18 @@ export class LuaTransformer {
 
         let restParamName: tstl.Identifier;
         let dotsLiteral: tstl.DotsLiteral;
+        let declarations: tstl.VariableDeclarationStatement[];
+        let identifierIndex = 0;
 
         // Only push parameter name to paramName array if it isn't a spread parameter
         for (const param of parameters) {
             if (ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword) {
                 continue;
             }
-            const paramName = this.transformIdentifier(param.name as ts.Identifier);
+
+            const paramName = ts.isObjectBindingPattern(param.name)
+                ? tstl.createIdentifier(`_${identifierIndex++}`)
+                : this.transformIdentifier(param.name as ts.Identifier);
 
             // This parameter is a spread parameter (...param)
             if (!param.dotDotDotToken) {
@@ -716,8 +722,7 @@ export class LuaTransformer {
                 dotsLiteral = tstl.createDotsLiteral();
             }
         }
-
-        return [paramNames, dotsLiteral, restParamName];
+        return [paramNames, dotsLiteral, restParamName, declarations];
     }
 
     public transformFunctionBody(
@@ -736,6 +741,38 @@ export class LuaTransformer {
             .map(declaration => this.transformParameterDefaultValueDeclaration(declaration));
 
         headerStatements.push(...defaultValueDeclarations);
+
+        // Add object binding patterns
+        let identifierIndex = 0;
+        const objectBindingPatternDeclarations: tstl.Statement[] = [];
+        parameters.forEach(binding => {
+            const tableIdentifier = `_${identifierIndex++}`;
+            let propertyAccessStack: ts.PropertyName[] = [];
+            const transformObjectBindingPattern = (pattern: ts.ObjectBindingPattern) => {
+                for (const element of pattern.elements) {
+                    if (ts.isObjectBindingPattern(element.name)) {
+                        propertyAccessStack.push(element.propertyName);
+                        transformObjectBindingPattern(element.name);
+                    } else {
+                        let indexExpression = tstl.createIdentifier(tableIdentifier);
+                        let tableAccessExpression: tstl.Expression = indexExpression;
+                        propertyAccessStack.forEach(propertyName => {
+                            tableAccessExpression = tstl.createTableIndexExpression(tableAccessExpression, this.transformPropertyName(propertyName));
+                        });
+                        const identifier = this.transformIdentifier(element.name as ts.Identifier);
+                        const propertyName = tstl.createStringLiteral(element.name.getText());
+                        const variableAccessExpression = tstl.createTableIndexExpression(tableAccessExpression, propertyName);
+                        objectBindingPatternDeclarations.push(tstl.createVariableDeclarationStatement(identifier, variableAccessExpression));
+                    }
+                }
+                propertyAccessStack.pop();
+            }
+            if (ts.isObjectBindingPattern(binding.name)) {
+                transformObjectBindingPattern(binding.name);
+            }
+        });
+
+        headerStatements.push(...objectBindingPatternDeclarations);
 
         // Push spread operator here
         if (spreadIdentifier) {
@@ -934,7 +971,7 @@ export class LuaTransformer {
         const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
-        const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
+        const [params, dotsLiteral, restParamName, declarations] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
         const body = tstl.createBlock(

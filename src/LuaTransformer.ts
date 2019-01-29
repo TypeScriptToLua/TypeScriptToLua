@@ -1144,9 +1144,13 @@ export class LuaTransformer {
         const result: tstl.Statement[] = [];
 
         if (statement.initializer) {
-            for (const variableDeclaration of (statement.initializer as ts.VariableDeclarationList).declarations) {
-                // local initializer = value
-                result.push(...this.transformVariableDeclaration(variableDeclaration));
+            if (ts.isVariableDeclarationList(statement.initializer)) {
+                for (const variableDeclaration of statement.initializer.declarations) {
+                    // local initializer = value
+                    result.push(...this.transformVariableDeclaration(variableDeclaration));
+                }
+            } else {
+                result.push(this.transformExpressionStatement(statement.initializer));
             }
         }
 

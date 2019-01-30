@@ -722,6 +722,7 @@ export class LuaTransformer {
                 dotsLiteral = tstl.createDotsLiteral();
             }
         }
+
         return [paramNames, dotsLiteral, restParamName];
     }
 

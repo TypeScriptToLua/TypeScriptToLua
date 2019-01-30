@@ -41,7 +41,6 @@ export class LuaTransformer {
 
     private scopeStack: Scope[];
     private genVarCounter: number;
-    private parameterIndex: number;
 
     private luaLibFeatureSet: Set<LuaLibFeature>;
 

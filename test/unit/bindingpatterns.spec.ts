@@ -1,5 +1,4 @@
 import { Expect, Test, TestCase, FocusTest, TestCases } from "alsatian";
-import { TranspileError } from "../../src/TranspileError";
 
 import * as util from "../src/util";
 
@@ -21,7 +20,11 @@ export class BindingPatternTests {
     @TestCase("{x, y}, {z}", "{x: false, y: false}, {z: true}", "z")
     @TestCases(testCases)
     @Test("Object bindings in functions")
-    public testObjectBindingPatternParameters(bindingString: string, objectString: string, returnVariable: string): void {
+    public testObjectBindingPatternParameters(
+        bindingString: string,
+        objectString: string,
+        returnVariable: string
+    ): void {
         const result = util.transpileAndExecute(`
             function test(${bindingString}) {
                 return ${returnVariable};
@@ -32,7 +35,11 @@ export class BindingPatternTests {
     }
 
     @TestCases(testCases)
-    public testObjectBindingPatternDeclarations(bindingString: string, objectString: string, returnVariable: string) {
+    public testObjectBindingPatternDeclarations(
+        bindingString: string,
+        objectString: string,
+        returnVariable: string
+    ): void {
         const result = util.transpileAndExecute(`
             let ${bindingString} = ${objectString};
             return ${returnVariable};

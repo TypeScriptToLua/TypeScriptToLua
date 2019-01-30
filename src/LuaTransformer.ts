@@ -808,11 +808,13 @@ export class LuaTransformer {
                     tableExpression = tstl.createTableIndexExpression(tableExpression, propertyName);
                 });
                 const propertyNameString = tstl.createStringLiteral(propertyName.text);
-                let tableAccessExpression: tstl.Expression = tstl.createTableIndexExpression(tableExpression, propertyNameString);
+                let tableAccessExpression: tstl.Expression =
+                    tstl.createTableIndexExpression(tableExpression, propertyNameString);
                 if (element.initializer) {
-                    tableAccessExpression = tstl.createBinaryExpression(tableAccessExpression, this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
+                    tableAccessExpression = tstl.createBinaryExpression(tableAccessExpression,
+                        this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
                 }
-                yield tstl.createVariableDeclarationStatement(name, tableAccessExpression);
+                yield* this.createLocalOrExportedOrGlobalDeclaration(name, tableAccessExpression);
             }
         }
         propertyAccessStack.pop();

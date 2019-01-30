@@ -691,7 +691,7 @@ export class LuaTransformer {
     }
 
     public transformParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>, context?: tstl.Identifier):
-        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined, tstl.VariableDeclarationStatement[] | undefined] {
+        [tstl.Identifier[], tstl.DotsLiteral, tstl.Identifier | undefined] {
         // Build parameter string
         const paramNames: tstl.Identifier[] = [];
         if (context) {
@@ -700,7 +700,6 @@ export class LuaTransformer {
 
         let restParamName: tstl.Identifier;
         let dotsLiteral: tstl.DotsLiteral;
-        let declarations: tstl.VariableDeclarationStatement[];
         let identifierIndex = 0;
 
         // Only push parameter name to paramName array if it isn't a spread parameter
@@ -724,7 +723,7 @@ export class LuaTransformer {
                 dotsLiteral = tstl.createDotsLiteral();
             }
         }
-        return [paramNames, dotsLiteral, restParamName, declarations];
+        return [paramNames, dotsLiteral, restParamName];
     }
 
     public transformFunctionBody(
@@ -799,7 +798,7 @@ export class LuaTransformer {
             } else {
                 // Get the name of the new variable and the propertyName of what to access in the table
                 const name = this.transformIdentifier(element.name as ts.Identifier);
-                let propertyName = element.propertyName
+                const propertyName = element.propertyName
                     ? this.transformIdentifier(element.propertyName as ts.Identifier)
                     : name;
                 // Build an expression to access the table property
@@ -809,7 +808,10 @@ export class LuaTransformer {
                     tableExpression = tstl.createTableIndexExpression(tableExpression, propertyName);
                 });
                 const propertyNameString = tstl.createStringLiteral(propertyName.text);
-                const tableAccessExpression = tstl.createTableIndexExpression(tableExpression, propertyNameString);
+                let tableAccessExpression: tstl.Expression = tstl.createTableIndexExpression(tableExpression, propertyNameString);
+                if (element.initializer) {
+                    tableAccessExpression = tstl.createBinaryExpression(tableAccessExpression, this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
+                }
                 yield tstl.createVariableDeclarationStatement(name, tableAccessExpression);
             }
         }
@@ -984,7 +986,7 @@ export class LuaTransformer {
         const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
-        const [params, dotsLiteral, restParamName, declarations] = this.transformParameters(functionDeclaration.parameters, context);
+        const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
         const body = tstl.createBlock(
@@ -1065,7 +1067,8 @@ export class LuaTransformer {
             if (ts.isObjectLiteralExpression(statement.initializer)) {
                 // If destructuring a literal table, declare the table first
                 table = tstl.createIdentifier("_");
-                statements.push(tstl.createVariableDeclarationStatement(table, this.transformExpression(statement.initializer)));
+                statements.push(tstl.createVariableDeclarationStatement(
+                    table, this.transformExpression(statement.initializer)));
             } else if (ts.isIdentifier(statement.initializer)) {
                 table = this.transformIdentifier(statement.initializer);
             }

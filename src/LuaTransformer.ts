@@ -745,15 +745,15 @@ export class LuaTransformer {
 
         // Add object binding patterns
         let identifierIndex = 0;
-        const objectBindingPatternDeclarations: tstl.Statement[] = [];
+        const bindingPatternDeclarations: tstl.Statement[] = [];
         parameters.forEach(binding => {
-            if (ts.isObjectBindingPattern(binding.name)) {
+            if (ts.isObjectBindingPattern(binding.name) || ts.isArrayBindingPattern(binding.name)) {
                 const identifier = tstl.createIdentifier(`_table${identifierIndex++}`);
-                objectBindingPatternDeclarations.push(...this.transformObjectBindingPattern(binding.name, identifier));
+                bindingPatternDeclarations.push(...this.transformBindingPattern(binding.name, identifier));
             }
         });
 
-        headerStatements.push(...objectBindingPatternDeclarations);
+        headerStatements.push(...bindingPatternDeclarations);
 
         // Push spread operator here
         if (spreadIdentifier) {
@@ -782,6 +782,58 @@ export class LuaTransformer {
         const ifBlock = tstl.createBlock([assignment]);
 
         return tstl.createIfStatement(nilCondition, ifBlock, undefined, declaration);
+    }
+
+    public * transformBindingPattern(
+        pattern: ts.BindingPattern,
+        table: tstl.Identifier,
+        propertyAccessStack: ts.PropertyName[] = []
+    ): IterableIterator<tstl.Statement>
+    {
+        let index = 1;
+        for (const element of pattern.elements) {
+            if (ts.isBindingElement(element)) {
+                if (ts.isArrayBindingPattern(element.name)
+                    || ts.isObjectBindingPattern(element.name)) {
+                    // rhs a binding pattern?
+                    if (ts.isArrayBindingPattern(pattern)) {
+                        propertyAccessStack.push(ts.createNumericLiteral(`${index++}`));
+                        yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
+                    } else if (ts.isObjectBindingPattern(pattern)) {
+                        propertyAccessStack.push(element.propertyName);
+                        yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
+                    }
+                } else {
+                    // Build the path to the table
+                    let tableExpression: tstl.Expression = table;
+                    propertyAccessStack.forEach(property => {
+                        const propertyName = ts.isPropertyName(property)
+                            ? this.transformPropertyName(property)
+                            : this.transformNumericLiteral(property);
+                        tableExpression = tstl.createTableIndexExpression(tableExpression, propertyName);
+                    });
+                    // The identifier of the new variable
+                    const variableName = this.transformIdentifier(element.name as ts.Identifier);
+                    // The field to extract
+                    const propertyName = this.transformIdentifier(
+                        (element.propertyName || element.name) as ts.Identifier);
+                    let expression: tstl.Expression;
+                    if (ts.isArrayBindingPattern(pattern)) {
+                        const indexIdentifier = tstl.createIdentifier(`${index++}`);
+                        expression = tstl.createTableIndexExpression(tableExpression, indexIdentifier);
+                    } else if (ts.isObjectBindingPattern(pattern)) {
+                        const stringLiteral = tstl.createStringLiteral(propertyName.text);
+                        expression = tstl.createTableIndexExpression(tableExpression, stringLiteral);
+                    }
+                    if (element.initializer) {
+                        expression = tstl.createBinaryExpression(expression,
+                            this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
+                    }
+                    yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, expression);
+                }
+            }
+        }
+        propertyAccessStack.pop();
     }
 
     public * transformObjectBindingPattern(

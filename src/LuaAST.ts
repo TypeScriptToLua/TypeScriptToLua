@@ -106,6 +106,7 @@ export interface TextRange {
 export interface Node extends TextRange {
     kind: SyntaxKind;
     parent?: Node;
+    tsOriginal?: ts.Node;
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
@@ -115,7 +116,7 @@ export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node
         pos = tsOriginal.pos;
         end = tsOriginal.end;
     }
-    return {kind, parent, pos, end};
+    return {kind, parent, pos, end, tsOriginal};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -125,6 +126,7 @@ export function cloneNode<T extends Node>(node: T): T {
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
     node.pos = tsOriginal.pos;
     node.end = tsOriginal.end;
+    node.tsOriginal = tsOriginal;
     return node;
 }
 
@@ -139,12 +141,18 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
                 n.pos = parent.pos;
                 n.end = parent.end;
             }
+            if (!n.tsOriginal) {
+                n.tsOriginal = parent.tsOriginal;
+            }
         });
     } else {
         node.parent = parent;
         if (node.pos === -1 || node.end === -1) {
             node.pos = parent.pos;
             node.end = parent.end;
+        }
+        if (!node.tsOriginal) {
+            node.tsOriginal = parent.tsOriginal;
         }
     }
 }

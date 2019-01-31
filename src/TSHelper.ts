@@ -541,4 +541,31 @@ export class TSHelper {
 
         return false;
     }
+
+    public static findFirstReferenceInScope(
+        identifier: ts.Identifier,
+        scope: ts.Node,
+        checker: ts.TypeChecker
+    ): ts.Identifier | undefined
+    {
+        const symbol = checker.getSymbolAtLocation(identifier);
+        let result: ts.Identifier | undefined;
+        let ctx: ts.TransformationContext;
+        const visitor: ts.Visitor = node => {
+            if (ts.isIdentifier(node)
+                && node.text === identifier.text
+                && checker.getSymbolAtLocation(node) === symbol)
+            {
+                result = result || node;
+                return node;
+            }
+            return ts.visitEachChild(node, visitor, ctx);
+        };
+        const factory: ts.TransformerFactory<ts.Node> = c => {
+            ctx = c;
+            return n => ts.visitNode(n, visitor);
+        };
+        ts.transform(scope, [factory]);
+        return result;
+    }
 }

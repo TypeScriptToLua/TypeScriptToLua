@@ -1211,7 +1211,7 @@ export class LuaTransformer {
     public transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {
         if (ts.isVariableDeclarationList(initializer)) {
             // Declaration of new variable
-            this.pushScope(ScopeType.Loop, initializer); // Counter hoisting - there's probably a better way to handle this
+            this.pushScope(ScopeType.Loop, initializer); // Counter hoisting - probably a better way to handle this
             const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
             const [, hoistedStatements] = this.popScope();
             variableDeclarations.unshift(...hoistedStatements);
@@ -3178,17 +3178,11 @@ export class LuaTransformer {
     }
 
     private shouldHoistIdentifier(identifier: tstl.Identifier, isVar: boolean): boolean {
-        if (!identifier.tsOriginal || identifier.tsOriginal.pos < 0) {
+        if (!identifier.tsOriginal || !ts.isIdentifier(identifier.tsOriginal) || identifier.tsOriginal.pos < 0) {
             return false;
         }
-
-        const scope = isVar ? this.findScope(ScopeType.Function) : this.peekScope();
-        const firstReference = tsHelper.findFirstReferenceInScope(
-            identifier.tsOriginal as ts.Identifier,
-            scope.node,
-            this.checker
-        );
-        return firstReference !== undefined && firstReference.pos < identifier.tsOriginal.pos;
+        const scope = isVar ? (this.findScope(ScopeType.Function) || this.scopeStack[0]) : this.peekScope();
+        return tsHelper.needsHoisting(identifier.tsOriginal as ts.Identifier, scope.node, this.checker);
     }
 
     private createLocalOrExportedOrGlobalDeclaration(
@@ -3214,19 +3208,26 @@ export class LuaTransformer {
             const isLetOrConst = tsOriginal && ts.isVariableDeclaration(tsOriginal)
                 && tsOriginal.parent && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
             if (this.isModule || this.currentNamespace || insideFunction || isLetOrConst) {
+                // local
                 const isVar = !(isLetOrConst || isFunctionDeclaration);
-                const hoist = isFunctionDeclaration || (Array.isArray(lhs)
+                const hoist = Array.isArray(lhs)
                     ? lhs.some(i => this.shouldHoistIdentifier(i, !isLetOrConst))
-                    : this.shouldHoistIdentifier(lhs, isVar));
+                    : this.shouldHoistIdentifier(lhs, isVar);
                 if (hoist) {
                     this.hoistLocals(lhs, isLetOrConst || isFunctionDeclaration ? undefined : ScopeType.Function);
+                } else if (rhs && tstl.isFunctionExpression(rhs)) {
+                    // separate declaration and assignment to support recursive functions
+                    return [
+                        tstl.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent),
+                        tstl.createAssignmentStatement(left, rhs, tsOriginal, parent),
+                    ];
                 } else {
                     return [tstl.createVariableDeclarationStatement(lhs, rhs, tsOriginal, parent)];
                 }
             }
         }
 
-        if (isFunctionDeclaration) {
+        if (isFunctionDeclaration && this.shouldHoistIdentifier(lhs as tstl.Identifier, false)) {
             // hoist function declarations
             this.hoistFunctionDeclaration(tstl.createAssignmentStatement(left, rhs, tsOriginal, parent));
             return undefined;

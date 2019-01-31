@@ -542,30 +542,34 @@ export class TSHelper {
         return false;
     }
 
-    public static findFirstReferenceInScope(
-        identifier: ts.Identifier,
-        scope: ts.Node,
-        checker: ts.TypeChecker
-    ): ts.Identifier | undefined
+    public static needsHoisting(identifier: ts.Identifier, scope: ts.Node, checker: ts.TypeChecker) : boolean
     {
         const symbol = checker.getSymbolAtLocation(identifier);
-        let result: ts.Identifier | undefined;
-        let ctx: ts.TransformationContext;
-        const visitor: ts.Visitor = node => {
-            if (ts.isIdentifier(node)
+        let result = false;
+        const functionStack: ts.FunctionDeclaration[] = [];
+        const visitor = (node: ts.Node) => {
+            if (ts.isFunctionDeclaration(node)) {
+                if (node.name !== identifier) { // don't recurse into self
+                    functionStack.push(node);
+                    ts.forEachChild(node, visitor);
+                    functionStack.pop();
+                }
+                return;
+
+            } else if (ts.isIdentifier(node)
                 && node.text === identifier.text
                 && checker.getSymbolAtLocation(node) === symbol)
             {
-                result = result || node;
-                return node;
+                // hoist if referenced before declaration, or inside a local function which itself will be hoisted
+                result = (node.pos < identifier.pos)
+                    || (functionStack.length > 0 && this.needsHoisting(functionStack[0].name, scope, checker));
             }
-            return ts.visitEachChild(node, visitor, ctx);
+
+            if (!result) {
+                ts.forEachChild(node, visitor);
+            }
         };
-        const factory: ts.TransformerFactory<ts.Node> = c => {
-            ctx = c;
-            return n => ts.visitNode(n, visitor);
-        };
-        ts.transform(scope, [factory]);
+        ts.forEachChild(scope, visitor);
         return result;
     }
 }

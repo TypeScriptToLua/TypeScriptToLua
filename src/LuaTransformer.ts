@@ -1066,13 +1066,13 @@ export class LuaTransformer {
         } else if (ts.isObjectBindingPattern(statement.name)) {
             const statements = [];
             let table: tstl.Identifier;
-            if (ts.isObjectLiteralExpression(statement.initializer)) {
-                // If destructuring a literal table, declare the table first
-                table = tstl.createIdentifier("_");
+            if (ts.isIdentifier(statement.initializer)) {
+                table = this.transformIdentifier(statement.initializer);
+            } else {
+                // Contain the expression in a temporary variable
+                table = tstl.createIdentifier("____");
                 statements.push(tstl.createVariableDeclarationStatement(
                     table, this.transformExpression(statement.initializer)));
-            } else if (ts.isIdentifier(statement.initializer)) {
-                table = this.transformIdentifier(statement.initializer);
             }
             statements.push(...this.transformObjectBindingPattern(statement.name, table));
             return statements;

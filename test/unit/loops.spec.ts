@@ -103,6 +103,22 @@ export class LuaLoopTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("for with expression")
+    public forWithExpression(inp: number[], expected: number[]): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            let i: number;
+            for (i = 0 * 1; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
     @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
     @Test("for with continue")
     public forWithContinue(inp: number[], expected: number[]): void

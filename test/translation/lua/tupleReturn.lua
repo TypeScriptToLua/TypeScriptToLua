@@ -1,10 +1,20 @@
-local a, b, c, d, e, f;
 tupleReturn = function()
     return 0, "foobar";
 end;
+tupleReturn();
+noTupleReturn();
+local a, b = tupleReturn();
+local c, d = table.unpack(noTupleReturn());
+a, b = tupleReturn();
+c, d = table.unpack(noTupleReturn());
+local e = ({tupleReturn()});
+local f = noTupleReturn();
+e = ({tupleReturn()});
+f = noTupleReturn();
+foo(({tupleReturn()}));
+foo(noTupleReturn());
 tupleReturnFromVar = function()
-    local r;
-    r = {1, "baz"};
+    local r = {1, "baz"};
     return table.unpack(r);
 end;
 tupleReturnForward = function()
@@ -16,15 +26,3 @@ end;
 tupleReturnUnpack = function()
     return table.unpack(tupleNoForward());
 end;
-tupleReturn();
-noTupleReturn();
-a, b = tupleReturn();
-c, d = table.unpack(noTupleReturn());
-a, b = tupleReturn();
-c, d = table.unpack(noTupleReturn());
-e = ({tupleReturn()});
-f = noTupleReturn();
-e = ({tupleReturn()});
-f = noTupleReturn();
-foo(({tupleReturn()}));
-foo(noTupleReturn());

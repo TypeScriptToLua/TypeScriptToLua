@@ -1,5 +1,4 @@
-local e;
-e = 10;
+local e = 10;
 repeat
     do
         e = e - 1;

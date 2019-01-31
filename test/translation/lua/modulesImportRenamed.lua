@@ -1,3 +1,2 @@
-local RenamedClass;
 local __TSTL_test = require("test");
-RenamedClass = __TSTL_test.TestClass;
+local RenamedClass = __TSTL_test.TestClass;

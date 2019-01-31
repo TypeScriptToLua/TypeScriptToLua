@@ -14,7 +14,7 @@ export class ObjectLiteralTests {
     @Test("Object Literal")
     public objectLiteral(inp: string, out: string): void {
         const lua = util.transpileString(`const myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar;\nmyvar = ${out}`);
+        Expect(lua).toBe(`local myvar = ${out}`);
     }
 
     @TestCase("3", 3)

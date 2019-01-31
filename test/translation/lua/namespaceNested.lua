@@ -1,8 +1,7 @@
 myNamespace = myNamespace or {};
 do
-    local myNestedNamespace;
     myNamespace.myNestedNamespace = myNamespace.myNestedNamespace or {};
-    myNestedNamespace = myNamespace.myNestedNamespace;
+    local myNestedNamespace = myNamespace.myNestedNamespace;
     do
         local nsMember;
         nsMember = function()

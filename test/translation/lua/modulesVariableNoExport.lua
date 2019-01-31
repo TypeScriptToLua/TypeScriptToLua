@@ -1,2 +1,1 @@
-local test;
-test = "test";
+local test = "test";

@@ -15,7 +15,7 @@ export class EnumTests {
             const valueOne = TestEnum.MEMBER_ONE;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne;\nvalueOne = "test";`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test";`);
     }
 
     @Test("Const enum")
@@ -29,7 +29,7 @@ export class EnumTests {
             const valueOne = TestEnum.MEMBER_ONE;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne;\nvalueOne = "test";`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test";`);
     }
 
     @Test("Const enum without initializer")
@@ -43,7 +43,7 @@ export class EnumTests {
             const valueOne = TestEnum.MEMBER_ONE;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne;\nvalueOne = 0;`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = 0;`);
     }
 
     @Test("Const enum without initializer in some values")
@@ -58,7 +58,7 @@ export class EnumTests {
             const valueOne = TestEnum.MEMBER_TWO;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne;\nvalueOne = 4;`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = 4;`);
     }
 
     @Test("Invalid heterogeneous enum")

@@ -1,7 +1,6 @@
 local exports = exports or {};
-local test;
 exports.test = exports.test or {};
-test = exports.test;
+local test = exports.test;
 do
     test.TestEnum = {};
     test.TestEnum.foo = "foo";

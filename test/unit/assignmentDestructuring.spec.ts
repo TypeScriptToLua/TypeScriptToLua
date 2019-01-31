@@ -15,7 +15,7 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
-        Expect(lua).toBe(`local a, b;\na, b = unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
 
     @Test("Assignment destructuring [5.2]")
@@ -25,7 +25,7 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
-        Expect(lua).toBe(`local a, b;\na, b = table.unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = table.unpack(myFunc());`);
     }
 
     @Test("Assignment destructuring [JIT]")
@@ -35,6 +35,6 @@ export class AssignmentDestructuringTests {
             this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None}
         );
         // Assert
-        Expect(lua).toBe(`local a, b;\na, b = unpack(myFunc());`);
+        Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
 }

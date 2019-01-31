@@ -1,5 +1,4 @@
-local i;
-i = 0;
+local i = 0;
 while i < 10 do
     do
         if i < 5 then

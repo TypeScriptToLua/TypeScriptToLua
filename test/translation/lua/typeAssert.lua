@@ -1,3 +1,2 @@
-local test1, test2;
-test1 = 10;
-test2 = 10;
+local test1 = 10;
+local test2 = 10;

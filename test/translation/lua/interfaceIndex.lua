@@ -1,3 +1,2 @@
-local a;
-a = {};
+local a = {};
 a.abc = "def";

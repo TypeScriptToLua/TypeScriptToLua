@@ -1,5 +1,4 @@
-local i;
-i = 1;
+local i = 1;
 while i <= 100 do
     do
     end

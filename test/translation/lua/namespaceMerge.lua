@@ -1,4 +1,3 @@
-local mergedClass;
 MergedClass = MergedClass or {};
 MergedClass.__index = MergedClass;
 MergedClass.new = function(construct, ...)
@@ -28,7 +27,7 @@ do
     MergedClass.namespaceFunc = function()
     end;
 end
-mergedClass = MergedClass.new(true);
+local mergedClass = MergedClass.new(true);
 mergedClass:methodB();
 mergedClass:propertyFunc();
 MergedClass:staticMethodB();

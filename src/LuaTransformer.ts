@@ -1059,6 +1059,11 @@ export class LuaTransformer {
             } else if (expression.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
                 // = assignment
                 return this.transformAssignmentStatement(expression);
+
+            } else if (expression.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+                const lhs = this.transformExpressionStatement(expression.left);
+                const rhs = this.transformExpressionStatement(expression.right);
+                return tstl.createDoStatement([lhs, rhs], expression);
             }
 
         } else if (
@@ -1172,9 +1177,13 @@ export class LuaTransformer {
         const result: tstl.Statement[] = [];
 
         if (statement.initializer) {
-            for (const variableDeclaration of (statement.initializer as ts.VariableDeclarationList).declarations) {
-                // local initializer = value
-                result.push(...this.transformVariableDeclaration(variableDeclaration));
+            if (ts.isVariableDeclarationList(statement.initializer)) {
+                for (const variableDeclaration of statement.initializer.declarations) {
+                    // local initializer = value
+                    result.push(...this.transformVariableDeclaration(variableDeclaration));
+                }
+            } else {
+                result.push(this.transformExpressionStatement(statement.initializer));
             }
         }
 
@@ -1727,6 +1736,13 @@ export class LuaTransformer {
 
             case ts.SyntaxKind.InstanceOfKeyword:
                 return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
+
+            case ts.SyntaxKind.CommaToken:
+                return this.createImmediatelyInvokedFunctionExpression(
+                    [this.transformExpressionStatement(expression.left)],
+                    rhs,
+                    expression
+                );
 
             default:
                 throw TSTLErrors.UnsupportedKind("binary operator", expression.operatorToken.kind, expression);

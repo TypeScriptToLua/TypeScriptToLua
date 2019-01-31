@@ -177,6 +177,28 @@ export class ExpressionTests {
         Expect(util.transpileString(input)).toBe(lua);
     }
 
+    @TestCase("bar(),foo()", 1)
+    @TestCase("foo(),bar()", 2)
+    @TestCase("foo(),bar(),baz()", 3)
+    @Test("Binary Comma")
+    public binaryComma(input: string, expectResult: number): void {
+        const code =
+            `function foo() { return 1; }
+            function bar() { return 2; };
+            function baz() { return 3; };
+            return (${input});`;
+        Expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+
+    @Test("Binary Comma Statement in For Loop")
+    public binaryCommaStatementInForLoop(): void {
+        const code =
+            `let x: number, y: number;
+            for (x = 0, y = 17; x < 5; ++x, --y) {}
+            return y;`;
+        Expect(util.transpileAndExecute(code)).toBe(12);
+    }
+
     @Test("Null Expression")
     public nullExpression(): void {
         Expect(util.transpileString("null")).toBe("nil;");

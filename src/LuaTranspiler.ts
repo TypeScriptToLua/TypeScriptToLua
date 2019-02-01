@@ -4,7 +4,7 @@ import * as ts from "typescript";
 
 import * as tstl from "./LuaAST";
 
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
+import {CompilerOptions, HoistingMode, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaPrinter} from "./LuaPrinter";
 import {LuaTransformer} from "./LuaTransformer";
 
@@ -33,6 +33,9 @@ export class LuaTranspiler {
         }
         if (options.luaLibImport) {
             options.luaLibImport = options.luaLibImport.toLocaleLowerCase() as LuaLibImportKind;
+        }
+        if (options.hoisting) {
+            options.hoisting = options.hoisting.toLowerCase() as HoistingMode;
         }
 
         return options;

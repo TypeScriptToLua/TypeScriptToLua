@@ -4,6 +4,7 @@ export interface CompilerOptions extends ts.CompilerOptions {
     noHeader?: boolean;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
+    hoisting?: HoistingMode;
 }
 
 export enum LuaLibImportKind {
@@ -18,4 +19,10 @@ export enum LuaTarget {
     Lua52 = "5.2",
     Lua53 = "5.3",
     LuaJIT = "jit",
+}
+
+export enum HoistingMode {
+    None = "none",
+    Full = "full",
+    Required = "required",
 }

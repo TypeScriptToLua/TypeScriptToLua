@@ -3,7 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 
 import {parseCommandLine} from "./CommandLineParser";
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
+import {CompilerOptions, HoistingMode, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaTranspiler} from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {

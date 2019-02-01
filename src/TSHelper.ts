@@ -542,34 +542,23 @@ export class TSHelper {
         return false;
     }
 
-    public static needsHoisting(identifier: ts.Identifier, scope: ts.Node, checker: ts.TypeChecker) : boolean
+    public static findFirstReference(
+        identifier: ts.Identifier,
+        scope: ts.Node,
+        checker: ts.TypeChecker
+    ) : ts.Identifier
     {
         const symbol = checker.getSymbolAtLocation(identifier);
-        let result = false;
-        const functionStack: ts.FunctionDeclaration[] = [];
-        const visitor = (node: ts.Node) => {
-            if (ts.isFunctionDeclaration(node)) {
-                if (node.name !== identifier) { // don't recurse into self
-                    functionStack.push(node);
-                    ts.forEachChild(node, visitor);
-                    functionStack.pop();
-                }
-                return;
 
-            } else if (ts.isIdentifier(node)
+        const visitor = (node: ts.Node) => {
+            if (ts.isIdentifier(node)
                 && node.text === identifier.text
                 && checker.getSymbolAtLocation(node) === symbol)
             {
-                // hoist if referenced before declaration, or inside a local function which itself will be hoisted
-                result = (node.pos < identifier.pos)
-                    || (functionStack.length > 0 && this.needsHoisting(functionStack[0].name, scope, checker));
+                return node;
             }
-
-            if (!result) {
-                ts.forEachChild(node, visitor);
-            }
+            return ts.forEachChild(node, visitor);
         };
-        ts.forEachChild(scope, visitor);
-        return result;
+        return ts.forEachChild(scope, visitor);
     }
 }

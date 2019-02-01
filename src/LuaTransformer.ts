@@ -2708,6 +2708,8 @@ export class LuaTransformer {
         switch (expressionName) {
             case "replace":
                 return this.transformLuaLibFunction(LuaLibFeature.StringReplace, caller, ...params);
+            case "concat":
+                return this.transformLuaLibFunction(LuaLibFeature.StringConcat, caller, ...params);
             case "indexOf":
                 const stringExpression =
                     node.arguments.length === 1

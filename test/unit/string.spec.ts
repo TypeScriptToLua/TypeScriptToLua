@@ -122,7 +122,23 @@ export class StringTests
         // Assert
         Expect(result).toBe(inp.indexOf(searchValue, x));
     }
+    @TestCase("hello test")
+    @TestCase("hello test", 0)
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 1, 2)
+    @TestCase("hello test", 1, 5)
+    @Test("string.slice")
+    public slice(inp: string, start?: number, end?: number): void
+    {
+        // Transpile/Execute
+        const paramStr = start? (end ? `${start}, ${end}` : `${start}`):'';
+        const result = util.transpileAndExecute(
+            `return "${inp}".slice(${paramStr})`
+        );
 
+        // Assert
+        Expect(result).toBe(inp.slice(start, end));
+    }
     @TestCase("hello test", 0)
     @TestCase("hello test", 1)
     @TestCase("hello test", 1, 2)

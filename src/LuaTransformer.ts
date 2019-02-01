@@ -2749,6 +2749,18 @@ export class LuaTransformer {
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
+            case "slice":
+                if (node.arguments.length === 0) {
+                    return caller;
+                }
+                else if (node.arguments.length === 1) {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    return this.createStringCall("sub", node, caller, arg1);
+                } else {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg2 = params[1];
+                    return this.createStringCall("sub", node, caller, arg1, arg2);
+                }
             case "toLowerCase":
                 return this.createStringCall("lower", node, caller);
             case "toUpperCase":

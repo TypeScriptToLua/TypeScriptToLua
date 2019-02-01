@@ -542,23 +542,56 @@ export class TSHelper {
         return false;
     }
 
-    public static findFirstReference(
-        identifier: ts.Identifier,
-        scope: ts.Node,
-        checker: ts.TypeChecker
-    ) : ts.Identifier
-    {
-        const symbol = checker.getSymbolAtLocation(identifier);
+    public static getFirstDeclaration(symbol: ts.Symbol, sourceFile?: ts.SourceFile): ts.Declaration | undefined {
+        let declarations = symbol.getDeclarations();
+        if (!declarations) {
+            return undefined;
+        }
+        if (sourceFile) {
+            declarations = declarations.filter(d => this.findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
+        }
+        return declarations.length > 0
+            ? declarations.reduce((p, c) => p.pos < c.pos ? p : c)
+            : undefined;
+    }
 
+    public static isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
+        const symbol = checker.getSymbolAtLocation(node.name);
+        if (!symbol) {
+            return false;
+        }
+        const firstDeclaration = this.getFirstDeclaration(symbol);
+        return firstDeclaration === node;
+    }
+
+    public static findFirstReference(symbol: ts.Symbol, scope: ts.Node, checker: ts.TypeChecker) : ts.Identifier
+    {
         const visitor = (node: ts.Node) => {
-            if (ts.isIdentifier(node)
-                && node.text === identifier.text
-                && checker.getSymbolAtLocation(node) === symbol)
+            if (checker.getSymbolAtLocation(node) === symbol)
             {
                 return node;
             }
             return ts.forEachChild(node, visitor);
         };
         return ts.forEachChild(scope, visitor);
+    }
+
+    public static findNodes<T extends ts.Node>(
+        root: ts.Node,
+        filter: (node: ts.Node) => node is T,
+        recurseIntoResults: boolean
+    ): T[] {
+        const results: T[] = [];
+        const visitor = (node: ts.Node) => {
+            if (filter(node)) {
+                results.push(node);
+                if (!recurseIntoResults) {
+                    return;
+                }
+            }
+            ts.forEachChild(node, visitor);
+        };
+        ts.forEachChild(root, visitor);
+        return results;
     }
 }

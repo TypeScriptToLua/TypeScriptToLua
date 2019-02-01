@@ -26,6 +26,7 @@ interface Scope {
     node: ts.Node;
     hoistedLocals: tstl.Identifier[];
     hoistedFunctions: tstl.Statement[];
+    nestedFunctionsCache?: ts.FunctionDeclaration[];
 }
 
 export class LuaTransformer {
@@ -49,7 +50,7 @@ export class LuaTransformer {
     private genVarCounter: number;
 
     private luaLibFeatureSet: Set<LuaLibFeature>;
-    private hoistingCache: Map<ts.Symbol, boolean>;
+    private symbolReferencedBeforeDeclaration: Map<ts.Symbol, boolean>;
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
@@ -76,7 +77,7 @@ export class LuaTransformer {
         this.scopeStack = [];
         this.classStack = [];
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
-        this.hoistingCache = new Map<ts.Symbol, boolean>();
+        this.symbolReferencedBeforeDeclaration = new Map<ts.Symbol, boolean>();
     }
 
     // TODO make all other methods private???
@@ -3036,6 +3037,18 @@ export class LuaTransformer {
                                                   // But this should be changed to retun tstl.createNilLiteral()
                                                   // at some point.
         }
+
+        // Track identifiers seen before they are declared
+        const symbol = this.checker.getSymbolAtLocation(expression);
+        if (symbol && !this.symbolReferencedBeforeDeclaration.has(symbol)) {
+            const firstDeclaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+            const referencedBeforeDeclaration = firstDeclaration && expression.pos < firstDeclaration.pos;
+            this.symbolReferencedBeforeDeclaration.set(symbol, referencedBeforeDeclaration);
+            if (this.options.hoisting === HoistingMode.None && referencedBeforeDeclaration) {
+                throw TSTLErrors.ReferencedBeforeDeclaration(expression);
+            }
+        }
+
         let escapedText = expression.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
@@ -3182,54 +3195,65 @@ export class LuaTransformer {
         return tstl.createIdentifier("self", tsOriginal);
     }
 
-    private identifierNeedsHoisting(identifier: ts.Identifier, scope: Scope) : boolean {
-        const symbol = this.checker.getSymbolAtLocation(identifier);
-        if (this.hoistingCache.has(symbol)) {
-            return this.hoistingCache.get(symbol);
+    private isReferencedBeforeDeclaration(symbol: ts.Symbol): boolean {
+        let referencedBeforeDeclaration = this.symbolReferencedBeforeDeclaration.get(symbol);
+        if (referencedBeforeDeclaration === undefined) {
+            const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+            if (declaration) {
+                const firstReference = tsHelper.findFirstReference(symbol, declaration.parent, this.checker);
+                referencedBeforeDeclaration = firstReference.pos < declaration.pos;
+            } else {
+                referencedBeforeDeclaration = false;
+            }
+            this.symbolReferencedBeforeDeclaration.set(symbol, referencedBeforeDeclaration);
         }
+        return referencedBeforeDeclaration;
+    }
 
+    private identifierNeedsHoisting(identifier: ts.Identifier, scope: Scope) : boolean {
         if (identifier.parent
             && ts.isFunctionDeclaration(identifier.parent)
-            && scope.type === ScopeType.File
+            && identifier.parent.parent
+            && ts.isSourceFile(identifier.parent.parent)
             && !this.isModule)
         {
-            // Dont' hoist global function declarations
-            this.hoistingCache.set(symbol, false);
+            // Don't hoist global function declarations in non-modules
             return false;
         }
 
-        const visitor = (node: ts.Node) => {
-            if (node.pos < identifier.pos) {
-                // check for reference before declaration
-                if (ts.isIdentifier(node)
-                    && node.text === identifier.text
-                    && this.checker.getSymbolAtLocation(node) === symbol)
-                {
-                    return true;
-                }
+        if (this.options.hoisting === HoistingMode.Full) {
+            return true;
+        }
 
-            } else if (node.pos > identifier.pos) {
-                // check for reference in function that will be hoisted
-                if (ts.isFunctionDeclaration(node)) {
-                    if (node.body
-                        && this.identifierNeedsHoisting(node.name, scope)
-                        && tsHelper.findFirstReference(identifier, node.body, this.checker))
-                    {
-                        return true;
-                    }
-                    return false;
-                }
+        const symbol = this.checker.getSymbolAtLocation(identifier);
+        if (this.isReferencedBeforeDeclaration(symbol)) {
+            return true;
+        }
+
+        const declarations = symbol.getDeclarations();
+        if (!declarations || declarations.length === 0) {
+            return false;
+        }
+
+        // Check for nested functions that reference the identifier and will be hoisted
+        if (!scope.nestedFunctionsCache) {
+            scope.nestedFunctionsCache = tsHelper.findNodes(scope.node, ts.isFunctionDeclaration, false);
+        }
+        for (const func of scope.nestedFunctionsCache) {
+            if (func.name && func.body
+                && func.pos > declarations[0].pos // No need to check functions before identifier was declared
+                && declarations.indexOf(func) < 0 // Prevent recursing into self
+                && this.identifierNeedsHoisting(func.name, scope)
+                && tsHelper.findFirstReference(symbol, func.body, this.checker))
+            {
+                return true;
             }
+        }
 
-            return ts.forEachChild(node, visitor);
-        };
-
-        const result = ts.forEachChild(scope.node, visitor) !== undefined;
-        this.hoistingCache.set(symbol, result);
-        return result;
+        return false;
     }
 
-    private shouldHoistIdentifier(identifier: tstl.Identifier, isVar: boolean): boolean {
+    private shouldHoistIdentifier(identifier: tstl.Identifier, scope: Scope): boolean {
         if (this.options.hoisting === HoistingMode.None
             || !identifier.tsOriginal
             || !ts.isIdentifier(identifier.tsOriginal)
@@ -3237,12 +3261,8 @@ export class LuaTransformer {
         {
             return false;
 
-        } else if (this.options.hoisting === HoistingMode.Full) {
-            return true;
-
         } else {
-            const scope = isVar ? (this.findScope(ScopeType.Function) || this.scopeStack[0]) : this.peekScope();
-            return this.identifierNeedsHoisting(identifier.tsOriginal as ts.Identifier, scope);
+            return this.identifierNeedsHoisting(identifier.tsOriginal, scope);
         }
     }
 
@@ -3263,21 +3283,28 @@ export class LuaTransformer {
                 left = lhs.map(i => this.createExportedIdentifier(i));
             } else {
                 left = this.createExportedIdentifier(lhs);
-                hoistFunction = isFunctionDeclaration && this.shouldHoistIdentifier(lhs, false);
+                hoistFunction = isFunctionDeclaration && this.shouldHoistIdentifier(lhs, this.peekScope());
             }
 
         } else {
             const insideFunction = this.findScope(ScopeType.Function) !== undefined;
-            const isLetOrConst = tsOriginal && ts.isVariableDeclaration(tsOriginal)
-                && tsOriginal.parent && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
-            if (this.isModule || this.currentNamespace || insideFunction || isLetOrConst) {
+            let isLetOrConst = false;
+            let isFirstDeclaration = true; // var can have multiple declarations for the same variable :/
+            if (tsOriginal && ts.isVariableDeclaration(tsOriginal)) {
+                isLetOrConst = tsOriginal.parent
+                    && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
+                isFirstDeclaration = isLetOrConst || tsHelper.isFirstDeclaration(tsOriginal, this.checker);
+            }
+            if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {
                 // local
-                const isVar = !(isLetOrConst || isFunctionDeclaration);
+                const scope = isLetOrConst || isFunctionDeclaration
+                    ? this.peekScope()
+                    : this.findScope(ScopeType.Function, ScopeType.File);
                 const hoist = Array.isArray(lhs)
-                    ? lhs.some(i => this.shouldHoistIdentifier(i, !isLetOrConst))
-                    : this.shouldHoistIdentifier(lhs, isVar);
+                    ? lhs.some(i => this.shouldHoistIdentifier(i, scope))
+                    : this.shouldHoistIdentifier(lhs, scope);
                 if (hoist) {
-                    this.hoistLocals(lhs, isLetOrConst || isFunctionDeclaration ? undefined : ScopeType.Function);
+                    this.hoistLocals(lhs, scope);
                     hoistFunction = isFunctionDeclaration;
 
                 } else if (rhs && tstl.isFunctionExpression(rhs)) {
@@ -3421,14 +3448,9 @@ export class LuaTransformer {
         return [scope, hoistedStatements];
     }
 
-    protected hoistLocals(locals: tstl.Identifier | tstl.Identifier[], scopeType?: ScopeType): void {
-        let scope: Scope;
-        if (!scopeType) {
+    protected hoistLocals(locals: tstl.Identifier | tstl.Identifier[], scope?: Scope): void {
+        if (!scope) {
             scope = this.peekScope();
-
-        } else {
-            // find first scope with desired type (default to file scope)
-            scope = this.scopeStack.slice().reverse().find(s => s.type === scopeType) || this.scopeStack[0];
         }
 
         if (Array.isArray(locals)) {
@@ -3450,7 +3472,7 @@ export class LuaTransformer {
         parent?: tstl.Node
     ): tstl.AssignmentStatement | tstl.VariableDeclarationStatement
     {
-        if (this.shouldHoistIdentifier(variable, false)) {
+        if (this.shouldHoistIdentifier(variable, this.peekScope())) {
             this.hoistLocals(variable);
             return tstl.createAssignmentStatement(variable, initializer, tsOriginal, parent);
         } else {

@@ -1,8 +1,17 @@
+import * as ts from "typescript";
 import { Expect, Test, TestCase } from "alsatian";
 
 import * as util from "../src/util";
+import { CompilerOptions, LuaLibImportKind, LuaTarget, HoistingMode } from "../../src/CompilerOptions";
+import { TranspileError } from "../../src/TranspileError";
 
 export class HoistingTests {
+    private static readonly hoistingCompilerOptions: CompilerOptions = {
+        hoisting: HoistingMode.Required,
+        luaLibImport: LuaLibImportKind.Require,
+        luaTarget: LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
 
     @Test("Var Hoisting")
     public varHoisting(): void {
@@ -10,7 +19,7 @@ export class HoistingTests {
             `foo = "foo";
             var foo;
             return foo;`;
-        const result = util.transpileAndExecute(code);
+        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
         Expect(result).toBe("foo");
     }
 
@@ -33,7 +42,7 @@ export class HoistingTests {
             ${varType} foo = "foo";
             setBar();
             return foo;`;
-        const result = util.transpileAndExecute(code);
+        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
         Expect(result).toBe("foo");
     }
 
@@ -56,7 +65,7 @@ export class HoistingTests {
             `const foo = bar();
             function bar() { return "bar"; }
             return foo;`;
-        const result = util.transpileAndExecute(code);
+        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
         Expect(result).toBe("bar");
     }
 
@@ -117,7 +126,7 @@ export class HoistingTests {
                 return bar;
             }
             return foo();`;
-        const result = util.transpileAndExecute(code);
+        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
         Expect(result).toBe(expectResult);
     }
 
@@ -191,5 +200,36 @@ export class HoistingTests {
             export const foo = bar();`;
         const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
+    }
+
+    @TestCase(`foo = "foo"; var foo;`, "foo")
+    @TestCase(`foo = "foo"; export var foo;`, "foo")
+    @TestCase(`function setBar() { const bar = foo; } let foo = "foo";`, "foo")
+    @TestCase(`function setBar() { const bar = foo; } const foo = "foo";`, "foo")
+    @TestCase(`function setBar() { const bar = foo; } export let foo = "foo";`, "foo")
+    @TestCase(`function setBar() { const bar = foo; } export const foo = "foo";`, "foo")
+    @TestCase(`const foo = bar(); function bar() { return "bar"; }`, "bar")
+    @TestCase(`export const foo = bar(); function bar() { return "bar"; }`, "bar")
+    @TestCase(`const foo = bar(); export function bar() { return "bar"; }`, "bar")
+    @TestCase(`function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, "NS")
+    @TestCase(
+        `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
+        "I"
+    )
+    @TestCase(`function makeFoo() { return new Foo(); } class Foo {}`, "Foo")
+    @TestCase(`function bar() { return E.A; } enum E { A = "foo" }`, "E")
+    @Test("No Hoisting")
+    public noHoisting(code: string, identifier: string): void {
+        const compilerOptions: CompilerOptions = {
+            hoisting: HoistingMode.None,
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
+            TranspileError,
+            `Identifier "${identifier}" was referenced before it was declared. The declaration ` +
+            "must be moved before the identifier's use, or hoisting must be enabled."
+        );
     }
 }

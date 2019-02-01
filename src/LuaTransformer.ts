@@ -12,12 +12,12 @@ export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined
 export type ExpressionVisitResult = tstl.Expression | undefined;
 
 export enum ScopeType {
-    File,
-    Function,
-    Switch,
-    Loop,
-    Conditional,
-    Block,
+    File = 0x1,
+    Function = 0x2,
+    Switch = 0x4,
+    Loop = 0x8,
+    Conditional = 0x10,
+    Block = 0x20,
 }
 
 interface Scope {
@@ -1503,7 +1503,7 @@ export class LuaTransformer {
     }
 
     public transformBreakStatement(breakStatement: ts.BreakStatement): StatementVisitResult {
-        const breakableScope = this.findScope(ScopeType.Loop, ScopeType.Switch);
+        const breakableScope = this.findScope(ScopeType.Loop | ScopeType.Switch);
         if (breakableScope.type === ScopeType.Switch) {
             return tstl.createGotoStatement(`____TS_switch${breakableScope.id}_end`);
         } else {
@@ -3299,7 +3299,7 @@ export class LuaTransformer {
                 // local
                 const scope = isLetOrConst || isFunctionDeclaration
                     ? this.peekScope()
-                    : this.findScope(ScopeType.Function, ScopeType.File);
+                    : this.findScope(ScopeType.Function | ScopeType.File);
                 const hoist = Array.isArray(lhs)
                     ? lhs.some(i => this.shouldHoistIdentifier(i, scope))
                     : this.shouldHoistIdentifier(lhs, scope);
@@ -3419,8 +3419,8 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
-    protected findScope(...scopeTypes: ScopeType[]): Scope | undefined {
-        return this.scopeStack.slice().reverse().find(s => scopeTypes.find(t => s.type === t) !== undefined);
+    protected findScope(scopeTypes: ScopeType): Scope | undefined {
+        return this.scopeStack.slice().reverse().find(s => (scopeTypes & s.type) !== 0);
     }
 
     protected peekScope(): Scope {

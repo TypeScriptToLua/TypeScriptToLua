@@ -803,6 +803,10 @@ export class LuaTransformer {
                     propertyAccessStack.push(propertyName);
                     yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
                 } else {
+                    // Disallow ellipsis destructure
+                    if (element.dotDotDotToken) {
+                        throw TSTLErrors.ForbiddenEllipsisDestruction(element);
+                    }
                     // Build the path to the table
                     let tableExpression: tstl.Expression = table;
                     propertyAccessStack.forEach(property => {

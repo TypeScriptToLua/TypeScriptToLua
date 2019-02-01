@@ -4,6 +4,11 @@ import * as util from "../src/util";
 
 const testCases = [
     ["{x}", "{x: true}", "x"],
+    ["[x, y]", "[false, true]", "y"],
+    ["{x: [y, z]}", "{x: [false, true]}", "z"],
+    ["{x: [, z]}", "{x: [false, true]}", "z"],
+    ["{x: [{y}]}", "{x: [{y: true}]}", "y"],
+    ["[[y, z]]", "[[false, true]]", "z"],
     ["{x, y}", "{x: false, y: true}", "y"],
     ["{x: foo, y}", "{x: true, y: false}", "foo"],
     ["{x: foo, y: bar}", "{x: false, y: true}", "bar"],
@@ -24,7 +29,7 @@ export class BindingPatternTests {
     @TestCases(testCases)
     @TestCases(testCasesDefault)
     @Test("Object bindings in functions")
-    public testObjectBindingPatternParameters(
+    public tesBindingPatternParameters(
         bindingString: string,
         objectString: string,
         returnVariable: string
@@ -40,7 +45,7 @@ export class BindingPatternTests {
 
     @TestCases(testCases)
     @TestCases(testCasesDefault)
-    public testObjectBindingPatternDeclarations(
+    public testBindingPatternDeclarations(
         bindingString: string,
         objectString: string,
         returnVariable: string
@@ -54,7 +59,7 @@ export class BindingPatternTests {
 
     @TestCases(testCases)
     @Test("Object bindings with call expressions")
-    public testObjectBindingCallExpressions(
+    public testBindingPatternCallExpressions(
         bindingString: string,
         objectString: string,
         returnVariable: string

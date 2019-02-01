@@ -707,10 +707,10 @@ export class LuaTransformer {
                 continue;
             }
 
-            // Binding patterns become _table0, _table1, etc as function parameters
+            // Binding patterns become ____TS_bindingPattern0, ____TS_bindingPattern1, etc as function parameters
             // See transformFunctionBody for how these values are destructured
             const paramName = ts.isObjectBindingPattern(param.name) || ts.isArrayBindingPattern(param.name)
-                ? tstl.createIdentifier(`_table${identifierIndex++}`)
+                ? tstl.createIdentifier(`____TS_bindingPattern${identifierIndex++}`)
                 : this.transformIdentifier(param.name as ts.Identifier);
 
             // This parameter is a spread parameter (...param)
@@ -748,7 +748,7 @@ export class LuaTransformer {
         const bindingPatternDeclarations: tstl.Statement[] = [];
         parameters.forEach(binding => {
             if (ts.isObjectBindingPattern(binding.name) || ts.isArrayBindingPattern(binding.name)) {
-                const identifier = tstl.createIdentifier(`_table${identifierIndex++}`);
+                const identifier = tstl.createIdentifier(`____TS_bindingPattern${identifierIndex++}`);
                 bindingPatternDeclarations.push(...this.transformBindingPattern(binding.name, identifier));
             }
         });
@@ -791,15 +791,14 @@ export class LuaTransformer {
     ): IterableIterator<tstl.Statement>
     {
         const isObjectBindingPattern = ts.isObjectBindingPattern(pattern);
-        let index = 0;
-        for (const element of pattern.elements) {
-            index++;
+        for (let index = 0; index < pattern.elements.length; index++) {
+            const element = pattern.elements[index];
             if (ts.isBindingElement(element)) {
                 if (ts.isArrayBindingPattern(element.name) || ts.isObjectBindingPattern(element.name)) {
                     // nested binding pattern
                     const propertyName = isObjectBindingPattern
                         ? element.propertyName
-                        : ts.createNumericLiteral(`${index}`);
+                        : ts.createNumericLiteral(String(index + 1));
                     propertyAccessStack.push(propertyName);
                     yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
                 } else {
@@ -822,7 +821,7 @@ export class LuaTransformer {
                         (element.propertyName || element.name) as ts.Identifier);
                     const expression = isObjectBindingPattern
                         ? tstl.createTableIndexExpression(tableExpression, tstl.createStringLiteral(propertyName.text))
-                        : tstl.createTableIndexExpression(tableExpression, tstl.createNumericLiteral(index));
+                        : tstl.createTableIndexExpression(tableExpression, tstl.createNumericLiteral(index + 1));
                     if (element.initializer) {
                         const defaultExpression = tstl.createBinaryExpression(expression,
                             this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);

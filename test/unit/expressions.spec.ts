@@ -529,16 +529,6 @@ export class ExpressionTests {
             .toThrowError(TranspileError, "Unsupported property on math: unknownProperty");
     }
 
-    @Test("Unsupported variable declaration type error")
-    public unsupportedVariableDeclarationType(): void {
-        const transformer = util.makeTestTransformer();
-
-        const mockNode: any = {name: ts.createLiteral(false)};
-
-        Expect(() => transformer.transformVariableDeclaration(mockNode as ts.VariableDeclaration))
-            .toThrowError(TranspileError, "Unsupported variable declaration kind: FalseKeyword");
-    }
-
     @Test("Unsupported object literal element error")
     public unsupportedObjectLiteralElementError(): void {
         const transformer = util.makeTestTransformer();

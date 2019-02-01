@@ -790,19 +790,18 @@ export class LuaTransformer {
         propertyAccessStack: ts.PropertyName[] = []
     ): IterableIterator<tstl.Statement>
     {
-        let index = 1;
+        const isObjectBindingPattern = ts.isObjectBindingPattern(pattern);
+        let index = 0;
         for (const element of pattern.elements) {
+            index++;
             if (ts.isBindingElement(element)) {
-                if (ts.isArrayBindingPattern(element.name)
-                    || ts.isObjectBindingPattern(element.name)) {
-                    // rhs a binding pattern?
-                    if (ts.isArrayBindingPattern(pattern)) {
-                        propertyAccessStack.push(ts.createNumericLiteral(`${index++}`));
-                        yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
-                    } else if (ts.isObjectBindingPattern(pattern)) {
-                        propertyAccessStack.push(element.propertyName);
-                        yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
-                    }
+                if (ts.isArrayBindingPattern(element.name) || ts.isObjectBindingPattern(element.name)) {
+                    // nested binding pattern
+                    const propertyName = isObjectBindingPattern
+                        ? element.propertyName
+                        : ts.createNumericLiteral(`${index}`);
+                    propertyAccessStack.push(propertyName);
+                    yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
                 } else {
                     // Build the path to the table
                     let tableExpression: tstl.Expression = table;
@@ -817,56 +816,17 @@ export class LuaTransformer {
                     // The field to extract
                     const propertyName = this.transformIdentifier(
                         (element.propertyName || element.name) as ts.Identifier);
-                    let expression: tstl.Expression;
-                    if (ts.isArrayBindingPattern(pattern)) {
-                        const indexIdentifier = tstl.createIdentifier(`${index++}`);
-                        expression = tstl.createTableIndexExpression(tableExpression, indexIdentifier);
-                    } else if (ts.isObjectBindingPattern(pattern)) {
-                        const stringLiteral = tstl.createStringLiteral(propertyName.text);
-                        expression = tstl.createTableIndexExpression(tableExpression, stringLiteral);
-                    }
+                    const expression = isObjectBindingPattern
+                        ? tstl.createTableIndexExpression(tableExpression, tstl.createStringLiteral(propertyName.text))
+                        : tstl.createTableIndexExpression(tableExpression, tstl.createNumericLiteral(index));
                     if (element.initializer) {
-                        expression = tstl.createBinaryExpression(expression,
+                        const defaultExpression = tstl.createBinaryExpression(expression,
                             this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
+                        yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, defaultExpression);
+                    } else {
+                        yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, expression);
                     }
-                    yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, expression);
                 }
-            }
-        }
-        propertyAccessStack.pop();
-    }
-
-    public * transformObjectBindingPattern(
-        pattern: ts.ObjectBindingPattern,
-        table: tstl.Identifier,
-        propertyAccessStack: ts.PropertyName[] = []
-    ): IterableIterator<tstl.Statement>
-    {
-        for (const element of pattern.elements) {
-            if (ts.isObjectBindingPattern(element.name)) {
-                // Recursive call for nested object binding patterns
-                propertyAccessStack.push(element.propertyName);
-                yield* this.transformObjectBindingPattern(element.name, table, propertyAccessStack);
-            } else {
-                // Get the name of the new variable and the propertyName of what to access in the table
-                const name = this.transformIdentifier(element.name as ts.Identifier);
-                const propertyName = element.propertyName
-                    ? this.transformIdentifier(element.propertyName as ts.Identifier)
-                    : name;
-                // Build an expression to access the table property
-                let tableExpression: tstl.Expression = table;
-                propertyAccessStack.forEach(property => {
-                    const propertyName = this.transformPropertyName(property);
-                    tableExpression = tstl.createTableIndexExpression(tableExpression, propertyName);
-                });
-                const propertyNameString = tstl.createStringLiteral(propertyName.text);
-                let tableAccessExpression: tstl.Expression =
-                    tstl.createTableIndexExpression(tableExpression, propertyNameString);
-                if (element.initializer) {
-                    tableAccessExpression = tstl.createBinaryExpression(tableAccessExpression,
-                        this.transformExpression(element.initializer), tstl.SyntaxKind.OrOperator);
-                }
-                yield* this.createLocalOrExportedOrGlobalDeclaration(name, tableAccessExpression);
             }
         }
         propertyAccessStack.pop();
@@ -1082,8 +1042,25 @@ export class LuaTransformer {
                     statement
                 );
             }
-        } else if (ts.isArrayBindingPattern(statement.name)) {
-            // Destructuring type
+        } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
+            // Destructuring types
+
+            // For nested bindings and object bindings, fall back to transformBindingPattern
+            if (ts.isObjectBindingPattern(statement.name)
+                || statement.name.elements.some(elem => !ts.isBindingElement(elem) || !ts.isIdentifier(elem.name))) {
+                const statements = [];
+                let table: tstl.Identifier;
+                if (ts.isIdentifier(statement.initializer)) {
+                    table = this.transformIdentifier(statement.initializer);
+                } else {
+                    // Contain the expression in a temporary variable
+                    table = tstl.createIdentifier("____");
+                    statements.push(tstl.createVariableDeclarationStatement(
+                        table, this.transformExpression(statement.initializer)));
+                }
+                statements.push(...this.transformBindingPattern(statement.name, table));
+                return statements;
+            }
 
             // Disallow ellipsis destruction
             if (statement.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
@@ -1115,19 +1092,6 @@ export class LuaTransformer {
                     statement
                 );
             }
-        } else if (ts.isObjectBindingPattern(statement.name)) {
-            const statements = [];
-            let table: tstl.Identifier;
-            if (ts.isIdentifier(statement.initializer)) {
-                table = this.transformIdentifier(statement.initializer);
-            } else {
-                // Contain the expression in a temporary variable
-                table = tstl.createIdentifier("____");
-                statements.push(tstl.createVariableDeclarationStatement(
-                    table, this.transformExpression(statement.initializer)));
-            }
-            statements.push(...this.transformObjectBindingPattern(statement.name, table));
-            return statements;
         }
     }
 

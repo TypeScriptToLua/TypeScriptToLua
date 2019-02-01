@@ -2770,6 +2770,11 @@ export class LuaTransformer {
             case "charAt":
                 const firstParamPlusOne = this.expressionPlusOne(params[0]);
                 return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
+            case "charCodeAt":
+            {
+                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                return this.createStringCall("byte", node, caller, firstParamPlusOne);
+            }
             default:
                 throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
         }

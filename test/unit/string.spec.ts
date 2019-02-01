@@ -274,6 +274,20 @@ export class StringTests
         Expect(result).toBe(inp.charAt(index));
     }
 
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 2)
+    @TestCase("hello test", 3)
+    @Test("string.charCodeAt")
+    public charCodeAt(inp: string, index: number): void
+    {
+        const result = util.transpileAndExecute(
+            `return "${inp}".charCodeAt(${index})`
+        );
+
+        // Assert
+        Expect(result).toBe(inp.charCodeAt(index));
+    }
+
     @TestCase("hello test", 1, 0)
     @TestCase("hello test", 1, 2)
     @TestCase("hello test", 3, 2)

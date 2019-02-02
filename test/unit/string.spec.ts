@@ -81,7 +81,20 @@ export class StringTests
         // Assert
         Expect(result).toBe(expected);
     }
-
+    @TestCase("", ["", ""])
+    @TestCase("hello", ["test"])
+    @TestCase("hello", [])
+    @TestCase("hello", ["test", "bye"])
+    @Test("string.concatFct")
+    public concatFct(str: string, param: string[]): void {
+        const paramStr = param.map(elem => `"${elem}"`).join(", ");
+        console.log(`return "${str}".concat(${paramStr})`);
+         const result = util.transpileAndExecute(
+             `return "${str}".concat(${paramStr})`
+         );
+         // Assert
+         Expect(result).toBe(str.concat(...param));
+    }
     @TestCase("hello test", "")
     @TestCase("hello test", "t")
     @TestCase("hello test", "h")

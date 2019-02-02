@@ -2804,6 +2804,8 @@ export class LuaTransformer {
         switch (expressionName) {
             case "replace":
                 return this.transformLuaLibFunction(LuaLibFeature.StringReplace, caller, ...params);
+            case "concat":
+                return this.transformLuaLibFunction(LuaLibFeature.StringConcat, caller, ...params);
             case "indexOf":
                 const stringExpression =
                     node.arguments.length === 1
@@ -2843,6 +2845,18 @@ export class LuaTransformer {
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
+            case "slice":
+                if (node.arguments.length === 0) {
+                    return caller;
+                }
+                else if (node.arguments.length === 1) {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    return this.createStringCall("sub", node, caller, arg1);
+                } else {
+                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg2 = params[1];
+                    return this.createStringCall("sub", node, caller, arg1, arg2);
+                }
             case "toLowerCase":
                 return this.createStringCall("lower", node, caller);
             case "toUpperCase":
@@ -2852,6 +2866,11 @@ export class LuaTransformer {
             case "charAt":
                 const firstParamPlusOne = this.expressionPlusOne(params[0]);
                 return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
+            case "charCodeAt":
+            {
+                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                return this.createStringCall("byte", node, caller, firstParamPlusOne);
+            }
             default:
                 throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
         }

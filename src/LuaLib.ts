@@ -25,6 +25,7 @@ export enum LuaLibFeature {
     Set = "Set",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
+    StringConcat = "StringConcat",
     Symbol = "Symbol",
 }
 

@@ -5,7 +5,7 @@ __TS__Await = function( value )
       s=true
       e=value
     end ))
-    if s then error(e,2) end
+    if s then error(e,0) end
     return r
   else
     return value

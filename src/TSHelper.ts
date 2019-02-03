@@ -83,12 +83,23 @@ export class TSHelper {
             // export statement, we only check for export statements
             // TODO will break in 3.x
             return sourceFile.statements.some(
-                statement => (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
-                    || statement.kind === ts.SyntaxKind.ExportAssignment
-                    || statement.kind === ts.SyntaxKind.ExportDeclaration
+                statement => (this.isDeclaration(statement) && this.isExported(statement))
+                    || ts.isExportAssignment(statement)
+                    || ts.isExportDeclaration(statement)
             );
         }
         return false;
+    }
+
+    public static isExported(declaration: ts.Declaration): boolean {
+        return (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0;
+    }
+
+    public static isDeclaration(node: ts.Node): node is ts.Declaration {
+        return ts.isEnumDeclaration(node) || ts.isClassDeclaration(node) || ts.isExportDeclaration(node)
+            || ts.isImportDeclaration(node) || ts.isMethodDeclaration(node) || ts.isModuleDeclaration(node)
+            || ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node) || ts.isInterfaceDeclaration(node)
+            || ts.isTypeAliasDeclaration(node) || ts.isNamespaceExportDeclaration(node);
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
@@ -384,7 +395,7 @@ export class TSHelper {
     }
 
     public static getSignatureDeclarations(
-        signatures: ts.Signature[],
+        signatures: ReadonlyArray<ts.Signature>,
         checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {

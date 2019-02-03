@@ -23,7 +23,6 @@ export enum SyntaxKind {
     BreakStatement,
     ExpressionStatement,
     // Expression
-    AwaitExpression,
     StringLiteral,
     NumericLiteral,
     NilKeyword,

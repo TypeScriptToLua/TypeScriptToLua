@@ -10,5 +10,5 @@
         "target": "es6",
         "module": "commonjs"
     },
-    "exclude": ["test/**/*", "build_lualib.ts", "src/lualib", "dist/**/*"]
+    "exclude": ["test/**/*", "test_async_await/**/*","build_lualib.ts", "src/lualib", "dist/**/*"]
 }

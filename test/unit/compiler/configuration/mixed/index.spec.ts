@@ -6,10 +6,10 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
 
-export class MixedConfigurationTests {
-
+export class MixedConfigurationTests
+{
     @Test("tsconfig.json mixed with cmd line args")
-    public tsconfigMixedWithCmdLineArgs() {
+    public tsconfigMixedWithCmdLineArgs(): void {
         const rootPath = __dirname;
         const tsConfigPath = path.join(rootPath, "project-tsconfig.json");
         const expectedTsConfig = ts.parseJsonConfigFileContent(

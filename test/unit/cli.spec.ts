@@ -1,11 +1,12 @@
 import { Expect, Test, TestCase } from "alsatian";
 
 import { findConfigFile, parseCommandLine } from "../../src/CommandLineParser";
+import { LuaTarget } from "../../src/CompilerOptions";
 
 export class CLITests {
 
     @Test("defaultOption")
-    @TestCase("luaTarget", "JIT")
+    @TestCase("luaTarget", LuaTarget.LuaJIT)
     @TestCase("noHeader", false)
     @TestCase("luaLibImport", "inline")
     @TestCase("rootDir", process.cwd())

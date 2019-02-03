@@ -61,22 +61,34 @@ export function parseCommandLine(args: string[]): ParsedCommandLine
 {
     const commandLine = ts.parseCommandLine(args);
 
-    const tsConfigOptions = readTsConfig(commandLine.options);
-
-    copyOptionsIfNotSet(commandLine.options, tsConfigOptions);
-
     // Run diagnostics to check for invalid tsc options
     runTsDiagnostics(commandLine);
 
-    const tstlOptions = parseTSTLOptions(args);
-    copyOptionsIfNotSet(commandLine.options, tstlOptions);
+    const tstlCLIOptions = parseTSTLOptions(args);
+    copyOptionsIfNotSet(commandLine.options, tstlCLIOptions);
 
-    const tstlDefaults = getDefaultOptions();
-    copyOptionsIfNotSet(commandLine.options, tstlDefaults);
+    const tsConfigOptions = readTsConfig(commandLine.options);
+    if (tsConfigOptions !== undefined) {
+        copyOptionsIfNotSet(commandLine.options, tsConfigOptions);
+    }
+
+    // Run diagnostics to check for invalid tsconfig
+    runTsDiagnostics(commandLine);
 
     if (commandLine.options.project && !commandLine.options.rootDir) {
         commandLine.options.rootDir = path.dirname(commandLine.options.project);
     }
+
+    if (!commandLine.options.rootDir) {
+        commandLine.options.rootDir = process.cwd();
+    }
+
+    if (!commandLine.options.outDir) {
+        commandLine.options.outDir = commandLine.options.rootDir;
+    }
+
+    const tstlDefaults = getDefaultOptions();
+    copyOptionsIfNotSet(commandLine.options, tstlDefaults);
 
     return commandLine as ParsedCommandLine;
 }
@@ -101,12 +113,29 @@ function readTsConfig(options: CompilerOptions): CompilerOptions {
         const configPath = options.project;
         const configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
-        return ts.parseJsonConfigFileContent(
+        const parsedJsonConfig = ts.parseJsonConfigFileContent(
             configJson.config,
             ts.sys,
             path.dirname(configPath),
             options
-        ).options;
+        );
+
+        for (const key in parsedJsonConfig.raw) {
+            const option = optionDeclarations[key];
+            if (option !== undefined) {
+                const value = readValue(parsedJsonConfig.raw[key], option.type);
+                if (option.choices) {
+                    if (option.choices.indexOf(value) < 0) {
+                        throw new CLIError(`Unknown ${key} value '${value}.\n'`
+                            + `Accepted values: ${option.choices}`);
+                    }
+                }
+
+                parsedJsonConfig.options[key] = value;
+            }
+        }
+
+        return parsedJsonConfig.options;
     }
     return undefined;
 }
@@ -159,11 +188,10 @@ function getDefaultOptions(): CompilerOptions {
     const options: CompilerOptions = {};
 
     for (const optionName in optionDeclarations) {
-        options[optionName] = optionDeclarations[optionName].default;
+        if (optionDeclarations[optionName].default !== undefined) {
+            options[optionName] = optionDeclarations[optionName].default;
+        }
     }
-
-    options.rootDir = process.cwd();
-    options.outDir = options.rootDir;
 
     return options;
 }

@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import { CompilerOptions, LuaLibImportKind, HoistingMode } from "../../../../../src/CompilerOptions";
+import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
 
 export class MixedConfigurationTests {
@@ -35,7 +35,7 @@ export class MixedConfigurationTests {
             // Only present in TSTL dfaults
             noHeader: optionDeclarations["noHeader"].default,
             project: tsConfigPath,
-            hoisting: HoistingMode.None,
+            noHoisting: optionDeclarations["noHoisting"].default,
         } as CompilerOptions);
     }
 }

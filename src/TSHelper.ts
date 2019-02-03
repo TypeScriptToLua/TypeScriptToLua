@@ -563,35 +563,4 @@ export class TSHelper {
         const firstDeclaration = this.getFirstDeclaration(symbol);
         return firstDeclaration === node;
     }
-
-    public static findFirstReference(symbol: ts.Symbol, scope: ts.Node, checker: ts.TypeChecker) : ts.Identifier
-    {
-        const visitor = (node: ts.Node) => {
-            if (checker.getSymbolAtLocation(node) === symbol)
-            {
-                return node;
-            }
-            return ts.forEachChild(node, visitor);
-        };
-        return ts.forEachChild(scope, visitor);
-    }
-
-    public static findNodes<T extends ts.Node>(
-        root: ts.Node,
-        filter: (node: ts.Node) => node is T,
-        recurseIntoResults: boolean
-    ): T[] {
-        const results: T[] = [];
-        const visitor = (node: ts.Node) => {
-            if (filter(node)) {
-                results.push(node);
-                if (!recurseIntoResults) {
-                    return;
-                }
-            }
-            ts.forEachChild(node, visitor);
-        };
-        ts.forEachChild(root, visitor);
-        return results;
-    }
 }

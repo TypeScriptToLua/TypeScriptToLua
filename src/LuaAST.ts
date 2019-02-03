@@ -106,7 +106,6 @@ export interface TextRange {
 export interface Node extends TextRange {
     kind: SyntaxKind;
     parent?: Node;
-    tsOriginal?: ts.Node;
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
@@ -116,7 +115,7 @@ export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node
         pos = tsOriginal.pos;
         end = tsOriginal.end;
     }
-    return {kind, parent, pos, end, tsOriginal};
+    return {kind, parent, pos, end};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -126,7 +125,6 @@ export function cloneNode<T extends Node>(node: T): T {
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
     node.pos = tsOriginal.pos;
     node.end = tsOriginal.end;
-    node.tsOriginal = tsOriginal;
     return node;
 }
 
@@ -141,18 +139,12 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
                 n.pos = parent.pos;
                 n.end = parent.end;
             }
-            if (!n.tsOriginal) {
-                n.tsOriginal = parent.tsOriginal;
-            }
         });
     } else {
         node.parent = parent;
         if (node.pos === -1 || node.end === -1) {
             node.pos = parent.pos;
             node.end = parent.end;
-        }
-        if (!node.tsOriginal) {
-            node.tsOriginal = parent.tsOriginal;
         }
     }
 }
@@ -198,6 +190,7 @@ export interface VariableDeclarationStatement extends Statement {
     kind: SyntaxKind.VariableDeclarationStatement;
     left: Identifier[];
     right?: Expression[];
+    local: boolean;
 }
 
 export function isVariableDeclarationStatement(node: Node): node is VariableDeclarationStatement {
@@ -208,7 +201,8 @@ export function createVariableDeclarationStatement(
     left: Identifier | Identifier[],
     right?: Expression | Expression[],
     tsOriginal?: ts.Node,
-    parent?: Node
+    parent?: Node,
+    local = true
 ): VariableDeclarationStatement
 {
     const statement = createNode(
@@ -228,6 +222,7 @@ export function createVariableDeclarationStatement(
     } else if (right) {
         statement.right = [right];
     }
+    statement.local = local;
     return statement;
 }
 
@@ -236,6 +231,7 @@ export interface AssignmentStatement extends Statement {
     kind: SyntaxKind.AssignmentStatement;
     left: IdentifierOrTableIndexExpression[];
     right: Expression[];
+    hoisted?: boolean;
 }
 
 export function isAssignmentStatement(node: Node): node is AssignmentStatement {
@@ -799,15 +795,23 @@ export function createMethodCallExpression(
 export interface Identifier extends Expression {
     kind: SyntaxKind.Identifier;
     text: string;
+    symbol?: ts.Symbol;
 }
 
 export function isIdentifier(node: Node): node is Identifier {
     return node.kind === SyntaxKind.Identifier;
 }
 
-export function createIdentifier(text: string | ts.__String, tsOriginal?: ts.Node, parent?: Node): Identifier {
+export function createIdentifier(
+    text: string | ts.__String,
+    tsOriginal?: ts.Node,
+    symbol?: ts.Symbol,
+    parent?: Node
+): Identifier
+{
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
     expression.text = text as string;
+    expression.symbol = symbol;
     return expression;
 }
 

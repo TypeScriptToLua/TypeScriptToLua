@@ -2,24 +2,17 @@ import * as ts from "typescript";
 import { Expect, Test, TestCase } from "alsatian";
 
 import * as util from "../src/util";
-import { CompilerOptions, LuaLibImportKind, LuaTarget, HoistingMode } from "../../src/CompilerOptions";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 import { TranspileError } from "../../src/TranspileError";
 
 export class HoistingTests {
-    private static readonly hoistingCompilerOptions: CompilerOptions = {
-        hoisting: HoistingMode.Required,
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-
     @Test("Var Hoisting")
     public varHoisting(): void {
         const code =
             `foo = "foo";
             var foo;
             return foo;`;
-        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
+        const result = util.transpileAndExecute(code);
         Expect(result).toBe("foo");
     }
 
@@ -42,7 +35,7 @@ export class HoistingTests {
             ${varType} foo = "foo";
             setBar();
             return foo;`;
-        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
+        const result = util.transpileAndExecute(code);
         Expect(result).toBe("foo");
     }
 
@@ -65,7 +58,7 @@ export class HoistingTests {
             `const foo = bar();
             function bar() { return "bar"; }
             return foo;`;
-        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
+        const result = util.transpileAndExecute(code);
         Expect(result).toBe("bar");
     }
 
@@ -126,7 +119,7 @@ export class HoistingTests {
                 return bar;
             }
             return foo();`;
-        const result = util.transpileAndExecute(code, HoistingTests.hoistingCompilerOptions);
+        const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
 
@@ -221,7 +214,7 @@ export class HoistingTests {
     @Test("No Hoisting")
     public noHoisting(code: string, identifier: string): void {
         const compilerOptions: CompilerOptions = {
-            hoisting: HoistingMode.None,
+            noHoisting: true,
             luaLibImport: LuaLibImportKind.Require,
             luaTarget: LuaTarget.Lua53,
             target: ts.ScriptTarget.ES2015,

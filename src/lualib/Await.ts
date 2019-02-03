@@ -18,11 +18,6 @@ declare interface Promise<T = undefined> {
   ): Promise<TResult1 | TResult2>;
 }
 
-declare interface PromiseConstructor {
-  resolve<T>( this:void ): Promise<T>;
-}
-
-declare const Promise: PromiseConstructor;
 
 
 

@@ -16,6 +16,8 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    Async = "Async",
+    Await = "Await",
     FunctionApply = "FunctionApply",
     FunctionBind = "FunctionBind",
     FunctionCall = "FunctionCall",

@@ -672,12 +672,17 @@ export class LuaTransformer {
             : undefined;
         const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
 
-        const functionExpression = tstl.createFunctionExpression(
+        let functionExpression = tstl.createFunctionExpression(
             tstl.createBlock(this.transformFunctionBody(node.parameters, node.body, restParamName)),
             paramNames,
             dots,
             restParamName
         );
+
+        const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        if( isAsync ) {
+          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, functionExpression ) as any;
+        }
 
         const parent = node.parent as ts.ClassLikeDeclaration;
         return tstl.createAssignmentStatement(
@@ -1009,7 +1014,13 @@ export class LuaTransformer {
         const body = tstl.createBlock(
             this.transformFunctionBody(functionDeclaration.parameters, functionDeclaration.body, restParamName)
         );
-        const functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
+        let functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
+
+        const isAsync = functionDeclaration.modifiers &&
+          functionDeclaration.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        if( isAsync ) {
+          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, functionExpression ) as any;
+        }
 
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
     }
@@ -1616,6 +1627,8 @@ export class LuaTransformer {
     // Expressions
     public transformExpression(expression: ts.Expression): ExpressionVisitResult {
         switch (expression.kind) {
+            case ts.SyntaxKind.AwaitExpression:
+                return this.transformAwaitExpression(expression as ts.AwaitExpression );
             case ts.SyntaxKind.BinaryExpression:
                 return this.transformBinaryExpression(expression as ts.BinaryExpression);
             case ts.SyntaxKind.ConditionalExpression:
@@ -1708,6 +1721,12 @@ export class LuaTransformer {
                 return tstl.createBinaryExpression(left, right, operator, node);
         }
     }
+
+    public transformAwaitExpression( expression: ts.AwaitExpression ) :tstl.Expression {
+      const inner = this.transformExpression(expression.expression);
+      return this.transformLuaLibFunction(LuaLibFeature.Await, inner );
+    }
+
 
     public transformBinaryExpression(expression: ts.BinaryExpression): tstl.Expression {
         // Check if this is an assignment token, then handle accordingly
@@ -2358,13 +2377,21 @@ export class LuaTransformer {
         const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
         const transformedBody = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
-        return tstl.createFunctionExpression(
+
+        const res = tstl.createFunctionExpression(
             tstl.createBlock(transformedBody),
             paramNames,
             dotsLiteral,
             spreadIdentifier,
             node
         );
+
+        const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
+        if( isAsync ) {
+          return this.transformLuaLibFunction(LuaLibFeature.Async, res ) as any;
+        }
+
+      return res;
     }
 
     public transformNewExpression(node: ts.NewExpression): tstl.CallExpression {

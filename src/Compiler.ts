@@ -2,14 +2,17 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import {parseCommandLine} from "./CommandLineParser";
+import {parseCommandLine, getHelpString} from "./CommandLineParser";
 import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaTranspiler} from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
     const commandLine = parseCommandLine(argv);
     /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
-    if (commandLine.options.watch) {
+    if (commandLine.options.help) {
+        console.log(getHelpString());
+    }
+    else if (commandLine.options.watch) {
         watchWithOptions(commandLine.fileNames, commandLine.options);
     } else {
         compileFilesWithOptions(commandLine.fileNames, commandLine.options);

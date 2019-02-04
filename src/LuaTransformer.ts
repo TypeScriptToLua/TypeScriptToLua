@@ -25,11 +25,6 @@ interface SymbolInfo {
     firstSeenAtPos: number;
 }
 
-interface VariableDeclarationInfo {
-    symbols: ts.Symbol[];
-    declaration: tstl.VariableDeclarationStatement;
-}
-
 interface FunctionDefinitionInfo {
     referencedSymbols: Set<ts.Symbol>;
     assignment?: tstl.AssignmentStatement;
@@ -39,7 +34,7 @@ interface Scope {
     type: ScopeType;
     id: number;
     referencedSymbols?: Set<ts.Symbol>;
-    variableDeclarations?: VariableDeclarationInfo[];
+    variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<ts.Symbol, FunctionDefinitionInfo>;
 }
 
@@ -1053,14 +1048,11 @@ export class LuaTransformer {
         const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
 
         // Remember symbols referenced in this function for hoisting later
-        if (!this.options.noHoisting && functionDeclaration.name) {
-            const symbol = this.checker.getSymbolAtLocation(functionDeclaration.name);
-            if (symbol) {
-                const scope = this.peekScope();
-                if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
-                const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
-                scope.functionDefinitions.set(symbol, functionInfo);
-            }
+        if (!this.options.noHoisting && name.symbol) {
+            const scope = this.peekScope();
+            if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
+            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
+            scope.functionDefinitions.set(name.symbol, functionInfo);
         }
 
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -3359,16 +3351,13 @@ export class LuaTransformer {
                 }
 
                 if (!this.options.noHoisting) {
-                    let symbols = Array.isArray(lhs) ? lhs.map(i => i.symbol) : [lhs.symbol];
-                    symbols = symbols.filter(i => i !== undefined);
-
+                    // Remember local variable declarations for hoisting later
                     const scope = isLetOrConst || functionDeclaration
                         ? this.peekScope()
                         : this.findScope(ScopeType.Function | ScopeType.File);
 
-                    // Remember local variable declarations for hoisting later
                     if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
-                    scope.variableDeclarations.push({declaration, symbols});
+                    scope.variableDeclarations.push(declaration);
                 }
 
             } else if (rhs) {
@@ -3380,9 +3369,9 @@ export class LuaTransformer {
             }
         }
 
-        // Remember function definitions for hoisting later
-        if (!this.options.noHoisting && functionDeclaration && functionDeclaration.name) {
-            const functionSymbol = this.checker.getSymbolAtLocation(functionDeclaration.name);
+        if (!this.options.noHoisting && functionDeclaration) {
+            // Remember function definitions for hoisting later
+            const functionSymbol = (lhs as tstl.Identifier).symbol;
             if (functionSymbol) {
                 this.peekScope().functionDefinitions.get(functionSymbol).assignment = assignment;
             }
@@ -3571,16 +3560,17 @@ export class LuaTransformer {
         // Hoist variable declarations
         if (scope.variableDeclarations) {
             const hoistedLocals: tstl.Identifier[] = [];
-            for (const variableDeclaration of scope.variableDeclarations) {
-                if (variableDeclaration.symbols.some(s => this.shouldHoist(s, scope))) {
+            for (const declaration of scope.variableDeclarations) {
+                const symbols = declaration.left.map(i => i.symbol);
+                if (symbols.some(s => this.shouldHoist(s, scope))) {
                     let assignment: tstl.AssignmentStatement | undefined;
-                    if (variableDeclaration.declaration.right) {
+                    if (declaration.right) {
                         assignment = tstl.createAssignmentStatement(
-                            variableDeclaration.declaration.left,
-                            variableDeclaration.declaration.right
+                            declaration.left,
+                            declaration.right
                         );
                     }
-                    const i = result.indexOf(variableDeclaration.declaration);
+                    const i = result.indexOf(declaration);
                     if (i >= 0) {
                         if (assignment) {
                             result.splice(i, 1, assignment);
@@ -3589,9 +3579,9 @@ export class LuaTransformer {
                         }
                     } else {
                         // Special case for 'var's declared in child scopes
-                        this.replaceStatementInParent(variableDeclaration.declaration, assignment);
+                        this.replaceStatementInParent(declaration, assignment);
                     }
-                    hoistedLocals.push(...variableDeclaration.declaration.left);
+                    hoistedLocals.push(...declaration.left);
                 }
             }
             if (hoistedLocals.length > 0) {
@@ -3616,13 +3606,10 @@ export class LuaTransformer {
     {
         const variable = this.transformIdentifier(identifier);
         const declaration = tstl.createVariableDeclarationStatement(variable, initializer, tsOriginal, parent);
-        if (!this.options.noHoisting) {
-            const symbol = this.checker.getSymbolAtLocation(identifier);
-            if (symbol) {
-                const scope = this.peekScope();
-                if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
-                scope.variableDeclarations.push({symbols: [symbol], declaration});
-            }
+        if (!this.options.noHoisting && variable.symbol) {
+            const scope = this.peekScope();
+            if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
+            scope.variableDeclarations.push(declaration);
         }
         return declaration;
     }

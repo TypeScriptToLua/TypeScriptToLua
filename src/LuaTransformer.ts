@@ -7,7 +7,6 @@ import * as tstl from "./LuaAST";
 import {LuaLib, LuaLibFeature} from "./LuaLib";
 import {ContextType, TSHelper as tsHelper} from "./TSHelper";
 import {TSTLErrors} from "./TSTLErrors";
-import { isVariableDeclaration } from "typescript";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;

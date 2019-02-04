@@ -81,7 +81,20 @@ export class StringTests
         // Assert
         Expect(result).toBe(expected);
     }
-
+    @TestCase("", ["", ""])
+    @TestCase("hello", ["test"])
+    @TestCase("hello", [])
+    @TestCase("hello", ["test", "bye"])
+    @Test("string.concatFct")
+    public concatFct(str: string, param: string[]): void {
+        const paramStr = param.map(elem => `"${elem}"`).join(", ");
+        console.log(`return "${str}".concat(${paramStr})`);
+         const result = util.transpileAndExecute(
+             `return "${str}".concat(${paramStr})`
+         );
+         // Assert
+         Expect(result).toBe(str.concat(...param));
+    }
     @TestCase("hello test", "")
     @TestCase("hello test", "t")
     @TestCase("hello test", "h")
@@ -122,7 +135,23 @@ export class StringTests
         // Assert
         Expect(result).toBe(inp.indexOf(searchValue, x));
     }
+    @TestCase("hello test")
+    @TestCase("hello test", 0)
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 1, 2)
+    @TestCase("hello test", 1, 5)
+    @Test("string.slice")
+    public slice(inp: string, start?: number, end?: number): void
+    {
+        // Transpile/Execute
+        const paramStr = start? (end ? `${start}, ${end}` : `${start}`):'';
+        const result = util.transpileAndExecute(
+            `return "${inp}".slice(${paramStr})`
+        );
 
+        // Assert
+        Expect(result).toBe(inp.slice(start, end));
+    }
     @TestCase("hello test", 0)
     @TestCase("hello test", 1)
     @TestCase("hello test", 1, 2)
@@ -256,6 +285,20 @@ export class StringTests
 
         // Assert
         Expect(result).toBe(inp.charAt(index));
+    }
+
+    @TestCase("hello test", 1)
+    @TestCase("hello test", 2)
+    @TestCase("hello test", 3)
+    @Test("string.charCodeAt")
+    public charCodeAt(inp: string, index: number): void
+    {
+        const result = util.transpileAndExecute(
+            `return "${inp}".charCodeAt(${index})`
+        );
+
+        // Assert
+        Expect(result).toBe(inp.charCodeAt(index));
     }
 
     @TestCase("hello test", 1, 0)

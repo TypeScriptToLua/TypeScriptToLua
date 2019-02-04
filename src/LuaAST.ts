@@ -190,7 +190,6 @@ export interface VariableDeclarationStatement extends Statement {
     kind: SyntaxKind.VariableDeclarationStatement;
     left: Identifier[];
     right?: Expression[];
-    local: boolean;
 }
 
 export function isVariableDeclarationStatement(node: Node): node is VariableDeclarationStatement {
@@ -201,8 +200,7 @@ export function createVariableDeclarationStatement(
     left: Identifier | Identifier[],
     right?: Expression | Expression[],
     tsOriginal?: ts.Node,
-    parent?: Node,
-    local = true
+    parent?: Node
 ): VariableDeclarationStatement
 {
     const statement = createNode(
@@ -222,7 +220,6 @@ export function createVariableDeclarationStatement(
     } else if (right) {
         statement.right = [right];
     }
-    statement.local = local;
     return statement;
 }
 
@@ -231,7 +228,6 @@ export interface AssignmentStatement extends Statement {
     kind: SyntaxKind.AssignmentStatement;
     left: IdentifierOrTableIndexExpression[];
     right: Expression[];
-    hoisted?: boolean;
 }
 
 export function isAssignmentStatement(node: Node): node is AssignmentStatement {

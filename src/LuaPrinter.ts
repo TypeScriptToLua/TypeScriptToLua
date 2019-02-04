@@ -128,11 +128,7 @@ export class LuaPrinter {
     }
 
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): string {
-        if (!statement.local && !statement.right) {
-            return "";
-        }
-        const prefix = statement.local ? "local " : "";
-        const left = this.indent(`${prefix}${statement.left.map(e => this.printExpression(e)).join(", ")}`);
+        const left = this.indent(`local ${statement.left.map(e => this.printExpression(e)).join(", ")}`);
         if (statement.right) {
             return left + ` = ${statement.right.map(e => this.printExpression(e)).join(", ")};\n`;
         } else {
@@ -141,9 +137,6 @@ export class LuaPrinter {
     }
 
     private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): string {
-        if (statement.hoisted) {
-            return "";
-        }
         return this.indent(
             `${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
             `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);

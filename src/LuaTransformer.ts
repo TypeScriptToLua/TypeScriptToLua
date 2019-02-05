@@ -3154,33 +3154,6 @@ export class LuaTransformer {
                                                   // at some point.
         }
 
-        const symbol = this.checker.getSymbolAtLocation(expression);
-        let symbolId: number | undefined;
-        if (symbol) {
-            if (this.options.noHoisting) {
-                // Check for reference-before-declaration
-                const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
-                if (declaration && expression.pos < declaration.pos) {
-                    throw TSTLErrors.ReferencedBeforeDeclaration(expression);
-                }
-
-            } else {
-                // Track symbols seen in scope
-                if (!this.symbolIds.has(symbol)) {
-                    symbolId = this.genSymbolIdCounter++;
-                    const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: expression.pos};
-                    this.symbolIds.set(symbol, symbolId);
-                    this.symbolInfo.set(symbolId, symbolInfo);
-                } else {
-                    symbolId = this.symbolIds.get(symbol);
-                }
-                this.scopeStack.forEach(s => {
-                    if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
-                    s.referencedSymbols.add(symbolId);
-                });
-            }
-        }
-
         let escapedText = expression.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
@@ -3191,6 +3164,8 @@ export class LuaTransformer {
         if (this.luaKeywords.has(escapedText)) {
             throw TSTLErrors.KeywordIdentifier(expression);
         }
+
+        const symbolId = this.getIdentifierSymbolId(expression);
         return tstl.createIdentifier(escapedText, expression, symbolId);
     }
 
@@ -3502,6 +3477,38 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
+    private getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId {
+        const symbol = this.checker.getSymbolAtLocation(identifier);
+        let symbolId: number | undefined;
+        if (symbol) {
+            if (this.options.noHoisting) {
+                // Check for reference-before-declaration
+                const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+                if (declaration && identifier.pos < declaration.pos) {
+                    throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
+                }
+
+            } else {
+                // Track first time symbols are seen
+                if (!this.symbolIds.has(symbol)) {
+                    symbolId = this.genSymbolIdCounter++;
+                    const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos};
+                    this.symbolIds.set(symbol, symbolId);
+                    this.symbolInfo.set(symbolId, symbolInfo);
+                } else {
+                    symbolId = this.symbolIds.get(symbol);
+                }
+
+                //Mark symbol as seen in all current scopes
+                this.scopeStack.forEach(s => {
+                    if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
+                    s.referencedSymbols.add(symbolId);
+                });
+            }
+        }
+        return symbolId;
+    }
+
     protected findScope(scopeTypes: ScopeType): Scope | undefined {
         return this.scopeStack.slice().reverse().find(s => (scopeTypes & s.type) !== 0);
     }
@@ -3564,60 +3571,73 @@ export class LuaTransformer {
         }
     }
 
+    protected hoistFunctionDefinitions(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+        if (!scope.functionDefinitions) {
+            return statements;
+        }
+
+        const result = statements.slice();
+        const hoistedFunctions: tstl.AssignmentStatement[] = [];
+        for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+            if (this.shouldHoist(functionSymbolId, scope)) {
+                const i = result.indexOf(functionDefinition.assignment);
+                result.splice(i, 1);
+                hoistedFunctions.push(functionDefinition.assignment);
+            }
+        }
+        if (hoistedFunctions.length > 0) {
+            result.unshift(...hoistedFunctions);
+        }
+        return result;
+    }
+
+    protected hoistVariableDeclarations(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+        if (!scope.variableDeclarations) {
+            return statements;
+        }
+
+        const result = statements.slice();
+        const hoistedLocals: tstl.Identifier[] = [];
+        for (const declaration of scope.variableDeclarations) {
+            const symbols = declaration.left.map(i => i.symbolId).filter(s => s !== undefined);
+            if (symbols.some(s => this.shouldHoist(s, scope))) {
+                let assignment: tstl.AssignmentStatement | undefined;
+                if (declaration.right) {
+                    assignment = tstl.createAssignmentStatement(
+                        declaration.left,
+                        declaration.right
+                    );
+                }
+                const i = result.indexOf(declaration);
+                if (i >= 0) {
+                    if (assignment) {
+                        result.splice(i, 1, assignment);
+                    } else {
+                        result.splice(i, 1);
+                    }
+                } else {
+                    // Special case for 'var's declared in child scopes
+                    this.replaceStatementInParent(declaration, assignment);
+                }
+                hoistedLocals.push(...declaration.left);
+            }
+        }
+        if (hoistedLocals.length > 0) {
+            result.unshift(tstl.createVariableDeclarationStatement(hoistedLocals));
+        }
+        return result;
+    }
+
     protected performHoisting(statements: tstl.Statement[]): tstl.Statement[] {
         if (this.options.noHoisting) {
             return statements;
         }
 
         const scope = this.peekScope();
-        const result = statements.slice();
 
-        // Hoist function definitions
-        if (scope.functionDefinitions) {
-            const hoistedFunctions: tstl.AssignmentStatement[] = [];
-            for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
-                if (this.shouldHoist(functionSymbolId, scope)) {
-                    const i = result.indexOf(functionDefinition.assignment);
-                    result.splice(i, 1);
-                    hoistedFunctions.push(functionDefinition.assignment);
-                }
-            }
-            if (hoistedFunctions.length > 0) {
-                result.unshift(...hoistedFunctions);
-            }
-        }
+        let result = this.hoistFunctionDefinitions(scope, statements);
 
-        // Hoist variable declarations
-        if (scope.variableDeclarations) {
-            const hoistedLocals: tstl.Identifier[] = [];
-            for (const declaration of scope.variableDeclarations) {
-                const symbols = declaration.left.map(i => i.symbolId).filter(s => s !== undefined);
-                if (symbols.some(s => this.shouldHoist(s, scope))) {
-                    let assignment: tstl.AssignmentStatement | undefined;
-                    if (declaration.right) {
-                        assignment = tstl.createAssignmentStatement(
-                            declaration.left,
-                            declaration.right
-                        );
-                    }
-                    const i = result.indexOf(declaration);
-                    if (i >= 0) {
-                        if (assignment) {
-                            result.splice(i, 1, assignment);
-                        } else {
-                            result.splice(i, 1);
-                        }
-                    } else {
-                        // Special case for 'var's declared in child scopes
-                        this.replaceStatementInParent(declaration, assignment);
-                    }
-                    hoistedLocals.push(...declaration.left);
-                }
-            }
-            if (hoistedLocals.length > 0) {
-                result.unshift(tstl.createVariableDeclarationStatement(hoistedLocals));
-            }
-        }
+        result = this.hoistVariableDeclarations(scope, result);
 
         return result;
     }

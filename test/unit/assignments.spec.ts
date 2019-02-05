@@ -804,6 +804,108 @@ export class AssignmentTests {
             + "Overloads should either be all functions or all methods, but not both.");
     }
 
+    @TestCase("s => s")
+    @TestCase("function(s) { return s; }")
+    @Test("Function expression type inference in class")
+    public functionExpressionTypeInferenceInClass(funcExp: string): void {
+        const code =
+            `class Foo {
+                func: (this: void, s: string) => string = ${funcExp};
+                method: (s: string) => string = ${funcExp};
+                static staticFunc: (this: void, s: string) => string = ${funcExp};
+                static staticMethod: (s: string) => string = ${funcExp};
+            }
+            const foo = new Foo();
+            return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");`;
+        Expect(util.transpileAndExecute(code)).toBe("abcd");
+    }
+
+    @TestCase("const foo: Foo", "s => s")
+    @TestCase("const foo: Foo", "function(s) { return s; }")
+    @TestCase("let foo: Foo; foo", "s => s")
+    @TestCase("let foo: Foo; foo", "function(s) { return s; }")
+    @Test("Function expression type inference in object literal")
+    public functionExpressionTypeInferenceInObjectLiteral(assignTo: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                func(this: void, s: string): string;
+                method(this: this, s: string): string;
+            }
+            ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
+            return foo.method("foo") + foo.func("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @TestCase("const foo: Foo", "s => s")
+    @TestCase("const foo: Foo", "function(s) { return s; }")
+    @TestCase("let foo: Foo; foo", "s => s")
+    @TestCase("let foo: Foo; foo", "function(s) { return s; }")
+    @Test("Function expression type inference in object literal (generic key)")
+    public functionExpressionTypeInferenceInObjectLiteralGenericKey(assignTo: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                [f: string]: (this: void, s: string) => string;
+            }
+            ${assignTo} = {func: ${funcExp}};
+            return foo.func("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "s => s")
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "function(s) { return s; }")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "s => s")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "function(s) { return s; }")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "s => s")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "function(s) { return s; }")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "s => s")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "function(s) { return s; }")
+    @Test("Function expression type inference in tuple")
+    public functionExpressionTypeInferenceInTuple(
+        assignTo: string,
+        func: string,
+        method: string,
+        funcExp: string
+    ): void
+    {
+        const code =
+            `interface Foo {
+                method(s: string): string;
+            }
+            interface Func {
+                (this: void, s: string): string;
+            }
+            interface Method {
+                (this: Foo, s: string): string;
+            }
+            ${assignTo} = [${funcExp}, ${funcExp}];
+            const foo: Foo = {method: ${method}};
+            return foo.method("foo") + ${func}("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @TestCase("const meths: Method[]", "meths[0]", "s => s")
+    @TestCase("const meths: Method[]", "meths[0]", "function(s) { return s; }")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "s => s")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "function(s) { return s; }")
+    @TestCase("const [meth]: Method[]", "meth", "s => s")
+    @TestCase("const [meth]: Method[]", "meth", "function(s) { return s; }")
+    @TestCase("let meth: Method; [meth]", "meth", "s => s")
+    @TestCase("let meth: Method; [meth]", "meth", "function(s) { return s; }")
+    @Test("Function expression type inference in array")
+    public functionExpressionTypeInferenceInArray(assignTo: string, method: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                method(s: string): string;
+            }
+            interface Method {
+                (this: Foo, s: string): string;
+            }
+            ${assignTo} = [${funcExp}];
+            const foo: Foo = {method: ${method}};
+            return foo.method("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
     @Test("String table access")
     public stringTableAccess(assignType: string): void {
         const code = `const dict : {[key:string]:any} = {};

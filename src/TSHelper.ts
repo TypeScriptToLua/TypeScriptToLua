@@ -383,34 +383,68 @@ export class TSHelper {
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
 
-    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type
-    {
+    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {
         if (ts.isParenthesizedExpression(expression.parent)) {
+            // Ignore expressions wrapped in parenthesis
             return this.inferAssignedType(expression.parent, checker);
-        }
 
-        if (ts.isCallExpression(expression.parent)) {
-            // Function expression being passed as argument to another function
-            const i = expression.parent.arguments.indexOf(expression);
+        } else if (ts.isCallExpression(expression.parent)) {
+            // Expression being passed as argument to a function
+            let i = expression.parent.arguments.indexOf(expression);
             if (i >= 0) {
                 const parentSignature = checker.getResolvedSignature(expression.parent);
                 const parentSignatureDeclaration = parentSignature.getDeclaration();
                 if (parentSignatureDeclaration) {
+                    if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
+                        ++i;
+                    }
                     return checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
                 }
             }
 
         } else if (ts.isReturnStatement(expression.parent)) {
+            // Expression being returned from a function
             return this.getContainingFunctionReturnType(expression.parent, checker);
 
+        } else if (ts.isPropertyDeclaration(expression.parent)) {
+            // Expression being assigned to a class property
+            return checker.getTypeAtLocation(expression.parent);
+
         } else if (ts.isPropertyAssignment(expression.parent)) {
-            const objType = checker.getTypeAtLocation(expression.parent.parent);
+            // Expression being assigned to an object literal property
+            const objType = this.inferAssignedType(expression.parent.parent, checker);
+            const property = objType.getProperty(expression.parent.name.getText());
+            if (!property) {
+                return objType.getStringIndexType();
+            } else {
+                return checker.getTypeAtLocation(property.valueDeclaration);
+            }
+
+        } else if (ts.isArrayLiteralExpression(expression.parent)) {
+            // Expression in an array literal
+            const arrayType = this.inferAssignedType(expression.parent, checker);
+            if (ts.isTupleTypeNode(checker.typeToTypeNode(arrayType))) {
+                // Tuples
+                const i = expression.parent.elements.indexOf(expression);
+                const elementType = (arrayType as ts.TypeReference).typeArguments[i];
+                return elementType;
+            } else {
+                // Standard arrays
+                return arrayType.getNumberIndexType();
+            }
+
+        } else if (ts.isVariableDeclaration(expression.parent)) {
+            // Expression assigned to declaration
             return checker.getTypeAtLocation(expression.parent.name);
 
-        } else {
-            return checker.getTypeAtLocation(expression.parent);
+        } else if (ts.isBinaryExpression(expression.parent)
+            && expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken)
+        {
+            // Expression assigned to variable
+            return checker.getTypeAtLocation(expression.parent.left);
         }
-        return undefined;
+
+        return checker.getTypeAtLocation(expression);
     }
 
     public static getSignatureDeclarations(
@@ -424,6 +458,7 @@ export class TSHelper {
             if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
                 && !this.getExplicitThisParameter(signatureDeclaration))
             {
+                // Infer type of function expressions/arrow functions
                 const inferredType = this.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
                     const inferredSignatures = inferredType.getCallSignatures();

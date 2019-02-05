@@ -383,6 +383,36 @@ export class TSHelper {
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
 
+    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type
+    {
+        if (ts.isParenthesizedExpression(expression.parent)) {
+            return this.inferAssignedType(expression.parent, checker);
+        }
+
+        if (ts.isCallExpression(expression.parent)) {
+            // Function expression being passed as argument to another function
+            const i = expression.parent.arguments.indexOf(expression);
+            if (i >= 0) {
+                const parentSignature = checker.getResolvedSignature(expression.parent);
+                const parentSignatureDeclaration = parentSignature.getDeclaration();
+                if (parentSignatureDeclaration) {
+                    return checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                }
+            }
+
+        } else if (ts.isReturnStatement(expression.parent)) {
+            return this.getContainingFunctionReturnType(expression.parent, checker);
+
+        } else if (ts.isPropertyAssignment(expression.parent)) {
+            const objType = checker.getTypeAtLocation(expression.parent.parent);
+            return checker.getTypeAtLocation(expression.parent.name);
+
+        } else {
+            return checker.getTypeAtLocation(expression.parent);
+        }
+        return undefined;
+    }
+
     public static getSignatureDeclarations(
         signatures: ts.Signature[],
         checker: ts.TypeChecker
@@ -392,29 +422,13 @@ export class TSHelper {
         for (const signature of signatures) {
             const signatureDeclaration = signature.getDeclaration();
             if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
-                && !this.getExplicitThisParameter(signatureDeclaration)) {
-                // Function expressions: get signatures of type being assigned to, unless 'this' was explicit
-                let declType: ts.Type;
-                if (ts.isCallExpression(signatureDeclaration.parent)) {
-                    // Function expression being passed as argument to another function
-                    const i = signatureDeclaration.parent.arguments.indexOf(signatureDeclaration);
-                    if (i >= 0) {
-                        const parentSignature = checker.getResolvedSignature(signatureDeclaration.parent);
-                        const parentSignatureDeclaration = parentSignature.getDeclaration();
-                        if (parentSignatureDeclaration) {
-                            declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
-                        }
-                    }
-                } else if (ts.isReturnStatement(signatureDeclaration.parent)) {
-                    declType = this.getContainingFunctionReturnType(signatureDeclaration.parent, checker);
-                } else {
-                    // Function expression being assigned
-                    declType = checker.getTypeAtLocation(signatureDeclaration.parent);
-                }
-                if (declType) {
-                    const declSignatures = declType.getCallSignatures();
-                    if (declSignatures.length > 0) {
-                        declSignatures.map(s => s.getDeclaration()).forEach(decl => signatureDeclarations.push(decl));
+                && !this.getExplicitThisParameter(signatureDeclaration))
+            {
+                const inferredType = this.inferAssignedType(signatureDeclaration, checker);
+                if (inferredType) {
+                    const inferredSignatures = inferredType.getCallSignatures();
+                    if (inferredSignatures.length > 0) {
+                        signatureDeclarations.push(...inferredSignatures.map(s => s.getDeclaration()));
                         continue;
                     }
                 }

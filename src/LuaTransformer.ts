@@ -21,20 +21,21 @@ export enum ScopeType {
 }
 
 interface SymbolInfo {
+    symbol: ts.Symbol;
     firstSeenAtPos: number;
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Set<ts.Symbol>;
+    referencedSymbols: Set<tstl.SymbolId>;
     assignment?: tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
-    referencedSymbols?: Set<ts.Symbol>;
+    referencedSymbols?: Set<tstl.SymbolId>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
-    functionDefinitions?: Map<ts.Symbol, FunctionDefinitionInfo>;
+    functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
 }
 
 export class LuaTransformer {
@@ -58,7 +59,10 @@ export class LuaTransformer {
     private genVarCounter: number;
 
     private luaLibFeatureSet: Set<LuaLibFeature>;
-    private symbolInfo: Map<ts.Symbol, SymbolInfo>;
+
+    private symbolInfo: Map<tstl.SymbolId, SymbolInfo>;
+    private symbolIds: Map<ts.Symbol, tstl.SymbolId>;
+    private genSymbolIdCounter: number;
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
@@ -82,7 +86,9 @@ export class LuaTransformer {
         this.scopeStack = [];
         this.classStack = [];
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
+        this.symbolIds = new Map();
         this.symbolInfo = new Map();
+        this.genSymbolIdCounter = 1;
     }
 
     // TODO make all other methods private???
@@ -1047,11 +1053,11 @@ export class LuaTransformer {
         const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
 
         // Remember symbols referenced in this function for hoisting later
-        if (!this.options.noHoisting && name.symbol) {
+        if (!this.options.noHoisting && name.symbolId !== undefined) {
             const scope = this.peekScope();
             if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
             const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
-            scope.functionDefinitions.set(name.symbol, functionInfo);
+            scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
 
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -3149,6 +3155,7 @@ export class LuaTransformer {
         }
 
         const symbol = this.checker.getSymbolAtLocation(expression);
+        let symbolId: number | undefined;
         if (symbol) {
             if (this.options.noHoisting) {
                 // Check for reference-before-declaration
@@ -3159,12 +3166,17 @@ export class LuaTransformer {
 
             } else {
                 // Track symbols seen in scope
-                if (!this.symbolInfo.has(symbol)) {
-                    this.symbolInfo.set(symbol, {firstSeenAtPos: expression.pos});
+                if (!this.symbolIds.has(symbol)) {
+                    symbolId = this.genSymbolIdCounter++;
+                    const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: expression.pos};
+                    this.symbolIds.set(symbol, symbolId);
+                    this.symbolInfo.set(symbolId, symbolInfo);
+                } else {
+                    symbolId = this.symbolIds.get(symbol);
                 }
                 this.scopeStack.forEach(s => {
                     if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
-                    s.referencedSymbols.add(symbol);
+                    s.referencedSymbols.add(symbolId);
                 });
             }
         }
@@ -3179,7 +3191,7 @@ export class LuaTransformer {
         if (this.luaKeywords.has(escapedText)) {
             throw TSTLErrors.KeywordIdentifier(expression);
         }
-        return tstl.createIdentifier(escapedText, expression, symbol);
+        return tstl.createIdentifier(escapedText, expression, symbolId);
     }
 
     public transformIdentifierExpression(expression: ts.Identifier): tstl.IdentifierOrTableIndexExpression {
@@ -3389,9 +3401,9 @@ export class LuaTransformer {
 
         if (!this.options.noHoisting && functionDeclaration) {
             // Remember function definitions for hoisting later
-            const functionSymbol = (lhs as tstl.Identifier).symbol;
-            if (functionSymbol) {
-                this.peekScope().functionDefinitions.get(functionSymbol).assignment = assignment;
+            const functionSymbolId = (lhs as tstl.Identifier).symbolId;
+            if (functionSymbolId !== undefined) {
+                this.peekScope().functionDefinitions.get(functionSymbolId).assignment = assignment;
             }
         }
 
@@ -3506,13 +3518,13 @@ export class LuaTransformer {
         this.genVarCounter++;
     }
 
-    private shouldHoist(symbol: ts.Symbol, scope: Scope): boolean {
-        const symbolInfo = this.symbolInfo.get(symbol);
+    private shouldHoist(symbolId: tstl.SymbolId, scope: Scope): boolean {
+        const symbolInfo = this.symbolInfo.get(symbolId);
         if (!symbolInfo) {
             return false;
         }
 
-        const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+        const declaration = tsHelper.getFirstDeclaration(symbolInfo.symbol, this.currentSourceFile);
         if (!declaration) {
             return false;
         }
@@ -3522,11 +3534,11 @@ export class LuaTransformer {
         }
 
         if (scope.functionDefinitions) {
-            for (const [functionSymbol, functionDefinition] of scope.functionDefinitions) {
-                if (functionSymbol !== symbol // Don't recurse into self
+            for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+                if (functionSymbolId !== symbolId // Don't recurse into self
                     && declaration.pos < functionDefinition.assignment.pos // Ignore functions before symbol declaration
-                    && functionDefinition.referencedSymbols.has(symbol)
-                    && this.shouldHoist(functionSymbol, scope))
+                    && functionDefinition.referencedSymbols.has(symbolId)
+                    && this.shouldHoist(functionSymbolId, scope))
                 {
                     return true;
                 }
@@ -3563,8 +3575,8 @@ export class LuaTransformer {
         // Hoist function definitions
         if (scope.functionDefinitions) {
             const hoistedFunctions: tstl.AssignmentStatement[] = [];
-            for (const [functionSymbol, functionDefinition] of scope.functionDefinitions) {
-                if (this.shouldHoist(functionSymbol, scope)) {
+            for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+                if (this.shouldHoist(functionSymbolId, scope)) {
                     const i = result.indexOf(functionDefinition.assignment);
                     result.splice(i, 1);
                     hoistedFunctions.push(functionDefinition.assignment);
@@ -3579,7 +3591,7 @@ export class LuaTransformer {
         if (scope.variableDeclarations) {
             const hoistedLocals: tstl.Identifier[] = [];
             for (const declaration of scope.variableDeclarations) {
-                const symbols = declaration.left.map(i => i.symbol);
+                const symbols = declaration.left.map(i => i.symbolId).filter(s => s !== undefined);
                 if (symbols.some(s => this.shouldHoist(s, scope))) {
                     let assignment: tstl.AssignmentStatement | undefined;
                     if (declaration.right) {
@@ -3624,7 +3636,7 @@ export class LuaTransformer {
     {
         const variable = this.transformIdentifier(identifier);
         const declaration = tstl.createVariableDeclarationStatement(variable, initializer, tsOriginal, parent);
-        if (!this.options.noHoisting && variable.symbol) {
+        if (!this.options.noHoisting && variable.symbolId) {
             const scope = this.peekScope();
             if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
             scope.variableDeclarations.push(declaration);

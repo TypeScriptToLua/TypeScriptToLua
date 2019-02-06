@@ -459,7 +459,7 @@ export class TSHelper {
     }
 
     public static getSignatureDeclarations(
-        signatures: ts.Signature[],
+        signatures: ReadonlyArray<ts.Signature>,
         checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {

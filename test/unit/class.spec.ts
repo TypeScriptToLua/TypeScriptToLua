@@ -660,4 +660,20 @@ export class ClassTests {
 
         Expect(result).toBe(8);
     }
+
+    @Test("Exported class super call")
+    public exportedClassSupercAll(): void {
+        const code =
+            `export class Foo {
+                prop: string;
+                constructor(prop: string) { this.prop = prop; }
+            }
+            export class Bar extends Foo {
+                constructor() {
+                    super("bar");
+                }
+            }
+            export const baz = (new Bar()).prop;`;
+        Expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("bar");
+    }
 }

@@ -99,6 +99,24 @@ export function transpileAndExecute(
     return executeLua(lua);
 }
 
+export function transpileExecuteAndReturnExport(
+    tsStr: string,
+    returnExport: string,
+    compilerOptions?: CompilerOptions,
+    luaHeader?: string
+): any
+{
+    const wrappedTsString = `declare function JSONStringify(p: any): string;
+        ${tsStr}`;
+
+    const lua = `return (function()
+        ${luaHeader ? luaHeader : ""}
+        ${transpileString(wrappedTsString, compilerOptions, false)}
+        end)().${returnExport}`;
+
+    return executeLua(lua);
+}
+
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)
     : [ts.SourceFile, ts.TypeChecker] {
     const program = createStringCompilerProgram(typescript, { luaTarget: target });

@@ -38,6 +38,11 @@ export const optionDeclarations: {[key: string]: CLIOption<any>} = {
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
     } as CLIOption<boolean>,
+    noHoisting: {
+        default: false,
+        describe: "Disables hoisting.",
+        type: "boolean",
+    } as CLIOption<boolean>,
 };
 
 const helpString =

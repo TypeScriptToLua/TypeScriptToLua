@@ -35,6 +35,7 @@ export class MixedConfigurationTests
             // Only present in TSTL dfaults
             noHeader: optionDeclarations["noHeader"].default,
             project: tsConfigPath,
+            noHoisting: optionDeclarations["noHoisting"].default,
         } as CompilerOptions);
     }
 }

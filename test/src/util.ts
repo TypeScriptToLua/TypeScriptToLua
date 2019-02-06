@@ -91,8 +91,9 @@ export function transpileAndExecute(
         ${tsHeader ? tsHeader : ""}
         function __runTest(): any {${tsStr}}`;
 
+    const ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics";
     const lua = `${luaHeader ? luaHeader : ""}
-        ${transpileString(wrappedTsString, compilerOptions, false)}
+        ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnosticsOverride)}
         return __runTest();`;
 
     return executeLua(lua);

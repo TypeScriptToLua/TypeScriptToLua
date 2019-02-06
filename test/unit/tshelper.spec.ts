@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { TSHelper as tsHelper } from "../../src/TSHelper";
 
 import * as ts from "typescript";
@@ -41,7 +41,6 @@ export class TSHelperTests {
     }
 
     @Test("GetCustomDecorators single")
-    @FocusTest
     public GetCustomDecoratorsSingle(): void {
         const source = `/** @compileMembersOnly */
             enum TestEnum {
@@ -54,7 +53,7 @@ export class TSHelperTests {
             const a = TestEnum.val1;`;
 
         const [sourceFile, typeChecker] = util.parseTypeScript(source);
-        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -77,7 +76,7 @@ export class TSHelperTests {
             const a = TestEnum.val1;`;
 
         const [sourceFile, typeChecker] = util.parseTypeScript(source);
-        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -100,7 +99,7 @@ export class TSHelperTests {
             const a = TestEnum.val1;`;
 
         const [sourceFile, typeChecker] = util.parseTypeScript(source);
-        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -123,7 +122,7 @@ export class TSHelperTests {
             const a = TestEnum.val1;`;
 
         const [sourceFile, typeChecker] = util.parseTypeScript(source);
-        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -149,7 +148,7 @@ export class TSHelperTests {
             const a = TestEnum.val1;`;
 
         const [sourceFile, typeChecker] = util.parseTypeScript(source);
-        const identifier = util.findFirstChild(sourceFile, ts.isIdentifier);
+        const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);

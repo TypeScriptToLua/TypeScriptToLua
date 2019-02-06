@@ -61,7 +61,9 @@ export class LuaTranspiler {
             return error;
         }
 
-        this.program.getSourceFiles().forEach(sourceFile => this.emitSourceFile(sourceFile));
+        this.program.getSourceFiles().forEach(sourceFile => {
+            this.emitSourceFile(sourceFile);
+        });
 
         // Copy lualib to target dir
         if (this.options.luaLibImport === LuaLibImportKind.Require

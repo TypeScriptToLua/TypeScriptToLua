@@ -59,21 +59,19 @@ class CLIError extends Error {}
  */
 export function parseCommandLine(args: string[]): ParsedCommandLine
 {
-    const commandLine = ts.parseCommandLine(args);
+    let commandLine = ts.parseCommandLine(args);
 
     // Run diagnostics to check for invalid tsc options
     runTsDiagnostics(commandLine);
 
-    const tstlCLIOptions = parseTSTLOptions(args);
-    copyOptionsIfNotSet(commandLine.options, tstlCLIOptions);
-
-    const tsConfigOptions = readTsConfig(commandLine.options);
-    if (tsConfigOptions !== undefined) {
-        copyOptionsIfNotSet(commandLine.options, tsConfigOptions);
-    }
+    // This will add TS and TSTL options from a tsconfig
+    commandLine = readTsConfig(commandLine);
 
     // Run diagnostics to check for invalid tsconfig
     runTsDiagnostics(commandLine);
+
+    // Merge TSTL CLI options in (highest priority) will also set defaults if none specified
+    commandLine = parseTSTLOptions(commandLine, args);
 
     if (commandLine.options.project && !commandLine.options.rootDir) {
         commandLine.options.rootDir = path.dirname(commandLine.options.project);
@@ -86,9 +84,6 @@ export function parseCommandLine(args: string[]): ParsedCommandLine
     if (!commandLine.options.outDir) {
         commandLine.options.outDir = commandLine.options.rootDir;
     }
-
-    const tstlDefaults = getDefaultOptions();
-    copyOptionsIfNotSet(commandLine.options, tstlDefaults);
 
     return commandLine as ParsedCommandLine;
 }
@@ -106,7 +101,9 @@ export function getHelpString(): string {
     return result;
 }
 
-function readTsConfig(options: CompilerOptions): CompilerOptions {
+function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): ts.ParsedCommandLine {
+    const options = parsedCommandLine.options;
+
     // Load config
     if (options.project) {
         findConfigFile(options);
@@ -134,21 +131,12 @@ function readTsConfig(options: CompilerOptions): CompilerOptions {
                 parsedJsonConfig.options[key] = value;
             }
         }
-
-        return parsedJsonConfig.options;
+        return parsedJsonConfig;
     }
-    return undefined;
+    return parsedCommandLine;
 }
 
-function copyOptionsIfNotSet(options: CompilerOptions, optionsToCopy: CompilerOptions): void {
-    for (const optionName in optionsToCopy) {
-        if (!options[optionName]) {
-            options[optionName] = optionsToCopy[optionName];
-        }
-    }
-}
-
-function parseTSTLOptions(args: string[]): CompilerOptions {
+function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): ts.ParsedCommandLine {
     const result = {};
     for (let i = 0; i < args.length; i++) {
         if (args[i].startsWith("--")) {
@@ -169,7 +157,17 @@ function parseTSTLOptions(args: string[]): CompilerOptions {
             }
         }
     }
-    return result;
+    for (const option in result) {
+        commandLine.options[option] = result[option];
+    }
+    // Add defaults if not set
+    const defaultOptions = getDefaultOptions();
+    for (const option in defaultOptions) {
+        if (!commandLine.options[option]) {
+            commandLine.options[option] = defaultOptions[option];
+        }
+    }
+    return commandLine;
 }
 
 function readValue(valueString: string, valueType: string): any {

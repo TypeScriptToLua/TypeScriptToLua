@@ -68,19 +68,17 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     transpiler.emitFilesAndReportErrors();
 }
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
+const libCache: {[key: string]: string} = {};
 
 const defaultCompilerOptions: CompilerOptions = {
     luaLibImport: LuaLibImportKind.Require,
     luaTarget: LuaTarget.Lua53,
 };
 
-export function transpileString(
-    str: string,
-    options: CompilerOptions = defaultCompilerOptions,
-    ignoreDiagnostics = false
-): string {
-    const compilerHost = {
+export function createStringCompilerProgram(
+    input: string, options: CompilerOptions = defaultCompilerOptions): ts.Program {
+
+    const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
@@ -89,12 +87,16 @@ export function transpileString(
         getDirectories: () => [],
         getNewLine: () => "\n",
 
-        getSourceFile: (filename, languageVersion) => {
+        getSourceFile: (filename: string, languageVersion) => {
             if (filename === "file.ts") {
-                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
+                return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
             }
-            if (filename === "lib.es6.d.ts") {
-                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            if (filename.indexOf(".d.ts") !== -1) {
+                if (!libCache[filename]) {
+                    libCache[filename] =
+                        fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), filename)).toString();
+                }
+                return ts.createSourceFile(filename, libCache[filename], ts.ScriptTarget.Latest, false);
             }
             return undefined;
         },
@@ -105,7 +107,15 @@ export function transpileString(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    const program = ts.createProgram(["file.ts"], options, compilerHost);
+    return ts.createProgram(["file.ts"], options, compilerHost);
+}
+
+export function transpileString(
+    str: string,
+    options: CompilerOptions = defaultCompilerOptions,
+    ignoreDiagnostics = false
+): string {
+    const program = createStringCompilerProgram(str, options);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import { TSHelper as tsHelper } from "../../src/TSHelper";
 
 import * as ts from "typescript";
@@ -41,6 +41,7 @@ export class TSHelperTests {
     }
 
     @Test("GetCustomDecorators single")
+    @FocusTest
     public GetCustomDecoratorsSingle(): void {
         const source = `/** @compileMembersOnly */
             enum TestEnum {

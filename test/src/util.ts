@@ -3,7 +3,7 @@ import * as ts from "typescript";
 
 import { Expect } from "alsatian";
 
-import { transpileString as compilerTranspileString } from "../../src/Compiler";
+import { transpileString as compilerTranspileString, createStringCompilerProgram } from "../../src/Compiler";
 import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
@@ -100,35 +100,7 @@ export function transpileAndExecute(
 
 export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)
     : [ts.SourceFile, ts.TypeChecker] {
-    const compilerHost = {
-        directoryExists: () => true,
-        fileExists: (fileName): boolean => true,
-        getCanonicalFileName: fileName => fileName,
-        getCurrentDirectory: () => "",
-        getDefaultLibFileName: () => "lib.es6.d.ts",
-        getDirectories: () => [],
-        getNewLine: () => "\n",
-
-        getSourceFile: (filename, languageVersion) => {
-            if (filename === "file.ts") {
-                return ts.createSourceFile(filename, typescript, ts.ScriptTarget.Latest, false);
-            }
-            if (filename === "lib.es6.d.ts") {
-                const libPath = path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts");
-                const libSource = fs.readFileSync(libPath).toString();
-                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
-            }
-            return undefined;
-        },
-
-        readFile: () => "",
-
-        useCaseSensitiveFileNames: () => false,
-        // Don't write output
-        writeFile: (name, text, writeByteOrderMark) => undefined,
-    };
-
-    const program = ts.createProgram(["file.ts"], { luaTarget: target }, compilerHost);
+    const program = createStringCompilerProgram(typescript, { luaTarget: target });
     return [program.getSourceFile("file.ts"), program.getTypeChecker()];
 }
 

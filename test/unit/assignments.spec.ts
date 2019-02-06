@@ -206,7 +206,9 @@ export class AssignmentTests {
 
     @TestCase("func", "lambda", "foo+lambda")
     @TestCase("func", "s => s", "foo")
+    @TestCase("func", "(s => s)", "foo")
     @TestCase("func", "function(s) { return s; }", "foo")
+    @TestCase("func", "(function(s) { return s; })", "foo")
     @TestCase("func", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("func", "s => foo.method(s)", "foo+method")
     @TestCase("func", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -216,7 +218,9 @@ export class AssignmentTests {
     @TestCase("func", "foo.voidLambdaProp", "foo+voidLambdaProp")
     @TestCase("lambda", "func", "foo+func")
     @TestCase("lambda", "s => s", "foo")
+    @TestCase("lambda", "(s => s)", "foo")
     @TestCase("lambda", "function(s) { return s; }", "foo")
+    @TestCase("lambda", "(function(s) { return s; })", "foo")
     @TestCase("lambda", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("lambda", "s => foo.method(s)", "foo+method")
     @TestCase("lambda", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -227,7 +231,9 @@ export class AssignmentTests {
     @TestCase("Foo.voidStaticMethod", "func", "foo+func")
     @TestCase("Foo.voidStaticMethod", "lambda", "foo+lambda")
     @TestCase("Foo.voidStaticMethod", "s => s", "foo")
+    @TestCase("Foo.voidStaticMethod", "(s => s)", "foo")
     @TestCase("Foo.voidStaticMethod", "function(s) { return s; }", "foo")
+    @TestCase("Foo.voidStaticMethod", "(function(s) { return s; })", "foo")
     @TestCase("Foo.voidStaticMethod", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("Foo.voidStaticMethod", "s => foo.method(s)", "foo+method")
     @TestCase("Foo.voidStaticMethod", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -237,7 +243,9 @@ export class AssignmentTests {
     @TestCase("Foo.voidStaticLambdaProp", "func", "foo+func")
     @TestCase("Foo.voidStaticLambdaProp", "lambda", "foo+lambda")
     @TestCase("Foo.voidStaticLambdaProp", "s => s", "foo")
+    @TestCase("Foo.voidStaticLambdaProp", "(s => s)", "foo")
     @TestCase("Foo.voidStaticLambdaProp", "function(s) { return s; }", "foo")
+    @TestCase("Foo.voidStaticLambdaProp", "(function(s) { return s; })", "foo")
     @TestCase("Foo.voidStaticLambdaProp", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("Foo.voidStaticLambdaProp", "s => foo.method(s)", "foo+method")
     @TestCase("Foo.voidStaticLambdaProp", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -247,7 +255,9 @@ export class AssignmentTests {
     @TestCase("foo.voidMethod", "func", "foo+func")
     @TestCase("foo.voidMethod", "lambda", "foo+lambda")
     @TestCase("foo.voidMethod", "s => s", "foo")
+    @TestCase("foo.voidMethod", "(s => s)", "foo")
     @TestCase("foo.voidMethod", "function(s) { return s; }", "foo")
+    @TestCase("foo.voidMethod", "(function(s) { return s; })", "foo")
     @TestCase("foo.voidMethod", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("foo.voidMethod", "s => foo.method(s)", "foo+method")
     @TestCase("foo.voidMethod", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -257,7 +267,9 @@ export class AssignmentTests {
     @TestCase("foo.voidLambdaProp", "func", "foo+func")
     @TestCase("foo.voidLambdaProp", "lambda", "foo+lambda")
     @TestCase("foo.voidLambdaProp", "s => s", "foo")
+    @TestCase("foo.voidLambdaProp", "(s => s)", "foo")
     @TestCase("foo.voidLambdaProp", "function(s) { return s; }", "foo")
+    @TestCase("foo.voidLambdaProp", "(function(s) { return s; })", "foo")
     @TestCase("foo.voidLambdaProp", "function(this: void, s: string) { return s; }", "foo")
     @TestCase("foo.voidLambdaProp", "s => foo.method(s)", "foo+method")
     @TestCase("foo.voidLambdaProp", "s => foo.lambdaProp(s)", "foo+lambdaProp")
@@ -280,7 +292,9 @@ export class AssignmentTests {
     @TestCase("foo.voidMethod", "foo+voidMethod")
     @TestCase("foo.voidLambdaProp", "foo+voidLambdaProp")
     @TestCase("s => s", "foo")
+    @TestCase("(s => s)", "foo")
     @TestCase("function(s) { return s; }", "foo")
+    @TestCase("(function(s) { return s; })", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
     @TestCase("func", "foo+func", "string | ((s: string) => string)")
     @TestCase("func", "foo+func", "T")
@@ -301,7 +315,9 @@ export class AssignmentTests {
     }
 
     @TestCase("s => s", "foo")
+    @TestCase("(s => s)", "foo")
     @TestCase("function(s) { return s; }", "foo")
+    @TestCase("(function(s) { return s; })", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
     @Test("Valid function expression argument with no signature")
     public validFunctionExpressionArgumentNoSignature(func: string, expectResult: string): void {
@@ -321,7 +337,9 @@ export class AssignmentTests {
     @TestCase("foo.voidMethod", "foo+voidMethod")
     @TestCase("foo.voidLambdaProp", "foo+voidLambdaProp")
     @TestCase("s => s", "foo")
+    @TestCase("(s => s)", "foo")
     @TestCase("function(s) { return s; }", "foo")
+    @TestCase("(function(s) { return s; })", "foo")
     @TestCase("function(this: void, s: string) { return s; }", "foo")
     @TestCase("func", "foo+func", "string | ((s: string) => string)")
     @TestCase("<(s: string) => string>func", "foo+func")
@@ -344,6 +362,7 @@ export class AssignmentTests {
     @TestCase("foo.method", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("foo.method", "s => s", "foo")
     @TestCase("foo.method", "function(s) { return s; }", "foo")
+    @TestCase("foo.method", "(function(s) { return s; })", "foo")
     @TestCase("foo.method", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("foo.method", "s => func(s)", "foo+func")
     @TestCase("foo.method", "s => lambda(s)", "foo+lambda")
@@ -353,7 +372,9 @@ export class AssignmentTests {
     @TestCase("foo.method", "thisLambda", "foo+thisLambda")
     @TestCase("foo.lambdaProp", "foo.method", "foo+method")
     @TestCase("foo.lambdaProp", "s => s", "foo")
+    @TestCase("foo.lambdaProp", "(s => s)", "foo")
     @TestCase("foo.lambdaProp", "function(s) { return s; }", "foo")
+    @TestCase("foo.lambdaProp", "(function(s) { return s; })", "foo")
     @TestCase("foo.lambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("foo.lambdaProp", "s => func(s)", "foo+func")
     @TestCase("foo.lambdaProp", "s => lambda(s)", "foo+lambda")
@@ -364,7 +385,9 @@ export class AssignmentTests {
     @TestCase("Foo.staticMethod", "foo.method", "foo+method")
     @TestCase("Foo.staticMethod", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("Foo.staticMethod", "s => s", "foo")
+    @TestCase("Foo.staticMethod", "(s => s)", "foo")
     @TestCase("Foo.staticMethod", "function(s) { return s; }", "foo")
+    @TestCase("Foo.staticMethod", "(function(s) { return s; })", "foo")
     @TestCase("Foo.staticMethod", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("Foo.staticMethod", "s => func(s)", "foo+func")
     @TestCase("Foo.staticMethod", "s => lambda(s)", "foo+lambda")
@@ -374,7 +397,9 @@ export class AssignmentTests {
     @TestCase("Foo.staticLambdaProp", "foo.method", "foo+method")
     @TestCase("Foo.staticLambdaProp", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("Foo.staticLambdaProp", "s => s", "foo")
+    @TestCase("Foo.staticLambdaProp", "(s => s)", "foo")
     @TestCase("Foo.staticLambdaProp", "function(s) { return s; }", "foo")
+    @TestCase("Foo.staticLambdaProp", "(function(s) { return s; })", "foo")
     @TestCase("Foo.staticLambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("Foo.staticLambdaProp", "s => func(s)", "foo+func")
     @TestCase("Foo.staticLambdaProp", "s => lambda(s)", "foo+lambda")
@@ -384,7 +409,9 @@ export class AssignmentTests {
     @TestCase("thisFunc", "foo.method", "foo+method")
     @TestCase("thisFunc", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("thisFunc", "s => s", "foo")
+    @TestCase("thisFunc", "(s => s)", "foo")
     @TestCase("thisFunc", "function(s) { return s; }", "foo")
+    @TestCase("thisFunc", "(function(s) { return s; })", "foo")
     @TestCase("thisFunc", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("thisFunc", "s => func(s)", "foo+func")
     @TestCase("thisFunc", "s => lambda(s)", "foo+lambda")
@@ -394,7 +421,9 @@ export class AssignmentTests {
     @TestCase("thisLambda", "foo.method", "foo+method")
     @TestCase("thisLambda", "foo.lambdaProp", "foo+lambdaProp")
     @TestCase("thisLambda", "s => s", "foo")
+    @TestCase("thisLambda", "(s => s)", "foo")
     @TestCase("thisLambda", "function(s) { return s; }", "foo")
+    @TestCase("thisLambda", "(function(s) { return s; })", "foo")
     @TestCase("thisLambda", "function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("thisLambda", "s => func(s)", "foo+func")
     @TestCase("thisLambda", "s => lambda(s)", "foo+lambda")
@@ -420,7 +449,9 @@ export class AssignmentTests {
     @TestCase("thisFunc", "foo+thisFunc")
     @TestCase("thisLambda", "foo+thisLambda")
     @TestCase("s => s", "foo")
+    @TestCase("(s => s)", "foo")
     @TestCase("function(s) { return s; }", "foo")
+    @TestCase("(function(s) { return s; })", "foo")
     @TestCase("function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
     @TestCase("foo.method", "foo+method", "T")
@@ -448,7 +479,9 @@ export class AssignmentTests {
     @TestCase("thisFunc", "foo+thisFunc")
     @TestCase("thisLambda", "foo+thisLambda")
     @TestCase("s => s", "foo")
+    @TestCase("(s => s)", "foo")
     @TestCase("function(s) { return s; }", "foo")
+    @TestCase("(function(s) { return s; })", "foo")
     @TestCase("function(this: Foo, s: string) { return s; }", "foo")
     @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
     @TestCase("<(this: Foo, s: string) => string>foo.method", "foo+method")
@@ -802,6 +835,134 @@ export class AssignmentTests {
             TranspileError,
             "Unsupported assignment of mixed function/method overload. "
             + "Overloads should either be all functions or all methods, but not both.");
+    }
+
+    @TestCase("s => s")
+    @TestCase("(s => s)")
+    @TestCase("function(s) { return s; }")
+    @TestCase("(function(s) { return s; })")
+    @Test("Function expression type inference in class")
+    public functionExpressionTypeInferenceInClass(funcExp: string): void {
+        const code =
+            `class Foo {
+                func: (this: void, s: string) => string = ${funcExp};
+                method: (s: string) => string = ${funcExp};
+                static staticFunc: (this: void, s: string) => string = ${funcExp};
+                static staticMethod: (s: string) => string = ${funcExp};
+            }
+            const foo = new Foo();
+            return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");`;
+        Expect(util.transpileAndExecute(code)).toBe("abcd");
+    }
+
+    @TestCase("const foo: Foo", "s => s")
+    @TestCase("const foo: Foo", "(s => s)")
+    @TestCase("const foo: Foo", "function(s) { return s; }")
+    @TestCase("const foo: Foo", "(function(s) { return s; })")
+    @TestCase("let foo: Foo; foo", "s => s")
+    @TestCase("let foo: Foo; foo", "(s => s)")
+    @TestCase("let foo: Foo; foo", "function(s) { return s; }")
+    @TestCase("let foo: Foo; foo", "(function(s) { return s; })")
+    @Test("Function expression type inference in object literal")
+    public functionExpressionTypeInferenceInObjectLiteral(assignTo: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                func(this: void, s: string): string;
+                method(this: this, s: string): string;
+            }
+            ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
+            return foo.method("foo") + foo.func("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @TestCase("const foo: Foo", "s => s")
+    @TestCase("const foo: Foo", "(s => s)")
+    @TestCase("const foo: Foo", "function(s) { return s; }")
+    @TestCase("const foo: Foo", "(function(s) { return s; })")
+    @TestCase("let foo: Foo; foo", "s => s")
+    @TestCase("let foo: Foo; foo", "(s => s)")
+    @TestCase("let foo: Foo; foo", "function(s) { return s; }")
+    @TestCase("let foo: Foo; foo", "(function(s) { return s; })")
+    @Test("Function expression type inference in object literal (generic key)")
+    public functionExpressionTypeInferenceInObjectLiteralGenericKey(assignTo: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                [f: string]: (this: void, s: string) => string;
+            }
+            ${assignTo} = {func: ${funcExp}};
+            return foo.func("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "s => s")
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "(s => s)")
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "function(s) { return s; }")
+    @TestCase("const funcs: [Func, Method]", "funcs[0]", "funcs[1]", "(function(s) { return s; })")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "s => s")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "(s => s)")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "function(s) { return s; }")
+    @TestCase("let funcs: [Func, Method]; funcs", "funcs[0]", "funcs[1]", "(function(s) { return s; })")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "s => s")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "(s => s)")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "function(s) { return s; }")
+    @TestCase("const [func, meth]: [Func, Method]", "func", "meth", "(function(s) { return s; })")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "s => s")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "(s => s)")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "function(s) { return s; }")
+    @TestCase("let func: Func; let meth: Method; [func, meth]", "func", "meth", "(function(s) { return s; })")
+    @Test("Function expression type inference in tuple")
+    public functionExpressionTypeInferenceInTuple(
+        assignTo: string,
+        func: string,
+        method: string,
+        funcExp: string
+    ): void
+    {
+        const code =
+            `interface Foo {
+                method(s: string): string;
+            }
+            interface Func {
+                (this: void, s: string): string;
+            }
+            interface Method {
+                (this: Foo, s: string): string;
+            }
+            ${assignTo} = [${funcExp}, ${funcExp}];
+            const foo: Foo = {method: ${method}};
+            return foo.method("foo") + ${func}("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @TestCase("const meths: Method[]", "meths[0]", "s => s")
+    @TestCase("const meths: Method[]", "meths[0]", "(s => s)")
+    @TestCase("const meths: Method[]", "meths[0]", "function(s) { return s; }")
+    @TestCase("const meths: Method[]", "meths[0]", "(function(s) { return s; })")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "s => s")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "(s => s)")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "function(s) { return s; }")
+    @TestCase("let meths: Method[]; meths", "meths[0]", "(function(s) { return s; })")
+    @TestCase("const [meth]: Method[]", "meth", "s => s")
+    @TestCase("const [meth]: Method[]", "meth", "(s => s)")
+    @TestCase("const [meth]: Method[]", "meth", "function(s) { return s; }")
+    @TestCase("const [meth]: Method[]", "meth", "(function(s) { return s; })")
+    @TestCase("let meth: Method; [meth]", "meth", "s => s")
+    @TestCase("let meth: Method; [meth]", "meth", "(s => s)")
+    @TestCase("let meth: Method; [meth]", "meth", "function(s) { return s; }")
+    @TestCase("let meth: Method; [meth]", "meth", "(function(s) { return s; })")
+    @Test("Function expression type inference in array")
+    public functionExpressionTypeInferenceInArray(assignTo: string, method: string, funcExp: string): void {
+        const code =
+            `interface Foo {
+                method(s: string): string;
+            }
+            interface Method {
+                (this: Foo, s: string): string;
+            }
+            ${assignTo} = [${funcExp}];
+            const foo: Foo = {method: ${method}};
+            return foo.method("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
     }
 
     @Test("String table access")

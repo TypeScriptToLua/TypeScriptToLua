@@ -590,4 +590,26 @@ export class TSHelper {
 
         return false;
     }
+
+    public static getFirstDeclaration(symbol: ts.Symbol, sourceFile?: ts.SourceFile): ts.Declaration | undefined {
+        let declarations = symbol.getDeclarations();
+        if (!declarations) {
+            return undefined;
+        }
+        if (sourceFile) {
+            declarations = declarations.filter(d => this.findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
+        }
+        return declarations.length > 0
+            ? declarations.reduce((p, c) => p.pos < c.pos ? p : c)
+            : undefined;
+    }
+
+    public static isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
+        const symbol = checker.getSymbolAtLocation(node.name);
+        if (!symbol) {
+            return false;
+        }
+        const firstDeclaration = this.getFirstDeclaration(symbol);
+        return firstDeclaration === node;
+    }
 }

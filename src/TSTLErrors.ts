@@ -119,4 +119,12 @@ export class TSTLErrors {
                 "the TupleReturn decorator.",
             node);
     };
+
+    public static ReferencedBeforeDeclaration = (node: ts.Identifier) => {
+        return new TranspileError(
+            `Identifier "${node.text}" was referenced before it was declared. The declaration ` +
+            "must be moved before the identifier's use, or hoisting must be enabled.",
+            node
+        );
+    }
 }

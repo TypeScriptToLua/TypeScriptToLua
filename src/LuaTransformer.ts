@@ -12,14 +12,30 @@ export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined
 export type ExpressionVisitResult = tstl.Expression | undefined;
 
 export enum ScopeType {
-    Function,
-    Switch,
-    Loop,
+    File = 0x1,
+    Function = 0x2,
+    Switch = 0x4,
+    Loop = 0x8,
+    Conditional = 0x10,
+    Block = 0x20,
+}
+
+interface SymbolInfo {
+    symbol: ts.Symbol;
+    firstSeenAtPos: number;
+}
+
+interface FunctionDefinitionInfo {
+    referencedSymbols: Set<tstl.SymbolId>;
+    assignment?: tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
+    referencedSymbols?: Set<tstl.SymbolId>;
+    variableDeclarations?: tstl.VariableDeclarationStatement[];
+    functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
 }
 
 export class LuaTransformer {
@@ -44,6 +60,10 @@ export class LuaTransformer {
 
     private luaLibFeatureSet: Set<LuaLibFeature>;
 
+    private symbolInfo: Map<tstl.SymbolId, SymbolInfo>;
+    private symbolIds: Map<ts.Symbol, tstl.SymbolId>;
+    private genSymbolIdCounter: number;
+
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
     public constructor(program: ts.Program, options: CompilerOptions) {
@@ -60,23 +80,28 @@ export class LuaTransformer {
     }
 
     public setupState(): void {
-        this.scopeStack = [];
         this.genVarCounter = 0;
         this.currentSourceFile = undefined;
         this.isModule = false;
         this.scopeStack = [];
         this.classStack = [];
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
+        this.symbolIds = new Map();
+        this.symbolInfo = new Map();
+        this.genSymbolIdCounter = 1;
     }
 
     // TODO make all other methods private???
     public transformSourceFile(node: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
+        this.pushScope(ScopeType.File, node);
 
         this.currentSourceFile = node;
         this.isModule = tsHelper.isFileModule(node);
 
-        const statements = this.transformStatements(node.statements);
+        const statements = this.performHoisting(this.transformStatements(node.statements));
+        this.popScope();
+
         if (this.isModule) {
             statements.unshift(
                 tstl.createVariableDeclarationStatement(
@@ -104,7 +129,7 @@ export class LuaTransformer {
         switch (node.kind) {
             // Block
             case ts.SyntaxKind.Block:
-                return this.transformScopeBlock(node as ts.Block);
+                return this.transformBlockAsDoStatement(node as ts.Block);
             // Declaration Statements
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
@@ -168,11 +193,17 @@ export class LuaTransformer {
     }
 
     public transformBlock(block: ts.Block): tstl.Block {
-        return tstl.createBlock(this.transformStatements(block.statements), block);
+        this.pushScope(ScopeType.Block, block);
+        const statements = this.performHoisting(this.transformStatements(block.statements));
+        this.popScope();
+        return tstl.createBlock(statements, block);
     }
 
-    public transformScopeBlock(block: ts.Block): tstl.DoStatement {
-        return tstl.createDoStatement(this.transformStatements(block.statements), block);
+    public transformBlockAsDoStatement(block: ts.Block): tstl.DoStatement {
+        this.pushScope(ScopeType.Block, block);
+        const statements = this.performHoisting(this.transformStatements(block.statements));
+        this.popScope();
+        return tstl.createDoStatement(statements, block);
     }
 
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
@@ -214,16 +245,15 @@ export class LuaTransformer {
                 if (importSpecifier.propertyName) {
                     const propertyIdentifier = this.transformIdentifier(importSpecifier.propertyName);
                     const propertyName = tstl.createStringLiteral(propertyIdentifier.text);
-                    const renamedImport = tstl.createVariableDeclarationStatement(
-                        this.transformIdentifier(importSpecifier.name),
+                    const renamedImport = this.createHoistableVariableDeclarationStatement(
+                        importSpecifier.name,
                         tstl.createTableIndexExpression(importUniqueName, propertyName),
                         importSpecifier);
                     result.push(renamedImport);
                 } else {
-                    const nameIdentifier = this.transformIdentifier(importSpecifier.name);
-                    const name = tstl.createStringLiteral(nameIdentifier.text);
-                    const namedImport = tstl.createVariableDeclarationStatement(
-                        nameIdentifier,
+                    const name = tstl.createStringLiteral(importSpecifier.name.text);
+                    const namedImport = this.createHoistableVariableDeclarationStatement(
+                        importSpecifier.name,
                         tstl.createTableIndexExpression(importUniqueName, name),
                         importSpecifier
                     );
@@ -232,8 +262,8 @@ export class LuaTransformer {
             });
             return result;
         } else if (ts.isNamespaceImport(imports)) {
-            const requireStatement = tstl.createVariableDeclarationStatement(
-                this.transformIdentifier(imports.name),
+            const requireStatement = this.createHoistableVariableDeclarationStatement(
+                imports.name,
                 requireCall,
                 statement
             );
@@ -588,16 +618,16 @@ export class LuaTransformer {
             this.createSelfIdentifier()
         );
 
-        bodyStatements.push(...this.transformFunctionBody(statement.parameters, statement.body, restParamName));
+        const [body] = this.transformFunctionBody(statement.parameters, statement.body, restParamName);
+        bodyStatements.push(...body);
 
-        const body: tstl.Block = tstl.createBlock(bodyStatements);
-
+        const block: tstl.Block = tstl.createBlock(bodyStatements);
 
         const result = tstl.createAssignmentStatement(
             tstl.createTableIndexExpression(
                 this.addExportToIdentifier(className),
                 tstl.createStringLiteral("constructor")),
-            tstl.createFunctionExpression(body, params, dotsLiteral, restParamName, undefined, undefined),
+            tstl.createFunctionExpression(block, params, dotsLiteral, restParamName, undefined, undefined),
             statement);
 
         this.classStack.pop();
@@ -613,8 +643,9 @@ export class LuaTransformer {
     {
         const name = this.transformIdentifier(getAccessor.name as ts.Identifier);
 
+        const [body] = this.transformFunctionBody(getAccessor.parameters, getAccessor.body);
         const accessorFunction = tstl.createFunctionExpression(
-            tstl.createBlock(this.transformFunctionBody(getAccessor.parameters, getAccessor.body)),
+            tstl.createBlock(body),
             [this.createSelfIdentifier()]
         );
 
@@ -636,8 +667,9 @@ export class LuaTransformer {
 
         const [params, dot, restParam] = this.transformParameters(setAccessor.parameters, this.createSelfIdentifier());
 
+        const [body] = this.transformFunctionBody(setAccessor.parameters, setAccessor.body, restParam);
         const accessorFunction = tstl.createFunctionExpression(
-            tstl.createBlock(this.transformFunctionBody(setAccessor.parameters, setAccessor.body, restParam)),
+            tstl.createBlock(body),
             params,
             dot,
             restParam
@@ -672,8 +704,9 @@ export class LuaTransformer {
             : undefined;
         const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
 
+        const [body] = this.transformFunctionBody(node.parameters, node.body, restParamName);
         const functionExpression = tstl.createFunctionExpression(
-            tstl.createBlock(this.transformFunctionBody(node.parameters, node.body, restParamName)),
+            tstl.createBlock(body),
             paramNames,
             dots,
             restParamName
@@ -730,9 +763,9 @@ export class LuaTransformer {
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
-    ): tstl.Statement[]
+    ): [tstl.Statement[], Scope]
     {
-        this.pushScope(ScopeType.Function);
+        this.pushScope(ScopeType.Function, body);
 
         const headerStatements = [];
 
@@ -761,11 +794,11 @@ export class LuaTransformer {
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
 
-        const bodyStatements = this.transformStatements(body.statements);
+        const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
 
-        this.popScope();
+        const scope = this.popScope();
 
-        return headerStatements.concat(bodyStatements);
+        return [headerStatements.concat(bodyStatements), scope];
     }
 
     public transformParameterDefaultValueDeclaration(declaration: ts.ParameterDeclaration): tstl.Statement {
@@ -860,13 +893,14 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local innerNS = outerNS.innerNS
-            const localDeclaration = tstl.createVariableDeclarationStatement(
-                this.transformIdentifier(statement.name as ts.Identifier),
+            const localDeclaration = this.createHoistableVariableDeclarationStatement(
+                statement.name as ts.Identifier,
                 tstl.createTableIndexExpression(
                     this.transformIdentifier(this.currentNamespace.name as ts.Identifier),
                     tstl.createStringLiteral(this.transformIdentifier(statement.name as ts.Identifier).text)));
 
             result.push(localDeclaration);
+
         } else if (this.isModule && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export)) {
             // exports.NS = exports.NS or {}
             const namespaceDeclaration = tstl.createAssignmentStatement(
@@ -879,11 +913,12 @@ export class LuaTransformer {
             result.push(namespaceDeclaration);
 
             // local NS = exports.NS
-            const localDeclaration = tstl.createVariableDeclarationStatement(
-                this.transformIdentifier(statement.name as ts.Identifier),
+            const localDeclaration = this.createHoistableVariableDeclarationStatement(
+                statement.name as ts.Identifier,
                 this.createExportedIdentifier(this.transformIdentifier(statement.name as ts.Identifier)));
 
             result.push(localDeclaration);
+
         } else {
             // local NS = NS or {}
             const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
@@ -905,7 +940,10 @@ export class LuaTransformer {
 
         // Transform moduleblock to block and visit it
         if (statement.body && ts.isModuleBlock(statement.body)) {
-            result.push(tstl.createDoStatement(this.transformStatements(statement.body.statements)));
+            this.pushScope(ScopeType.Block, statement);
+            const statements = this.performHoisting(this.transformStatements(statement.body.statements));
+            this.popScope();
+            result.push(tstl.createDoStatement(statements));
         }
 
         this.currentNamespace = previousNamespace;
@@ -1006,10 +1044,21 @@ export class LuaTransformer {
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
-        const body = tstl.createBlock(
-            this.transformFunctionBody(functionDeclaration.parameters, functionDeclaration.body, restParamName)
+        const [body, functionScope] = this.transformFunctionBody(
+            functionDeclaration.parameters,
+            functionDeclaration.body,
+            restParamName
         );
-        const functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
+        const block = tstl.createBlock(body);
+        const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
+
+        // Remember symbols referenced in this function for hoisting later
+        if (!this.options.noHoisting && name.symbolId !== undefined) {
+            const scope = this.peekScope();
+            if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
+            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
+            scope.functionDefinitions.set(name.symbolId, functionInfo);
+        }
 
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
     }
@@ -1041,7 +1090,7 @@ export class LuaTransformer {
             } else {
                 return this.createLocalOrExportedOrGlobalDeclaration(
                     identifierName,
-                    tstl.createNilLiteral(),
+                    undefined,
                     statement
                 );
             }
@@ -1200,13 +1249,19 @@ export class LuaTransformer {
     }
 
     public transformIfStatement(statement: ts.IfStatement): tstl.IfStatement {
+        this.pushScope(ScopeType.Conditional, statement.thenStatement);
         const condition = this.transformExpression(statement.expression);
-        const ifBlock = tstl.createBlock(this.transformBlockOrStatement(statement.thenStatement));
+        const statements = this.performHoisting(this.transformBlockOrStatement(statement.thenStatement));
+        this.popScope();
+        const ifBlock = tstl.createBlock(statements);
         if (statement.elseStatement) {
             if (ts.isIfStatement(statement.elseStatement)) {
                 return tstl.createIfStatement(condition, ifBlock, this.transformIfStatement(statement.elseStatement));
             } else {
-                const elseBlock = tstl.createBlock(this.transformBlockOrStatement(statement.elseStatement));
+                this.pushScope(ScopeType.Conditional, statement.elseStatement);
+                const elseStatements = this.performHoisting(this.transformBlockOrStatement(statement.elseStatement));
+                this.popScope();
+                const elseBlock = tstl.createBlock(elseStatements);
                 return tstl.createIfStatement(condition, ifBlock, elseBlock);
             }
         }
@@ -1289,9 +1344,10 @@ export class LuaTransformer {
         loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
     ): tstl.Statement[]
     {
-        this.pushScope(ScopeType.Loop);
-        const body = this.transformBlockOrStatement(loop.statement);
-        const scopeId = this.popScope().id;
+        this.pushScope(ScopeType.Loop, loop.statement);
+        const body = this.performHoisting(this.transformBlockOrStatement(loop.statement));
+        const scope = this.popScope();
+        const scopeId = scope.id;
 
         if (this.options.luaTarget === LuaTarget.Lua51) {
             return body;
@@ -1492,16 +1548,16 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedForTarget("Switch statements", this.options.luaTarget, statement);
         }
 
-        this.pushScope(ScopeType.Switch);
+        this.pushScope(ScopeType.Switch, statement);
 
         // Give the switch a unique name to prevent nested switches from acting up.
-        const switchName = `____TS_switch${this.scopeStack.length}`;
+        const switchName = `____TS_switch${this.peekScope().id}`;
 
         const expression = this.transformExpression(statement.expression);
         const switchVariable = tstl.createIdentifier(switchName);
         const switchVariableDeclaration = tstl.createVariableDeclarationStatement(switchVariable, expression);
 
-        const statements: tstl.Statement[] = [switchVariableDeclaration];
+        let statements: tstl.Statement[] = [switchVariableDeclaration];
 
         const caseClauses = statement.caseBlock.clauses.filter(c => ts.isCaseClause(c)) as ts.CaseClause[];
 
@@ -1537,14 +1593,16 @@ export class LuaTransformer {
 
         statements.push(tstl.createLabelStatement(`${switchName}_end`));
 
+        statements = this.performHoisting(statements);
         this.popScope();
 
         return statements;
     }
 
     public transformBreakStatement(breakStatement: ts.BreakStatement): StatementVisitResult {
-        if (this.peekScope().type === ScopeType.Switch) {
-            return tstl.createGotoStatement(`____TS_switch${this.scopeStack.length}_end`);
+        const breakableScope = this.findScope(ScopeType.Loop | ScopeType.Switch);
+        if (breakableScope.type === ScopeType.Switch) {
+            return tstl.createGotoStatement(`____TS_switch${breakableScope.id}_end`);
         } else {
             return tstl.createBreakStatement(breakStatement);
         }
@@ -1604,7 +1662,7 @@ export class LuaTransformer {
         }
 
         return tstl.createGotoStatement(
-            `__continue${this.peekScope().id}`,
+            `__continue${this.findScope(ScopeType.Loop).id}`,
             statement
         );
     }
@@ -2356,7 +2414,7 @@ export class LuaTransformer {
         );
 
         const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
-        const transformedBody = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
+        const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
         return tstl.createFunctionExpression(
             tstl.createBlock(transformedBody),
@@ -3095,6 +3153,7 @@ export class LuaTransformer {
                                                   // But this should be changed to retun tstl.createNilLiteral()
                                                   // at some point.
         }
+
         let escapedText = expression.escapedText as string;
         const underScoreCharCode = "_".charCodeAt(0);
         if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
@@ -3105,7 +3164,9 @@ export class LuaTransformer {
         if (this.luaKeywords.has(escapedText)) {
             throw TSTLErrors.KeywordIdentifier(expression);
         }
-        return tstl.createIdentifier(escapedText, expression);
+
+        const symbolId = this.getIdentifierSymbolId(expression);
+        return tstl.createIdentifier(escapedText, expression, symbolId);
     }
 
     public transformIdentifierExpression(expression: ts.Identifier): tstl.IdentifierOrTableIndexExpression {
@@ -3243,44 +3304,90 @@ export class LuaTransformer {
 
     private createLocalOrExportedOrGlobalDeclaration(
         lhs: tstl.Identifier | tstl.Identifier[],
-        rhs: tstl.Expression,
+        rhs?: tstl.Expression,
         tsOriginal?: ts.Node,
         parent?: tstl.Node
     ): tstl.Statement[]
     {
+        let declaration: tstl.VariableDeclarationStatement | undefined;
+        let assignment: tstl.AssignmentStatement | undefined;
+
+        const functionDeclaration = tsOriginal && ts.isFunctionDeclaration(tsOriginal) ? tsOriginal : undefined;
+
         if (this.shouldExportIdentifier(lhs)) {
             // exported
-            if (Array.isArray(lhs)) {
-                return [tstl.createAssignmentStatement(
-                    lhs.map(i => this.createExportedIdentifier(i)), rhs, undefined, parent
-                )];
-            } else {
-                return [tstl.createAssignmentStatement(this.createExportedIdentifier(lhs), rhs, undefined, parent)];
-            }
-        }
+            if (!rhs) {
+                return [];
 
-        const insideFunction = this.scopeStack.some(s => s.type === ScopeType.Function);
-        const isLetOrConst = tsOriginal && ts.isVariableDeclaration(tsOriginal)
-            && tsOriginal.parent && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
-        if (this.isModule || this.currentNamespace || insideFunction || isLetOrConst) {
-            // local
-            const isFunction =
-                tsOriginal
-                && (ts.isFunctionDeclaration(tsOriginal)
-                    || (ts.isVariableDeclaration(tsOriginal) && ts.isFunctionLike(tsOriginal.initializer)));
-            if (isFunction) {
-                // Separate declaration from assignment for functions to allow recursion
-                return [
-                    tstl.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent),
-                    tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent),
-                ];
+            } else if (Array.isArray(lhs)) {
+                assignment = tstl.createAssignmentStatement(
+                    lhs.map(i => this.createExportedIdentifier(i)),
+                    rhs,
+                    tsOriginal,
+                    parent
+                );
+
             } else {
-                return [tstl.createVariableDeclarationStatement(lhs, rhs, tsOriginal, parent)];
+                assignment = tstl.createAssignmentStatement(
+                    this.createExportedIdentifier(lhs),
+                    rhs,
+                    tsOriginal,
+                    parent
+                );
             }
 
         } else {
-            // global
-            return [tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent)];
+            const insideFunction = this.findScope(ScopeType.Function) !== undefined;
+            let isLetOrConst = false;
+            let isFirstDeclaration = true; // var can have multiple declarations for the same variable :/
+            if (tsOriginal && ts.isVariableDeclaration(tsOriginal)) {
+                isLetOrConst = tsOriginal.parent
+                    && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
+                isFirstDeclaration = isLetOrConst || tsHelper.isFirstDeclaration(tsOriginal, this.checker);
+            }
+            if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {
+                // local
+                if (rhs && tstl.isFunctionExpression(rhs)) {
+                    declaration = tstl.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent);
+                    assignment = tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
+
+                } else {
+                    declaration = tstl.createVariableDeclarationStatement(lhs, rhs, tsOriginal, parent);
+                }
+
+                if (!this.options.noHoisting) {
+                    // Remember local variable declarations for hoisting later
+                    const scope = isLetOrConst || functionDeclaration
+                        ? this.peekScope()
+                        : this.findScope(ScopeType.Function | ScopeType.File);
+
+                    if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
+                    scope.variableDeclarations.push(declaration);
+                }
+
+            } else if (rhs) {
+                // global
+                assignment = tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
+
+            } else {
+                return [];
+            }
+        }
+
+        if (!this.options.noHoisting && functionDeclaration) {
+            // Remember function definitions for hoisting later
+            const functionSymbolId = (lhs as tstl.Identifier).symbolId;
+            if (functionSymbolId !== undefined) {
+                this.peekScope().functionDefinitions.get(functionSymbolId).assignment = assignment;
+            }
+        }
+
+        if (declaration && assignment) {
+            return [declaration, assignment];
+        } else if (declaration) {
+            return [declaration];
+        } else {
+            return [assignment];
         }
     }
 
@@ -3370,17 +3477,191 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
+    private getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId {
+        const symbol = this.checker.getSymbolAtLocation(identifier);
+        let symbolId: number | undefined;
+        if (symbol) {
+            if (this.options.noHoisting) {
+                // Check for reference-before-declaration
+                const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+                if (declaration && identifier.pos < declaration.pos) {
+                    throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
+                }
+
+            } else {
+                // Track first time symbols are seen
+                if (!this.symbolIds.has(symbol)) {
+                    symbolId = this.genSymbolIdCounter++;
+                    const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos};
+                    this.symbolIds.set(symbol, symbolId);
+                    this.symbolInfo.set(symbolId, symbolInfo);
+                } else {
+                    symbolId = this.symbolIds.get(symbol);
+                }
+
+                //Mark symbol as seen in all current scopes
+                this.scopeStack.forEach(s => {
+                    if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
+                    s.referencedSymbols.add(symbolId);
+                });
+            }
+        }
+        return symbolId;
+    }
+
+    protected findScope(scopeTypes: ScopeType): Scope | undefined {
+        return this.scopeStack.slice().reverse().find(s => (scopeTypes & s.type) !== 0);
+    }
+
     protected peekScope(): Scope {
         return this.scopeStack[this.scopeStack.length - 1];
     }
 
-    protected pushScope(scopeType: ScopeType): void {
-        this.scopeStack.push({type: scopeType, id: this.genVarCounter});
+    protected pushScope(scopeType: ScopeType, node: ts.Node): void {
+        this.scopeStack.push({
+            type: scopeType,
+            id: this.genVarCounter,
+        });
         this.genVarCounter++;
     }
 
+    private shouldHoist(symbolId: tstl.SymbolId, scope: Scope): boolean {
+        const symbolInfo = this.symbolInfo.get(symbolId);
+        if (!symbolInfo) {
+            return false;
+        }
+
+        const declaration = tsHelper.getFirstDeclaration(symbolInfo.symbol, this.currentSourceFile);
+        if (!declaration) {
+            return false;
+        }
+
+        if (symbolInfo.firstSeenAtPos < declaration.pos) {
+            return true;
+        }
+
+        if (scope.functionDefinitions) {
+            for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+                if (functionSymbolId !== symbolId // Don't recurse into self
+                    && declaration.pos < functionDefinition.assignment.pos // Ignore functions before symbol declaration
+                    && functionDefinition.referencedSymbols.has(symbolId)
+                    && this.shouldHoist(functionSymbolId, scope))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    protected replaceStatementInParent(oldNode: tstl.Statement, newNode?: tstl.Statement): void {
+        if (!oldNode.parent) {
+            throw new Error("node has not yet been assigned a parent");
+        }
+
+        if (tstl.isBlock(oldNode.parent) || tstl.isDoStatement(oldNode.parent)) {
+            if (newNode) {
+                oldNode.parent.statements.splice(oldNode.parent.statements.indexOf(oldNode), 1, newNode);
+            } else {
+                oldNode.parent.statements.splice(oldNode.parent.statements.indexOf(oldNode), 1);
+            }
+        } else {
+            throw new Error("unexpected parent type");
+        }
+    }
+
+    protected hoistFunctionDefinitions(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+        if (!scope.functionDefinitions) {
+            return statements;
+        }
+
+        const result = statements.slice();
+        const hoistedFunctions: tstl.AssignmentStatement[] = [];
+        for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+            if (this.shouldHoist(functionSymbolId, scope)) {
+                const i = result.indexOf(functionDefinition.assignment);
+                result.splice(i, 1);
+                hoistedFunctions.push(functionDefinition.assignment);
+            }
+        }
+        if (hoistedFunctions.length > 0) {
+            result.unshift(...hoistedFunctions);
+        }
+        return result;
+    }
+
+    protected hoistVariableDeclarations(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+        if (!scope.variableDeclarations) {
+            return statements;
+        }
+
+        const result = statements.slice();
+        const hoistedLocals: tstl.Identifier[] = [];
+        for (const declaration of scope.variableDeclarations) {
+            const symbols = declaration.left.map(i => i.symbolId).filter(s => s !== undefined);
+            if (symbols.some(s => this.shouldHoist(s, scope))) {
+                let assignment: tstl.AssignmentStatement | undefined;
+                if (declaration.right) {
+                    assignment = tstl.createAssignmentStatement(
+                        declaration.left,
+                        declaration.right
+                    );
+                }
+                const i = result.indexOf(declaration);
+                if (i >= 0) {
+                    if (assignment) {
+                        result.splice(i, 1, assignment);
+                    } else {
+                        result.splice(i, 1);
+                    }
+                } else {
+                    // Special case for 'var's declared in child scopes
+                    this.replaceStatementInParent(declaration, assignment);
+                }
+                hoistedLocals.push(...declaration.left);
+            }
+        }
+        if (hoistedLocals.length > 0) {
+            result.unshift(tstl.createVariableDeclarationStatement(hoistedLocals));
+        }
+        return result;
+    }
+
+    protected performHoisting(statements: tstl.Statement[]): tstl.Statement[] {
+        if (this.options.noHoisting) {
+            return statements;
+        }
+
+        const scope = this.peekScope();
+
+        let result = this.hoistFunctionDefinitions(scope, statements);
+
+        result = this.hoistVariableDeclarations(scope, result);
+
+        return result;
+    }
+
     protected popScope(): Scope {
-        return this.scopeStack.pop();
+        const scope = this.scopeStack.pop();
+        return scope;
+    }
+
+    protected createHoistableVariableDeclarationStatement(
+        identifier: ts.Identifier,
+        initializer?: tstl.Expression,
+        tsOriginal?: ts.Node,
+        parent?: tstl.Node
+    ): tstl.AssignmentStatement | tstl.VariableDeclarationStatement
+    {
+        const variable = this.transformIdentifier(identifier);
+        const declaration = tstl.createVariableDeclarationStatement(variable, initializer, tsOriginal, parent);
+        if (!this.options.noHoisting && variable.symbolId) {
+            const scope = this.peekScope();
+            if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
+            scope.variableDeclarations.push(declaration);
+        }
+        return declaration;
     }
 
     private statementVisitResultToStatementArray(visitResult: StatementVisitResult): tstl.Statement[] {

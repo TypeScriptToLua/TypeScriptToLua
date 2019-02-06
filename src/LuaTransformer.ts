@@ -3177,7 +3177,7 @@ export class LuaTransformer {
     }
 
     public isIdentifierExported(identifierName: string | ts.__String): boolean {
-        if (!this.currentNamespace && !(this.isModule && this.peekScope().type === ScopeType.File)) {
+        if (!this.isModule && !this.currentNamespace) {
             return false;
         }
         const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
@@ -3288,7 +3288,7 @@ export class LuaTransformer {
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {
-        if (!this.currentNamespace && !(this.isModule && this.peekScope().type === ScopeType.File)) {
+        if (!this.isModule && !this.currentNamespace) {
             return false;
         }
         if (Array.isArray(identifier)) {

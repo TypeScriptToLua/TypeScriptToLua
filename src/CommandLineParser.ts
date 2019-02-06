@@ -19,7 +19,7 @@ interface CLIOption<T> extends BaseCLIOption {
     default: T;
 }
 
-export const optionDeclarations: {[key: string]: CLIOption<any>} = {
+const optionDeclarations: {[key: string]: CLIOption<any>} = {
     luaLibImport: {
         choices: [LuaLibImportKind.Inline, LuaLibImportKind.Require, LuaLibImportKind.Always, LuaLibImportKind.None],
         default: LuaLibImportKind.Inline,
@@ -96,8 +96,20 @@ export function parseCommandLine(args: string[]): ParsedCommandLine
 export function getHelpString(): string {
     let result = helpString + "\n\n";
 
+    result += "Options:\n";
+    for (const optionName in optionDeclarations) {
+        const option = optionDeclarations[optionName];
+        const parameterDescribe = option.choices
+            ? option.choices.join("|")
+            : option.type;
+
+        const spacing = " ".repeat(Math.max(1, 45 - optionName.length - parameterDescribe.length));
+
+        result += `\n    --${optionName} <${parameterDescribe}>${spacing}${option.describe}\n`;
+    }
+
     if (examples.length > 0) {
-        result += "Examples:\n";
+        result += "\nExamples:\n";
         for (const [exampleName, example] of examples) {
             result += `    ${exampleName}: ${example}\n`;
         }

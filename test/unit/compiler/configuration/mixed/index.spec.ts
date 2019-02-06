@@ -4,7 +4,7 @@ import * as path from "path";
 import * as ts from "typescript";
 
 import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
-import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
+import { parseCommandLine } from "../../../../../src/CommandLineParser";
 
 export class MixedConfigurationTests
 {
@@ -33,9 +33,9 @@ export class MixedConfigurationTests
             // Only set in tsconfig, TSTL default is "JIT"
             luaTarget: "5.1",
             // Only present in TSTL dfaults
-            noHeader: optionDeclarations["noHeader"].default,
+            noHeader: false,
             project: tsConfigPath,
-            noHoisting: optionDeclarations["noHoisting"].default,
+            noHoisting: false,
         } as CompilerOptions);
     }
 }

@@ -7,15 +7,23 @@ import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaTranspiler} from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
-    const commandLine = CommandLineParser.parseCommandLine(argv);
-    /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
-    if (commandLine.options.help) {
-        console.log(CommandLineParser.getHelpString());
-    }
-    else if (commandLine.options.watch) {
-        watchWithOptions(commandLine.fileNames, commandLine.options);
+    const parseResult = CommandLineParser.parseCommandLine(argv);
+
+    if (parseResult.isValid === true) {
+
+        if (parseResult.result.options.help) {
+            console.log(CommandLineParser.getHelpString());
+            return;
+        }
+
+        /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
+        if (parseResult.result.options.watch) {
+            watchWithOptions(parseResult.result.fileNames, parseResult.result.options);
+        } else {
+            compileFilesWithOptions(parseResult.result.fileNames, parseResult.result.options);
+        }
     } else {
-        compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+        console.error(`Invalid CLI input: ${parseResult.errorMessage}`);
     }
 }
 

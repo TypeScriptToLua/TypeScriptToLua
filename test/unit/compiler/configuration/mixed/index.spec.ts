@@ -26,16 +26,21 @@ export class MixedConfigurationTests
             `${path.join(rootPath, "test.ts")}`,
         ]);
 
-        Expect(parsedArgs.options).toEqual({
-            ...expectedTsConfig.options,
-            // Overridden by cmd args (set to "none" in project-tsconfig.json)
-            luaLibImport: LuaLibImportKind.Inline,
-            // Only set in tsconfig, TSTL default is "JIT"
-            luaTarget: "5.1",
-            // Only present in TSTL dfaults
-            noHeader: false,
-            project: tsConfigPath,
-            noHoisting: false,
-        } as CompilerOptions);
+        if (parsedArgs.isValid === true)
+        {
+            Expect(parsedArgs.result.options).toEqual({
+                ...expectedTsConfig.options,
+                // Overridden by cmd args (set to "none" in project-tsconfig.json)
+                luaLibImport: LuaLibImportKind.Inline,
+                // Only set in tsconfig, TSTL default is "JIT"
+                luaTarget: "5.1",
+                // Only present in TSTL dfaults
+                noHeader: false,
+                project: tsConfigPath,
+                noHoisting: false,
+            } as CompilerOptions);
+        } else {
+            Expect(parsedArgs.isValid).toBeTruthy();
+        }
     }
 }

@@ -4,12 +4,18 @@ import * as ts from "typescript";
 
 import {CompilerOptions, LuaTarget, LuaLibImportKind} from "./CompilerOptions";
 
+export type CLIParseResult = ParseResult<ParsedCommandLine>;
+
+type ParseResult<T> =
+    { isValid: true; result: T }
+    | { isValid: false, errorMessage: string};
+
 interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
 
 interface BaseCLIOption {
-    alias: string | string[];
+    aliases: string[];
     describe: string;
     type: string;
 }
@@ -27,7 +33,7 @@ const optionDeclarations: {[key: string]: CLIOption<any>} = {
         type: "enum",
     } as CLIOption<string>,
     luaTarget: {
-        alias: "lt",
+        aliases: ["lt"],
         choices: [LuaTarget.LuaJIT, LuaTarget.Lua53, LuaTarget.Lua52, LuaTarget.Lua51],
         default: LuaTarget.LuaJIT,
         describe: "Specify Lua target version.",
@@ -62,21 +68,37 @@ class CLIError extends Error {}
  * Parse the supplied arguments.
  * The result will include arguments supplied via CLI and arguments from tsconfig.
  */
-export function parseCommandLine(args: string[]): ParsedCommandLine
+export function parseCommandLine(args: string[]): CLIParseResult
 {
     let commandLine = ts.parseCommandLine(args);
 
     // Run diagnostics to check for invalid tsc options
-    runTsDiagnostics(commandLine);
+    const diagnosticsResult = runTsDiagnostics(commandLine);
+    if (diagnosticsResult.isValid === false) {
+        return diagnosticsResult;
+    }
 
     // This will add TS and TSTL options from a tsconfig
-    commandLine = readTsConfig(commandLine);
+    const configResult = readTsConfig(commandLine);
+    if (configResult.isValid === true) {
+        commandLine = configResult.result;
+    } else {
+        return { isValid: false, errorMessage: configResult.errorMessage };
+    }
 
     // Run diagnostics to check for invalid tsconfig
-    runTsDiagnostics(commandLine);
+    const diagnosticsResult2 = runTsDiagnostics(commandLine);
+    if (diagnosticsResult2.isValid === false) {
+        return diagnosticsResult2;
+    }
 
     // Merge TSTL CLI options in (highest priority) will also set defaults if none specified
-    commandLine = parseTSTLOptions(commandLine, args);
+    const tstlCLIResult = parseTSTLOptions(commandLine, args);
+    if (tstlCLIResult.isValid === true) {
+        commandLine = tstlCLIResult.result;
+    } else {
+        return { isValid: false, errorMessage: tstlCLIResult.errorMessage };
+    }
 
     if (commandLine.options.project && !commandLine.options.rootDir) {
         commandLine.options.rootDir = path.dirname(commandLine.options.project);
@@ -90,7 +112,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine
         commandLine.options.outDir = commandLine.options.rootDir;
     }
 
-    return commandLine as ParsedCommandLine;
+    return { isValid: true, result: commandLine as ParsedCommandLine };
 }
 
 export function getHelpString(): string {
@@ -118,12 +140,19 @@ export function getHelpString(): string {
     return result;
 }
 
-function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): ts.ParsedCommandLine {
+function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
+{
     const options = parsedCommandLine.options;
 
     // Load config
     if (options.project) {
-        findConfigFile(options);
+        const findProjectPathResult = findConfigFile(options);
+        if (findProjectPathResult.isValid === true) {
+            options.project = findProjectPathResult.result;
+        } else {
+            return { isValid: false, errorMessage: findProjectPathResult.errorMessage };
+        }
+
         const configPath = options.project;
         const configContents = fs.readFileSync(configPath).toString();
         const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
@@ -137,40 +166,57 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): ts.ParsedCommand
         for (const key in parsedJsonConfig.raw) {
             const option = optionDeclarations[key];
             if (option !== undefined) {
-                const value = readValue(parsedJsonConfig.raw[key], option.type);
+                const value = readValue(parsedJsonConfig.raw[key], option.type, key);
                 if (option.choices) {
                     if (option.choices.indexOf(value) < 0) {
-                        throw new CLIError(`Unknown ${key} value '${value}.\n'`
-                            + `Accepted values: ${option.choices}`);
+                        return {
+                            isValid: false,
+                            errorMessage: `Unknown ${key} value '${value}'.\nAccepted values: ${option.choices}`,
+                        };
                     }
                 }
 
                 parsedJsonConfig.options[key] = value;
             }
         }
-        return parsedJsonConfig;
+        return { isValid: true, result: parsedJsonConfig };
     }
-    return parsedCommandLine;
+    return { isValid: true, result: parsedCommandLine };
 }
 
-function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): ts.ParsedCommandLine {
+function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CLIParseResult {
     const result = {};
     for (let i = 0; i < args.length; i++) {
         if (args[i].startsWith("--")) {
             const argumentName = args[i].substr(2);
             const option = optionDeclarations[argumentName];
             if (option) {
-                const value = readValue(args[i + 1], option.type);
+                const argumentResult = getArgumentValue(argumentName, args[i + 1]);
                 i++; // Skip the value from being considered as argument name
-
-                if (option.choices) {
-                    if (option.choices.indexOf(value) < 0) {
-                        throw new CLIError(`Unknown ${argumentName} value '${value}.\n'`
-                            + `Accepted values: ${option.choices}`);
-                    }
+                if (argumentResult.isValid === true) {
+                    result[argumentName] = argumentResult.result;
+                } else {
+                    return { isValid: false, errorMessage: argumentResult.errorMessage };
                 }
+            }
+        } else if (args[i].startsWith("-")) {
+            const argument = args[i].substr(1);
+            let argumentName: string;
+            for (const key in optionDeclarations) {
+                if (optionDeclarations[key].aliases && optionDeclarations[key].aliases.indexOf(argument) >= 0) {
+                    argumentName = key;
+                    break;
+                }
+            }
 
-                result[argumentName] = value;
+            if (argumentName) {
+                const argumentResult = getArgumentValue(argumentName, args[i + 1]);
+                i++; // Skip the value from being considered as argument name
+                if (argumentResult.isValid === true) {
+                    result[argumentName] = argumentResult.result;
+                } else {
+                    return { isValid: false, errorMessage: argumentResult.errorMessage };
+                }
             }
         }
     }
@@ -184,10 +230,31 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): ts
             commandLine.options[option] = defaultOptions[option];
         }
     }
-    return commandLine;
+    return { isValid: true, result: commandLine };
 }
 
-function readValue(valueString: string, valueType: string): any {
+function getArgumentValue(argumentName: string, argument: string): ParseResult<string | boolean>
+{
+    if (argument === undefined) {
+        return { isValid: false, errorMessage: `Missing value for parameter ${argumentName}`};
+    }
+
+    const option = optionDeclarations[argumentName];
+    const value = readValue(argument, option.type, argumentName);
+
+    if (option.choices) {
+        if (option.choices.indexOf(value) < 0) {
+            return {
+                isValid: false,
+                errorMessage: `Unknown ${argumentName} value '${value}'. Accepted values are: ${option.choices}`,
+            };
+        }
+    }
+
+    return { isValid: true, result: value };
+}
+
+function readValue(valueString: string, valueType: string, parameterName: string): string | boolean {
     if (valueType === "boolean") {
         return valueString === "true" || valueString === "t"
             ? true
@@ -212,7 +279,7 @@ function getDefaultOptions(): CompilerOptions {
 }
 
 /** Check the current state of the ParsedCommandLine for errors */
-function runTsDiagnostics(commandLine: ts.ParsedCommandLine): void {
+function runTsDiagnostics(commandLine: ts.ParsedCommandLine): ParseResult<boolean> {
     // Remove files that dont exist
     commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
 
@@ -222,7 +289,7 @@ function runTsDiagnostics(commandLine: ts.ParsedCommandLine): void {
         const optionNames: string[] = [];
         for (const key of Object.keys(optionDeclarations)) {
             optionNames.push(key);
-            const alias = optionDeclarations[key].alias;
+            const alias = optionDeclarations[key].aliases;
             if (alias) {
                 if (typeof alias === "string") {
                     optionNames.push(alias);
@@ -232,27 +299,31 @@ function runTsDiagnostics(commandLine: ts.ParsedCommandLine): void {
             }
         }
 
-        commandLine.errors.forEach(err => {
-            let ignore = false;
+        for (const err of commandLine.errors) {
             // Ignore errors caused by tstl specific compiler options
             if (err.code === tsInvalidCompilerOptionErrorCode) {
+                let ignore = false;
                 for (const optionName of optionNames) {
                     if (err.messageText.toString().indexOf(optionName) !== -1) {
                         ignore = true;
+                        break;
                     }
                 }
+
                 if (!ignore) {
-                    throw new CLIError(`error TS${err.code}: ${err.messageText}`);
+                    return { isValid: false, errorMessage: `error TS${err.code}: ${err.messageText}`};
                 }
             }
-        });
+        }
     }
+
+    return { isValid: true, result: true };
 }
 
 /** Find configFile, function from ts api seems to be broken? */
-export function findConfigFile(options: ts.CompilerOptions): void {
+export function findConfigFile(options: ts.CompilerOptions): ParseResult<string> {
     if (!options.project) {
-        throw new CLIError(`error no base path provided, could not find config.`);
+        return { isValid: false, errorMessage: `error no base path provided, could not find config.`};
     }
     let configPath = options.project;
     // If the project path is wrapped in double quotes, remove them
@@ -279,5 +350,6 @@ export function findConfigFile(options: ts.CompilerOptions): void {
             }
         }
     }
-    options.project = configPath;
+
+    return { isValid: true, result: configPath };
 }

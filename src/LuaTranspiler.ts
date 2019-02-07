@@ -119,7 +119,6 @@ export class LuaTranspiler {
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(`${sourceFile.fileName} (${1 + pos.line},${pos.character})\n${exception.stack}`);
-                    process.exit(1);
                 } else {
                     throw exception;
                 }

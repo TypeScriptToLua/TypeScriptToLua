@@ -42,6 +42,21 @@ export class CommandLineParserTests
         }
     }
 
+    @TestCase(["-lt", "5.1"], LuaTarget.Lua51)
+    @TestCase(["-lt", "5.2"], LuaTarget.Lua52)
+    @TestCase(["-lt", "jit"], LuaTarget.LuaJIT)
+    @TestCase(["-lt", "JIT"], LuaTarget.LuaJIT)
+    @TestCase(["-lt", "5.3"], LuaTarget.Lua53)
+    @Test("CLI parser luaTarget")
+    public cliParserLuaTargetAlias(args: string[], expected: LuaTarget): void {
+        const result = parseCommandLine(args);
+        if (result.isValid === true) {
+            Expect(result.result.options.luaTarget).toBe(expected);
+        } else {
+            Expect(result.isValid).toBeTruthy();
+        }
+    }
+
     @Test("CLI parser invalid luaTarget")
     public cliParserInvalidLuaTarget(): void {
         const result = parseCommandLine(["--luatTarget", "invalid"]);

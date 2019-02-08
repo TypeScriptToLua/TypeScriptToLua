@@ -57,6 +57,6 @@ export class DecoratorMetaExtension {
                 `
             );
         }).toThrowError(TranspileError,
-                        "Cannot construct classes with decorator '!Extension' or '!MetaExtension'.");
+                        "Cannot construct classes with decorator '@extension' or '@metaExtension'.");
     }
 }

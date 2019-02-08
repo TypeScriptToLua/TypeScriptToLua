@@ -1,7 +1,8 @@
-import { Expect, Test } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
+import { TranspileError } from "../../src/TranspileError";
 
 export class ClassTests {
 
@@ -275,6 +276,29 @@ export class ClassTests {
 
         // Assert
         Expect(result).toBe(10);
+    }
+
+    @Test("classSuperSkip")
+    public classSuperSkip(): void {
+        const result = util.transpileAndExecute(
+            `class a {
+                public field: number = 4;
+                constructor(n: number) {
+                    this.field = n;
+                }
+            }
+            class b extends a {
+            }
+            class c extends b {
+                constructor() {
+                    super(5);
+                }
+            }
+            return new c().field;`
+        );
+
+        // Assert
+        Expect(result).toBe(5);
     }
 
     @Test("renamedClassExtends")
@@ -603,6 +627,68 @@ export class ClassTests {
         Expect(result).toBe(10);
     }
 
+    @Test("CallSuperExpressionMethod")
+    public callSuperExpressionMethod(): void {
+        const result = util.transpileAndExecute(
+            `let i = 0;
+            function make() {
+                const j = i++;
+                return class {
+                    constructor() {}
+                    method() {}
+                };
+            }
+            class B extends make() {
+                constructor() { super(); }
+                method() { super.method(); }
+            }
+            const inst = new B();
+            inst.method();
+            inst.method();
+            inst.method();
+            return i;`
+        );
+
+        // Assert
+        Expect(result).toBe(1);
+    }
+
+    @Test("CallSuperSuperMethod")
+    public callSuperSuperMethod(): void {
+        const result = util.transpileAndExecute(
+            `class a {
+                a: number
+                constructor(n: number) {
+                    this.a = n;
+                }
+                public method() {
+                    return this.a;
+                }
+            }
+            class b extends a {
+                constructor(n: number) {
+                    super(n);
+                }
+                public method() {
+                    return super.method();
+                }
+            }
+            class c extends b {
+                constructor(n: number) {
+                    super(n);
+                }
+                public method() {
+                    return super.method();
+                }
+            }
+            let inst = new c(6);
+            return inst.method();`
+        );
+
+        // Assert
+        Expect(result).toBe(6);
+    }
+
     @Test("classExpression")
     public classExpression(): void {
         const result = util.transpileAndExecute(
@@ -662,7 +748,7 @@ export class ClassTests {
     }
 
     @Test("Exported class super call")
-    public exportedClassSupercAll(): void {
+    public exportedClassSuperCall(): void {
         const code =
             `export class Foo {
                 prop: string;
@@ -675,5 +761,48 @@ export class ClassTests {
             }
             export const baz = (new Bar()).prop;`;
         Expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("bar");
+    }
+
+    @TestCase("(new Foo())", "foo")
+    @TestCase("Foo", "bar")
+    @Test("Class method name collision")
+    public classMethodNameCollisiom(input: string, expectResult: string): void {
+        const code =
+            `class Foo {
+                public method() { return "foo"; }
+                public static method() { return "bar"; }
+            }
+            return ${input}.method();`;
+        Expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+
+    @TestCase("extension")
+    @TestCase("metaExtension")
+    @Test("Class extends extension")
+    public classExtendsExtension(extensionType: string): void {
+        const code =
+            `declare class A {}
+            /** @${extensionType} **/
+            class B extends A {}
+            class C extends B {}`;
+        Expect(() => util.transpileString(code)).toThrowError(
+            TranspileError,
+            "Cannot extend classes with decorator '@extension' or '@metaExtension'."
+        );
+    }
+
+    @TestCase("extension")
+    @TestCase("metaExtension")
+    @Test("Class construct extension")
+    public classConstructExtension(extensionType: string): void {
+        const code =
+            `declare class A {}
+            /** @${extensionType} **/
+            class B extends A {}
+            const b = new B();`;
+        Expect(() => util.transpileString(code)).toThrowError(
+            TranspileError,
+            "Cannot construct classes with decorator '@extension' or '@metaExtension'."
+        );
     }
 }

@@ -388,4 +388,35 @@ export class FunctionTests {
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foobar");
     }
+    @Test("Generator functions")
+    public generatorFunction(): void {
+        const fct = `function* seq() {
+            let a = yield 1;
+            return a;
+        }
+        const gen = seq();
+        `;
+        {
+            const code = fct + `return gen.next().done;`;
+            const result = util.transpileAndExecute(code);
+            Expect(result).toBe(false);
+        }
+        {
+            const code = fct + `return gen.next().value;`;
+            const result = util.transpileAndExecute(code);
+            Expect(result).toBe(1);
+        }
+        {
+            const code = fct + `gen.next();
+            return gen.next(42).done;`;
+            const result = util.transpileAndExecute(code);
+            Expect(result).toBe(true);
+        }
+        {
+            const code = fct + `gen.next();
+            return gen.next(42).value;`;
+            const result = util.transpileAndExecute(code);
+            Expect(result).toBe(42);
+        }
+    }
 }

@@ -10,7 +10,6 @@ import {TSTLErrors} from "./TSTLErrors";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;
-
 export enum ScopeType {
     Function,
     Switch,
@@ -937,9 +936,39 @@ export class LuaTransformer {
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
-        const body = tstl.createBlock(
-            this.transformFunctionBody(functionDeclaration.parameters, functionDeclaration.body, restParamName)
-        );
+        let body: tstl.Block;
+        if (functionDeclaration.asteriskToken)
+        {
+            this.importLuaLibFeature(LuaLibFeature.Symbol);
+            const functionBody = this.transformFunctionBody(
+                functionDeclaration.parameters, functionDeclaration.body, restParamName);
+            functionBody.push(tstl.createReturnStatement([
+                tstl.createTableExpression([tstl.createTableFieldExpression(
+                    tstl.createBooleanLiteral(true), tstl.createStringLiteral("done")
+                )])]));
+            const wrappedFunction = tstl.createCallExpression(
+                tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"),
+                    tstl.createStringLiteral("wrap")),
+                [tstl.createFunctionExpression(
+                        tstl.createBlock(functionBody), params, dotsLiteral, restParamName)]);
+            const itIdentifier = tstl.createIdentifier("__it");
+            const symbolIterator = tstl.createTableIndexExpression(
+                tstl.createIdentifier("Symbol"),tstl.createStringLiteral("iterator"));
+            body = tstl.createBlock(
+                [tstl.createAssignmentStatement(itIdentifier, tstl.createTableExpression([
+                    tstl.createTableFieldExpression(wrappedFunction, tstl.createStringLiteral("next"))])),
+                tstl.createAssignmentStatement(
+                    tstl.createTableIndexExpression(itIdentifier, symbolIterator),
+                    tstl.createFunctionExpression(tstl.createBlock([tstl.createReturnStatement([itIdentifier])]))),
+                tstl.createReturnStatement([itIdentifier])]
+                );
+        }
+        else
+        {
+            body = tstl.createBlock(
+                this.transformFunctionBody(functionDeclaration.parameters, functionDeclaration.body, restParamName)
+            );
+        }
         const functionExpression = tstl.createFunctionExpression(body, params, dotsLiteral, restParamName);
 
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -967,8 +996,15 @@ export class LuaTransformer {
             // Find variable identifier
             const identifierName = this.transformIdentifier(statement.name);
             if (statement.initializer) {
-                const value = this.transformExpression(statement.initializer);
-                return this.createLocalOrExportedOrGlobalDeclaration(identifierName, value, statement);
+                if(ts.isYieldExpression(statement.initializer))
+                {
+                    const value = this.transformExpression(statement.initializer);
+                    return this.createLocalOrExportedOrGlobalDeclaration(
+                        [tstl.createAnnonymousIdentifier(), identifierName], value, statement);
+                } else {
+                    const value = this.transformExpression(statement.initializer);
+                    return this.createLocalOrExportedOrGlobalDeclaration(identifierName, value, statement);
+                }
             } else {
                 return this.createLocalOrExportedOrGlobalDeclaration(
                     identifierName,
@@ -1080,13 +1116,32 @@ export class LuaTransformer {
 
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
+    public transformYield(expression: ts.YieldExpression): tstl.Expression {
+        const yieldValue = [tstl.createTableFieldExpression(
+            tstl.createBooleanLiteral(false),tstl.createStringLiteral("done"))];
 
+        if(expression.expression){
+            yieldValue.push(tstl.createTableFieldExpression(this.transformExpression(expression.expression),
+            tstl.createStringLiteral("value")));
+        }
+
+        return tstl.createCallExpression(
+            tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("yield")),
+                [tstl.createTableExpression(yieldValue)], expression);
+    }
     public transformReturn(statement: ts.ReturnStatement): tstl.Statement {
         if (statement.expression) {
             const returnType = tsHelper.getContainingFunctionReturnType(statement, this.checker);
             if (returnType) {
                 const expressionType = this.checker.getTypeAtLocation(statement.expression);
                 this.validateFunctionAssignment(statement, expressionType, returnType);
+            }
+            if (tsHelper.isInGeneratorFunction(statement, this.checker)) {
+                return tstl.createReturnStatement([tstl.createTableExpression([
+                    tstl.createTableFieldExpression(tstl.createBooleanLiteral(true),
+                        tstl.createStringLiteral("done")),
+                    tstl.createTableFieldExpression(this.transformExpression(statement.expression),
+                        tstl.createStringLiteral("value"))])]);
             }
             if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
                 // Parent function is a TupleReturn function
@@ -1584,6 +1639,8 @@ export class LuaTransformer {
                 return this.transformSpreadElement(expression as ts.SpreadElement);
             case ts.SyntaxKind.NonNullExpression:
                 return this.transformExpression((expression as ts.NonNullExpression).expression);
+            case ts.SyntaxKind.YieldExpression:
+                return this.transformYield(expression as ts.YieldExpression);
             case ts.SyntaxKind.EmptyStatement:
                 return undefined;
             case ts.SyntaxKind.NotEmittedStatement:
@@ -1717,7 +1774,21 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedUnionAccessor(lhs);
             }
         }
-
+        let originalRhs: ts.Expression | undefined;
+        if(ts.isBinaryExpression(lhs.parent))
+        {
+            originalRhs = lhs.parent.right;
+        }
+        if (originalRhs && tsHelper.isGeneratorYieldCall(originalRhs, this.checker)) {
+            //a = yield(); can only be called on an iterator, which will generate code like it:resume().
+            //we need to ignore the implicit self in the resume call
+            return tstl.createAssignmentStatement(
+                [tstl.createAnnonymousIdentifier(),
+                    this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression],
+                    right,
+                    lhs.parent
+            );
+        }
         return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,
             right,

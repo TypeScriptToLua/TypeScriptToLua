@@ -1043,11 +1043,13 @@ export class LuaTransformer {
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
-        let body: tstl.Block;
+        let block: tstl.Block;
+        let functionScope: Scope;
         if (functionDeclaration.asteriskToken)
         {
             this.importLuaLibFeature(LuaLibFeature.Symbol);
-            const [functionBody, _scope] = this.transformFunctionBody(
+            let functionBody: tstl.Statement[];
+            [functionBody, functionScope] = this.transformFunctionBody(
                 functionDeclaration.parameters, functionDeclaration.body, restParamName);
             functionBody.push(tstl.createReturnStatement([
                 tstl.createTableExpression([tstl.createTableFieldExpression(
@@ -1061,7 +1063,7 @@ export class LuaTransformer {
             const itIdentifier = tstl.createIdentifier("__it");
             const symbolIterator = tstl.createTableIndexExpression(
                 tstl.createIdentifier("Symbol"),tstl.createStringLiteral("iterator"));
-            body = tstl.createBlock(
+            block = tstl.createBlock(
                 [tstl.createAssignmentStatement(itIdentifier, tstl.createTableExpression([
                     tstl.createTableFieldExpression(wrappedFunction, tstl.createStringLiteral("next"))])),
                 tstl.createAssignmentStatement(
@@ -1072,22 +1074,23 @@ export class LuaTransformer {
         }
         else
         {
-            const [body, functionScope] = this.transformFunctionBody(
+            let body: tstl.Statement[];
+            [body, functionScope] = this.transformFunctionBody(
                 functionDeclaration.parameters,
                 functionDeclaration.body,
                 restParamName
             );
-            const block = tstl.createBlock(body);
-            const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
-            // Remember symbols referenced in this function for hoisting later
-            if (!this.options.noHoisting && name.symbolId !== undefined) {
-                const scope = this.peekScope();
-                if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
-                const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
-                scope.functionDefinitions.set(name.symbolId, functionInfo);
-            }
-            return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
+            block = tstl.createBlock(body);
         }
+        const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
+        // Remember symbols referenced in this function for hoisting later
+        if (!this.options.noHoisting && name.symbolId !== undefined) {
+            const scope = this.peekScope();
+            if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
+            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
+            scope.functionDefinitions.set(name.symbolId, functionInfo);
+        }
+        return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
     }
 
     public transformTypeAliasDeclaration(statement: ts.TypeAliasDeclaration): undefined {

@@ -813,6 +813,10 @@ export function createIdentifier(
     return expression;
 }
 
+export function cloneIdentifier(identifier: Identifier): Identifier {
+    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+}
+
 export interface TableIndexExpression extends Expression {
     kind: SyntaxKind.TableIndexExpression;
     table: Expression;

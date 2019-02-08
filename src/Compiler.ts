@@ -16,6 +16,11 @@ export function compile(argv: string[]): void {
             return;
         }
 
+        if (parseResult.result.options.version) {
+            console.log(CommandLineParser.version);
+            return;
+        }
+
         /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
         if (parseResult.result.options.watch) {
             watchWithOptions(parseResult.result.fileNames, parseResult.result.options);

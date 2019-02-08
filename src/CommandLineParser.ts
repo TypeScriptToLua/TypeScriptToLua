@@ -51,18 +51,18 @@ const optionDeclarations: {[key: string]: CLIOption<any>} = {
     } as CLIOption<boolean>,
 };
 
+export const { version } = require("../package.json");
+
 const helpString =
-    "Syntax: tstl [options] [files...]\n\n" +
+    `Version ${version}\n` +
+    "Syntax:   tstl [options] [files...]\n\n" +
+
+    "Examples: tstl path/to/file.ts [...]\n" +
+    "          tstl -p path/to/tsconfig.json\n\n" +
+
     "In addition to the options listed below you can also pass options\n" +
     "for the typescript compiler (For a list of options use tsc -h).\n" +
     "Some tsc options might have no effect.";
-
-const examples = [
-    ["Compile files", "tstl path/to/file.ts [...]"],
-    ["Compile project", "tstl -p path/to/tsconfig.json"],
-];
-
-class CLIError extends Error {}
 
 /**
  * Parse the supplied arguments.
@@ -121,20 +121,19 @@ export function getHelpString(): string {
     result += "Options:\n";
     for (const optionName in optionDeclarations) {
         const option = optionDeclarations[optionName];
+        const aliasStrings = option.aliases
+            ? option.aliases.map(a => "-" + a)
+            : [];
+
+        const optionString = aliasStrings.concat(["--" + optionName]).join("|");
+
         const parameterDescribe = option.choices
             ? option.choices.join("|")
             : option.type;
 
-        const spacing = " ".repeat(Math.max(1, 45 - optionName.length - parameterDescribe.length));
+        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - parameterDescribe.length));
 
-        result += `\n    --${optionName} <${parameterDescribe}>${spacing}${option.describe}\n`;
-    }
-
-    if (examples.length > 0) {
-        result += "\nExamples:\n";
-        for (const [exampleName, example] of examples) {
-            result += `    ${exampleName}: ${example}\n`;
-        }
+        result += `\n ${optionString} <${parameterDescribe}>${spacing}${option.describe}\n`;
     }
 
     return result;

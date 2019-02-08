@@ -102,6 +102,19 @@ export class CommandLineParserTests
         }
     }
 
+    @TestCase([""], false)
+    @TestCase(["--version"], true)
+    @TestCase(["-v"], true)
+    @Test("CLI parser project")
+    public cliParserVersion(args: string[], expected: boolean): void {
+        const result = parseCommandLine(args);
+        if (result.isValid === true) {
+            Expect(result.result.options.version === true).toBe(expected);
+        } else {
+            Expect(result.isValid).toBeTruthy();
+        }
+    }
+
     @Test("defaultOption")
     @TestCase("luaTarget", LuaTarget.LuaJIT)
     @TestCase("noHeader", false)

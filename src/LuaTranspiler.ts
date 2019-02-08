@@ -55,6 +55,15 @@ export class LuaTranspiler {
         return 0;
     }
 
+    public emitLuaLib(): string {
+        const outPath = path.join(this.options.outDir, "lualib_bundle.lua");
+        fs.copyFileSync(
+            path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
+            outPath
+        );
+        return outPath;
+    }
+
     public emitFilesAndReportErrors(): number {
         const error = this.reportErrors();
         if (error > 0) {
@@ -67,10 +76,7 @@ export class LuaTranspiler {
         if (this.options.luaLibImport === LuaLibImportKind.Require
             || this.options.luaLibImport === LuaLibImportKind.Always
         ) {
-            fs.copyFileSync(
-                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-                path.join(this.options.outDir, "lualib_bundle.lua")
-            );
+            this.emitLuaLib();
         }
 
         return 0;

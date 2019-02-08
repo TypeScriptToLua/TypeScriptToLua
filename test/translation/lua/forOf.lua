@@ -3,5 +3,5 @@ for ____TS_index = 1, #____TS_array do
     local i = ____TS_array[____TS_index];
     do
     end
-    ::__continue0::
+    ::__continue1::
 end

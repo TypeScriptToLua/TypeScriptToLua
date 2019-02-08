@@ -402,6 +402,70 @@ export class TSHelper {
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
 
+    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {
+        if (ts.isParenthesizedExpression(expression.parent)) {
+            // Ignore expressions wrapped in parenthesis
+            return this.inferAssignedType(expression.parent, checker);
+
+        } else if (ts.isCallExpression(expression.parent)) {
+            // Expression being passed as argument to a function
+            let i = expression.parent.arguments.indexOf(expression);
+            if (i >= 0) {
+                const parentSignature = checker.getResolvedSignature(expression.parent);
+                const parentSignatureDeclaration = parentSignature.getDeclaration();
+                if (parentSignatureDeclaration) {
+                    if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
+                        ++i;
+                    }
+                    return checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                }
+            }
+
+        } else if (ts.isReturnStatement(expression.parent)) {
+            // Expression being returned from a function
+            return this.getContainingFunctionReturnType(expression.parent, checker);
+
+        } else if (ts.isPropertyDeclaration(expression.parent)) {
+            // Expression being assigned to a class property
+            return checker.getTypeAtLocation(expression.parent);
+
+        } else if (ts.isPropertyAssignment(expression.parent)) {
+            // Expression being assigned to an object literal property
+            const objType = this.inferAssignedType(expression.parent.parent, checker);
+            const property = objType.getProperty(expression.parent.name.getText());
+            if (!property) {
+                return objType.getStringIndexType();
+            } else {
+                return checker.getTypeAtLocation(property.valueDeclaration);
+            }
+
+        } else if (ts.isArrayLiteralExpression(expression.parent)) {
+            // Expression in an array literal
+            const arrayType = this.inferAssignedType(expression.parent, checker);
+            if (ts.isTupleTypeNode(checker.typeToTypeNode(arrayType))) {
+                // Tuples
+                const i = expression.parent.elements.indexOf(expression);
+                const elementType = (arrayType as ts.TypeReference).typeArguments[i];
+                return elementType;
+            } else {
+                // Standard arrays
+                return arrayType.getNumberIndexType();
+            }
+
+        } else if (ts.isVariableDeclaration(expression.parent)) {
+            // Expression assigned to declaration
+            return checker.getTypeAtLocation(expression.parent.name);
+
+        } else if (ts.isBinaryExpression(expression.parent)
+            && expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken)
+        {
+            // Expression assigned to variable
+            return checker.getTypeAtLocation(expression.parent.left);
+        }
+
+        return checker.getTypeAtLocation(expression);
+    }
+
     public static getSignatureDeclarations(
         signatures: ts.Signature[],
         checker: ts.TypeChecker
@@ -411,29 +475,14 @@ export class TSHelper {
         for (const signature of signatures) {
             const signatureDeclaration = signature.getDeclaration();
             if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
-                && !this.getExplicitThisParameter(signatureDeclaration)) {
-                // Function expressions: get signatures of type being assigned to, unless 'this' was explicit
-                let declType: ts.Type;
-                if (ts.isCallExpression(signatureDeclaration.parent)) {
-                    // Function expression being passed as argument to another function
-                    const i = signatureDeclaration.parent.arguments.indexOf(signatureDeclaration);
-                    if (i >= 0) {
-                        const parentSignature = checker.getResolvedSignature(signatureDeclaration.parent);
-                        const parentSignatureDeclaration = parentSignature.getDeclaration();
-                        if (parentSignatureDeclaration) {
-                            declType = checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
-                        }
-                    }
-                } else if (ts.isReturnStatement(signatureDeclaration.parent)) {
-                    declType = this.getContainingFunctionReturnType(signatureDeclaration.parent, checker);
-                } else {
-                    // Function expression being assigned
-                    declType = checker.getTypeAtLocation(signatureDeclaration.parent);
-                }
-                if (declType) {
-                    const declSignatures = declType.getCallSignatures();
-                    if (declSignatures.length > 0) {
-                        declSignatures.map(s => s.getDeclaration()).forEach(decl => signatureDeclarations.push(decl));
+                && !this.getExplicitThisParameter(signatureDeclaration))
+            {
+                // Infer type of function expressions/arrow functions
+                const inferredType = this.inferAssignedType(signatureDeclaration, checker);
+                if (inferredType) {
+                    const inferredSignatures = inferredType.getCallSignatures();
+                    if (inferredSignatures.length > 0) {
+                        signatureDeclarations.push(...inferredSignatures.map(s => s.getDeclaration()));
                         continue;
                     }
                 }
@@ -559,5 +608,27 @@ export class TSHelper {
         }
 
         return false;
+    }
+
+    public static getFirstDeclaration(symbol: ts.Symbol, sourceFile?: ts.SourceFile): ts.Declaration | undefined {
+        let declarations = symbol.getDeclarations();
+        if (!declarations) {
+            return undefined;
+        }
+        if (sourceFile) {
+            declarations = declarations.filter(d => this.findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
+        }
+        return declarations.length > 0
+            ? declarations.reduce((p, c) => p.pos < c.pos ? p : c)
+            : undefined;
+    }
+
+    public static isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
+        const symbol = checker.getSymbolAtLocation(node.name);
+        if (!symbol) {
+            return false;
+        }
+        const firstDeclaration = this.getFirstDeclaration(symbol);
+        return firstDeclaration === node;
     }
 }

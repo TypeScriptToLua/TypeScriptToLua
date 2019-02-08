@@ -3,5 +3,5 @@ repeat
     do
         e = e - 1;
     end
-    ::__continue0::
+    ::__continue1::
 until not (e > 0);

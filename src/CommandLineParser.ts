@@ -32,6 +32,11 @@ export const optionDeclarations: YargsOptions = {
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },
+    noHoisting: {
+        default: false,
+        describe: "Disables hoisting.",
+        type: "boolean",
+    },
 };
 
 class CLIError extends Error {}

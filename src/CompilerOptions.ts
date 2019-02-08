@@ -4,6 +4,7 @@ export interface CompilerOptions extends ts.CompilerOptions {
     noHeader?: boolean;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
+    noHoisting?: boolean;
 }
 
 export enum LuaLibImportKind {

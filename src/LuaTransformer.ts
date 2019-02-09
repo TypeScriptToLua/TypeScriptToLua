@@ -1132,7 +1132,7 @@ export class LuaTransformer {
             tstl.createDotsLiteral());
 
         //____it = {next = function(____, ...)}
-        const iterator = tstl.createAssignmentStatement(
+        const iterator = tstl.createVariableDeclarationStatement(
             itIdentifier,
             tstl.createTableExpression([
                 tstl.createTableFieldExpression(
@@ -1167,6 +1167,7 @@ export class LuaTransformer {
         ];
         return [block, functionScope];
     }
+
     public transformFunctionDeclaration(functionDeclaration: ts.FunctionDeclaration): StatementVisitResult {
         // Don't transform functions without body (overload declarations)
         if (!functionDeclaration.body) {

@@ -1045,12 +1045,12 @@ export class LuaTransformer {
             spreadIdentifier
         );
 
-        const coroutineIdentifier = tstl.createIdentifier("__co");
-        const valueIdentifier =  tstl.createIdentifier("__value");
-        const errIdentifier =  tstl.createIdentifier("__err");
-        const itIdentifier = tstl.createIdentifier("__it");
+        const coroutineIdentifier = tstl.createIdentifier("____co");
+        const valueIdentifier =  tstl.createIdentifier("____value");
+        const errIdentifier =  tstl.createIdentifier("____err");
+        const itIdentifier = tstl.createIdentifier("____it");
 
-        //local __co = coroutine.create(originalFunction)
+        //local ____co = coroutine.create(originalFunction)
         const coroutine =
             tstl.createVariableDeclarationStatement(coroutineIdentifier,
                 tstl.createCallExpression(
@@ -1076,13 +1076,13 @@ export class LuaTransformer {
             [coroutineIdentifier, tstl.createDotsLiteral()]
         );
 
-        // __err, __value = coroutine.resume(__co, ...)
+        // ____err, ____value = coroutine.resume(____co, ...)
         nextBody.push(tstl.createVariableDeclarationStatement(
             [errIdentifier, valueIdentifier],
             resumeCall)
         );
 
-        //coroutine.status(__co) ~= "dead";
+        //coroutine.status(____co) ~= "dead";
         const coStatus = tstl.createCallExpression(
             tstl.createTableIndexExpression(
                 tstl.createIdentifier("coroutine"),
@@ -1096,7 +1096,7 @@ export class LuaTransformer {
             tstl.SyntaxKind.EqualityOperator
         );
         nextBody.push(status);
-        //if(not __err){error(__value)}
+        //if(not ____err){error(____value)}
         const errorCheck = tstl.createIfStatement(
             tstl.createUnaryExpression(
                 errIdentifier,
@@ -1112,7 +1112,7 @@ export class LuaTransformer {
             ])
         );
         nextBody.push(errorCheck);
-        //{done = coroutine.status(__co) ~= "dead"; value = __value}
+        //{done = coroutine.status(____co) ~= "dead"; value = ____value}
         const iteratorResult = tstl.createTableExpression([
             tstl.createTableFieldExpression(
                 status,
@@ -1125,13 +1125,13 @@ export class LuaTransformer {
         ]);
         nextBody.push(tstl.createReturnStatement([iteratorResult]));
 
-        //function(__, ...)
+        //function(____, ...)
         const nextFunctionDeclaration = tstl.createFunctionExpression(
             tstl.createBlock(nextBody),
             [tstl.createAnnonymousIdentifier()],
             tstl.createDotsLiteral());
 
-        //__it = {next = function(__, ...)}
+        //____it = {next = function(____, ...)}
         const iterator = tstl.createAssignmentStatement(
             itIdentifier,
             tstl.createTableExpression([
@@ -1150,7 +1150,7 @@ export class LuaTransformer {
         const block = [
             coroutine,
             iterator,
-            //__it[Symbol.iterator] = {return __it}
+            //____it[Symbol.iterator] = {return ____it}
             tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(
                     itIdentifier,
@@ -1162,7 +1162,7 @@ export class LuaTransformer {
                     )
                 )
             ),
-            //return __it
+            //return ____it
             tstl.createReturnStatement([itIdentifier]),
         ];
         return [block, functionScope];

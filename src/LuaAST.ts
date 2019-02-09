@@ -815,7 +815,7 @@ export function createIdentifier(
 
 export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
-    expression.text = "___";
+    expression.text = "____";
     return expression;
 }
 

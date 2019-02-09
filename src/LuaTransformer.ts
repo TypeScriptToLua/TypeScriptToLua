@@ -1096,7 +1096,22 @@ export class LuaTransformer {
             tstl.SyntaxKind.EqualityOperator
         );
         nextBody.push(status);
-
+        //if(not __err){error(__value)}
+        const errorCheck = tstl.createIfStatement(
+            tstl.createUnaryExpression(
+                errIdentifier,
+                tstl.SyntaxKind.NotOperator
+            ),
+            tstl.createBlock([
+                tstl.createExpressionStatement(
+                        tstl.createCallExpression(
+                        tstl.createIdentifier("error"),
+                        [valueIdentifier]
+                    )
+                ),
+            ])
+        );
+        nextBody.push(errorCheck);
         //{done = coroutine.status(__co) ~= "dead"; value = not __err and __value}
         const iteratorResult = tstl.createTableExpression([
             tstl.createTableFieldExpression(

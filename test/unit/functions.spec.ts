@@ -419,4 +419,21 @@ export class FunctionTests {
             Expect(result).toBe(42);
         }
     }
+    @Test("Generator for..of")
+    public generatorFunctionForOf(): void {
+        const code = `function* seq() {
+            yield(1);
+            yield(2);
+            yield(3);
+            return 4;
+        }
+        let result = 0;
+        for(let i of seq())
+        {
+            result = result * 10 + i;
+        }
+        return result`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(123);
+    }
 }

@@ -1030,6 +1030,131 @@ export class LuaTransformer {
         });
     }
 
+    private transformGeneratorFunction(
+        parameters: ts.NodeArray<ts.ParameterDeclaration>,
+        body: ts.Block,
+        transformedParameters: tstl.Identifier[],
+        dotsLiteral: tstl.DotsLiteral,
+        spreadIdentifier?: tstl.Identifier
+    ): [tstl.Statement[], Scope]
+    {
+        this.importLuaLibFeature(LuaLibFeature.Symbol);
+        const [functionBody, functionScope] = this.transformFunctionBody(
+            parameters,
+            body,
+            spreadIdentifier
+        );
+
+        const coroutineIdentifier = tstl.createIdentifier("__co");
+        const valueIdentifier =  tstl.createIdentifier("__value");
+        const errIdentifier =  tstl.createIdentifier("__err");
+        const itIdentifier = tstl.createIdentifier("__it");
+
+        //local __co = coroutine.create(originalFunction)
+        const coroutine =
+            tstl.createVariableDeclarationStatement(coroutineIdentifier,
+                tstl.createCallExpression(
+                    tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"),
+                        tstl.createStringLiteral("create")
+                    ),
+                    [tstl.createFunctionExpression(
+                            tstl.createBlock(functionBody),
+                            transformedParameters,
+                            dotsLiteral,
+                            spreadIdentifier),
+                    ]
+                )
+            );
+
+        const nextBody = [];
+        // coroutine.resume(__co, ...)
+        const resumeCall = tstl.createCallExpression(
+            tstl.createTableIndexExpression(
+                tstl.createIdentifier("coroutine"),
+                tstl.createStringLiteral("resume")
+            ),
+            [coroutineIdentifier, tstl.createDotsLiteral()]
+        );
+
+        // __err, __value = coroutine.resume(__co, ...)
+        nextBody.push(tstl.createVariableDeclarationStatement(
+            [errIdentifier, valueIdentifier],
+            resumeCall)
+        );
+
+        //coroutine.status(__co) ~= "dead";
+        const coStatus = tstl.createCallExpression(
+            tstl.createTableIndexExpression(
+                tstl.createIdentifier("coroutine"),
+                tstl.createStringLiteral("status")
+            ),
+            [coroutineIdentifier]
+        );
+        const status = tstl.createBinaryExpression(
+            coStatus,
+            tstl.createStringLiteral("dead"),
+            tstl.SyntaxKind.EqualityOperator
+        );
+        nextBody.push(status);
+
+        //{done = coroutine.status(__co) ~= "dead"; value = not __err and __value}
+        const iteratorResult = tstl.createTableExpression([
+            tstl.createTableFieldExpression(
+                status,
+                tstl.createStringLiteral("done")
+            ),
+            tstl.createTableFieldExpression(
+                tstl.createBinaryExpression(
+                    errIdentifier,
+                    valueIdentifier,
+                    tstl.SyntaxKind.AndOperator),
+                 tstl.createStringLiteral("value")
+            ),
+        ]);
+        nextBody.push(tstl.createReturnStatement([iteratorResult]));
+
+        //function(__, ...)
+        const nextFunctionDeclaration = tstl.createFunctionExpression(
+            tstl.createBlock(nextBody),
+            [tstl.createAnnonymousIdentifier()],
+            tstl.createDotsLiteral());
+
+        //__it = {next = function(__, ...)}
+        const iterator = tstl.createAssignmentStatement(
+            itIdentifier,
+            tstl.createTableExpression([
+                tstl.createTableFieldExpression(
+                    nextFunctionDeclaration,
+                    tstl.createStringLiteral("next")
+                ),
+            ])
+        );
+
+        const symbolIterator = tstl.createTableIndexExpression(
+            tstl.createIdentifier("Symbol"),
+            tstl.createStringLiteral("iterator")
+        );
+
+        const block = [
+            coroutine,
+            iterator,
+            //__it[Symbol.iterator] = {return __it}
+            tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(
+                    itIdentifier,
+                    symbolIterator
+                ),
+                tstl.createFunctionExpression(
+                    tstl.createBlock(
+                        [tstl.createReturnStatement([itIdentifier])]
+                    )
+                )
+            ),
+            //return __it
+            tstl.createReturnStatement([itIdentifier]),
+        ];
+        return [block, functionScope];
+    }
     public transformFunctionDeclaration(functionDeclaration: ts.FunctionDeclaration): StatementVisitResult {
         // Don't transform functions without body (overload declarations)
         if (!functionDeclaration.body) {
@@ -1043,45 +1168,20 @@ export class LuaTransformer {
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
         const name = this.transformIdentifier(functionDeclaration.name);
-        let block: tstl.Block;
-        let functionScope: Scope;
-        if (functionDeclaration.asteriskToken)
-        {
-            this.importLuaLibFeature(LuaLibFeature.Symbol);
-            let functionBody: tstl.Statement[];
-            [functionBody, functionScope] = this.transformFunctionBody(
-                functionDeclaration.parameters, functionDeclaration.body, restParamName);
-            functionBody.push(tstl.createReturnStatement([
-                tstl.createTableExpression([tstl.createTableFieldExpression(
-                    tstl.createBooleanLiteral(true), tstl.createStringLiteral("done")
-                )])]));
-            const wrappedFunction = tstl.createCallExpression(
-                tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"),
-                    tstl.createStringLiteral("wrap")),
-                [tstl.createFunctionExpression(
-                        tstl.createBlock(functionBody), params, dotsLiteral, restParamName)]);
-            const itIdentifier = tstl.createIdentifier("__it");
-            const symbolIterator = tstl.createTableIndexExpression(
-                tstl.createIdentifier("Symbol"),tstl.createStringLiteral("iterator"));
-            block = tstl.createBlock(
-                [tstl.createAssignmentStatement(itIdentifier, tstl.createTableExpression([
-                    tstl.createTableFieldExpression(wrappedFunction, tstl.createStringLiteral("next"))])),
-                tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(itIdentifier, symbolIterator),
-                    tstl.createFunctionExpression(tstl.createBlock([tstl.createReturnStatement([itIdentifier])]))),
-                tstl.createReturnStatement([itIdentifier])]
-                );
-        }
-        else
-        {
-            let body: tstl.Statement[];
-            [body, functionScope] = this.transformFunctionBody(
+        const [body, functionScope] = functionDeclaration.asteriskToken
+            ? this.transformGeneratorFunction(
+                functionDeclaration.parameters,
+                functionDeclaration.body,
+                params,
+                dotsLiteral,
+                restParamName
+            )
+            : this.transformFunctionBody(
                 functionDeclaration.parameters,
                 functionDeclaration.body,
                 restParamName
             );
-            block = tstl.createBlock(body);
-        }
+        const block = tstl.createBlock(body);
         const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
         // Remember symbols referenced in this function for hoisting later
         if (!this.options.noHoisting && name.symbolId !== undefined) {
@@ -1115,15 +1215,8 @@ export class LuaTransformer {
             // Find variable identifier
             const identifierName = this.transformIdentifier(statement.name);
             if (statement.initializer) {
-                if(ts.isYieldExpression(statement.initializer))
-                {
-                    const value = this.transformExpression(statement.initializer);
-                    return this.createLocalOrExportedOrGlobalDeclaration(
-                        [tstl.createAnnonymousIdentifier(), identifierName], value, statement);
-                } else {
-                    const value = this.transformExpression(statement.initializer);
-                    return this.createLocalOrExportedOrGlobalDeclaration(identifierName, value, statement);
-                }
+                const value = this.transformExpression(statement.initializer);
+                return this.createLocalOrExportedOrGlobalDeclaration(identifierName, value, statement);
             } else {
                 return this.createLocalOrExportedOrGlobalDeclaration(
                     identifierName,
@@ -1256,17 +1349,9 @@ export class LuaTransformer {
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
     public transformYield(expression: ts.YieldExpression): tstl.Expression {
-        const yieldValue = [tstl.createTableFieldExpression(
-            tstl.createBooleanLiteral(false),tstl.createStringLiteral("done"))];
-
-        if(expression.expression){
-            yieldValue.push(tstl.createTableFieldExpression(this.transformExpression(expression.expression),
-            tstl.createStringLiteral("value")));
-        }
-
         return tstl.createCallExpression(
             tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("yield")),
-                [tstl.createTableExpression(yieldValue)], expression);
+                expression.expression?[this.transformExpression(expression.expression)]:[], expression);
     }
     public transformReturn(statement: ts.ReturnStatement): tstl.Statement {
         if (statement.expression) {
@@ -1274,13 +1359,6 @@ export class LuaTransformer {
             if (returnType) {
                 const expressionType = this.checker.getTypeAtLocation(statement.expression);
                 this.validateFunctionAssignment(statement, expressionType, returnType);
-            }
-            if (tsHelper.isInGeneratorFunction(statement, this.checker)) {
-                return tstl.createReturnStatement([tstl.createTableExpression([
-                    tstl.createTableFieldExpression(tstl.createBooleanLiteral(true),
-                        tstl.createStringLiteral("done")),
-                    tstl.createTableFieldExpression(this.transformExpression(statement.expression),
-                        tstl.createStringLiteral("value"))])]);
             }
             if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
                 // Parent function is a TupleReturn function
@@ -1928,21 +2006,6 @@ export class LuaTransformer {
                 // on the same field.
                 throw TSTLErrors.UnsupportedUnionAccessor(lhs);
             }
-        }
-        let originalRhs: ts.Expression | undefined;
-        if(ts.isBinaryExpression(lhs.parent))
-        {
-            originalRhs = lhs.parent.right;
-        }
-        if (originalRhs && tsHelper.isGeneratorYieldCall(originalRhs, this.checker)) {
-            //a = yield(); can only be called on an iterator, which will generate code like it:resume().
-            //we need to ignore the implicit self in the resume call
-            return tstl.createAssignmentStatement(
-                [tstl.createAnnonymousIdentifier(),
-                    this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression],
-                    right,
-                    lhs.parent
-            );
         }
         return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,

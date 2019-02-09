@@ -1112,18 +1112,15 @@ export class LuaTransformer {
             ])
         );
         nextBody.push(errorCheck);
-        //{done = coroutine.status(__co) ~= "dead"; value = not __err and __value}
+        //{done = coroutine.status(__co) ~= "dead"; value = __value}
         const iteratorResult = tstl.createTableExpression([
             tstl.createTableFieldExpression(
                 status,
                 tstl.createStringLiteral("done")
             ),
             tstl.createTableFieldExpression(
-                tstl.createBinaryExpression(
-                    errIdentifier,
-                    valueIdentifier,
-                    tstl.SyntaxKind.AndOperator),
-                 tstl.createStringLiteral("value")
+                valueIdentifier,
+                tstl.createStringLiteral("value")
             ),
         ]);
         nextBody.push(tstl.createReturnStatement([iteratorResult]));

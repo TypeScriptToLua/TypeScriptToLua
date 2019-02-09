@@ -3170,25 +3170,41 @@ export class LuaTransformer {
     }
 
     public transformIdentifierExpression(expression: ts.Identifier): tstl.IdentifierOrTableIndexExpression {
-        if (this.isIdentifierExported(expression.escapedText)) {
-            return this.createExportedIdentifier(this.transformIdentifier(expression));
+        const identifier = this.transformIdentifier(expression);
+        if (this.isIdentifierExported(identifier)) {
+            return this.createExportedIdentifier(identifier);
         }
-        return this.transformIdentifier(expression);
+        return identifier;
     }
 
-    public isIdentifierExported(identifierName: string | ts.__String): boolean {
+    public isIdentifierExported(identifier: tstl.Identifier): boolean {
         if (!this.isModule && !this.currentNamespace) {
             return false;
         }
+
+        const symbolInfo = identifier.symbolId && this.symbolInfo.get(identifier.symbolId);
+        if (!symbolInfo) {
+            return false;
+        }
+
         const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
         const scopeSymbol = this.checker.getSymbolAtLocation(currentScope)
             ? this.checker.getSymbolAtLocation(currentScope)
             : this.checker.getTypeAtLocation(currentScope).getSymbol();
-        return scopeSymbol.exports.has(identifierName as ts.__String);
+
+        const it: Iterable<ts.Symbol> = {
+            [Symbol.iterator]: () => scopeSymbol.exports.values(), // Why isn't ts.SymbolTable.values() iterable?
+        };
+        for (const symbol of it) {
+            if (symbol === symbolInfo.symbol) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public addExportToIdentifier(identifier: tstl.Identifier): tstl.IdentifierOrTableIndexExpression {
-        if (this.isIdentifierExported(identifier.text)) {
+        if (this.isIdentifierExported(identifier)) {
             return this.createExportedIdentifier(identifier);
         }
         return identifier;
@@ -3292,9 +3308,9 @@ export class LuaTransformer {
             return false;
         }
         if (Array.isArray(identifier)) {
-            return identifier.some(i => this.isIdentifierExported(i.text));
+            return identifier.some(i => this.isIdentifierExported(i));
         } else {
-            return this.isIdentifierExported(identifier.text);
+            return this.isIdentifierExported(identifier);
         }
     }
 
@@ -3481,6 +3497,16 @@ export class LuaTransformer {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         let symbolId: number | undefined;
         if (symbol) {
+            // Track first time symbols are seen
+            if (!this.symbolIds.has(symbol)) {
+                symbolId = this.genSymbolIdCounter++;
+                const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos};
+                this.symbolIds.set(symbol, symbolId);
+                this.symbolInfo.set(symbolId, symbolInfo);
+            } else {
+                symbolId = this.symbolIds.get(symbol);
+            }
+
             if (this.options.noHoisting) {
                 // Check for reference-before-declaration
                 const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
@@ -3489,16 +3515,6 @@ export class LuaTransformer {
                 }
 
             } else {
-                // Track first time symbols are seen
-                if (!this.symbolIds.has(symbol)) {
-                    symbolId = this.genSymbolIdCounter++;
-                    const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos};
-                    this.symbolIds.set(symbol, symbolId);
-                    this.symbolInfo.set(symbolId, symbolInfo);
-                } else {
-                    symbolId = this.symbolIds.get(symbol);
-                }
-
                 //Mark symbol as seen in all current scopes
                 this.scopeStack.forEach(s => {
                     if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }

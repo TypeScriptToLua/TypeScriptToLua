@@ -4,7 +4,7 @@ exports.TestClass.__index = exports.TestClass;
 exports.TestClass.prototype = exports.TestClass.prototype or {};
 exports.TestClass.prototype.__index = exports.TestClass.prototype;
 exports.TestClass.prototype.constructor = TestClass;
-exports.TestClass.____new = function(...)
+exports.TestClass.new = function(...)
     local self = setmetatable({}, exports.TestClass.prototype);
     self:____constructor(...);
     return self;

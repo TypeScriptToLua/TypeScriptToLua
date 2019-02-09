@@ -3,7 +3,7 @@ MergedClass.__index = MergedClass;
 MergedClass.prototype = MergedClass.prototype or {};
 MergedClass.prototype.__index = MergedClass.prototype;
 MergedClass.prototype.constructor = MergedClass;
-MergedClass.____new = function(...)
+MergedClass.new = function(...)
     local self = setmetatable({}, MergedClass.prototype);
     self:____constructor(...);
     return self;
@@ -28,7 +28,7 @@ do
     MergedClass.namespaceFunc = function()
     end;
 end
-local mergedClass = MergedClass.____new();
+local mergedClass = MergedClass.new();
 mergedClass:methodB();
 mergedClass:propertyFunc();
 MergedClass:staticMethodB();

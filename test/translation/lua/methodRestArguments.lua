@@ -3,7 +3,7 @@ MyClass.__index = MyClass;
 MyClass.prototype = MyClass.prototype or {};
 MyClass.prototype.__index = MyClass.prototype;
 MyClass.prototype.constructor = MyClass;
-MyClass.____new = function(...)
+MyClass.new = function(...)
     local self = setmetatable({}, MyClass.prototype);
     self:____constructor(...);
     return self;

@@ -3,7 +3,7 @@ ClassB.__index = ClassB;
 ClassB.prototype = ClassB.prototype or {};
 ClassB.prototype.__index = ClassB.prototype;
 ClassB.prototype.constructor = ClassB;
-ClassB.____new = function(...)
+ClassB.new = function(...)
     local self = setmetatable({}, ClassB.prototype);
     self:____constructor(...);
     return self;

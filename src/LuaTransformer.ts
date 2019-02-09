@@ -40,8 +40,9 @@ interface Scope {
 
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set([
-        "and", "break", "do",  "else", "elseif", "end",    "false",  "for",  "function", "if",
-        "in",  "local", "nil", "not",  "or",     "repeat", "return", "then", "until",    "while",
+        "and", "break", "do",  "else", "elseif", "end", "false",  "for",    "function",     "if",
+        "in",  "local", "new", "nil", "not",  "or",     "repeat", "return", "self", "then", "until",
+        "while",
     ]);
 
     private isStrict = true;
@@ -598,12 +599,12 @@ export class LuaTransformer {
         const returnSelf = tstl.createReturnStatement([this.createSelfIdentifier()]);
         newFuncStatements.push(returnSelf);
 
-        // function className.____new(construct, ...) ... end
-        // or function export.className.____new(construct, ...) ... end
+        // function className.new(construct, ...) ... end
+        // or function export.className.new(construct, ...) ... end
         const newFunc = tstl.createAssignmentStatement(
             tstl.createTableIndexExpression(
                 createClassNameWithExport(),
-                tstl.createStringLiteral("____new")),
+                tstl.createStringLiteral("new")),
             tstl.createFunctionExpression(
                 tstl.createBlock(newFuncStatements),
                 undefined,
@@ -2552,7 +2553,7 @@ export class LuaTransformer {
         }
 
         return tstl.createCallExpression(
-            tstl.createTableIndexExpression(name, tstl.createStringLiteral("____new")),
+            tstl.createTableIndexExpression(name, tstl.createStringLiteral("new")),
             params,
             node
         );

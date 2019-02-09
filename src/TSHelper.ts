@@ -62,7 +62,7 @@ export class TSHelper {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                     const superType = checker.getTypeAtLocation(clause.types[0]);
-                    const decorators = this.getCustomDecorators(superType, checker);
+                    const decorators = TSHelper.getCustomDecorators(superType, checker);
                     if (!decorators.has(DecoratorKind.PureAbstract)) {
                         return clause.types[0];
                     }
@@ -73,22 +73,34 @@ export class TSHelper {
     }
 
     public static getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
-        const extendedTypeNode = this.getExtendedTypeNode(node, checker);
+        const extendedTypeNode = TSHelper.getExtendedTypeNode(node, checker);
         return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
     }
 
     public static isFileModule(sourceFile: ts.SourceFile): boolean {
         if (sourceFile) {
-            // Vanilla ts flags files as external module if they have an import or
-            // export statement, we only check for export statements
-            // TODO will break in 3.x
-            return sourceFile.statements.some(
-                statement => (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
-                    || statement.kind === ts.SyntaxKind.ExportAssignment
-                    || statement.kind === ts.SyntaxKind.ExportDeclaration
-            );
+            return sourceFile.statements.some(TSHelper.isStatementExported);
         }
         return false;
+    }
+
+    public static isStatementExported(statement: ts.Statement): boolean {
+        if (ts.isExportAssignment(statement) || ts.isExportDeclaration(statement)) {
+            return true;
+        }
+        if (ts.isVariableStatement(statement)) {
+            return statement.declarationList.declarations.some(
+                declaration => (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0);
+        }
+        return TSHelper.isDeclaration(statement)
+                && ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0);
+    }
+
+    public static isDeclaration(node: ts.Node): node is ts.Declaration {
+        return ts.isEnumDeclaration(node) || ts.isClassDeclaration(node) || ts.isExportDeclaration(node)
+            || ts.isImportDeclaration(node) || ts.isMethodDeclaration(node) || ts.isModuleDeclaration(node)
+            || ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node) || ts.isInterfaceDeclaration(node)
+            || ts.isTypeAliasDeclaration(node) || ts.isNamespaceExportDeclaration(node);
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
@@ -112,7 +124,7 @@ export class TSHelper {
         const superTypes = type.getBaseTypes();
         if (superTypes) {
             for (const superType of superTypes) {
-                if (this.forTypeOrAnySupertype(superType, checker, predicate)) {
+                if (TSHelper.forTypeOrAnySupertype(superType, checker, predicate)) {
                     return true;
                 }
             }
@@ -128,12 +140,12 @@ export class TSHelper {
     public static isArrayTypeNode(typeNode: ts.TypeNode): boolean {
         return typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType ||
                ((typeNode.kind === ts.SyntaxKind.UnionType || typeNode.kind === ts.SyntaxKind.IntersectionType) &&
-                (typeNode as ts.UnionOrIntersectionTypeNode).types.some(this.isArrayTypeNode));
+                (typeNode as ts.UnionOrIntersectionTypeNode).types.some(TSHelper.isArrayTypeNode));
     }
 
     public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
-        return typeNode && this.isArrayTypeNode(typeNode);
+        return typeNode && TSHelper.isArrayTypeNode(typeNode);
     }
 
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
@@ -142,13 +154,13 @@ export class TSHelper {
     }
 
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return this.forTypeOrAnySupertype(type, checker, t => this.isExplicitArrayType(t, checker));
+        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
     }
 
     public static isLuaIteratorCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node) && node.parent && ts.isForOfStatement(node.parent)) {
             const type = checker.getTypeAtLocation(node.expression);
-            return this.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
+            return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
         } else {
             return false;
         }
@@ -158,19 +170,19 @@ export class TSHelper {
         if (ts.isCallExpression(node)) {
             const type = checker.getTypeAtLocation(node.expression);
 
-            return this.getCustomDecorators(type, checker).has(DecoratorKind.TupleReturn);
+            return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.TupleReturn);
         } else {
             return false;
         }
     }
 
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
-        const declaration = this.findFirstNodeAbove(
+        const declaration = TSHelper.findFirstNodeAbove(
             node,
             (n): n is ts.Node => ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n)
         );
         if (declaration) {
-            const decorators = this.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
+            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
             return decorators.has(DecoratorKind.TupleReturn)
                    // Lua iterators are not 'true' tupleReturn functions as they actually return a function
                    && !decorators.has(DecoratorKind.LuaIterator);
@@ -180,7 +192,7 @@ export class TSHelper {
     }
 
     public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
-        const declaration = this.findFirstNodeAbove(node, ts.isFunctionLike);
+        const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
             const signature = checker.getSignatureFromDeclaration(declaration);
             return checker.getReturnTypeOfSignature(signature);
@@ -213,7 +225,6 @@ export class TSHelper {
                 console.warn(`Encountered unknown decorator ${decStr}.`);
             }
         });
-
         symbol.getJsDocTags().forEach(tag => {
             if (Decorator.isValid(tag.name)) {
                 const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
@@ -225,10 +236,10 @@ export class TSHelper {
     public static getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map<DecoratorKind, Decorator> {
         const decMap = new Map<DecoratorKind, Decorator>();
         if (type.symbol) {
-            this.collectCustomDecorators(type.symbol, checker, decMap);
+            TSHelper.collectCustomDecorators(type.symbol, checker, decMap);
         }
         if (type.aliasSymbol) {
-            this.collectCustomDecorators(type.aliasSymbol, checker, decMap);
+            TSHelper.collectCustomDecorators(type.aliasSymbol, checker, decMap);
         }
         return decMap;
     }
@@ -255,20 +266,20 @@ export class TSHelper {
 
     public static typeHasGetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
         if (type.isUnion()) {
-            if (type.types.some(t => this.typeHasGetAccessor(t, name, checker))) {
+            if (type.types.some(t => TSHelper.typeHasGetAccessor(t, name, checker))) {
                 // undefined if only a subset of types implements the accessor
-                return type.types.every(t => this.typeHasGetAccessor(t, name, checker)) ? true : undefined;
+                return type.types.every(t => TSHelper.typeHasGetAccessor(t, name, checker)) ? true : undefined;
             }
             return false;
         }
-        return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitGetAccessor(t, name));
+        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitGetAccessor(t, name));
     }
 
     public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean | undefined {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-            return this.typeHasGetAccessor(type, name, checker);
+            return TSHelper.typeHasGetAccessor(type, name, checker);
         }
         return false;
     }
@@ -282,20 +293,20 @@ export class TSHelper {
 
     public static typeHasSetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
         if (type.isUnion()) {
-            if (type.types.some(t => this.typeHasSetAccessor(t, name, checker))) {
+            if (type.types.some(t => TSHelper.typeHasSetAccessor(t, name, checker))) {
                 // undefined if only a subset of types implements the accessor
-                return type.types.every(t => this.typeHasSetAccessor(t, name, checker)) ? true : undefined;
+                return type.types.every(t => TSHelper.typeHasSetAccessor(t, name, checker)) ? true : undefined;
             }
             return false;
         }
-        return this.forTypeOrAnySupertype(type, checker, t => this.hasExplicitSetAccessor(t, name));
+        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitSetAccessor(t, name));
     }
 
     public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isPropertyAccessExpression(node)) {
             const name = node.name.escapedText;
             const type = checker.getTypeAtLocation(node.expression);
-            return this.typeHasSetAccessor(type, name, checker);
+            return TSHelper.typeHasSetAccessor(type, name, checker);
         }
         return false;
     }
@@ -356,10 +367,10 @@ export class TSHelper {
     public static isAccessExpressionWithEvaluationEffects(node: ts.Expression, checker: ts.TypeChecker):
         [boolean, ts.Expression, ts.Expression] {
         if (ts.isElementAccessExpression(node) &&
-            (this.isExpressionWithEvaluationEffect(node.expression)
-            || this.isExpressionWithEvaluationEffect(node.argumentExpression))) {
+            (TSHelper.isExpressionWithEvaluationEffect(node.expression)
+            || TSHelper.isExpressionWithEvaluationEffect(node.argumentExpression))) {
             const type = checker.getTypeAtLocation(node.expression);
-            if (this.isArrayType(type, checker)) {
+            if (TSHelper.isArrayType(type, checker)) {
                 // Offset arrays by one
                 const oneLit = ts.createNumericLiteral("1");
                 const exp = ts.createParen(node.argumentExpression);
@@ -368,7 +379,7 @@ export class TSHelper {
             } else {
                 return [true, node.expression, node.argumentExpression];
             }
-        } else if (ts.isPropertyAccessExpression(node) && this.isExpressionWithEvaluationEffect(node.expression)) {
+        } else if (ts.isPropertyAccessExpression(node) && TSHelper.isExpressionWithEvaluationEffect(node.expression)) {
             return [true, node.expression, ts.createStringLiteral(node.name.text)];
         }
         return [false, undefined, undefined];
@@ -448,7 +459,7 @@ export class TSHelper {
     }
 
     public static getSignatureDeclarations(
-        signatures: ts.Signature[],
+        signatures: ReadonlyArray<ts.Signature>,
         checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {
@@ -456,10 +467,10 @@ export class TSHelper {
         for (const signature of signatures) {
             const signatureDeclaration = signature.getDeclaration();
             if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
-                && !this.getExplicitThisParameter(signatureDeclaration))
+                && !TSHelper.getExplicitThisParameter(signatureDeclaration))
             {
                 // Infer type of function expressions/arrow functions
-                const inferredType = this.inferAssignedType(signatureDeclaration, checker);
+                const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
                     const inferredSignatures = inferredType.getCallSignatures();
                     if (inferredSignatures.length > 0) {
@@ -478,7 +489,7 @@ export class TSHelper {
         checker: ts.TypeChecker
     ): ContextType
     {
-        const thisParameter = this.getExplicitThisParameter(signatureDeclaration);
+        const thisParameter = TSHelper.getExplicitThisParameter(signatureDeclaration);
         if (thisParameter) {
             // Explicit 'this'
             return thisParameter.type && thisParameter.type.kind === ts.SyntaxKind.VoidKeyword
@@ -497,7 +508,8 @@ export class TSHelper {
         }
         if (ts.isBinaryExpression(signatureDeclaration.parent)) {
             // Function expression: check type being assigned to
-            return this.getFunctionContextType(checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
+            return TSHelper.getFunctionContextType(
+                checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
         }
         return ContextType.Void;
     }
@@ -523,15 +535,16 @@ export class TSHelper {
         }
 
         if (type.isUnion()) {
-            return this.reduceContextTypes(type.types.map(t => this.getFunctionContextType(t, checker)));
+            return TSHelper.reduceContextTypes(type.types.map(t => TSHelper.getFunctionContextType(t, checker)));
         }
 
         const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         if (signatures.length === 0) {
             return ContextType.None;
         }
-        const signatureDeclarations = this.getSignatureDeclarations(signatures, checker);
-        return this.reduceContextTypes(signatureDeclarations.map(s => this.getDeclarationContextType(s, checker)));
+        const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker);
+        return TSHelper.reduceContextTypes(
+            signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
     }
 
     public static isDefaultArrayPropertyName(methodName: string): boolean {
@@ -582,7 +595,7 @@ export class TSHelper {
             return true;
         } else if (type.isUnion()) {
             for (const subType of type.types) {
-                if (this.isFalsible(subType, strictNullChecks)) {
+                if (TSHelper.isFalsible(subType, strictNullChecks)) {
                     return true;
                 }
             }

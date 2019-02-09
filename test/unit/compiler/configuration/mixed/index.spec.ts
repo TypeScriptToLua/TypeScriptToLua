@@ -4,12 +4,12 @@ import * as path from "path";
 import * as ts from "typescript";
 
 import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
-import { optionDeclarations, parseCommandLine } from "../../../../../src/CommandLineParser";
+import { parseCommandLine } from "../../../../../src/CommandLineParser";
 
-export class MixedConfigurationTests {
-
+export class MixedConfigurationTests
+{
     @Test("tsconfig.json mixed with cmd line args")
-    public tsconfigMixedWithCmdLineArgs() {
+    public tsconfigMixedWithCmdLineArgs(): void {
         const rootPath = __dirname;
         const tsConfigPath = path.join(rootPath, "project-tsconfig.json");
         const expectedTsConfig = ts.parseJsonConfigFileContent(
@@ -26,16 +26,21 @@ export class MixedConfigurationTests {
             `${path.join(rootPath, "test.ts")}`,
         ]);
 
-        Expect(parsedArgs.options).toEqual({
-            ...expectedTsConfig.options,
-            // Overridden by cmd args (set to "none" in project-tsconfig.json)
-            luaLibImport: LuaLibImportKind.Inline,
-            // Only set in tsconfig, TSTL default is "JIT"
-            luaTarget: "5.1",
-            // Only present in TSTL dfaults
-            noHeader: optionDeclarations["noHeader"].default,
-            project: tsConfigPath,
-            noHoisting: optionDeclarations["noHoisting"].default,
-        } as CompilerOptions);
+        if (parsedArgs.isValid === true)
+        {
+            Expect(parsedArgs.result.options).toEqual({
+                ...expectedTsConfig.options,
+                // Overridden by cmd args (set to "none" in project-tsconfig.json)
+                luaLibImport: LuaLibImportKind.Inline,
+                // Only set in tsconfig, TSTL default is "JIT"
+                luaTarget: "5.1",
+                // Only present in TSTL dfaults
+                noHeader: false,
+                project: tsConfigPath,
+                noHoisting: false,
+            } as CompilerOptions);
+        } else {
+            Expect(parsedArgs.isValid).toBeTruthy();
+        }
     }
 }

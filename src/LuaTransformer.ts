@@ -3200,31 +3200,16 @@ export class LuaTransformer {
         }
     }
 
-    private getAbsoluteImportPath(relativePath: string): string {
-        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
-            return path.resolve(this.options.baseUrl, relativePath);
-        }
-        return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
-    }
-
     private getImportPath(relativePath: string): string {
-        // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsoluteImportPath(relativePath)
-            .replace(/\\/g, "/");
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = this.pathToLuaRequirePath(
-                absolutePathToImport.replace(this.options.rootDir, "").slice(1)
-            );
-            return relativePathToRoot;
-        }
-
         return this.pathToLuaRequirePath(relativePath);
     }
 
     private pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(new RegExp("\\\\|\/", "g"), ".");
+        return filePath
+            .replace(".\\", "")
+            .replace("./", "")
+            .replace("/", ".")
+            .replace("\\", ".");
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {

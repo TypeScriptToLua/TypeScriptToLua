@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -445,5 +445,16 @@ export class FunctionTests {
         return result`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(123);
+    }
+
+    @Test("Function local overriding export")
+    public functionLocalOverridingExport(): void {
+        const code =
+            `export const foo = 5;
+            function bar(foo: number) {
+                return foo;
+            }
+            export const result = bar(7);`;
+        Expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(7);
     }
 }

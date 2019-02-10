@@ -1,8 +1,5 @@
 {
     "defaultSeverity": "error",
-    "extends": [
-        "tslint-override"
-    ],
     "rules": {
         "array-type": [true, "array-simple"],
         "arrow-parens": [true, "ban-single-arg-parens"],

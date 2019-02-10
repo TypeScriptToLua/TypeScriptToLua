@@ -179,14 +179,6 @@ export class TSHelper {
         }
     }
 
-    public static isGeneratorYieldCall(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (ts.isYieldExpression(node) ) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
         const declaration = this.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {

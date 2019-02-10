@@ -76,20 +76,6 @@ export class EnumTests {
                         + "member values, or specify values (of the same type) for all members.");
     }
 
-    @Test("Unsuported enum")
-    public unsuportedEnum(): void {
-        // Transpile & Assert
-        Expect(() => {
-            const lua = util.transpileString(
-                `enum TestEnum {
-                    val1 = [],
-                    val2 = "ok",
-                    val3 = "bye"
-                }`
-            );
-        }).toThrowError(TranspileError, "Only numeric or string initializers allowed for enums.");
-    }
-
     @Test("String literal name in enum")
     public stringLiteralNameEnum(): void {
         const code = `enum TestEnum {
@@ -98,5 +84,78 @@ export class EnumTests {
             return TestEnum["name"];`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foo");
+    }
+
+    @Test("Enum identifier value internal")
+    public enumIdentifierValueInternal(): void {
+        const result = util.transpileAndExecute(
+            `enum testEnum {
+                abc,
+                def,
+                ghi = def,
+                jkl,
+            }
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
+        );
+
+        Expect(result).toBe("0,1,1,2");
+    }
+
+    @Test("Enum identifier value internal recursive")
+    public enumIdentifierValueInternalRecursive(): void {
+        const result = util.transpileAndExecute(
+            `enum testEnum {
+                abc,
+                def,
+                ghi = def,
+                jkl = ghi,
+            }
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
+        );
+
+        Expect(result).toBe("0,1,1,1");
+    }
+
+    @Test("Enum identifier value external")
+    public enumIdentifierValueExternal(): void {
+        const result = util.transpileAndExecute(
+            `const ext = 6;
+            enum testEnum {
+                abc,
+                def,
+                ghi = ext,
+            }
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`
+        );
+
+        Expect(result).toBe("0,1,6");
+    }
+
+    @Test("Enum reverse mapping")
+    public enumReverseMapping(): void {
+        const result = util.transpileAndExecute(
+            `enum testEnum {
+                abc,
+                def,
+                ghi
+            }
+            return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`
+        );
+
+        Expect(result).toBe("abcghi");
+    }
+
+    @Test("Const enum index")
+    public constEnumIndex(): void {
+        const result = util.transpileAndExecute(
+            `const enum testEnum {
+                abc,
+                def,
+                ghi
+            }
+            return testEnum["def"];`
+        );
+
+        Expect(result).toBe(1);
     }
 }

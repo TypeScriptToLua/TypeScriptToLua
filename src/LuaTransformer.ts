@@ -986,10 +986,12 @@ export class LuaTransformer {
                     ));
                 }
             } else {
-                const table: tstl.IdentifierOrTableIndexExpression  =
-                    this.transformIdentifierExpression(enumDeclaration.name);
-                const property = tstl.createTableIndexExpression(table, memberName, undefined);
+                const enumTable = this.transformIdentifierExpression(enumDeclaration.name);
+                const property = tstl.createTableIndexExpression(enumTable, memberName);
                 result.push(tstl.createAssignmentStatement(property, enumMember.value, enumMember.original));
+
+                const valueIndex = tstl.createTableIndexExpression(enumTable, enumMember.value);
+                result.push(tstl.createAssignmentStatement(valueIndex, memberName, enumMember.original));
             }
         }
 
@@ -997,35 +999,57 @@ export class LuaTransformer {
     }
 
     public computeEnumMembers(node: ts.EnumDeclaration):
-        Array<{name: ts.PropertyName, value: tstl.NumericLiteral | tstl.StringLiteral, original: ts.Node}> {
+        Array<{name: ts.PropertyName, value: tstl.Expression, original: ts.Node}> {
         let numericValue = 0;
         let hasStringInitializers = false;
 
+        const valueMap = new Map<ts.PropertyName, tstl.Expression>();
+
         return node.members.map(member => {
-            let valueLiteral: tstl.NumericLiteral | tstl.StringLiteral;
+            let valueExpression: tstl.Expression;
             if (member.initializer) {
-                if (ts.isNumericLiteral(member.initializer)) {
+                if (ts.isNumericLiteral(member.initializer))
+                {
                     numericValue = Number(member.initializer.text);
-                    valueLiteral = tstl.createNumericLiteral(numericValue);
-                } else if (ts.isStringLiteral(member.initializer)) {
-                    hasStringInitializers = true;
-                    valueLiteral = tstl.createStringLiteral(member.initializer.text);
-                } else {
-                    throw TSTLErrors.InvalidEnumMember(member.initializer);
+                    valueExpression = tstl.createNumericLiteral(numericValue);
+                    numericValue++;
                 }
-            } else if (hasStringInitializers) {
-                throw TSTLErrors.HeterogeneousEnum(node);
-            } else {
-                valueLiteral = tstl.createNumericLiteral(numericValue);
+                else if (ts.isStringLiteral(member.initializer))
+                {
+                    hasStringInitializers = true;
+                    valueExpression = tstl.createStringLiteral(member.initializer.text);
+                }
+                else
+                {
+                    if (ts.isIdentifier(member.initializer)) {
+                        const [isEnumMember, originalName] = tsHelper.isEnumMember(node, member.initializer);
+                        if (isEnumMember) {
+                            valueExpression = valueMap.get(originalName);
+                        } else {
+                            valueExpression = this.transformExpression(member.initializer);
+                        }
+                    } else {
+                        valueExpression = this.transformExpression(member.initializer);
+                    }
+                }
             }
+            else if (hasStringInitializers)
+            {
+                throw TSTLErrors.HeterogeneousEnum(node);
+            }
+            else
+            {
+                valueExpression = tstl.createNumericLiteral(numericValue);
+                numericValue++;
+            }
+
+            valueMap.set(member.name, valueExpression);
 
             const enumMember = {
                 name: member.name,
                 original: member,
-                value: valueLiteral,
+                value: valueExpression,
             };
-
-            numericValue++;
 
             return enumMember;
         });

@@ -158,4 +158,34 @@ export class EnumTests {
 
         Expect(result).toBe(1);
     }
+
+    @Test("Const enum index identifier value")
+    public constEnumIndexIdnetifierValue(): void {
+        const result = util.transpileAndExecute(
+            `const enum testEnum {
+                abc,
+                def = 4,
+                ghi,
+                jkl = ghi
+            }
+            return testEnum["jkl"];`
+        );
+
+        Expect(result).toBe(5);
+    }
+
+    @Test("Const enum index identifier chain")
+    public constEnumIndexIdnetifierChain(): void {
+        const result = util.transpileAndExecute(
+            `const enum testEnum {
+                abc = 3,
+                def,
+                ghi = def,
+                jkl = ghi,
+            }
+            return testEnum["ghi"];`
+        );
+
+        Expect(result).toBe(4);
+    }
 }

@@ -2749,26 +2749,7 @@ export class LuaTransformer {
         }
 
         if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
-            const propertyValueDeclaration = this.checker.getTypeAtLocation(node).symbol.valueDeclaration;
-
-            if (propertyValueDeclaration && propertyValueDeclaration.kind === ts.SyntaxKind.EnumMember) {
-                const enumMember = propertyValueDeclaration as ts.EnumMember;
-
-                if (enumMember.initializer) {
-                    return this.transformExpression(enumMember.initializer);
-                } else {
-                    const enumMembers = this.computeEnumMembers(enumMember.parent);
-                    const memberPosition = enumMember.parent.members.indexOf(enumMember);
-
-                    if (memberPosition === -1) {
-                        throw TSTLErrors.UnsupportedProperty(type.symbol.name, property, node);
-                    }
-
-                    const value = tstl.cloneNode(enumMembers[memberPosition].value);
-                    tstl.setNodeOriginal(value, enumMember);
-                    return value;
-                }
-            }
+            return this.transformConstEnumValue(type, property, node);
         }
 
         this.checkForLuaLibType(type);
@@ -2864,6 +2845,13 @@ export class LuaTransformer {
         const index = this.transformExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
+
+        if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)
+            && ts.isStringLiteral(node.argumentExpression))
+        {
+            return this.transformConstEnumValue(type, node.argumentExpression.text, node);
+        }
+
         if (tsHelper.isArrayType(type, this.checker)) {
             return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), node);
         } else if (tsHelper.isStringType(type)) {
@@ -2875,6 +2863,45 @@ export class LuaTransformer {
         } else {
             return tstl.createTableIndexExpression(table, index, node);
         }
+    }
+
+    private transformConstEnumValue(enumType: ts.EnumType, memberName: string, tsOriginal: ts.Node): tstl.Expression {
+        // Assumption: the enum only has one declaration
+        const enumDeclaration = enumType.symbol.declarations.find(d => ts.isEnumDeclaration(d)) as ts.EnumDeclaration;
+        const enumMember = enumDeclaration.members
+            .find(m => ts.isIdentifier(m.name) && m.name.text === memberName);
+
+        if (enumMember) {
+            if (enumMember.initializer) {
+                if (ts.isIdentifier(enumMember.initializer)) {
+                    const [isEnumMember, valueName] = tsHelper.isEnumMember(enumDeclaration, enumMember.initializer);
+                    if (isEnumMember) {
+                        if (ts.isIdentifier(valueName)) {
+                            return this.transformConstEnumValue(enumType, valueName.text, tsOriginal);
+                        }
+                    } else {
+                        return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
+                    }
+                } else {
+                    return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
+                }
+            } else {
+                let enumValue = 0;
+                for (const member of enumDeclaration.members) {
+                    if (member === enumMember) {
+                        return tstl.createNumericLiteral(enumValue, tsOriginal);
+                    }
+                    if (member.initializer === undefined) {
+                        enumValue++;
+                    } else if (ts.isNumericLiteral(member.initializer)) {
+                        enumValue = Number(member.initializer.text) + 1;
+                    }
+                }
+
+                throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
+            }
+        }
+        throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
     public transformStringCallExpression(node: ts.CallExpression): tstl.Expression {

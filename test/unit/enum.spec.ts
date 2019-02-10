@@ -26,10 +26,10 @@ export class EnumTests {
                 MEMBER_TWO = "test2"
             }
 
-            const valueOne = TestEnum.MEMBER_ONE;
+            const valueOne = TestEnum.MEMBER_TWO;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test";`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = "test2";`);
     }
 
     @Test("Const enum without initializer")
@@ -40,10 +40,10 @@ export class EnumTests {
                 MEMBER_TWO
             }
 
-            const valueOne = TestEnum.MEMBER_ONE;
+            const valueOne = TestEnum.MEMBER_TWO;
         `;
 
-        Expect(util.transpileString(testCode)).toBe(`local valueOne = 0;`);
+        Expect(util.transpileString(testCode)).toBe(`local valueOne = 1;`);
     }
 
     @Test("Const enum without initializer in some values")

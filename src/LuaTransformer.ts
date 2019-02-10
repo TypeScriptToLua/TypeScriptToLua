@@ -296,7 +296,7 @@ export class LuaTransformer {
             throw TSTLErrors.InvalidExtensionMetaExtension(statement);
         }
 
-        if ((isExtension || isMetaExtension) && this.isIdentifierExported(className.text)) {
+        if ((isExtension || isMetaExtension) && this.isIdentifierExported(className)) {
             // Cannot export extension classes
             throw TSTLErrors.InvalidExportsExtension(statement);
         }

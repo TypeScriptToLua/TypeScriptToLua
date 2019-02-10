@@ -1361,11 +1361,13 @@ export class LuaTransformer {
 
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
+
     public transformYield(expression: ts.YieldExpression): tstl.Expression {
         return tstl.createCallExpression(
             tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("yield")),
                 expression.expression?[this.transformExpression(expression.expression)]:[], expression);
     }
+
     public transformReturn(statement: ts.ReturnStatement): tstl.Statement {
         if (statement.expression) {
             const returnType = tsHelper.getContainingFunctionReturnType(statement, this.checker);

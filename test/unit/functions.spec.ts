@@ -388,37 +388,47 @@ export class FunctionTests {
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foobar");
     }
-    @Test("Generator functions")
-    public generatorFunction(): void {
-        const fct = `function* seq() {
-            let a = yield 1;
-            return a;
+
+    @TestCase(1, 1)
+    @TestCase(2, 42)
+    @Test("Generator functions value")
+    public generatorFunctionValue(iterations: number, expectedResult: number): void {
+        const code = `function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
         }
-        const gen = seq();
+        const gen = seq(0);
+        let ret: number;
+        for(let i = 0; i < ${iterations}; ++i)
+        {
+            ret = gen.next(i).value;
+        }
+        return ret;
         `;
-        {
-            const code = fct + `return gen.next().done;`;
-            const result = util.transpileAndExecute(code);
-            Expect(result).toBe(false);
-        }
-        {
-            const code = fct + `return gen.next().value;`;
-            const result = util.transpileAndExecute(code);
-            Expect(result).toBe(1);
-        }
-        {
-            const code = fct + `gen.next();
-            return gen.next(42).done;`;
-            const result = util.transpileAndExecute(code);
-            Expect(result).toBe(true);
-        }
-        {
-            const code = fct + `gen.next();
-            return gen.next(42).value;`;
-            const result = util.transpileAndExecute(code);
-            Expect(result).toBe(42);
-        }
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectedResult);
     }
+
+    @TestCase(1, false)
+    @TestCase(2, true)
+    @Test("Generator functions done")
+    public generatorFunctionDone(iterations: number, expectedResult: boolean): void {
+        const code = `function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
+        }
+        const gen = seq(0);
+        let ret: boolean;
+        for(let i = 0; i < ${iterations}; ++i)
+        {
+            ret = gen.next(i).done;
+        }
+        return ret;
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectedResult);
+    }
+
     @Test("Generator for..of")
     public generatorFunctionForOf(): void {
         const code = `function* seq() {

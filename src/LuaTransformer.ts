@@ -1075,10 +1075,12 @@ export class LuaTransformer {
                     ));
                 }
             } else {
-                const table: tstl.IdentifierOrTableIndexExpression  =
-                    this.transformIdentifierExpression(enumDeclaration.name);
-                const property = tstl.createTableIndexExpression(table, memberName, undefined);
+                const enumTable = this.transformIdentifierExpression(enumDeclaration.name);
+                const property = tstl.createTableIndexExpression(enumTable, memberName);
                 result.push(tstl.createAssignmentStatement(property, enumMember.value, enumMember.original));
+
+                const valueIndex = tstl.createTableIndexExpression(enumTable, enumMember.value);
+                result.push(tstl.createAssignmentStatement(valueIndex, memberName, enumMember.original));
             }
         }
 
@@ -1086,35 +1088,57 @@ export class LuaTransformer {
     }
 
     public computeEnumMembers(node: ts.EnumDeclaration):
-        Array<{name: ts.PropertyName, value: tstl.NumericLiteral | tstl.StringLiteral, original: ts.Node}> {
+        Array<{name: ts.PropertyName, value: tstl.Expression, original: ts.Node}> {
         let numericValue = 0;
         let hasStringInitializers = false;
 
+        const valueMap = new Map<ts.PropertyName, tstl.Expression>();
+
         return node.members.map(member => {
-            let valueLiteral: tstl.NumericLiteral | tstl.StringLiteral;
+            let valueExpression: tstl.Expression;
             if (member.initializer) {
-                if (ts.isNumericLiteral(member.initializer)) {
+                if (ts.isNumericLiteral(member.initializer))
+                {
                     numericValue = Number(member.initializer.text);
-                    valueLiteral = tstl.createNumericLiteral(numericValue);
-                } else if (ts.isStringLiteral(member.initializer)) {
-                    hasStringInitializers = true;
-                    valueLiteral = tstl.createStringLiteral(member.initializer.text);
-                } else {
-                    throw TSTLErrors.InvalidEnumMember(member.initializer);
+                    valueExpression = this.transformNumericLiteral(member.initializer);
+                    numericValue++;
                 }
-            } else if (hasStringInitializers) {
-                throw TSTLErrors.HeterogeneousEnum(node);
-            } else {
-                valueLiteral = tstl.createNumericLiteral(numericValue);
+                else if (ts.isStringLiteral(member.initializer))
+                {
+                    hasStringInitializers = true;
+                    valueExpression = this.transformStringLiteral(member.initializer);
+                }
+                else
+                {
+                    if (ts.isIdentifier(member.initializer)) {
+                        const [isEnumMember, originalName] = tsHelper.isEnumMember(node, member.initializer);
+                        if (isEnumMember) {
+                            valueExpression = valueMap.get(originalName);
+                        } else {
+                            valueExpression = this.transformExpression(member.initializer);
+                        }
+                    } else {
+                        valueExpression = this.transformExpression(member.initializer);
+                    }
+                }
             }
+            else if (hasStringInitializers)
+            {
+                throw TSTLErrors.HeterogeneousEnum(node);
+            }
+            else
+            {
+                valueExpression = tstl.createNumericLiteral(numericValue);
+                numericValue++;
+            }
+
+            valueMap.set(member.name, valueExpression);
 
             const enumMember = {
                 name: member.name,
                 original: member,
-                value: valueLiteral,
+                value: valueExpression,
             };
-
-            numericValue++;
 
             return enumMember;
         });
@@ -2980,26 +3004,7 @@ export class LuaTransformer {
         }
 
         if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
-            const propertyValueDeclaration = this.checker.getTypeAtLocation(node).symbol.valueDeclaration;
-
-            if (propertyValueDeclaration && propertyValueDeclaration.kind === ts.SyntaxKind.EnumMember) {
-                const enumMember = propertyValueDeclaration as ts.EnumMember;
-
-                if (enumMember.initializer) {
-                    return this.transformExpression(enumMember.initializer);
-                } else {
-                    const enumMembers = this.computeEnumMembers(enumMember.parent);
-                    const memberPosition = enumMember.parent.members.indexOf(enumMember);
-
-                    if (memberPosition === -1) {
-                        throw TSTLErrors.UnsupportedProperty(type.symbol.name, property, node);
-                    }
-
-                    const value = tstl.cloneNode(enumMembers[memberPosition].value);
-                    tstl.setNodeOriginal(value, enumMember);
-                    return value;
-                }
-            }
+            return this.transformConstEnumValue(type, property, node);
         }
 
         this.checkForLuaLibType(type);
@@ -3095,6 +3100,13 @@ export class LuaTransformer {
         const index = this.transformExpression(node.argumentExpression);
 
         const type = this.checker.getTypeAtLocation(node.expression);
+
+        if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)
+            && ts.isStringLiteral(node.argumentExpression))
+        {
+            return this.transformConstEnumValue(type, node.argumentExpression.text, node);
+        }
+
         if (tsHelper.isArrayType(type, this.checker)) {
             return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), node);
         } else if (tsHelper.isStringType(type)) {
@@ -3106,6 +3118,45 @@ export class LuaTransformer {
         } else {
             return tstl.createTableIndexExpression(table, index, node);
         }
+    }
+
+    private transformConstEnumValue(enumType: ts.EnumType, memberName: string, tsOriginal: ts.Node): tstl.Expression {
+        // Assumption: the enum only has one declaration
+        const enumDeclaration = enumType.symbol.declarations.find(d => ts.isEnumDeclaration(d)) as ts.EnumDeclaration;
+        const enumMember = enumDeclaration.members
+            .find(m => ts.isIdentifier(m.name) && m.name.text === memberName);
+
+        if (enumMember) {
+            if (enumMember.initializer) {
+                if (ts.isIdentifier(enumMember.initializer)) {
+                    const [isEnumMember, valueName] = tsHelper.isEnumMember(enumDeclaration, enumMember.initializer);
+                    if (isEnumMember) {
+                        if (ts.isIdentifier(valueName)) {
+                            return this.transformConstEnumValue(enumType, valueName.text, tsOriginal);
+                        }
+                    } else {
+                        return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
+                    }
+                } else {
+                    return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
+                }
+            } else {
+                let enumValue = 0;
+                for (const member of enumDeclaration.members) {
+                    if (member === enumMember) {
+                        return tstl.createNumericLiteral(enumValue, tsOriginal);
+                    }
+                    if (member.initializer === undefined) {
+                        enumValue++;
+                    } else if (ts.isNumericLiteral(member.initializer)) {
+                        enumValue = Number(member.initializer.text) + 1;
+                    }
+                }
+
+                throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
+            }
+        }
+        throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
     public transformStringCallExpression(node: ts.CallExpression): tstl.Expression {

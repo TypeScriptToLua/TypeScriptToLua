@@ -625,4 +625,21 @@ export class TSHelper {
         const firstDeclaration = this.getFirstDeclaration(symbol);
         return firstDeclaration === node;
     }
+
+    public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {
+        if (ts.isIdentifier(value)) {
+            const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === value.text);
+            if (enumMember !== undefined) {
+                if (enumMember.initializer && ts.isIdentifier(enumMember.initializer)) {
+                    return this.isEnumMember(enumDeclaration, enumMember.initializer);
+                } else {
+                    return [true, enumMember.name];
+                }
+            } else {
+                return [false, undefined];
+            }
+        } else {
+            return [false, undefined];
+        }
+    }
 }

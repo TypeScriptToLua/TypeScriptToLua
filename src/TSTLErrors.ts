@@ -4,6 +4,11 @@ import {TranspileError} from "./TranspileError";
 import {TSHelper as tsHelper} from "./TSHelper";
 
 export class TSTLErrors {
+    public static CouldNotFindEnumMember =
+        (enumDeclaration: ts.EnumDeclaration, enumMember: string, node: ts.Node) => new TranspileError(
+            `Could not find ${enumMember} in ${enumDeclaration.name.text}`, node
+        );
+
     public static DefaultImportsNotSupported = (node: ts.Node) =>
         new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 

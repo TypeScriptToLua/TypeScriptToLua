@@ -1,24 +1,25 @@
 MergedClass = MergedClass or {};
 MergedClass.__index = MergedClass;
-MergedClass.new = function(construct, ...)
-    local self = setmetatable({}, MergedClass);
-    self.propertyFunc = function(____)
-    end;
-    if construct and MergedClass.constructor then
-        MergedClass.constructor(self, ...);
-    end
+MergedClass.prototype = MergedClass.prototype or {};
+MergedClass.prototype.__index = MergedClass.prototype;
+MergedClass.prototype.constructor = MergedClass;
+MergedClass.new = function(...)
+    local self = setmetatable({}, MergedClass.prototype);
+    self:____constructor(...);
     return self;
 end;
-MergedClass.constructor = function(self)
+MergedClass.prototype.____constructor = function(self)
+    self.propertyFunc = function(____)
+    end;
 end;
 MergedClass.staticMethodA = function(self)
 end;
 MergedClass.staticMethodB = function(self)
     self:staticMethodA();
 end;
-MergedClass.methodA = function(self)
+MergedClass.prototype.methodA = function(self)
 end;
-MergedClass.methodB = function(self)
+MergedClass.prototype.methodB = function(self)
     self:methodA();
     self:propertyFunc();
 end;
@@ -27,7 +28,7 @@ do
     MergedClass.namespaceFunc = function()
     end;
 end
-local mergedClass = MergedClass.new(true);
+local mergedClass = MergedClass.new();
 mergedClass:methodB();
 mergedClass:propertyFunc();
 MergedClass:staticMethodB();

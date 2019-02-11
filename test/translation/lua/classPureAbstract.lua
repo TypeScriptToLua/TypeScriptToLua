@@ -1,11 +1,12 @@
 ClassB = ClassB or {};
 ClassB.__index = ClassB;
-ClassB.new = function(construct, ...)
-    local self = setmetatable({}, ClassB);
-    if construct and ClassB.constructor then
-        ClassB.constructor(self, ...);
-    end
+ClassB.prototype = ClassB.prototype or {};
+ClassB.prototype.__index = ClassB.prototype;
+ClassB.prototype.constructor = ClassB;
+ClassB.new = function(...)
+    local self = setmetatable({}, ClassB.prototype);
+    self:____constructor(...);
     return self;
 end;
-ClassB.constructor = function(self)
+ClassB.prototype.____constructor = function(self)
 end;

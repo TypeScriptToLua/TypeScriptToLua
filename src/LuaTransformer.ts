@@ -1011,13 +1011,13 @@ export class LuaTransformer {
                 if (ts.isNumericLiteral(member.initializer))
                 {
                     numericValue = Number(member.initializer.text);
-                    valueExpression = tstl.createNumericLiteral(numericValue);
+                    valueExpression = this.transformNumericLiteral(member.initializer);
                     numericValue++;
                 }
                 else if (ts.isStringLiteral(member.initializer))
                 {
                     hasStringInitializers = true;
-                    valueExpression = tstl.createStringLiteral(member.initializer.text);
+                    valueExpression = this.transformStringLiteral(member.initializer);
                 }
                 else
                 {

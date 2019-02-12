@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.15.0
+* Now written for TypeScript 3.3.x!
+* Removed external CLI parser dependency and wrote our own `CommandLineParser.ts` to read CLI and tsconfig input.
 * Added support for hoisting, can be disabled with the `noHoisting` option in CLI or tsconfig.
 * Added support for generator functions.
 * Reworked classes into a system more similar to JavaScript with prototype tables.

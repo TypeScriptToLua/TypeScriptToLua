@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.0
+* Added support for hoisting, can be disabled with the `noHoisting` option in CLI or tsconfig.
+* Added support for generator functions.
+* Reworked classes into a system more similar to JavaScript with prototype tables.
+* Improved support for ObjectBindingPatterns.
+* Added support for enums with identifier values.
+* Added support for the binary comma operator.
+* Added support for `string.concat`, `string.slice` and `string.charCodeAt`.
+* Refactored LuaTranspiler.emitLuaLib to its own method so it can be called from external code.
+* Improved function type inference.
+* Fixed some bugs in for loops with expressions.
+* Fixed a bug forwarding luaIterator functions.
+
 ## 0.14.0
 * Reworked internal transpiler structure to be more suited for future extension.
 * Reworked module and exports system.

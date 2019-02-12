@@ -133,4 +133,17 @@ export class TypeCheckingTests {
             "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'."
         );
     }
+
+    @Test("instanceof export")
+    public instanceOfExport(): void
+    {
+        const result = util.transpileExecuteAndReturnExport(
+            `export class myClass {}
+            let inst = new myClass();
+            export const result = inst instanceof myClass;`,
+            "result"
+        );
+
+        Expect(result).toBeTruthy();
+    }
 }

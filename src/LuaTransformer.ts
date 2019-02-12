@@ -531,7 +531,7 @@ export class LuaTransformer {
         );
         const assignClassPrototypeConstructor = tstl.createAssignmentStatement(
             classPrototypeConstructor,
-            className,
+            createClassNameWithExport(),
             statement
         );
         result.push(assignClassPrototypeConstructor);

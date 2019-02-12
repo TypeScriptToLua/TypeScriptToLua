@@ -177,15 +177,20 @@ export class TSHelper {
     }
 
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
-        const declaration = TSHelper.findFirstNodeAbove(
-            node,
-            (n): n is ts.Node => ts.isFunctionDeclaration(n) || ts.isMethodDeclaration(n)
-        );
+        const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
             const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
-            return decorators.has(DecoratorKind.TupleReturn)
-                   // Lua iterators are not 'true' tupleReturn functions as they actually return a function
-                   && !decorators.has(DecoratorKind.LuaIterator);
+            return decorators.has(DecoratorKind.TupleReturn);
+        } else {
+            return false;
+        }
+    }
+
+    public static isInLuaIteratorFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
+        if (declaration) {
+            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
+            return decorators.has(DecoratorKind.LuaIterator);
         } else {
             return false;
         }

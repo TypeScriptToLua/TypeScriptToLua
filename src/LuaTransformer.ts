@@ -1495,7 +1495,10 @@ export class LuaTransformer {
                     // If return expression is an array literal, leave out brackets.
                     return tstl.createReturnStatement(statement.expression.elements
                         .map(elem => this.transformExpression(elem)));
-                } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
+                } else if (
+                    !tsHelper.isTupleReturnCall(statement.expression, this.checker)
+                    && !tsHelper.isInLuaIteratorFunction(statement, this.checker))
+                {
                     // If return expression is not another TupleReturn call, unpack it
                     const expression = this.createUnpackCall(
                         this.transformExpression(statement.expression),

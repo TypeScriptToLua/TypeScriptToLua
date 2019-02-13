@@ -2990,23 +2990,16 @@ export class LuaTransformer {
 
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
-        switch (type.flags) {
-            case ts.TypeFlags.String:
-            case ts.TypeFlags.StringLiteral:
-                return this.transformStringProperty(node);
-            case ts.TypeFlags.Object:
-                if (tsHelper.isExplicitArrayType(type, this.checker))
-                {
-                    return this.transformArrayProperty(node);
-                }
-                else if (tsHelper.isArrayType(type, this.checker)
-                    && tsHelper.isDefaultArrayPropertyName(node.name.escapedText as string))
-                {
-                    return this.transformArrayProperty(node);
-                }
-        }
+        if (tsHelper.isStringType(type)) {
+            return this.transformStringProperty(node);
 
-        if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
+        } else if (tsHelper.isArrayType(type, this.checker)) {
+            const arrayPropertyAccess = this.transformArrayProperty(node);
+            if (arrayPropertyAccess) {
+                return arrayPropertyAccess;
+            }
+
+        } else if (type.symbol && (type.symbol.flags & ts.SymbolFlags.ConstEnum)) {
             return this.transformConstEnumValue(type, property, node);
         }
 
@@ -3088,13 +3081,13 @@ export class LuaTransformer {
     }
 
     // Transpile access of array properties, only supported properties are allowed
-    public transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
+    public transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
         switch (node.name.escapedText) {
             case "length":
                 return tstl.createUnaryExpression(
                     this.transformExpression(node.expression), tstl.SyntaxKind.LengthOperator, node);
             default:
-                throw TSTLErrors.UnsupportedProperty("array", node.name.escapedText as string, node);
+                return undefined;
         }
     }
 

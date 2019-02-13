@@ -3665,9 +3665,8 @@ export class LuaTransformer {
             const insideFunction = this.findScope(ScopeType.Function) !== undefined;
             let isLetOrConst = false;
             let isFirstDeclaration = true; // var can have multiple declarations for the same variable :/
-            if (tsOriginal && ts.isVariableDeclaration(tsOriginal)) {
-                isLetOrConst = tsOriginal.parent
-                    && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
+            if (tsOriginal && ts.isVariableDeclaration(tsOriginal) && tsOriginal.parent) {
+                isLetOrConst = (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
                 isFirstDeclaration = isLetOrConst || tsHelper.isFirstDeclaration(tsOriginal, this.checker);
             }
             if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {

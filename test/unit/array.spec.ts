@@ -118,4 +118,14 @@ export class ArrayTests {
 
         Expect(result).toBe("true:1,2,3,4");
     }
+
+    @Test("Array property access")
+    public arrayPropertyAccess(): void {
+        const code =
+            `type A = number[] & {foo?: string};
+            const a: A = [1,2,3];
+            a.foo = "bar";
+            return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar123");
+    }
 }

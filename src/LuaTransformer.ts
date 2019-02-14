@@ -516,13 +516,61 @@ export class LuaTransformer {
         const assignClassPrototype = tstl.createAssignmentStatement(createClassPrototype(), classPrototypeTable);
         result.push(assignClassPrototype);
 
-        // className.prototype.__index = className.prototype
         const classPrototypeIndex = tstl.createTableIndexExpression(
             createClassPrototype(),
             tstl.createStringLiteral("__index")
         );
-        const assignClassPrototypeIndex = tstl.createAssignmentStatement(classPrototypeIndex, createClassPrototype());
-        result.push(assignClassPrototypeIndex);
+        if (statement.members.some(ts.isGetAccessor)) {
+            // className.prototype.____getters = {}
+            const classPrototypeGetters = tstl.createTableIndexExpression(
+                createClassPrototype(),
+                tstl.createStringLiteral("____getters")
+            );
+            const assignClassPrototypeGetters = tstl.createAssignmentStatement(
+                classPrototypeGetters,
+                tstl.createTableExpression()
+            );
+            result.push(assignClassPrototypeGetters);
+
+            // className.prototype.__index = __TS_Index(className.prototype)
+            const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+                classPrototypeIndex,
+                this.transformLuaLibFunction(LuaLibFeature.Index, createClassPrototype())
+            );
+            result.push(assignClassPrototypeIndex);
+
+        } else {
+            // className.prototype.__index = className.prototype
+            const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+                classPrototypeIndex,
+                createClassPrototype()
+            );
+            result.push(assignClassPrototypeIndex);
+        }
+
+        if (tsHelper.hasSetAccessorInClassOrAncestor(statement, this.checker)) {
+            // className.prototype.____setters = {}
+            const classPrototypeSetters = tstl.createTableIndexExpression(
+                createClassPrototype(),
+                tstl.createStringLiteral("____setters")
+            );
+            const assignClassPrototypeSetters = tstl.createAssignmentStatement(
+                classPrototypeSetters,
+                tstl.createTableExpression()
+            );
+            result.push(assignClassPrototypeSetters);
+
+            // className.prototype.__newindex = __TS_NewIndex(className.prototype)
+            const classPrototypeNewIndex = tstl.createTableIndexExpression(
+                createClassPrototype(),
+                tstl.createStringLiteral("__newindex")
+            );
+            const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+                classPrototypeNewIndex,
+                this.transformLuaLibFunction(LuaLibFeature.NewIndex, createClassPrototype())
+            );
+            result.push(assignClassPrototypeIndex);
+        }
 
         // className.prototype.constructor = className
         const classPrototypeConstructor = tstl.createTableIndexExpression(
@@ -727,15 +775,20 @@ export class LuaTransformer {
             [this.createSelfIdentifier()]
         );
 
-        return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(
-                tstl.createTableIndexExpression(
-                    this.addExportToIdentifier(tstl.cloneIdentifier(className)),
-                    tstl.createStringLiteral("prototype")
-                ),
-                tstl.createStringLiteral("get__" + name.text)),
-            accessorFunction
+        const classPrototype = tstl.createTableIndexExpression(
+            this.addExportToIdentifier(tstl.cloneIdentifier(className)),
+            tstl.createStringLiteral("prototype")
         );
+        const classGetters = tstl.createTableIndexExpression(
+            classPrototype,
+            tstl.createStringLiteral("____getters")
+        );
+        const getter = tstl.createTableIndexExpression(
+            classGetters,
+            tstl.createStringLiteral(name.text)
+        );
+        const assignGetter = tstl.createAssignmentStatement(getter, accessorFunction);
+        return assignGetter;
     }
 
     public transformSetAccessorDeclaration(
@@ -756,15 +809,20 @@ export class LuaTransformer {
             restParam
         );
 
-        return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(
-                tstl.createTableIndexExpression(
-                    this.addExportToIdentifier(tstl.cloneIdentifier(className)),
-                    tstl.createStringLiteral("prototype")
-                ),
-                tstl.createStringLiteral("set__" + name.text)),
-            accessorFunction
+        const classPrototype = tstl.createTableIndexExpression(
+            this.addExportToIdentifier(tstl.cloneIdentifier(className)),
+            tstl.createStringLiteral("prototype")
         );
+        const classSetters = tstl.createTableIndexExpression(
+            classPrototype,
+            tstl.createStringLiteral("____setters")
+        );
+        const setter = tstl.createTableIndexExpression(
+            classSetters,
+            tstl.createStringLiteral(name.text)
+        );
+        const assignSetter = tstl.createAssignmentStatement(setter, accessorFunction);
+        return assignSetter;
     }
 
     public transformMethodDeclaration(
@@ -2137,16 +2195,6 @@ export class LuaTransformer {
     }
 
     public transformAssignment(lhs: ts.Expression, right: tstl.Expression): tstl.Statement {
-        if (ts.isPropertyAccessExpression(lhs)) {
-            const hasSetAccessor = tsHelper.hasSetAccessor(lhs, this.checker);
-            if (hasSetAccessor) {
-                return tstl.createExpressionStatement(this.transformSetAccessor(lhs, right), lhs.parent);
-            } else if (hasSetAccessor === undefined) {
-                // Undefined hasSetAccessor indicates a union with both set accessors and no accessors
-                // on the same field.
-                throw TSTLErrors.UnsupportedUnionAccessor(lhs);
-            }
-        }
         return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,
             right,
@@ -2214,10 +2262,7 @@ export class LuaTransformer {
             );
         }
 
-        if (
-            (ts.isPropertyAccessExpression(expression.left) && !tsHelper.hasSetAccessor(expression.left, this.checker))
-            || ts.isElementAccessExpression(expression.left)
-        ) {
+        if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
             // Left is property/element access: cache result while maintaining order of evaluation
             // (function(o, i, v) o[i] = v; return v end)(${objExpression}, ${indexExpression}, ${right})
             const objParameter = tstl.createIdentifier("o");
@@ -2980,14 +3025,6 @@ export class LuaTransformer {
     public transformPropertyAccessExpression(node: ts.PropertyAccessExpression): tstl.Expression {
         const property = node.name.text;
 
-        const hasGetAccessor = tsHelper.hasGetAccessor(node, this.checker);
-        if (hasGetAccessor) {
-            return this.transformGetAccessor(node);
-        } else if (hasGetAccessor === undefined) {
-            // Undefined hasGetAccessor indicates a union with both get accessors and no accessors on the same field.
-            throw TSTLErrors.UnsupportedUnionAccessor(node);
-        }
-
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
         switch (type.flags) {
@@ -3030,18 +3067,6 @@ export class LuaTransformer {
 
         const callPath = this.transformExpression(node.expression);
         return tstl.createTableIndexExpression(callPath, tstl.createStringLiteral(property), node);
-    }
-
-    public transformGetAccessor(node: ts.PropertyAccessExpression): tstl.MethodCallExpression {
-        const name = tstl.createIdentifier(`get__${node.name.escapedText}`);
-        const expression = this.transformExpression(node.expression);
-        return tstl.createMethodCallExpression(expression, name, [], node);
-    }
-
-    public transformSetAccessor(node: ts.PropertyAccessExpression, value: tstl.Expression): tstl.MethodCallExpression {
-        const name = tstl.createIdentifier(`set__${node.name.escapedText}`);
-        const expression = this.transformExpression(node.expression);
-        return tstl.createMethodCallExpression(expression, name, [value], node);
     }
 
     // Transpile a Math._ property

@@ -262,60 +262,6 @@ export class TSHelper {
         return undefined;
     }
 
-    public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
-        if (type && type.symbol && type.symbol.members) {
-            const field = type.symbol.members.get(name);
-            return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
-        }
-    }
-
-    public static typeHasGetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
-        if (type.isUnion()) {
-            if (type.types.some(t => TSHelper.typeHasGetAccessor(t, name, checker))) {
-                // undefined if only a subset of types implements the accessor
-                return type.types.every(t => TSHelper.typeHasGetAccessor(t, name, checker)) ? true : undefined;
-            }
-            return false;
-        }
-        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitGetAccessor(t, name));
-    }
-
-    public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean | undefined {
-        if (ts.isPropertyAccessExpression(node)) {
-            const name = node.name.escapedText;
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.typeHasGetAccessor(type, name, checker);
-        }
-        return false;
-    }
-
-    public static hasExplicitSetAccessor(type: ts.Type, name: ts.__String): boolean {
-        if (type && type.symbol && type.symbol.members) {
-            const field = type.symbol.members.get(name);
-            return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
-        }
-    }
-
-    public static typeHasSetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
-        if (type.isUnion()) {
-            if (type.types.some(t => TSHelper.typeHasSetAccessor(t, name, checker))) {
-                // undefined if only a subset of types implements the accessor
-                return type.types.every(t => TSHelper.typeHasSetAccessor(t, name, checker)) ? true : undefined;
-            }
-            return false;
-        }
-        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitSetAccessor(t, name));
-    }
-
-    public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (ts.isPropertyAccessExpression(node)) {
-            const name = node.name.escapedText;
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.typeHasSetAccessor(type, name, checker);
-        }
-        return false;
-    }
-
     public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, tstl.BinaryOperator] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
@@ -397,6 +343,23 @@ export class TSHelper {
     public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {
         return signatureDeclaration.parameters.find(
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+    }
+
+    public static hasSetAccessorInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): boolean
+    {
+        if (classDeclaration.members.some(ts.isSetAccessor)) {
+            return true;
+        }
+        const extendsType = TSHelper.getExtendedType(classDeclaration, checker);
+        if (!extendsType) {
+            return false;
+        }
+        const symbol = extendsType.getSymbol();
+        const declarations = symbol.getDeclarations();
+        return declarations.filter(ts.isClassLike).some(d => TSHelper.hasSetAccessorInClassOrAncestor(d, checker));
     }
 
     public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {

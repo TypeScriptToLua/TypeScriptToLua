@@ -249,7 +249,7 @@ export class ExpressionTests {
     @TestCase("inst.field | 3", 8 | 3)
     @TestCase("inst.field << 3", 8 << 3)
     @TestCase("inst.field >> 1", 8 >> 1)
-    @TestCase("inst.field = 3", 7)
+    @TestCase("inst.field = 3", 3)
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
     public getAccessorBinary(expression: string, expected: any): void {
@@ -340,20 +340,6 @@ export class ExpressionTests {
         );
 
         Expect(result).toBe(expected);
-    }
-
-    @TestCase("x.value = 3;")
-    @TestCase("return x.value;")
-    @Test("Unsupported Union accessors")
-    public unsupportedUnionAccessors(expression: string): void {
-        const source = `class A{ get value(){ return 1; } }
-                        class B{ value:number = 3; }
-                        let x: A|B = new A();
-                        ${expression}`;
-        Expect(() => { util.transpileString(source); }).toThrowError(
-            TranspileError,
-            "Unsupported mixed union of accessor and non-accessor types for the same property."
-        );
     }
 
     @TestCase("i++", 10)

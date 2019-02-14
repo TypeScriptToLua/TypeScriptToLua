@@ -345,21 +345,78 @@ export class TSHelper {
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
 
+    public static findInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        callback: (classDeclaration: ts.ClassLikeDeclarationBase) => boolean,
+        checker: ts.TypeChecker
+    ): ts.ClassLikeDeclarationBase
+    {
+        if (callback(classDeclaration)) {
+            return classDeclaration;
+        }
+
+        const extendsType = TSHelper.getExtendedType(classDeclaration, checker);
+        if (!extendsType) {
+            return undefined;
+        }
+
+        const symbol = extendsType.getSymbol();
+        const declaration = symbol.getDeclarations().find(ts.isClassLike);
+        if (!declaration) {
+            return undefined;
+        }
+
+        return TSHelper.findInClassOrAncestor(declaration, callback, checker);
+    }
+
     public static hasSetAccessorInClassOrAncestor(
         classDeclaration: ts.ClassLikeDeclarationBase,
         checker: ts.TypeChecker
     ): boolean
     {
-        if (classDeclaration.members.some(ts.isSetAccessor)) {
-            return true;
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(ts.isSetAccessor),
+            checker
+        ) !== undefined;
+    }
+
+    public static getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
+        if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName)) {
+            return propertyName.text;
+        } else if (ts.isNumericLiteral(propertyName)) {
+            return Number(propertyName.text);
+        } else {
+            return undefined; // TODO: how to handle computed property names?
         }
-        const extendsType = TSHelper.getExtendedType(classDeclaration, checker);
-        if (!extendsType) {
+    }
+
+    public static isSamePropertyName(a: ts.PropertyName, b: ts.PropertyName): boolean {
+        const aName = TSHelper.getPropertyName(a);
+        const bName = TSHelper.getPropertyName(b);
+        return aName !== undefined && aName === bName;
+    }
+
+    public static isGetAccessorOverride(
+        element: ts.ClassElement,
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): element is ts.GetAccessorDeclaration
+    {
+        if (!ts.isGetAccessor(element)) {
             return false;
         }
-        const symbol = extendsType.getSymbol();
-        const declarations = symbol.getDeclarations();
-        return declarations.filter(ts.isClassLike).some(d => TSHelper.hasSetAccessorInClassOrAncestor(d, checker));
+
+        const hasInitializedField = (e: ts.ClassElement) =>
+            ts.isPropertyDeclaration(e)
+            && e.initializer
+            && TSHelper.isSamePropertyName(e.name, element.name);
+
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(hasInitializedField),
+            checker
+        ) !== undefined;
     }
 
     public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {

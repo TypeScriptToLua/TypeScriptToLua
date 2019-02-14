@@ -415,12 +415,14 @@ export class LuaTransformer {
                     instanceFields,
                     statement
                 ));
-            } else if (instanceFields.length > 0) {
+            } else if (instanceFields.length > 0
+                || statement.members.some(m => tsHelper.isGetAccessorOverride(m, statement, this.checker)))
+            {
                 // Generate a constructor if none was defined in a class with instance fields that need initialization
                 // className.prototype.____constructor = function(self, ...)
                 //     baseClassName.prototype.____constructor(self, ...)
                 //     ...
-                const constructorBody = this.transformClassInstanceFields(instanceFields);
+                const constructorBody = this.transformClassInstanceFields(statement, instanceFields);
                 const superCall = tstl.createExpressionStatement(
                     tstl.createCallExpression(
                         tstl.createTableIndexExpression(
@@ -664,7 +666,11 @@ export class LuaTransformer {
         return result;
     }
 
-    public transformClassInstanceFields(instanceFields: ts.PropertyDeclaration[]): tstl.Statement[] {
+    public transformClassInstanceFields(
+        classDeclarataion: ts.ClassLikeDeclaration,
+        instanceFields: ts.PropertyDeclaration[]
+    ): tstl.Statement[]
+    {
         const statements: tstl.Statement[] = [];
 
         for (const f of instanceFields) {
@@ -680,6 +686,19 @@ export class LuaTransformer {
             const assignClassField = tstl.createAssignmentStatement(selfIndex, value);
 
             statements.push(assignClassField);
+        }
+
+        const getOverrides = classDeclarataion.members.filter(
+            m => tsHelper.isGetAccessorOverride(m, classDeclarataion, this.checker)
+        );
+        for (const getter of getOverrides) {
+            const resetGetter = tstl.createExpressionStatement(
+                tstl.createCallExpression(
+                    tstl.createIdentifier("rawset"),
+                    [this.createSelfIdentifier(), this.transformPropertyName(getter.name), tstl.createNilLiteral()]
+                )
+            );
+            statements.push(resetGetter);
         }
 
         return statements;
@@ -707,7 +726,7 @@ export class LuaTransformer {
             return undefined;
         }
 
-        const bodyStatements: tstl.Statement[] = this.transformClassInstanceFields(instanceFields);
+        const bodyStatements: tstl.Statement[] = this.transformClassInstanceFields(classDeclaration, instanceFields);
 
         // Check for field declarations in constructor
         const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);

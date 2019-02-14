@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../../src/util";
 
-export class LuaLibArrayTests
+export class LuaLibTests
 {
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("forEach")
@@ -377,5 +377,43 @@ export class LuaLibArrayTests
 
         // Assert
         Expect(result).toBe(expected);
+    }
+
+    @TestCase("{a: 3}", "{}", {a : 3})
+    @TestCase("{}", "{a: 3}", {a : 3})
+    @TestCase("{a: 3}", "{a: 5}", {a : 5})
+    @TestCase("{a: 3}", "{b: 5},{c: 7}", {a : 3, b: 5, c: 7})
+    @Test("Object.Assign")
+    public objectAssign(initial: string, parameters: string, expected: object): void {
+        const jsonResult = util.transpileAndExecute(`
+            return JSONStringify(Object.assign(${initial},${parameters}));
+        `);
+
+        const result = JSON.parse(jsonResult);
+        for (const key in expected) {
+            Expect(result[key]).toBe(expected[key]);
+        }
+    }
+
+    @TestCase("{}", [])
+    @TestCase("{abc: 3}", ["abc"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["abc", "def"])
+    @Test("Object.keys")
+    public objectKeys(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.keys(obj).join(",");
+        `) as string;
+
+        const foundKeys = result.split(",");
+        if (expected.length === 0) {
+            Expect(foundKeys.length).toBe(1);
+            Expect(foundKeys[0]).toBe("");
+        } else {
+            Expect(foundKeys.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundKeys.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
     }
 }

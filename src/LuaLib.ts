@@ -22,6 +22,8 @@ export enum LuaLibFeature {
     InstanceOf = "InstanceOf",
     Iterator = "Iterator",
     Map = "Map",
+    ObjectAssign = "ObjectAssign",
+    ObjectKeys = "ObjectKeys",
     Set = "Set",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",

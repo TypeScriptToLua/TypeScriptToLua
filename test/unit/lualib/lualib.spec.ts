@@ -1,5 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
+import * as ts from "typescript";
 import * as util from "../../src/util";
+import { LuaLibImportKind } from "../../../src/CompilerOptions";
 
 export class LuaLibTests
 {
@@ -413,6 +415,28 @@ export class LuaLibTests
             Expect(foundKeys.length).toBe(expected.length);
             for (const key of expected) {
                 Expect(foundKeys.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
+    }
+
+    @TestCase("{}", [])
+    @TestCase("{abc: 'def'}", ["def"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["3", "xyz"])
+    @Test("Object.values")
+    public objectValues(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.values(obj).join(",");
+        `, {target: ts.ScriptTarget.ES2018, lib: ["es2018"], luaLibImport: LuaLibImportKind.Require}) as string;
+
+        const foundValues = result.split(",");
+        if (expected.length === 0) {
+            Expect(foundValues.length).toBe(1);
+            Expect(foundValues[0]).toBe("");
+        } else {
+            Expect(foundValues.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundValues.indexOf(key) >= 0).toBeTruthy();
             }
         }
     }

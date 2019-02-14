@@ -3290,6 +3290,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...parameters);
             case "keys":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectKeys, expression, ...parameters);
+            case "values":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectValues, expression, ...parameters);
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `object property ${methodName}`,

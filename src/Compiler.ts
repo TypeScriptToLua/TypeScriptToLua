@@ -106,8 +106,14 @@ export function createStringCompilerProgram(
             }
             if (filename.indexOf(".d.ts") !== -1) {
                 if (!libCache[filename]) {
-                    libCache[filename] =
-                        fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), filename)).toString();
+                    const typeScriptDir = path.dirname(require.resolve("typescript"));
+                    const filePath = path.join(typeScriptDir, filename);
+                    if (fs.existsSync(filePath)) {
+                        libCache[filename] = fs.readFileSync(filePath).toString();
+                    } else {
+                        const pathWithLibPrefix = path.join(typeScriptDir, "lib." + filename);
+                        libCache[filename] = fs.readFileSync(pathWithLibPrefix).toString();
+                    }
                 }
                 return ts.createSourceFile(filename, libCache[filename], ts.ScriptTarget.Latest, false);
             }

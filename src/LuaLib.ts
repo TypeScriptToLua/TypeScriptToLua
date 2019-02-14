@@ -24,6 +24,7 @@ export enum LuaLibFeature {
     Map = "Map",
     ObjectAssign = "ObjectAssign",
     ObjectKeys = "ObjectKeys",
+    ObjectValues = "ObjectValues",
     Set = "Set",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",

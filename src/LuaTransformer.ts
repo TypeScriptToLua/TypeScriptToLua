@@ -206,11 +206,9 @@ export class LuaTransformer {
     }
 
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
-        if (!statement.importClause || !statement.importClause.namedBindings) {
+        if (statement.importClause && !statement.importClause.namedBindings) {
             throw TSTLErrors.DefaultImportsNotSupported(statement);
         }
-
-        const imports = statement.importClause.namedBindings;
 
         const result: tstl.Statement[] = [];
 
@@ -220,6 +218,12 @@ export class LuaTransformer {
 
         const requireCall = tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
 
+        if (!statement.importClause) {
+            result.push(tstl.createExpressionStatement(requireCall));
+            return result;
+        }
+
+        const imports = statement.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);

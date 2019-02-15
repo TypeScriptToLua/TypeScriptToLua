@@ -26,7 +26,7 @@ class Set<TValue> {
                 const arr = other as TValue[];
                 this.size = arr.length;
                 for (const value of arr) {
-                    this.items[value as any] = true as any;
+                    this.items[value as any] = true;
                 }
             }
         }

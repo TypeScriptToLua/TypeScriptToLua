@@ -495,18 +495,6 @@ export class ExpressionTests {
             .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
     }
 
-    @Test("Unsupported array property error")
-    public unsupportedArrayPropertyError(): void {
-        const transformer = util.makeTestTransformer();
-
-        const mockNode: any = {
-            name: ts.createIdentifier("unknownProperty"),
-        };
-
-        Expect(() => transformer.transformArrayProperty(mockNode as ts.PropertyAccessExpression))
-            .toThrowError(TranspileError, "Unsupported property on array: unknownProperty");
-    }
-
     @Test("Unsupported math property error")
     public unsupportedMathPropertyError(): void {
         const transformer = util.makeTestTransformer();

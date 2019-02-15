@@ -75,7 +75,8 @@ const defaultCompilerOptions: CompilerOptions = {
 export function transpileString(
     str: string,
     options: CompilerOptions = defaultCompilerOptions,
-    ignoreDiagnostics = false
+    ignoreDiagnostics = false,
+    filePath = "file.ts"
 ): string {
     const compilerHost = {
         directoryExists: () => true,
@@ -87,7 +88,7 @@ export function transpileString(
         getNewLine: () => "\n",
 
         getSourceFile: (filename, languageVersion) => {
-            if (filename === "file.ts") {
+            if (filename === filePath) {
                 return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
             }
             if (filename === "lib.es6.d.ts") {
@@ -102,7 +103,7 @@ export function transpileString(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    const program = ts.createProgram(["file.ts"], options, compilerHost);
+    const program = ts.createProgram([filePath], options, compilerHost);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);
@@ -116,7 +117,7 @@ export function transpileString(
 
     const transpiler = new LuaTranspiler(program);
 
-    const result = transpiler.transpileSourceFile(program.getSourceFile("file.ts"));
+    const result = transpiler.transpileSourceFile(program.getSourceFile(filePath));
 
     return result.trim();
 }

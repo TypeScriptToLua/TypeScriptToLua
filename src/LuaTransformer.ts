@@ -1550,8 +1550,116 @@ export class LuaTransformer {
         );
     }
 
-    public transformForStatement(statement: ts.ForStatement): tstl.Statement[] {
+    public transformNumericForStatement(
+        statement: ts.ForStatement,
+        incrementor: tstl.Statement,
+        body: tstl.Statement[]
+    ): tstl.ForStatement | undefined
+    {
+        // Incrementor must be "i = i + n" or "i = i - n"
+        if (!tstl.isAssignmentStatement(incrementor) || incrementor.right.length !== 1) {
+            return undefined;
+        }
+        const incrementorOp = incrementor.right[0];
+        if (!tstl.isBinaryExpression(incrementorOp)
+            || (incrementorOp.operator !== tstl.SyntaxKind.AdditionOperator
+                && incrementorOp.operator !== tstl.SyntaxKind.SubractionOperator))
+        {
+            return undefined;
+        }
+        const incrementorVar = incrementor.left[0];
+        if (!tstl.isIdentifier(incrementorVar)
+            || !tstl.isIdentifier(incrementorOp.left)
+            || incrementorVar.symbolId !== incrementorOp.left.symbolId)
+        {
+            return undefined;
+        }
+
+        // Initializer must be "var|let|const i = n"
+        if (!statement.initializer
+            || !ts.isVariableDeclarationList(statement.initializer)
+            || statement.initializer.declarations.length !== 1)
+        {
+            return undefined;
+        }
+        const initDeclaration = statement.initializer.declarations[0];
+        if (!initDeclaration.initializer) {
+            return undefined;
+        }
+        const symbol = this.checker.getSymbolAtLocation(initDeclaration.name);
+        const symbolId = this.symbolIds.get(symbol);
+        if (symbolId !== incrementorVar.symbolId) {
+            return undefined;
+        }
+
+        // Condition must be "i < n" or "i <= n" for addition, or "i > n" or "i >= n" for subtraction
+        if (!statement.condition || !ts.isBinaryExpression(statement.condition)) {
+            return undefined;
+        }
+        if (incrementorOp.operator === tstl.SyntaxKind.AdditionOperator) {
+            if (statement.condition.operatorToken.kind !== ts.SyntaxKind.LessThanToken
+                && statement.condition.operatorToken.kind !== ts.SyntaxKind.LessThanEqualsToken)
+            {
+                return undefined;
+            }
+        } else {
+            if (statement.condition.operatorToken.kind !== ts.SyntaxKind.GreaterThanToken
+                && statement.condition.operatorToken.kind !== ts.SyntaxKind.GreaterThanEqualsToken)
+            {
+                return undefined;
+            }
+        }
+
+        let limit = this.transformExpression(statement.condition.right);
+        if (statement.condition.operatorToken.kind === ts.SyntaxKind.LessThanToken) {
+            limit = tstl.createBinaryExpression(
+                limit,
+                tstl.createNumericLiteral(1),
+                tstl.SyntaxKind.SubractionOperator
+            );
+        } else if (statement.condition.operatorToken.kind === ts.SyntaxKind.GreaterThanToken) {
+            limit = tstl.createBinaryExpression(
+                limit,
+                tstl.createNumericLiteral(1),
+                tstl.SyntaxKind.AdditionOperator
+            );
+        }
+
+        let step: tstl.Expression | undefined;
+        if (!(incrementorOp.operator === tstl.SyntaxKind.AdditionOperator
+            && tstl.isNumericLiteral(incrementorOp.right)
+            && incrementorOp.right.value === 1))
+        {
+            step = incrementorOp.right;
+            if (incrementorOp.operator === tstl.SyntaxKind.SubractionOperator) {
+                step = tstl.createUnaryExpression(step, tstl.SyntaxKind.NegationOperator);
+            }
+        }
+
+        return tstl.createForStatement(
+            tstl.createBlock(body),
+            incrementorVar,
+            this.transformExpression(initDeclaration.initializer),
+            limit,
+            step,
+            statement
+        );
+    }
+
+    public transformForStatement(statement: ts.ForStatement): tstl.Statement {
         const result: tstl.Statement[] = [];
+
+        const body: tstl.Statement[] = this.transformLoopBody(statement);
+
+        let incrementor: tstl.Statement | undefined;
+        if (statement.incrementor) {
+            incrementor = this.transformExpressionStatement(statement.incrementor);
+
+            const numericForStatement = this.transformNumericForStatement(statement, incrementor, body);
+            if (numericForStatement) {
+                return numericForStatement;
+            }
+        }
 
         if (statement.initializer) {
             if (ts.isVariableDeclarationList(statement.initializer)) {
@@ -1568,17 +1676,14 @@ export class LuaTransformer {
             ? this.transformExpression(statement.condition)
             : tstl.createBooleanLiteral(true);
 
-        // Add body
-        const body: tstl.Statement[] = this.transformLoopBody(statement);
-
-        if (statement.incrementor) {
-            body.push(this.transformExpressionStatement(statement.incrementor));
+        if (incrementor) {
+            body.push(incrementor);
         }
 
         // while (condition) do ... end
         result.push(tstl.createWhileStatement(tstl.createBlock(body), condition));
 
-        return result;
+        return tstl.createDoStatement(result, statement);
     }
 
     public transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {

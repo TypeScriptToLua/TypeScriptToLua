@@ -3200,16 +3200,45 @@ export class LuaTransformer {
         }
     }
 
-    private getImportPath(relativePath: string): string {
-        return this.pathToLuaRequirePath(relativePath);
+    private getAbsoluteImportPath(relativePath: string): string {
+        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
+            return path.resolve(this.options.baseUrl, relativePath);
+        }
+        return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
     }
 
-    private pathToLuaRequirePath(filePath: string): string {
+    private getImportPath(relativePath: string): string {
+        if (this.options.rootDir) {
+            // Full path to the import, forward slashes are used
+            const absoluteImportPath = this.formatPathToLuaPath(this.getAbsoluteImportPath(relativePath));
+            const absoluteRootDirPath = this.formatPathToLuaPath(this.options.rootDir);
+            if (absoluteImportPath.includes(absoluteRootDirPath)) {
+                const relativePathToRoot = this.formatPathToLuaPath(
+                    absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
+                return this.formatPathToLuaPath(relativePathToRoot);
+            } else {
+                throw TSTLErrors.UnresolvableRequirePath(undefined,
+                    `Cannot create require path. Module does not exist within --rootDir`,
+                    relativePath);
+            }
+        } else {
+            throw TSTLErrors.UnresolvableRequirePath(undefined,
+                "To resolve require paths --rootDir must be specified. " +
+                "This must point to the working directory of the entry point source file",
+                relativePath);
+        }
+    }
+
+    private formatPathToLuaPath(filePath: string): string {
+        if (process.platform === "win32") {
+            // Windows can use backslashes
+            filePath = filePath
+                .replace(/\.\\/g, "")
+                .replace(/\\/g, ".");
+        }
         return filePath
-            .replace(".\\", "")
-            .replace("./", "")
-            .replace("/", ".")
-            .replace("\\", ".");
+            .replace(/\.\//g, "")
+            .replace(/\//g, ".");
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {

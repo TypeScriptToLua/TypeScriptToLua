@@ -119,4 +119,11 @@ export class TSTLErrors {
                 "the TupleReturn decorator.",
             node);
     };
+
+    public static UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) => {
+        return new TranspileError(
+            `${reason}. ` +
+            `TypeScript path: ${path}.`,
+            node);
+    };
 }

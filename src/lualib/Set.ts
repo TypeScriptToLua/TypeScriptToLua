@@ -42,6 +42,9 @@ class Set<TValue> {
 
     public clear(): void {
         this.items = {};
+        for (const k in this.items) {
+            this[k] = undefined;
+        }
         this.size = 0;
         return;
     }

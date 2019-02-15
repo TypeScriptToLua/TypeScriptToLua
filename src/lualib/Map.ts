@@ -34,7 +34,9 @@ class Map<TKey, TValue> {
     }
 
     public clear(): void {
-        this.items = {};
+        for (const k in this.items) {
+            this.items[k] = undefined;
+        }
         this.size = 0;
         return;
     }

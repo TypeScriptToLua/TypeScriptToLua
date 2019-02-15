@@ -1,7 +1,9 @@
 import { Expect, Test, TestCase } from "alsatian";
+import * as ts from "typescript";
 import * as util from "../../src/util";
+import { LuaLibImportKind } from "../../../src/CompilerOptions";
 
-export class LuaLibArrayTests
+export class LuaLibTests
 {
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("forEach")
@@ -377,5 +379,87 @@ export class LuaLibArrayTests
 
         // Assert
         Expect(result).toBe(expected);
+    }
+
+    @TestCase("{a: 3}", "{}", {a : 3})
+    @TestCase("{}", "{a: 3}", {a : 3})
+    @TestCase("{a: 3}", "{a: 5}", {a : 5})
+    @TestCase("{a: 3}", "{b: 5},{c: 7}", {a : 3, b: 5, c: 7})
+    @Test("Object.Assign")
+    public objectAssign(initial: string, parameters: string, expected: object): void {
+        const jsonResult = util.transpileAndExecute(`
+            return JSONStringify(Object.assign(${initial},${parameters}));
+        `);
+
+        const result = JSON.parse(jsonResult);
+        for (const key in expected) {
+            Expect(result[key]).toBe(expected[key]);
+        }
+    }
+
+    @TestCase("{}", [])
+    @TestCase("{abc: 3}", ["abc,3"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["abc,3", "def,xyz"])
+    @Test("Object.entries")
+    public objectEntries(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.entries(obj).map(e => e.join(",")).join(";");
+        `, {target: ts.ScriptTarget.ES2018, lib: ["es2018"], luaLibImport: LuaLibImportKind.Require}) as string;
+
+        const foundKeys = result.split(";");
+        if (expected.length === 0) {
+            Expect(foundKeys.length).toBe(1);
+            Expect(foundKeys[0]).toBe("");
+        } else {
+            Expect(foundKeys.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundKeys.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
+    }
+
+    @TestCase("{}", [])
+    @TestCase("{abc: 3}", ["abc"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["abc", "def"])
+    @Test("Object.keys")
+    public objectKeys(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.keys(obj).join(",");
+        `) as string;
+
+        const foundKeys = result.split(",");
+        if (expected.length === 0) {
+            Expect(foundKeys.length).toBe(1);
+            Expect(foundKeys[0]).toBe("");
+        } else {
+            Expect(foundKeys.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundKeys.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
+    }
+
+    @TestCase("{}", [])
+    @TestCase("{abc: 'def'}", ["def"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["3", "xyz"])
+    @Test("Object.values")
+    public objectValues(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.values(obj).join(",");
+        `, {target: ts.ScriptTarget.ES2018, lib: ["es2018"], luaLibImport: LuaLibImportKind.Require}) as string;
+
+        const foundValues = result.split(",");
+        if (expected.length === 0) {
+            Expect(foundValues.length).toBe(1);
+            Expect(foundValues[0]).toBe("");
+        } else {
+            Expect(foundValues.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundValues.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
     }
 }

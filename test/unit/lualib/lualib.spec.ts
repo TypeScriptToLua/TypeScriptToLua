@@ -398,6 +398,28 @@ export class LuaLibTests
     }
 
     @TestCase("{}", [])
+    @TestCase("{abc: 3}", ["abc,3"])
+    @TestCase("{abc: 3, def: 'xyz'}", ["abc,3", "def,xyz"])
+    @Test("Object.entries")
+    public objectEntries(obj: string, expected: string[]): void {
+        const result = util.transpileAndExecute(`
+            const obj = ${obj};
+            return Object.entries(obj).map(e => e.join(",")).join(";");
+        `, {target: ts.ScriptTarget.ES2018, lib: ["es2018"], luaLibImport: LuaLibImportKind.Require}) as string;
+
+        const foundKeys = result.split(";");
+        if (expected.length === 0) {
+            Expect(foundKeys.length).toBe(1);
+            Expect(foundKeys[0]).toBe("");
+        } else {
+            Expect(foundKeys.length).toBe(expected.length);
+            for (const key of expected) {
+                Expect(foundKeys.indexOf(key) >= 0).toBeTruthy();
+            }
+        }
+    }
+
+    @TestCase("{}", [])
     @TestCase("{abc: 3}", ["abc"])
     @TestCase("{abc: 3, def: 'xyz'}", ["abc", "def"])
     @Test("Object.keys")

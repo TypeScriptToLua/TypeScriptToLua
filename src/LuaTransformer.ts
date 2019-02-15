@@ -3288,6 +3288,8 @@ export class LuaTransformer {
         switch (methodName) {
             case "assign":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...parameters);
+            case "entries":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectEntries, expression, ...parameters);
             case "keys":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectKeys, expression, ...parameters);
             case "values":

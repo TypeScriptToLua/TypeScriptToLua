@@ -23,6 +23,7 @@ export enum LuaLibFeature {
     Iterator = "Iterator",
     Map = "Map",
     ObjectAssign = "ObjectAssign",
+    ObjectEntries = "ObjectEntries",
     ObjectKeys = "ObjectKeys",
     ObjectValues = "ObjectValues",
     Set = "Set",

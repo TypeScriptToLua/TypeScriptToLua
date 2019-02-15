@@ -6,7 +6,6 @@ import { CompilerOptions } from "../../src/CompilerOptions";
 
 export class RequireTests {
 
-    @FocusTest
     @TestCase("file.ts", "./folder/Module", "folder.Module", { rootDir: "." }, false)
     @TestCase("src/file.ts", "./folder/Module", "src.folder.Module", { rootDir: "." }, false)
     @TestCase("file.ts", "folder/Module", "folder.Module", { rootDir: ".", baseUrl: "." }, false)

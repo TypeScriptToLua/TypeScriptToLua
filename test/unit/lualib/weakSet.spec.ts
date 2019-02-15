@@ -76,11 +76,12 @@ export class WeakSetTests {
     @Test("weakSet has no set features")
     public weakSetHasNoSetFeatures(): void
     {
-        Expect(util.transpileAndExecute(`return new WeakSet().size`)).toBe(undefined);
-        Expect(() => util.transpileAndExecute(`new WeakSet().clear()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().keys()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().values()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().entries()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().forEach(() => {})`)).toThrow();
+        const transpileAndExecute = (tsStr: string) => util.transpileAndExecute(tsStr, undefined, undefined, undefined, true);
+        Expect(transpileAndExecute(`return new WeakSet().size`)).toBe(undefined);
+        Expect(() => transpileAndExecute(`new WeakSet().clear()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakSet().keys()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakSet().values()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakSet().entries()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakSet().forEach(() => {})`)).toThrow();
     }
 }

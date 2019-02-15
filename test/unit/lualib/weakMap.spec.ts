@@ -123,11 +123,12 @@ export class WeakMapTests {
     @Test("weakMap has no map features")
     public weakMapHasNoMapFeatures(): void
     {
-        Expect(util.transpileAndExecute(`return new WeakMap().size`)).toBe(undefined);
-        Expect(() => util.transpileAndExecute(`new WeakMap().clear()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().keys()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().values()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().entries()`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().forEach(() => {})`)).toThrow();
+        const transpileAndExecute = (tsStr: string) => util.transpileAndExecute(tsStr, undefined, undefined, undefined, true);
+        Expect(transpileAndExecute(`return new WeakMap().size`)).toBe(undefined);
+        Expect(() => transpileAndExecute(`new WeakMap().clear()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakMap().keys()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakMap().values()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakMap().entries()`)).toThrow();
+        Expect(() => transpileAndExecute(`new WeakMap().forEach(() => {})`)).toThrow();
     }
 }

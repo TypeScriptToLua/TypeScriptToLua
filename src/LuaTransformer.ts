@@ -3541,6 +3541,12 @@ export class LuaTransformer {
                 case "Set":
                     this.importLuaLibFeature(LuaLibFeature.Set);
                     return;
+                case "WeakMap":
+                    this.importLuaLibFeature(LuaLibFeature.WeakMap);
+                    return;
+                case "WeakSet":
+                    this.importLuaLibFeature(LuaLibFeature.WeakSet);
+                    return;
             }
         }
     }

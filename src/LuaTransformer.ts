@@ -2815,6 +2815,11 @@ export class LuaTransformer {
             parameters = this.transformArguments(node.arguments, signature);
         }
 
+        const expressionType = this.checker.getTypeAtLocation(node.expression);
+        if (expressionType.symbol && expressionType.symbol.escapedName === "SymbolConstructor") {
+            return this.transformLuaLibFunction(LuaLibFeature.Symbol, node, ...parameters);
+        }
+
         const callExpression = tstl.createCallExpression(callPath, parameters);
         return wrapResult ? this.wrapInTable(callExpression) : callExpression;
     }
@@ -2848,6 +2853,10 @@ export class LuaTransformer {
 
         if (ownerType.symbol && ownerType.symbol.escapedName === "ObjectConstructor") {
             return this.transformObjectCallExpression(node);
+        }
+
+        if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
+            return this.transformSymbolCallExpression(node);
         }
 
         switch (ownerType.flags) {
@@ -3294,6 +3303,28 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `object property ${methodName}`,
+                    this.options.luaTarget,
+                    expression
+                );
+        }
+    }
+
+    // Transpile a Symbol._ property
+    public transformSymbolCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const parameters = this.transformArguments(expression.arguments);
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "for":
+            case "keyFor":
+                this.importLuaLibFeature(LuaLibFeature.SymbolRegistry);
+                const upperMethodName = methodName[0].toUpperCase() + methodName.slice(1);
+                const functionIdentifier = tstl.createIdentifier(`__TS__SymbolRegistry${upperMethodName}`);
+                return tstl.createCallExpression(functionIdentifier, parameters, expression);
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `symbol property ${methodName}`,
                     this.options.luaTarget,
                     expression
                 );

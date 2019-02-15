@@ -21,15 +21,13 @@ class WeakSet<TValue extends object> {
                 }
             } else {
                 for (const value of other as TValue[]) {
-                    this.add(value);
+                    this.items[value as any] = true;
                 }
             }
         }
     }
 
     public add(value: TValue): WeakSet<TValue> {
-        const valueType = typeof value;
-        if (valueType !== "object" && valueType !== "function") throw "​​​​​​Invalid value used in weak set​​";
         this.items[value as any] = true;
         return this;
     }

@@ -16,13 +16,6 @@ export class WeakSetTests {
         Expect(result).toBe(true);
     }
 
-    @Test("weakSet invalid constructor")
-    public weakSetInvalidConstructor(): void
-    {
-        Expect(() => util.transpileAndExecute(`new WeakSet(["a"])`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet([0])`)).toThrow();
-    }
-
     @Test("weakSet iterable constructor")
     public weakSetIterableConstructor(): void
     {
@@ -67,14 +60,6 @@ export class WeakSetTests {
         `);
 
         Expect(result).toBe(false);
-    }
-
-    @Test("weakSet add invalid")
-    public weakSetAddInvalid(): void
-    {
-        Expect(() => util.transpileAndExecute(`new WeakSet().add("a")`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().add(0)`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakSet().add(null)`)).toThrow();
     }
 
     @Test("weakSet delete")

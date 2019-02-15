@@ -16,13 +16,6 @@ export class WeakMapTests {
         Expect(result).toBe(1);
     }
 
-    @Test("weakMap invalid constructor")
-    public weakMapInvalidConstructor(): void
-    {
-        Expect(() => util.transpileAndExecute(`new WeakMap([["a", true]])`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap([[0, true]])`)).toThrow();
-    }
-
     @Test("weakMap iterable constructor")
     public weakMapIterableConstructor(): void
     {
@@ -125,14 +118,6 @@ export class WeakMapTests {
 
         const value = util.transpileAndExecute(init + `return mymap.get(ref)`);
         Expect(value).toBe(5);
-    }
-
-    @Test("weakMap set invalid")
-    public weakMapSetInvalid(): void
-    {
-        Expect(() => util.transpileAndExecute(`new WeakMap().set("a", true)`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().set(0, true)`)).toThrow();
-        Expect(() => util.transpileAndExecute(`new WeakMap().set(null, true)`)).toThrow();
     }
 
     @Test("weakMap has no map features")

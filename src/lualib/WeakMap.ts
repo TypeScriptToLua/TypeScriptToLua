@@ -22,7 +22,7 @@ class WeakMap<TKey extends object, TValue> {
                 }
             } else {
                 for (const kvp of other as Array<[TKey, TValue]>) {
-                    this.set(kvp[0], kvp[1]);
+                    this.items[kvp[0] as any] = kvp[1];
                 }
             }
         }
@@ -43,8 +43,6 @@ class WeakMap<TKey extends object, TValue> {
     }
 
     public set(key: TKey, value: TValue): WeakMap<TKey, TValue> {
-        const keyType = typeof key;
-        if (keyType !== "object" && keyType !== "function") throw "​​Invalid value used as weak map key​​";
         this.items[key as any] = value;
         return this;
     }

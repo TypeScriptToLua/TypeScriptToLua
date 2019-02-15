@@ -27,7 +27,7 @@
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "style-check": "tslint -p . && tslint -c src/lualib/tslint.json src/lualib/*.ts"
+        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
     },
     "bin": {
         "tstl": "./dist/index.js"

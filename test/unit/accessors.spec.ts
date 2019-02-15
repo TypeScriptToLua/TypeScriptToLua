@@ -53,6 +53,20 @@ export class AccessorTests {
         Expect(util.transpileAndExecute(code)).toBe("bar");
     }
 
+    @Test("get accessor override accessor")
+    public getAccessorOverrideAccessor(): void {
+        const code =
+            `class Foo {
+                get foo() { return "foo"; }
+            }
+            class Bar extends Foo {
+                get foo() { return "bar"; }
+            }
+            const b = new Bar();
+            return b.foo;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar");
+    }
+
     @Test("get accessor from interface")
     public getAccessorFromINterface(): void {
         const code =
@@ -125,6 +139,22 @@ export class AccessorTests {
             b.foo = "bar"
             return propOriginal + b.prop;`;
         Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @Test("set accessor override accessor")
+    public setAccessorOverrideAccessor(): void {
+        const code =
+            `class Foo {
+                prop = "prop";
+                set foo(val: string) { this.prop = "foo"; }
+            }
+            class Bar extends Foo {
+                set foo(val: string) { this.prop = val; }
+            }
+            const b = new Bar();
+            b.foo = "bar"
+            return b.prop;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar");
     }
 
     @Test("set accessor from interface")

@@ -381,10 +381,8 @@ export class TSHelper {
     }
 
     public static getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
-        if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName)) {
+        if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName) || ts.isNumericLiteral(propertyName)) {
             return propertyName.text;
-        } else if (ts.isNumericLiteral(propertyName)) {
-            return Number(propertyName.text);
         } else {
             return undefined; // TODO: how to handle computed property names?
         }

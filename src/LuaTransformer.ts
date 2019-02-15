@@ -541,7 +541,7 @@ export class LuaTransformer {
             // className.prototype.__index = __TS_Index(className.prototype)
             const assignClassPrototypeIndex = tstl.createAssignmentStatement(
                 classPrototypeIndex,
-                this.transformLuaLibFunction(LuaLibFeature.Index, createClassPrototype())
+                this.transformLuaLibFunction(LuaLibFeature.Index, undefined, createClassPrototype())
             );
             result.push(assignClassPrototypeIndex);
 
@@ -573,7 +573,7 @@ export class LuaTransformer {
             );
             const assignClassPrototypeIndex = tstl.createAssignmentStatement(
                 classPrototypeNewIndex,
-                this.transformLuaLibFunction(LuaLibFeature.NewIndex, createClassPrototype())
+                this.transformLuaLibFunction(LuaLibFeature.NewIndex, undefined, createClassPrototype())
             );
             result.push(assignClassPrototypeIndex);
         }

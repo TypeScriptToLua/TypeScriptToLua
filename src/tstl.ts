@@ -1,5 +1,5 @@
-export {parseCommandLine} from "./CommandLineParser";
-export {compile, compileFilesWithOptions, transpileString, watchWithOptions} from "./Compiler";
-export {CompilerOptions, LuaLibImportKind, LuaTarget,} from "./CompilerOptions";
-export {LuaLibFeature,} from "./LuaLib";
-export {LuaTranspiler,} from "./LuaTranspiler";
+#!/usr/bin/env node
+
+import {compile} from "./Compiler";
+
+compile(process.argv.slice(2));

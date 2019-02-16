@@ -15,8 +15,8 @@
         "dist/**/*.lua",
         "dist/**/*.ts"
     ],
-    "main": "dist/tstl.js",
-    "types": "dist/tstl.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
@@ -36,7 +36,7 @@
         "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
     },
     "bin": {
-        "tstl": "./dist/index.js"
+        "tstl": "./dist/tstl.js"
     },
     "nyc": {
         "all": true,

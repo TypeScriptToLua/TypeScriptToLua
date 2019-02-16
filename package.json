@@ -9,6 +9,12 @@
         "tstl",
         "transpiler"
     ],
+    "files": [
+        "dist/**/*.js",
+        "!dist/**/*.map.js",
+        "dist/**/*.lua",
+        "dist/**/*.ts"
+    ],
     "main": "dist/tstl.js",
     "types": "dist/tstl.d.ts",
     "scripts": {

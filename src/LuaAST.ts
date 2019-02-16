@@ -97,6 +97,8 @@ export type BinaryOperator =
 
 export type Operator = UnaryOperator | BinaryOperator;
 
+export type SymbolId = number;
+
 // TODO For future sourcemap support?
 export interface TextRange {
     pos: number;
@@ -791,15 +793,33 @@ export function createMethodCallExpression(
 export interface Identifier extends Expression {
     kind: SyntaxKind.Identifier;
     text: string;
+    symbolId?: SymbolId;
 }
 
 export function isIdentifier(node: Node): node is Identifier {
     return node.kind === SyntaxKind.Identifier;
 }
 
-export function createIdentifier(text: string | ts.__String, tsOriginal?: ts.Node, parent?: Node): Identifier {
+export function createIdentifier(
+    text: string | ts.__String,
+    tsOriginal?: ts.Node,
+    symbolId?: SymbolId,
+    parent?: Node
+): Identifier
+{
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
     expression.text = text as string;
+    expression.symbolId = symbolId;
+    return expression;
+}
+
+export function cloneIdentifier(identifier: Identifier): Identifier {
+    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+}
+
+export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
+    const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+    expression.text = "____";
     return expression;
 }
 

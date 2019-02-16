@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
@@ -387,5 +387,74 @@ export class FunctionTests {
         `;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foobar");
+    }
+
+    @TestCase(1, 1)
+    @TestCase(2, 42)
+    @Test("Generator functions value")
+    public generatorFunctionValue(iterations: number, expectedResult: number): void {
+        const code = `function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
+        }
+        const gen = seq(0);
+        let ret: number;
+        for(let i = 0; i < ${iterations}; ++i)
+        {
+            ret = gen.next(i).value;
+        }
+        return ret;
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectedResult);
+    }
+
+    @TestCase(1, false)
+    @TestCase(2, true)
+    @Test("Generator functions done")
+    public generatorFunctionDone(iterations: number, expectedResult: boolean): void {
+        const code = `function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
+        }
+        const gen = seq(0);
+        let ret: boolean;
+        for(let i = 0; i < ${iterations}; ++i)
+        {
+            ret = gen.next(i).done;
+        }
+        return ret;
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectedResult);
+    }
+
+    @Test("Generator for..of")
+    public generatorFunctionForOf(): void {
+        const code = `function* seq() {
+            yield(1);
+            yield(2);
+            yield(3);
+            return 4;
+        }
+        let result = 0;
+        for(let i of seq())
+        {
+            result = result * 10 + i;
+        }
+        return result`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(123);
+    }
+
+    @Test("Function local overriding export")
+    public functionLocalOverridingExport(): void {
+        const code =
+            `export const foo = 5;
+            function bar(foo: number) {
+                return foo;
+            }
+            export const result = bar(7);`;
+        Expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(7);
     }
 }

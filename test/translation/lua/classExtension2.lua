@@ -1,2 +1,2 @@
-TestClass.myFunction = function(self)
+TestClass.prototype.myFunction = function(self)
 end;

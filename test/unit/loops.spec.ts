@@ -680,6 +680,61 @@ export class LuaLoopTests
             + "the TupleReturn decorator.");
     }
 
+    @Test("forof forwarded lua iterator")
+    public forofForwardedLuaIterator(): void {
+        const code =
+            `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<string> {
+                let i = 0;
+                function iter() { return arr[i++]; }
+                return iter as any;
+            }
+            /** @luaIterator */
+            function forward(): Iterable<string> {
+                return luaIter();
+            }
+            let result = "";
+            for (let a of forward()) { result += a; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof forwarded lua iterator with tupleReturn")
+    public forofForwardedLuaIteratorWithTupleReturn(): void {
+        const code =
+            `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            /** @tupleReturn */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                /** @tupleReturn */
+                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+                return iter as any;
+            }
+            /** @luaIterator */
+            /** @tupleReturn */
+            function forward(): Iterable<[string, string]> {
+                return luaIter();
+            }
+            let result = "";
+            for (let [a, b] of forward()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("0a1b2c");
+    }
+
     @TestCase("while (a < b) { i++; }")
     @TestCase("do { i++; } while (a < b)")
     @TestCase("for (let i = 0; i < 3; i++) {}")
@@ -694,10 +749,10 @@ export class LuaLoopTests
         const luajit = util.transpileString(loop, { luaTarget: LuaTarget.LuaJIT });
 
         // Assert
-        Expect(lua51.indexOf("::__continue0::") !== -1).toBe(false); // No labels in 5.1
-        Expect(lua52.indexOf("::__continue0::") !== -1).toBe(true); // Labels from 5.2 onwards
-        Expect(lua53.indexOf("::__continue0::") !== -1).toBe(true);
-        Expect(luajit.indexOf("::__continue0::") !== -1).toBe(true);
+        Expect(lua51.indexOf("::__continue1::") !== -1).toBe(false); // No labels in 5.1
+        Expect(lua52.indexOf("::__continue1::") !== -1).toBe(true); // Labels from 5.2 onwards
+        Expect(lua53.indexOf("::__continue1::") !== -1).toBe(true);
+        Expect(luajit.indexOf("::__continue1::") !== -1).toBe(true);
     }
 
     @Test("for dead code after return")

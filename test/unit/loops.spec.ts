@@ -104,6 +104,80 @@ export class LuaLoopTests
     }
 
     @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("for with less-equal")
+    public forLessEqual(inp: number[], expected: number[]): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            const stop = arrTest.length - 1;
+            for (let i = 0; i <= stop; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("for reverse")
+    public forReverse(inp: number[], expected: number[]): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (let i = arrTest.length - 1; i > -1; --i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
+    @Test("for reverse greater-equal")
+    public forReverseGreaterEqual(inp: number[], expected: number[]): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (let i = arrTest.length - 1; i >= 0; --i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`
+        );
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 1, 3, 3])
+    @Test("for modify incrementor")
+    public forModifyIncrementor(inp: number[], expected: number[]): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            for (let i = 0; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+                ++i;
+            }
+            return JSONStringify(arrTest);`
+        );
+        // Assert
+        Expect(result).toBe(JSON.stringify(expected));
+    }
+
+    @Test("for scope")
+    public forScope(): void
+    {
+        const result = util.transpileAndExecute(
+            `let i = 37;
+            for (let i = 1; i < 8; i *= 2) {} // Prevent lua numerical for loop from being used
+            return i;`
+        );
+        // Assert
+        Expect(result).toBe(37);
+    }
+
+    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
     @Test("for with expression")
     public forWithExpression(inp: number[], expected: number[]): void
     {

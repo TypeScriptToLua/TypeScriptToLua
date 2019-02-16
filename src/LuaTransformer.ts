@@ -32,6 +32,7 @@ interface FunctionDefinitionInfo {
 interface Scope {
     type: ScopeType;
     id: number;
+    assignedSymbols?: Set<tstl.SymbolId>;
     referencedSymbols?: Set<tstl.SymbolId>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
@@ -1535,16 +1536,18 @@ export class LuaTransformer {
     }
 
     public transformWhileStatement(statement: ts.WhileStatement): tstl.WhileStatement {
+        const [body] = this.transformLoopBody(statement);
         return tstl.createWhileStatement(
-            tstl.createBlock(this.transformLoopBody(statement)),
+            tstl.createBlock(body),
             this.transformExpression(statement.expression),
             statement
         );
     }
 
     public transformDoStatement(statement: ts.DoStatement): tstl.RepeatStatement {
+        const [body] = this.transformLoopBody(statement);
         return tstl.createRepeatStatement(
-            tstl.createBlock(this.transformLoopBody(statement)),
+            tstl.createBlock(body),
             tstl.createUnaryExpression(this.transformExpression(statement.expression), tstl.SyntaxKind.NotOperator),
             statement
         );
@@ -1553,7 +1556,8 @@ export class LuaTransformer {
     public transformNumericForStatement(
         statement: ts.ForStatement,
         incrementor: tstl.Statement,
-        body: tstl.Statement[]
+        body: tstl.Statement[],
+        loopScope: Scope
     ): tstl.ForStatement | undefined
     {
         // Incrementor must be "i = i + n" or "i = i - n"
@@ -1575,7 +1579,12 @@ export class LuaTransformer {
             return undefined;
         }
 
-        // Initializer must be "var|let|const i = n"
+        //Loop variable cannot be assigned in loop body
+        if (loopScope.assignedSymbols && loopScope.assignedSymbols.has(incrementorVar.symbolId)) {
+            return undefined;
+        }
+
+        // Initializer must be "let i = n"
         if (!statement.initializer
             || !ts.isVariableDeclarationList(statement.initializer)
             || statement.initializer.declarations.length !== 1)
@@ -1649,13 +1658,13 @@ export class LuaTransformer {
     public transformForStatement(statement: ts.ForStatement): tstl.Statement {
         const result: tstl.Statement[] = [];
 
-        const body: tstl.Statement[] = this.transformLoopBody(statement);
+        const [body, loopScope] = this.transformLoopBody(statement);
 
         let incrementor: tstl.Statement | undefined;
         if (statement.incrementor) {
             incrementor = this.transformExpressionStatement(statement.incrementor);
 
-            const numericForStatement = this.transformNumericForStatement(statement, incrementor, body);
+            const numericForStatement = this.transformNumericForStatement(statement, incrementor, body, loopScope);
             if (numericForStatement) {
                 return numericForStatement;
             }
@@ -1713,7 +1722,7 @@ export class LuaTransformer {
 
     public transformLoopBody(
         loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
-    ): tstl.Statement[]
+    ): [tstl.Statement[], Scope]
     {
         this.pushScope(ScopeType.Loop, loop.statement);
         const body = this.performHoisting(this.transformBlockOrStatement(loop.statement));
@@ -1721,14 +1730,14 @@ export class LuaTransformer {
         const scopeId = scope.id;
 
         if (this.options.luaTarget === LuaTarget.Lua51) {
-            return body;
+            return [body, scope];
         }
 
         const baseResult: tstl.Statement[] = [tstl.createDoStatement(body)];
         const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
         baseResult.push(continueLabel);
 
-        return baseResult;
+        return [baseResult, scope];
     }
 
     public transformBlockOrStatement(statement: ts.Statement): tstl.Statement[] {
@@ -1875,7 +1884,8 @@ export class LuaTransformer {
 
     public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
         // Transpile body
-        const body = tstl.createBlock(this.transformLoopBody(statement));
+        const [loopBody] = this.transformLoopBody(statement);
+        const body = tstl.createBlock(loopBody);
 
         if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
             // Arrays
@@ -1904,7 +1914,8 @@ export class LuaTransformer {
             throw TSTLErrors.ForbiddenForIn(statement);
         }
 
-        const body = tstl.createBlock(this.transformLoopBody(statement));
+        const [loopBody] = this.transformLoopBody(statement);
+        const body = tstl.createBlock(loopBody);
 
         return tstl.createForInStatement(
             body,
@@ -2241,6 +2252,19 @@ export class LuaTransformer {
         }
     }
 
+    // Tracks symbols assigned in scope - used in detection of viable numerical for loops
+    public trackAssignment(statement: tstl.AssignmentStatement): void {
+        for (const identifier of statement.left) {
+            if (tstl.isIdentifier(identifier) && identifier.symbolId !== undefined) {
+                for (let i = this.scopeStack.length - 1; i >= 0; --i) {
+                    const scope = this.scopeStack[i];
+                    if (!scope.assignedSymbols) { scope.assignedSymbols = new Set(); }
+                    scope.assignedSymbols.add(identifier.symbolId);
+                }
+            }
+        }
+    }
+
     public transformAssignment(lhs: ts.Expression, right: tstl.Expression): tstl.Statement {
         if (ts.isPropertyAccessExpression(lhs)) {
             const hasSetAccessor = tsHelper.hasSetAccessor(lhs, this.checker);
@@ -2252,11 +2276,13 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedUnionAccessor(lhs);
             }
         }
-        return tstl.createAssignmentStatement(
+        const statement = tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression,
             right,
             lhs.parent
         );
+        this.trackAssignment(statement);
+        return statement;
     }
 
     public transformAssignmentStatement(expression: ts.BinaryExpression): tstl.Statement {
@@ -2276,11 +2302,13 @@ export class LuaTransformer {
             } else {
                 right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
-            return tstl.createAssignmentStatement(
+            const statement = tstl.createAssignmentStatement(
                 left as tstl.IdentifierOrTableIndexExpression[],
                 right,
                 expression
             );
+            this.trackAssignment(statement);
+            return statement;
         } else {
             // Simple assignment
             return this.transformAssignment(expression.left, this.transformExpression(expression.right));

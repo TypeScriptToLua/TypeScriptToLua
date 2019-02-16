@@ -34,6 +34,16 @@ export class SymbolTests {
         Expect(result).toBe(description);
     }
 
+    @Test("symbol uniqueness")
+    public symbolUniqueness(): void
+    {
+        const result = util.transpileAndExecute(`
+            return Symbol("a") === Symbol("a");
+        `);
+
+        Expect(result).toBe(false);
+    }
+
     @Test("Symbol.for")
     public symbolFor(): void
     {
@@ -44,8 +54,8 @@ export class SymbolTests {
         Expect(result).toBe("name");
     }
 
-    @Test("Symbol.for reference")
-    public symbolForReference(): void
+    @Test("Symbol.for non-uniqueness")
+    public symbolForNonUniqueness(): void
     {
         const result = util.transpileAndExecute(`
             return Symbol.for("a") === Symbol.for("a");

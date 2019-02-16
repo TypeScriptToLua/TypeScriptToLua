@@ -5,7 +5,6 @@ import * as ts from "typescript";
 import * as util from "../src/util";
 
 export class LuaModuleTests {
-
     @Test("defaultImport")
     public defaultImport(): void {
         Expect(() => {
@@ -16,8 +15,10 @@ export class LuaModuleTests {
     @Test("lualibRequire")
     public lualibRequire(): void {
         // Transpile
-        const lua = util.transpileString(`let a = b instanceof c;`,
-                                         { luaLibImport: LuaLibImportKind.Require, luaTarget: LuaTarget.LuaJIT });
+        const lua = util.transpileString(`let a = b instanceof c;`, {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.LuaJIT,
+        });
 
         // Assert
         Expect(lua.startsWith(`require("lualib_bundle")`));
@@ -38,7 +39,7 @@ export class LuaModuleTests {
             "return g.test();",
             undefined,
             undefined,
-            "module g { export function test() { return 3; } }" // Typescript header
+            "module g { export function test() { return 3; } }", // Typescript header
         );
 
         Expect(result).toBe(3);

@@ -7,7 +7,7 @@ import { LuaLibImportKind } from "./CompilerOptions";
 
 export class LuaPrinter {
     /* tslint:disable:object-literal-sort-keys */
-    private static operatorMap: {[key in tstl.Operator]: string} = {
+    private static operatorMap: { [key in tstl.Operator]: string } = {
         [tstl.SyntaxKind.AdditionOperator]: "+",
         [tstl.SyntaxKind.SubractionOperator]: "-",
         [tstl.SyntaxKind.MultiplicationOperator]: "*",
@@ -54,14 +54,14 @@ export class LuaPrinter {
 
         if (luaLibFeatures) {
             // Require lualib bundle
-            if ((this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
-                || this.options.luaLibImport === LuaLibImportKind.Always)
-            {
+            if (
+                (this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0) ||
+                this.options.luaLibImport === LuaLibImportKind.Always
+            ) {
                 header += `require("lualib_bundle");\n`;
             }
             // Inline lualib features
-            else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
-            {
+            else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
                 header += LuaLib.loadFeatures(luaLibFeatures);
             }
@@ -83,7 +83,9 @@ export class LuaPrinter {
     }
 
     private printBlock(block: tstl.Block): string {
-        return this.ignoreDeadStatements(block.statements).map(s => this.printStatement(s)).join("");
+        return this.ignoreDeadStatements(block.statements)
+            .map(s => this.printStatement(s))
+            .join("");
     }
 
     private printStatement(statement: tstl.Statement): string {
@@ -120,7 +122,9 @@ export class LuaPrinter {
     private printDoStatement(statement: tstl.DoStatement): string {
         let result = this.indent("do\n");
         this.pushIndent();
-        result += this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)).join("");
+        result += this.ignoreDeadStatements(statement.statements)
+            .map(s => this.printStatement(s))
+            .join("");
         this.popIndent();
         result += this.indent("end\n");
 
@@ -139,7 +143,8 @@ export class LuaPrinter {
     private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): string {
         return this.indent(
             `${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
-            `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
+                `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`,
+        );
     }
 
     private printIfStatement(statement: tstl.IfStatement, isElseIf?: boolean): string {
@@ -360,8 +365,11 @@ export class LuaPrinter {
     }
 
     private needsParentheses(expression: tstl.Expression): boolean {
-        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression)
-            || tstl.isFunctionExpression(expression);
+        return (
+            tstl.isBinaryExpression(expression) ||
+            tstl.isUnaryExpression(expression) ||
+            tstl.isFunctionExpression(expression)
+        );
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): string {

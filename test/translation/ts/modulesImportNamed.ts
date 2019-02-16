@@ -1,1 +1,1 @@
-import {TestClass} from "test"
+import { TestClass } from "test";

@@ -4,9 +4,9 @@ import * as ts from "typescript";
 
 import * as tstl from "./LuaAST";
 
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {LuaPrinter} from "./LuaPrinter";
-import {LuaTransformer} from "./LuaTransformer";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
+import { LuaPrinter } from "./LuaPrinter";
+import { LuaTransformer } from "./LuaTransformer";
 
 export class LuaTranspiler {
     private program: ts.Program;
@@ -57,10 +57,7 @@ export class LuaTranspiler {
 
     public emitLuaLib(): string {
         const outPath = path.join(this.options.outDir, "lualib_bundle.lua");
-        fs.copyFileSync(
-            path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-            outPath
-        );
+        fs.copyFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), outPath);
         return outPath;
     }
 
@@ -75,8 +72,9 @@ export class LuaTranspiler {
         });
 
         // Copy lualib to target dir
-        if (this.options.luaLibImport === LuaLibImportKind.Require
-            || this.options.luaLibImport === LuaLibImportKind.Always
+        if (
+            this.options.luaLibImport === LuaLibImportKind.Require ||
+            this.options.luaLibImport === LuaLibImportKind.Always
         ) {
             this.emitLuaLib();
         }
@@ -142,7 +140,7 @@ export class LuaTranspiler {
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {
         if (diagnostic.file) {
-            const {line, character} = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
+            const { line, character } = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!);
             const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n");
             console.log(`${diagnostic.code}: ${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`);
         } else {

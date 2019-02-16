@@ -3,13 +3,12 @@ import * as util from "../src/util";
 
 export class TupleTests {
     @Test("Tuple loop")
-    public tupleLoop(): void
-    {
+    public tupleLoop(): void {
         const result = util.transpileAndExecute(
             `const tuple: [number, number, number] = [3,5,1];
             let count = 0;
             for (const value of tuple) { count += value; }
-            return count;`
+            return count;`,
         );
 
         // Assert
@@ -17,13 +16,12 @@ export class TupleTests {
     }
 
     @Test("Tuple foreach")
-    public tupleForEach(): void
-    {
+    public tupleForEach(): void {
         const result = util.transpileAndExecute(
             `const tuple: [number, number, number] = [3,5,1];
             let count = 0;
             tuple.forEach(v => count += v);
-            return count;`
+            return count;`,
         );
 
         // Assert
@@ -31,11 +29,10 @@ export class TupleTests {
     }
 
     @Test("Tuple access")
-    public tupleAccess(): void
-    {
+    public tupleAccess(): void {
         const result = util.transpileAndExecute(
             `const tuple: [number, number, number] = [3,5,1];
-            return tuple[1];`
+            return tuple[1];`,
         );
 
         // Assert
@@ -43,19 +40,17 @@ export class TupleTests {
     }
 
     @Test("Tuple union access")
-    public tupleUnionAccess(): void
-    {
+    public tupleUnionAccess(): void {
         const result = util.transpileAndExecute(
             `function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }
             const tuple = makeTuple();
-            return tuple[1];`
+            return tuple[1];`,
         );
         Expect(result).toBe(5);
     }
 
     @Test("Tuple intersection access")
-    public tupleIntersectionAccess(): void
-    {
+    public tupleIntersectionAccess(): void {
         const result = util.transpileAndExecute(
             `type I = [number, number, number] & {foo: string};
             function makeTuple(): I {
@@ -64,18 +59,17 @@ export class TupleTests {
                 return (t as I);
             }
             const tuple = makeTuple();
-            return tuple[1];`
+            return tuple[1];`,
         );
         Expect(result).toBe(5);
     }
 
     @Test("Tuple Destruct")
-    public tupleDestruct(): void
-    {
+    public tupleDestruct(): void {
         const result = util.transpileAndExecute(
             `function tuple(): [number, number, number] { return [3,5,1]; }
             const [a,b,c] = tuple();
-            return b;`
+            return b;`,
         );
 
         // Assert
@@ -83,11 +77,10 @@ export class TupleTests {
     }
 
     @Test("Tuple length")
-    public tupleLength(): void
-    {
+    public tupleLength(): void {
         const result = util.transpileAndExecute(
             `const tuple: [number, number, number] = [3,5,1];
-            return tuple.length;`
+            return tuple.length;`,
         );
 
         // Assert
@@ -95,12 +88,11 @@ export class TupleTests {
     }
 
     @Test("Tuple Return Access")
-    public tupleReturnAccess(): void
-    {
+    public tupleReturnAccess(): void {
         const result = util.transpileAndExecute(
             `/** @tupleReturn */
             function tuple(): [number, number, number] { return [3,5,1]; }
-            return tuple()[2];`
+            return tuple()[2];`,
         );
 
         // Assert
@@ -108,13 +100,12 @@ export class TupleTests {
     }
 
     @Test("Tuple Return Destruct Declaration")
-    public tupleReturnDestructDeclaration(): void
-    {
+    public tupleReturnDestructDeclaration(): void {
         const result = util.transpileAndExecute(
             `/** @tupleReturn */
             function tuple(): [number, number, number] { return [3,5,1]; }
             const [a,b,c] = tuple();
-            return b;`
+            return b;`,
         );
 
         // Assert
@@ -122,14 +113,13 @@ export class TupleTests {
     }
 
     @Test("Tuple Return Destruct Assignment")
-    public tupleReturnDestructAssignment(): void
-    {
+    public tupleReturnDestructAssignment(): void {
         const result = util.transpileAndExecute(
             `/** @tupleReturn */
             function tuple(): [number, number] { return [3,6]; }
             let [a,b] = [1,2];
             [b,a] = tuple();
-            return a - b;`
+            return a - b;`,
         );
 
         // Assert
@@ -137,15 +127,14 @@ export class TupleTests {
     }
 
     @Test("Tuple Static Method Return Destruct")
-    public tupleStaticMethodReturnDestruct(): void
-    {
+    public tupleStaticMethodReturnDestruct(): void {
         const result = util.transpileAndExecute(
             `class Test {
                 /** @tupleReturn */
                 static tuple(): [number, number, number] { return [3,5,1]; }
             }
             const [a,b,c] = Test.tuple();
-            return b;`
+            return b;`,
         );
 
         // Assert
@@ -153,8 +142,7 @@ export class TupleTests {
     }
 
     @Test("Tuple Non-Static Method Return Destruct")
-    public tupleMethodNonStaticReturnDestruct(): void
-    {
+    public tupleMethodNonStaticReturnDestruct(): void {
         const result = util.transpileAndExecute(
             `class Test {
                 /** @tupleReturn */
@@ -162,7 +150,7 @@ export class TupleTests {
             }
             const t = new Test();
             const [a,b,c] = t.tuple();
-            return b;`
+            return b;`,
         );
 
         // Assert

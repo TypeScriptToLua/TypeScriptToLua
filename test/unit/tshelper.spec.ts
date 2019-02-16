@@ -13,7 +13,6 @@ enum TestEnum {
 }
 
 export class TSHelperTests {
-
     @TestCase(TestEnum.testA, "testA")
     @TestCase(-1, "unknown")
     @TestCase(TestEnum.testA | TestEnum.testB, "unknown")

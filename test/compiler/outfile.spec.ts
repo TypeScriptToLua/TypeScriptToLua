@@ -4,7 +4,6 @@ import * as path from "path";
 import { compile } from "../../src/Compiler";
 
 export class CompilerOutFileTests {
-
     private outFileRelPath: string;
     private outFileAbsPath: string;
 
@@ -38,7 +37,7 @@ export class CompilerOutFileTests {
 
     @Teardown
     public teardown() {
-        fs.unlink(this.outFileAbsPath, (err) => {
+        fs.unlink(this.outFileAbsPath, err => {
             if (err) {
                 throw err;
             }

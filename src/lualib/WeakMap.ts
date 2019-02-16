@@ -1,11 +1,11 @@
 declare function setmetatable<T extends object>(obj: T, metatable: any): T;
 
 class WeakMap<TKey extends object, TValue> {
-    private items: {[key: string]: TValue}; // Type of key is actually TKey
+    private items: { [key: string]: TValue }; // Type of key is actually TKey
 
     constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
         this.items = {};
-        setmetatable(this.items, { __mode: 'k' });
+        setmetatable(this.items, { __mode: "k" });
 
         if (other) {
             const iterable = other as Iterable<[TKey, TValue]>;

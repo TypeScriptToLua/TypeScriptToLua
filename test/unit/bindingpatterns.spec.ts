@@ -17,23 +17,15 @@ const testCases = [
     ["{x: {x, y}, z}", "{x: {x: false, y: false}, z: true}", "z"],
 ];
 
-const testCasesDefault = [
-    ["{x = true}", "{}", "x"],
-    ["{x, y = true}", "{x: false}", "y"],
-];
+const testCasesDefault = [["{x = true}", "{}", "x"], ["{x, y = true}", "{x: false}", "y"]];
 
 export class BindingPatternTests {
-
     @TestCase("{x, y}, z", "{x: false, y: false}, true", "z")
     @TestCase("{x, y}, {z}", "{x: false, y: false}, {z: true}", "z")
     @TestCases(testCases)
     @TestCases(testCasesDefault)
     @Test("Object bindings in functions")
-    public tesBindingPatternParameters(
-        bindingString: string,
-        objectString: string,
-        returnVariable: string
-    ): void {
+    public tesBindingPatternParameters(bindingString: string, objectString: string, returnVariable: string): void {
         const result = util.transpileAndExecute(`
             function test(${bindingString}) {
                 return ${returnVariable};
@@ -45,11 +37,7 @@ export class BindingPatternTests {
 
     @TestCases(testCases)
     @TestCases(testCasesDefault)
-    public testBindingPatternDeclarations(
-        bindingString: string,
-        objectString: string,
-        returnVariable: string
-    ): void {
+    public testBindingPatternDeclarations(bindingString: string, objectString: string, returnVariable: string): void {
         const result = util.transpileAndExecute(`
             let ${bindingString} = ${objectString};
             return ${returnVariable};
@@ -62,7 +50,7 @@ export class BindingPatternTests {
     public testBindingPatternCallExpressions(
         bindingString: string,
         objectString: string,
-        returnVariable: string
+        returnVariable: string,
     ): void {
         const result = util.transpileAndExecute(`
             function call() {
@@ -73,5 +61,4 @@ export class BindingPatternTests {
         `);
         Expect(result).toBe(true);
     }
-
 }

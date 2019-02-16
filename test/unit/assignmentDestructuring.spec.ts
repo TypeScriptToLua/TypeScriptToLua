@@ -3,7 +3,6 @@ import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class AssignmentDestructuringTests {
-
     private readonly assignmentDestruturingTs = `
         declare function myFunc(): [number, string];
         let [a, b] = myFunc();`;
@@ -11,9 +10,10 @@ export class AssignmentDestructuringTests {
     @Test("Assignment destructuring [5.1]")
     public assignmentDestructuring51(): void {
         // Transpile
-        const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None}
-        );
+        const lua = util.transpileString(this.assignmentDestruturingTs, {
+            luaTarget: LuaTarget.Lua51,
+            luaLibImport: LuaLibImportKind.None,
+        });
         // Assert
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
@@ -21,9 +21,10 @@ export class AssignmentDestructuringTests {
     @Test("Assignment destructuring [5.2]")
     public tupleDestructing52(): void {
         // Transpile
-        const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None}
-        );
+        const lua = util.transpileString(this.assignmentDestruturingTs, {
+            luaTarget: LuaTarget.Lua52,
+            luaLibImport: LuaLibImportKind.None,
+        });
         // Assert
         Expect(lua).toBe(`local a, b = table.unpack(myFunc());`);
     }
@@ -31,9 +32,10 @@ export class AssignmentDestructuringTests {
     @Test("Assignment destructuring [JIT]")
     public assignmentDestructuringJIT(): void {
         // Transpile
-        const lua = util.transpileString(
-            this.assignmentDestruturingTs, {luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None}
-        );
+        const lua = util.transpileString(this.assignmentDestruturingTs, {
+            luaTarget: LuaTarget.LuaJIT,
+            luaLibImport: LuaLibImportKind.None,
+        });
         // Assert
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }

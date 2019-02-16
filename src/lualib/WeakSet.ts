@@ -1,11 +1,11 @@
 declare function setmetatable<T extends object>(obj: T, metatable: any): T;
 
 class WeakSet<TValue extends object> {
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+    private items: { [key: string]: boolean }; // Key type is actually TValue
 
     constructor(other: Iterable<TValue> | TValue[]) {
         this.items = {};
-        setmetatable(this.items, { __mode: 'k' });
+        setmetatable(this.items, { __mode: "k" });
 
         if (other) {
             const iterable = other as Iterable<TValue>;

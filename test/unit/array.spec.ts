@@ -6,7 +6,7 @@ export class ArrayTests {
     public arrayAccess(): void {
         const result = util.transpileAndExecute(
             `const arr: number[] = [3,5,1];
-            return arr[1];`
+            return arr[1];`,
         );
         Expect(result).toBe(5);
     }
@@ -16,7 +16,7 @@ export class ArrayTests {
         const result = util.transpileAndExecute(
             `function makeArray(): number[] | string[] { return [3,5,1]; }
             const arr = makeArray();
-            return arr[1];`
+            return arr[1];`,
         );
         Expect(result).toBe(5);
     }
@@ -26,7 +26,7 @@ export class ArrayTests {
         const result = util.transpileAndExecute(
             `function makeArray(): number[] | string[] { return [3,5,1]; }
             const arr = makeArray();
-            return arr.length;`
+            return arr.length;`,
         );
         Expect(result).toBe(3);
     }
@@ -41,7 +41,7 @@ export class ArrayTests {
                 return (t as I);
             }
             const arr = makeArray();
-            return arr[1];`
+            return arr[1];`,
         );
         Expect(result).toBe(5);
     }
@@ -56,7 +56,7 @@ export class ArrayTests {
                 return (t as I);
             }
             const arr = makeArray();
-            return arr.length;`
+            return arr.length;`,
         );
         Expect(result).toBe(3);
     }
@@ -67,8 +67,7 @@ export class ArrayTests {
     @Test("Derived array access")
     public derivedArrayAccess(member: string, expected: any): void {
         const luaHeader = `local arr = {name="array", firstElement=function(self) return self[1]; end};`;
-        const typeScriptHeader =
-            `interface CustomArray<T> extends Array<T>{
+        const typeScriptHeader = `interface CustomArray<T> extends Array<T>{
                 name:string,
                 firstElement():number;
             };
@@ -80,7 +79,7 @@ export class ArrayTests {
             return arr.${member};`,
             undefined,
             luaHeader,
-            typeScriptHeader
+            typeScriptHeader,
         );
 
         Expect(result).toBe(expected);
@@ -91,7 +90,7 @@ export class ArrayTests {
         const result = util.transpileAndExecute(
             `const myarray = [1,2,3,4];
             delete myarray[2];
-            return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
+            return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
         );
 
         Expect(result).toBe("1,2,nil,4");
@@ -102,7 +101,7 @@ export class ArrayTests {
         const result = util.transpileAndExecute(
             `const myarray = [1,2,3,4];
             const exists = delete myarray[2];
-            return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
+            return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
         );
 
         Expect(result).toBe("true:1,2,nil,4");
@@ -113,7 +112,7 @@ export class ArrayTests {
         const result = util.transpileAndExecute(
             `const myarray = [1,2,3,4];
             const exists = delete myarray[4];
-            return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
+            return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
         );
 
         Expect(result).toBe("true:1,2,3,4");
@@ -121,8 +120,7 @@ export class ArrayTests {
 
     @Test("Array property access")
     public arrayPropertyAccess(): void {
-        const code =
-            `type A = number[] & {foo?: string};
+        const code = `type A = number[] & {foo?: string};
             const a: A = [1,2,3];
             a.foo = "bar";
             return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;`;

@@ -4,7 +4,6 @@ import * as util from "../src/util";
 const fs = require("fs");
 
 export class ObjectLiteralTests {
-
     @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"};`)
     @TestCase(`{"a":3,b:"4"}`, `{a = 3, b = "4"};`)
     @TestCase(`{["a"]:3,b:"4"}`, `{a = 3, b = "4"};`)

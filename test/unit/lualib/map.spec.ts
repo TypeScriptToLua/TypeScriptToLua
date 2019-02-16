@@ -3,26 +3,24 @@ import * as util from "../../src/util";
 
 export class MapTests {
     @Test("map constructor")
-    public mapConstructor(): void
-    {
+    public mapConstructor(): void {
         const result = util.transpileAndExecute(`let mymap = new Map(); return mymap.size;`);
 
         Expect(result).toBe(0);
     }
 
     @Test("map iterable constructor")
-    public mapIterableConstructor(): void
-    {
+    public mapIterableConstructor(): void {
         const result = util.transpileAndExecute(
             `let mymap = new Map([["a", "c"],["b", "d"]]);
-             return mymap.has("a") && mymap.has("b");`);
+             return mymap.has("a") && mymap.has("b");`,
+        );
 
         Expect(result).toBe(true);
     }
 
     @Test("map iterable constructor map")
-    public mapIterableConstructor2(): void
-    {
+    public mapIterableConstructor2(): void {
         const result = util.transpileAndExecute(`let mymap = new Map(new Map([["a", "c"],["b", "d"]]));
                                           return mymap.has("a") && mymap.has("b");`);
 
@@ -30,8 +28,7 @@ export class MapTests {
     }
 
     @Test("map clear")
-    public mapClear(): void
-    {
+    public mapClear(): void {
         const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();`;
         const size = util.transpileAndExecute(mapTS + `return mymap.size;`);
         Expect(size).toBe(0);
@@ -41,103 +38,92 @@ export class MapTests {
     }
 
     @Test("map delete")
-    public mapDelete(): void
-    {
+    public mapDelete(): void {
         const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.delete("a");`;
         const contains = util.transpileAndExecute(mapTS + `return mymap.has("b") && !mymap.has("a");`);
         Expect(contains).toBe(true);
     }
 
     @Test("map entries")
-    public mapEntries(): void
-    {
+    public mapEntries(): void {
         const result = util.transpileAndExecute(
             `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
             let count = 0;
             for (var [key, value] of mymap.entries()) { count += key + value; }
-            return count;`
+            return count;`,
         );
         Expect(result).toBe(27);
     }
 
     @Test("map foreach")
-    public mapForEach(): void
-    {
+    public mapForEach(): void {
         const result = util.transpileAndExecute(
             `let mymap = new Map([["a", 2],["b", 3],["c", 4]]);
             let count = 0;
             mymap.forEach(i => count += i);
-            return count;`
+            return count;`,
         );
 
         Expect(result).toBe(9);
     }
 
     @Test("map foreach keys")
-    public mapForEachKeys(): void
-    {
+    public mapForEachKeys(): void {
         const result = util.transpileAndExecute(
             `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
             let count = 0;
             mymap.forEach((value, key) => { count += key; });
-            return count;`
+            return count;`,
         );
 
         Expect(result).toBe(18);
     }
 
     @Test("map get")
-    public mapGet(): void
-    {
+    public mapGet(): void {
         const result = util.transpileAndExecute(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("a");`);
 
         Expect(result).toBe("c");
     }
 
     @Test("map get missing")
-    public mapGetMissing(): void
-    {
+    public mapGetMissing(): void {
         const result = util.transpileAndExecute(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");`);
         Expect(result).toBe(undefined);
     }
 
     @Test("map has")
-    public mapHas(): void
-    {
+    public mapHas(): void {
         const contains = util.transpileAndExecute(`let mymap = new Map([["a", "c"]]); return mymap.has("a");`);
         Expect(contains).toBe(true);
     }
 
     @Test("map has false")
-    public mapHasFalse(): void
-    {
+    public mapHasFalse(): void {
         const contains = util.transpileAndExecute(`let mymap = new Map(); return mymap.has("a");`);
         Expect(contains).toBe(false);
     }
 
     @Test("map has null")
-    public mapHasNull(): void
-    {
+    public mapHasNull(): void {
         const contains = util.transpileAndExecute(`let mymap = new Map([["a", "c"]]); return mymap.has(null);`);
         Expect(contains).toBe(false);
     }
 
     @Test("map keys")
-    public mapKeys(): void
-    {
+    public mapKeys(): void {
         const result = util.transpileAndExecute(
             `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
             let count = 0;
             for (var key of mymap.keys()) { count += key; }
-            return count;`
+            return count;`,
         );
 
         Expect(result).toBe(18);
     }
 
     @Test("map set")
-    public mapSet(): void
-    {
+    public mapSet(): void {
         const mapTS = `let mymap = new Map(); mymap.set("a", 5);`;
         const has = util.transpileAndExecute(mapTS + `return mymap.has("a");`);
         Expect(has).toBe(true);
@@ -152,7 +138,7 @@ export class MapTests {
             `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
             let count = 0;
             for (var value of mymap.values()) { count += value; }
-            return count;`
+            return count;`,
         );
 
         Expect(result).toBe(9);

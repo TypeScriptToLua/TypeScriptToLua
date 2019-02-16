@@ -4,13 +4,10 @@ import * as util from "../src/util";
 import { TranspileError } from "../../src/TranspileError";
 
 export class LuaErrorTests {
-
     @Test("throwString")
     public trowString(): void {
         // Transpile
-        const lua = util.transpileString(
-            `throw "Some Error"`
-        );
+        const lua = util.transpileString(`throw "Some Error"`);
         // Assert
         Expect(lua).toBe(`error("Some Error");`);
     }
@@ -19,9 +16,7 @@ export class LuaErrorTests {
     public throwError(): void {
         // Transpile & Asser
         Expect(() => {
-            const lua = util.transpileString(
-                `throw Error("Some Error")`
-            );
+            const lua = util.transpileString(`throw Error("Some Error")`);
         }).toThrowError(TranspileError, "Invalid throw expression, only strings can be thrown.");
     }
 
@@ -30,8 +25,7 @@ export class LuaErrorTests {
     @TestCase(2, "C")
     @Test("re-throw")
     public reThrow(i: number, expected: any): void {
-        const source =
-            `const i: number = ${i};
+        const source = `const i: number = ${i};
             function foo() {
                 try {
                     try {
@@ -60,8 +54,7 @@ export class LuaErrorTests {
 
     @Test("re-throw (no catch var)")
     public reThrowWithoutCatchVar(): void {
-        const source =
-            `let result = "x";
+        const source = `let result = "x";
             try {
                 try {
                     throw "y";

@@ -1,8 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
-export class DeclarationTests
-{
+export class DeclarationTests {
     @Test("Declaration function call")
     public declarationFunctionCall(): void {
         // Arrange
@@ -106,8 +105,7 @@ export class DeclarationTests
             myInstance.x = 10
             function myInstance:declaredFunction(callback) return callback(self.x) end`;
 
-        const tsHeader =
-            `declare interface MyInterface {
+        const tsHeader = `declare interface MyInterface {
                 declaredFunction(callback: (x: number) => number): number;
             }
             declare var myInstance: MyInterface;`;

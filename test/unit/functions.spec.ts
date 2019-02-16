@@ -4,10 +4,8 @@ import * as ts from "typescript";
 import * as util from "../src/util";
 
 export class FunctionTests {
-
     @Test("Arrow Function Expression")
-    public arrowFunctionExpression(): void
-    {
+    public arrowFunctionExpression(): void {
         const result = util.transpileAndExecute(`let add = (a, b) => a+b; return add(1,2);`);
 
         // Assert
@@ -33,8 +31,7 @@ export class FunctionTests {
     @TestCase("b => a **= b", 100000)
     @TestCase("b => a %= b", 0)
     @Test("Arrow function assignment")
-    public arrowFunctionAssignment(lambda: string, expected: number): void
-    {
+    public arrowFunctionAssignment(lambda: string, expected: number): void {
         const result = util.transpileAndExecute(`let a = 10; let lambda = ${lambda};
                                           lambda(5); return a;`);
 
@@ -57,7 +54,7 @@ export class FunctionTests {
         // Transpile/Execute
         const result = util.transpileAndExecute(
             `let add = (a: number = 3, b: number = 4) => a+b;
-            return add(${callArgs});`
+            return add(${callArgs});`,
         );
 
         // Assert
@@ -65,8 +62,7 @@ export class FunctionTests {
     }
 
     @Test("Function Expression")
-    public functionExpression(): void
-    {
+    public functionExpression(): void {
         const result = util.transpileAndExecute(`let add = function(a, b) {return a+b}; return add(1,2);`);
 
         // Assert
@@ -74,8 +70,7 @@ export class FunctionTests {
     }
 
     @Test("Function definition scope")
-    public functionDefinitionScope(): void
-    {
+    public functionDefinitionScope(): void {
         const result = util.transpileAndExecute(`function abc() { function xyz() { return 5; } }\n
             function def() { function xyz() { return 3; } abc(); return xyz(); }\n
             return def();`);
@@ -85,8 +80,7 @@ export class FunctionTests {
     }
 
     @Test("Function default parameter")
-    public functionDefaultParameter(): void
-    {
+    public functionDefaultParameter(): void {
         const result = util.transpileAndExecute(`function abc(defaultParam: string = "abc") { return defaultParam; }\n
             return abc() + abc("def");`);
 
@@ -109,7 +103,7 @@ export class FunctionTests {
         // Transpile/Execute
         const result = util.transpileAndExecute(
             `let add = function(a: number = 3, b: number = 4) { return a+b; };
-            return add(${callArgs});`
+            return add(${callArgs});`,
         );
 
         // Assert
@@ -237,14 +231,15 @@ export class FunctionTests {
             expression: ts.createLiteral("abc"),
         };
 
-        Expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression))
-            .toThrowError(Error, "Tried to transpile a non-property call as property call.");
+        Expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression)).toThrowError(
+            Error,
+            "Tried to transpile a non-property call as property call.",
+        );
     }
 
     @Test("Function dead code after return")
     public functionDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `function abc() { return 3; const a = 5; } return abc();`);
+        const result = util.transpileAndExecute(`function abc() { return 3; const a = 5; } return abc();`);
 
         Expect(result).toBe(3);
     }
@@ -252,31 +247,29 @@ export class FunctionTests {
     @Test("Method dead code after return")
     public methodDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(
-            `class def { public static abc() { return 3; const a = 5; } } return def.abc();`);
+            `class def { public static abc() { return 3; const a = 5; } } return def.abc();`,
+        );
 
         Expect(result).toBe(3);
     }
 
     @Test("Recursive function definition")
     public recursiveFunctionDefinition(): void {
-        const result = util.transpileAndExecute(
-            `function f() { return typeof f; }; return f();`);
+        const result = util.transpileAndExecute(`function f() { return typeof f; }; return f();`);
 
         Expect(result).toBe("function");
     }
 
     @Test("Recursive function expression")
     public recursiveFunctionExpression(): void {
-        const result = util.transpileAndExecute(
-            `let f = function() { return typeof f; }; return f();`);
+        const result = util.transpileAndExecute(`let f = function() { return typeof f; }; return f();`);
 
         Expect(result).toBe("function");
     }
 
     @Test("Recursive arrow function")
     public recursiveArrowFunction(): void {
-        const result = util.transpileAndExecute(
-            `let f = () => typeof f; return f();`);
+        const result = util.transpileAndExecute(`let f = () => typeof f; return f();`);
 
         Expect(result).toBe("function");
     }
@@ -284,7 +277,8 @@ export class FunctionTests {
     @Test("Object method declaration")
     public objectMethodDeclaration(): void {
         const result = util.transpileAndExecute(
-            `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`);
+            `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`,
+        );
         Expect(result).toBe(12);
     }
 
@@ -304,7 +298,7 @@ export class FunctionTests {
                           }
                       };
                       const o = new O();
-                      return o.method(${args.map(a => "\"" + a + "\"").join(", ")});`;
+                      return o.method(${args.map(a => '"' + a + '"').join(", ")});`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
@@ -331,8 +325,7 @@ export class FunctionTests {
     @TestCase("abc", "abc")
     @TestCase("abc", "def")
     @Test("Dot vs Colon method call")
-    public dotVColonMethodCall(s1: string, s2: string): void
-    {
+    public dotVColonMethodCall(s1: string, s2: string): void {
         const result = util.transpileAndExecute(
             `class MyClass {
                 dotMethod(this: void, s: string) {
@@ -343,7 +336,7 @@ export class FunctionTests {
                 }
             }
             const inst = new MyClass();
-            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`
+            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`,
         );
         Expect(result).toBe(s1 === s2);
     }
@@ -449,8 +442,7 @@ export class FunctionTests {
 
     @Test("Function local overriding export")
     public functionLocalOverridingExport(): void {
-        const code =
-            `export const foo = 5;
+        const code = `export const foo = 5;
             function bar(foo: number) {
                 return foo;
             }

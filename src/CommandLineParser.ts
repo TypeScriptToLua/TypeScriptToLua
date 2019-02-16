@@ -2,13 +2,11 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import {CompilerOptions, LuaTarget, LuaLibImportKind} from "./CompilerOptions";
+import { CompilerOptions, LuaTarget, LuaLibImportKind } from "./CompilerOptions";
 
 export type CLIParseResult = ParseResult<ParsedCommandLine>;
 
-type ParseResult<T> =
-    { isValid: true; result: T }
-    | { isValid: false, errorMessage: string};
+type ParseResult<T> = { isValid: true; result: T } | { isValid: false; errorMessage: string };
 
 interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -25,7 +23,7 @@ interface CLIOption<T> extends BaseCLIOption {
     default: T;
 }
 
-const optionDeclarations: {[key: string]: CLIOption<any>} = {
+const optionDeclarations: { [key: string]: CLIOption<any> } = {
     luaLibImport: {
         choices: [LuaLibImportKind.Inline, LuaLibImportKind.Require, LuaLibImportKind.Always, LuaLibImportKind.None],
         default: LuaLibImportKind.Inline,
@@ -56,10 +54,8 @@ export const { version } = require("../package.json");
 const helpString =
     `Version ${version}\n` +
     "Syntax:   tstl [options] [files...]\n\n" +
-
     "Examples: tstl path/to/file.ts [...]\n" +
     "          tstl -p path/to/tsconfig.json\n\n" +
-
     "In addition to the options listed below you can also pass options\n" +
     "for the typescript compiler (For a list of options use tsc -h).\n" +
     "Some tsc options might have no effect.";
@@ -68,8 +64,7 @@ const helpString =
  * Parse the supplied arguments.
  * The result will include arguments supplied via CLI and arguments from tsconfig.
  */
-export function parseCommandLine(args: string[]): CLIParseResult
-{
+export function parseCommandLine(args: string[]): CLIParseResult {
     let commandLine = ts.parseCommandLine(args);
 
     // Run diagnostics to check for invalid tsc options
@@ -121,15 +116,11 @@ export function getHelpString(): string {
     result += "Options:\n";
     for (const optionName in optionDeclarations) {
         const option = optionDeclarations[optionName];
-        const aliasStrings = option.aliases
-            ? option.aliases.map(a => "-" + a)
-            : [];
+        const aliasStrings = option.aliases ? option.aliases.map(a => "-" + a) : [];
 
         const optionString = aliasStrings.concat(["--" + optionName]).join("|");
 
-        const parameterDescribe = option.choices
-            ? option.choices.join("|")
-            : option.type;
+        const parameterDescribe = option.choices ? option.choices.join("|") : option.type;
 
         const spacing = " ".repeat(Math.max(1, 45 - optionString.length - parameterDescribe.length));
 
@@ -139,8 +130,7 @@ export function getHelpString(): string {
     return result;
 }
 
-function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
-{
+function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult {
     const options = parsedCommandLine.options;
 
     // Load config
@@ -159,7 +149,7 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
             configJson.config,
             ts.sys,
             path.dirname(configPath),
-            options
+            options,
         );
 
         for (const key in parsedJsonConfig.raw) {
@@ -232,10 +222,9 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
     return { isValid: true, result: commandLine };
 }
 
-function getArgumentValue(argumentName: string, argument: string): ParseResult<string | boolean>
-{
+function getArgumentValue(argumentName: string, argument: string): ParseResult<string | boolean> {
     if (argument === undefined) {
-        return { isValid: false, errorMessage: `Missing value for parameter ${argumentName}`};
+        return { isValid: false, errorMessage: `Missing value for parameter ${argumentName}` };
     }
 
     const option = optionDeclarations[argumentName];
@@ -255,9 +244,7 @@ function getArgumentValue(argumentName: string, argument: string): ParseResult<s
 
 function readValue(valueString: string, valueType: string, parameterName: string): string | boolean {
     if (valueType === "boolean") {
-        return valueString === "true" || valueString === "t"
-            ? true
-            : false;
+        return valueString === "true" || valueString === "t" ? true : false;
     } else if (valueType === "enum") {
         return valueString.toLowerCase();
     } else {
@@ -310,7 +297,7 @@ function runTsDiagnostics(commandLine: ts.ParsedCommandLine): ParseResult<boolea
                 }
 
                 if (!ignore) {
-                    return { isValid: false, errorMessage: `error TS${err.code}: ${err.messageText}`};
+                    return { isValid: false, errorMessage: `error TS${err.code}: ${err.messageText}` };
                 }
             }
         }
@@ -322,7 +309,7 @@ function runTsDiagnostics(commandLine: ts.ParsedCommandLine): ParseResult<boolea
 /** Find configFile, function from ts api seems to be broken? */
 export function findConfigFile(options: ts.CompilerOptions): ParseResult<string> {
     if (!options.project) {
-        return { isValid: false, errorMessage: `error no base path provided, could not find config.`};
+        return { isValid: false, errorMessage: `error no base path provided, could not find config.` };
     }
     let configPath = options.project;
     // If the project path is wrapped in double quotes, remove them

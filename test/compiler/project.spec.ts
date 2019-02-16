@@ -7,56 +7,48 @@ import { compile } from "../../src/Compiler";
  * Find all files inside a dir, recursively.
  */
 function getAllFiles(dir: string): string[] {
-    return fs.readdirSync(dir).reduce(
-        (files, file) => {
-            const name = path.join(dir, file);
-            const isDirectory = fs.statSync(name).isDirectory();
-            return isDirectory ? [...files, ...getAllFiles(name)] : [...files, name];
-        },
-        []
-    );
+    return fs.readdirSync(dir).reduce((files, file) => {
+        const name = path.join(dir, file);
+        const isDirectory = fs.statSync(name).isDirectory();
+        return isDirectory ? [...files, ...getAllFiles(name)] : [...files, name];
+    }, []);
 }
 
 export class CompilerProjectTests {
-
     private existingFiles: string[];
     private filesAfterCompile: string[];
 
-    @TestCase("basic",
-              "tsconfig.json",
-              "lualib_bundle.lua",
-              "test_src/test_lib/file.lua",
-              "test_src/main.lua")
-    @TestCase("basic",
-              ".",
-              "lualib_bundle.lua",
-              "test_src/test_lib/file.lua",
-              "test_src/main.lua")
-    @TestCase("basic",
-              "test_src/main.ts",
-              "lualib_bundle.lua",
-              "test_src/test_lib/file.lua",
-              "test_src/main.lua")
-    @TestCase("basic",
-              "tsconfig.outDir.json",
-              "out_dir/lualib_bundle.lua",
-              "out_dir/test_src/test_lib/file.lua",
-              "out_dir/test_src/main.lua")
-    @TestCase("basic",
-              "tsconfig.rootDir.json",
-              "test_src/lualib_bundle.lua",
-              "test_src/test_lib/file.lua",
-              "test_src/main.lua")
-    @TestCase("basic",
-              "tsconfig.bothDirOptions.json",
-              "out_dir/lualib_bundle.lua",
-              "out_dir/test_lib/file.lua",
-              "out_dir/main.lua")
-    @TestCase("baseurl",
-              "tsconfig.json",
-              "out_dir/lualib_bundle.lua",
-              "out_dir/test_src/test_lib/nested/lib_file.lua",
-              "out_dir/test_src/main.lua")
+    @TestCase("basic", "tsconfig.json", "lualib_bundle.lua", "test_src/test_lib/file.lua", "test_src/main.lua")
+    @TestCase("basic", ".", "lualib_bundle.lua", "test_src/test_lib/file.lua", "test_src/main.lua")
+    @TestCase("basic", "test_src/main.ts", "lualib_bundle.lua", "test_src/test_lib/file.lua", "test_src/main.lua")
+    @TestCase(
+        "basic",
+        "tsconfig.outDir.json",
+        "out_dir/lualib_bundle.lua",
+        "out_dir/test_src/test_lib/file.lua",
+        "out_dir/test_src/main.lua",
+    )
+    @TestCase(
+        "basic",
+        "tsconfig.rootDir.json",
+        "test_src/lualib_bundle.lua",
+        "test_src/test_lib/file.lua",
+        "test_src/main.lua",
+    )
+    @TestCase(
+        "basic",
+        "tsconfig.bothDirOptions.json",
+        "out_dir/lualib_bundle.lua",
+        "out_dir/test_lib/file.lua",
+        "out_dir/main.lua",
+    )
+    @TestCase(
+        "baseurl",
+        "tsconfig.json",
+        "out_dir/lualib_bundle.lua",
+        "out_dir/test_src/test_lib/nested/lib_file.lua",
+        "out_dir/test_src/main.lua",
+    )
     @Test("Compile project")
     public compileProject(projectName: string, tsconfig: string, ...expectedFiles: string[]) {
         const relPathToProject = path.join("projects", projectName);
@@ -90,5 +82,4 @@ export class CompilerProjectTests {
         this.existingFiles = [];
         this.filesAfterCompile = [];
     }
-
 }

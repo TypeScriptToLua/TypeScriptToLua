@@ -1,4 +1,4 @@
-let e = 10
+let e = 10;
 do {
-  e--;
-} while (e > 0)
+    e--;
+} while (e > 0);

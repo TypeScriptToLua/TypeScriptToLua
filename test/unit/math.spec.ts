@@ -2,7 +2,6 @@ import { Expect, Test, TestCase, IgnoreTest } from "alsatian";
 import * as util from "../src/util";
 
 export class MathTests {
-
     // Dont test all and dont do functional test
     // because math implementations may differ between js and lua
     @TestCase("Math.cos()", "math.cos();")
@@ -39,7 +38,8 @@ export class MathTests {
             `let x = 3;
             let y = 6;
             ${statement};
-            return \`x=\${x};y=\${y}\``);
+            return \`x=\${x};y=\${y}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -64,7 +64,8 @@ export class MathTests {
             `let o = {p: 3};
             let a = [6];
             ${statement};
-            return \`o=\${o.p};a=\${a[0]}\``);
+            return \`o=\${o.p};a=\${a[0]}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -89,7 +90,8 @@ export class MathTests {
             `let o = {p: {d: 3}};
             let a = [[6,11], [7,13]];
             ${statement};
-            return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}]\``);
+            return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}]\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -117,7 +119,8 @@ export class MathTests {
             function af() { return a; }
             function i() { return 0; }
             ${statement};
-            return \`o=\${o.p};a=\${a[0]}\``);
+            return \`o=\${o.p};a=\${a[0]}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -146,7 +149,8 @@ export class MathTests {
             let _i = 0;
             function i() { return _i++; }
             ${statement};
-            return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}];i=\${_i}\``);
+            return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}];i=\${_i}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -174,7 +178,8 @@ export class MathTests {
             `let x = 3;
             let y = 6;
             const r = ${expression};
-            return \`\${r};x=\${x};y=\${y}\``);
+            return \`\${r};x=\${x};y=\${y}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -202,7 +207,8 @@ export class MathTests {
             `let o = {p: 3};
             let a = [6];
             const r = ${expression};
-            return \`\${r};o=\${o.p};a=\${a[0]}\``);
+            return \`\${r};o=\${o.p};a=\${a[0]}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -233,7 +239,8 @@ export class MathTests {
             function af() { return a; }
             function i() { return 0; }
             const r = ${expression};
-            return \`\${r};o=\${o.p};a=\${a[0]}\``);
+            return \`\${r};o=\${o.p};a=\${a[0]}\``,
+        );
         Expect(result).toBe(expected);
     }
 }

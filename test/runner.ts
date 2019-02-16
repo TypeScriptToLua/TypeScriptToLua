@@ -13,10 +13,7 @@ testSet.addTestsFromFiles("./test/**/*.spec.js");
 const testRunner = new TestRunner();
 
 // Copy lualib to project root
-fs.copyFileSync(
-    path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-    "lualib_bundle.lua"
-);
+fs.copyFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "lualib_bundle.lua");
 
 // setup the output
 testRunner.outputStream
@@ -37,7 +34,8 @@ testRunner.onTestComplete(test => {
 });
 
 // run the test set
-testRunner.run(testSet)
+testRunner
+    .run(testSet)
     // this will be called after all tests have been run
     .then(result => {
         // Remove lualib bundle again

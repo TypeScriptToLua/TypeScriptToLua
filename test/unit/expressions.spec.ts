@@ -6,7 +6,6 @@ import * as ts from "typescript";
 import * as util from "../src/util";
 
 export class ExpressionTests {
-
     @TestCase("i++", "i = i + 1;")
     @TestCase("++i", "i = i + 1;")
     @TestCase("i--", "i = i - 1;")
@@ -60,8 +59,7 @@ export class ExpressionTests {
     @TestCase("0 in obj")
     @TestCase("9 in obj")
     @Test("Binary expression in")
-    public binaryIn(input: string): void
-    {
+    public binaryIn(input: string): void {
         const tsHeader = "declare var obj: any;";
         const tsSource = `return ${input}`;
         const luaHeader = "obj = { existingKey = 1 }";
@@ -100,8 +98,9 @@ export class ExpressionTests {
     @Test("Bitop [5.1]")
     public bitOperatorOverride51(input: string, lua: string): void {
         // Bit operations not supported in 5.1, expect an exception
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None }))
-            .toThrow();
+        Expect(() =>
+            util.transpileString(input, { luaTarget: LuaTarget.Lua51, luaLibImport: LuaLibImportKind.None }),
+        ).toThrow();
     }
 
     @TestCase("~a", "bit.bnot(a);")
@@ -163,8 +162,9 @@ export class ExpressionTests {
     @TestCase("a>>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
-        Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
-            .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
+        Expect(() =>
+            util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }),
+        ).toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
     }
 
     @TestCase("1+1", "1 + 1;")
@@ -182,8 +182,7 @@ export class ExpressionTests {
     @TestCase("foo(),bar(),baz()", 3)
     @Test("Binary Comma")
     public binaryComma(input: string, expectResult: number): void {
-        const code =
-            `function foo() { return 1; }
+        const code = `function foo() { return 1; }
             function bar() { return 2; };
             function baz() { return 3; };
             return (${input});`;
@@ -192,8 +191,7 @@ export class ExpressionTests {
 
     @Test("Binary Comma Statement in For Loop")
     public binaryCommaStatementInForLoop(): void {
-        const code =
-            `let x: number, y: number;
+        const code = `let x: number, y: number;
             for (x = 0, y = 17; x < 5; ++x, --y) {}
             return y;`;
         Expect(util.transpileAndExecute(code)).toBe(12);
@@ -234,7 +232,9 @@ export class ExpressionTests {
             let variableValue:string;
             let maybeBooleanValue:string|boolean = false;
             let maybeUndefinedValue:string|undefined;
-            return ${input};`, options);
+            return ${input};`,
+            options,
+        );
 
         Expect(result).toBe(expected);
     }
@@ -253,14 +253,15 @@ export class ExpressionTests {
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
     public getAccessorBinary(expression: string, expected: any): void {
-        const source = `class MyClass {`
-                     + `    public _field: number;`
-                     + `    public get field(): number { return this._field + 4; }`
-                     + `    public set field(v: number) { this._field = v; }`
-                     + `}`
-                     + `var inst = new MyClass();`
-                     + `inst._field = 4;`
-                     + `return ${expression};`;
+        const source =
+            `class MyClass {` +
+            `    public _field: number;` +
+            `    public get field(): number { return this._field + 4; }` +
+            `    public set field(v: number) { this._field = v; }` +
+            `}` +
+            `var inst = new MyClass();` +
+            `inst._field = 4;` +
+            `return ${expression};`;
 
         // Transpile/Execute
         const result = util.transpileAndExecute(source);
@@ -270,24 +271,25 @@ export class ExpressionTests {
     }
 
     @TestCase("= 4", 4 + 4)
-    @TestCase("-= 3", (4 - 3) + 4)
-    @TestCase("+= 3", (4 + 3) + 4)
-    @TestCase("*= 3", (4 * 3) + 4)
-    @TestCase("/= 2", (4 / 2) + 4)
+    @TestCase("-= 3", 4 - 3 + 4)
+    @TestCase("+= 3", 4 + 3 + 4)
+    @TestCase("*= 3", 4 * 3 + 4)
+    @TestCase("/= 2", 4 / 2 + 4)
     @TestCase("&= 3", (4 & 3) + 4)
     @TestCase("|= 3", (4 | 3) + 4)
     @TestCase("<<= 3", (4 << 3) + 4)
     @TestCase(">>= 3", (4 >> 3) + 4)
     @Test("Set accessorExpression")
     public setAccessorBinary(expression: string, expected: any): void {
-        const source = `class MyClass {`
-                     + `    public _field: number = 4;`
-                     + `    public get field(): number { return this._field; }`
-                     + `    public set field(v: number) { this._field = v + 4; }`
-                     + `}`
-                     + `var inst = new MyClass();`
-                     + `inst.field ${expression};`
-                     + `return inst._field;`;
+        const source =
+            `class MyClass {` +
+            `    public _field: number = 4;` +
+            `    public get field(): number { return this._field; }` +
+            `    public set field(v: number) { this._field = v + 4; }` +
+            `}` +
+            `var inst = new MyClass();` +
+            `inst.field ${expression};` +
+            `return inst._field;`;
 
         // Transpile/Execute
         const result = util.transpileAndExecute(source);
@@ -302,27 +304,28 @@ export class ExpressionTests {
     @TestCase("inst.superBaseField", 4)
     @Test("Inherited accessors")
     public inheritedAccessors(expression: string, expected: any): void {
-        const source = `class MyBaseClass {`
-                   + `    public _baseField: number;`
-                   + `    public get baseField(): number { return this._baseField + 6; }`
-                   + `    public set baseField(v: number) { this._baseField = v; }`
-                   + `}`
-                   + `class MyClass extends MyBaseClass {`
-                   + `    public _field: number;`
-                   + `    public get field(): number { return this._field + 4; }`
-                   + `    public set field(v: number) { this._field = v; }`
-                   + `}`
-                   + `class MySuperClass extends MyClass {`
-                   + `    public _superField: number;`
-                   + `    public get superField(): number { return this._superField + 2; }`
-                   + `    public set superField(v: number) { this._superField = v; }`
-                   + `    public get superBaseField() { return this.baseField - 3; }`
-                   + `}`
-                   + `var inst = new MySuperClass();`
-                   + `inst.baseField = 1;`
-                   + `inst.field = 2;`
-                   + `inst.superField = 3;`
-                   + `return ${expression};`;
+        const source =
+            `class MyBaseClass {` +
+            `    public _baseField: number;` +
+            `    public get baseField(): number { return this._baseField + 6; }` +
+            `    public set baseField(v: number) { this._baseField = v; }` +
+            `}` +
+            `class MyClass extends MyBaseClass {` +
+            `    public _field: number;` +
+            `    public get field(): number { return this._field + 4; }` +
+            `    public set field(v: number) { this._field = v; }` +
+            `}` +
+            `class MySuperClass extends MyClass {` +
+            `    public _superField: number;` +
+            `    public get superField(): number { return this._superField + 2; }` +
+            `    public set superField(v: number) { this._superField = v; }` +
+            `    public get superBaseField() { return this.baseField - 3; }` +
+            `}` +
+            `var inst = new MySuperClass();` +
+            `inst.baseField = 1;` +
+            `inst.field = 2;` +
+            `inst.superField = 3;` +
+            `return ${expression};`;
 
         const result = util.transpileAndExecute(source);
         Expect(result).toBe(expected);
@@ -336,7 +339,7 @@ export class ExpressionTests {
             `class A{ get value(){ return this.v || 1; } set value(v){ this.v = v; } v: number; }
             class B{ get value(){ return this.v || 2; } set value(v){ this.v = v; } v: number; }
             let x: A|B = new A();
-            ${expression}`
+            ${expression}`,
         );
 
         Expect(result).toBe(expected);
@@ -350,9 +353,11 @@ export class ExpressionTests {
                         class B{ value:number = 3; }
                         let x: A|B = new A();
                         ${expression}`;
-        Expect(() => { util.transpileString(source); }).toThrowError(
+        Expect(() => {
+            util.transpileString(source);
+        }).toThrowError(
             TranspileError,
-            "Unsupported mixed union of accessor and non-accessor types for the same property."
+            "Unsupported mixed union of accessor and non-accessor types for the same property.",
         );
     }
 
@@ -396,7 +401,8 @@ export class ExpressionTests {
             let y = "y";
             let o = {p: "o"};
             let a = ["a"];
-            return ${expression};`);
+            return ${expression};`,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -410,7 +416,8 @@ export class ExpressionTests {
             `let x = "x";
             let o = {p: "o"};
             let a = ["a"];
-            return ${expression};`);
+            return ${expression};`,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -429,7 +436,8 @@ export class ExpressionTests {
             /** @tupleReturn */
             function tr(): [string, string] { return ["tr0", "tr1"] };
             const r = ${expression};
-            return \`\${r[0]},\${r[1]}\``);
+            return \`\${r[0]},\${r[1]}\``,
+        );
         Expect(result).toBe(expected);
     }
 
@@ -459,8 +467,9 @@ export class ExpressionTests {
             operator: ts.SyntaxKind.AsteriskToken,
         };
 
-        Expect(() => transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression))
-            .toThrowError(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
+        Expect(() =>
+            transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression),
+        ).toThrowError(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
     }
 
     @Test("Unknown unary postfix error")
@@ -472,8 +481,9 @@ export class ExpressionTests {
             operator: ts.SyntaxKind.AsteriskToken,
         };
 
-        Expect(() => transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression))
-            .toThrowError(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
+        Expect(() =>
+            transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression),
+        ).toThrowError(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
     }
 
     @Test("Incompatible fromCodePoint expression error")
@@ -481,9 +491,10 @@ export class ExpressionTests {
         const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("fromCodePoint");
-        Expect(() => transformer.transformStringExpression(identifier))
-            .toThrowError(TranspileError, "string property fromCodePoint is/are not supported " +
-                          "for target Lua jit.");
+        Expect(() => transformer.transformStringExpression(identifier)).toThrowError(
+            TranspileError,
+            "string property fromCodePoint is/are not supported " + "for target Lua jit.",
+        );
     }
 
     @Test("Unknown string expression error")
@@ -491,8 +502,10 @@ export class ExpressionTests {
         const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
         const identifier = ts.createIdentifier("abcd");
-        Expect(() => transformer.transformStringExpression(identifier))
-            .toThrowError(TranspileError, "string property abcd is/are not supported for target Lua jit.");
+        Expect(() => transformer.transformStringExpression(identifier)).toThrowError(
+            TranspileError,
+            "string property abcd is/are not supported for target Lua jit.",
+        );
     }
 
     @Test("Unsupported array function error")
@@ -502,19 +515,23 @@ export class ExpressionTests {
         const mockNode: any = {
             arguments: [],
             caller: ts.createLiteral(false),
-            expression: {name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false)},
+            expression: { name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false) },
         };
 
-        Expect(() => transformer.transformArrayCallExpression(mockNode as ts.CallExpression))
-            .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
+        Expect(() => transformer.transformArrayCallExpression(mockNode as ts.CallExpression)).toThrowError(
+            TranspileError,
+            "Unsupported property on array: unknownFunction",
+        );
     }
 
     @Test("Unsupported math property error")
     public unsupportedMathPropertyError(): void {
         const transformer = util.makeTestTransformer();
 
-        Expect(() => transformer.transformMathExpression(ts.createIdentifier("unknownProperty")))
-            .toThrowError(TranspileError, "Unsupported property on math: unknownProperty");
+        Expect(() => transformer.transformMathExpression(ts.createIdentifier("unknownProperty"))).toThrowError(
+            TranspileError,
+            "Unsupported property on math: unknownProperty",
+        );
     }
 
     @Test("Unsupported object literal element error")
@@ -522,13 +539,17 @@ export class ExpressionTests {
         const transformer = util.makeTestTransformer();
 
         const mockObject: any = {
-            properties: [{
-                kind: ts.SyntaxKind.FalseKeyword,
-                name: ts.createIdentifier("testProperty"),
-            }],
+            properties: [
+                {
+                    kind: ts.SyntaxKind.FalseKeyword,
+                    name: ts.createIdentifier("testProperty"),
+                },
+            ],
         };
 
-        Expect(() => transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression))
-            .toThrowError(TranspileError, "Unsupported object literal element kind: FalseKeyword");
+        Expect(() => transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression)).toThrowError(
+            TranspileError,
+            "Unsupported object literal element kind: FalseKeyword",
+        );
     }
 }

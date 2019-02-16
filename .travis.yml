@@ -1,13 +1,13 @@
 language: node_js
 node_js:
-- stable
+  - stable
 install:
-- npm install
+  - npm install
 script:
-- npm run build
-- npm run coverage
+  - npm run build
+  - npm run coverage
 after_success:
-- codecov
+  - codecov
 deploy:
   provider: npm
   email: lorenz.junglas@student.kit.edu

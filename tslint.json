@@ -5,16 +5,18 @@
         "prettier": true,
         "array-type": [true, "array-simple"],
         "arrow-return-shorthand": true,
-        "ban": [true,
-          {"name": "parseInt", "message": "tsstyle#type-coercion"},
-          {"name": "parseFloat", "message": "tsstyle#type-coercion"},
-          {"name": "Array", "message": "tsstyle#array-constructor"}
+        "ban": [
+            true,
+            { "name": "parseInt", "message": "tsstyle#type-coercion" },
+            { "name": "parseFloat", "message": "tsstyle#type-coercion" },
+            { "name": "Array", "message": "tsstyle#array-constructor" }
         ],
-        "ban-types": [true,
-          ["Object", "Use {} instead."],
-          ["String", "Use 'string' instead."],
-          ["Number", "Use 'number' instead."],
-          ["Boolean", "Use 'boolean' instead."]
+        "ban-types": [
+            true,
+            ["Object", "Use {} instead."],
+            ["String", "Use 'string' instead."],
+            ["Number", "Use 'number' instead."],
+            ["Boolean", "Use 'boolean' instead."]
         ],
         "class-name": true,
         "curly": [true, "ignore-same-line"],
@@ -46,19 +48,9 @@
         "radix": true,
         "switch-default": false,
         "triple-equals": [true, "allow-null-check"],
-        "typedef": [
-            true,
-            "call-signature",
-            "property-declaration"
-        ],
+        "typedef": [true, "call-signature", "property-declaration"],
         "use-isnan": true,
-        "variable-name": [
-          true,
-          "check-format",
-          "ban-keywords",
-          "allow-leading-underscore",
-          "allow-pascal-case"
-        ]
+        "variable-name": [true, "check-format", "ban-keywords", "allow-leading-underscore", "allow-pascal-case"]
     },
     "rulesDirectory": []
 }

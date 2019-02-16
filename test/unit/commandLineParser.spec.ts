@@ -3,8 +3,7 @@ import { Expect, Test, TestCase } from "alsatian";
 import { findConfigFile, parseCommandLine } from "../../src/CommandLineParser";
 import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
-export class CommandLineParserTests
-{
+export class CommandLineParserTests {
     @TestCase([""], LuaLibImportKind.Inline)
     @TestCase(["--luaLibImport", "none"], LuaLibImportKind.None)
     @TestCase(["--luaLibImport", "always"], LuaLibImportKind.Always)
@@ -132,7 +131,7 @@ export class CommandLineParserTests
 
     @Test("ValidLuaTarget")
     public validLuaTarget(): void {
-        const parsedCommandLine = parseCommandLine(['--luaTarget', '5.3']);
+        const parsedCommandLine = parseCommandLine(["--luaTarget", "5.3"]);
         if (parsedCommandLine.isValid) {
             Expect(parsedCommandLine.result.options["luaTarget"]).toBe("5.3");
         } else {
@@ -143,23 +142,23 @@ export class CommandLineParserTests
     @Test("InvalidLuaTarget")
     public invalidLuaTarget(): void {
         // Don't check error message because the yargs library messes the message up.
-        const result = parseCommandLine(['--luaTarget', '42']);
+        const result = parseCommandLine(["--luaTarget", "42"]);
         Expect(result.isValid).toBe(false);
     }
 
     @Test("InvalidArgumentTSTL")
     public invalidArgument(): void {
         // Don't check error message because the yargs library messes the message up.
-        const result = parseCommandLine(['--invalidTarget', 'test']);
+        const result = parseCommandLine(["--invalidTarget", "test"]);
         Expect(result.isValid).toBe(false);
     }
 
     @Test("outDir")
     public outDir(): void {
-        const parsedCommandLine = parseCommandLine(['--outDir', './test']);
+        const parsedCommandLine = parseCommandLine(["--outDir", "./test"]);
 
         if (parsedCommandLine.isValid) {
-            Expect(parsedCommandLine.result.options['outDir']).toBe('./test');
+            Expect(parsedCommandLine.result.options["outDir"]).toBe("./test");
         } else {
             Expect(parsedCommandLine.isValid).toBeTruthy();
         }
@@ -167,11 +166,11 @@ export class CommandLineParserTests
 
     @Test("rootDir")
     public rootDir(): void {
-        const parsedCommandLine = parseCommandLine(['--rootDir', './test']);
+        const parsedCommandLine = parseCommandLine(["--rootDir", "./test"]);
 
         if (parsedCommandLine.isValid) {
-            Expect(parsedCommandLine.result.options['rootDir']).toBe('./test');
-            Expect(parsedCommandLine.result.options['outDir']).toBe('./test');
+            Expect(parsedCommandLine.result.options["rootDir"]).toBe("./test");
+            Expect(parsedCommandLine.result.options["outDir"]).toBe("./test");
         } else {
             Expect(parsedCommandLine.isValid).toBeTruthy();
         }
@@ -179,11 +178,11 @@ export class CommandLineParserTests
 
     @Test("outDirAndRooDir")
     public outDirAndRooDir(): void {
-        const parsedCommandLine = parseCommandLine(['--outDir', './testOut', '--rootDir', './testRoot']);
+        const parsedCommandLine = parseCommandLine(["--outDir", "./testOut", "--rootDir", "./testRoot"]);
 
         if (parsedCommandLine.isValid) {
-            Expect(parsedCommandLine.result.options['outDir']).toBe('./testOut');
-            Expect(parsedCommandLine.result.options['rootDir']).toBe('./testRoot');
+            Expect(parsedCommandLine.result.options["outDir"]).toBe("./testOut");
+            Expect(parsedCommandLine.result.options["rootDir"]).toBe("./testRoot");
         } else {
             Expect(parsedCommandLine.isValid).toBeTruthy();
         }

@@ -12,25 +12,30 @@ module.exports = (input, done) => {
     testRunner.onTestComplete(result => {
         if (result.outcome === TestOutcome.Fail) {
             if (result.error instanceof MatchError) {
-                console.log(`Test ${result.testFixture.description}, ${result.test.key}(${JSON.stringify(result.testCase.caseArguments)}) Failed!`);
-                console.log(" ---\n" +
-                '   message: "' +
-                result.error.message +
-                '"\n' +
-                "   severity: fail\n" +
-                "   data:\n" +
-                "     got: " +
-                result.error.actual +
-                "\n" +
-                "     expect: " +
-                result.error.expected +
-                "\n");
+                console.log(
+                    `Test ${result.testFixture.description}, ${result.test.key}(${JSON.stringify(
+                        result.testCase.caseArguments,
+                    )}) Failed!`,
+                );
+                console.log(
+                    " ---\n" +
+                        '   message: "' +
+                        result.error.message +
+                        '"\n' +
+                        "   severity: fail\n" +
+                        "   data:\n" +
+                        "     got: " +
+                        result.error.actual +
+                        "\n" +
+                        "     expect: " +
+                        result.error.expected +
+                        "\n",
+                );
             }
             failedTestCount++;
         }
         testCount++;
     });
 
-    testRunner.run(testSet)
-              .then(() => done(testCount, failedTestCount));
+    testRunner.run(testSet).then(() => done(testCount, failedTestCount));
 };

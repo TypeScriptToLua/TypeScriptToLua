@@ -6,8 +6,7 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 import { parseCommandLine } from "../../../../../src/CommandLineParser";
 
-export class MixedConfigurationTests
-{
+export class MixedConfigurationTests {
     @Test("tsconfig.json mixed with cmd line args")
     public tsconfigMixedWithCmdLineArgs(): void {
         const rootPath = __dirname;
@@ -15,7 +14,7 @@ export class MixedConfigurationTests
         const expectedTsConfig = ts.parseJsonConfigFileContent(
             ts.parseConfigFileTextToJson(tsConfigPath, fs.readFileSync(tsConfigPath).toString()).config,
             ts.sys,
-            path.dirname(tsConfigPath)
+            path.dirname(tsConfigPath),
         );
 
         const parsedArgs = parseCommandLine([
@@ -26,8 +25,7 @@ export class MixedConfigurationTests
             `${path.join(rootPath, "test.ts")}`,
         ]);
 
-        if (parsedArgs.isValid === true)
-        {
+        if (parsedArgs.isValid === true) {
             Expect(parsedArgs.result.options).toEqual({
                 ...expectedTsConfig.options,
                 // Overridden by cmd args (set to "none" in project-tsconfig.json)

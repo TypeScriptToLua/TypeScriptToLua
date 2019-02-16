@@ -6,7 +6,7 @@ import { Expect } from "alsatian";
 import { transpileString as compilerTranspileString, createStringCompilerProgram } from "../../src/Compiler";
 import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
-import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
+import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 
 import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
@@ -26,7 +26,7 @@ export function transpileString(str: string, options?: CompilerOptions, ignoreDi
                 target: ts.ScriptTarget.ES2015,
                 noHeader: true,
             },
-            ignoreDiagnostics
+            ignoreDiagnostics,
         );
     }
 }
@@ -76,7 +76,7 @@ export function expectCodeEqual(code1: string, code2: string): void {
 
 // Get a mock transformer to use for testing
 export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
-    const options = {luaTarget: target};
+    const options = { luaTarget: target };
     return new LuaTransformer(ts.createProgram([], options), options);
 }
 
@@ -85,9 +85,8 @@ export function transpileAndExecute(
     compilerOptions?: CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
-    ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics"
-): any
-{
+    ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics",
+): any {
     const wrappedTsString = `declare function JSONStringify(p: any): string;
         ${tsHeader ? tsHeader : ""}
         function __runTest(): any {${tsStr}}`;
@@ -103,9 +102,8 @@ export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
     compilerOptions?: CompilerOptions,
-    luaHeader?: string
-): any
-{
+    luaHeader?: string,
+): any {
     const wrappedTsString = `declare function JSONStringify(p: any): string;
         ${tsStr}`;
 
@@ -117,8 +115,10 @@ export function transpileExecuteAndReturnExport(
     return executeLua(lua);
 }
 
-export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)
-    : [ts.SourceFile, ts.TypeChecker] {
+export function parseTypeScript(
+    typescript: string,
+    target: LuaTarget = LuaTarget.Lua53,
+): [ts.SourceFile, ts.TypeChecker] {
     const program = createStringCompilerProgram(typescript, { luaTarget: target });
     return [program.getSourceFile("file.ts"), program.getTypeChecker()];
 }

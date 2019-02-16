@@ -1,6 +1,5 @@
 /** @extension */
-class TestClass {
-}
+class TestClass {}
 
 /** @extension */
 class MyClass extends TestClass {

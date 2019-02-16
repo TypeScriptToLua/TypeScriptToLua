@@ -5,14 +5,13 @@ import * as util from "../src/util";
 import { TranspileError } from "../../src/TranspileError";
 
 export class ClassTests {
-
     @Test("ClassFieldInitializer")
     public classFieldInitializer(): void {
         const result = util.transpileAndExecute(
             `class a {
                 field: number = 4;
             }
-            return new a().field;`
+            return new a().field;`,
         );
 
         // Assert
@@ -25,7 +24,7 @@ export class ClassTests {
             `class a {
                 1: number = 4;
             }
-            return new a()[1];`
+            return new a()[1];`,
         );
 
         // Assert
@@ -38,7 +37,7 @@ export class ClassTests {
             `class a {
                 "field": number = 4;
             }
-            return new a()["field"];`
+            return new a()["field"];`,
         );
 
         // Assert
@@ -52,7 +51,7 @@ export class ClassTests {
             class a {
                 [field]: number = 4;
             }
-            return new a()[field];`
+            return new a()[field];`,
         );
 
         // Assert
@@ -68,7 +67,7 @@ export class ClassTests {
                     this.field = n * 2;
                 }
             }
-            return new a(4).field;`
+            return new a(4).field;`,
         );
 
         // Assert
@@ -79,7 +78,7 @@ export class ClassTests {
     public classConstructorAssignment(): void {
         const result = util.transpileAndExecute(
             `class a { constructor(public field: number) {} }
-            return new a(4).field;`
+            return new a(4).field;`,
         );
 
         // Assert
@@ -90,7 +89,7 @@ export class ClassTests {
     public classConstructorDefaultParameter(): void {
         const result = util.transpileAndExecute(
             `class a { public field: number; constructor(f: number = 3) { this.field = f; } }
-            return new a().field;`
+            return new a().field;`,
         );
 
         Expect(result).toBe(3);
@@ -100,7 +99,7 @@ export class ClassTests {
     public classConstructorAssignmentParameterDefault(): void {
         const result = util.transpileAndExecute(
             `class a { constructor(public field: number = 3) { } }
-            return new a().field;`
+            return new a().field;`,
         );
 
         Expect(result).toBe(3);
@@ -114,7 +113,7 @@ export class ClassTests {
                 constructor() {}
             }
             let inst = new a;
-            return inst.field;`
+            return inst.field;`,
         );
 
         // Assert
@@ -125,7 +124,7 @@ export class ClassTests {
     public classStaticFields(): void {
         const result = util.transpileAndExecute(
             `class a { static field: number = 4; }
-            return a.field;`
+            return a.field;`,
         );
 
         // Assert
@@ -136,7 +135,7 @@ export class ClassTests {
     public classStaticNumericLiteralFields(): void {
         const result = util.transpileAndExecute(
             `class a { static 1: number = 4; }
-            return a[1];`
+            return a[1];`,
         );
 
         // Assert
@@ -147,7 +146,7 @@ export class ClassTests {
     public classStaticStringLiteralFields(): void {
         const result = util.transpileAndExecute(
             `class a { static "field": number = 4; }
-            return a["field"];`
+            return a["field"];`,
         );
 
         // Assert
@@ -159,7 +158,7 @@ export class ClassTests {
         const result = util.transpileAndExecute(
             `const field: "field" = "field";
             class a { static [field]: number = 4; }
-            return a[field];`
+            return a[field];`,
         );
 
         // Assert
@@ -171,7 +170,7 @@ export class ClassTests {
         const result = util.transpileAndExecute(
             `class a { field: number = 4; }
             class b extends a {}
-            return new b().field;`
+            return new b().field;`,
         );
 
         // Assert
@@ -188,7 +187,7 @@ export class ClassTests {
                 }
             }
             class b extends a {}
-            return new b(10).field;`
+            return new b(10).field;`,
         );
 
         Expect(result).toBe(10);
@@ -205,7 +204,7 @@ export class ClassTests {
             }
             class b extends a {}
             class c extends b {}
-            return new c(10).field;`
+            return new c(10).field;`,
         );
 
         Expect(result).toBe(10);
@@ -225,7 +224,7 @@ export class ClassTests {
                     super(field + 1);
                 }
             }
-            return new b(10).field;`
+            return new b(10).field;`,
         );
 
         Expect(result).toBe(11);
@@ -245,7 +244,7 @@ export class ClassTests {
                     super(5);
                 }
             }
-            return new b().field;`
+            return new b().field;`,
         );
 
         // Assert
@@ -271,7 +270,7 @@ export class ClassTests {
                     super(5);
                 }
             }
-            return new c().field;`
+            return new c().field;`,
         );
 
         // Assert
@@ -294,7 +293,7 @@ export class ClassTests {
                     super(5);
                 }
             }
-            return new c().field;`
+            return new c().field;`,
         );
 
         // Assert
@@ -302,12 +301,12 @@ export class ClassTests {
     }
 
     @Test("renamedClassExtends")
-    public renamedClassExtends(): void
-    {
+    public renamedClassExtends(): void {
         const result = util.transpileAndExecute(
             `const b = new B();
             return b.value;`,
-            undefined, undefined,
+            undefined,
+            undefined,
             `namespace Classes {
                 export class Base {
                     public value: number;
@@ -318,7 +317,7 @@ export class ClassTests {
             const A = Classes.Base;
             class B extends A {
                 constructor(){ super(); }
-            };`
+            };`,
         );
 
         // Assert
@@ -334,7 +333,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -350,7 +349,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst[1]();`
+            return inst[1]();`,
         );
 
         // Assert
@@ -366,7 +365,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst["method"]();`
+            return inst["method"]();`,
         );
 
         // Assert
@@ -383,7 +382,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst[method]();`
+            return inst[method]();`,
         );
 
         // Assert
@@ -399,7 +398,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst.toString();`
+            return inst.toString();`,
         );
 
         // Assert
@@ -414,7 +413,7 @@ export class ClassTests {
             }
             let inst = new a();
             inst["prop"] = 17;
-            return inst.hasOwnProperty("prop");`
+            return inst.hasOwnProperty("prop");`,
         );
 
         // Assert
@@ -429,7 +428,7 @@ export class ClassTests {
             }
             let inst = new a();
             inst["prop"] = 17;
-            return inst.hasOwnProperty("test");`
+            return inst.hasOwnProperty("test");`,
         );
 
         // Assert
@@ -451,7 +450,7 @@ export class ClassTests {
             let result = {val : 0};
             (inst as a).method(result);
             (inst as a).method(result);
-            return result.val;`
+            return result.val;`,
         );
 
         // Assert
@@ -466,7 +465,7 @@ export class ClassTests {
                 public method: () => number = () => this.n;
             }
             let inst = new a(4);
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -483,7 +482,7 @@ export class ClassTests {
             }
             class b extends a {}
             let inst = new b();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -501,7 +500,7 @@ export class ClassTests {
             class b extends a {}
             class c extends b {}
             let inst = new c();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -519,7 +518,7 @@ export class ClassTests {
             }
             class c extends b {}
             let inst = new c();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -540,7 +539,7 @@ export class ClassTests {
                 }
             }
             let inst = new b();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -556,7 +555,7 @@ export class ClassTests {
                 }
             }
             let inst = new a();
-            return inst.method(4);`
+            return inst.method(4);`,
         );
 
         // Assert
@@ -567,8 +566,10 @@ export class ClassTests {
     public classWithoutNameError(): void {
         const transformer = util.makeTestTransformer();
 
-        Expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration))
-            .toThrowError(Error, "Class declarations must have a name.");
+        Expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration)).toThrowError(
+            Error,
+            "Class declarations must have a name.",
+        );
     }
 
     @Test("CallSuperMethodNoArgs")
@@ -592,7 +593,7 @@ export class ClassTests {
                 }
             }
             let inst = new b(6);
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -620,7 +621,7 @@ export class ClassTests {
                 }
             }
             let inst = new b(6);
-            return inst.method(4);`
+            return inst.method(4);`,
         );
 
         // Assert
@@ -646,7 +647,7 @@ export class ClassTests {
             inst.method();
             inst.method();
             inst.method();
-            return i;`
+            return i;`,
         );
 
         // Assert
@@ -682,7 +683,7 @@ export class ClassTests {
                 }
             }
             let inst = new c(6);
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -703,7 +704,7 @@ export class ClassTests {
                 }
             }
             let inst = new b();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -721,7 +722,7 @@ export class ClassTests {
             const b = class extends a {
             }
             let inst = new b();
-            return inst.method();`
+            return inst.method();`,
         );
 
         // Assert
@@ -741,7 +742,7 @@ export class ClassTests {
             inst.method = () => {
                 return 8;
             }
-            return inst.method();`
+            return inst.method();`,
         );
 
         Expect(result).toBe(8);
@@ -749,8 +750,7 @@ export class ClassTests {
 
     @Test("Exported class super call")
     public exportedClassSuperCall(): void {
-        const code =
-            `export class Foo {
+        const code = `export class Foo {
                 prop: string;
                 constructor(prop: string) { this.prop = prop; }
             }
@@ -767,8 +767,7 @@ export class ClassTests {
     @TestCase("Foo", "bar")
     @Test("Class method name collision")
     public classMethodNameCollisiom(input: string, expectResult: string): void {
-        const code =
-            `class Foo {
+        const code = `class Foo {
                 public method() { return "foo"; }
                 public static method() { return "bar"; }
             }
@@ -780,14 +779,13 @@ export class ClassTests {
     @TestCase("metaExtension")
     @Test("Class extends extension")
     public classExtendsExtension(extensionType: string): void {
-        const code =
-            `declare class A {}
+        const code = `declare class A {}
             /** @${extensionType} **/
             class B extends A {}
             class C extends B {}`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Cannot extend classes with decorator '@extension' or '@metaExtension'."
+            "Cannot extend classes with decorator '@extension' or '@metaExtension'.",
         );
     }
 
@@ -795,14 +793,13 @@ export class ClassTests {
     @TestCase("metaExtension")
     @Test("Class construct extension")
     public classConstructExtension(extensionType: string): void {
-        const code =
-            `declare class A {}
+        const code = `declare class A {}
             /** @${extensionType} **/
             class B extends A {}
             const b = new B();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Cannot construct classes with decorator '@extension' or '@metaExtension'."
+            "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
         );
     }
 }

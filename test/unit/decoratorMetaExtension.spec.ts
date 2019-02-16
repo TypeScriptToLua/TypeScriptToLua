@@ -4,7 +4,6 @@ import * as util from "../src/util";
 import { TranspileError } from "../../src/TranspileError";
 
 export class DecoratorMetaExtension {
-
     @Test("MetaExtension")
     public metaExtension(): void {
         const tsHeader = `
@@ -21,7 +20,10 @@ export class DecoratorMetaExtension {
 
         const result = util.transpileAndExecute(
             `return debug.getregistry()["_LOADED"].test();`,
-            undefined, undefined, tsHeader);
+            undefined,
+            undefined,
+            tsHeader,
+        );
 
         // Assert
         Expect(result).toBe(5);
@@ -38,10 +40,9 @@ export class DecoratorMetaExtension {
                         return 5;
                     }
                 }
-                `
+                `,
             );
-        }).toThrowError(TranspileError,
-                        "!MetaExtension requires the extension of the metatable class.");
+        }).toThrowError(TranspileError, "!MetaExtension requires the extension of the metatable class.");
     }
 
     @Test("DontAllowInstantiation")
@@ -54,9 +55,8 @@ export class DecoratorMetaExtension {
                 class Ext extends _LOADED {
                 }
                 const e = new Ext();
-                `
+                `,
             );
-        }).toThrowError(TranspileError,
-                        "Cannot construct classes with decorator '@extension' or '@metaExtension'.");
+        }).toThrowError(TranspileError, "Cannot construct classes with decorator '@extension' or '@metaExtension'.");
     }
 }

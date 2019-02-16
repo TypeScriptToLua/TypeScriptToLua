@@ -1,1 +1,1 @@
-import * as Test from "test"
+import * as Test from "test";

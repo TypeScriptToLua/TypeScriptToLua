@@ -5,9 +5,5 @@
         "target": "es6",
         "module": "commonjs"
     },
-    "exclude": [
-        "translation/ts/*",
-        "compiler/projects/*",
-        "compiler/testfiles/*"
-    ]
+    "exclude": ["translation/ts/*", "compiler/projects/*", "compiler/testfiles/*"]
 }

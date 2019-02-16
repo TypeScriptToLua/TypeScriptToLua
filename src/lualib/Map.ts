@@ -4,7 +4,7 @@ declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [
 class Map<TKey, TValue> {
     public size: number;
 
-    private items: {[key: string]: TValue}; // Type of key is actually TKey
+    private items: { [key: string]: TValue }; // Type of key is actually TKey
 
     constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
         this.items = {};
@@ -57,10 +57,12 @@ class Map<TKey, TValue> {
         let key: TKey;
         let value: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<[TKey, TValue]> { return this; },
+            [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
+                return this;
+            },
             next(): IteratorResult<[TKey, TValue]> {
                 [key, value] = next(items, key);
-                return {done: !key, value: [key, value]};
+                return { done: !key, value: [key, value] };
             },
         };
     }
@@ -84,10 +86,12 @@ class Map<TKey, TValue> {
         const items = this.items;
         let key: TKey;
         return {
-            [Symbol.iterator](): IterableIterator<TKey> { return this; },
+            [Symbol.iterator](): IterableIterator<TKey> {
+                return this;
+            },
             next(): IteratorResult<TKey> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: key };
             },
         };
     }
@@ -105,10 +109,12 @@ class Map<TKey, TValue> {
         let key: TKey;
         let value: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            [Symbol.iterator](): IterableIterator<TValue> {
+                return this;
+            },
             next(): IteratorResult<TValue> {
                 [key, value] = next(items, key);
-                return {done: !key, value};
+                return { done: !key, value };
             },
         };
     }

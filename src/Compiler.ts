@@ -3,14 +3,13 @@ import * as path from "path";
 import * as ts from "typescript";
 
 import * as CommandLineParser from "./CommandLineParser";
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {LuaTranspiler} from "./LuaTranspiler";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
+import { LuaTranspiler } from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
     const parseResult = CommandLineParser.parseCommandLine(argv);
 
     if (parseResult.isValid === true) {
-
         if (parseResult.result.options.help) {
             console.log(CommandLineParser.getHelpString());
             return;
@@ -63,13 +62,11 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
     };
 
     if (config) {
-        ts.createWatchProgram(
-            host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>
-        );
+        ts.createWatchProgram(host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>);
     } else {
-        ts.createWatchProgram(
-            host as ts.WatchCompilerHostOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>
-        );
+        ts.createWatchProgram(host as ts.WatchCompilerHostOfFilesAndCompilerOptions<
+            ts.SemanticDiagnosticsBuilderProgram
+        >);
     }
 }
 
@@ -81,7 +78,7 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     transpiler.emitFilesAndReportErrors();
 }
 
-const libCache: {[key: string]: string} = {};
+const libCache: { [key: string]: string } = {};
 
 const defaultCompilerOptions: CompilerOptions = {
     luaLibImport: LuaLibImportKind.Require,
@@ -89,9 +86,10 @@ const defaultCompilerOptions: CompilerOptions = {
 };
 
 export function createStringCompilerProgram(
-    input: string, options: CompilerOptions = defaultCompilerOptions): ts.Program {
-
-    const compilerHost =  {
+    input: string,
+    options: CompilerOptions = defaultCompilerOptions,
+): ts.Program {
+    const compilerHost = {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
@@ -104,7 +102,7 @@ export function createStringCompilerProgram(
             if (filename === "file.ts") {
                 return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
             }
-            if (filename.indexOf(".d.ts") !== -1) {
+            if (filename.indexOf(".d.ts") !== -1) {
                 if (!libCache[filename]) {
                     const typeScriptDir = path.dirname(require.resolve("typescript"));
                     const filePath = path.join(typeScriptDir, filename);
@@ -132,7 +130,7 @@ export function createStringCompilerProgram(
 export function transpileString(
     str: string,
     options: CompilerOptions = defaultCompilerOptions,
-    ignoreDiagnostics = false
+    ignoreDiagnostics = false,
 ): string {
     const program = createStringCompilerProgram(str, options);
 

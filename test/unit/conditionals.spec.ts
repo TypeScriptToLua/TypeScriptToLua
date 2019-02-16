@@ -4,7 +4,6 @@ import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
 export class LuaConditionalsTests {
-
     @TestCase(0, 0)
     @TestCase(1, 1)
     @Test("if")
@@ -14,7 +13,7 @@ export class LuaConditionalsTests {
             if (input === 0) {
                 return 0;
             }
-            return 1;`
+            return 1;`,
         );
 
         // Assert
@@ -31,7 +30,7 @@ export class LuaConditionalsTests {
                 return 0;
             } else {
                 return 1;
-            }`
+            }`,
         );
 
         // Assert
@@ -53,7 +52,7 @@ export class LuaConditionalsTests {
             } else if (input === 2){
                 return 2;
             }
-            return 3;`
+            return 3;`,
         );
 
         // Assert
@@ -76,7 +75,7 @@ export class LuaConditionalsTests {
                 return 2;
             } else {
                 return 3;
-            }`
+            }`,
         );
 
         // Assert
@@ -103,7 +102,7 @@ export class LuaConditionalsTests {
                     result = 2;
                     break;
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -133,7 +132,7 @@ export class LuaConditionalsTests {
                     result = -2;
                     break;
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -175,7 +174,7 @@ export class LuaConditionalsTests {
                     result = -2;
                     break;
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -215,7 +214,7 @@ export class LuaConditionalsTests {
                     result = -2;
                     break;
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -246,7 +245,7 @@ export class LuaConditionalsTests {
                     break;
                 }
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -272,7 +271,7 @@ export class LuaConditionalsTests {
                     return 2;
                     break;
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -302,13 +301,12 @@ export class LuaConditionalsTests {
                     break;
                 }
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
         Expect(result).toBe(expected);
     }
-
 
     @TestCase(0, 0)
     @TestCase(1, 1)
@@ -334,7 +332,7 @@ export class LuaConditionalsTests {
                     break;
                 }
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -371,7 +369,7 @@ export class LuaConditionalsTests {
                     break;
                 }
             }
-            return result;`
+            return result;`,
         );
 
         // Assert
@@ -380,8 +378,7 @@ export class LuaConditionalsTests {
 
     @Test("If dead code after return")
     public ifDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `if (true) { return 3; const b = 8; }`);
+        const result = util.transpileAndExecute(`if (true) { return 3; const b = 8; }`);
 
         Expect(result).toBe(3);
     }
@@ -389,14 +386,17 @@ export class LuaConditionalsTests {
     @Test("switch dead code after return")
     public whileDeadCodeAfterReturn(): void {
         const result = util.transpileAndExecute(
-            `switch (<string>"abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`);
+            `switch (<string>"abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`,
+        );
 
         Expect(result).toBe(5);
     }
 
     @Test("switch not allowed in 5.1")
     public switchThrow51(): void {
-        Expect( () => util.transpileString(`switch ("abc") {}`, {luaTarget: LuaTarget.Lua51}))
-            .toThrowError(TranspileError, "Switch statements is/are not supported for target Lua 5.1.");
+        Expect(() => util.transpileString(`switch ("abc") {}`, { luaTarget: LuaTarget.Lua51 })).toThrowError(
+            TranspileError,
+            "Switch statements is/are not supported for target Lua 5.1.",
+        );
     }
 }

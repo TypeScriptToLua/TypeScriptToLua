@@ -70,10 +70,13 @@ export class EnumTests {
                     a,
                     b = "ok",
                     c,
-                }`
+                }`,
             );
-        }).toThrowError(TranspileError, "Invalid heterogeneous enum. Enums should either specify no "
-                        + "member values, or specify values (of the same type) for all members.");
+        }).toThrowError(
+            TranspileError,
+            "Invalid heterogeneous enum. Enums should either specify no " +
+                "member values, or specify values (of the same type) for all members.",
+        );
     }
 
     @Test("String literal name in enum")
@@ -95,7 +98,7 @@ export class EnumTests {
                 ghi = def,
                 jkl,
             }
-            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`,
         );
 
         Expect(result).toBe("0,1,1,2");
@@ -110,7 +113,7 @@ export class EnumTests {
                 ghi = def,
                 jkl = ghi,
             }
-            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`,
         );
 
         Expect(result).toBe("0,1,1,1");
@@ -125,7 +128,7 @@ export class EnumTests {
                 def,
                 ghi = ext,
             }
-            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`
+            return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`,
         );
 
         Expect(result).toBe("0,1,6");
@@ -139,7 +142,7 @@ export class EnumTests {
                 def,
                 ghi
             }
-            return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`
+            return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`,
         );
 
         Expect(result).toBe("abcghi");
@@ -153,7 +156,7 @@ export class EnumTests {
                 def,
                 ghi
             }
-            return testEnum["def"];`
+            return testEnum["def"];`,
         );
 
         Expect(result).toBe(1);
@@ -168,7 +171,7 @@ export class EnumTests {
                 ghi,
                 jkl = ghi
             }
-            return testEnum["jkl"];`
+            return testEnum["jkl"];`,
         );
 
         Expect(result).toBe(5);
@@ -183,7 +186,7 @@ export class EnumTests {
                 ghi = def,
                 jkl = ghi,
             }
-            return testEnum["ghi"];`
+            return testEnum["ghi"];`,
         );
 
         Expect(result).toBe(4);

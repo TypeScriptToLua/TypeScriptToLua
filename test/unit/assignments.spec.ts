@@ -5,9 +5,7 @@ import * as util from "../src/util";
 const fs = require("fs");
 
 export class AssignmentTests {
-
-    public static readonly funcAssignTestCode =
-        `let func: {(s: string): string} = function(s) { return s + "+func"; };
+    public static readonly funcAssignTestCode = `let func: {(s: string): string} = function(s) { return s + "+func"; };
          let lambda: (s: string) => string = s => s + "+lambda";
          let thisFunc: {(this: Foo, s: string): string} = function(s) { return s + "+thisFunc"; };
          let thisLambda: (this: Foo, s: string) => string = s => s + "+thisLambda";
@@ -85,8 +83,10 @@ export class AssignmentTests {
 
     @Test("Ellipsis binding pattern")
     public ellipsisBindingPattern(): void {
-        Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];"))
-            .toThrowError(Error, "Ellipsis destruction is not allowed.");
+        Expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrowError(
+            Error,
+            "Ellipsis destruction is not allowed.",
+        );
     }
 
     @Test("Tuple Assignment")
@@ -100,9 +100,7 @@ export class AssignmentTests {
 
     @Test("TupleReturn assignment")
     public tupleReturnFunction(): void {
-        const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): number[]\n`
-                   + `let [a,b] = abc();`;
+        const code = `/** @tupleReturn */\n` + `declare function abc(): number[]\n` + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a, b = abc();");
@@ -110,10 +108,8 @@ export class AssignmentTests {
 
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment(): void {
-        const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): [number, string];\n`
-                   + `let a = abc();`
-                   + `a = abc();`;
+        const code =
+            `/** @tupleReturn */\n` + `declare function abc(): [number, string];\n` + `let a = abc();` + `a = abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a = ({abc()});\na = ({abc()});");
@@ -121,11 +117,12 @@ export class AssignmentTests {
 
     @Test("TupleReturn interface assignment")
     public tupleReturnInterface(): void {
-        const code = `interface def {\n`
-                   + `/** @tupleReturn */\n`
-                   + `abc();\n`
-                   + `} declare const jkl : def;\n`
-                   + `let [a,b] = jkl.abc();`;
+        const code =
+            `interface def {\n` +
+            `/** @tupleReturn */\n` +
+            `abc();\n` +
+            `} declare const jkl : def;\n` +
+            `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a, b = jkl:abc();");
@@ -133,11 +130,12 @@ export class AssignmentTests {
 
     @Test("TupleReturn namespace assignment")
     public tupleReturnNameSpace(): void {
-        const code = `declare namespace def {\n`
-                   + `/** @tupleReturn */\n`
-                   + `function abc() {}\n`
-                   + `}\n`
-                   + `let [a,b] = def.abc();`;
+        const code =
+            `declare namespace def {\n` +
+            `/** @tupleReturn */\n` +
+            `function abc() {}\n` +
+            `}\n` +
+            `let [a,b] = def.abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local a, b = def.abc();");
@@ -145,11 +143,12 @@ export class AssignmentTests {
 
     @Test("TupleReturn method assignment")
     public tupleReturnMethod(): void {
-        const code = `declare class def {\n`
-                   + `/** @tupleReturn */\n`
-                   + `abc() { return [1,2,3]; }\n`
-                   + `} const jkl = new def();\n`
-                   + `let [a,b] = jkl.abc();`;
+        const code =
+            `declare class def {\n` +
+            `/** @tupleReturn */\n` +
+            `abc() { return [1,2,3]; }\n` +
+            `} const jkl = new def();\n` +
+            `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
         Expect(lua).toBe("local jkl = def.new();\nlocal a, b = jkl:abc();");
@@ -200,8 +199,10 @@ export class AssignmentTests {
     @TestCase("until")
     @Test("Keyword identifier error")
     public keywordIdentifierError(identifier: string): void {
-        Expect(() => util.transpileString(`const ${identifier} = 3;`))
-            .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
+        Expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowError(
+            TranspileError,
+            `Cannot use Lua keyword ${identifier} as identifier.`,
+        );
     }
 
     @TestCase("func", "lambda", "foo+lambda")
@@ -539,7 +540,8 @@ export class AssignmentTests {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.",
+        );
     }
 
     @TestCase("foo.method")
@@ -561,7 +563,8 @@ export class AssignmentTests {
                       takesFunc(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function \"fn\". To fix, wrap the method in an arrow function.");
+            'Unsupported conversion from method to function "fn". To fix, wrap the method in an arrow function.',
+        );
     }
 
     @TestCase("<(s: string) => string>foo.method")
@@ -573,7 +576,8 @@ export class AssignmentTests {
                       takesFunc(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.",
+        );
     }
 
     @TestCase("foo.method")
@@ -598,7 +602,8 @@ export class AssignmentTests {
                       }`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.",
+        );
     }
 
     @TestCase("foo.method", "func")
@@ -651,8 +656,9 @@ export class AssignmentTests {
         const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare"
-            + " the function with an explicit 'this' parameter.");
+            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare" +
+                " the function with an explicit 'this' parameter.",
+        );
     }
 
     @TestCase("func")
@@ -674,8 +680,9 @@ export class AssignmentTests {
                       takesMethod(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method \"meth\". To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
+            'Unsupported conversion from function to method "meth". To fix, wrap the function in an arrow function ' +
+                "or declare the function with an explicit 'this' parameter.",
+        );
     }
 
     @TestCase("<(this: Foo, s: string) => string>func")
@@ -688,8 +695,9 @@ export class AssignmentTests {
                       takesMethod(${func});`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
+            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function " +
+                "or declare the function with an explicit 'this' parameter.",
+        );
     }
 
     @TestCase("func")
@@ -714,8 +722,9 @@ export class AssignmentTests {
                       }`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
+            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function " +
+                "or declare the function with an explicit 'this' parameter.",
+        );
     }
 
     @Test("Interface method assignment")
@@ -752,7 +761,8 @@ export class AssignmentTests {
                       let [i, f]: [number, Func] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.",
+        );
     }
 
     @Test("Valid method tuple assignment")
@@ -776,8 +786,9 @@ export class AssignmentTests {
                       let [i, f]: [number, Meth] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare"
-            + " the function with an explicit 'this' parameter.");
+            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare" +
+                " the function with an explicit 'this' parameter.",
+        );
     }
 
     @Test("Valid interface method assignment")
@@ -799,7 +810,8 @@ export class AssignmentTests {
                       const b: B = a;`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function \"fn\". To fix, wrap the method in an arrow function.");
+            'Unsupported conversion from method to function "fn". To fix, wrap the method in an arrow function.',
+        );
     }
 
     @TestCase("(s: string) => string", ["foo"], "foobar")
@@ -814,7 +826,7 @@ export class AssignmentTests {
                       }
                       const o: O = (s1: string, s2?: string) => s1 + (s2 || "bar");
                       let f: ${assignType} = o;
-                      return f(${args.map(a => "\"" + a + "\"").join(", ")});`;
+                      return f(${args.map(a => '"' + a + '"').join(", ")});`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(expectResult);
     }
@@ -833,8 +845,9 @@ export class AssignmentTests {
                       let f: ${assignType} = o;`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported assignment of mixed function/method overload. "
-            + "Overloads should either be all functions or all methods, but not both.");
+            "Unsupported assignment of mixed function/method overload. " +
+                "Overloads should either be all functions or all methods, but not both.",
+        );
     }
 
     @TestCase("s => s")
@@ -843,8 +856,7 @@ export class AssignmentTests {
     @TestCase("(function(s) { return s; })")
     @Test("Function expression type inference in class")
     public functionExpressionTypeInferenceInClass(funcExp: string): void {
-        const code =
-            `class Foo {
+        const code = `class Foo {
                 func: (this: void, s: string) => string = ${funcExp};
                 method: (s: string) => string = ${funcExp};
                 static staticFunc: (this: void, s: string) => string = ${funcExp};
@@ -865,8 +877,7 @@ export class AssignmentTests {
     @TestCase("let foo: Foo; foo", "(function(s) { return s; })")
     @Test("Function expression type inference in object literal")
     public functionExpressionTypeInferenceInObjectLiteral(assignTo: string, funcExp: string): void {
-        const code =
-            `interface Foo {
+        const code = `interface Foo {
                 func(this: void, s: string): string;
                 method(this: this, s: string): string;
             }
@@ -885,8 +896,7 @@ export class AssignmentTests {
     @TestCase("let foo: Foo; foo", "(function(s) { return s; })")
     @Test("Function expression type inference in object literal (generic key)")
     public functionExpressionTypeInferenceInObjectLiteralGenericKey(assignTo: string, funcExp: string): void {
-        const code =
-            `interface Foo {
+        const code = `interface Foo {
                 [f: string]: (this: void, s: string) => string;
             }
             ${assignTo} = {func: ${funcExp}};
@@ -915,11 +925,9 @@ export class AssignmentTests {
         assignTo: string,
         func: string,
         method: string,
-        funcExp: string
-    ): void
-    {
-        const code =
-            `interface Foo {
+        funcExp: string,
+    ): void {
+        const code = `interface Foo {
                 method(s: string): string;
             }
             interface Func {
@@ -952,8 +960,7 @@ export class AssignmentTests {
     @TestCase("let meth: Method; [meth]", "meth", "(function(s) { return s; })")
     @Test("Function expression type inference in array")
     public functionExpressionTypeInferenceInArray(assignTo: string, method: string, funcExp: string): void {
-        const code =
-            `interface Foo {
+        const code = `interface Foo {
                 method(s: string): string;
             }
             interface Method {
@@ -973,5 +980,4 @@ export class AssignmentTests {
         const result = util.transpileAndExecute(code);
         Expect(result).toBe(3);
     }
-
 }

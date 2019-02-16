@@ -8,8 +8,7 @@ import { TranspileError } from "../../src/TranspileError";
 export class HoistingTests {
     @Test("Var Hoisting")
     public varHoisting(): void {
-        const code =
-            `foo = "foo";
+        const code = `foo = "foo";
             var foo;
             return foo;`;
         const result = util.transpileAndExecute(code);
@@ -18,8 +17,7 @@ export class HoistingTests {
 
     @Test("Exported Var Hoisting")
     public exportedVarHoisting(): void {
-        const code =
-            `foo = "foo";
+        const code = `foo = "foo";
             export var foo;`;
         const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("foo");
@@ -29,8 +27,7 @@ export class HoistingTests {
     @TestCase("const")
     @Test("Let/Const Hoisting")
     public letConstHoisting(varType: string): void {
-        const code =
-            `let bar: string;
+        const code = `let bar: string;
             function setBar() { bar = foo; }
             ${varType} foo = "foo";
             setBar();
@@ -43,8 +40,7 @@ export class HoistingTests {
     @TestCase("const")
     @Test("Exported Let/Const Hoisting")
     public exportedLetConstHoisting(varType: string): void {
-        const code =
-            `let bar: string;
+        const code = `let bar: string;
             function setBar() { bar = foo; }
             export ${varType} foo = "foo";
             setBar();`;
@@ -54,8 +50,7 @@ export class HoistingTests {
 
     @Test("Global Function Hoisting")
     public globalFunctionHoisting(): void {
-        const code =
-            `const foo = bar();
+        const code = `const foo = bar();
             function bar() { return "bar"; }
             return foo;`;
         const result = util.transpileAndExecute(code);
@@ -64,8 +59,7 @@ export class HoistingTests {
 
     @Test("Local Function Hoisting")
     public localFunctionHoisting(): void {
-        const code =
-            `export const foo = bar();
+        const code = `export const foo = bar();
             function bar() { return "bar"; }`;
         const result = util.transpileExecuteAndReturnExport(code, "foo");
         Expect(result).toBe("bar");
@@ -73,8 +67,7 @@ export class HoistingTests {
 
     @Test("Exported Function Hoisting")
     public exportedFunctionHoisting(): void {
-        const code =
-            `const foo = bar();
+        const code = `const foo = bar();
             export function bar() { return "bar"; }
             export const baz = foo;`;
         const result = util.transpileExecuteAndReturnExport(code, "baz");
@@ -83,8 +76,7 @@ export class HoistingTests {
 
     @Test("Namespace Function Hoisting")
     public namespaceFunctionHoisting(): void {
-        const code =
-            `let foo: string;
+        const code = `let foo: string;
             namespace NS {
                 foo = bar();
                 function bar() { return "bar"; }
@@ -95,8 +87,7 @@ export class HoistingTests {
 
     @Test("Exported Namespace Function Hoisting")
     public exportedNamespaceFunctionHoisting(): void {
-        const code =
-            `let foo: string;
+        const code = `let foo: string;
             namespace NS {
                 foo = bar();
                 export function bar() { return "bar"; }
@@ -110,8 +101,7 @@ export class HoistingTests {
     @TestCase("const", "bar")
     @Test("Hoisting in Non-Function Scope")
     public hoistingInNonFunctionScope(varType: string, expectResult: string): void {
-        const code =
-            `function foo() {
+        const code = `function foo() {
                 ${varType} bar = "bar";
                 for (let i = 0; i < 1; ++i) {
                     ${varType} bar = "foo";
@@ -125,8 +115,7 @@ export class HoistingTests {
 
     @Test("Namespace Hoisting")
     public namespaceHoisting(): void {
-        const code =
-            `function bar() {
+        const code = `function bar() {
                 return NS.foo;
             }
             namespace NS {
@@ -139,8 +128,7 @@ export class HoistingTests {
 
     @Test("Exported Namespace Hoisting")
     public exportedNamespaceHoisting(): void {
-        const code =
-            `function bar() {
+        const code = `function bar() {
                 return NS.foo;
             }
             export namespace NS {
@@ -153,8 +141,7 @@ export class HoistingTests {
 
     @Test("Nested Namespace Hoisting")
     public nestedNamespaceHoisting(): void {
-        const code =
-            `export namespace Outer {
+        const code = `export namespace Outer {
                 export function bar() {
                     return Inner.foo;
                 }
@@ -169,8 +156,7 @@ export class HoistingTests {
 
     @Test("Class Hoisting")
     public classHoisting(): void {
-        const code =
-            `function makeFoo() {
+        const code = `function makeFoo() {
                 return new Foo();
             }
             class Foo {
@@ -183,8 +169,7 @@ export class HoistingTests {
 
     @Test("Enum Hoisting")
     public enumHoisting(): void {
-        const code =
-            `function bar() {
+        const code = `function bar() {
                 return E.A;
             }
             enum E {
@@ -207,7 +192,7 @@ export class HoistingTests {
     @TestCase(`function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, "NS")
     @TestCase(
         `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
-        "I"
+        "I",
     )
     @TestCase(`function makeFoo() { return new Foo(); } class Foo {}`, "Foo")
     @TestCase(`function bar() { return E.A; } enum E { A = "foo" }`, "E")
@@ -222,7 +207,7 @@ export class HoistingTests {
         Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
             TranspileError,
             `Identifier "${identifier}" was referenced before it was declared. The declaration ` +
-            "must be moved before the identifier's use, or hoisting must be enabled."
+                "must be moved before the identifier's use, or hoisting must be enabled.",
         );
     }
 }

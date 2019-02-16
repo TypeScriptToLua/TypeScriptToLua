@@ -12,8 +12,8 @@ export class RequireTests {
     @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "src" }, false)
     @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "./src" }, false)
     @TestCase("file.ts", "../Module", "", { rootDir: "./src" }, true)
-    @TestCase("src/dir/file.ts", "../Module", "Module", { rootDir: ".\\src" }, false)
-    @TestCase("src/dir/dir/file.ts", "../../dir/Module", "dir.Module", { rootDir: ".\\src" }, false)
+    @TestCase("src/dir/file.ts", "../Module", "Module", { rootDir: "./src" }, false)
+    @TestCase("src/dir/dir/file.ts", "../../dir/Module", "dir.Module", { rootDir: "./src" }, false)
     @Test("require paths root from --baseUrl or --rootDir")
     public testRequirePath(
         filePath: string,

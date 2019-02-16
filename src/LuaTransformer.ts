@@ -207,11 +207,9 @@ export class LuaTransformer {
     }
 
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
-        if (!statement.importClause || !statement.importClause.namedBindings) {
+        if (statement.importClause && !statement.importClause.namedBindings) {
             throw TSTLErrors.DefaultImportsNotSupported(statement);
         }
-
-        const imports = statement.importClause.namedBindings;
 
         const result: tstl.Statement[] = [];
 
@@ -221,6 +219,12 @@ export class LuaTransformer {
 
         const requireCall = tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
 
+        if (!statement.importClause) {
+            result.push(tstl.createExpressionStatement(requireCall));
+            return result;
+        }
+
+        const imports = statement.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
@@ -1864,7 +1868,7 @@ export class LuaTransformer {
             return tstl.createForInStatement(
                 block,
                 [this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier)],
-                [this.transformLuaLibFunction(LuaLibFeature.Iterator, iterable)]
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)]
             );
 
         } else {
@@ -1877,7 +1881,7 @@ export class LuaTransformer {
             return tstl.createForInStatement(
                 block,
                 [valueVariable],
-                [this.transformLuaLibFunction(LuaLibFeature.Iterator, iterable)]
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)]
             );
         }
     }
@@ -2238,7 +2242,7 @@ export class LuaTransformer {
                     // Cannot use instanceof on extension classes
                     throw TSTLErrors.InvalidInstanceOfExtension(expression);
                 }
-                return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, lhs, rhs);
+                return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, expression, lhs, rhs);
 
             case ts.SyntaxKind.CommaToken:
                 return this.createImmediatelyInvokedFunctionExpression(
@@ -2960,21 +2964,23 @@ export class LuaTransformer {
         const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
         if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
-            parameters = this.transformArguments(node.arguments);
             return tstl.createCallExpression(
                 this.transformMathExpression(node.expression.name),
-                parameters,
+                this.transformArguments(node.arguments),
                 node
             );
         }
 
         if (ownerType.symbol && ownerType.symbol.escapedName === "StringConstructor") {
-            parameters = this.transformArguments(node.arguments);
             return tstl.createCallExpression(
                 this.transformStringExpression(node.expression.name),
-                parameters,
+                this.transformArguments(node.arguments),
                 node
             );
+        }
+
+        if (ownerType.symbol && ownerType.symbol.escapedName === "ObjectConstructor") {
+            return this.transformObjectCallExpression(node);
         }
 
         switch (ownerType.flags) {
@@ -3296,9 +3302,9 @@ export class LuaTransformer {
         const expressionName = expression.name.escapedText as string;
         switch (expressionName) {
             case "replace":
-                return this.transformLuaLibFunction(LuaLibFeature.StringReplace, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.StringReplace, node, caller, ...params);
             case "concat":
-                return this.transformLuaLibFunction(LuaLibFeature.StringConcat, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.StringConcat, node, caller, ...params);
             case "indexOf":
                 const stringExpression =
                     node.arguments.length === 1
@@ -3355,7 +3361,7 @@ export class LuaTransformer {
             case "toUpperCase":
                 return this.createStringCall("upper", node, caller);
             case "split":
-                return this.transformLuaLibFunction(LuaLibFeature.StringSplit, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.StringSplit, node, caller, ...params);
             case "charAt":
                 const firstParamPlusOne = this.expressionPlusOne(params[0]);
                 return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
@@ -3384,7 +3390,7 @@ export class LuaTransformer {
     }
 
     // Transpile a String._ property
-    public transformStringExpression(identifier: ts.Identifier): tstl.TableIndexExpression {
+    public transformStringExpression(identifier: ts.Identifier): ExpressionVisitResult {
         const identifierString = identifier.escapedText as string;
 
         switch (identifierString) {
@@ -3402,6 +3408,31 @@ export class LuaTransformer {
         }
     }
 
+    // Transpile an Object._ property
+    public transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const parameters = this.transformArguments(expression.arguments);
+        const caller = this.transformExpression(expression.expression);
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "assign":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...parameters);
+            case "entries":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectEntries, expression, ...parameters);
+            case "keys":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectKeys, expression, ...parameters);
+            case "values":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectValues, expression, ...parameters);
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `object property ${methodName}`,
+                    this.options.luaTarget,
+                    expression
+                );
+        }
+    }
+
     public transformArrayCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const params = this.transformArguments(node.arguments);
@@ -3409,17 +3440,17 @@ export class LuaTransformer {
         const expressionName = expression.name.escapedText;
         switch (expressionName) {
             case "concat":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayConcat, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayConcat, node, caller, ...params);
             case "push":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayPush, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayPush, node, caller, ...params);
             case "reverse":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayReverse, caller);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReverse, node, caller);
             case "shift":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayShift, caller);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayShift, node, caller);
             case "unshift":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayUnshift, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayUnshift, node, caller, ...params);
             case "sort":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, caller);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, node, caller);
             case "pop":
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("remove")),
@@ -3427,21 +3458,21 @@ export class LuaTransformer {
                     node
                 );
             case "forEach":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayForEach, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayForEach, node, caller, ...params);
             case "indexOf":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayIndexOf, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayIndexOf, node, caller, ...params);
             case "map":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, node, caller, ...params);
             case "filter":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
             case "some":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySome, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":
-                return this.transformLuaLibFunction(LuaLibFeature.ArrayEvery, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayEvery, node, caller, ...params);
             case "slice":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySlice, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySlice, node, caller, ...params);
             case "splice":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, node, caller, ...params);
             case "join":
                 const parameters = node.arguments.length === 0
                     ? [caller, tstl.createStringLiteral(",")]
@@ -3468,11 +3499,11 @@ export class LuaTransformer {
         const expressionName = expression.name.escapedText;
         switch (expressionName) {
             case "apply":
-                return this.transformLuaLibFunction(LuaLibFeature.FunctionApply, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionApply, node, caller, ...params);
             case "bind":
-                return this.transformLuaLibFunction(LuaLibFeature.FunctionBind, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionBind, node, caller, ...params);
             case "call":
-                return this.transformLuaLibFunction(LuaLibFeature.FunctionCall, caller, ...params);
+                return this.transformLuaLibFunction(LuaLibFeature.FunctionCall, node, caller, ...params);
             default:
                 throw TSTLErrors.UnsupportedProperty("function", expressionName as string, node);
         }
@@ -3655,10 +3686,15 @@ export class LuaTransformer {
             tstl.createStringLiteral(identifier.text));
     }
 
-    public transformLuaLibFunction(func: LuaLibFeature, ...params: tstl.Expression[]): tstl.CallExpression {
+    public transformLuaLibFunction(
+        func: LuaLibFeature,
+        tsParent: ts.Expression,
+        ...params: tstl.Expression[]
+    ): tstl.CallExpression
+    {
         this.importLuaLibFeature(func);
         const functionIdentifier = tstl.createIdentifier(`__TS__${func}`);
-        return tstl.createCallExpression(functionIdentifier, params);
+        return tstl.createCallExpression(functionIdentifier, params, tsParent);
     }
 
     public checkForLuaLibType(type: ts.Type): void {
@@ -3669,6 +3705,12 @@ export class LuaTransformer {
                     return;
                 case "Set":
                     this.importLuaLibFeature(LuaLibFeature.Set);
+                    return;
+                case "WeakMap":
+                    this.importLuaLibFeature(LuaLibFeature.WeakMap);
+                    return;
+                case "WeakSet":
+                    this.importLuaLibFeature(LuaLibFeature.WeakSet);
                     return;
             }
         }

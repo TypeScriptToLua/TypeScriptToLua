@@ -2,7 +2,6 @@ import * as ts from "typescript";
 
 import {Decorator, DecoratorKind} from "./Decorator";
 import * as tstl from "./LuaAST";
-import {TSTLErrors} from "./TSTLErrors";
 
 export enum ContextType {
     None,

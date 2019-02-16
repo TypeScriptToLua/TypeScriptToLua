@@ -135,7 +135,7 @@ export function transpileString(
     ignoreDiagnostics = false,
     filePath = "file.ts"
 ): string {
-    const program = createStringCompilerProgram(str, options);
+    const program = createStringCompilerProgram(str, options, filePath);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);

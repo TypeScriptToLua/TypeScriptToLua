@@ -1,0 +1,3 @@
+/dist
+.nyc*
+/test/compiler/testfiles/invalid_syntax.ts

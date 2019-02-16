@@ -27,7 +27,8 @@
         "release-major": "npm version major",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags",
-        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
+        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts && npm run style-check:prettier",
+        "style-check:prettier": "prettier --check \"**/.*.y{,a}ml\" \"**/*.{yml,yaml,json,md}\""
     },
     "bin": {
         "tstl": "./dist/index.js"
@@ -47,6 +48,23 @@
     "engines": {
         "node": ">=8.5.0"
     },
+    "prettier": {
+        "printWidth": 120,
+        "proseWrap": "always",
+        "tabWidth": 4,
+        "trailingComma": "all",
+        "overrides": [
+            {
+                "files": [
+                    "**/*.y{,a}ml",
+                    "**/.*.y{,a}ml"
+                ],
+                "options": {
+                    "tabWidth": 2
+                }
+            }
+        ]
+    },
     "dependencies": {
         "typescript": "^3.3.1"
     },
@@ -60,9 +78,11 @@
         "fengari": "^0.1.2",
         "glob": "^7.1.2",
         "nyc": "^13.3.0",
+        "prettier": "^1.16.4",
         "rimraf": "^2.6.3",
         "threads": "^0.12.0",
         "ts-node": "^7.0.0",
-        "tslint": "^5.10.0"
+        "tslint": "^5.10.0",
+        "tslint-plugin-prettier": "^2.0.1"
     }
 }

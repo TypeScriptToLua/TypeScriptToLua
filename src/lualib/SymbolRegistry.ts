@@ -1,15 +1,16 @@
-const symbolRegistry: Record<string, symbol> = {};
+// tslint:disable-next-line: variable-name
+const ____symbolRegistry: Record<string, symbol> = {};
 
 function __TS__SymbolRegistryFor(key: string): symbol {
-    if (!symbolRegistry[key])  {
-        symbolRegistry[key] = __TS__Symbol(key);
+    if (!____symbolRegistry[key])  {
+        ____symbolRegistry[key] = __TS__Symbol(key);
     }
 
-    return symbolRegistry[key];
+    return ____symbolRegistry[key];
 }
 
 function __TS__SymbolRegistryKeyFor(sym: symbol): string {
-    for (const key in symbolRegistry) {
-        if (symbolRegistry[key] === sym) return key;
+    for (const key in ____symbolRegistry) {
+        if (____symbolRegistry[key] === sym) return key;
     }
 }

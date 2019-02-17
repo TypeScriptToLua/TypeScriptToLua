@@ -3734,7 +3734,7 @@ export class LuaTransformer {
     }
 
     private pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(new RegExp("\\\\|\/", "g"), ".").replace(/\.json$/, '');
+        return filePath.replace(/\.json$/, '').replace(new RegExp("\\\\|\/", "g"), ".");
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {

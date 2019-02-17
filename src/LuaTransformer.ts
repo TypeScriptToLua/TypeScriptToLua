@@ -93,27 +93,41 @@ export class LuaTransformer {
     // TODO make all other methods private???
     public transformSourceFile(node: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
-        this.pushScope(ScopeType.File, node);
 
         this.currentSourceFile = node;
-        this.isModule = tsHelper.isFileModule(node);
 
-        const statements = this.performHoisting(this.transformStatements(node.statements));
-        this.popScope();
+        let statements: tstl.Statement[] = [];
+        if (node.flags & ts.NodeFlags.JsonFile) {
+            this.isModule = false;
 
-        if (this.isModule) {
-            statements.unshift(
-                tstl.createVariableDeclarationStatement(
-                    tstl.createIdentifier("exports"),
-                    tstl.createBinaryExpression(
+            const statement = node.statements[0];
+            if (!statement || !ts.isExpressionStatement(statement)) {
+                throw TSTLErrors.InvalidJsonFileContent(node);
+            }
+
+            statements.push(tstl.createReturnStatement([this.transformExpression(statement.expression)]));
+        } else {
+            this.pushScope(ScopeType.File, node);
+
+            this.isModule = tsHelper.isFileModule(node);
+            statements = this.performHoisting(this.transformStatements(node.statements));
+
+            this.popScope();
+
+            if (this.isModule) {
+                statements.unshift(
+                    tstl.createVariableDeclarationStatement(
                         tstl.createIdentifier("exports"),
-                        tstl.createTableExpression(),
-                        tstl.SyntaxKind.OrOperator
-                    )));
-            statements.push(
-                tstl.createReturnStatement(
-                    [tstl.createIdentifier("exports")]
-                ));
+                        tstl.createBinaryExpression(
+                            tstl.createIdentifier("exports"),
+                            tstl.createTableExpression(),
+                            tstl.SyntaxKind.OrOperator
+                        )));
+                statements.push(
+                    tstl.createReturnStatement(
+                        [tstl.createIdentifier("exports")]
+                    ));
+            }
         }
 
         return [tstl.createBlock(statements, node), this.luaLibFeatureSet];

@@ -141,4 +141,6 @@ export class TSTLErrors {
             node
         );
     }
+
+    public static InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 }

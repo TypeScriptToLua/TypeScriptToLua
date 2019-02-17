@@ -89,8 +89,10 @@ const defaultCompilerOptions: CompilerOptions = {
 };
 
 export function createStringCompilerProgram(
-    input: string, options: CompilerOptions = defaultCompilerOptions): ts.Program {
-
+    input: string,
+    options: CompilerOptions = defaultCompilerOptions,
+    mainFileName = "file.ts"
+): ts.Program {
     const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -100,8 +102,8 @@ export function createStringCompilerProgram(
         getDirectories: () => [],
         getNewLine: () => "\n",
 
-        getSourceFile: (filename: string, languageVersion) => {
-            if (filename === "file.ts") {
+        getSourceFile: (filename: string) => {
+            if (filename === mainFileName) {
                 return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
             }
             if (filename.indexOf(".d.ts") !== -1) {
@@ -126,15 +128,16 @@ export function createStringCompilerProgram(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    return ts.createProgram(["file.ts"], options, compilerHost);
+    return ts.createProgram([mainFileName], options, compilerHost);
 }
 
 export function transpileString(
     str: string,
     options: CompilerOptions = defaultCompilerOptions,
-    ignoreDiagnostics = false
+    ignoreDiagnostics = false,
+    mainFileName = "file.ts"
 ): string {
-    const program = createStringCompilerProgram(str, options);
+    const program = createStringCompilerProgram(str, options, mainFileName);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);
@@ -148,7 +151,7 @@ export function transpileString(
 
     const transpiler = new LuaTranspiler(program);
 
-    const result = transpiler.transpileSourceFile(program.getSourceFile("file.ts"));
+    const result = transpiler.transpileSourceFile(program.getSourceFile(mainFileName));
 
     return result.trim();
 }

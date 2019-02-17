@@ -1,4 +1,4 @@
-RenamedTestClass.prototype.myFunction = function(self)
+RenamedTestClass.myFunction = function(self)
 end;
-RenamedMyClass.prototype.myFunction = function(self)
+RenamedMyClass.myFunction = function(self)
 end;

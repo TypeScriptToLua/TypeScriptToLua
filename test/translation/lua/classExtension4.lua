@@ -1,4 +1,4 @@
 MyClass.test = "test";
 MyClass.testP = "testP";
-MyClass.prototype.myFunction = function(self)
+MyClass.myFunction = function(self)
 end;

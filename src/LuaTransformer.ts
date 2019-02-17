@@ -476,7 +476,7 @@ export class LuaTransformer {
 
         // Transform methods
         statement.members.filter(ts.isMethodDeclaration).forEach(method => {
-            result.push(this.transformMethodDeclaration(method, className));
+            result.push(this.transformMethodDeclaration(method, className, isExtension || isMetaExtension));
         });
 
         this.classStack.pop();
@@ -864,7 +864,8 @@ export class LuaTransformer {
 
     public transformMethodDeclaration(
         node: ts.MethodDeclaration,
-        className: tstl.Identifier
+        className: tstl.Identifier,
+        usePrototype: boolean
     ): tstl.AssignmentStatement
     {
         // Don't transform methods without body (overload declarations)
@@ -893,7 +894,7 @@ export class LuaTransformer {
 
         const isStatic = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
         const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
-        const methodTable = isStatic
+        const methodTable = isStatic || usePrototype
             ? classNameWithExport
             : tstl.createTableIndexExpression(classNameWithExport, tstl.createStringLiteral("prototype"));
 

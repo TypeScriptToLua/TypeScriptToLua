@@ -222,37 +222,80 @@ export class LuaTransformer {
     }
 
     public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
-        // First transpile as import clause
-        const importClause = ts.createImportClause(
-            undefined,
-            ts.createNamedImports(statement.exportClause.elements
-                .map(e => ts.createImportSpecifier(e.propertyName, e.name))
-            )
-        );
-
-        const importDeclaration = ts.createImportDeclaration(
-            statement.decorators,
-            statement.modifiers,
-            importClause,
-            statement.moduleSpecifier
-        );
-
-        const importResult = this.transformImportDeclaration(importDeclaration);
-
-        const result = Array.isArray(importResult) ? importResult : [importResult];
-
-        // Now the module is imported, add the imports to the export table
-        for (const exportVariable of statement.exportClause.elements) {
-            result.push(
-                tstl.createAssignmentStatement(
-                    this.addExportToIdentifier(this.transformIdentifier(exportVariable.name)),
-                    this.transformIdentifier(exportVariable.name)
-                )
-            );
+        if (statement.moduleSpecifier === undefined) {
+            const result = [];
+            for (const exportElement of statement.exportClause.elements) {
+                result.push(
+                    tstl.createAssignmentStatement(
+                        this.createExportedIdentifier(this.transformIdentifier(exportElement.name)),
+                        this.transformIdentifier(exportElement.propertyName || exportElement.name)
+                    )
+                );
+            }
+            return result;
         }
 
-        // Wrap this in a DoStatement to prevent polluting the scope.
-        return tstl.createDoStatement(result, statement);
+        if (statement.exportClause) {
+            // First transpile as import clause
+            const importClause = ts.createImportClause(
+                undefined,
+                ts.createNamedImports(statement.exportClause.elements
+                    .map(e => ts.createImportSpecifier(e.propertyName, e.name))
+                )
+            );
+
+            const importDeclaration = ts.createImportDeclaration(
+                statement.decorators,
+                statement.modifiers,
+                importClause,
+                statement.moduleSpecifier
+            );
+
+            const importResult = this.transformImportDeclaration(importDeclaration);
+
+            const result = Array.isArray(importResult) ? importResult : [importResult];
+
+            // Now the module is imported, add the imports to the export table
+            for (const exportVariable of statement.exportClause.elements) {
+                result.push(
+                    tstl.createAssignmentStatement(
+                        this.createExportedIdentifier(this.transformIdentifier(exportVariable.name)),
+                        this.transformIdentifier(exportVariable.name)
+                    )
+                );
+            }
+
+            // Wrap this in a DoStatement to prevent polluting the scope.
+            return tstl.createDoStatement(result, statement);
+        } else {
+            const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+            const tempModuleIdentifier = tstl.createIdentifier("__TSTL_export");
+
+            const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+
+            const forKey = tstl.createIdentifier("____exportKey");
+            const forValue = tstl.createIdentifier("____exportValue");
+
+            const body = tstl.createBlock(
+                [tstl.createAssignmentStatement(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("exports"),
+                        forKey
+                    ),
+                    forValue
+                )]
+            );
+
+            const pairsIdentifier = tstl.createIdentifier("pairs");
+            const forIn = tstl.createForInStatement(
+                body,
+                [tstl.cloneIdentifier(forKey), tstl.cloneIdentifier(forValue)],
+                [tstl.createCallExpression(pairsIdentifier, [tstl.cloneIdentifier(tempModuleIdentifier)])]
+            );
+
+            // Wrap this in a DoStatement to prevent polluting the scope.
+            return tstl.createDoStatement([declaration, forIn], statement);
+        }
     }
 
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
@@ -264,9 +307,8 @@ export class LuaTransformer {
 
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
-        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
 
-        const requireCall = tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
 
         if (!statement.importClause) {
             result.push(tstl.createExpressionStatement(requireCall));
@@ -325,6 +367,13 @@ export class LuaTransformer {
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }
+    }
+
+    private createModuleRequire(moduleSpecifier: ts.StringLiteral): tstl.CallExpression {
+        const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
+        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
+
+        return tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
     }
 
     public transformClassDeclaration(

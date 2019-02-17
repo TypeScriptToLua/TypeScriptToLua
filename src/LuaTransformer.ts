@@ -1568,7 +1568,7 @@ export class LuaTransformer {
         );
     }
 
-    public transformForStatement(statement: ts.ForStatement): tstl.Statement[] {
+    public transformForStatement(statement: ts.ForStatement): tstl.DoStatement {
         const result: tstl.Statement[] = [];
 
         if (statement.initializer) {
@@ -1596,7 +1596,7 @@ export class LuaTransformer {
         // while (condition) do ... end
         result.push(tstl.createWhileStatement(tstl.createBlock(body), condition));
 
-        return result;
+        return tstl.createDoStatement(result, statement);
     }
 
     public transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {

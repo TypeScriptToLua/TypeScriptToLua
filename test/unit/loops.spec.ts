@@ -263,6 +263,15 @@ export class LuaLoopTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase("for scope")
+    public forScope(): void {
+        const code =
+            `let i = 42;
+            for (let i = 0; i < 10; ++i) {}
+            return i;`;
+        Expect(util.transpileAndExecute(code)).toBe(42);
+    }
+
     @TestCase({ ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 }, { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 })
     @Test("forin[Object]")
     public forinObject(inp: any, expected: any): void

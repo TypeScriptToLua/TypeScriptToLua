@@ -144,6 +144,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.Block:
                 return this.transformBlockAsDoStatement(node as ts.Block);
             // Declaration Statements
+            case ts.SyntaxKind.ExportDeclaration:
+                return this.transformExportDeclaration(node as ts.ExportDeclaration);
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
@@ -217,6 +219,40 @@ export class LuaTransformer {
         const statements = this.performHoisting(this.transformStatements(block.statements));
         this.popScope();
         return tstl.createDoStatement(statements, block);
+    }
+
+    public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
+        // First transpile as import clause
+        const importClause = ts.createImportClause(
+            undefined,
+            ts.createNamedImports(statement.exportClause.elements
+                .map(e => ts.createImportSpecifier(e.propertyName, e.name))
+            )
+        );
+
+        const importDeclaration = ts.createImportDeclaration(
+            statement.decorators,
+            statement.modifiers,
+            importClause,
+            statement.moduleSpecifier
+        );
+
+        const importResult = this.transformImportDeclaration(importDeclaration);
+
+        const result = Array.isArray(importResult) ? importResult : [importResult];
+
+        // Now the module is imported, add the imports to the export table
+        for (const exportVariable of statement.exportClause.elements) {
+            result.push(
+                tstl.createAssignmentStatement(
+                    this.addExportToIdentifier(this.transformIdentifier(exportVariable.name)),
+                    this.transformIdentifier(exportVariable.name)
+                )
+            );
+        }
+
+        // Wrap this in a DoStatement to prevent polluting the scope.
+        return tstl.createDoStatement(result, statement);
     }
 
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {

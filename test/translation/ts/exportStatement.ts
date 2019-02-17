@@ -1,0 +1,1 @@
+export {abc, def} from "xyz";

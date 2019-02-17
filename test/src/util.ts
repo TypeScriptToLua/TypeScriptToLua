@@ -31,7 +31,7 @@ export function transpileString(str: string, options?: CompilerOptions, ignoreDi
     }
 }
 
-function executeLua(luaStr: string, withLib = true): any {
+export function executeLua(luaStr: string, withLib = true): any {
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
     }

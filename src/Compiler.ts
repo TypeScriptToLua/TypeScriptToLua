@@ -2,17 +2,33 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 
-import {parseCommandLine} from "./CommandLineParser";
+import * as CommandLineParser from "./CommandLineParser";
 import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
 import {LuaTranspiler} from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
-    const commandLine = parseCommandLine(argv);
-    /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
-    if (commandLine.options.watch) {
-        watchWithOptions(commandLine.fileNames, commandLine.options);
+    const parseResult = CommandLineParser.parseCommandLine(argv);
+
+    if (parseResult.isValid === true) {
+
+        if (parseResult.result.options.help) {
+            console.log(CommandLineParser.getHelpString());
+            return;
+        }
+
+        if (parseResult.result.options.version) {
+            console.log(CommandLineParser.version);
+            return;
+        }
+
+        /* istanbul ignore if: tested in test/compiler/watchmode.spec with subproccess */
+        if (parseResult.result.options.watch) {
+            watchWithOptions(parseResult.result.fileNames, parseResult.result.options);
+        } else {
+            compileFilesWithOptions(parseResult.result.fileNames, parseResult.result.options);
+        }
     } else {
-        compileFilesWithOptions(commandLine.fileNames, commandLine.options);
+        console.error(`Invalid CLI input: ${parseResult.errorMessage}`);
     }
 }
 
@@ -65,19 +81,16 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     transpiler.emitFilesAndReportErrors();
 }
 
-const libSource = fs.readFileSync(path.join(path.dirname(require.resolve("typescript")), "lib.es6.d.ts")).toString();
+const libCache: {[key: string]: string} = {};
 
 const defaultCompilerOptions: CompilerOptions = {
     luaLibImport: LuaLibImportKind.Require,
     luaTarget: LuaTarget.Lua53,
 };
 
-export function transpileString(
-    str: string,
-    options: CompilerOptions = defaultCompilerOptions,
-    ignoreDiagnostics = false
-): string {
-    const compilerHost = {
+export function createStringCompilerProgram(
+    input: string, options: CompilerOptions = defaultCompilerOptions, filePath = "file.ts"): ts.Program {
+    const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
@@ -86,12 +99,22 @@ export function transpileString(
         getDirectories: () => [],
         getNewLine: () => "\n",
 
-        getSourceFile: (filename, languageVersion) => {
-            if (filename === "file.ts") {
-                return ts.createSourceFile(filename, str, ts.ScriptTarget.Latest, false);
+        getSourceFile: (filename: string) => {
+            if (filename === filePath) {
+                return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
             }
-            if (filename === "lib.es6.d.ts") {
-                return ts.createSourceFile(filename, libSource, ts.ScriptTarget.Latest, false);
+            if (filename.indexOf(".d.ts") !== -1) {
+                if (!libCache[filename]) {
+                    const typeScriptDir = path.dirname(require.resolve("typescript"));
+                    const filePath = path.join(typeScriptDir, filename);
+                    if (fs.existsSync(filePath)) {
+                        libCache[filename] = fs.readFileSync(filePath).toString();
+                    } else {
+                        const pathWithLibPrefix = path.join(typeScriptDir, "lib." + filename);
+                        libCache[filename] = fs.readFileSync(pathWithLibPrefix).toString();
+                    }
+                }
+                return ts.createSourceFile(filename, libCache[filename], ts.ScriptTarget.Latest, false);
             }
             return undefined;
         },
@@ -102,7 +125,16 @@ export function transpileString(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    const program = ts.createProgram(["file.ts"], options, compilerHost);
+    return ts.createProgram([filePath], options, compilerHost);
+}
+
+export function transpileString(
+    str: string,
+    options: CompilerOptions = defaultCompilerOptions,
+    ignoreDiagnostics = false,
+    filePath = "file.ts"
+): string {
+    const program = createStringCompilerProgram(str, options, filePath);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);
@@ -116,7 +148,7 @@ export function transpileString(
 
     const transpiler = new LuaTranspiler(program);
 
-    const result = transpiler.transpileSourceFile(program.getSourceFile("file.ts"));
+    const result = transpiler.transpileSourceFile(program.getSourceFile(filePath));
 
     return result.trim();
 }

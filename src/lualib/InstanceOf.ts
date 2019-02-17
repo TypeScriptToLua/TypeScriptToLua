@@ -1,14 +1,20 @@
 interface LuaClass {
-    __index: LuaClass;
-    __base: LuaClass;
+    ____super?: LuaClass;
 }
 
-function __TS__InstanceOf(obj: LuaClass, classTbl: LuaClass): boolean {
-    while (obj !== undefined) {
-        if (obj.__index === classTbl) {
-            return true;
+interface LuaObject {
+    constructor: LuaClass;
+}
+
+function __TS__InstanceOf(obj: LuaObject, classTbl: LuaClass): boolean {
+    if (obj !== undefined) {
+        let luaClass = obj.constructor;
+        while (luaClass !== undefined) {
+            if (luaClass === classTbl) {
+                return true;
+            }
+            luaClass = luaClass.____super;
         }
-        obj = obj.__base;
     }
     return false;
 }

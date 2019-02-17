@@ -21,6 +21,16 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Array union length")
+    public arrayUnionLength(): void {
+        const result = util.transpileAndExecute(
+            `function makeArray(): number[] | string[] { return [3,5,1]; }
+            const arr = makeArray();
+            return arr.length;`
+        );
+        Expect(result).toBe(3);
+    }
+
     @Test("Array intersection access")
     public arrayIntersectionAccess(): void {
         const result = util.transpileAndExecute(
@@ -34,6 +44,21 @@ export class ArrayTests {
             return arr[1];`
         );
         Expect(result).toBe(5);
+    }
+
+    @Test("Array intersection length")
+    public arrayIntersectionLength(): void {
+        const result = util.transpileAndExecute(
+            `type I = number[] & {foo: string};
+            function makeArray(): I {
+                let t = [3,5,1];
+                (t as I).foo = "bar";
+                return (t as I);
+            }
+            const arr = makeArray();
+            return arr.length;`
+        );
+        Expect(result).toBe(3);
     }
 
     @TestCase("firstElement()", 3)
@@ -92,5 +117,15 @@ export class ArrayTests {
         );
 
         Expect(result).toBe("true:1,2,3,4");
+    }
+
+    @Test("Array property access")
+    public arrayPropertyAccess(): void {
+        const code =
+            `type A = number[] & {foo?: string};
+            const a: A = [1,2,3];
+            a.foo = "bar";
+            return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar123");
     }
 }

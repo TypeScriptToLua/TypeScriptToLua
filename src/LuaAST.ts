@@ -813,6 +813,16 @@ export function createIdentifier(
     return expression;
 }
 
+export function cloneIdentifier(identifier: Identifier): Identifier {
+    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+}
+
+export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
+    const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+    expression.text = "____";
+    return expression;
+}
+
 export interface TableIndexExpression extends Expression {
     kind: SyntaxKind.TableIndexExpression;
     table: Expression;

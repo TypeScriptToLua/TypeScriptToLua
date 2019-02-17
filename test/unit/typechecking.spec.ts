@@ -1,6 +1,7 @@
 import { Expect, Test, TestCase } from "alsatian";
 
 import * as util from "../src/util";
+import { TranspileError } from "../../src/TranspileError";
 
 export class TypeCheckingTests {
     @TestCase("0")
@@ -115,5 +116,34 @@ export class TypeCheckingTests {
         const result = util.transpileAndExecute("class myClass {} return (<any>null) instanceof myClass;");
 
         Expect(result).toBe(false);
+    }
+
+    @TestCase("extension")
+    @TestCase("metaExtension")
+    @Test("instanceof extension")
+    public instanceOfExtension(extensionType: string): void {
+        const code =
+            `declare class A {}
+            /** @${extensionType} **/
+            class B extends A {}
+            declare const foo: any;
+            const result = foo instanceof B;`;
+        Expect(() => util.transpileString(code)).toThrowError(
+            TranspileError,
+            "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'."
+        );
+    }
+
+    @Test("instanceof export")
+    public instanceOfExport(): void
+    {
+        const result = util.transpileExecuteAndReturnExport(
+            `export class myClass {}
+            let inst = new myClass();
+            export const result = inst instanceof myClass;`,
+            "result"
+        );
+
+        Expect(result).toBeTruthy();
     }
 }

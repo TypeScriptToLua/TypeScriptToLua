@@ -263,6 +263,15 @@ export class LuaLoopTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase("for scope")
+    public forScope(): void {
+        const code =
+            `let i = 42;
+            for (let i = 0; i < 10; ++i) {}
+            return i;`;
+        Expect(util.transpileAndExecute(code)).toBe(42);
+    }
+
     @TestCase({ ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 }, { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 })
     @Test("forin[Object]")
     public forinObject(inp: any, expected: any): void
@@ -678,6 +687,61 @@ export class LuaLoopTests
             "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
             + "You must use a destructuring statement to catch results from a lua iterator with "
             + "the TupleReturn decorator.");
+    }
+
+    @Test("forof forwarded lua iterator")
+    public forofForwardedLuaIterator(): void {
+        const code =
+            `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            function luaIter(): Iterable<string> {
+                let i = 0;
+                function iter() { return arr[i++]; }
+                return iter as any;
+            }
+            /** @luaIterator */
+            function forward(): Iterable<string> {
+                return luaIter();
+            }
+            let result = "";
+            for (let a of forward()) { result += a; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof forwarded lua iterator with tupleReturn")
+    public forofForwardedLuaIteratorWithTupleReturn(): void {
+        const code =
+            `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            /** @tupleReturn */
+            function luaIter(): Iterable<[string, string]> {
+                let i = 0;
+                /** @tupleReturn */
+                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+                return iter as any;
+            }
+            /** @luaIterator */
+            /** @tupleReturn */
+            function forward(): Iterable<[string, string]> {
+                return luaIter();
+            }
+            let result = "";
+            for (let [a, b] of forward()) { result += a + b; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("0a1b2c");
     }
 
     @TestCase("while (a < b) { i++; }")

@@ -152,7 +152,7 @@ export class AssignmentTests {
                    + `let [a,b] = jkl.abc();`;
 
         const lua = util.transpileString(code);
-        Expect(lua).toBe("local jkl = def.new(true);\nlocal a, b = jkl:abc();");
+        Expect(lua).toBe("local jkl = def.new();\nlocal a, b = jkl:abc();");
     }
 
     @Test("TupleReturn functional")

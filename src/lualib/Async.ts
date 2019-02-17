@@ -42,7 +42,7 @@ function __TS__Async<TResult>(    f: ( ...args:any[] ) => TResult  ): ( ...args:
       const [state, value] = coroutine.resume( co, ...args );
       if( state ) {
         if( coroutine.status(co) === "dead" ) return value;
-        if( value && value.next ) return value.next( handleNext, handleError );
+        if( typeof value === "object" && value.next ) return value.next( handleNext, handleError );
         else return value;
       } else {
         return handleError(value);

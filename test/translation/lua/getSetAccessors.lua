@@ -1,21 +1,26 @@
+require("lualib_bundle");
 MyClass = MyClass or {};
 MyClass.__index = MyClass;
-MyClass.new = function(construct, ...)
-    local self = setmetatable({}, MyClass);
-    if construct and MyClass.constructor then
-        MyClass.constructor(self, ...);
-    end
+MyClass.prototype = MyClass.prototype or {};
+MyClass.prototype.____getters = {};
+MyClass.prototype.__index = __TS__Index(MyClass.prototype);
+MyClass.prototype.____setters = {};
+MyClass.prototype.__newindex = __TS__NewIndex(MyClass.prototype);
+MyClass.prototype.constructor = MyClass;
+MyClass.new = function(...)
+    local self = setmetatable({}, MyClass.prototype);
+    self:____constructor(...);
     return self;
 end;
-MyClass.constructor = function(self)
+MyClass.prototype.____constructor = function(self)
 end;
-MyClass.get__field = function(self)
+MyClass.prototype.____getters.field = function(self)
     return self._field + 4;
 end;
-MyClass.set__field = function(self, v)
+MyClass.prototype.____setters.field = function(self, v)
     self._field = v * 2;
 end;
-local instance = MyClass.new(true);
-instance:set__field(4);
-local b = instance:get__field();
-local c = (4 + instance:get__field()) * 3;
+local instance = MyClass.new();
+instance.field = 4;
+local b = instance.field;
+local c = (4 + instance.field) * 3;

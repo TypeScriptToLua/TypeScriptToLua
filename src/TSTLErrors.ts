@@ -4,6 +4,11 @@ import {TranspileError} from "./TranspileError";
 import {TSHelper as tsHelper} from "./TSHelper";
 
 export class TSTLErrors {
+    public static CouldNotFindEnumMember =
+        (enumDeclaration: ts.EnumDeclaration, enumMember: string, node: ts.Node) => new TranspileError(
+            `Could not find ${enumMember} in ${enumDeclaration.name.text}`, node
+        );
+
     public static DefaultImportsNotSupported = (node: ts.Node) =>
         new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 
@@ -25,10 +30,19 @@ export class TSTLErrors {
         new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
 
     public static InvalidExtensionMetaExtension = (node: ts.Node) =>
-        new TranspileError(`Cannot use both '!Extension' and '!MetaExtension' decorators on the same class.`, node);
+        new TranspileError(`Cannot use both '@extension' and '@metaExtension' decorators on the same class.`, node);
 
     public static InvalidNewExpressionOnExtension = (node: ts.Node) =>
-        new TranspileError(`Cannot construct classes with decorator '!Extension' or '!MetaExtension'.`, node);
+        new TranspileError(`Cannot construct classes with decorator '@extension' or '@metaExtension'.`, node);
+
+    public static InvalidExtendsExtension = (node: ts.Node) =>
+        new TranspileError(`Cannot extend classes with decorator '@extension' or '@metaExtension'.`, node);
+
+    public static InvalidExportsExtension = (node: ts.Node) =>
+        new TranspileError(`Cannot export classes with decorator '@extension' or '@metaExtension'.`, node);
+
+    public static InvalidInstanceOfExtension = (node: ts.Node) =>
+        new TranspileError(`Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.`, node);
 
     public static InvalidPropertyCall = (node: ts.Node) =>
         new TranspileError(`Tried to transpile a non-property call as property call.`, node);
@@ -127,4 +141,6 @@ export class TSTLErrors {
             node
         );
     }
+
+    public static InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 }

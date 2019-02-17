@@ -33,6 +33,7 @@ export enum LuaLibFeature {
     StringSplit = "StringSplit",
     StringConcat = "StringConcat",
     Symbol = "Symbol",
+    SymbolRegistry = "SymbolRegistry",
 }
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
@@ -41,6 +42,7 @@ const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
+    SymbolRegistry: [LuaLibFeature.Symbol],
 };
 
 export class LuaLib {

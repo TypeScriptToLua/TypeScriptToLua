@@ -3832,7 +3832,11 @@ export class LuaTransformer {
             }
             if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {
                 // local
-                if (rhs && tstl.isFunctionExpression(rhs)) {
+                const isFunctionType = functionDeclaration
+                    || (tsOriginal && ts.isVariableDeclaration(tsOriginal) && tsOriginal.initializer
+                        && tsHelper.isFunctionTypeAtLocation(tsOriginal.initializer, this.checker));
+                if (isFunctionType) {
+                    // Split declaration and assignment for cuntions to allow recursion
                     declaration = tstl.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent);
                     assignment = tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
 

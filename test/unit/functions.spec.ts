@@ -273,10 +273,28 @@ export class FunctionTests {
         Expect(result).toBe("function");
     }
 
+    @Test("Wrapped recursive function expression")
+    public wrappedRecursiveFunctionExpression(): void {
+        const result = util.transpileAndExecute(
+            `function wrap<T>(fn: T) { return fn; }
+            let f = wrap(function() { return typeof f; }); return f();`);
+
+        Expect(result).toBe("function");
+    }
+
     @Test("Recursive arrow function")
     public recursiveArrowFunction(): void {
         const result = util.transpileAndExecute(
             `let f = () => typeof f; return f();`);
+
+        Expect(result).toBe("function");
+    }
+
+    @Test("Wrapped recursive arrow function")
+    public wrappedRecursiveArrowFunction(): void {
+        const result = util.transpileAndExecute(
+            `function wrap<T>(fn: T) { return fn; }
+            let f = wrap(() => typeof f); return f();`);
 
         Expect(result).toBe("function");
     }

@@ -152,6 +152,11 @@ export class TSHelper {
         return typeNode && ts.isFunctionTypeNode(typeNode);
     }
 
+    public static isFunctionTypeAtLocation(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.isFunctionType(type, checker);
+    }
+
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
     }

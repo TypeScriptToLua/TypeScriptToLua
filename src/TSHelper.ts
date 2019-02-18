@@ -152,6 +152,11 @@ export class TSHelper {
         return typeNode && ts.isFunctionTypeNode(typeNode);
     }
 
+    public static isFunctionTypeAtLocation(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.isFunctionType(type, checker);
+    }
+
     public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
         return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
     }
@@ -261,60 +266,6 @@ export class TSHelper {
         return undefined;
     }
 
-    public static hasExplicitGetAccessor(type: ts.Type, name: ts.__String): boolean {
-        if (type && type.symbol && type.symbol.members) {
-            const field = type.symbol.members.get(name);
-            return field && (field.flags & ts.SymbolFlags.GetAccessor) !== 0;
-        }
-    }
-
-    public static typeHasGetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
-        if (type.isUnion()) {
-            if (type.types.some(t => TSHelper.typeHasGetAccessor(t, name, checker))) {
-                // undefined if only a subset of types implements the accessor
-                return type.types.every(t => TSHelper.typeHasGetAccessor(t, name, checker)) ? true : undefined;
-            }
-            return false;
-        }
-        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitGetAccessor(t, name));
-    }
-
-    public static hasGetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean | undefined {
-        if (ts.isPropertyAccessExpression(node)) {
-            const name = node.name.escapedText;
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.typeHasGetAccessor(type, name, checker);
-        }
-        return false;
-    }
-
-    public static hasExplicitSetAccessor(type: ts.Type, name: ts.__String): boolean {
-        if (type && type.symbol && type.symbol.members) {
-            const field = type.symbol.members.get(name);
-            return field && (field.flags & ts.SymbolFlags.SetAccessor) !== 0;
-        }
-    }
-
-    public static typeHasSetAccessor(type: ts.Type, name: ts.__String, checker: ts.TypeChecker): boolean | undefined {
-        if (type.isUnion()) {
-            if (type.types.some(t => TSHelper.typeHasSetAccessor(t, name, checker))) {
-                // undefined if only a subset of types implements the accessor
-                return type.types.every(t => TSHelper.typeHasSetAccessor(t, name, checker)) ? true : undefined;
-            }
-            return false;
-        }
-        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.hasExplicitSetAccessor(t, name));
-    }
-
-    public static hasSetAccessor(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (ts.isPropertyAccessExpression(node)) {
-            const name = node.name.escapedText;
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.typeHasSetAccessor(type, name, checker);
-        }
-        return false;
-    }
-
     public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, tstl.BinaryOperator] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
@@ -396,6 +347,78 @@ export class TSHelper {
     public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {
         return signatureDeclaration.parameters.find(
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+    }
+
+    public static findInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        callback: (classDeclaration: ts.ClassLikeDeclarationBase) => boolean,
+        checker: ts.TypeChecker
+    ): ts.ClassLikeDeclarationBase
+    {
+        if (callback(classDeclaration)) {
+            return classDeclaration;
+        }
+
+        const extendsType = TSHelper.getExtendedType(classDeclaration, checker);
+        if (!extendsType) {
+            return undefined;
+        }
+
+        const symbol = extendsType.getSymbol();
+        const declaration = symbol.getDeclarations().find(ts.isClassLike);
+        if (!declaration) {
+            return undefined;
+        }
+
+        return TSHelper.findInClassOrAncestor(declaration, callback, checker);
+    }
+
+    public static hasSetAccessorInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): boolean
+    {
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(ts.isSetAccessor),
+            checker
+        ) !== undefined;
+    }
+
+    public static getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
+        if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName) || ts.isNumericLiteral(propertyName)) {
+            return propertyName.text;
+        } else {
+            return undefined; // TODO: how to handle computed property names?
+        }
+    }
+
+    public static isSamePropertyName(a: ts.PropertyName, b: ts.PropertyName): boolean {
+        const aName = TSHelper.getPropertyName(a);
+        const bName = TSHelper.getPropertyName(b);
+        return aName !== undefined && aName === bName;
+    }
+
+    public static isGetAccessorOverride(
+        element: ts.ClassElement,
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): element is ts.GetAccessorDeclaration
+    {
+        if (!ts.isGetAccessor(element)) {
+            return false;
+        }
+
+        const hasInitializedField = (e: ts.ClassElement) =>
+            ts.isPropertyDeclaration(e)
+            && e.initializer
+            && TSHelper.isSamePropertyName(e.name, element.name);
+
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(hasInitializedField),
+            checker
+        ) !== undefined;
     }
 
     public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {

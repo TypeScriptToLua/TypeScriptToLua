@@ -90,7 +90,6 @@ const defaultCompilerOptions: CompilerOptions = {
 
 export function createStringCompilerProgram(
     input: string, options: CompilerOptions = defaultCompilerOptions, filePath = "file.ts"): ts.Program {
-
     const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -100,7 +99,7 @@ export function createStringCompilerProgram(
         getDirectories: () => [],
         getNewLine: () => "\n",
 
-        getSourceFile: (filename: string, languageVersion) => {
+        getSourceFile: (filename: string) => {
             if (filename === filePath) {
                 return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
             }

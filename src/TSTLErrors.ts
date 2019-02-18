@@ -134,6 +134,13 @@ export class TSTLErrors {
             node);
     };
 
+    public static UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) => {
+        return new TranspileError(
+            `${reason}. ` +
+            `TypeScript path: ${path}.`,
+            node);
+    };
+
     public static ReferencedBeforeDeclaration = (node: ts.Identifier) => {
         return new TranspileError(
             `Identifier "${node.text}" was referenced before it was declared. The declaration ` +

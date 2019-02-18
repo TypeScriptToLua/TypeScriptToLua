@@ -3719,22 +3719,31 @@ export class LuaTransformer {
     }
 
     private getImportPath(relativePath: string): string {
-        // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = this.pathToLuaRequirePath(
-                absolutePathToImport.replace(this.options.rootDir, "").slice(1)
-            );
-            return relativePathToRoot;
+        const rootDir = this.options.rootDir || path.resolve(".");
+        const absoluteImportPath = this.formatPathToLuaPath(this.getAbsoluteImportPath(relativePath));
+        const absoluteRootDirPath = this.formatPathToLuaPath(rootDir);
+        if (absoluteImportPath.includes(absoluteRootDirPath)) {
+            const relativePathToRoot = this.formatPathToLuaPath(
+                absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
+            return this.formatPathToLuaPath(relativePathToRoot);
+        } else {
+            throw TSTLErrors.UnresolvableRequirePath(undefined,
+                `Cannot create require path. Module does not exist within --rootDir`,
+                relativePath);
         }
-
-        return this.pathToLuaRequirePath(relativePath);
     }
 
-    private pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(/\.json$/, '').replace(new RegExp("\\\\|\/", "g"), ".");
+    private formatPathToLuaPath(filePath: string): string {
+        filePath = filePath.replace(/\.json$/, "");
+        if (process.platform === "win32") {
+            // Windows can use backslashes
+            filePath = filePath
+                .replace(/\.\\/g, "")
+                .replace(/\\/g, ".");
+        }
+        return filePath
+            .replace(/\.\//g, "")
+            .replace(/\//g, ".");
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {

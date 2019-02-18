@@ -11,12 +11,16 @@ import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
-export function transpileString(str: string, options?: CompilerOptions, ignoreDiagnostics = true): string {
+export function transpileString(
+    str: string,
+    options?: CompilerOptions,
+    ignoreDiagnostics = true,
+    filePath = "file.ts"): string {
     if (options) {
         if (options.noHeader === undefined) {
             options.noHeader = true;
         }
-        return compilerTranspileString(str, options, ignoreDiagnostics);
+        return compilerTranspileString(str, options, ignoreDiagnostics, filePath);
     } else {
         return compilerTranspileString(
             str,
@@ -26,7 +30,8 @@ export function transpileString(str: string, options?: CompilerOptions, ignoreDi
                 target: ts.ScriptTarget.ES2015,
                 noHeader: true,
             },
-            ignoreDiagnostics
+            ignoreDiagnostics,
+            filePath
         );
     }
 }

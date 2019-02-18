@@ -2,6 +2,7 @@ import { Expect, Test } from "alsatian";
 import * as util from "../src/util";
 
 import { TranspileError } from "../../src/TranspileError";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 export class DecoratorMetaExtension {
 
@@ -29,6 +30,7 @@ export class DecoratorMetaExtension {
 
     @Test("IncorrectUsage")
     public incorrectUsage(): void {
+        const expectedMessage = TSTLErrors.MissingMetaExtension(undefined).message;
         Expect(() => {
             util.transpileString(
                 `
@@ -40,8 +42,7 @@ export class DecoratorMetaExtension {
                 }
                 `
             );
-        }).toThrowError(TranspileError,
-                        "!MetaExtension requires the extension of the metatable class.");
+        }).toThrowError(TranspileError, expectedMessage);
     }
 
     @Test("DontAllowInstantiation")

@@ -236,6 +236,13 @@ export class LuaTransformer {
         }
 
         if (statement.exportClause) {
+            if (statement.exportClause.elements.some(e =>
+                (e.name && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
+                || (e.propertyName && e.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword))
+            ) {
+                throw TSTLErrors.UnsupportedDefaultExport(statement);
+            }
+
             // First transpile as import clause
             const importClause = ts.createImportClause(
                 undefined,

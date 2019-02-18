@@ -540,7 +540,7 @@ export class LuaTransformer {
             createClassPrototype(),
             tstl.createStringLiteral("__index")
         );
-        if (statement.members.some(ts.isGetAccessor)) {
+        if (tsHelper.hasGetAccessorInClassOrAncestor(statement, this.checker)) {
             // className.prototype.____getters = {}
             const classPrototypeGetters = tstl.createTableIndexExpression(
                 createClassPrototype(),

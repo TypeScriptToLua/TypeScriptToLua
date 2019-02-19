@@ -1,7 +1,6 @@
-import { Expect, Test, FocusTests } from "alsatian";
+import { Expect, Test } from "alsatian";
 import * as util from "../src/util";
 
-@FocusTests
 export class AccessorTests {
     @Test("get accessor")
     public getAccessor(): void {

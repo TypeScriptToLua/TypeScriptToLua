@@ -390,6 +390,18 @@ export class TSHelper {
         ) !== undefined;
     }
 
+    public static hasGetAccessorInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): boolean
+    {
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(ts.isGetAccessor),
+            checker
+        ) !== undefined;
+    }
+
     public static getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
         if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName) || ts.isNumericLiteral(propertyName)) {
             return propertyName.text;

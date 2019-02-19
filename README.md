@@ -1,4 +1,4 @@
-# TypescriptToLua
+# TypeScriptToLua
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!
 
 Large projects written in lua can become hard to maintain and make it easy to make mistakes. Writing code in TypeScript instead improves maintainability, readability and robustness, with the added bonus of good IDE support. This project is useful in any environment where Lua code is accepted, with the powerful option of simply declaring any existing API using TypeScript declaration files.
@@ -7,7 +7,7 @@ Large projects written in lua can become hard to maintain and make it easy to ma
 [![Build status](https://ci.appveyor.com/api/projects/status/github/perryvw/typescripttolua?branch=master&svg=true)](https://ci.appveyor.com/project/Perryvw/typescripttolua)
 [![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
 
-You can chat with us on Discord: [![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
+You can chat with us on [Discord: ![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
 
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).
@@ -27,6 +27,10 @@ Changelog can be found in [CHANGELOG.md](https://github.com/Perryvw/TypescriptTo
 **Compile Projects**
 
 `tstl -p path/to/tsconfig.json`
+
+**Compile project in watch mode**
+
+`tstl -p path/to/tsconfig.json --watch`
 
 **Example tsconfig.json**
 ```
@@ -48,6 +52,7 @@ All contributions are welcome, but please read our [contribution guidelines](htt
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)
 - [Defold Game Engine Scripting](https://github.com/dasannikov/DefoldTypeScript/blob/master/defold.d.ts)
+- [LÖVE 2D Game Development](https://github.com/hazzard993/love-typescript-definitions)
 
 ## Building & Tests
 

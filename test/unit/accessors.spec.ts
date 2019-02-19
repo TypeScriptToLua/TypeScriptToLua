@@ -6,7 +6,9 @@ export class AccessorTests {
     public getAccessor(): void {
         const code =
             `class Foo {
-                get foo() { return "foo"; }
+                _foo;
+                get foo() { return this._foo; }
+                constructor(){ this._foo = "foo"; }
             }
             const f = new Foo();
             return f.foo;`;
@@ -17,7 +19,9 @@ export class AccessorTests {
     public getAccessorInBaseClass(): void {
         const code =
             `class Foo {
-                get foo() { return "foo"; }
+                _foo;
+                get foo() { return this._foo; }
+                constructor(){ this._foo = "foo"; }
             }
             class Bar extends Foo {}
             const b = new Bar();

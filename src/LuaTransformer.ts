@@ -144,6 +144,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.Block:
                 return this.transformBlockAsDoStatement(node as ts.Block);
             // Declaration Statements
+            case ts.SyntaxKind.ExportDeclaration:
+                return this.transformExportDeclaration(node as ts.ExportDeclaration);
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
@@ -219,6 +221,90 @@ export class LuaTransformer {
         return tstl.createDoStatement(statements, block);
     }
 
+    public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
+        if (statement.moduleSpecifier === undefined) {
+            const result = [];
+            for (const exportElement of statement.exportClause.elements) {
+                result.push(
+                    tstl.createAssignmentStatement(
+                        this.createExportedIdentifier(this.transformIdentifier(exportElement.name)),
+                        this.transformIdentifier(exportElement.propertyName || exportElement.name)
+                    )
+                );
+            }
+            return result;
+        }
+
+        if (statement.exportClause) {
+            if (statement.exportClause.elements.some(e =>
+                (e.name && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
+                || (e.propertyName && e.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword))
+            ) {
+                throw TSTLErrors.UnsupportedDefaultExport(statement);
+            }
+
+            // First transpile as import clause
+            const importClause = ts.createImportClause(
+                undefined,
+                ts.createNamedImports(statement.exportClause.elements
+                    .map(e => ts.createImportSpecifier(e.propertyName, e.name))
+                )
+            );
+
+            const importDeclaration = ts.createImportDeclaration(
+                statement.decorators,
+                statement.modifiers,
+                importClause,
+                statement.moduleSpecifier
+            );
+
+            const importResult = this.transformImportDeclaration(importDeclaration);
+
+            const result = Array.isArray(importResult) ? importResult : [importResult];
+
+            // Now the module is imported, add the imports to the export table
+            for (const exportVariable of statement.exportClause.elements) {
+                result.push(
+                    tstl.createAssignmentStatement(
+                        this.createExportedIdentifier(this.transformIdentifier(exportVariable.name)),
+                        this.transformIdentifier(exportVariable.name)
+                    )
+                );
+            }
+
+            // Wrap this in a DoStatement to prevent polluting the scope.
+            return tstl.createDoStatement(result, statement);
+        } else {
+            const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+            const tempModuleIdentifier = tstl.createIdentifier("__TSTL_export");
+
+            const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+
+            const forKey = tstl.createIdentifier("____exportKey");
+            const forValue = tstl.createIdentifier("____exportValue");
+
+            const body = tstl.createBlock(
+                [tstl.createAssignmentStatement(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("exports"),
+                        forKey
+                    ),
+                    forValue
+                )]
+            );
+
+            const pairsIdentifier = tstl.createIdentifier("pairs");
+            const forIn = tstl.createForInStatement(
+                body,
+                [tstl.cloneIdentifier(forKey), tstl.cloneIdentifier(forValue)],
+                [tstl.createCallExpression(pairsIdentifier, [tstl.cloneIdentifier(tempModuleIdentifier)])]
+            );
+
+            // Wrap this in a DoStatement to prevent polluting the scope.
+            return tstl.createDoStatement([declaration, forIn], statement);
+        }
+    }
+
     public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
         if (statement.importClause && !statement.importClause.namedBindings) {
             throw TSTLErrors.DefaultImportsNotSupported(statement);
@@ -228,9 +314,8 @@ export class LuaTransformer {
 
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
-        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
 
-        const requireCall = tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
 
         if (!statement.importClause) {
             result.push(tstl.createExpressionStatement(requireCall));
@@ -289,6 +374,13 @@ export class LuaTransformer {
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }
+    }
+
+    private createModuleRequire(moduleSpecifier: ts.StringLiteral): tstl.CallExpression {
+        const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
+        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
+
+        return tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
     }
 
     public transformClassDeclaration(
@@ -3820,22 +3912,31 @@ export class LuaTransformer {
     }
 
     private getImportPath(relativePath: string): string {
-        // Calculate absolute path to import
-        const absolutePathToImport = this.getAbsoluteImportPath(relativePath);
-        if (this.options.rootDir) {
-            // Calculate path relative to project root
-            // and replace path.sep with dots (lua doesn't know paths)
-            const relativePathToRoot = this.pathToLuaRequirePath(
-                absolutePathToImport.replace(this.options.rootDir, "").slice(1)
-            );
-            return relativePathToRoot;
+        const rootDir = this.options.rootDir || path.resolve(".");
+        const absoluteImportPath = this.formatPathToLuaPath(this.getAbsoluteImportPath(relativePath));
+        const absoluteRootDirPath = this.formatPathToLuaPath(rootDir);
+        if (absoluteImportPath.includes(absoluteRootDirPath)) {
+            const relativePathToRoot = this.formatPathToLuaPath(
+                absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
+            return this.formatPathToLuaPath(relativePathToRoot);
+        } else {
+            throw TSTLErrors.UnresolvableRequirePath(undefined,
+                `Cannot create require path. Module does not exist within --rootDir`,
+                relativePath);
         }
-
-        return this.pathToLuaRequirePath(relativePath);
     }
 
-    private pathToLuaRequirePath(filePath: string): string {
-        return filePath.replace(/\.json$/, '').replace(new RegExp("\\\\|\/", "g"), ".");
+    private formatPathToLuaPath(filePath: string): string {
+        filePath = filePath.replace(/\.json$/, "");
+        if (process.platform === "win32") {
+            // Windows can use backslashes
+            filePath = filePath
+                .replace(/\.\\/g, "")
+                .replace(/\\/g, ".");
+        }
+        return filePath
+            .replace(/\.\//g, "")
+            .replace(/\//g, ".");
     }
 
     private shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {

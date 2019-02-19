@@ -132,7 +132,7 @@ export class TSHelper {
     }
 
     public static isStatic(node: ts.Node): boolean {
-        return node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
+        return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
     }
 
     public static isStringType(type: ts.Type): boolean {
@@ -392,12 +392,13 @@ export class TSHelper {
 
     public static hasGetAccessorInClassOrAncestor(
         classDeclaration: ts.ClassLikeDeclarationBase,
+        isStatic: boolean,
         checker: ts.TypeChecker
     ): boolean
     {
         return TSHelper.findInClassOrAncestor(
             classDeclaration,
-            c => c.members.some(ts.isGetAccessor),
+            c => c.members.some(m => ts.isGetAccessor(m) && TSHelper.isStatic(m) === isStatic),
             checker
         ) !== undefined;
     }
@@ -422,7 +423,7 @@ export class TSHelper {
         checker: ts.TypeChecker
     ): element is ts.GetAccessorDeclaration
     {
-        if (!ts.isGetAccessor(element)) {
+        if (!ts.isGetAccessor(element) || TSHelper.isStatic(element)) {
             return false;
         }
 

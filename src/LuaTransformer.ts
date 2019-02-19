@@ -605,8 +605,7 @@ export class LuaTransformer {
         const createClassNameWithExport = () => this.addExportToIdentifier(tstl.cloneIdentifier(className));
 
         // className.____getters = {}
-        const hasStaticGetters = statement.members.some(m => ts.isGetAccessor(m) && tsHelper.isStatic(m));
-        if (hasStaticGetters) {
+        if (statement.members.some(m => ts.isGetAccessor(m) && tsHelper.isStatic(m))) {
             const classGetters = tstl.createTableIndexExpression(
                 createClassNameWithExport(),
                 tstl.createStringLiteral("____getters")
@@ -630,8 +629,7 @@ export class LuaTransformer {
         result.push(assignClassIndex);
 
         // className.____setters = {}
-        const hasStaticSetters = tsHelper.hasSetAccessorInClassOrAncestor(statement, true, this.checker);
-        if (hasStaticSetters) {
+        if (statement.members.some(m => ts.isSetAccessor(m) && tsHelper.isStatic(m))) {
             const classSetters = tstl.createTableIndexExpression(
                 createClassNameWithExport(),
                 tstl.createStringLiteral("____setters")
@@ -661,12 +659,8 @@ export class LuaTransformer {
         const assignClassPrototype = tstl.createAssignmentStatement(createClassPrototype(), classPrototypeTable);
         result.push(assignClassPrototype);
 
-        const classPrototypeIndex = tstl.createTableIndexExpression(
-            createClassPrototype(),
-            tstl.createStringLiteral("__index")
-        );
+        // className.prototype.____getters = {}
         if (statement.members.some(m => ts.isGetAccessor(m) && !tsHelper.isStatic(m))) {
-            // className.prototype.____getters = {}
             const classPrototypeGetters = tstl.createTableIndexExpression(
                 createClassPrototype(),
                 tstl.createStringLiteral("____getters")
@@ -676,7 +670,13 @@ export class LuaTransformer {
                 tstl.createTableExpression()
             );
             result.push(assignClassPrototypeGetters);
+        }
 
+        const classPrototypeIndex = tstl.createTableIndexExpression(
+            createClassPrototype(),
+            tstl.createStringLiteral("__index")
+        );
+        if (tsHelper.hasGetAccessorInClassOrAncestor(statement, false, this.checker)) {
             // className.prototype.__index = __TS_Index(className.prototype)
             const assignClassPrototypeIndex = tstl.createAssignmentStatement(
                 classPrototypeIndex,
@@ -693,7 +693,7 @@ export class LuaTransformer {
             result.push(assignClassPrototypeIndex);
         }
 
-        if (tsHelper.hasSetAccessorInClassOrAncestor(statement, false, this.checker)) {
+        if (statement.members.some(m => ts.isSetAccessor(m) && !tsHelper.isStatic(m))) {
             // className.prototype.____setters = {}
             const classPrototypeSetters = tstl.createTableIndexExpression(
                 createClassPrototype(),
@@ -704,7 +704,9 @@ export class LuaTransformer {
                 tstl.createTableExpression()
             );
             result.push(assignClassPrototypeSetters);
+        }
 
+        if (tsHelper.hasSetAccessorInClassOrAncestor(statement, false, this.checker)) {
             // className.prototype.__newindex = __TS_NewIndex(className.prototype)
             const classPrototypeNewIndex = tstl.createTableIndexExpression(
                 createClassPrototype(),
@@ -728,6 +730,9 @@ export class LuaTransformer {
             statement
         );
         result.push(assignClassPrototypeConstructor);
+
+        const hasStaticGetters = tsHelper.hasGetAccessorInClassOrAncestor(statement, true, this.checker);
+        const hasStaticSetters = tsHelper.hasSetAccessorInClassOrAncestor(statement, true, this.checker);
 
         if (extendsType) {
             const extendedTypeNode = tsHelper.getExtendedTypeNode(statement, this.checker);

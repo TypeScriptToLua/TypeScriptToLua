@@ -334,9 +334,8 @@ export class LuaTransformer {
         const properties = statement.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
 
         // Divide properties into static and non-static
-        const isStatic = prop => prop.modifiers && prop.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
-        const staticFields = properties.filter(isStatic);
-        const instanceFields = properties.filter(prop => !isStatic(prop));
+        const staticFields = properties.filter(tsHelper.isStatic);
+        const instanceFields = properties.filter(prop => !tsHelper.isStatic(prop));
 
         const result: tstl.Statement[] = [];
 
@@ -513,6 +512,23 @@ export class LuaTransformer {
 
         const createClassNameWithExport = () => this.addExportToIdentifier(tstl.cloneIdentifier(className));
 
+        // className.____getters = {}
+        const hasStaticGetters = statement.members.some(m => ts.isGetAccessor(m) && tsHelper.isStatic(m));
+        if (hasStaticGetters) {
+            const classGetters = tstl.createTableIndexExpression(
+                createClassNameWithExport(),
+                tstl.createStringLiteral("____getters")
+            );
+            const assignClassGetters = tstl.createAssignmentStatement(
+                classGetters,
+                tstl.createTableExpression(),
+                statement
+            );
+            result.push(assignClassGetters);
+
+            this.importLuaLibFeature(LuaLibFeature.ClassIndex);
+        }
+
         // className.__index = className
         const classIndex = tstl.createTableIndexExpression(
             createClassNameWithExport(),
@@ -520,6 +536,23 @@ export class LuaTransformer {
         );
         const assignClassIndex = tstl.createAssignmentStatement(classIndex, createClassNameWithExport(), statement);
         result.push(assignClassIndex);
+
+        // className.____setters = {}
+        const hasStaticSetters = tsHelper.hasSetAccessorInClassOrAncestor(statement, true, this.checker);
+        if (hasStaticSetters) {
+            const classSetters = tstl.createTableIndexExpression(
+                createClassNameWithExport(),
+                tstl.createStringLiteral("____setters")
+            );
+            const assignClassSetters = tstl.createAssignmentStatement(
+                classSetters,
+                tstl.createTableExpression(),
+                statement
+            );
+            result.push(assignClassSetters);
+
+            this.importLuaLibFeature(LuaLibFeature.ClassNewIndex);
+        }
 
         // className.prototype = className.prototype or {}
         const createClassPrototype = () => tstl.createTableIndexExpression(
@@ -540,7 +573,7 @@ export class LuaTransformer {
             createClassPrototype(),
             tstl.createStringLiteral("__index")
         );
-        if (statement.members.some(ts.isGetAccessor)) {
+        if (statement.members.some(m => ts.isGetAccessor(m) && !tsHelper.isStatic(m))) {
             // className.prototype.____getters = {}
             const classPrototypeGetters = tstl.createTableIndexExpression(
                 createClassPrototype(),
@@ -568,7 +601,7 @@ export class LuaTransformer {
             result.push(assignClassPrototypeIndex);
         }
 
-        if (tsHelper.hasSetAccessorInClassOrAncestor(statement, this.checker)) {
+        if (tsHelper.hasSetAccessorInClassOrAncestor(statement, false, this.checker)) {
             // className.prototype.____setters = {}
             const classPrototypeSetters = tstl.createTableIndexExpression(
                 createClassPrototype(),
@@ -616,14 +649,51 @@ export class LuaTransformer {
             const assignClassBase = tstl.createAssignmentStatement(createClassBase(), baseName, statement);
             result.push(assignClassBase);
 
-            // setmetatable(className, className.____super)
-            const setClassMetatable = tstl.createExpressionStatement(
-                tstl.createCallExpression(
-                    tstl.createIdentifier("setmetatable"),
-                    [createClassNameWithExport(), createClassBase()]
-                )
-            );
-            result.push(setClassMetatable);
+            if (hasStaticGetters || hasStaticSetters) {
+                const metatableFields: tstl.TableFieldExpression[] = [];
+                if (hasStaticGetters) {
+                    // __index = __TS__ClassIndex
+                    metatableFields.push(
+                        tstl.createTableFieldExpression(
+                            tstl.createIdentifier("__TS__ClassIndex"),
+                            tstl.createStringLiteral("__index")
+                        )
+                    );
+                } else {
+                    // __index = className.____super
+                    metatableFields.push(
+                        tstl.createTableFieldExpression(createClassBase(), tstl.createStringLiteral("__index"))
+                    );
+                }
+
+                if (hasStaticSetters) {
+                    // __newindex = __TS__ClassNewIndex
+                    metatableFields.push(
+                        tstl.createTableFieldExpression(
+                            tstl.createIdentifier("__TS__ClassNewIndex"),
+                            tstl.createStringLiteral("__newindex")
+                        )
+                    );
+                }
+
+                const setClassMetatable = tstl.createExpressionStatement(
+                    tstl.createCallExpression(
+                        tstl.createIdentifier("setmetatable"),
+                        [createClassNameWithExport(), tstl.createTableExpression(metatableFields)]
+                    )
+                );
+                result.push(setClassMetatable);
+
+            } else {
+                // setmetatable(className, className.____super)
+                const setClassMetatable = tstl.createExpressionStatement(
+                    tstl.createCallExpression(
+                        tstl.createIdentifier("setmetatable"),
+                        [createClassNameWithExport(), createClassBase()]
+                    )
+                );
+                result.push(setClassMetatable);
+            }
 
             // setmetatable(className.prototype, className.____super.prototype)
             const basePrototype = tstl.createTableIndexExpression(
@@ -637,6 +707,36 @@ export class LuaTransformer {
                 )
             );
             result.push(setClassPrototypeMetatable);
+
+        } else if (hasStaticGetters || hasStaticSetters) {
+            const metatableFields: tstl.TableFieldExpression[] = [];
+            if (hasStaticGetters) {
+                // __index = __TS__ClassIndex
+                metatableFields.push(
+                    tstl.createTableFieldExpression(
+                        tstl.createIdentifier("__TS__ClassIndex"),
+                        tstl.createStringLiteral("__index")
+                    )
+                );
+            }
+
+            if (hasStaticSetters) {
+                // __newindex = __TS__ClassNewIndex
+                metatableFields.push(
+                    tstl.createTableFieldExpression(
+                        tstl.createIdentifier("__TS__ClassNewIndex"),
+                        tstl.createStringLiteral("__newindex")
+                    )
+                );
+            }
+
+            const setClassMetatable = tstl.createExpressionStatement(
+                tstl.createCallExpression(
+                    tstl.createIdentifier("setmetatable"),
+                    [createClassNameWithExport(), tstl.createTableExpression(metatableFields)]
+                )
+            );
+            result.push(setClassMetatable);
         }
 
         const newFuncStatements: tstl.Statement[] = [];
@@ -812,12 +912,13 @@ export class LuaTransformer {
             [this.createSelfIdentifier()]
         );
 
-        const classPrototype = tstl.createTableIndexExpression(
-            this.addExportToIdentifier(tstl.cloneIdentifier(className)),
-            tstl.createStringLiteral("prototype")
-        );
+        const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
+        const methodTable = tsHelper.isStatic(getAccessor)
+            ? classNameWithExport
+            : tstl.createTableIndexExpression(classNameWithExport, tstl.createStringLiteral("prototype"));
+
         const classGetters = tstl.createTableIndexExpression(
-            classPrototype,
+            methodTable,
             tstl.createStringLiteral("____getters")
         );
         const getter = tstl.createTableIndexExpression(
@@ -846,12 +947,13 @@ export class LuaTransformer {
             restParam
         );
 
-        const classPrototype = tstl.createTableIndexExpression(
-            this.addExportToIdentifier(tstl.cloneIdentifier(className)),
-            tstl.createStringLiteral("prototype")
-        );
+        const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
+        const methodTable = tsHelper.isStatic(setAccessor)
+            ? classNameWithExport
+            : tstl.createTableIndexExpression(classNameWithExport, tstl.createStringLiteral("prototype"));
+
         const classSetters = tstl.createTableIndexExpression(
-            classPrototype,
+            methodTable,
             tstl.createStringLiteral("____setters")
         );
         const setter = tstl.createTableIndexExpression(
@@ -865,7 +967,7 @@ export class LuaTransformer {
     public transformMethodDeclaration(
         node: ts.MethodDeclaration,
         className: tstl.Identifier,
-        usePrototype: boolean
+        noPrototype: boolean
     ): tstl.AssignmentStatement
     {
         // Don't transform methods without body (overload declarations)
@@ -892,9 +994,8 @@ export class LuaTransformer {
             restParamName
         );
 
-        const isStatic = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
         const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
-        const methodTable = isStatic || usePrototype
+        const methodTable = tsHelper.isStatic(node) || noPrototype
             ? classNameWithExport
             : tstl.createTableIndexExpression(classNameWithExport, tstl.createStringLiteral("prototype"));
 

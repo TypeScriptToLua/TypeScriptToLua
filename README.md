@@ -48,7 +48,7 @@ All contributions are welcome, but please read our [contribution guidelines](htt
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)
 - [Defold Game Engine Scripting](https://github.com/dasannikov/DefoldTypeScript/blob/master/defold.d.ts)
-- [LÖVE 2D Game Engine Scripting](https://github.com/hazzard993/love-typescript-definitions)
+- [LÖVE 2D Game Development](https://github.com/hazzard993/love-typescript-definitions)
 
 ## Building & Tests
 

@@ -1,0 +1,10 @@
+local __TSTL_kebab_module = require("kebab-module");
+local TestClass = __TSTL_kebab_module.TestClass;
+local __TSTL_dollar_module = require("dollar$module");
+local TestClass = __TSTL_dollar_module.TestClass;
+local __TSTL_singlequote_module = require("singlequote'module");
+local TestClass = __TSTL_singlequote_module.TestClass;
+local __TSTL_hash_module = require("hash#module");
+local TestClass = __TSTL_hash_module.TestClass;
+local __TSTL_space_module = require("space module");
+local TestClass = __TSTL_space_module.TestClass;

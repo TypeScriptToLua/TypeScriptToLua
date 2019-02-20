@@ -1,5 +1,5 @@
 import { MatchError, TestRunner, TestSet, TestOutcome } from "alsatian";
-import * as JSON from "circular-json";
+import * as flatted from "flatted";
 
 module.exports = (input, done) => {
     const testSet = TestSet.create();
@@ -12,7 +12,7 @@ module.exports = (input, done) => {
     testRunner.onTestComplete(result => {
         if (result.outcome === TestOutcome.Fail) {
             if (result.error instanceof MatchError) {
-                console.log(`Test ${result.testFixture.description}, ${result.test.key}(${JSON.stringify(result.testCase.caseArguments)}) Failed!`);
+                console.log(`Test ${result.testFixture.description}, ${result.test.key}(${flatted.stringify(result.testCase.caseArguments)}) Failed!`);
                 console.log(" ---\n" +
                 '   message: "' +
                 result.error.message +

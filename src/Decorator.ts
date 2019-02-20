@@ -38,13 +38,13 @@ export class Decorator {
 }
 
 export enum DecoratorKind {
-    Extension = "Extension",
-    MetaExtension = "MetaExtension",
-    CustomConstructor = "CustomConstructor",
-    CompileMembersOnly = "CompileMembersOnly",
-    PureAbstract = "PureAbstract",
-    Phantom = "Phantom",
-    TupleReturn = "TupleReturn",
-    NoClassOr = "NoClassOr",
-    LuaIterator = "LuaIterator",
+    Extension = "extension",
+    MetaExtension = "metaExtension",
+    CustomConstructor = "customConstructor",
+    CompileMembersOnly = "compileMembersOnly",
+    PureAbstract = "pureAbstract",
+    Phantom = "phantom",
+    TupleReturn = "tupleReturn",
+    NoClassOr = "noClassOr",
+    LuaIterator = "luaIterator",
 }

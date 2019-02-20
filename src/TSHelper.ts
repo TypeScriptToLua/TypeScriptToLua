@@ -227,9 +227,7 @@ export class TSHelper {
             if (Decorator.isValid(decoratorName.substr(1))) {
                 const dec = new Decorator(decoratorName.substr(1), decoratorArguments);
                 decMap.set(dec.kind, dec);
-                console.warn(
-                    `[Deprecated] Decorators with ! are being deprecated, ` +
-                    `use @${decStr.substr(1)} instead`);
+                console.warn(`[Deprecated] Compiler directives with ! are deprecated, use @${dec.kind} instead`);
             } else {
                 console.warn(`Encountered unknown decorator ${decStr}.`);
             }
@@ -238,6 +236,11 @@ export class TSHelper {
             if (Decorator.isValid(tag.name)) {
                 const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
                 decMap.set(dec.kind, dec);
+                if (dec.kind !== tag.name) {
+                    console.warn(
+                        `[Deprecated] Case insensitive compiler directives are deprecated, use @${dec.kind} instead`
+                    );
+                }
             }
         });
     }

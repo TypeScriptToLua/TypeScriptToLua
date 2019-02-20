@@ -7,8 +7,10 @@ import { CompilerOptions } from "../../src/CompilerOptions";
 export class RequireTests {
 
     @TestCase("file.ts", "./folder/Module", "folder.Module", { rootDir: "." }, false)
+    @TestCase("file.ts", "./folder/Module", "folder.Module", { rootDir: "./" }, false)
     @TestCase("src/file.ts", "./folder/Module", "src.folder.Module", { rootDir: "." }, false)
     @TestCase("file.ts", "folder/Module", "folder.Module", { rootDir: ".", baseUrl: "." }, false)
+    @TestCase("file.ts", "folder/Module", "folder.Module", { rootDir: "./", baseUrl: "." }, false)
     @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "src" }, false)
     @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "./src" }, false)
     @TestCase("file.ts", "../Module", "", { rootDir: "./src" }, true)
@@ -22,7 +24,6 @@ export class RequireTests {
         options: CompilerOptions,
         throwsError: boolean): void {
         const regex = /require\("(.*?)"\)/;                 // This regex extracts `hello` from require("hello")
-        options.rootDir = path.resolve(options.rootDir);    // This happens automatically from the command line
         if (throwsError) {
             Expect(() => util.transpileString(`import * from "${usedPath}";`, options, true, filePath)).toThrow();
         } else {

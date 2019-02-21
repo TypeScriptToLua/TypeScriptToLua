@@ -325,6 +325,12 @@ export class LuaTransformer {
         const imports = statement.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
+                // ignore interface imports
+                const declaredType = this.checker.getDeclaredTypeOfSymbol((e as any).symbol);
+                if (declaredType.isClassOrInterface() && !declaredType.isClass()) {
+                    return false;
+                }
+                
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
                 return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
             });

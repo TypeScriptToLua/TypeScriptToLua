@@ -55,4 +55,13 @@ export class LuaModuleTests {
         // Assert
         Expect(lua).toBe(``);
     }
+
+    @Test("Nested module with dot in name")
+    public nestedModuleWithDotInName(): void {
+        const code =
+            `module a.b {
+                export const foo = "foo";
+            }`;
+        Expect(util.transpileAndExecute("return a.b.foo;", undefined, undefined, code)).toBe("foo");
+    }
 }

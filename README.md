@@ -1,9 +1,9 @@
 <div align="center">
     <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
-    <h3>TypeScriptToLua</h3>
-    <h4>A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!</h4>
+    <h2>TypeScriptToLua</h2>
 </div>
 
+A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!
 
 Large projects written in lua can become hard to maintain and make it easy to make mistakes. Writing code in TypeScript instead improves maintainability, readability and robustness, with the added bonus of good IDE support. This project is useful in any environment where Lua code is accepted, with the powerful option of simply declaring any existing API using TypeScript declaration files.
 

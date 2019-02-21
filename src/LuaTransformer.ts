@@ -3917,12 +3917,12 @@ export class LuaTransformer {
     }
 
     private getImportPath(relativePath: string): string {
-        const rootDir = this.options.rootDir || path.resolve(".");
-        const absoluteImportPath = this.formatPathToLuaPath(this.getAbsoluteImportPath(relativePath));
-        const absoluteRootDirPath = this.formatPathToLuaPath(rootDir);
+        const rootDir = this.options.rootDir ? path.resolve(this.options.rootDir) : path.resolve(".");
+        const absoluteImportPath = path.format(path.parse(this.getAbsoluteImportPath(relativePath)));
+        const absoluteRootDirPath = path.format(path.parse(rootDir));
         if (absoluteImportPath.includes(absoluteRootDirPath)) {
-            const relativePathToRoot =  absoluteImportPath.replace(absoluteRootDirPath, "").slice(1);
-            return relativePathToRoot;
+            return this.formatPathToLuaPath(
+                absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
         } else {
             throw TSTLErrors.UnresolvableRequirePath(undefined,
                 `Cannot create require path. Module does not exist within --rootDir`,

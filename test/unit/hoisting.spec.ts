@@ -142,12 +142,12 @@ export class HoistingTests {
     @Test("Hoisting due to reference from hoisted function")
     public hoistingDueToReferenceFromHoistedFunction(): void {
         const code =
-            `bar();
-            const foo = "foo";
+            `const foo = "foo";
+            const result = bar();
             function bar() {
                 return foo;
             }
-            return foo;`;
+            return result;`;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foo");
     }

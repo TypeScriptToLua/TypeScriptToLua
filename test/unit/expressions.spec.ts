@@ -13,6 +13,7 @@ export class ExpressionTests {
     @TestCase("--i", "i = i - 1;")
     @TestCase("!a", "not a;")
     @TestCase("-a", "-a;")
+    @TestCase("+a", "a;")
     @TestCase("let a = delete tbl['test']", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
     @TestCase("delete tbl['test']", "tbl.test = nil;")
     @TestCase("let a = delete tbl.test", "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();")
@@ -365,6 +366,7 @@ export class ExpressionTests {
     }
 
     @TestCase("x = y", "y")
+    @TestCase("x += y", "xy")
     @Test("Assignment expressions")
     public assignmentExpression(expression: string, expected: string): void {
         const result = util.transpileAndExecute(`let x = "x"; let y = "y"; return ${expression};`);

@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest, TestCases } from "alsatian";
+import { Expect, Test, TestCase, TestCases } from "alsatian";
 
 import * as util from "../src/util";
 
@@ -54,6 +54,20 @@ export class BindingPatternTests {
             let ${bindingString} = ${objectString};
             return ${returnVariable};
         `);
+        Expect(result).toBe(true);
+    }
+
+    @TestCases(testCases)
+    @TestCases(testCasesDefault)
+    public testBindingPatternExportDeclarations(
+        bindingString: string,
+        objectString: string,
+        returnVariable: string
+    ): void {
+        const result = util.transpileExecuteAndReturnExport(
+            `export const ${bindingString} = ${objectString};`,
+            returnVariable
+        );
         Expect(result).toBe(true);
     }
 

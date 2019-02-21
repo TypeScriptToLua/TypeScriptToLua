@@ -1,6 +1,6 @@
 <div align="center">
     <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
-    <h2>TypeScriptToLua</h2>
+    <h1>TypeScriptToLua</h1>
 </div>
 
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!

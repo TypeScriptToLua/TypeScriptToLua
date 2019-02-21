@@ -3811,7 +3811,7 @@ export class LuaTransformer {
     }
 
     private getImportPath(relativePath: string): string {
-        const rootDir = this.options.rootDir && path.resolve(this.options.rootDir) || path.resolve(".");
+        const rootDir = this.options.rootDir ? path.resolve(this.options.rootDir) : path.resolve(".");
         const absoluteImportPath = path.format(path.parse(this.getAbsoluteImportPath(relativePath)));
         const absoluteRootDirPath = path.format(path.parse(rootDir));
         if (absoluteImportPath.includes(absoluteRootDirPath)) {

@@ -2,8 +2,7 @@
     <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
     <h1>
         TypeScriptToLua
-        <br />
-        <br />
+        <p></p>
         <img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" />
         <img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" />
         <img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" />

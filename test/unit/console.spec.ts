@@ -1,7 +1,7 @@
 import { Expect, Test, TestCase, IgnoreTest, FocusTest } from "alsatian";
 import * as util from "../src/util";
 
-export class MathTests {
+export class ConsoleTests {
 
     @TestCase("console.log()", "print();")
     @TestCase('console.log("Hello")', 'print("Hello");')

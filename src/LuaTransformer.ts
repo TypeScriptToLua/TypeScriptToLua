@@ -3115,28 +3115,27 @@ export class LuaTransformer {
         // If the function being called is of type owner.func, get the type of owner
         const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
-            return tstl.createCallExpression(
-                this.transformMathExpression(node.expression.name),
-                this.transformArguments(node.arguments),
-                node
-            );
-        }
-
-        if (ownerType.symbol && ownerType.symbol.escapedName === "StringConstructor") {
-            return tstl.createCallExpression(
-                this.transformStringExpression(node.expression.name),
-                this.transformArguments(node.arguments),
-                node
-            );
-        }
-
-        if (ownerType.symbol && ownerType.symbol.escapedName === "ObjectConstructor") {
-            return this.transformObjectCallExpression(node);
-        }
-
-        if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
-            return this.transformSymbolCallExpression(node);
+        if (ownerType.symbol) {
+            switch (ownerType.symbol.escapedName) {
+                case "Math":
+                    return tstl.createCallExpression(
+                        this.transformMathExpression(node.expression.name),
+                        this.transformArguments(node.arguments),
+                        node
+                    );
+                case "StringConstructor":
+                    return tstl.createCallExpression(
+                        this.transformStringExpression(node.expression.name),
+                        this.transformArguments(node.arguments),
+                        node
+                    );
+                case "Console":
+                    return this.transformConsoleCallExpression(node);
+                case "ObjectConstructor":
+                    return this.transformObjectCallExpression(node);
+                case "SymbolConstructor":
+                    return this.transformSymbolCallExpression(node);
+            }
         }
 
         switch (ownerType.flags) {
@@ -3540,6 +3539,90 @@ export class LuaTransformer {
                     `string property ${identifierString}`,
                     this.options.luaTarget,
                     identifier
+                );
+        }
+    }
+
+    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "log":
+                if (expression.arguments.length > 0) {
+                    if (ts.isStringLiteral(expression.arguments[0])
+                        && expression.arguments[0].getText().includes("%")) {
+                        // print(string.format([arguments]))
+                        return tstl.createCallExpression(
+                            tstl.createIdentifier("print"),
+                            [tstl.createCallExpression(
+                                tstl.createTableIndexExpression(
+                                    tstl.createIdentifier("string"),
+                                    tstl.createStringLiteral("format")),
+                                this.transformArguments(expression.arguments))]
+                        );
+                    }
+                }
+                // print([arguments])
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    this.transformArguments(expression.arguments)
+                );
+            case "assert":
+                const args = this.transformArguments(expression.arguments);
+                if (expression.arguments.length > 1) {
+                    if (ts.isStringLiteral(expression.arguments[1])
+                        && expression.arguments[1].getText().includes("%")) {
+                        // assert([condition], string.format([arguments]))
+                        return tstl.createCallExpression(
+                            tstl.createIdentifier("assert"),
+                            [args[0],
+                            tstl.createCallExpression(
+                                tstl.createTableIndexExpression(
+                                    tstl.createIdentifier("string"),
+                                    tstl.createStringLiteral("format")),
+                                args.slice(1))]
+                        );
+                    }
+                }
+                // assert()
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("assert"),
+                    args
+                );
+            case "trace":
+                if (expression.arguments.length > 0) {
+                    if (ts.isStringLiteral(expression.arguments[0])
+                        && expression.arguments[0].getText().includes("%")) {
+                        // print(debug.traceback(string.format([arguments])))
+                        return tstl.createCallExpression(
+                            tstl.createIdentifier("print"),
+                            [tstl.createCallExpression(
+                                tstl.createTableIndexExpression(
+                                    tstl.createIdentifier("debug"),
+                                    tstl.createStringLiteral("traceback")),
+                                [tstl.createCallExpression(
+                                    tstl.createTableIndexExpression(
+                                        tstl.createIdentifier("string"),
+                                        tstl.createStringLiteral("format")),
+                                    this.transformArguments(expression.arguments))])]
+                        );
+                    }
+                }
+                // print(debug.traceback([arguments])))
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    [tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("debug"),
+                            tstl.createStringLiteral("traceback")),
+                        this.transformArguments(expression.arguments))]
+                );
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `console property ${methodName}`,
+                    this.options.luaTarget,
+                    expression
                 );
         }
     }

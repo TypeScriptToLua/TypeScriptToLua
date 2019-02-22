@@ -1,17 +1,16 @@
 <div align="center">
     <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
-    <h1>TypeScriptToLua</h1>
+    <h2>TypeScriptToLua</h2>
+
+<img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" />
+<img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" />
+<img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" />
+<img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white">
 </div>
 
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!
 
 Large projects written in lua can become hard to maintain and make it easy to make mistakes. Writing code in TypeScript instead improves maintainability, readability and robustness, with the added bonus of good IDE support. This project is useful in any environment where Lua code is accepted, with the powerful option of simply declaring any existing API using TypeScript declaration files.
-
-[![Build Status](https://travis-ci.org/Perryvw/TypescriptToLua.svg?branch=master)](https://travis-ci.org/Perryvw/TypescriptToLua)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/perryvw/typescripttolua?branch=master&svg=true)](https://ci.appveyor.com/project/Perryvw/typescripttolua)
-[![Coverage](https://codecov.io/gh/perryvw/typescripttolua/branch/master/graph/badge.svg)](https://codecov.io/gh/perryvw/typescripttolua)
-
-You can chat with us on [Discord: ![Discord](https://img.shields.io/discord/515854149821267971.svg)](https://discord.gg/BWAq58Y)
 
 ## Documentation
 More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).

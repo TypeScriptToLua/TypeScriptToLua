@@ -1,11 +1,14 @@
 <div align="center">
     <img src="logo-hq.png?raw=true" alt="TypeScriptToLua" width="256" />
-    <h2>TypeScriptToLua</h2>
-
-<img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" />
-<img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" />
-<img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" />
-<img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white">
+    <h1>
+        TypeScriptToLua
+        <br />
+        <br />
+        <img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" />
+        <img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" />
+        <img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" />
+        <img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white">
+    </h1>
 </div>
 
 A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!

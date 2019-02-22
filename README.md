@@ -3,7 +3,7 @@
     <h1>
         TypeScriptToLua
         <p></p>
-        <a href="https://travis-ci.org/Perryvw/TypescriptToLua"><img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" /></a>
+        <a href="https://travis-ci.org/Perryvw/TypeScriptToLua"><img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" /></a>
         <a href="https://ci.appveyor.com/project/Perryvw/typescripttolua"><img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" /></a>
         <a href="https://codecov.io/gh/perryvw/typescripttolua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" /></a>
         <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white"></a>

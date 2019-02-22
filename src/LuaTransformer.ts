@@ -1322,9 +1322,12 @@ export class LuaTransformer {
         this.currentNamespace = statement;
 
         // Transform moduleblock to block and visit it
-        if (statement.body && ts.isModuleBlock(statement.body)) {
+        if (statement.body && (ts.isModuleBlock(statement.body) || ts.isModuleDeclaration(statement.body))) {
             this.pushScope(ScopeType.Block, statement);
-            const statements = this.performHoisting(this.transformStatements(statement.body.statements));
+            let statements = ts.isModuleBlock(statement.body)
+                ? this.transformStatements(statement.body.statements)
+                : this.transformModuleDeclaration(statement.body);
+            statements = this.performHoisting(statements);
             this.popScope();
             result.push(tstl.createDoStatement(statements));
         }

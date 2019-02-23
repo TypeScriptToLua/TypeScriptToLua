@@ -2972,7 +2972,15 @@ export class LuaTransformer {
             hasContext ? context : undefined
         );
 
-        const body = ts.isBlock(node.body) ? node.body : ts.createBlock([ts.createReturn(node.body)]);
+        let body: ts.Block;
+        if (ts.isBlock(node.body)) {
+            body = node.body;
+        } else {
+            const ret = ts.createReturn(node.body);
+            body = ts.createBlock([ret]);
+            ret.parent = body;
+            body.parent = node.body.parent;
+        }
         const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
         return tstl.createFunctionExpression(
@@ -3053,9 +3061,10 @@ export class LuaTransformer {
         const isTupleReturnForward =
             node.parent && ts.isReturnStatement(node.parent) && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
+        const isInSpread = node.parent && ts.isSpreadElement(node.parent);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
-        const wrapResult = isTupleReturn && !isTupleReturnForward&& !isInDestructingAssignment
-            && returnValueIsUsed && !isLuaIterator;
+        const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment
+            && !isInSpread && returnValueIsUsed && !isLuaIterator;
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transformPropertyCall(node);
@@ -3707,8 +3716,11 @@ export class LuaTransformer {
 
     public transformSpreadElement(expression: ts.SpreadElement): ExpressionVisitResult {
         const innerExpression = this.transformExpression(expression.expression);
-
-        return this.createUnpackCall(innerExpression, expression);
+        if (tsHelper.isTupleReturnCall(expression.expression, this.checker)) {
+            return innerExpression;
+        } else {
+            return this.createUnpackCall(innerExpression, expression);
+        }
     }
 
     public transformStringLiteral(literal: ts.StringLiteralLike): tstl.StringLiteral {

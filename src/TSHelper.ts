@@ -187,7 +187,13 @@ export class TSHelper {
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
-            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
+            let functionType: ts.Type;
+            if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
+                functionType = TSHelper.inferAssignedType(declaration, checker);
+            } else {
+                functionType = checker.getTypeAtLocation(declaration);
+            }
+            const decorators = TSHelper.getCustomDecorators(functionType, checker);
             return decorators.has(DecoratorKind.TupleReturn);
         } else {
             return false;
@@ -446,15 +452,36 @@ export class TSHelper {
 
         } else if (ts.isCallExpression(expression.parent)) {
             // Expression being passed as argument to a function
-            let i = expression.parent.arguments.indexOf(expression);
-            if (i >= 0) {
+            const argumentIndex = expression.parent.arguments.indexOf(expression);
+            if (argumentIndex >= 0) {
                 const parentSignature = checker.getResolvedSignature(expression.parent);
-                const parentSignatureDeclaration = parentSignature.getDeclaration();
-                if (parentSignatureDeclaration) {
-                    if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
-                        ++i;
+                if (parentSignature.parameters.length > 0) { // In case function type is 'any'
+                    const signatureIndex = Math.min(argumentIndex, parentSignature.parameters.length - 1);
+                    let parameterType = checker.getTypeOfSymbolAtLocation(
+                        parentSignature.parameters[signatureIndex],
+                        expression
+                    );
+                    if (TSHelper.isArrayType(parameterType, checker)) {
+                        // Check for elipses argument
+                        const parentSignatureDeclaration = parentSignature.getDeclaration();
+                        if (parentSignatureDeclaration) {
+                            let declarationIndex = signatureIndex;
+                            if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
+                                // Ignore 'this' parameter
+                                ++declarationIndex;
+                            }
+                            const parameterDeclaration = parentSignatureDeclaration.parameters[declarationIndex];
+                            if ((parameterType.flags & ts.TypeFlags.Object) !== 0
+                                && ((parameterType as ts.ObjectType).objectFlags & ts.ObjectFlags.Reference) !== 0
+                                && parameterDeclaration.dotDotDotToken)
+                            {
+                                // Determine type from elipsis array/tuple type
+                                const parameterTypeReference = (parameterType as ts.TypeReference);
+                                parameterType = parameterTypeReference.typeArguments[argumentIndex - declarationIndex];
+                            }
+                        }
                     }
-                    return checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                    return parameterType;
                 }
             }
 

@@ -10,6 +10,10 @@ type ParseResult<T> =
     { isValid: true; result: T }
     | { isValid: false, errorMessage: string};
 
+type ArgumentParseResult<T> =
+    { isValid: true; result: T; increment?: number }
+    | { isValid: false, errorMessage: string };
+
 interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
@@ -190,10 +194,11 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
             const argumentName = args[i].substr(2);
             const option = optionDeclarations[argumentName];
             if (option) {
-                const argumentResult = getArgumentValue(argumentName, args[i + 1]);
-                i++; // Skip the value from being considered as argument name
+                const argumentResult = getArgumentValue(argumentName, i, args);
                 if (argumentResult.isValid === true) {
                     result[argumentName] = argumentResult.result;
+                    // Skip value from being considered as option
+                    i += argumentResult.increment !== undefined ? argumentResult.increment : 1;
                 } else {
                     return { isValid: false, errorMessage: argumentResult.errorMessage };
                 }
@@ -209,10 +214,11 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
             }
 
             if (argumentName) {
-                const argumentResult = getArgumentValue(argumentName, args[i + 1]);
-                i++; // Skip the value from being considered as argument name
+                const argumentResult = getArgumentValue(argumentName, i, args);
                 if (argumentResult.isValid === true) {
                     result[argumentName] = argumentResult.result;
+                    // Skip value from being considered as option
+                    i += argumentResult.increment !== undefined ? argumentResult.increment : 1;
                 } else {
                     return { isValid: false, errorMessage: argumentResult.errorMessage };
                 }
@@ -232,13 +238,24 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
     return { isValid: true, result: commandLine };
 }
 
-function getArgumentValue(argumentName: string, argument: string): ParseResult<string | boolean>
+function getArgumentValue(
+    argumentName: string,
+    argumentIndex: number,
+    args: string[]
+): ArgumentParseResult<string | boolean>
 {
+    const option = optionDeclarations[argumentName];
+    const argument = args[argumentIndex + 1];
+
+    if (option.type === "boolean" && (argument === undefined || argument.startsWith("-"))) {
+        // Set boolean arguments without supplied value to true
+        return { isValid: true, result: true, increment: 0 };
+    }
+
     if (argument === undefined) {
         return { isValid: false, errorMessage: `Missing value for parameter ${argumentName}`};
     }
 
-    const option = optionDeclarations[argumentName];
     const value = readValue(argument, option.type, argumentName);
 
     if (option.choices) {

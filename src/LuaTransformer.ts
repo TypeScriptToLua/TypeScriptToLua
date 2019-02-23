@@ -2976,9 +2976,9 @@ export class LuaTransformer {
         if (ts.isBlock(node.body)) {
             body = node.body;
         } else {
-            const ret = ts.createReturn(node.body);
-            body = ts.createBlock([ret]);
-            ret.parent = body;
+            const returnExpression = ts.createReturn(node.body);
+            body = ts.createBlock([returnExpression]);
+            returnExpression.parent = body;
             body.parent = node.body.parent;
         }
         const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);

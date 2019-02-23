@@ -66,11 +66,28 @@ export class CommandLineParserTests
     @TestCase([""], false)
     @TestCase(["--noHeader", "true"], true)
     @TestCase(["--noHeader", "false"], false)
+    @TestCase(["--noHeader"], true)
+    @TestCase(["--noHeader", "--noHoisting"], true)
     @Test("CLI parser noHeader")
     public cliParserNoHeader(args: string[], expected: boolean): void {
         const result = parseCommandLine(args);
         if (result.isValid === true) {
             Expect(result.result.options.noHeader).toBe(expected);
+        } else {
+            Expect(result.isValid).toBeTruthy();
+        }
+    }
+
+    @TestCase([""], false)
+    @TestCase(["--noHoisting", "true"], true)
+    @TestCase(["--noHoisting", "false"], false)
+    @TestCase(["--noHoisting"], true)
+    @TestCase(["--noHoisting", "--noHeader"], true)
+    @Test("CLI parser noHoisting")
+    public cliParserNoHoisting(args: string[], expected: boolean): void {
+        const result = parseCommandLine(args);
+        if (result.isValid === true) {
+            Expect(result.result.options.noHoisting).toBe(expected);
         } else {
             Expect(result.isValid).toBeTruthy();
         }
@@ -84,6 +101,21 @@ export class CommandLineParserTests
         const result = parseCommandLine(args);
         if (result.isValid === true) {
             Expect(result.result.options.project !== undefined).toBe(expected);
+        } else {
+            Expect(result.isValid).toBeTruthy();
+        }
+    }
+
+    @Test("CLI Parser Multiple Options")
+    public cliParserMultipleOptions(): void {
+        const commandLine = "--project tsconfig.json --noHeader --noHoisting -lt 5.3";
+        const result = parseCommandLine(commandLine.split(" "));
+
+        if (result.isValid === true) {
+            Expect(result.result.options.project).toBeDefined();
+            Expect(result.result.options.noHeader).toBe(true);
+            Expect(result.result.options.noHoisting).toBe(true);
+            Expect(result.result.options.luaTarget).toBe(LuaTarget.Lua53);
         } else {
             Expect(result.isValid).toBeTruthy();
         }

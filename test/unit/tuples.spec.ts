@@ -168,4 +168,90 @@ export class TupleTests {
         // Assert
         Expect(result).toBe(5);
     }
+
+    @Test("Tuple Return on Arrow Function")
+    public tupleReturnOnArrowFunction(): void {
+        const code =
+            `const fn = /** @tupleReturn */ (s: string) => [s, "bar"];
+            const [a, b] = fn("foo");
+            return a + b;`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
+
+    @Test("Tuple Return Inference")
+    public tupleReturnInference(): void {
+        const code =
+            `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+            const fn: Fn = s => [s, "bar"];
+            const [a, b] = fn("foo");
+            return a + b;`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
+
+    @Test("Tuple Return Inference as Argument")
+    public tupleReturnInferenceAsArgument(): void {
+        const code =
+            `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+            function foo(fn: Fn) {
+                const [a, b] = fn("foo");
+                return a + b;
+            }
+            return foo(s => [s, "bar"]);`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
+
+    @Test("Tuple Return Inference as Elipsis Argument")
+    public tupleReturnInferenceAsElipsisArgument(): void {
+        const code =
+            `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+            function foo(a: number, ...fn: Fn[]) {
+                const [a, b] = fn[0]("foo");
+                return a + b;
+            }
+            return foo(7, s => [s, "bar"]);`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
+
+    @Test("Tuple Return Inference as Elipsis Tuple Argument")
+    public tupleReturnInferenceAsElipsisTupleArgument(): void {
+        const code =
+            `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+            function foo(a: number, ...fn: [number, Fn]) {
+                const [a, b] = fn[1]("foo");
+                return a + b;
+            }
+            return foo(7, 17, s => [s, "bar"]);`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
+
+    @Test("Tuple Return in Spread")
+    public tupleReturnInSpread(): void {
+        const code =
+            `/** @tupleReturn */ function foo(): [string, string] {
+                return ["foo", "bar"];
+            }
+            function bar(a: string, b: string) {
+                return a + b;
+            }
+            return bar(...foo());`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("foobar");
+    }
 }

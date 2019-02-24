@@ -165,13 +165,9 @@ export class TSHelper {
         return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
     }
 
-    public static isLuaIteratorCall(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (ts.isCallExpression(node) && node.parent && ts.isForOfStatement(node.parent)) {
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
-        } else {
-            return false;
-        }
+    public static isLuaIteratorType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -195,16 +191,6 @@ export class TSHelper {
             }
             const decorators = TSHelper.getCustomDecorators(functionType, checker);
             return decorators.has(DecoratorKind.TupleReturn);
-        } else {
-            return false;
-        }
-    }
-
-    public static isInLuaIteratorFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
-        const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
-        if (declaration) {
-            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
-            return decorators.has(DecoratorKind.LuaIterator);
         } else {
             return false;
         }

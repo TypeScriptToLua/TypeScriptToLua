@@ -14,6 +14,17 @@ export class StringTests
         }).toThrowError(TranspileError, "Unsupported property on string: testThisIsNoMember");
     }
 
+    @Test("Suported lua string function")
+    public stringSuportedLuaFunction(): void {
+        Expect(util.transpileAndExecute(
+                `return "test".upper()`,
+                undefined,
+                undefined,
+                `interface String { upper(): string; }`
+            )
+        ).toBe("TEST");
+    }
+
     @TestCase([])
     @TestCase([65])
     @TestCase([65, 66])

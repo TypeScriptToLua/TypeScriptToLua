@@ -3513,6 +3513,35 @@ export class LuaTransformer {
                 const firstParamPlusOne = this.expressionPlusOne(params[0]);
                 return this.createStringCall("byte", node, caller, firstParamPlusOne);
             }
+            case "byte":
+            case "char":
+            case "dump":
+            case "find":
+            case "format":
+            case "gmatch":
+            case "gsub":
+            case "len":
+            case "lower":
+            case "match":
+            case "pack":
+            case "packsize":
+            case "rep":
+            case "reverse":
+            case "sub":
+            case "unpack":
+            case "upper":
+                // Allow lua's string instance methods
+                let stringVariable = this.transformExpression(expression.expression);
+                if (ts.isStringLiteral(expression.expression)) {
+                    // "foo":method() needs to be ("foo"):method()
+                    stringVariable = tstl.createParenthesizedExpression(stringVariable);
+                }
+                return tstl.createMethodCallExpression(
+                    stringVariable,
+                    this.transformIdentifier(expression.name),
+                    params,
+                    node
+                );
             default:
                 throw TSTLErrors.UnsupportedProperty("string", expressionName, node);
         }

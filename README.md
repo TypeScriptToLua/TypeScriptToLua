@@ -3,9 +3,9 @@
     <h1>
         TypeScriptToLua
         <p></p>
-        <a href="https://travis-ci.org/Perryvw/TypeScriptToLua"><img alt="Build status" src="https://img.shields.io/travis/Perryvw/TypeScriptToLua.svg?style=for-the-badge" /></a>
-        <a href="https://ci.appveyor.com/project/Perryvw/typescripttolua"><img alt="Build status" src="https://img.shields.io/appveyor/ci/perryvw/typescripttolua.svg?logo=appveyor&style=for-the-badge" /></a>
-        <a href="https://codecov.io/gh/perryvw/typescripttolua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/perryvw/typescripttolua.svg?logo=codecov&style=for-the-badge" /></a>
+        <a href="https://travis-ci.org/TypeScriptToLua/TypeScriptToLua"><img alt="Build status" src="https://img.shields.io/travis/TypeScriptToLua/TypeScriptToLua.svg?style=for-the-badge" /></a>
+        <a href="https://ci.appveyor.com/project/TypeScriptToLua/typescripttolua"><img alt="Build status" src="https://img.shields.io/appveyor/ci/TypeScriptToLua/typescripttolua.svg?logo=appveyor&style=for-the-badge" /></a>
+        <a href="https://codecov.io/gh/TypeScriptToLua/typescripttolua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/TypeScriptToLua/typescripttolua.svg?logo=codecov&style=for-the-badge" /></a>
         <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white"></a>
     </h1>
 </div>
@@ -15,9 +15,9 @@ A generic TypeScript to Lua transpiler. Write your code in TypeScript and publis
 Large projects written in lua can become hard to maintain and make it easy to make mistakes. Writing code in TypeScript instead improves maintainability, readability and robustness, with the added bonus of good IDE support. This project is useful in any environment where Lua code is accepted, with the powerful option of simply declaring any existing API using TypeScript declaration files.
 
 ## Documentation
-More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/Perryvw/TypescriptToLua/wiki).
+More detailed documentation and info on writing declarations can be found [on the wiki](https://github.com/TypeScriptToLua/TypescriptToLua/wiki).
 
-Changelog can be found in [CHANGELOG.md](https://github.com/Perryvw/TypescriptToLua/blob/master/CHANGELOG.md)
+Changelog can be found in [CHANGELOG.md](https://github.com/TypeScriptToLua/TypescriptToLua/blob/master/CHANGELOG.md)
 
 ## Usage Guide
 
@@ -51,7 +51,7 @@ Changelog can be found in [CHANGELOG.md](https://github.com/Perryvw/TypescriptTo
 ```
 
 ## Contributing
-All contributions are welcome, but please read our [contribution guidelines](https://github.com/Perryvw/TypescriptToLua/blob/master/CONTRIBUTING.md)!
+All contributions are welcome, but please read our [contribution guidelines](https://github.com/TypeScriptToLua/TypescriptToLua/blob/master/CONTRIBUTING.md)!
 
 ## Declarations
 The real power of this transpiler is usage together with good declarations for the Lua API provided. Some examples of Lua interface declarations can be found here:

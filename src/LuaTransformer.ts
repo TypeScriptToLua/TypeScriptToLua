@@ -1792,10 +1792,7 @@ export class LuaTransformer {
                     // If return expression is an array literal, leave out brackets.
                     return tstl.createReturnStatement(statement.expression.elements
                         .map(elem => this.transformExpression(elem)));
-                } else if (
-                    !tsHelper.isTupleReturnCall(statement.expression, this.checker)
-                    && !tsHelper.isInLuaIteratorFunction(statement, this.checker))
-                {
+                } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
                     // If return expression is not another TupleReturn call, unpack it
                     const expression = this.createUnpackCall(
                         this.transformExpression(statement.expression),
@@ -1971,7 +1968,9 @@ export class LuaTransformer {
 
     public transformForOfLuaIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
         const luaIterator = this.transformExpression(statement.expression);
-        if (tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
+        const type = this.checker.getTypeAtLocation(statement.expression);
+        const tupleReturn = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.TupleReturn);
+        if (tupleReturn) {
             // LuaIterator + TupleReturn
             if (ts.isVariableDeclarationList(statement.initializer)) {
                 // Variables declared in for loop
@@ -2073,7 +2072,7 @@ export class LuaTransformer {
             // Arrays
             return this.transformForOfArrayStatement(statement, body);
 
-        } else if (tsHelper.isLuaIteratorCall(statement.expression, this.checker)) {
+        } else if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
             // LuaIterators
             return this.transformForOfLuaIteratorStatement(statement, body);
 
@@ -3056,7 +3055,6 @@ export class LuaTransformer {
         // Check for calls on primitives to override
         let parameters: tstl.Expression[] = [];
 
-        const isLuaIterator = tsHelper.isLuaIteratorCall(node, this.checker);
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
         const isTupleReturnForward =
             node.parent && ts.isReturnStatement(node.parent) && tsHelper.isInTupleReturnFunction(node, this.checker);
@@ -3064,7 +3062,7 @@ export class LuaTransformer {
         const isInSpread = node.parent && ts.isSpreadElement(node.parent);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
         const wrapResult = isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment
-            && !isInSpread && returnValueIsUsed && !isLuaIterator;
+            && !isInSpread && returnValueIsUsed;
 
         if (ts.isPropertyAccessExpression(node.expression)) {
             const result = this.transformPropertyCall(node);

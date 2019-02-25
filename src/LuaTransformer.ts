@@ -3331,7 +3331,7 @@ export class LuaTransformer {
             case "LOG2E":
             case "SQRT1_2":
             case "SQRT2":
-                return tstl.createNumericLiteral(Math[name]);
+                return tstl.createNumericLiteral(Math[name], identifier);
 
             default:
                 throw TSTLErrors.UnsupportedProperty("math", name, identifier);

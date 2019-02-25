@@ -8,7 +8,13 @@ export class MathTests {
     @TestCase("Math.cos()", "math.cos();")
     @TestCase("Math.sin()", "math.sin();")
     @TestCase("Math.min()", "math.min();")
+    @TestCase("Math.atan2(2, 3)", "math.atan(2 / 3);")
+    @TestCase("Math.log2(3)", `(math.log(3) / ${Math.LN2});`)
+    @TestCase("Math.log10(3)", `(math.log(3) / ${Math.LN10});`)
+    @TestCase("Math.log1p(3)", "math.log(1 + 3);")
+    @TestCase("Math.round(3.3)", "math.floor(3.3 + 0.5);")
     @TestCase("Math.PI", "math.pi;")
+    @TestCase("Math.E", `${Math.E};`)
     @Test("Math")
     public math(inp: string, expected: string): void {
         // Transpile

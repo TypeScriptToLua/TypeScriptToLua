@@ -99,10 +99,9 @@ export type Operator = UnaryOperator | BinaryOperator;
 
 export type SymbolId = number;
 
-// TODO For future sourcemap support?
 export interface TextRange {
-    pos: number;
-    end: number;
+    line?: number;
+    column?: number;
 }
 
 export interface Node extends TextRange {
@@ -111,13 +110,16 @@ export interface Node extends TextRange {
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
-    let pos = -1;
-    let end = -1;
-    if (tsOriginal) {
-        pos = tsOriginal.pos;
-        end = tsOriginal.end;
+    let line: number | undefined;
+    let column: number | undefined;
+    // TODO figure out why tsOriginal.getSourceFile()
+    // can return udnefined in the first place instead of catching it here
+    if (tsOriginal && tsOriginal.getSourceFile()) {
+        const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
+        line = lineAndCharacter.line;
+        column = lineAndCharacter.character;
     }
-    return {kind, parent, pos, end};
+    return {kind, parent, line, column};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -125,8 +127,9 @@ export function cloneNode<T extends Node>(node: T): T {
 }
 
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
-    node.pos = tsOriginal.pos;
-    node.end = tsOriginal.end;
+    const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
+    node.line = lineAndCharacter.line;
+    node.column = lineAndCharacter.character;
     return node;
 }
 
@@ -137,16 +140,16 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
     if (Array.isArray(node)) {
         node.forEach(n => {
             n.parent = parent;
-            if (n.pos === -1 || n.end === -1) {
-                n.pos = parent.pos;
-                n.end = parent.end;
+            if (!n.line || !n.column) {
+                n.line = parent.line;
+                n.column = parent.column;
             }
         });
     } else {
         node.parent = parent;
-        if (node.pos === -1 || node.end === -1) {
-            node.pos = parent.pos;
-            node.end = parent.end;
+        if (!node.line || !node.column) {
+            node.line = parent.line;
+            node.column = parent.column;
         }
     }
 }

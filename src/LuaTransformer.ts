@@ -4243,8 +4243,12 @@ export class LuaTransformer {
 
         if (scope.functionDefinitions) {
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+                const assignmentPos = ts.getPositionOfLineAndCharacter(
+                    this.currentSourceFile,
+                    functionDefinition.assignment.line,
+                    functionDefinition.assignment.column);
                 if (functionSymbolId !== symbolId // Don't recurse into self
-                    && declaration.pos < functionDefinition.assignment.pos // Ignore functions before symbol declaration
+                    && declaration.pos < assignmentPos // Ignore functions before symbol declaration
                     && functionDefinition.referencedSymbols.has(symbolId)
                     && this.shouldHoist(functionSymbolId, scope))
                 {

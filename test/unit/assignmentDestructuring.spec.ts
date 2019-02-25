@@ -46,8 +46,19 @@ export class AssignmentDestructuringTests {
     @TestCase("[] = ['a', 'b', 'c'];")
     @TestCase("[] = [];")
     @TestCase("[] = [] = [];")
+    @TestCase("[] = [] = [];")
     @Test("Empty destructuring")
     public emptyDestructuring(code: string): void {
         Expect(() => util.transpileAndExecute(code)).not.toThrow();
+    }
+
+    @Test("Union destructuring")
+    public unionDestructuring(): void {
+        const code =
+            `function foo(): [string] | [] { return ["bar"]; }
+            let x: string;
+            [x] = foo();
+            return x;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar");
     }
 }

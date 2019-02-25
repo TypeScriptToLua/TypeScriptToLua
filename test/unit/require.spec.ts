@@ -33,4 +33,14 @@ export class RequireTests {
         }
     }
 
+    @Test("modules do not have their require paths adjusted")
+    public testRequireModule(): void {
+        const regex = /require\("(.*?)"\)/;
+        const lua = util.transpileString(`
+            import * as fake from "fake";
+            declare module "fake" {}
+        `);
+        Expect(regex.exec(lua)[1]).toBe("fake");
+    }
+
 }

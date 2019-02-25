@@ -314,15 +314,23 @@ export class LuaTransformer {
 
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
+        const imports = statement.importClause.namedBindings;
 
-        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+        const type = this.checker.getTypeAtLocation(imports);
+        let requireCall: tstl.CallExpression;
+        if (type && type.symbol && type.symbol.valueDeclaration.kind === ts.SyntaxKind.ModuleDeclaration) {
+            requireCall = tstl.createCallExpression(
+                tstl.createIdentifier("require"),
+                [tstl.createStringLiteral((statement.moduleSpecifier as ts.StringLiteral).text)]);
+        } else {
+            requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+        }
 
         if (!statement.importClause) {
             result.push(tstl.createExpressionStatement(requireCall));
             return result;
         }
 
-        const imports = statement.importClause.namedBindings;
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);

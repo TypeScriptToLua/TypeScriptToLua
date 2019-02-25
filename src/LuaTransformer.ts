@@ -2465,7 +2465,7 @@ export class LuaTransformer {
             }
             return tstl.createAssignmentStatement(
                 left as tstl.IdentifierOrTableIndexExpression[],
-                right as tstl.Expression[],
+                right,
                 expression
             );
         } else {

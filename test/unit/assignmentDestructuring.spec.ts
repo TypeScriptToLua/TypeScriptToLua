@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 import * as util from "../src/util";
 
@@ -38,7 +38,6 @@ export class AssignmentDestructuringTests {
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);
     }
 
-    @FocusTest
     @TestCase("function foo(): [] { return []; }; let [] = foo();")
     @TestCase("let [] = ['a', 'b', 'c'];")
     @TestCase("let [] = [];")

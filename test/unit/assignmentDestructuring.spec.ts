@@ -46,7 +46,6 @@ export class AssignmentDestructuringTests {
     @TestCase("[] = ['a', 'b', 'c'];")
     @TestCase("[] = [];")
     @TestCase("[] = [] = [];")
-    @TestCase("[] = [] = [];")
     @Test("Empty destructuring")
     public emptyDestructuring(code: string): void {
         Expect(() => util.transpileAndExecute(code)).not.toThrow();

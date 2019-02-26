@@ -3139,7 +3139,7 @@ export class LuaTransformer {
         }
 
         if (ownerType.symbol && ownerType.symbol.escapedName === "Console") {
-            return this.transformObjectCallExpression(node);
+            return this.transformConsoleCallExpression(node);
         }
 
         if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {

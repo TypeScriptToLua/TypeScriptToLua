@@ -1673,7 +1673,9 @@ export class LuaTransformer {
                 throw TSTLErrors.ForbiddenEllipsisDestruction(statement);
             }
 
-            const vars = statement.name.elements.map(e => this.transformArrayBindingElement(e));
+            const vars = statement.name.elements.length > 0
+                ? statement.name.elements.map(e => this.transformArrayBindingElement(e))
+                : tstl.createAnnonymousIdentifier(statement.name);
 
             // Don't unpack TupleReturn decorated functions
             if (statement.initializer) {
@@ -2448,10 +2450,14 @@ export class LuaTransformer {
 
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
-            const left = expression.left.elements.map(e => this.transformExpression(e));
+            const left = expression.left.elements.length > 0
+                ? expression.left.elements.map(e => this.transformExpression(e))
+                : [tstl.createAnnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
-                right = expression.right.elements.map(e => this.transformExpression(e));
+                right = expression.right.elements.length > 0
+                    ? expression.right.elements.map(e => this.transformExpression(e))
+                    : [tstl.createNilLiteral()];
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
@@ -2479,16 +2485,20 @@ export class LuaTransformer {
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
             // (function() local ${tmps} = ${right}; ${left} = ${tmps}; return {${tmps}} end)()
-            const left = expression.left.elements.map(e => this.transformExpression(e));
+            const left = expression.left.elements.length > 0
+                ? expression.left.elements.map(e => this.transformExpression(e))
+                : [tstl.createAnnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
-                right = expression.right.elements.map(e => this.transformExpression(e));
+                right = expression.right.elements.length > 0
+                    ? expression.right.elements.map(e => this.transformExpression(e))
+                    : [tstl.createNilLiteral()];
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = [this.transformExpression(expression.right)];
             } else {
                 right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
-            const tmps = expression.left.elements.map((_, i) => tstl.createIdentifier(`____TS_tmp${i}`));
+            const tmps = left.map((_, i) => tstl.createIdentifier(`____TS_tmp${i}`));
             const statements: tstl.Statement[] = [
                 tstl.createVariableDeclarationStatement(tmps, right),
                 tstl.createAssignmentStatement(left as tstl.IdentifierOrTableIndexExpression[], tmps),
@@ -4191,6 +4201,9 @@ export class LuaTransformer {
 
         const fromTypeNode = this.checker.typeToTypeNode(fromType);
         const toTypeNode = this.checker.typeToTypeNode(toType);
+        if (!fromTypeNode || !toTypeNode) {
+            return;
+        }
 
         if ((ts.isArrayTypeNode(toTypeNode) || ts.isTupleTypeNode(toTypeNode))
             && (ts.isArrayTypeNode(fromTypeNode) || ts.isTupleTypeNode(fromTypeNode))) {

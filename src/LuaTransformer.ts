@@ -314,8 +314,14 @@ export class LuaTransformer {
 
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
-        const imports = statement.importClause.namedBindings;
 
+        if (!statement.importClause) {
+            const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+            result.push(tstl.createExpressionStatement(requireCall));
+            return result;
+        }
+
+        const imports = statement.importClause.namedBindings;
         const type = this.checker.getTypeAtLocation(imports);
         let requireCall: tstl.CallExpression;
         if (type && this.isAmbientModuleDeclaration(type)) {
@@ -324,11 +330,6 @@ export class LuaTransformer {
                 [tstl.createStringLiteral((statement.moduleSpecifier as ts.StringLiteral).text)]);
         } else {
             requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-        }
-
-        if (!statement.importClause) {
-            result.push(tstl.createExpressionStatement(requireCall));
-            return result;
         }
 
         if (ts.isNamedImports(imports)) {

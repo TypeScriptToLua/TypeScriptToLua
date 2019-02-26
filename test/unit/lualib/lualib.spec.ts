@@ -21,6 +21,23 @@ export class LuaLibTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([0, 2, 4, 8], 10, -1)
+    @TestCase([0, 2, 4, 8], 4, 2)
+    @TestCase([0, 2, 4, 8], 8, 3)
+    @Test("findIndex")
+    public findIndex(inp: number[], searchEl: number, expected: number): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            return JSONStringify(arrTest.findIndex((elem, index) => {
+                return elem === ${searchEl};
+            }));`
+        );
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
     @TestCase([], "x => x")
     @TestCase([0, 1, 2, 3], "x => x")
     @TestCase([0, 1, 2, 3], "x => x*2")

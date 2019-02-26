@@ -3679,13 +3679,15 @@ export class LuaTransformer {
                 if (expression.arguments.length > 0
                     && this.isStringFormatTemplate(expression.arguments[0])) {
                     // print(string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
                     return tstl.createCallExpression(
                         tstl.createIdentifier("print"),
-                        [tstl.createCallExpression(
-                            tstl.createTableIndexExpression(
-                                tstl.createIdentifier("string"),
-                                tstl.createStringLiteral("format")),
-                            this.transformArguments(expression.arguments))]
+                        [stringFormatCall]
                     );
                 }
                 // print([arguments])

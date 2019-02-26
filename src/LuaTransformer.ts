@@ -324,7 +324,7 @@ export class LuaTransformer {
         const imports = statement.importClause.namedBindings;
         const type = this.checker.getTypeAtLocation(imports);
         let requireCall: tstl.CallExpression;
-        if (type && this.isAmbientModuleDeclaration(type)) {
+        if (type && tsHelper.isAmbientModuleDeclaration(type)) {
             requireCall = tstl.createCallExpression(
                 tstl.createIdentifier("require"),
                 [tstl.createStringLiteral((statement.moduleSpecifier as ts.StringLiteral).text)]);
@@ -383,10 +383,6 @@ export class LuaTransformer {
         } else {
             throw TSTLErrors.UnsupportedImportType(imports);
         }
-    }
-
-    public isAmbientModuleDeclaration(type: ts.Type): boolean {
-        return type.symbol && type.symbol.valueDeclaration.kind === ts.SyntaxKind.ModuleDeclaration;
     }
 
     private createModuleRequire(moduleSpecifier: ts.StringLiteral): tstl.CallExpression {

@@ -3550,8 +3550,7 @@ export class LuaTransformer {
         switch (methodName) {
             case "log":
                 if (expression.arguments.length > 0) {
-                    if (ts.isStringLiteral(expression.arguments[0])
-                        && expression.arguments[0].getText().includes("%")) {
+                    if (this.isStringFormatTemplate(expression.arguments[0])) {
                         // print(string.format([arguments]))
                         return tstl.createCallExpression(
                             tstl.createIdentifier("print"),
@@ -3571,8 +3570,7 @@ export class LuaTransformer {
             case "assert":
                 const args = this.transformArguments(expression.arguments);
                 if (expression.arguments.length > 1) {
-                    if (ts.isStringLiteral(expression.arguments[1])
-                        && expression.arguments[1].getText().includes("%")) {
+                    if (this.isStringFormatTemplate(expression.arguments[1])) {
                         // assert([condition], string.format([arguments]))
                         return tstl.createCallExpression(
                             tstl.createIdentifier("assert"),
@@ -3592,8 +3590,7 @@ export class LuaTransformer {
                 );
             case "trace":
                 if (expression.arguments.length > 0) {
-                    if (ts.isStringLiteral(expression.arguments[0])
-                        && expression.arguments[0].getText().includes("%")) {
+                    if (this.isStringFormatTemplate(expression.arguments[0])) {
                         // print(debug.traceback(string.format([arguments])))
                         return tstl.createCallExpression(
                             tstl.createIdentifier("print"),
@@ -3627,6 +3624,9 @@ export class LuaTransformer {
         }
     }
 
+    private isStringFormatTemplate(expression: ts.Expression): boolean {
+        return ts.isStringLiteral(expression) && expression.text.match(/\%/g) !== null;
+    }
     // Transpile an Object._ property
     public transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;

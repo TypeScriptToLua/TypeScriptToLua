@@ -384,7 +384,7 @@ export class LuaTransformer {
         }
     }
 
-    private isAmbientModuleDeclaration(type: ts.Type): boolean {
+    public isAmbientModuleDeclaration(type: ts.Type): boolean {
         return type.symbol && type.symbol.valueDeclaration.kind === ts.SyntaxKind.ModuleDeclaration;
     }
 

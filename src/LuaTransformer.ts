@@ -323,14 +323,8 @@ export class LuaTransformer {
 
         const imports = statement.importClause.namedBindings;
         const type = this.checker.getTypeAtLocation(imports);
-        let requireCall: tstl.CallExpression;
-        if (type && tsHelper.isAmbientModuleDeclaration(type)) {
-            requireCall = tstl.createCallExpression(
-                tstl.createIdentifier("require"),
-                [tstl.createStringLiteral((statement.moduleSpecifier as ts.StringLiteral).text)]);
-        } else {
-            requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-        }
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral,
+            type && tsHelper.isAmbientModuleDeclaration(type));
 
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
@@ -385,11 +379,12 @@ export class LuaTransformer {
         }
     }
 
-    private createModuleRequire(moduleSpecifier: ts.StringLiteral): tstl.CallExpression {
-        const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
-        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
-
-        return tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
+    private createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
+        const modulePathString = resolveModule
+            ? this.getImportPath(moduleSpecifier.text.replace(new RegExp("\"", "g"), ""))
+            : moduleSpecifier.text;
+        const modulePath = tstl.createStringLiteral(modulePathString);
+        return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath]);
     }
 
     public transformClassDeclaration(

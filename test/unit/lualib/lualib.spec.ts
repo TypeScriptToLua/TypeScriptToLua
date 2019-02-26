@@ -353,15 +353,18 @@ export class LuaLibTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
-    @TestCase("[4, 5, 3, 2, 1]", [1, 2, 3, 4, 5], "a - b")
-    @TestCase('["4", "5", "3", "2", "1"]', ["1", "2", "3", "4", "5"], "tonumber(a) - tonumber(b)")
-    @TestCase('["4", "5", "3", "2", "1"]', ["5", "4", "3", "2", "1"], "tonumber(b) - tonumber(a)")
     @Test("array.sort with compare function")
-    public arraySortWithCompareFunction(array: string, expected: any, compare: string): void
-    {
+    @TestCase([1, 2, 3, 4, 5], "a - b", (a: number, b: number) => a - b)
+    @TestCase(["4", "5", "3", "2", "1"], "tonumber(a) - tonumber(b)", (a: string, b: string) => Number(a) - Number(b))
+    @TestCase(["4", "5", "3", "2", "1"], "tonumber(b) - tonumber(a)", (a: string, b: string) => Number(b) - Number(a))
+    public arraySortWithCompareFunction(
+        array: any[],
+        compareStr: string,
+        compareFn: (a: any, b: any) => number
+    ): void {
         const result = util.transpileAndExecute(
-            `let testArray = ${array};
-            testArray.sort((a, b) => ${compare});
+            `let testArray = ${JSON.stringify(array)};
+            testArray.sort((a, b) => ${compareStr});
             return JSONStringify(testArray)`,
             undefined,
             undefined,
@@ -369,7 +372,7 @@ export class LuaLibTests
         );
 
         // Assert
-        Expect(result).toBe(JSON.stringify(expected));
+        Expect(result).toBe(JSON.stringify(array.sort(compareFn)));
     }
 
     @TestCase("true", "4", "5", 4)

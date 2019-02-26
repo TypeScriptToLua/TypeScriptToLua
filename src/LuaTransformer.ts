@@ -3676,18 +3676,17 @@ export class LuaTransformer {
 
         switch (methodName) {
             case "log":
-                if (expression.arguments.length > 0) {
-                    if (this.isStringFormatTemplate(expression.arguments[0])) {
-                        // print(string.format([arguments]))
-                        return tstl.createCallExpression(
-                            tstl.createIdentifier("print"),
-                            [tstl.createCallExpression(
-                                tstl.createTableIndexExpression(
-                                    tstl.createIdentifier("string"),
-                                    tstl.createStringLiteral("format")),
-                                this.transformArguments(expression.arguments))]
-                        );
-                    }
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(string.format([arguments]))
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [tstl.createCallExpression(
+                            tstl.createTableIndexExpression(
+                                tstl.createIdentifier("string"),
+                                tstl.createStringLiteral("format")),
+                            this.transformArguments(expression.arguments))]
+                    );
                 }
                 // print([arguments])
                 return tstl.createCallExpression(
@@ -3696,19 +3695,19 @@ export class LuaTransformer {
                 );
             case "assert":
                 const args = this.transformArguments(expression.arguments);
-                if (expression.arguments.length > 1) {
-                    if (this.isStringFormatTemplate(expression.arguments[1])) {
-                        // assert([condition], string.format([arguments]))
-                        return tstl.createCallExpression(
-                            tstl.createIdentifier("assert"),
-                            [args[0],
-                            tstl.createCallExpression(
-                                tstl.createTableIndexExpression(
-                                    tstl.createIdentifier("string"),
-                                    tstl.createStringLiteral("format")),
-                                args.slice(1))]
-                        );
-                    }
+                if (expression.arguments.length > 1
+                    && this.isStringFormatTemplate(expression.arguments[1])) {
+                    // assert([condition], string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        args.slice(1)
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("assert"),
+                        [args[0], stringFormatCall]
+                    );
                 }
                 // assert()
                 return tstl.createCallExpression(
@@ -3716,31 +3715,36 @@ export class LuaTransformer {
                     args
                 );
             case "trace":
-                if (expression.arguments.length > 0) {
-                    if (this.isStringFormatTemplate(expression.arguments[0])) {
-                        // print(debug.traceback(string.format([arguments])))
-                        return tstl.createCallExpression(
-                            tstl.createIdentifier("print"),
-                            [tstl.createCallExpression(
-                                tstl.createTableIndexExpression(
-                                    tstl.createIdentifier("debug"),
-                                    tstl.createStringLiteral("traceback")),
-                                [tstl.createCallExpression(
-                                    tstl.createTableIndexExpression(
-                                        tstl.createIdentifier("string"),
-                                        tstl.createStringLiteral("format")),
-                                    this.transformArguments(expression.arguments))])]
-                        );
-                    }
-                }
-                // print(debug.traceback([arguments])))
-                return tstl.createCallExpression(
-                    tstl.createIdentifier("print"),
-                    [tstl.createCallExpression(
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(debug.traceback(string.format([arguments])))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
+                    const debugTracebackCall = tstl.createCallExpression(
                         tstl.createTableIndexExpression(
                             tstl.createIdentifier("debug"),
                             tstl.createStringLiteral("traceback")),
-                        this.transformArguments(expression.arguments))]
+                        [stringFormatCall]
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [debugTracebackCall]
+                    );
+                }
+                // print(debug.traceback([arguments])))
+                const debugTracebackCall = tstl.createCallExpression(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("debug"),
+                        tstl.createStringLiteral("traceback")),
+                    this.transformArguments(expression.arguments)
+                );
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    [debugTracebackCall]
                 );
             default:
                 throw TSTLErrors.UnsupportedForTarget(

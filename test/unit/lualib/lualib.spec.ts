@@ -354,15 +354,19 @@ export class LuaLibTests
     }
 
     @TestCase("[4, 5, 3, 2, 1]", [1, 2, 3, 4, 5], "a - b")
-    @TestCase('["4", "5", "3", "2", "1"]', ["1", "2", "3", "4", "5"], "Number(a) - Number(b)")
-    @TestCase('["4", "5", "3", "2", "1"]', ["5", "4", "3", "2", "1"], "Number(b) - Number(a)")
+    @TestCase('["4", "5", "3", "2", "1"]', ["1", "2", "3", "4", "5"], "tonumber(a) - tonumber(b)")
+    @TestCase('["4", "5", "3", "2", "1"]', ["5", "4", "3", "2", "1"], "tonumber(b) - tonumber(a)")
     @Test("array.sort with compare function")
     public arraySortWithCompareFunction(array: string, expected: any, compare: string): void
     {
         const result = util.transpileAndExecute(
             `let testArray = ${array};
             testArray.sort((a, b) => ${compare});
-            return JSONStringify(testArray)`);
+            return JSONStringify(testArray)`,
+            undefined,
+            undefined,
+            `declare function tonumber(e: any): number`
+        );
 
         // Assert
         Expect(result).toBe(JSON.stringify(expected));

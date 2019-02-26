@@ -3715,7 +3715,7 @@ export class LuaTransformer {
             case "unshift":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayUnshift, node, caller, ...params);
             case "sort":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, node, caller);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, node, caller, ...params);
             case "pop":
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("remove")),

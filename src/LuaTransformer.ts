@@ -3148,6 +3148,10 @@ export class LuaTransformer {
             return this.transformObjectCallExpression(node);
         }
 
+        if (ownerType.symbol && ownerType.symbol.escapedName === "Console") {
+            return this.transformConsoleCallExpression(node);
+        }
+
         if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
             return this.transformSymbolCallExpression(node);
         }
@@ -3674,6 +3678,97 @@ export class LuaTransformer {
                     expression
                 );
         }
+    }
+
+    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "log":
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [stringFormatCall]
+                    );
+                }
+                // print([arguments])
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    this.transformArguments(expression.arguments)
+                );
+            case "assert":
+                const args = this.transformArguments(expression.arguments);
+                if (expression.arguments.length > 1
+                    && this.isStringFormatTemplate(expression.arguments[1])) {
+                    // assert([condition], string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        args.slice(1)
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("assert"),
+                        [args[0], stringFormatCall]
+                    );
+                }
+                // assert()
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("assert"),
+                    args
+                );
+            case "trace":
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(debug.traceback(string.format([arguments])))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
+                    const debugTracebackCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("debug"),
+                            tstl.createStringLiteral("traceback")),
+                        [stringFormatCall]
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [debugTracebackCall]
+                    );
+                }
+                // print(debug.traceback([arguments])))
+                const debugTracebackCall = tstl.createCallExpression(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("debug"),
+                        tstl.createStringLiteral("traceback")),
+                    this.transformArguments(expression.arguments)
+                );
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    [debugTracebackCall]
+                );
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `console property ${methodName}`,
+                    this.options.luaTarget,
+                    expression
+                );
+        }
+    }
+
+    private isStringFormatTemplate(expression: ts.Expression): boolean {
+        return ts.isStringLiteral(expression) && expression.text.match(/\%/g) !== null;
     }
 
     // Transpile a Symbol._ property

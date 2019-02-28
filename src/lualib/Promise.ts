@@ -235,6 +235,19 @@ class PromiseImpl<T = never> {
     return this.then( undefined, onRejected );
   }
 
+  public finally(onFinally?: (() => void) | undefined | null): PromiseImpl<T> {
+    return this.then(
+       v => {
+        onFinally();
+        return v;
+      },
+      err => {
+        onFinally();
+        return error(err);
+      }
+    );
+  }
+
   protected resolve( value: T ): void {
     PromiseImpl.PromiseResolutionProcedure<T>( this, value );
   }

@@ -131,6 +131,10 @@ export class TSHelper {
         return false;
     }
 
+    public static isStatic(node: ts.Node): boolean {
+        return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
+    }
+
     public static isStringType(type: ts.Type): boolean {
         return (type.flags & ts.TypeFlags.String) !== 0 || (type.flags & ts.TypeFlags.StringLike) !== 0 ||
                (type.flags & ts.TypeFlags.StringLiteral) !== 0;
@@ -161,13 +165,9 @@ export class TSHelper {
         return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
     }
 
-    public static isLuaIteratorCall(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (ts.isCallExpression(node) && node.parent && ts.isForOfStatement(node.parent)) {
-            const type = checker.getTypeAtLocation(node.expression);
-            return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
-        } else {
-            return false;
-        }
+    public static isLuaIteratorType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -183,18 +183,14 @@ export class TSHelper {
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
-            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
+            let functionType: ts.Type;
+            if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
+                functionType = TSHelper.inferAssignedType(declaration, checker);
+            } else {
+                functionType = checker.getTypeAtLocation(declaration);
+            }
+            const decorators = TSHelper.getCustomDecorators(functionType, checker);
             return decorators.has(DecoratorKind.TupleReturn);
-        } else {
-            return false;
-        }
-    }
-
-    public static isInLuaIteratorFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
-        const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
-        if (declaration) {
-            const decorators = TSHelper.getCustomDecorators(checker.getTypeAtLocation(declaration), checker);
-            return decorators.has(DecoratorKind.LuaIterator);
         } else {
             return false;
         }
@@ -375,12 +371,26 @@ export class TSHelper {
 
     public static hasSetAccessorInClassOrAncestor(
         classDeclaration: ts.ClassLikeDeclarationBase,
+        isStatic: boolean,
         checker: ts.TypeChecker
     ): boolean
     {
         return TSHelper.findInClassOrAncestor(
             classDeclaration,
-            c => c.members.some(ts.isSetAccessor),
+            c => c.members.some(m => ts.isSetAccessor(m) && TSHelper.isStatic(m) === isStatic),
+            checker
+        ) !== undefined;
+    }
+
+    public static hasGetAccessorInClassOrAncestor(
+        classDeclaration: ts.ClassLikeDeclarationBase,
+        isStatic: boolean,
+        checker: ts.TypeChecker
+    ): boolean
+    {
+        return TSHelper.findInClassOrAncestor(
+            classDeclaration,
+            c => c.members.some(m => ts.isGetAccessor(m) && TSHelper.isStatic(m) === isStatic),
             checker
         ) !== undefined;
     }
@@ -405,7 +415,7 @@ export class TSHelper {
         checker: ts.TypeChecker
     ): element is ts.GetAccessorDeclaration
     {
-        if (!ts.isGetAccessor(element)) {
+        if (!ts.isGetAccessor(element) || TSHelper.isStatic(element)) {
             return false;
         }
 
@@ -428,15 +438,36 @@ export class TSHelper {
 
         } else if (ts.isCallExpression(expression.parent)) {
             // Expression being passed as argument to a function
-            let i = expression.parent.arguments.indexOf(expression);
-            if (i >= 0) {
+            const argumentIndex = expression.parent.arguments.indexOf(expression);
+            if (argumentIndex >= 0) {
                 const parentSignature = checker.getResolvedSignature(expression.parent);
-                const parentSignatureDeclaration = parentSignature.getDeclaration();
-                if (parentSignatureDeclaration) {
-                    if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
-                        ++i;
+                if (parentSignature.parameters.length > 0) { // In case function type is 'any'
+                    const signatureIndex = Math.min(argumentIndex, parentSignature.parameters.length - 1);
+                    let parameterType = checker.getTypeOfSymbolAtLocation(
+                        parentSignature.parameters[signatureIndex],
+                        expression
+                    );
+                    if (TSHelper.isArrayType(parameterType, checker)) {
+                        // Check for elipses argument
+                        const parentSignatureDeclaration = parentSignature.getDeclaration();
+                        if (parentSignatureDeclaration) {
+                            let declarationIndex = signatureIndex;
+                            if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
+                                // Ignore 'this' parameter
+                                ++declarationIndex;
+                            }
+                            const parameterDeclaration = parentSignatureDeclaration.parameters[declarationIndex];
+                            if ((parameterType.flags & ts.TypeFlags.Object) !== 0
+                                && ((parameterType as ts.ObjectType).objectFlags & ts.ObjectFlags.Reference) !== 0
+                                && parameterDeclaration.dotDotDotToken)
+                            {
+                                // Determine type from elipsis array/tuple type
+                                const parameterTypeReference = (parameterType as ts.TypeReference);
+                                parameterType = parameterTypeReference.typeArguments[argumentIndex - declarationIndex];
+                            }
+                        }
                     }
-                    return checker.getTypeAtLocation(parentSignatureDeclaration.parameters[i]);
+                    return parameterType;
                 }
             }
 

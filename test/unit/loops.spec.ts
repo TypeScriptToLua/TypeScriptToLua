@@ -525,7 +525,8 @@ export class LuaLoopTests
     public forofLuaIterator(): void {
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
-            function luaIter(): Iterable<string> {
+            interface Iter extends Iterable<string> {}
+            function luaIter(): Iter {
                 let i = 0;
                 return (() => arr[i++]) as any;
             }
@@ -545,7 +546,8 @@ export class LuaLoopTests
     public forofLuaIteratorExistingVar(): void {
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
-            function luaIter(): Iterable<string> {
+            interface Iter extends Iterable<string> {}
+            function luaIter(): Iter {
                 let i = 0;
                 return (() => arr[i++]) as any;
             }
@@ -566,7 +568,8 @@ export class LuaLoopTests
     public forofLuaIteratorDestructuring(): void {
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
-            function luaIter(): Iterable<[string, string]> {
+            interface Iter extends Iterable<[string, string]> {}
+            function luaIter(): Iter {
                 let i = 0;
                 return (() => arr[i] && [i.toString(), arr[i++]]) as any;
             }
@@ -586,7 +589,8 @@ export class LuaLoopTests
     public forofLuaIteratorDestructuringExistingVar(): void {
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
-            function luaIter(): Iterable<[string, string]> {
+            interface Iter extends Iterable<[string, string]> {}
+            function luaIter(): Iter {
                 let i = 0;
                 return (() => arr[i] && [i.toString(), arr[i++]]) as any;
             }
@@ -609,7 +613,8 @@ export class LuaLoopTests
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
             /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
+            interface Iter extends Iterable<[string, string]> {}
+            function luaIter(): Iter {
                 let i = 0;
                 /** @tupleReturn */
                 function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
@@ -632,7 +637,8 @@ export class LuaLoopTests
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
             /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
+            interface Iter extends Iterable<[string, string]> {}
+            function luaIter(): Iter {
                 let i = 0;
                 /** @tupleReturn */
                 function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
@@ -656,7 +662,8 @@ export class LuaLoopTests
     public forofLuaIteratorTupleReturnSingleVar(): void {
         const code = `/** @luaIterator */
             /** @tupleReturn */
-            declare function luaIter(): Iterable<[string, string]>;
+            interface Iter extends Iterable<[string, string]> {}
+            declare function luaIter(): Iter;
             for (let x of luaIter()) {}`;
         const compilerOptions = {
             luaLibImport: LuaLibImportKind.Require,
@@ -674,7 +681,8 @@ export class LuaLoopTests
     public forofLuaIteratorTupleReturnSingleExistingVar(): void {
         const code = `/** @luaIterator */
             /** @tupleReturn */
-            declare function luaIter(): Iterable<[string, string]>;
+            interface Iter extends Iterable<[string, string]> {}
+            declare function luaIter(): Iter;
             let x: [string, string];
             for (x of luaIter()) {}`;
         const compilerOptions = {
@@ -694,14 +702,15 @@ export class LuaLoopTests
         const code =
             `const arr = ["a", "b", "c"];
             /** @luaIterator */
-            function luaIter(): Iterable<string> {
+            interface Iter extends Iterable<string> {}
+            function luaIter(): Iter {
                 let i = 0;
                 function iter() { return arr[i++]; }
                 return iter as any;
             }
-            /** @luaIterator */
-            function forward(): Iterable<string> {
-                return luaIter();
+            function forward() {
+                const iter = luaIter();
+                return iter;
             }
             let result = "";
             for (let a of forward()) { result += a; }
@@ -721,16 +730,16 @@ export class LuaLoopTests
             `const arr = ["a", "b", "c"];
             /** @luaIterator */
             /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
+            interface Iter extends Iterable<[string, string]> {}
+            function luaIter(): Iter {
                 let i = 0;
                 /** @tupleReturn */
                 function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
                 return iter as any;
             }
-            /** @luaIterator */
-            /** @tupleReturn */
-            function forward(): Iterable<[string, string]> {
-                return luaIter();
+            function forward() {
+                const iter = luaIter();
+                return iter;
             }
             let result = "";
             for (let [a, b] of forward()) { result += a + b; }

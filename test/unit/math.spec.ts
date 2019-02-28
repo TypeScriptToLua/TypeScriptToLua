@@ -8,6 +8,11 @@ export class MathTests {
     @TestCase("Math.cos()", "math.cos();")
     @TestCase("Math.sin()", "math.sin();")
     @TestCase("Math.min()", "math.min();")
+    @TestCase("Math.atan2(2, 3)", "math.atan(2 / 3);")
+    @TestCase("Math.log2(3)", `(math.log(3) / ${Math.LN2});`)
+    @TestCase("Math.log10(3)", `(math.log(3) / ${Math.LN10});`)
+    @TestCase("Math.log1p(3)", "math.log(1 + 3);")
+    @TestCase("Math.round(3.3)", "math.floor(3.3 + 0.5);")
     @TestCase("Math.PI", "math.pi;")
     @Test("Math")
     public math(inp: string, expected: string): void {
@@ -16,6 +21,20 @@ export class MathTests {
 
         // Assert
         Expect(lua).toBe(expected);
+    }
+
+    @TestCase("E")
+    @TestCase("LN10")
+    @TestCase("LN2")
+    @TestCase("LOG10E")
+    @TestCase("LOG2E")
+    @TestCase("SQRT1_2")
+    @TestCase("SQRT2")
+    @Test("Math constant")
+    public mathConstant(constant: string): void {
+        const epsilon = 0.000001;
+        const code = `return Math.abs(Math.${constant} - ${Math[constant]}) <= ${epsilon}`;
+        Expect(util.transpileAndExecute(code)).toBe(true);
     }
 
     @TestCase("++x", "x=4;y=6")

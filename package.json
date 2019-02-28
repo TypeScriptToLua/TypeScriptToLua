@@ -1,7 +1,7 @@
 {
     "name": "typescript-to-lua",
     "license": "MIT",
-    "version": "0.15.0",
+    "version": "0.15.2",
     "repository": "https://github.com/Perryvw/TypescriptToLua",
     "keywords": [
         "typescript",
@@ -9,8 +9,13 @@
         "tstl",
         "transpiler"
     ],
-    "main": "dist/tstl.js",
-    "types": "dist/tstl.d.ts",
+    "files": [
+        "dist/**/*.js",
+        "dist/**/*.lua",
+        "dist/**/*.ts"
+    ],
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
@@ -30,7 +35,7 @@
         "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
     },
     "bin": {
-        "tstl": "./dist/index.js"
+        "tstl": "./dist/tstl.js"
     },
     "nyc": {
         "all": true,
@@ -54,10 +59,10 @@
         "@types/glob": "^5.0.35",
         "@types/node": "^9.6.23",
         "alsatian": "^2.3.0",
-        "circular-json": "^0.5.5",
         "codecov": "3.0.2",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
+        "flatted": "^2.0.0",
         "glob": "^7.1.2",
         "nyc": "^13.3.0",
         "rimraf": "^2.6.3",

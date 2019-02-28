@@ -15,6 +15,8 @@ compile([
     "./dist/lualib",
     "--rootDir",
     "./src/lualib",
+    "--noHeader",
+    "true",
     ...glob.sync("./src/lualib/*.ts"),
 ]);
 

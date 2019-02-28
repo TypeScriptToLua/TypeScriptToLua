@@ -7,8 +7,9 @@
         "declaration": true,
         "sourceMap": true,
         "experimentalDecorators": true,
-        "target": "es6",
+        "target": "es2017",
         "module": "commonjs"
     },
-    "exclude": ["test/**/*", "test_async_await/**/*","build_lualib.ts", "src/lualib", "dist/**/*"]
+    "include": ["src"],
+    "exclude": ["src/lualib"]
 }

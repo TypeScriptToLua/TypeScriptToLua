@@ -379,6 +379,19 @@ export class FunctionTests {
         Expect(result).toBe("foobar");
     }
 
+    @Test("Element access call no args")
+    public elementAccessCallNoArgs(): void {
+        const code = `class C {
+            prop = "bar";
+            method() { return this.prop; }
+        }
+        const c = new C();
+        return c['method']();
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("bar");
+    }
+
     @Test("Complex element access call")
     public elementAccessCallComplex(): void {
         const code = `class C {
@@ -390,6 +403,19 @@ export class FunctionTests {
         `;
         const result = util.transpileAndExecute(code);
         Expect(result).toBe("foobar");
+    }
+
+    @Test("Complex element access call no args")
+    public elementAccessCallComplexNoArgs(): void {
+        const code = `class C {
+            prop = "bar";
+            method() { return this.prop; }
+        }
+        function getC() { return new C(); }
+        return getC()['method']();
+        `;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("bar");
     }
 
     @Test("Complex element access call statement")
@@ -474,5 +500,15 @@ export class FunctionTests {
             }
             export const result = bar(7);`;
         Expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(7);
+    }
+
+    @Test("Function using global as this")
+    public functionUsingGlobalAsThis(): void {
+        const code =
+            `var foo = "foo";
+            function bar(this: any) {
+                return this.foo;
+            }`;
+        Expect(util.transpileAndExecute("return foo;", undefined, undefined, code)).toBe("foo");
     }
 }

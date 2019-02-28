@@ -123,6 +123,35 @@ export class HoistingTests {
         Expect(result).toBe(expectResult);
     }
 
+    @TestCase("", "foofoo")
+    @TestCase(" = \"bar\"", "barbar")
+    @Test("Var hoisting from child scope")
+    public varHoistingFromChildScope(initializer: string, expectResult: string): void {
+        const code =
+            `foo = "foo";
+            let result: string;
+            if (true) {
+                var foo${initializer};
+                result = foo;
+            }
+            return foo + result;`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe(expectResult);
+    }
+
+    @Test("Hoisting due to reference from hoisted function")
+    public hoistingDueToReferenceFromHoistedFunction(): void {
+        const code =
+            `const foo = "foo";
+            const result = bar();
+            function bar() {
+                return foo;
+            }
+            return result;`;
+        const result = util.transpileAndExecute(code);
+        Expect(result).toBe("foo");
+    }
+
     @Test("Namespace Hoisting")
     public namespaceHoisting(): void {
         const code =

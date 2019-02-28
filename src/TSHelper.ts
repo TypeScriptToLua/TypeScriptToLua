@@ -76,10 +76,6 @@ export class TSHelper {
         return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
     }
 
-    public static isAmbientModuleDeclaration(type: ts.Type): boolean {
-        return type.symbol && type.symbol.valueDeclaration.kind === ts.SyntaxKind.ModuleDeclaration;
-    }
-
     public static isFileModule(sourceFile: ts.SourceFile): boolean {
         if (sourceFile) {
             return sourceFile.statements.some(TSHelper.isStatementExported);

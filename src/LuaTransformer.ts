@@ -1097,8 +1097,6 @@ export class LuaTransformer {
 
         const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
-          this.importLuaLibFeature( LuaLibFeature.Promise );
           functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, undefined, functionExpression) as any;
         }
 
@@ -1624,8 +1622,6 @@ export class LuaTransformer {
         const isAsync = functionDeclaration.modifiers &&
           functionDeclaration.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
-          this.importLuaLibFeature( LuaLibFeature.Promise );
           functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, undefined, functionExpression) as any;
         }
 
@@ -2261,8 +2257,6 @@ export class LuaTransformer {
     public transformExpression(expression: ts.Expression): ExpressionVisitResult {
         switch (expression.kind) {
             case ts.SyntaxKind.AwaitExpression:
-                this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
-                this.importLuaLibFeature( LuaLibFeature.Promise );
                 return this.transformAwaitExpression(expression as ts.AwaitExpression );
             case ts.SyntaxKind.BinaryExpression:
                 return this.transformBinaryExpression(expression as ts.BinaryExpression);
@@ -3035,8 +3029,6 @@ export class LuaTransformer {
 
         const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
-          this.importLuaLibFeature( LuaLibFeature.Promise );
           return this.transformLuaLibFunction(LuaLibFeature.Async, undefined, res );
         }
 
@@ -4142,7 +4134,6 @@ export class LuaTransformer {
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
                     return;
                 case "Promise":
-                    this.importLuaLibFeature(LuaLibFeature.ArrayForEach);
                     this.importLuaLibFeature(LuaLibFeature.Promise);
                     return;
             }

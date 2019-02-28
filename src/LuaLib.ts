@@ -45,6 +45,8 @@ export enum LuaLibFeature {
 }
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
+    Promise: [LuaLibFeature.ArrayForEach],
+    Async: [LuaLibFeature.Promise],
     Iterator: [LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],

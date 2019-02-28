@@ -1097,7 +1097,9 @@ export class LuaTransformer {
 
         const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, functionExpression as any) as any;
+          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
+          this.importLuaLibFeature( LuaLibFeature.Promise );
+          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, undefined, functionExpression) as any;
         }
 
         const isStatic = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
@@ -1622,7 +1624,9 @@ export class LuaTransformer {
         const isAsync = functionDeclaration.modifiers &&
           functionDeclaration.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, functionExpression as any) as any;
+          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
+          this.importLuaLibFeature( LuaLibFeature.Promise );
+          functionExpression = this.transformLuaLibFunction(LuaLibFeature.Async, undefined, functionExpression) as any;
         }
 
         // Remember symbols referenced in this function for hoisting later
@@ -2257,6 +2261,8 @@ export class LuaTransformer {
     public transformExpression(expression: ts.Expression): ExpressionVisitResult {
         switch (expression.kind) {
             case ts.SyntaxKind.AwaitExpression:
+                this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
+                this.importLuaLibFeature( LuaLibFeature.Promise );
                 return this.transformAwaitExpression(expression as ts.AwaitExpression );
             case ts.SyntaxKind.BinaryExpression:
                 return this.transformBinaryExpression(expression as ts.BinaryExpression);
@@ -2355,7 +2361,7 @@ export class LuaTransformer {
 
     public transformAwaitExpression( expression: ts.AwaitExpression ) :tstl.Expression {
       const inner = this.transformExpression(expression.expression);
-      return this.transformLuaLibFunction(LuaLibFeature.Await, inner as any);
+      return this.transformLuaLibFunction(LuaLibFeature.Await, undefined, inner);
     }
 
 
@@ -3029,7 +3035,9 @@ export class LuaTransformer {
 
         const isAsync = node.modifiers && node.modifiers.some(m => m.kind === ts.SyntaxKind.AsyncKeyword);
         if( isAsync ) {
-          return this.transformLuaLibFunction(LuaLibFeature.Async, res as any ) as any;
+          this.importLuaLibFeature( LuaLibFeature.ArrayForEach );
+          this.importLuaLibFeature( LuaLibFeature.Promise );
+          return this.transformLuaLibFunction(LuaLibFeature.Async, undefined, res );
         }
 
       return res;
@@ -3220,7 +3228,17 @@ export class LuaTransformer {
             return tstl.createCallExpression(this.transformExpression(node.expression), parameters);
         } else {
             // Replace last . with : here
-            const name = node.expression.name.escapedText;
+            let name = node.expression.name.escapedText as string;
+
+            // catch usage of Lua keywords
+            if (this.luaKeywords.has(name)) {
+              if ( this.translateKeywords.has(name) ) {
+                name = this.translateKeywords.get(name);
+              } else {
+                throw TSTLErrors.KeywordIdentifier( node.expression.name );
+              }
+            }
+
             if (name === "toString") {
                 const toStringIdentifier = tstl.createIdentifier("tostring");
                 return tstl.createCallExpression(
@@ -3324,7 +3342,15 @@ export class LuaTransformer {
     }
 
     public transformPropertyAccessExpression(node: ts.PropertyAccessExpression): tstl.Expression {
-        const property = node.name.text;
+        let property = node.name.text;
+
+        if (this.luaKeywords.has(property)) {
+          if ( this.translateKeywords.has(property) ) {
+            property = this.translateKeywords.get(property);
+          } else {
+            throw TSTLErrors.KeywordIdentifier(node.name);
+          }
+        }
 
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(node.expression);
@@ -4114,6 +4140,10 @@ export class LuaTransformer {
                     return;
                 case "WeakSet":
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
+                    return;
+                case "Promise":
+                    this.importLuaLibFeature(LuaLibFeature.ArrayForEach);
+                    this.importLuaLibFeature(LuaLibFeature.Promise);
                     return;
             }
         }

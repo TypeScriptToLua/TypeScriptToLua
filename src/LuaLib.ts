@@ -33,6 +33,7 @@ export enum LuaLibFeature {
     ObjectEntries = "ObjectEntries",
     ObjectKeys = "ObjectKeys",
     ObjectValues = "ObjectValues",
+    Promise = "Promise",
     Set = "Set",
     WeakMap = "WeakMap",
     WeakSet = "WeakSet",

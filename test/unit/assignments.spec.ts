@@ -196,7 +196,6 @@ export class AssignmentTests {
     @TestCase("not")
     @TestCase("or")
     @TestCase("repeat")
-    @TestCase("then")
     @TestCase("until")
     @Test("Keyword identifier error")
     public keywordIdentifierError(identifier: string): void {

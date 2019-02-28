@@ -323,8 +323,8 @@ export class LuaTransformer {
 
         const imports = statement.importClause.namedBindings;
         const type = this.checker.getTypeAtLocation(imports);
-        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral,
-            type && tsHelper.isAmbientModuleDeclaration(type));
+        const shouldResolve = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution);
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {

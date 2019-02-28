@@ -35,10 +35,6 @@ class PromiseImpl<T = never> {
     return p;
   }
 
-  protected static create<T = undefined>(): PromiseImpl<T> {
-    return new PromiseImpl<T>();
-  }
-
   public static all( promises: Array<PromiseImpl<any>> ): PromiseImpl<any[]> {
     const p = new PromiseImpl<any[]>();
     if ( promises.length === 0 ) {

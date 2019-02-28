@@ -1,12 +1,13 @@
 declare function error( value:string, level?:number ): never;
-const logError: any = print;
 
-let runAtNextTick: ( func: () => void ) => void = func => func();
-function setRunAtNextTickFunction(  func: (f: () => void ) => void ): void {
-  runAtNextTick = func;
-}
+const ____logError: any = print;
 
-enum PromiseState {
+// The Promise A+ standard (https://promisesaplus.com/ Note 3.1) requires to call .then etc within a new stack
+// This might be implemented by something equivalent to
+// __runAtNextTick = func => setImmediate(func);
+let ____runAtNextTick: ( func: () => void ) => void = func => func();
+
+enum ____PromiseState {
   PENDING = 0,
   FULFILLED = 1,
   REJECTED = 2,
@@ -156,7 +157,7 @@ class PromiseImpl<T = never> {
     return promise;
   }
 
-  protected state: PromiseState = PromiseState.PENDING;
+  protected state: ____PromiseState = ____PromiseState.PENDING;
   protected value!: T;
   protected reason!: any;
   protected handledError?: boolean;
@@ -193,15 +194,15 @@ class PromiseImpl<T = never> {
   ): PromiseImpl<TResult1 | TResult2> {
     const promise = new PromiseImpl<TResult1 | TResult2>();
 
-    if ( this.state === PromiseState.PENDING ) {
+    if ( this.state === ____PromiseState.PENDING ) {
         this.queue.push( {
           promise,
           onFulfilled,
           onRejected,
         } as Deferred< T, TResult1 | TResult2 > );
-    } else if ( this.state === PromiseState.FULFILLED ) {
+    } else if ( this.state === ____PromiseState.FULFILLED ) {
         if ( onFulfilled ) {
-          runAtNextTick( () => {
+          ____runAtNextTick( () => {
             try {
               PromiseImpl.PromiseResolutionProcedure( promise, onFulfilled(this.value) as TResult1 );
             } catch ( err ) {
@@ -211,10 +212,10 @@ class PromiseImpl<T = never> {
         } else {
           return this as any;
         }
-    }  else if ( this.state === PromiseState.REJECTED ) {
+    }  else if ( this.state === ____PromiseState.REJECTED ) {
         this.handledError = true;
         if ( onRejected ) {
-          runAtNextTick( () => {
+          ____runAtNextTick( () => {
             try {
               PromiseImpl.PromiseResolutionProcedure( promise, onRejected(this.reason) as TResult2);
             } catch ( err ) {
@@ -253,16 +254,16 @@ class PromiseImpl<T = never> {
   }
 
   protected reject( reason: any ): void {
-    if ( this.state !== PromiseState.PENDING ) {
+    if ( this.state !== ____PromiseState.PENDING ) {
       return;
     }
-    this.state = PromiseState.REJECTED;
+    this.state = ____PromiseState.REJECTED;
     this.reason = reason;
     this.queue.forEach( d => {
       if ( typeof d.onRejected !== "function" ) { // if reject isnt a function -> ignore it
         d.promise.reject(this.reason);
       } else {
-        runAtNextTick( () => {
+        ____runAtNextTick( () => {
           try {
             const val = (d.onRejected as any)( reason );
             PromiseImpl.PromiseResolutionProcedure( d.promise, val );
@@ -275,27 +276,27 @@ class PromiseImpl<T = never> {
   }
 
   protected __gc(): void {
-    if ( this.state === PromiseState.REJECTED && !this.handledError ) {
+    if ( this.state === ____PromiseState.REJECTED && !this.handledError ) {
       for ( const d of this.queue ) {
         if ( d.onRejected ) {
           return;
         }
       }
-      logError("Unhandled rejected promise ", this.reason );
+      ____logError("Unhandled rejected promise ", this.reason );
     }
   }
 
   protected fulfill( value: T ): PromiseImpl<T> {
-    if ( this.state !== PromiseState.PENDING ) {
+    if ( this.state !== ____PromiseState.PENDING ) {
       return this;
     }
-    this.state = PromiseState.FULFILLED;
+    this.state = ____PromiseState.FULFILLED;
     this.value = value as T;
     this.queue.forEach( d => {
       if ( typeof d.onFulfilled !== "function" ) { // if fulfill isnt a function -> ignore it
         d.promise.fulfill(this.value);
       } else {
-        runAtNextTick( () => {
+        ____runAtNextTick( () => {
           try {
             const val = (d.onFulfilled as any)( value );
             PromiseImpl.PromiseResolutionProcedure( d.promise, val );

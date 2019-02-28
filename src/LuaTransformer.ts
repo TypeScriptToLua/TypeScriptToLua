@@ -43,6 +43,10 @@ export class LuaTransformer {
         "not", "or", "repeat", "return", "self", "then", "until", "while",
     ]);
 
+    public translateKeywords = new Map<string, string>([
+    [ "then", "__TS__then", ],
+    ]);
+
     private isStrict = true;
 
     private checker: ts.TypeChecker;
@@ -4023,7 +4027,11 @@ export class LuaTransformer {
         }
 
         if (this.luaKeywords.has(escapedText)) {
+          if ( this.translateKeywords.has(escapedText) ) {
+            escapedText = this.translateKeywords.get(escapedText);
+          } else {
             throw TSTLErrors.KeywordIdentifier(expression);
+          }
         }
 
         const symbolId = this.getIdentifierSymbolId(expression);

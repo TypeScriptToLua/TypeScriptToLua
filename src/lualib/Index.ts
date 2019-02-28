@@ -21,7 +21,7 @@ function __TS__Index(classProto: LuaObject): (tbl: LuaObject, key: keyof LuaObje
 
             const getters = rawget(proto, "____getters");
             if (getters) {
-                const getter = getters[key] as any;
+                const getter = getters[key];
                 if (getter) {
                     return getter(tbl);
                 }

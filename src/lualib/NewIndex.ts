@@ -17,7 +17,7 @@ function __TS__NewIndex(classProto: LuaObject): (tbl: LuaObject, key: keyof LuaO
         while (true) {
             const setters = rawget(proto, "____setters");
             if (setters) {
-                const setter = setters[key] as any;
+                const setter = setters[key];
                 if (setter) {
                     setter(tbl, val);
                     return;

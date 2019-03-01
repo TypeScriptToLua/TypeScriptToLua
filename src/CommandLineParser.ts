@@ -157,16 +157,16 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
         }
 
         const configPath = options.project;
-        const parsedJsonConfig = parseTsConfigFile(configPath);
+        const parsedJsonConfig = parseTsConfigFile(configPath, options);
 
         return parsedJsonConfig;
     }
     return { isValid: true, result: parsedCommandLine };
 }
 
-export function parseTsConfigFile(filePath: string): CLIParseResult {
+export function parseTsConfigFile(filePath: string, existingOptions?: ts.CompilerOptions): CLIParseResult {
     const configContents = fs.readFileSync(filePath).toString();
-    return parseTsConfigFile(configContents);
+    return parseTsConfigString(configContents, filePath, existingOptions);
 }
 
 export function parseTsConfigString(

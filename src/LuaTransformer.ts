@@ -1512,20 +1512,6 @@ export class LuaTransformer {
             resumeCall)
         );
 
-        //coroutine.status(____co) ~= "dead";
-        const coStatus = tstl.createCallExpression(
-            tstl.createTableIndexExpression(
-                tstl.createIdentifier("coroutine"),
-                tstl.createStringLiteral("status")
-            ),
-            [coroutineIdentifier]
-        );
-        const status = tstl.createBinaryExpression(
-            coStatus,
-            tstl.createStringLiteral("dead"),
-            tstl.SyntaxKind.EqualityOperator
-        );
-        nextBody.push(status);
         //if(not ____err){error(____value)}
         const errorCheck = tstl.createIfStatement(
             tstl.createUnaryExpression(
@@ -1542,7 +1528,22 @@ export class LuaTransformer {
             ])
         );
         nextBody.push(errorCheck);
-        //{done = coroutine.status(____co) ~= "dead"; value = ____value}
+
+        //coroutine.status(____co) == "dead";
+        const coStatus = tstl.createCallExpression(
+            tstl.createTableIndexExpression(
+                tstl.createIdentifier("coroutine"),
+                tstl.createStringLiteral("status")
+            ),
+            [coroutineIdentifier]
+        );
+        const status = tstl.createBinaryExpression(
+            coStatus,
+            tstl.createStringLiteral("dead"),
+            tstl.SyntaxKind.EqualityOperator
+        );
+
+        //{done = coroutine.status(____co) == "dead"; value = ____value}
         const iteratorResult = tstl.createTableExpression([
             tstl.createTableFieldExpression(
                 status,
@@ -4055,6 +4056,7 @@ export class LuaTransformer {
                     parent
                 );
             }
+
         } else {
             const insideFunction = this.findScope(ScopeType.Function) !== undefined;
             let isLetOrConst = false;

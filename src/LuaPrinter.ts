@@ -117,11 +117,9 @@ export class LuaPrinter {
     private createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[]): SourceNode {
         const originalPos = tstl.getOriginalPos(node);
 
-        if (originalPos) {
-            return new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks);
-        } else {
-            return new SourceNode(undefined, undefined, this.sourceFile, chunks);
-        }
+        return originalPos !== undefined
+            ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks)
+            : new SourceNode(undefined, undefined, this.sourceFile, chunks);
     }
 
     private concatNodes(...chunks: SourceChunk[]): SourceNode {
@@ -163,6 +161,8 @@ export class LuaPrinter {
                 return this.printBreakStatement(statement as tstl.BreakStatement);
             case tstl.SyntaxKind.ExpressionStatement:
                 return this.printExpressionStatement(statement as tstl.ExpressionStatement);
+            default:
+                throw new Error(`Tried to print unknown statement kind: ${tstl.SyntaxKind[statement.kind]}`);
         }
     }
 
@@ -307,13 +307,11 @@ export class LuaPrinter {
     }
 
     private printReturnStatement(statement: tstl.ReturnStatement): SourceNode {
-        if (!statement.expressions) {
+        if (!statement.expressions || statement.expressions.length === 0) {
             return this.createSourceNode(statement, this.indent("return;\n"));
         }
 
         const chunks: SourceChunk[] = [];
-
-        //chunks.push(this.createSourceNode(statement, this.indent("return ")));
 
         chunks.push(...this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e))));
 
@@ -364,6 +362,8 @@ export class LuaPrinter {
                 return this.printIdentifier(expression as tstl.Identifier);
             case tstl.SyntaxKind.TableIndexExpression:
                 return this.printTableIndexExpression(expression as tstl.TableIndexExpression);
+            default:
+                throw new Error(`Tried to print unknown statement kind: ${tstl.SyntaxKind[expression.kind]}`);
         }
     }
 

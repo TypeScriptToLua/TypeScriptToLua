@@ -3100,7 +3100,7 @@ export class LuaTransformer {
         }
 
         const callPath = this.transformExpression(node.expression);
-        const signatureDeclaration = signature.getDeclaration();
+        const signatureDeclaration = signature && signature.getDeclaration();
         if (signatureDeclaration
             && !ts.isPropertyAccessExpression(node.expression)
             && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
@@ -3201,7 +3201,7 @@ export class LuaTransformer {
             } else {
                 const parameters = this.transformArguments(node.arguments, signature);
                 const table = this.transformExpression(node.expression.expression);
-                const signatureDeclaration = signature.getDeclaration();
+                const signatureDeclaration = signature && signature.getDeclaration();
                 if (!signatureDeclaration
                     || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
                 {
@@ -3229,7 +3229,7 @@ export class LuaTransformer {
         const signature = this.checker.getResolvedSignature(node);
         let parameters = this.transformArguments(node.arguments, signature);
 
-        const signatureDeclaration = signature.getDeclaration();
+        const signatureDeclaration = signature && signature.getDeclaration();
         if (!signatureDeclaration
             || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
             // Pass left-side as context

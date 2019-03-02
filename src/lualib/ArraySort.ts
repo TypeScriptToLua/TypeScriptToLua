@@ -1,5 +1,5 @@
 declare namespace table {
-    function sort<T>(this: void, arr: T[], compareFn?: (a: T, b: T) => boolean): void;
+    function sort<T>(this: void, arr: T[], compareFn?: (this: void, a: T, b: T) => boolean): void;
 }
 function __TS__ArraySort<T>(this: void, arr: T[], compareFn?: (a: T, b: T) => number): T[] {
     if (compareFn !== undefined) {

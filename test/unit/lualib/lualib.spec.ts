@@ -401,7 +401,7 @@ export class LuaLibTests
             return JSONStringify(testArray)`,
             undefined,
             undefined,
-            `declare function tonumber(e: any): number`
+            `declare function tonumber(this: void, e: any): number`
         );
 
         // Assert

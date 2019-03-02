@@ -99,27 +99,14 @@ export type Operator = UnaryOperator | BinaryOperator;
 
 export type SymbolId = number;
 
-export interface TextRange {
-    line?: number;
-    column?: number;
-}
-
-export interface Node extends TextRange {
+export interface Node {
     kind: SyntaxKind;
     parent?: Node;
+    tsOriginal?: ts.Node;
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
-    let line: number | undefined;
-    let column: number | undefined;
-    // TODO figure out why tsOriginal.getSourceFile()
-    // can return udnefined in the first place instead of catching it here
-    if (tsOriginal && tsOriginal.getSourceFile()) {
-        const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
-        line = lineAndCharacter.line;
-        column = lineAndCharacter.character;
-    }
-    return {kind, parent, line, column};
+    return {kind, parent, tsOriginal};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -127,9 +114,7 @@ export function cloneNode<T extends Node>(node: T): T {
 }
 
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
-    const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
-    node.line = lineAndCharacter.line;
-    node.column = lineAndCharacter.character;
+    node.tsOriginal = tsOriginal;
     return node;
 }
 
@@ -140,17 +125,25 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
     if (Array.isArray(node)) {
         node.forEach(n => {
             n.parent = parent;
-            if (!n.line || !n.column) {
-                n.line = parent.line;
-                n.column = parent.column;
-            }
         });
     } else {
         node.parent = parent;
-        if (!node.line || !node.column) {
-            node.line = parent.line;
-            node.column = parent.column;
-        }
+    }
+}
+
+export function getOriginalPos(node: Node): { line: number, column: number } {
+    while (node.tsOriginal === undefined && node.parent !== undefined) {
+        node = node.parent;
+    }
+
+    if (node.tsOriginal !== undefined && node.tsOriginal.getSourceFile() !== undefined && node.tsOriginal.pos >= 0) {
+
+        const { line, character } = ts.getLineAndCharacterOfPosition(
+            node.tsOriginal.getSourceFile(),
+            node.tsOriginal.pos + node.tsOriginal.getLeadingTriviaWidth()
+        );
+
+        return { line, column: character };
     }
 }
 
@@ -816,8 +809,8 @@ export function createIdentifier(
     return expression;
 }
 
-export function cloneIdentifier(identifier: Identifier): Identifier {
-    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): Identifier {
+    return createIdentifier(identifier.text, tsOriginal, identifier.symbolId);
 }
 
 export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {

@@ -3100,10 +3100,10 @@ export class LuaTransformer {
         }
 
         const callPath = this.transformExpression(node.expression);
-        if (signature
-            && signature.getDeclaration()
+        const signatureDeclaration = signature && signature.getDeclaration();
+        if (signatureDeclaration
             && !ts.isPropertyAccessExpression(node.expression)
-            && tsHelper.getDeclarationContextType(signature.getDeclaration(), this.checker) === ContextType.NonVoid
+            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
             && !ts.isElementAccessExpression(node.expression))
         {
             const context = this.isStrict ? ts.createNull() : ts.createIdentifier("_G");
@@ -3201,10 +3201,10 @@ export class LuaTransformer {
             } else {
                 const parameters = this.transformArguments(node.arguments, signature);
                 const table = this.transformExpression(node.expression.expression);
-                if (!signature
-                    || !signature.getDeclaration()
-                    || tsHelper.getDeclarationContextType(signature.getDeclaration(), this.checker) !== ContextType.Void
-                ) {
+                const signatureDeclaration = signature && signature.getDeclaration();
+                if (!signatureDeclaration
+                    || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
+                {
                     // table:name()
                     return tstl.createMethodCallExpression(
                         table,
@@ -3229,9 +3229,9 @@ export class LuaTransformer {
         const signature = this.checker.getResolvedSignature(node);
         let parameters = this.transformArguments(node.arguments, signature);
 
-        if (!signature
-            || !signature.getDeclaration()
-            || tsHelper.getDeclarationContextType(signature.getDeclaration(), this.checker) !== ContextType.Void) {
+        const signatureDeclaration = signature && signature.getDeclaration();
+        if (!signatureDeclaration
+            || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void) {
             // Pass left-side as context
 
             const context = this.transformExpression(node.expression.expression);

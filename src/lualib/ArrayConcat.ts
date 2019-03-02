@@ -1,7 +1,7 @@
-declare function pcall(func: () => any): any;
-declare function type(val: any): string;
+declare function pcall(this: void, func: () => any): any;
+declare function type(this: void, val: any): string;
 
-function __TS__ArrayConcat(arr1: any[], ...args: any[]): any[] {
+function __TS__ArrayConcat(this: void, arr1: any[], ...args: any[]): any[] {
   const out: any[] = [];
   for (const val of arr1) {
     out[out.length] = val;

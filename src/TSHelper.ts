@@ -554,22 +554,24 @@ export class TSHelper {
                 ? ContextType.Void
                 : ContextType.NonVoid;
         }
-        if (ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration)) {
-            // Method
-            return ContextType.NonVoid;
+
+        let scopeDeclaration: ts.Declaration = signatureDeclaration;
+        while (true) {
+            scopeDeclaration = TSHelper.findFirstNodeAbove(
+                scopeDeclaration,
+                (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration =>
+                    ts.isModuleDeclaration(n) || ts.isClassDeclaration(n)
+            );
+            if (!scopeDeclaration) {
+                break;
+            }
+
+            const scopeType = checker.getTypeAtLocation(scopeDeclaration);
+            if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+                return ContextType.Void;
+            }
         }
-        if (ts.isPropertySignature(signatureDeclaration.parent)
-            || ts.isPropertyDeclaration(signatureDeclaration.parent)
-            || ts.isPropertyAssignment(signatureDeclaration.parent)) {
-            // Lambda property
-            return ContextType.NonVoid;
-        }
-        if (ts.isBinaryExpression(signatureDeclaration.parent)) {
-            // Function expression: check type being assigned to
-            return TSHelper.getFunctionContextType(
-                checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
-        }
-        return ContextType.Void;
+        return ContextType.NonVoid;
     }
 
     public static reduceContextTypes(contexts: ContextType[]): ContextType {

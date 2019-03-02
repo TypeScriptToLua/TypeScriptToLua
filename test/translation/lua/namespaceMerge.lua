@@ -25,11 +25,11 @@ MergedClass.prototype.methodB = function(self)
 end;
 MergedClass = MergedClass or {};
 do
-    MergedClass.namespaceFunc = function()
+    MergedClass.namespaceFunc = function(self)
     end;
 end
 local mergedClass = MergedClass.new();
 mergedClass:methodB();
 mergedClass:propertyFunc();
 MergedClass:staticMethodB();
-MergedClass.namespaceFunc();
+MergedClass:namespaceFunc();

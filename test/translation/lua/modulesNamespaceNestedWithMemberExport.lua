@@ -5,7 +5,7 @@ do
     TestSpace.TestNestedSpace = TestSpace.TestNestedSpace or {};
     local TestNestedSpace = TestSpace.TestNestedSpace;
     do
-        TestNestedSpace.innerFunc = function()
+        TestNestedSpace.innerFunc = function(self)
         end;
     end
 end

@@ -64,4 +64,15 @@ export class LuaModuleTests {
             }`;
         Expect(util.transpileAndExecute("return a.b.foo;", undefined, undefined, code)).toBe("foo");
     }
+
+    @Test("Access this in module")
+    public accessThisInModule(): void {
+        const header =
+            `module M {
+                export const foo = "foo";
+                export function bar() { return foo + "bar"; }
+            }`;
+        const code = `return M.bar();`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+    }
 }

@@ -1,4 +1,4 @@
-declare function setmetatable<T extends object>(obj: T, metatable: any): T;
+declare function setmetatable<T extends object>(this: void, obj: T, metatable: any): T;
 
 // tslint:disable-next-line: variable-name
 const ____symbolMetatable = {

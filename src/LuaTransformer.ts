@@ -3142,6 +3142,10 @@ export class LuaTransformer {
             return this.transformObjectCallExpression(node);
         }
 
+        if (ownerType.symbol && ownerType.symbol.escapedName === "Console") {
+            return this.transformConsoleCallExpression(node);
+        }
+
         if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
             return this.transformSymbolCallExpression(node);
         }
@@ -3670,6 +3674,97 @@ export class LuaTransformer {
         }
     }
 
+    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "log":
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [stringFormatCall]
+                    );
+                }
+                // print([arguments])
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    this.transformArguments(expression.arguments)
+                );
+            case "assert":
+                const args = this.transformArguments(expression.arguments);
+                if (expression.arguments.length > 1
+                    && this.isStringFormatTemplate(expression.arguments[1])) {
+                    // assert([condition], string.format([arguments]))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        args.slice(1)
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("assert"),
+                        [args[0], stringFormatCall]
+                    );
+                }
+                // assert()
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("assert"),
+                    args
+                );
+            case "trace":
+                if (expression.arguments.length > 0
+                    && this.isStringFormatTemplate(expression.arguments[0])) {
+                    // print(debug.traceback(string.format([arguments])))
+                    const stringFormatCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("string"),
+                            tstl.createStringLiteral("format")),
+                        this.transformArguments(expression.arguments)
+                    );
+                    const debugTracebackCall = tstl.createCallExpression(
+                        tstl.createTableIndexExpression(
+                            tstl.createIdentifier("debug"),
+                            tstl.createStringLiteral("traceback")),
+                        [stringFormatCall]
+                    );
+                    return tstl.createCallExpression(
+                        tstl.createIdentifier("print"),
+                        [debugTracebackCall]
+                    );
+                }
+                // print(debug.traceback([arguments])))
+                const debugTracebackCall = tstl.createCallExpression(
+                    tstl.createTableIndexExpression(
+                        tstl.createIdentifier("debug"),
+                        tstl.createStringLiteral("traceback")),
+                    this.transformArguments(expression.arguments)
+                );
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("print"),
+                    [debugTracebackCall]
+                );
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `console property ${methodName}`,
+                    this.options.luaTarget,
+                    expression
+                );
+        }
+    }
+
+    private isStringFormatTemplate(expression: ts.Expression): boolean {
+        return ts.isStringLiteral(expression) && expression.text.match(/\%/g) !== null;
+    }
+
     // Transpile a Symbol._ property
     public transformSymbolCallExpression(expression: ts.CallExpression): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
@@ -3709,7 +3804,7 @@ export class LuaTransformer {
             case "unshift":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayUnshift, node, caller, ...params);
             case "sort":
-                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, node, caller);
+                return this.transformLuaLibFunction(LuaLibFeature.ArraySort, node, caller, ...params);
             case "pop":
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("remove")),
@@ -3718,6 +3813,8 @@ export class LuaTransformer {
                 );
             case "forEach":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayForEach, node, caller, ...params);
+            case "findIndex":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFindIndex, node, caller, ...params);
             case "indexOf":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayIndexOf, node, caller, ...params);
             case "map":

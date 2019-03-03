@@ -195,17 +195,17 @@ export function parseTsConfigString(
                 }
             }
             // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
-            //    + `look like { "compilerOptions": { <typescript options> }, "luaOptions": { <tstl options> } }`);
+            //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
             parsedJsonConfig.options[key] = value;
         }
     }
 
-    // Eventually we will only look for the luaOptions object for tstl options
-    if (parsedJsonConfig.raw.luaOptions) {
+    // Eventually we will only look for the tstl object for tstl options
+    if (parsedJsonConfig.raw.tstl) {
         for (const key in parsedJsonConfig.raw.tstl) {
             const option = optionDeclarations[key];
             if (option !== undefined) {
-                const value = readValue(parsedJsonConfig.raw.luaOptions[key], option.type, key);
+                const value = readValue(parsedJsonConfig.raw.tstl[key], option.type, key);
                 if (option.choices) {
                     if (option.choices.indexOf(value) < 0) {
                         return {

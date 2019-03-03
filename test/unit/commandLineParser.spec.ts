@@ -228,10 +228,10 @@ export class CommandLineParserTests
     }
 
     @TestCase("{}", undefined)
-    @TestCase("{ noHeader: true }", true)
-    @TestCase("{ noHeader: \"true\" }", true)
-    @TestCase("{ tstl: { noHeader: true } }", true)
-    @TestCase("{ tstl: { noHeader: \"true\" } }", true)
+    @TestCase(`{ noHeader: true }`, true)
+    @TestCase(`{ noHeader: "true" }`, true)
+    @TestCase(`{ tstl: { noHeader: true } }`, true)
+    @TestCase(`{ tstl: { noHeader: "true" } }`, true)
     @Test("TsConfig noHeader")
     public tsConfigNoHeader(tsConfig: string, expected: boolean): void {
         const result = parseTsConfigString(tsConfig, "");

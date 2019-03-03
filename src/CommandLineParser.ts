@@ -194,15 +194,15 @@ export function parseTsConfigString(
                     };
                 }
             }
-            console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to look `
-             + `like { "compilerOptions": { <typescript options> }, "luaOptions": { <tstl options> } }`);
+            // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
+            //    + `look like { "compilerOptions": { <typescript options> }, "luaOptions": { <tstl options> } }`);
             parsedJsonConfig.options[key] = value;
         }
     }
 
     // Eventually we will only look for the luaOptions object for tstl options
     if (parsedJsonConfig.raw.luaOptions) {
-        for (const key in parsedJsonConfig.raw.luaOptions) {
+        for (const key in parsedJsonConfig.raw.tstl) {
             const option = optionDeclarations[key];
             if (option !== undefined) {
                 const value = readValue(parsedJsonConfig.raw.luaOptions[key], option.type, key);

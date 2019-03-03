@@ -99,14 +99,23 @@ export type Operator = UnaryOperator | BinaryOperator;
 
 export type SymbolId = number;
 
-export interface Node {
+export interface TextRange {
+    line?: number;
+    column?: number;
+}
+
+export interface Node extends TextRange {
     kind: SyntaxKind;
     parent?: Node;
-    tsOriginal?: ts.Node;
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
-    return {kind, parent, tsOriginal};
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        return {kind, parent, line: sourcePosition.line, column: sourcePosition.column};
+    } else {
+        return {kind, parent};
+    }
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -114,7 +123,12 @@ export function cloneNode<T extends Node>(node: T): T {
 }
 
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
-    node.tsOriginal = tsOriginal;
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        node.line = sourcePosition.line;
+        node.line = sourcePosition.line;
+    }
+
     return node;
 }
 
@@ -131,20 +145,24 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
     }
 }
 
-export function getOriginalPos(node: Node): { line: number, column: number } {
-    while (node.tsOriginal === undefined && node.parent !== undefined) {
-        node = node.parent;
-    }
-
-    if (node.tsOriginal !== undefined && node.tsOriginal.getSourceFile() !== undefined && node.tsOriginal.pos >= 0) {
+function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
+    if (sourceNode !== undefined && sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
 
         const { line, character } = ts.getLineAndCharacterOfPosition(
-            node.tsOriginal.getSourceFile(),
-            node.tsOriginal.pos + node.tsOriginal.getLeadingTriviaWidth()
+            sourceNode.getSourceFile(),
+            sourceNode.pos + sourceNode.getLeadingTriviaWidth()
         );
 
         return { line, column: character };
     }
+}
+
+export function getOriginalPos(node: Node): TextRange {
+    while (node.line === undefined && node.parent !== undefined) {
+        node = node.parent;
+    }
+
+    return { line: node.line, column: node.column };
 }
 
 export interface Block extends Node {

@@ -3848,7 +3848,7 @@ export class LuaTransformer {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
-            throw TSTLErrors.UnsupportedMethodConversion(node);
+            throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
         const params = this.transformArguments(node.arguments);
         const caller = this.transformExpression(expression.expression);
@@ -4284,9 +4284,9 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
         } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
             if (toContext === ContextType.Void) {
-                throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
+                throw TSTLErrors.UnsupportedNoSelfFunctionConversion(node, toName);
             } else {
-                throw TSTLErrors.UnsupportedMethodConversion(node, toName);
+                throw TSTLErrors.UnsupportedSelfFunctionConversion(node, toName);
             }
         }
 

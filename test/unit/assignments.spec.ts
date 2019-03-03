@@ -472,8 +472,8 @@ export class AssignmentTests {
             ${valueFunction.definition || ""}
             ${assigneeFunction.value} = ${valueFunction.value};`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined)
-            : TSTLErrors.UnsupportedFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -499,8 +499,8 @@ export class AssignmentTests {
             let fn: typeof ${testFunction.value};
             fn = ${castedFunction};`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined)
-            : TSTLErrors.UnsupportedFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -525,8 +525,8 @@ export class AssignmentTests {
             ${testFunction.definition || ""}
             takesFunction(${testFunction.value});`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -554,8 +554,8 @@ export class AssignmentTests {
             declare function takesFunction(fn: typeof ${testFunction.value});
             takesFunction(${castedFunction});`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -589,8 +589,8 @@ export class AssignmentTests {
             ${testFunction.definition || ""}
             takesFunction(${testFunction.value});`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -628,8 +628,8 @@ export class AssignmentTests {
                 return ${testFunction.value};
             }`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined)
-            : TSTLErrors.UnsupportedFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -659,8 +659,8 @@ export class AssignmentTests {
                 return ${castedFunction};
             }`;
         const err = isMethodConversion
-            ? TSTLErrors.UnsupportedMethodConversion(undefined)
-            : TSTLErrors.UnsupportedFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
@@ -698,7 +698,7 @@ export class AssignmentTests {
                       let [i, f]: [number, Func] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            TSTLErrors.UnsupportedFunctionConversion(undefined).message
+            TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined).message
         );
     }
 
@@ -723,7 +723,7 @@ export class AssignmentTests {
                       let [i, f]: [number, Meth] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            TSTLErrors.UnsupportedMethodConversion(undefined).message
+            TSTLErrors.UnsupportedSelfFunctionConversion(undefined).message
         );
     }
 
@@ -746,7 +746,7 @@ export class AssignmentTests {
                       const b: B = a;`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            TSTLErrors.UnsupportedFunctionConversion(undefined, "fn").message
+            TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn").message
         );
     }
 

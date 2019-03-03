@@ -78,32 +78,30 @@ export class TSTLErrors {
     public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
         new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
 
-    public static UnsupportedFunctionConversion = (node: ts.Node, name?: string) => {
+    public static UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {
         if (name) {
             return new TranspileError(
-                `Unsupported conversion from method to function "${name}". ` +
-                    `To fix, wrap the method in an arrow function.`,
+                `Unable to convert function with a 'this' parameter to function "${name}" with no 'this'. ` +
+                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
                 node);
         } else {
             return new TranspileError(
-                `Unsupported conversion from method to function. ` +
-                    `To fix, wrap the method in an arrow function.`,
+                `Unable to convert function with a 'this' parameter to function with no 'this'. ` +
+                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
                 node);
         }
     };
 
-    public static UnsupportedMethodConversion = (node: ts.Node, name?: string) => {
+    public static UnsupportedSelfFunctionConversion = (node: ts.Node, name?: string) => {
         if (name) {
             return new TranspileError(
-                `Unsupported conversion from function to method "${name}". ` +
-                    `To fix, wrap the function in an arrow function or declare the function with` +
-                    ` an explicit 'this' parameter.`,
+                `Unable to convert function with no 'this' parameter to function "${name}" with 'this'. ` +
+                `To fix, wrap in an arrow function or declare with 'this: any'.`,
                 node);
         } else {
             return new TranspileError(
-                `Unsupported conversion from function to method. ` +
-                    `To fix, wrap the function in an arrow function or declare the function with` +
-                    ` an explicit 'this' parameter.`,
+                `Unable to convert function with no 'this' parameter to function with 'this'. ` +
+                `To fix, wrap in an arrow function or declare with 'this: any'.`,
                 node);
         }
     };
@@ -111,13 +109,13 @@ export class TSTLErrors {
     public static UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
         if (name) {
             return new TranspileError(
-                `Unsupported assignment of mixed function/method overload to "${name}". ` +
-                    `Overloads should either be all functions or all methods, but not both.`,
+                `Unsupported assignment of function with different overloaded types for 'this' to "${name}". ` +
+                `Overloads should all have the same type for 'this'.`,
                 node);
         } else {
             return new TranspileError(
-                `Unsupported assignment of mixed function/method overload. ` +
-                    `Overloads should either be all functions or all methods, but not both.`,
+                `Unsupported assignment of function with different overloaded types for 'this'. ` +
+                `Overloads should all have the same type for 'this'.`,
                 node);
         }
     };

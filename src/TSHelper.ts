@@ -542,6 +542,22 @@ export class TSHelper {
         return signatureDeclarations;
     }
 
+    public static hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeChecker): boolean {
+        const scopeDeclaration = TSHelper.findFirstNodeAbove(
+            declaration,
+            (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration =>
+                ts.isModuleDeclaration(n) || ts.isClassDeclaration(n)
+        );
+        if (!scopeDeclaration) {
+            return false;
+        }
+        const scopeType = checker.getTypeAtLocation(scopeDeclaration);
+        if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+            return true;
+        }
+        return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker);
+    }
+
     public static getDeclarationContextType(
         signatureDeclaration: ts.SignatureDeclaration,
         checker: ts.TypeChecker
@@ -555,22 +571,10 @@ export class TSHelper {
                 : ContextType.NonVoid;
         }
 
-        let scopeDeclaration: ts.Declaration = signatureDeclaration;
-        while (true) {
-            scopeDeclaration = TSHelper.findFirstNodeAbove(
-                scopeDeclaration,
-                (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration =>
-                    ts.isModuleDeclaration(n) || ts.isClassDeclaration(n)
-            );
-            if (!scopeDeclaration) {
-                break;
-            }
-
-            const scopeType = checker.getTypeAtLocation(scopeDeclaration);
-            if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
-                return ContextType.Void;
-            }
+        if (TSHelper.hasNoSelfAncestor(signatureDeclaration, checker)) {
+            return ContextType.Void;
         }
+
         return ContextType.NonVoid;
     }
 

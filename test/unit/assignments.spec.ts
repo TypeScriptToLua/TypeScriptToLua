@@ -44,7 +44,7 @@ const selfTestFunctions: TestFunction[] = [
     },
     {
         value: "anonFuncPropClass.anonFuncProp",
-        definition: `class AnonFuncPropClass { anonFuncProp: (this: any, s: string) => string = s => s; }
+        definition: `class AnonFuncPropClass { anonFuncProp: (s: string) => string = s => s; }
             const anonFuncPropClass = new AnonFuncPropClass();`,
     },
     {
@@ -474,7 +474,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined)
             : TSTLErrors.UnsupportedFunctionConversion(undefined);
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @TestCases(validTestFunctionCasts)
@@ -501,7 +501,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined)
             : TSTLErrors.UnsupportedFunctionConversion(undefined);
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @TestCases(validTestFunctionAssignments)
@@ -527,7 +527,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
             : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @TestCases(validTestFunctionCasts)
@@ -556,7 +556,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
             : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     // TODO: Fix function expression inference with generic types. The following should work, but doesn't:
@@ -591,7 +591,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined, "fn")
             : TSTLErrors.UnsupportedFunctionConversion(undefined, "fn");
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @TestCases(anonTestFunctionExpressions.map(f => [f, "0", "'foobar'"]))
@@ -630,7 +630,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined)
             : TSTLErrors.UnsupportedFunctionConversion(undefined);
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @TestCases(validTestFunctionCasts)
@@ -661,7 +661,7 @@ export class AssignmentTests {
         const err = isMethodConversion
             ? TSTLErrors.UnsupportedMethodConversion(undefined)
             : TSTLErrors.UnsupportedFunctionConversion(undefined);
-        Expect(() => util.transpileString(code)).toThrowError(TranspileError, err.message);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @Test("Interface method assignment")

@@ -875,6 +875,14 @@ export class AssignmentTests {
         Expect(util.transpileAndExecute(code)).toBe("foobar");
     }
 
+    @Test("Function expression type inference in object literal assigned to narrower type")
+    public functionEXpressionTypeInferenceInObjectLiteralAssignedToNarrowerType(): void {
+        const code =
+            `let foo: {} = {bar: s => s};
+            return (foo as {bar: (a: any) => any}).bar("foobar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
     @TestCase("const foo: Foo", "s => s")
     @TestCase("const foo: Foo", "(s => s)")
     @TestCase("const foo: Foo", "function(s) { return s; }")

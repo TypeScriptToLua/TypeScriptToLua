@@ -297,7 +297,7 @@ export class TSHelper {
         return node.parent === undefined || ts.isExpressionStatement(node.parent) || ts.isForStatement(node.parent);
     }
 
-    public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {
+    public static isInGlobalScope(node: ts.Node): boolean {
         let parent = node.parent;
         while (parent !== undefined) {
             if (ts.isBlock(parent)) {

@@ -3148,7 +3148,7 @@ export class LuaTransformer {
             return this.transformObjectCallExpression(node);
         }
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "Console") {
+        if (ownerType.symbol && ownerType.symbol.escapedName === "Console" && tsHelper.isInGlobalScope(node)) {
             return this.transformConsoleCallExpression(node);
         }
 

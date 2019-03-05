@@ -47,6 +47,8 @@ export class LuaTransformer {
 
     private checker: ts.TypeChecker;
     protected options: CompilerOptions;
+    protected program: ts.Program;
+
     private isModule: boolean;
 
     private currentSourceFile?: ts.SourceFile;
@@ -62,8 +64,6 @@ export class LuaTransformer {
     private symbolInfo: Map<tstl.SymbolId, SymbolInfo>;
     private symbolIds: Map<ts.Symbol, tstl.SymbolId>;
     private genSymbolIdCounter: number;
-
-    private program: ts.Program;
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 

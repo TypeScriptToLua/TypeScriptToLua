@@ -684,6 +684,19 @@ export class TSHelper {
         return firstDeclaration === node;
     }
 
+    public static isTypeDeclaredInDOM(type: ts.Type, name: string): boolean {
+        const symbol = type.symbol;
+        if (!symbol || symbol.escapedName !== name) { return false; }
+        const declaration = symbol.valueDeclaration;
+        if(!declaration) { return false; }
+        const source = declaration.getSourceFile();
+        if (!source) { return false; }
+        let fileName = source.fileName;
+        if(!fileName) { return false; }
+        fileName = fileName.replace(/^.*[\\\/]/, '');
+        return fileName === "lib.dom.d.ts";
+    }
+
     public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {
         if (ts.isIdentifier(value)) {
             const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === value.text);

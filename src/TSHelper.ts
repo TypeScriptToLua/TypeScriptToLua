@@ -484,7 +484,10 @@ export class TSHelper {
             const objType = this.inferAssignedType(expression.parent.parent, checker);
             const property = objType.getProperty(expression.parent.name.getText());
             if (!property) {
-                return objType.getStringIndexType();
+                const stringPropertyType = objType.getStringIndexType();
+                if (stringPropertyType) {
+                    return stringPropertyType;
+                }
             } else {
                 return checker.getTypeAtLocation(property.valueDeclaration);
             }

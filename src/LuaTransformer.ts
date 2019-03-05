@@ -3116,7 +3116,7 @@ export class LuaTransformer {
         }
 
         const expressionType = this.checker.getTypeAtLocation(node.expression);
-        if (tsHelper.isStandardLibraryType(expressionType, "SymbolConstructor", this.program)) {
+        if (expressionType.symbol && expressionType.symbol.escapedName === "SymbolConstructor") {
             return this.transformLuaLibFunction(LuaLibFeature.Symbol, node, ...parameters);
         }
 
@@ -3143,7 +3143,7 @@ export class LuaTransformer {
             return this.transformConsoleCallExpression(node);
         }
 
-        if (tsHelper.isStandardLibraryType(ownerType, "StringConstructor", this.program)) {
+        if (ownerType.symbol && ownerType.symbol.escapedName === "StringConstructor") {
             return tstl.createCallExpression(
                 this.transformStringExpression(node.expression.name),
                 this.transformArguments(node.arguments),
@@ -3151,11 +3151,11 @@ export class LuaTransformer {
             );
         }
 
-        if (tsHelper.isStandardLibraryType(ownerType, "ObjectConstructor", this.program)) {
+        if (ownerType.symbol && ownerType.symbol.escapedName === "ObjectConstructor") {
             return this.transformObjectCallExpression(node);
         }
 
-        if (tsHelper.isStandardLibraryType(ownerType, "SymbolConstructor", this.program)) {
+        if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
             return this.transformSymbolCallExpression(node);
         }
 

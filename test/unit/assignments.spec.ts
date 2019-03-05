@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, TestCases } from "alsatian";
+import { Expect, Test, TestCase, TestCases, FocusTest } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 
 import * as util from "../src/util";
@@ -198,7 +198,7 @@ const noSelfTestFunctionType = "(this: void, s: string) => string";
 type TestFunctionCast = [
     /*testFunction: */TestFunction,
     /*castedFunction: */string,
-    /*isMethodConversion?: */boolean?
+    /*isSelfConversion?: */boolean?
 ];
 const validTestFunctionCasts: TestFunctionCast[] = [
     ...selfTestFunctions.map((f): TestFunctionCast => [f, `<${anonTestFunctionType}>(${f.value})`]),
@@ -220,7 +220,7 @@ const invalidTestFunctionCasts: TestFunctionCast[] = [
 type TestFunctionAssignment = [
     /*testFunction: */TestFunction,
     /*functionType: */string,
-    /*isMethodConversion?: */boolean?
+    /*isSelfConversion?: */boolean?
 ];
 const validTestFunctionAssignments: TestFunctionAssignment[] = [
     ...selfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
@@ -241,18 +241,6 @@ const invalidTestFunctionAssignments: TestFunctionAssignment[] = [
     ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType, true]),
     ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
 ];
-
-function *testFunctionCombinations(functionsA: TestFunction[], functionsB: TestFunction[], ...args: any[])
-    : IterableIterator<[TestFunction, TestFunction, ...any[]]>
-{
-    for (const assigneeFunction of functionsA) {
-        for (const valueFunction of functionsB) {
-            if (assigneeFunction !== valueFunction) {
-                yield [assigneeFunction, valueFunction, ...args];
-            }
-        }
-    }
-}
 
 export class AssignmentTests {
 
@@ -437,41 +425,49 @@ export class AssignmentTests {
             .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
     }
 
-    @TestCases(testFunctionCombinations(selfTestFunctions, selfTestFunctions))
-    @TestCases(testFunctionCombinations(selfTestFunctions, selfTestFunctionExpressions))
-    @TestCases(testFunctionCombinations(selfTestFunctions, anonTestFunctionExpressions))
-    @TestCases(testFunctionCombinations(noSelfTestFunctions, noSelfTestFunctions))
-    @TestCases(testFunctionCombinations(noSelfTestFunctions, noSelfTestFunctionExpressions))
-    @TestCases(testFunctionCombinations(noSelfTestFunctions, anonTestFunctionExpressions))
-    @Test("Valid function assignment")
-    public validFunctionAssignment(assigneeFunction: TestFunction, valueFunction: TestFunction)
-        : void
-    {
-        const header =
-            `${assigneeFunction.definition || ""}
-            ${valueFunction.definition || ""}`;
+    @TestCases(validTestFunctionAssignments)
+    @Test("Valid function variable declaration")
+    public validFunctionDeclaration(testFunction: TestFunction, functionType: string): void {
         const code =
-            `${assigneeFunction.value} = ${valueFunction.value};
-            return ${assigneeFunction.value}("foobar");`;
-        Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+            `const fn: ${functionType} = ${testFunction.value};
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
     }
 
-    @TestCases(testFunctionCombinations(selfTestFunctions, noSelfTestFunctions, true))
-    @TestCases(testFunctionCombinations(selfTestFunctions, noSelfTestFunctionExpressions, true))
-    @TestCases(testFunctionCombinations(noSelfTestFunctions, selfTestFunctions, false))
-    @TestCases(testFunctionCombinations(noSelfTestFunctions, selfTestFunctionExpressions, false))
-    @Test("Invalid function assignment")
-    public invalidFunctionAssignment(
-        assigneeFunction: TestFunction,
-        valueFunction: TestFunction,
-        isMethodConversion: boolean
-    ): void
+    @TestCases(validTestFunctionAssignments)
+    @Test("Valid function assignment")
+    public validFunctionAssignment(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `let fn: ${functionType};
+            fn = ${testFunction.value};
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(invalidTestFunctionAssignments)
+    @Test("Invalid function variable declaration")
+    public invalidFunctionDeclaration(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
     {
         const code =
-            `${assigneeFunction.definition || ""}
-            ${valueFunction.definition || ""}
-            ${assigneeFunction.value} = ${valueFunction.value};`;
-        const err = isMethodConversion
+            `${testFunction.definition || ""}
+            const fn: ${functionType} = ${testFunction.value};`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
+    }
+
+    @TestCases(invalidTestFunctionAssignments)
+    @Test("Invalid function assignment")
+    public invalidFunctionAssignment(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            let fn: ${functionType};
+            fn = ${testFunction.value};`;
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -492,13 +488,13 @@ export class AssignmentTests {
     public invalidFunctionAssignmentWithCast(
         testFunction: TestFunction,
         castedFunction: string,
-        isMethodConversion: boolean
+        isSelfConversion: boolean
     ): void {
         const code =
             `${testFunction.definition || ""}
             let fn: typeof ${testFunction.value};
             fn = ${castedFunction};`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -517,14 +513,14 @@ export class AssignmentTests {
 
     @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function argument")
-    public invalidFunctionArgument(testFunction: TestFunction, functionType: string, isMethodConversion: boolean)
+    public invalidFunctionArgument(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
         : void
     {
         const code =
             `declare function takesFunction(fn: ${functionType});
             ${testFunction.definition || ""}
             takesFunction(${testFunction.value});`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -546,14 +542,14 @@ export class AssignmentTests {
     public invalidFunctionArgumentWithCast(
         testFunction: TestFunction,
         castedFunction: string,
-        isMethodConversion: boolean
+        isSelfConversion: boolean
     ): void
     {
         const code =
             `${testFunction.definition || ""}
             declare function takesFunction(fn: typeof ${testFunction.value});
             takesFunction(${castedFunction});`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -581,14 +577,14 @@ export class AssignmentTests {
 
     @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function generic argument")
-    public invalidFunctionGenericArgument(testFunction: TestFunction, functionType: string, isMethodConversion: boolean)
+    public invalidFunctionGenericArgument(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
         : void
     {
         const code =
             `declare function takesFunction<T extends ${functionType}>(fn: T);
             ${testFunction.definition || ""}
             takesFunction(${testFunction.value});`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -621,13 +617,13 @@ export class AssignmentTests {
 
     @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function return")
-    public invalidFunctionReturn(testFunction: TestFunction, functionType: string, isMethodConversion: boolean): void {
+    public invalidFunctionReturn(testFunction: TestFunction, functionType: string, isSelfConversion: boolean): void {
         const code =
             `${testFunction.definition || ""}
             function returnsFunction(): ${functionType} {
                 return ${testFunction.value};
             }`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
@@ -650,7 +646,7 @@ export class AssignmentTests {
     public invalidFunctionReturnWithCast(
         testFunction: TestFunction,
         castedFunction: string,
-        isMethodConversion: boolean
+        isSelfConversion: boolean
     ): void
     {
         const code =
@@ -658,7 +654,7 @@ export class AssignmentTests {
             function returnsFunction(): typeof ${testFunction.value} {
                 return ${castedFunction};
             }`;
-        const err = isMethodConversion
+        const err = isSelfConversion
             ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);

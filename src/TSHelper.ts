@@ -684,25 +684,18 @@ export class TSHelper {
         return firstDeclaration === node;
     }
 
-    public static isDeclarationDeclaredIn(declaration: ts.Declaration, fileName: string): boolean {
+    public static isStandardLibraryDeclaration(declaration: ts.Declaration, program: ts.Program): boolean {
         const source = declaration.getSourceFile();
         if (!source) { return false; }
-        let sourceFileName = source.fileName;
-        if(!sourceFileName) { return false; }
-        sourceFileName = sourceFileName.replace(/^.*[\\\/]/, '');
-        return sourceFileName === fileName;
+        return program.isSourceFileDefaultLibrary(source);
     }
 
-    public static isTypeDeclaredIn(type: ts.Type, name: string, fileName: string): boolean {
+    public static isStandardLibraryType(type: ts.Type, name: string, program: ts.Program): boolean {
         const symbol = type.symbol;
         if (!symbol || symbol.escapedName !== name) { return false; }
         const declaration = symbol.valueDeclaration;
         if(!declaration) { return false; }
-        return this.isDeclarationDeclaredIn(declaration, fileName);
-    }
-
-    public static isTypeDeclaredInDOM(type: ts.Type, name: string): boolean {
-        return this.isTypeDeclaredIn(type, name, "lib.dom.d.ts");
+        return this.isStandardLibraryDeclaration(declaration, program);
     }
 
     public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {

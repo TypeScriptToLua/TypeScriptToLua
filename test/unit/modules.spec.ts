@@ -70,7 +70,7 @@ export class LuaModuleTests {
         const header =
             `module M {
                 export const foo = "foo";
-                export function bar() { return foo + "bar"; }
+                export function bar() { return this.foo + "bar"; }
             }`;
         const code = `return M.bar();`;
         Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");

@@ -694,7 +694,7 @@ export class TSHelper {
         const symbol = type.symbol;
         if (!symbol || symbol.escapedName !== name) { return false; }
         const declaration = symbol.valueDeclaration;
-        if(!declaration) { return false; }
+        if(!declaration) { return true; } // assume to be lib function if no valueDeclaration exists
         return this.isStandardLibraryDeclaration(declaration, program);
     }
 

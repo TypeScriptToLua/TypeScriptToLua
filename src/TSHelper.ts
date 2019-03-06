@@ -297,7 +297,7 @@ export class TSHelper {
         return node.parent === undefined || ts.isExpressionStatement(node.parent) || ts.isForStatement(node.parent);
     }
 
-    public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {
+    public static isInGlobalScope(node: ts.Node): boolean {
         let parent = node.parent;
         while (parent !== undefined) {
             if (ts.isBlock(parent)) {
@@ -685,6 +685,20 @@ export class TSHelper {
         }
         const firstDeclaration = this.getFirstDeclaration(symbol);
         return firstDeclaration === node;
+    }
+
+    public static isStandardLibraryDeclaration(declaration: ts.Declaration, program: ts.Program): boolean {
+        const source = declaration.getSourceFile();
+        if (!source) { return false; }
+        return program.isSourceFileDefaultLibrary(source);
+    }
+
+    public static isStandardLibraryType(type: ts.Type, name: string, program: ts.Program): boolean {
+        const symbol = type.symbol;
+        if (!symbol || symbol.escapedName !== name) { return false; }
+        const declaration = symbol.valueDeclaration;
+        if(!declaration) { return true; } // assume to be lib function if no valueDeclaration exists
+        return this.isStandardLibraryDeclaration(declaration, program);
     }
 
     public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {

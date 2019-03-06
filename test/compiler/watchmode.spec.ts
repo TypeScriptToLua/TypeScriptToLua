@@ -23,8 +23,8 @@ export class CompilerWatchModeTest {
 
         Expect(fs.existsSync(fileToChangeOut)).toBe(true);
 
-        const initialResultLua = fs.readFileSync(fileToChangeOut);
-        const originalTS = fs.readFileSync(fileToChange);
+        const initialResultLua = fs.readFileSync(fileToChangeOut, "utf-8");
+        const originalTS = fs.readFileSync(fileToChange, "utf-8");
 
         fs.unlinkSync(fileToChangeOut);
 
@@ -33,7 +33,7 @@ export class CompilerWatchModeTest {
         await this.waitForFileExists(fileToChangeOut, 5000)
                   .catch(err => console.error(err));
 
-        const updatedResultLua = fs.readFileSync(fileToChangeOut).toString();
+        const updatedResultLua = fs.readFileSync(fileToChangeOut, "utf-8").toString();
 
         Expect(initialResultLua).not.toEqual(updatedResultLua);
 

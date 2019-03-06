@@ -110,16 +110,12 @@ export interface Node extends TextRange {
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
-    let line: number | undefined;
-    let column: number | undefined;
-    // TODO figure out why tsOriginal.getSourceFile()
-    // can return udnefined in the first place instead of catching it here
-    if (tsOriginal && tsOriginal.getSourceFile()) {
-        const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
-        line = lineAndCharacter.line;
-        column = lineAndCharacter.character;
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        return {kind, parent, line: sourcePosition.line, column: sourcePosition.column};
+    } else {
+        return {kind, parent};
     }
-    return {kind, parent, line, column};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -127,9 +123,12 @@ export function cloneNode<T extends Node>(node: T): T {
 }
 
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
-    const lineAndCharacter = ts.getLineAndCharacterOfPosition(tsOriginal.getSourceFile(), tsOriginal.pos);
-    node.line = lineAndCharacter.line;
-    node.column = lineAndCharacter.character;
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        node.line = sourcePosition.line;
+        node.line = sourcePosition.line;
+    }
+
     return node;
 }
 
@@ -140,18 +139,30 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
     if (Array.isArray(node)) {
         node.forEach(n => {
             n.parent = parent;
-            if (!n.line || !n.column) {
-                n.line = parent.line;
-                n.column = parent.column;
-            }
         });
     } else {
         node.parent = parent;
-        if (!node.line || !node.column) {
-            node.line = parent.line;
-            node.column = parent.column;
-        }
     }
+}
+
+function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
+    if (sourceNode !== undefined && sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
+
+        const { line, character } = ts.getLineAndCharacterOfPosition(
+            sourceNode.getSourceFile(),
+            sourceNode.pos + sourceNode.getLeadingTriviaWidth()
+        );
+
+        return { line, column: character };
+    }
+}
+
+export function getOriginalPos(node: Node): TextRange {
+    while (node.line === undefined && node.parent !== undefined) {
+        node = node.parent;
+    }
+
+    return { line: node.line, column: node.column };
 }
 
 export interface Block extends Node {
@@ -816,8 +827,8 @@ export function createIdentifier(
     return expression;
 }
 
-export function cloneIdentifier(identifier: Identifier): Identifier {
-    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): Identifier {
+    return createIdentifier(identifier.text, tsOriginal, identifier.symbolId);
 }
 
 export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {

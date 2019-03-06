@@ -548,8 +548,11 @@ export class TSHelper {
     public static hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeChecker): boolean {
         const scopeDeclaration = TSHelper.findFirstNodeAbove(
             declaration,
-            (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration =>
-                ts.isModuleDeclaration(n) || ts.isClassDeclaration(n) || ts.isClassExpression(n)
+            (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
+                ts.isModuleDeclaration(n)
+                || ts.isClassDeclaration(n)
+                || ts.isClassExpression(n)
+                || ts.isInterfaceDeclaration(n)
         );
         if (!scopeDeclaration) {
             return false;

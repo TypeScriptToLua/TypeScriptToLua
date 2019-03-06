@@ -50,8 +50,8 @@ const selfTestFunctions: TestFunction[] = [
     {
         value: "StaticMethodClass.staticMethod",
         definition: `class StaticMethodClass {
-            static staticMethod(this: any, s: string): string { return s; }
-        }`,
+                static staticMethod(this: any, s: string): string { return s; }
+            }`,
     },
     {
         value: "AnonStaticMethodClass.anonStaticMethod",
@@ -60,14 +60,14 @@ const selfTestFunctions: TestFunction[] = [
     {
         value: "StaticFuncPropClass.staticFuncProp",
         definition: `class StaticFuncPropClass {
-            static staticFuncProp: (this: any, s: string) => string = s => s;
-        }`,
+                static staticFuncProp: (this: any, s: string) => string = s => s;
+            }`,
     },
     {
         value: "AnonStaticFuncPropClass.anonStaticFuncProp",
         definition: `class AnonStaticFuncPropClass {
-            static anonStaticFuncProp: (s: string) => string = s => s;
-        }`,
+                static anonStaticFuncProp: (s: string) => string = s => s;
+            }`,
     },
     {
         value: "FuncNs.nsFunc",
@@ -76,29 +76,62 @@ const selfTestFunctions: TestFunction[] = [
     {
         value: "FuncNestedNs.NestedNs.nestedNsFunc",
         definition: `namespace FuncNestedNs {
-            export namespace NestedNs { export function nestedNsFunc(s: string) { return s; } }
-        }`,
+                export namespace NestedNs { export function nestedNsFunc(s: string) { return s; } }
+            }`,
     },
     {
         value: "LambdaNs.nsLambda",
         definition: `namespace LambdaNs {
-            export let nsLambda: (s: string) => string = s => s;
-        }`,
+                export let nsLambda: (s: string) => string = s => s;
+            }`,
     },
     {
         value: "LambdaNestedNs.NestedNs.nestedNsLambda",
         definition: `namespace LambdaNestedNs {
-            export namespace NestedNs { export let nestedNsLambda: (s: string) => string = s => s }
-        }`,
+                export namespace NestedNs { export let nestedNsLambda: (s: string) => string = s => s }
+            }`,
+    },
+    {
+        value: "methodInterface.method",
+        definition: `interface MethodInterface { method(this: any, s: string): string; }
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }`,
+    },
+    {
+        value: "anonMethodInterface.anonMethod",
+        definition: `interface AnonMethodInterface { anonMethod(s: string): string; }
+            const anonMethodInterface: AnonMethodInterface = {
+                anonMethod: function(this: any, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "funcPropInterface.funcProp",
+        definition: `interface FuncPropInterface { funcProp: (this: any, s: string) => string; }
+            const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };`,
+    },
+    {
+        value: "anonFuncPropInterface.anonFuncProp",
+        definition: `interface AnonFuncPropInterface { anonFuncProp: (s: string) => string; }
+            const anonFuncPropInterface: AnonFuncPropInterface = { anonFuncProp: (s: string): string => s };`,
     },
     {
         value: "anonMethodClassInNoSelfNs.method",
         definition: `/** @noSelf */ namespace AnonMethodClassInNoSelfNs {
-            export class MethodClass {
-                method(s: string): string { return s; }
+                export class MethodClass {
+                    method(s: string): string { return s; }
+                }
             }
-        }
-        const anonMethodClassInNoSelfNs = new AnonMethodClassInNoSelfNs.MethodClass();`,
+            const anonMethodClassInNoSelfNs = new AnonMethodClassInNoSelfNs.MethodClass();`,
+    },
+    {
+        value: "anonMethodInterfaceInNoSelfNs.method",
+        definition: `/** @noSelf */ namespace AnonMethodInterfaceInNoSelfNs {
+                export interface MethodInterface {
+                    method(s: string): string;
+                }
+            }
+            const anonMethodInterfaceInNoSelfNs: AnonMethodInterfaceInNoSelfNs.MethodInterface = {
+                method: function(s: string): string { return s; }
+            };`,
     },
 ];
 
@@ -114,28 +147,28 @@ const noSelfTestFunctions: TestFunction[] = [
     {
         value: "voidMethodClass.voidMethod",
         definition: `class VoidMethodClass {
-            voidMethod(this: void, s: string): string { return s; }
-        }
-        const voidMethodClass = new VoidMethodClass();`,
+                voidMethod(this: void, s: string): string { return s; }
+            }
+            const voidMethodClass = new VoidMethodClass();`,
     },
     {
         value: "voidFuncPropClass.voidFuncProp",
         definition: `class VoidFuncPropClass {
-            voidFuncProp: (this: void, s: string) => string = s => s;
-        }
-        const voidFuncPropClass = new VoidFuncPropClass();`,
+                voidFuncProp: (this: void, s: string) => string = s => s;
+            }
+            const voidFuncPropClass = new VoidFuncPropClass();`,
     },
     {
         value: "StaticVoidMethodClass.staticVoidMethod",
         definition: `class StaticVoidMethodClass {
-            static staticVoidMethod(this: void, s: string): string { return s; }
-        }`,
+                static staticVoidMethod(this: void, s: string): string { return s; }
+            }`,
     },
     {
         value: "StaticVoidFuncPropClass.staticVoidFuncProp",
         definition: `class StaticVoidFuncPropClass {
-            static staticVoidFuncProp: (this: void, s: string) => string = s => s;
-        }`,
+                static staticVoidFuncProp: (this: void, s: string) => string = s => s;
+            }`,
     },
     {
         value: "NoSelfFuncNs.noSelfNsFunc",
@@ -144,20 +177,20 @@ const noSelfTestFunctions: TestFunction[] = [
     {
         value: "NoSelfFuncNestedNs.NestedNs.noSelfNestedNsFunc",
         definition: `/** @noSelf */ namespace NoSelfFuncNestedNs {
-            export namespace NestedNs { export function noSelfNestedNsFunc(s: string) { return s; } }
-        }`,
+                export namespace NestedNs { export function noSelfNestedNsFunc(s: string) { return s; } }
+            }`,
     },
     {
         value: "NoSelfLambdaNs.noSelfNsLambda",
         definition: `/** @noSelf */ namespace NoSelfLambdaNs {
-            export let noSelfNsLambda: (s: string) => string = s => s;
-        }`,
+                export let noSelfNsLambda: (s: string) => string = s => s;
+            }`,
     },
     {
         value: "NoSelfLambdaNestedNs.NestedNs.noSelfNestedNsLambda",
         definition: `/** @noSelf */ namespace NoSelfLambdaNestedNs {
-            export namespace NestedNs { export let noSelfNestedNsLambda: (s: string) => string = s => s }
-        }`,
+                export namespace NestedNs { export let noSelfNestedNsLambda: (s: string) => string = s => s }
+            }`,
     },
     {
         value: "noSelfMethodClass.noSelfMethod",
@@ -167,19 +200,51 @@ const noSelfTestFunctions: TestFunction[] = [
     {
         value: "NoSelfStaticMethodClass.noSelfStaticMethod",
         definition: `/** @noSelf */ class NoSelfStaticMethodClass {
-            static noSelfStaticMethod(s: string): string { return s; }
-        }`,
+                static noSelfStaticMethod(s: string): string { return s; }
+            }`,
     },
     {
         value: "noSelfFuncPropClass.noSelfFuncProp",
-        definition: `/** @noSelf */ class NoSelfFuncPropClass { noSelfFuncProp(s: string): string { return s; } }
+        definition: `/** @noSelf */ class NoSelfFuncPropClass { noSelfFuncProp: (s: string) => string = s => s; }
             const noSelfFuncPropClass = new NoSelfFuncPropClass();`,
     },
     {
         value: "NoSelfStaticFuncPropClass.noSelfStaticFuncProp",
         definition: `/** @noSelf */ class NoSelfStaticFuncPropClass {
-            static noSelfStaticFuncProp(s: string): string { return s; }
-        }`,
+                static noSelfStaticFuncProp: (s: string) => string  = s => s;
+            }`,
+    },
+    {
+        value: "voidMethodInterface.voidMethod",
+        definition: `interface VoidMethodInterface {
+                voidMethod(this: void, s: string): string;
+            }
+            const voidMethodInterface: VoidMethodInterface = {
+                voidMethod(this: void, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "voidFuncPropInterface.voidFuncProp",
+        definition: `interface VoidFuncPropInterface {
+                voidFuncProp: (this: void, s: string) => string;
+            }
+            const voidFuncPropInterface: VoidFuncPropInterface = {
+                voidFuncProp: function(this: void, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "noSelfMethodInterface.noSelfMethod",
+        definition: `/** @noSelf */ interface NoSelfMethodInterface { noSelfMethod(s: string): string; }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "noSelfFuncPropInterface.noSelfFuncProp",
+        definition: `/** @noSelf */ interface NoSelfFuncPropInterface { noSelfFuncProp(s: string): string; }
+            const noSelfFuncPropInterface: NoSelfFuncPropInterface = {
+                noSelfFuncProp: (s: string): string => s
+            };`,
     },
     {
         value: "noSelfMethodClassExpression.noSelfMethod",

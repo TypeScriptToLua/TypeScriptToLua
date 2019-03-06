@@ -91,6 +91,15 @@ const selfTestFunctions: TestFunction[] = [
             export namespace NestedNs { export let nestedNsLambda: (s: string) => string = s => s }
         }`,
     },
+    {
+        value: "anonMethodClassInNoSelfNs.method",
+        definition: `/** @noSelf */ namespace AnonMethodClassInNoSelfNs {
+            export class MethodClass {
+                method(s: string): string { return s; }
+            }
+        }
+        const anonMethodClassInNoSelfNs = new AnonMethodClassInNoSelfNs.MethodClass();`,
+    },
 ];
 
 const noSelfTestFunctions: TestFunction[] = [
@@ -171,6 +180,13 @@ const noSelfTestFunctions: TestFunction[] = [
         definition: `/** @noSelf */ class NoSelfStaticFuncPropClass {
             static noSelfStaticFuncProp(s: string): string { return s; }
         }`,
+    },
+    {
+        value: "noSelfMethodClassExpression.noSelfMethod",
+        definition: `/** @noSelf */ const NoSelfMethodClassExpression = class {
+                noSelfMethod(s: string): string { return s; }
+            }
+            const noSelfMethodClassExpression = new NoSelfMethodClassExpression();`,
     },
 ];
 

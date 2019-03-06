@@ -549,7 +549,7 @@ export class TSHelper {
         const scopeDeclaration = TSHelper.findFirstNodeAbove(
             declaration,
             (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration =>
-                ts.isModuleDeclaration(n) || ts.isClassDeclaration(n)
+                ts.isModuleDeclaration(n) || ts.isClassDeclaration(n) || ts.isClassExpression(n)
         );
         if (!scopeDeclaration) {
             return false;
@@ -558,7 +558,10 @@ export class TSHelper {
         if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
             return true;
         }
-        return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker);
+        if (ts.isModuleDeclaration(scopeDeclaration)) {
+            return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker); // Recurse namespaces
+        }
+        return false;
     }
 
     public static getDeclarationContextType(

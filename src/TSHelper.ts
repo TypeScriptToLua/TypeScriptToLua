@@ -249,6 +249,21 @@ export class TSHelper {
         return decMap;
     }
 
+    public static getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
+        const decMap = new Map<DecoratorKind, Decorator>();
+        if (file.statements.length > 0) {
+            const tags = ts.getJSDocTags(file.statements[0]);
+            for (const tag of tags) {
+                const tagName = tag.tagName.escapedText as string;
+                if (Decorator.isValid(tagName)) {
+                    const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+                    decMap.set(dec.kind, dec);
+                }
+            }
+        }
+        return decMap;
+    }
+
     // Search up until finding a node satisfying the callback
     public static findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (n: ts.Node) => n is T): T {
         let current = node;
@@ -548,14 +563,18 @@ export class TSHelper {
     public static hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeChecker): boolean {
         const scopeDeclaration = TSHelper.findFirstNodeAbove(
             declaration,
-            (n): n is ts.ModuleDeclaration | ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
-                ts.isModuleDeclaration(n)
+            (n): n is ts.SourceFile | ts.ModuleDeclaration | ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
+                ts.isSourceFile(n)
+                || ts.isModuleDeclaration(n)
                 || ts.isClassDeclaration(n)
                 || ts.isClassExpression(n)
                 || ts.isInterfaceDeclaration(n)
         );
         if (!scopeDeclaration) {
             return false;
+        }
+        if (ts.isSourceFile(scopeDeclaration)) {
+            return TSHelper.getCustomFileDirectives(scopeDeclaration).has(DecoratorKind.NoSelfInFile);
         }
         const scopeType = checker.getTypeAtLocation(scopeDeclaration);
         if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {

@@ -98,8 +98,8 @@ export function transpileAndExecute(
     ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics"
 ): any
 {
-    const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
-        ${tsHeader ? tsHeader : ""}
+    const wrappedTsString = `${tsHeader ? tsHeader : ""}
+        declare function JSONStringify(this: void, p: any): string;
         function __runTest(this: void): any {${tsStr}}`;
 
     const lua = `${luaHeader ? luaHeader : ""}

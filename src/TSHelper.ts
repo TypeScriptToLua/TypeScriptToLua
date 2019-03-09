@@ -436,7 +436,7 @@ export class TSHelper {
             // Ignore expressions wrapped in parenthesis
             return this.inferAssignedType(expression.parent, checker);
 
-        } else if (ts.isCallExpression(expression.parent)) {
+        } else if (ts.isCallOrNewExpression(expression.parent)) {
             // Expression being passed as argument to a function
             const argumentIndex = expression.parent.arguments.indexOf(expression);
             if (argumentIndex >= 0) {
@@ -514,9 +514,20 @@ export class TSHelper {
         {
             // Expression assigned to variable
             return checker.getTypeAtLocation(expression.parent.left);
+
+        } else if (ts.isAssertionExpression(expression.parent)) {
+            // Expression being cast
+            return checker.getTypeFromTypeNode(expression.parent.type);
         }
 
         return checker.getTypeAtLocation(expression);
+    }
+
+    public static getAllCallSignatures(type: ts.Type): ReadonlyArray<ts.Signature> {
+        if (type.isUnion()) {
+            return type.types.map(t => TSHelper.getAllCallSignatures(t)).reduce((a, b) => a.concat(b));
+        }
+        return type.getCallSignatures();
     }
 
     public static getSignatureDeclarations(
@@ -533,7 +544,7 @@ export class TSHelper {
                 // Infer type of function expressions/arrow functions
                 const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
-                    const inferredSignatures = inferredType.getCallSignatures();
+                    const inferredSignatures = TSHelper.getAllCallSignatures(inferredType);
                     if (inferredSignatures.length > 0) {
                         signatureDeclarations.push(...inferredSignatures.map(s => s.getDeclaration()));
                         continue;

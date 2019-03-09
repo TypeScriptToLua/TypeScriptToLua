@@ -976,15 +976,9 @@ export class AssignmentTests {
     @TestCase("(this: void, s: string) => string", "s => s")
     @TestCase("(this: any, s: string) => string", "s => s")
     @TestCase("(s: string) => string", "s => s")
-    @TestCase("(this: void, s: string) => string", "(s => s)")
-    @TestCase("(this: any, s: string) => string", "(s => s)")
-    @TestCase("(s: string) => string", "(s => s)")
     @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
     @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
     @TestCase("(s: string) => string", "function(s) { return s; }")
-    @TestCase("(this: void, s: string) => string", "(function(s) { return s; })")
-    @TestCase("(this: any, s: string) => string", "(function(s) { return s; })")
-    @TestCase("(s: string) => string", "(function(s) { return s; })")
     @Test("Function expression type inference in union")
     public functionExpressionTypeInferenceInUnion(funcType: string, funcExp: string): void {
         const code =
@@ -1020,6 +1014,24 @@ export class AssignmentTests {
         const code =
             `const fn: ${funcType} = <${funcType}>(${funcExp});
             return fn("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in constructor")
+    public functionExpresssionTypeInferenceInConstructor(funcType: string, funcExp: string): void {
+        const code =
+            `class C {
+                result: string;
+                constructor(fn: (s: string) => string) { this.result = fn("foo"); }
+            }
+            const c = new C(s => s);
+            return c.result;`;
         Expect(util.transpileAndExecute(code)).toBe("foo");
     }
 

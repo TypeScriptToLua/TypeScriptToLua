@@ -436,7 +436,7 @@ export class TSHelper {
             // Ignore expressions wrapped in parenthesis
             return this.inferAssignedType(expression.parent, checker);
 
-        } else if (ts.isCallExpression(expression.parent)) {
+        } else if (ts.isCallOrNewExpression(expression.parent)) {
             // Expression being passed as argument to a function
             const argumentIndex = expression.parent.arguments.indexOf(expression);
             if (argumentIndex >= 0) {

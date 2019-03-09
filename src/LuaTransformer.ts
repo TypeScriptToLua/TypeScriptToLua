@@ -47,6 +47,8 @@ export class LuaTransformer {
 
     private checker: ts.TypeChecker;
     protected options: CompilerOptions;
+    protected program: ts.Program;
+
     private isModule: boolean;
 
     private currentSourceFile?: ts.SourceFile;
@@ -68,6 +70,7 @@ export class LuaTransformer {
     public constructor(program: ts.Program, options: CompilerOptions) {
         this.checker = program.getTypeChecker();
         this.options = options;
+        this.program = program;
         this.isStrict = this.options.alwaysStrict || (this.options.strict && this.options.alwaysStrict !== false) ||
                         (this.isModule && this.options.target && this.options.target >= ts.ScriptTarget.ES2015);
 
@@ -3107,7 +3110,7 @@ export class LuaTransformer {
         }
 
         const expressionType = this.checker.getTypeAtLocation(node.expression);
-        if (expressionType.symbol && expressionType.symbol.escapedName === "SymbolConstructor") {
+        if (tsHelper.isStandardLibraryType(expressionType, "SymbolConstructor", this.program)) {
             return this.transformLuaLibFunction(LuaLibFeature.Symbol, node, ...parameters);
         }
 
@@ -3126,11 +3129,15 @@ export class LuaTransformer {
         // If the function being called is of type owner.func, get the type of owner
         const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "Math") {
+        if (tsHelper.isStandardLibraryType(ownerType, "Math", this.program)) {
             return this.transformMathCallExpression(node);
         }
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "StringConstructor") {
+        if (tsHelper.isStandardLibraryType(ownerType, "Console", this.program)) {
+            return this.transformConsoleCallExpression(node);
+        }
+
+        if (tsHelper.isStandardLibraryType(ownerType, "StringConstructor", this.program)) {
             return tstl.createCallExpression(
                 this.transformStringExpression(node.expression.name),
                 this.transformArguments(node.arguments),
@@ -3138,15 +3145,11 @@ export class LuaTransformer {
             );
         }
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "ObjectConstructor") {
+        if (tsHelper.isStandardLibraryType(ownerType, "ObjectConstructor", this.program)) {
             return this.transformObjectCallExpression(node);
         }
 
-        if (ownerType.symbol && ownerType.symbol.escapedName === "Console") {
-            return this.transformConsoleCallExpression(node);
-        }
-
-        if (ownerType.symbol && ownerType.symbol.escapedName === "SymbolConstructor") {
+        if (tsHelper.isStandardLibraryType(ownerType, "SymbolConstructor", this.program)) {
             return this.transformSymbolCallExpression(node);
         }
 
@@ -3311,9 +3314,11 @@ export class LuaTransformer {
 
         // Catch math expressions
         if (ts.isIdentifier(node.expression)) {
-            if (node.expression.escapedText === "Math") {
+            const ownerType = this.checker.getTypeAtLocation(node.expression);
+
+            if (tsHelper.isStandardLibraryType(ownerType, "Math", this.program)) {
                 return this.transformMathExpression(node.name);
-            } else if (node.expression.escapedText === "Symbol") {
+            } else if (tsHelper.isStandardLibraryType(ownerType, "Symbol", this.program)) {
                 // Pull in Symbol lib
                 this.importLuaLibFeature(LuaLibFeature.Symbol);
             }

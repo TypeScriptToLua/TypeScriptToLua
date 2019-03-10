@@ -494,24 +494,6 @@ export class LuaTransformer {
             }
         }
 
-        // Add static declarations
-        for (const field of staticFields) {
-            const fieldName = this.transformPropertyName(field.name);
-            const value = this.transformExpression(field.initializer);
-
-            const classField = tstl.createTableIndexExpression(
-                    this.addExportToIdentifier(tstl.cloneIdentifier(className)),
-                    fieldName
-                );
-
-            const fieldAssign = tstl.createAssignmentStatement(
-                classField,
-                value
-            );
-
-            result.push(fieldAssign);
-        }
-
         // Find first constructor with body
         if (!isExtension && !isMetaExtension) {
             const constructor = statement.members
@@ -572,6 +554,24 @@ export class LuaTransformer {
         statement.members.filter(ts.isMethodDeclaration).forEach(method => {
             result.push(this.transformMethodDeclaration(method, className, isExtension || isMetaExtension));
         });
+
+        // Add static declarations
+        for (const field of staticFields) {
+            const fieldName = this.transformPropertyName(field.name);
+            const value = this.transformExpression(field.initializer);
+
+            const classField = tstl.createTableIndexExpression(
+                    this.addExportToIdentifier(tstl.cloneIdentifier(className)),
+                    fieldName
+                );
+
+            const fieldAssign = tstl.createAssignmentStatement(
+                classField,
+                value
+            );
+
+            result.push(fieldAssign);
+        }
 
         this.classStack.pop();
 

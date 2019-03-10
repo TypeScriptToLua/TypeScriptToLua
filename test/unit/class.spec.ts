@@ -805,4 +805,15 @@ export class ClassTests {
             "Cannot construct classes with decorator '@extension' or '@metaExtension'."
         );
     }
+
+    @Test("Class static instance of self")
+    public classStaticInstanceOfSelf(): void {
+        const code =
+            `class Foo {
+                bar = "foobar";
+                static instance = new Foo();
+            }
+            return Foo.instance.bar;`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
 }

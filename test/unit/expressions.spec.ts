@@ -114,10 +114,10 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = bit.bxor(a, b);")
     @TestCase("a<<b", "bit.lshift(a, b);")
     @TestCase("a<<=b", "a = bit.lshift(a, b);")
-    @TestCase("a>>b", "bit.rshift(a, b);")
-    @TestCase("a>>=b", "a = bit.rshift(a, b);")
-    @TestCase("a>>>b", "bit.arshift(a, b);")
-    @TestCase("a>>>=b", "a = bit.arshift(a, b);")
+    @TestCase("a>>b", "bit.arshift(a, b);")
+    @TestCase("a>>=b", "a = bit.arshift(a, b);")
+    @TestCase("a>>>b", "bit.rshift(a, b);")
+    @TestCase("a>>>=b", "a = bit.rshift(a, b);")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
@@ -133,10 +133,10 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = bit32.bxor(a, b);")
     @TestCase("a<<b", "bit32.lshift(a, b);")
     @TestCase("a<<=b", "a = bit32.lshift(a, b);")
-    @TestCase("a>>b", "bit32.rshift(a, b);")
-    @TestCase("a>>=b", "a = bit32.rshift(a, b);")
-    @TestCase("a>>>b", "bit32.arshift(a, b);")
-    @TestCase("a>>>=b", "a = bit32.arshift(a, b);")
+    @TestCase("a>>b", "bit32.arshift(a, b);")
+    @TestCase("a>>=b", "a = bit32.arshift(a, b);")
+    @TestCase("a>>>b", "bit32.rshift(a, b);")
+    @TestCase("a>>>=b", "a = bit32.rshift(a, b);")
     @Test("Bitop [5.2]")
     public bitOperatorOverride52(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None };

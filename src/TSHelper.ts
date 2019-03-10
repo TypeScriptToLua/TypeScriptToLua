@@ -285,9 +285,9 @@ export class TSHelper {
             case ts.SyntaxKind.LessThanLessThanEqualsToken:
                 return [true, tstl.SyntaxKind.BitwiseLeftShiftOperator];
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
-            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
                 return [true, tstl.SyntaxKind.BitwiseArithmeticRightShift];
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
+                return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
         }
 
         return [false, undefined];

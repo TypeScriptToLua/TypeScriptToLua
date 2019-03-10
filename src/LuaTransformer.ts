@@ -2364,9 +2364,9 @@ export class LuaTransformer {
             case ts.SyntaxKind.LessThanLessThanToken:
                 return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseLeftShiftOperator);
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseRightShiftOperator);
-            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseArithmeticRightShift);
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseRightShiftOperator);
             case ts.SyntaxKind.AmpersandAmpersandToken:
                 return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.AndOperator);
             case ts.SyntaxKind.BarBarToken:
@@ -2812,7 +2812,7 @@ export class LuaTransformer {
                 return this.transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
             default:
-                if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {
+                if (operator === tstl.SyntaxKind.BitwiseRightShiftOperator) {
                     throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);
                 }
                 return tstl.createBinaryExpression(left, right, operator, node);

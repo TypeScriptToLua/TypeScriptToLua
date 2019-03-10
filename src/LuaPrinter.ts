@@ -30,8 +30,8 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseAndOperator]: "&",
         [tstl.SyntaxKind.BitwiseOrOperator]: "|",
         [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
-        [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>",
-        [tstl.SyntaxKind.BitwiseArithmeticRightShift]: ">>>",
+        [tstl.SyntaxKind.BitwiseArithmeticRightShift]: ">>",
+        [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>>",
         [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };

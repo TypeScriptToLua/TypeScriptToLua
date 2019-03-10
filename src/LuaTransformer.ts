@@ -2666,11 +2666,8 @@ export class LuaTransformer {
     }
 
     public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
-        const className = expression.name !== undefined
-            ? this.transformIdentifier(expression.name)
-            : tstl.createAnnonymousIdentifier();
-
-        const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression);
+        const className = tstl.createAnnonymousIdentifier();
+        const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
         return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
     }
 

@@ -394,7 +394,7 @@ export class LuaTransformer {
 
         let className = statement.name
             ? this.transformIdentifier(statement.name)
-            : tstl.createIdentifier("____");
+            : tstl.createAnnonymousIdentifier();
 
         if (!className) {
             throw TSTLErrors.MissingClassName(statement);
@@ -2667,7 +2667,7 @@ export class LuaTransformer {
     public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
         const className = expression.name !== undefined
             ? this.transformIdentifier(expression.name)
-            : tstl.createIdentifier("____");
+            : tstl.createAnnonymousIdentifier();
 
         const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression);
         return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);

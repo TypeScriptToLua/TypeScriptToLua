@@ -935,6 +935,19 @@ export class AssignmentTests {
         Expect(util.transpileAndExecute(code, undefined, undefined, header, false)).toBe("foo");
     }
 
+    @TestCase("(this: void, s: string) => string")
+    @TestCase("(this: any, s: string) => string")
+    @TestCase("(s: string) => string")
+    @Test("Function expression type inference in binary operator")
+    public functionExpressionTypeInferenceInBinaryOp(funcType: string): void {
+        const header = `declare const undefinedFunc: ${funcType};`;
+        const code =
+            `let func: ${funcType} = s => s;
+            func = undefinedFunc || (s => s);
+            return func("foo");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
+    }
+
     @TestCase("s => s")
     @TestCase("(s => s)")
     @TestCase("function(s) { return s; }")

@@ -250,7 +250,7 @@ export class ExpressionTests {
     @TestCase("(inst.field + 3) & 3", (8 + 3) & 3)
     @TestCase("inst.field | 3", 8 | 3)
     @TestCase("inst.field << 3", 8 << 3)
-    @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase("inst.field >>> 1", 8 >> 1)
     @TestCase("inst.field = 3", 3)
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
@@ -279,7 +279,7 @@ export class ExpressionTests {
     @TestCase("&= 3", (4 & 3) + 4)
     @TestCase("|= 3", (4 | 3) + 4)
     @TestCase("<<= 3", (4 << 3) + 4)
-    @TestCase(">>= 3", (4 >> 3) + 4)
+    @TestCase(">>>= 3", (4 >> 3) + 4)
     @Test("Set accessorExpression")
     public setAccessorBinary(expression: string, expected: any): void {
         const source = `class MyClass {`

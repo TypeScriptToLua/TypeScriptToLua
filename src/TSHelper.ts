@@ -509,11 +509,14 @@ export class TSHelper {
             // Expression assigned to declaration
             return checker.getTypeAtLocation(expression.parent.name);
 
-        } else if (ts.isBinaryExpression(expression.parent)
-            && expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken)
-        {
-            // Expression assigned to variable
-            return checker.getTypeAtLocation(expression.parent.left);
+        } else if (ts.isBinaryExpression(expression.parent)) {
+            if (expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+                // Expression assigned to variable
+                return checker.getTypeAtLocation(expression.parent.left);
+            } else {
+                // Other binary expressions
+                return TSHelper.inferAssignedType(expression.parent, checker);
+            }
 
         } else if (ts.isAssertionExpression(expression.parent)) {
             // Expression being cast

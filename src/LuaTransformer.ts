@@ -387,13 +387,15 @@ export class LuaTransformer {
     }
 
     public transformClassDeclaration(
-        statement: ts.ClassLikeDeclaration,
-        nameOverride?: tstl.Identifier
+        statement: ts.ClassLikeDeclaration
     ): tstl.Statement[]
     {
         this.classStack.push(statement);
 
-        let className = statement.name ? this.transformIdentifier(statement.name) : nameOverride;
+        let className = statement.name
+            ? this.transformIdentifier(statement.name)
+            : tstl.createIdentifier("____");
+
         if (!className) {
             throw TSTLErrors.MissingClassName(statement);
         }
@@ -2305,9 +2307,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.NotEmittedStatement:
                 return undefined;
             case ts.SyntaxKind.ClassExpression:
-                const className = tstl.createIdentifier("____");
-                const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
-                return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
+                return this.transformClassExpression(expression as ts.ClassExpression);
             case ts.SyntaxKind.PartiallyEmittedExpression:
                 return this.transformExpression((expression as ts.PartiallyEmittedExpression).expression);
             default:
@@ -2662,6 +2662,15 @@ export class LuaTransformer {
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
             return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, lhs.parent);
         }
+    }
+
+    public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
+        const className = expression.name !== undefined
+            ? this.transformIdentifier(expression.name)
+            : tstl.createIdentifier("____");
+
+        const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression);
+        return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
     }
 
     public transformCompoundAssignmentStatement(

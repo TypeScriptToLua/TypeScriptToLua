@@ -3978,8 +3978,23 @@ export class LuaTransformer {
             const value = Number(propertyName.text);
             return tstl.createNumericLiteral(value, propertyName);
         } else {
-            return tstl.createStringLiteral(this.transformIdentifier(propertyName).text);
+            return tstl.createStringLiteral(this.getIdentifierText(propertyName));
         }
+    }
+
+    public getIdentifierText(identifier: ts.Identifier): string {
+        let escapedText = identifier.escapedText as string;
+        const underScoreCharCode = "_".charCodeAt(0);
+        if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
+            escapedText.charCodeAt(1) === underScoreCharCode && escapedText.charCodeAt(2) === underScoreCharCode) {
+            escapedText = escapedText.substr(1);
+        }
+
+        if (this.luaKeywords.has(escapedText)) {
+            throw TSTLErrors.KeywordIdentifier(identifier);
+        }
+
+        return escapedText;
     }
 
     public transformIdentifier(expression: ts.Identifier): tstl.Identifier {
@@ -3990,17 +4005,7 @@ export class LuaTransformer {
                                                   // at some point.
         }
 
-        let escapedText = expression.escapedText as string;
-        const underScoreCharCode = "_".charCodeAt(0);
-        if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
-            escapedText.charCodeAt(1) === underScoreCharCode && escapedText.charCodeAt(2) === underScoreCharCode) {
-            escapedText = escapedText.substr(1);
-        }
-
-        if (this.luaKeywords.has(escapedText)) {
-            throw TSTLErrors.KeywordIdentifier(expression);
-        }
-
+        const escapedText = this.getIdentifierText(expression);
         const symbolId = this.getIdentifierSymbolId(expression);
         return tstl.createIdentifier(escapedText, expression, symbolId);
     }

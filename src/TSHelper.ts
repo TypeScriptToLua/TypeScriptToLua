@@ -574,12 +574,7 @@ export class TSHelper {
     public static hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeChecker): boolean {
         const scopeDeclaration = TSHelper.findFirstNodeAbove(
             declaration,
-            (n): n is ts.SourceFile | ts.ModuleDeclaration | ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
-                ts.isSourceFile(n)
-                || ts.isModuleDeclaration(n)
-                || ts.isClassDeclaration(n)
-                || ts.isClassExpression(n)
-                || ts.isInterfaceDeclaration(n)
+            (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n)
         );
         if (!scopeDeclaration) {
             return false;
@@ -591,10 +586,7 @@ export class TSHelper {
         if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
             return true;
         }
-        if (ts.isModuleDeclaration(scopeDeclaration)) {
-            return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker); // Recurse namespaces
-        }
-        return false;
+        return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker);
     }
 
     public static getDeclarationContextType(
@@ -610,6 +602,29 @@ export class TSHelper {
                 : ContextType.NonVoid;
         }
 
+        if (ts.isMethodSignature(signatureDeclaration)
+            || ts.isMethodDeclaration(signatureDeclaration)
+            || ts.isConstructSignatureDeclaration(signatureDeclaration)
+            || ts.isConstructorDeclaration(signatureDeclaration)
+            || (signatureDeclaration.parent && ts.isPropertyDeclaration(signatureDeclaration.parent))
+            || (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent)))
+        {
+            // Class/interface methods only respect @noSelf on their parent
+            const scopeDeclaration = TSHelper.findFirstNodeAbove(
+                signatureDeclaration,
+                (n): n is ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
+                    ts.isClassDeclaration(n)
+                    || ts.isClassExpression(n)
+                    || ts.isInterfaceDeclaration(n)
+            );
+            const scopeType = checker.getTypeAtLocation(scopeDeclaration);
+            if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+                return ContextType.Void;
+            }
+            return ContextType.NonVoid;
+        }
+
+        // Walk up to find @noSelf or @noSelfOnFile
         if (TSHelper.hasNoSelfAncestor(signatureDeclaration, checker)) {
             return ContextType.Void;
         }

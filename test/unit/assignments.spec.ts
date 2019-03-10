@@ -133,6 +133,13 @@ const selfTestFunctions: TestFunction[] = [
                 method: function(s: string): string { return s; }
             };`,
     },
+    {
+        value: "anonFunctionNestedInNoSelfClass",
+        definition: `/** @noSelf */ class AnonFunctionNestedInNoSelfClass {
+            method() { return function(s: string) { return s; } }
+        }
+        const anonFunctionNestedInNoSelfClass = (new AnonFunctionNestedInNoSelfClass).method();`,
+    },
 ];
 
 const noSelfTestFunctions: TestFunction[] = [
@@ -253,6 +260,16 @@ const noSelfTestFunctions: TestFunction[] = [
             }
             const noSelfMethodClassExpression = new NoSelfMethodClassExpression();`,
     },
+    {
+        value: "anonFunctionNestedInClassInNoSelfNs",
+        definition: `/** @noSelf */ namespace AnonFunctionNestedInClassInNoSelfNs {
+            export class AnonFunctionNestedInClass {
+                method() { return function(s: string) { return s; } }
+            }
+        }
+        const anonFunctionNestedInClassInNoSelfNs =
+            (new AnonFunctionNestedInClassInNoSelfNs.AnonFunctionNestedInClass).method();`,
+    },
 ];
 
 const noSelfInFileTestFunctions: TestFunction[] = [
@@ -275,6 +292,13 @@ const noSelfInFileTestFunctions: TestFunction[] = [
         definition: `/** @noSelfInFile */ namespace NoSelfInFileLambdaNs {
                 export let noSelfInFileNsLambda: (s: string) => string = s => s;
             }`,
+    },
+    {
+        value: "noSelfInFileFuncNestedInClass",
+        definition: `/** @noSelfInFile */ class NoSelfInFileFuncNestedInClass {
+            method() { return function(s: string) { return s; } }
+        }
+        const noSelfInFileFuncNestedInClass = (new NoSelfInFileFuncNestedInClass).method();`,
     },
 ];
 
@@ -305,26 +329,26 @@ type TestFunctionCast = [
     /*isSelfConversion?: */boolean?
 ];
 const validTestFunctionCasts: TestFunctionCast[] = [
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `<${anonTestFunctionType}>(${f.value})`]),
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${anonTestFunctionType})`]),
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `<${selfTestFunctionType}>(${f.value})`]),
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${selfTestFunctionType})`]),
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `<${noSelfTestFunctionType}>(${f.value})`]),
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${noSelfTestFunctionType})`]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `<${anonTestFunctionType}>(${f.value})`, false]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${anonTestFunctionType})`, false]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `<${noSelfTestFunctionType}>(${f.value})`]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${noSelfTestFunctionType})`]),
+    [selfTestFunctions[0], `<${anonTestFunctionType}>(${selfTestFunctions[0].value})`],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${anonTestFunctionType})`],
+    [selfTestFunctions[0], `<${selfTestFunctionType}>(${selfTestFunctions[0].value})`],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${selfTestFunctionType})`],
+    [noSelfTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfTestFunctions[0].value})`],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
+    [noSelfInFileTestFunctions[0], `<${anonTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${anonTestFunctionType})`],
+    [noSelfInFileTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
 ];
 const invalidTestFunctionCasts: TestFunctionCast[] = [
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `<${anonTestFunctionType}>(${f.value})`, false]),
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${anonTestFunctionType})`, false]),
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `<${selfTestFunctionType}>(${f.value})`, false]),
-    ...noSelfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${selfTestFunctionType})`, false]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `<${selfTestFunctionType}>(${f.value})`, false]),
-    ...noSelfInFileTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${selfTestFunctionType})`, false]),
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `<${noSelfTestFunctionType}>(${f.value})`, true]),
-    ...selfTestFunctions.map((f): TestFunctionCast => [f, `(${f.value}) as (${noSelfTestFunctionType})`, true]),
+    [noSelfTestFunctions[0], `<${anonTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${anonTestFunctionType})`, false],
+    [noSelfTestFunctions[0], `<${selfTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
+    [noSelfInFileTestFunctions[0], `<${selfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`, false],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
+    [selfTestFunctions[0], `<${noSelfTestFunctionType}>(${selfTestFunctions[0].value})`, true],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${noSelfTestFunctionType})`, true],
 ];
 
 type TestFunctionAssignment = [
@@ -892,6 +916,23 @@ export class AssignmentTests {
             TranspileError,
             TSTLErrors.UnsupportedOverloadAssignment(undefined).message
         );
+    }
+
+    @TestCase("noSelf")
+    @TestCase("noSelfInFile")
+    @Test("noSelf function method argument")
+    public noSelfFunctionMethodArgument(noSelfTag: string): void {
+        const header =
+            `/** @${noSelfTag} */ namespace NS {
+                export class C {
+                    method(fn: (s: string) => string) { return fn("foo"); }
+                }
+            }
+            function foo(this: void, s: string) { return s; }`;
+        const code =
+            `const c = new NS.C();
+            return c.method(foo);`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header, false)).toBe("foo");
     }
 
     @TestCase("s => s")

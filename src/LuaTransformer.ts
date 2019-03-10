@@ -387,18 +387,19 @@ export class LuaTransformer {
     }
 
     public transformClassDeclaration(
-        statement: ts.ClassLikeDeclaration
+        statement: ts.ClassLikeDeclaration,
+        nameOverride?: tstl.Identifier
     ): tstl.Statement[]
     {
         this.classStack.push(statement);
 
-        let className = statement.name
-            ? this.transformIdentifier(statement.name)
-            : tstl.createAnnonymousIdentifier();
-
-        if (!className) {
+        if (statement.name === undefined && nameOverride === undefined) {
             throw TSTLErrors.MissingClassName(statement);
         }
+
+        let className = nameOverride !== undefined
+            ? nameOverride
+            : this.transformIdentifier(statement.name);
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(statement), this.checker);
 
@@ -2821,8 +2822,9 @@ export class LuaTransformer {
                 return this.transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
             default:
-                if (operator === tstl.SyntaxKind.BitwiseRightShiftOperator) {
-                    throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);
+                if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {
+                    throw TSTLErrors.UnsupportedForTarget("Bitwise >> operator (use >>> instead)",
+                        this.options.luaTarget, node);
                 }
                 return tstl.createBinaryExpression(left, right, operator, node);
         }

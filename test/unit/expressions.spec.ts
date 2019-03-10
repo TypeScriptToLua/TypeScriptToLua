@@ -152,20 +152,21 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = a ~ b;")
     @TestCase("a<<b", "a << b;")
     @TestCase("a<<=b", "a = a << b;")
-    @TestCase("a>>b", "a >> b;")
-    @TestCase("a>>=b", "a = a >> b;")
+    @TestCase("a>>>b", "a >> b;")
+    @TestCase("a>>>=b", "a = a >> b;")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None };
         Expect(util.transpileString(input, options)).toBe(lua);
     }
 
-    @TestCase("a>>>b")
-    @TestCase("a>>>=b")
+    @TestCase("a>>b")
+    @TestCase("a>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
         Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
-            .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
+            .toThrowError(TranspileError,
+                "Bitwise >> operator (use >>> instead) is/are not supported for target Lua 5.3.");
     }
 
     @TestCase("1+1", "1 + 1;")

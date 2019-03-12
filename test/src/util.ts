@@ -15,12 +15,13 @@ export function transpileString(
     str: string,
     options?: CompilerOptions,
     ignoreDiagnostics = true,
-    filePath = "file.ts"): string {
+    filePath = "file.ts",
+    extraFiles?: { [filename: string]: string }): string {
     if (options) {
         if (options.noHeader === undefined) {
             options.noHeader = true;
         }
-        return compilerTranspileString(str, options, ignoreDiagnostics, filePath);
+        return compilerTranspileString(str, options, ignoreDiagnostics, filePath, extraFiles);
     } else {
         return compilerTranspileString(
             str,
@@ -31,7 +32,8 @@ export function transpileString(
                 noHeader: true,
             },
             ignoreDiagnostics,
-            filePath
+            filePath,
+            extraFiles
         );
     }
 }

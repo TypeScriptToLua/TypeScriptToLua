@@ -89,7 +89,10 @@ const defaultCompilerOptions: CompilerOptions = {
 };
 
 export function createStringCompilerProgram(
-    input: string, options: CompilerOptions = defaultCompilerOptions, filePath = "file.ts"): ts.Program {
+    input: string,
+    options: CompilerOptions = defaultCompilerOptions,
+    filePath = "file.ts",
+    extraFiles?: { [filename: string]: string }): ts.Program {
     const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -102,6 +105,9 @@ export function createStringCompilerProgram(
         getSourceFile: (filename: string) => {
             if (filename === filePath) {
                 return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
+            }
+            if (extraFiles && filename in extraFiles) {
+                return ts.createSourceFile(filename, extraFiles[filename], ts.ScriptTarget.Latest, false);
             }
             if (filename.indexOf(".d.ts") !== -1) {
                 if (!libCache[filename]) {
@@ -125,16 +131,21 @@ export function createStringCompilerProgram(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    return ts.createProgram([filePath], options, compilerHost);
+    const filePaths = [filePath];
+    if (extraFiles) {
+        filePaths.push(...Object.keys(extraFiles));
+    }
+    return ts.createProgram(filePaths, options, compilerHost);
 }
 
 export function transpileString(
     str: string,
     options: CompilerOptions = defaultCompilerOptions,
     ignoreDiagnostics = false,
-    filePath = "file.ts"
+    filePath = "file.ts",
+    extraFiles?: { [filename: string]: string }
 ): string {
-    const program = createStringCompilerProgram(str, options, filePath);
+    const program = createStringCompilerProgram(str, options, filePath, extraFiles);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);

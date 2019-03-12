@@ -297,7 +297,7 @@ export class TSHelper {
         return node.parent === undefined || ts.isExpressionStatement(node.parent) || ts.isForStatement(node.parent);
     }
 
-    public static isInGlobalScope(node: ts.FunctionDeclaration): boolean {
+    public static isInGlobalScope(node: ts.Node): boolean {
         let parent = node.parent;
         while (parent !== undefined) {
             if (ts.isBlock(parent)) {
@@ -436,7 +436,7 @@ export class TSHelper {
             // Ignore expressions wrapped in parenthesis
             return this.inferAssignedType(expression.parent, checker);
 
-        } else if (ts.isCallExpression(expression.parent)) {
+        } else if (ts.isCallOrNewExpression(expression.parent)) {
             // Expression being passed as argument to a function
             const argumentIndex = expression.parent.arguments.indexOf(expression);
             if (argumentIndex >= 0) {
@@ -484,7 +484,10 @@ export class TSHelper {
             const objType = this.inferAssignedType(expression.parent.parent, checker);
             const property = objType.getProperty(expression.parent.name.getText());
             if (!property) {
-                return objType.getStringIndexType();
+                const stringPropertyType = objType.getStringIndexType();
+                if (stringPropertyType) {
+                    return stringPropertyType;
+                }
             } else {
                 return checker.getTypeAtLocation(property.valueDeclaration);
             }
@@ -506,14 +509,28 @@ export class TSHelper {
             // Expression assigned to declaration
             return checker.getTypeAtLocation(expression.parent.name);
 
-        } else if (ts.isBinaryExpression(expression.parent)
-            && expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken)
-        {
-            // Expression assigned to variable
-            return checker.getTypeAtLocation(expression.parent.left);
+        } else if (ts.isBinaryExpression(expression.parent)) {
+            if (expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+                // Expression assigned to variable
+                return checker.getTypeAtLocation(expression.parent.left);
+            } else {
+                // Other binary expressions
+                return TSHelper.inferAssignedType(expression.parent, checker);
+            }
+
+        } else if (ts.isAssertionExpression(expression.parent)) {
+            // Expression being cast
+            return checker.getTypeFromTypeNode(expression.parent.type);
         }
 
         return checker.getTypeAtLocation(expression);
+    }
+
+    public static getAllCallSignatures(type: ts.Type): ReadonlyArray<ts.Signature> {
+        if (type.isUnion()) {
+            return type.types.map(t => TSHelper.getAllCallSignatures(t)).reduce((a, b) => a.concat(b));
+        }
+        return type.getCallSignatures();
     }
 
     public static getSignatureDeclarations(
@@ -530,7 +547,7 @@ export class TSHelper {
                 // Infer type of function expressions/arrow functions
                 const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
-                    const inferredSignatures = inferredType.getCallSignatures();
+                    const inferredSignatures = TSHelper.getAllCallSignatures(inferredType);
                     if (inferredSignatures.length > 0) {
                         signatureDeclarations.push(...inferredSignatures.map(s => s.getDeclaration()));
                         continue;
@@ -682,6 +699,20 @@ export class TSHelper {
         }
         const firstDeclaration = this.getFirstDeclaration(symbol);
         return firstDeclaration === node;
+    }
+
+    public static isStandardLibraryDeclaration(declaration: ts.Declaration, program: ts.Program): boolean {
+        const source = declaration.getSourceFile();
+        if (!source) { return false; }
+        return program.isSourceFileDefaultLibrary(source);
+    }
+
+    public static isStandardLibraryType(type: ts.Type, name: string, program: ts.Program): boolean {
+        const symbol = type.symbol;
+        if (!symbol || symbol.escapedName !== name) { return false; }
+        const declaration = symbol.valueDeclaration;
+        if(!declaration) { return true; } // assume to be lib function if no valueDeclaration exists
+        return this.isStandardLibraryDeclaration(declaration, program);
     }
 
     public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {

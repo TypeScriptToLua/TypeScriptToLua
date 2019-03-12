@@ -837,6 +837,19 @@ export class AssignmentTests {
             + "Overloads should either be all functions or all methods, but not both.");
     }
 
+    @TestCase("(this: void, s: string) => string")
+    @TestCase("(this: any, s: string) => string")
+    @TestCase("(s: string) => string")
+    @Test("Function expression type inference in binary operator")
+    public functionExpressionTypeInferenceInBinaryOp(funcType: string): void {
+        const header = `declare const undefinedFunc: ${funcType};`;
+        const code =
+            `let func: ${funcType} = s => s;
+            func = undefinedFunc || (s => s);
+            return func("foo");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
+    }
+
     @TestCase("s => s")
     @TestCase("(s => s)")
     @TestCase("function(s) { return s; }")
@@ -872,6 +885,14 @@ export class AssignmentTests {
             }
             ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
             return foo.method("foo") + foo.func("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @Test("Function expression type inference in object literal assigned to narrower type")
+    public functionEXpressionTypeInferenceInObjectLiteralAssignedToNarrowerType(): void {
+        const code =
+            `let foo: {} = {bar: s => s};
+            return (foo as {bar: (a: any) => any}).bar("foobar");`;
         Expect(util.transpileAndExecute(code)).toBe("foobar");
     }
 
@@ -962,6 +983,68 @@ export class AssignmentTests {
             ${assignTo} = [${funcExp}];
             const foo: Foo = {method: ${method}};
             return foo.method("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in union")
+    public functionExpressionTypeInferenceInUnion(funcType: string, funcExp: string): void {
+        const code =
+            `type U = string | number | (${funcType});
+            const u: U = ${funcExp};
+            return (u as ${funcType})("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in as cast")
+    public functionExpressionTypeInferenceInAsCast(funcType: string, funcExp: string): void {
+        const code =
+            `const fn: ${funcType} = (${funcExp}) as (${funcType});
+            return fn("foo");`;
+            console.log(code);
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in type assertion")
+    public functionExpressionTypeInferenceInTypeAssert(funcType: string, funcExp: string): void {
+        const code =
+            `const fn: ${funcType} = <${funcType}>(${funcExp});
+            return fn("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in constructor")
+    public functionExpresssionTypeInferenceInConstructor(funcType: string, funcExp: string): void {
+        const code =
+            `class C {
+                result: string;
+                constructor(fn: (s: string) => string) { this.result = fn("foo"); }
+            }
+            const c = new C(s => s);
+            return c.result;`;
         Expect(util.transpileAndExecute(code)).toBe("foo");
     }
 

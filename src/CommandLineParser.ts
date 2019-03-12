@@ -157,19 +157,55 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
         }
 
         const configPath = options.project;
-        const configContents = fs.readFileSync(configPath).toString();
-        const configJson = ts.parseConfigFileTextToJson(configPath, configContents);
-        const parsedJsonConfig = ts.parseJsonConfigFileContent(
-            configJson.config,
-            ts.sys,
-            path.dirname(configPath),
-            options
-        );
+        const parsedJsonConfig = parseTsConfigFile(configPath, options);
 
-        for (const key in parsedJsonConfig.raw) {
+        return parsedJsonConfig;
+    }
+    return { isValid: true, result: parsedCommandLine };
+}
+
+export function parseTsConfigFile(filePath: string, existingOptions?: ts.CompilerOptions): CLIParseResult {
+    const configContents = fs.readFileSync(filePath).toString();
+    return parseTsConfigString(configContents, filePath, existingOptions);
+}
+
+export function parseTsConfigString(
+    tsConfigString: string,
+    configPath: string,
+    existingOptions?: ts.CompilerOptions
+): CLIParseResult {
+    const configJson = ts.parseConfigFileTextToJson(configPath, tsConfigString);
+    const parsedJsonConfig = ts.parseJsonConfigFileContent(
+        configJson.config,
+        ts.sys,
+        path.dirname(configPath),
+        existingOptions
+    );
+
+    for (const key in parsedJsonConfig.raw) {
+        const option = optionDeclarations[key];
+        if (option !== undefined) {
+            const value = readValue(parsedJsonConfig.raw[key], option.type, key);
+            if (option.choices) {
+                if (option.choices.indexOf(value) < 0) {
+                    return {
+                        isValid: false,
+                        errorMessage: `Unknown ${key} value '${value}'.\nAccepted values: ${option.choices}`,
+                    };
+                }
+            }
+            // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
+            //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
+            parsedJsonConfig.options[key] = value;
+        }
+    }
+
+    // Eventually we will only look for the tstl object for tstl options
+    if (parsedJsonConfig.raw.tstl) {
+        for (const key in parsedJsonConfig.raw.tstl) {
             const option = optionDeclarations[key];
             if (option !== undefined) {
-                const value = readValue(parsedJsonConfig.raw[key], option.type, key);
+                const value = readValue(parsedJsonConfig.raw.tstl[key], option.type, key);
                 if (option.choices) {
                     if (option.choices.indexOf(value) < 0) {
                         return {
@@ -182,9 +218,9 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
                 parsedJsonConfig.options[key] = value;
             }
         }
-        return { isValid: true, result: parsedJsonConfig };
     }
-    return { isValid: true, result: parsedCommandLine };
+
+    return { isValid: true, result: parsedJsonConfig };
 }
 
 function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CLIParseResult {
@@ -270,15 +306,15 @@ function getArgumentValue(
     return { isValid: true, result: value };
 }
 
-function readValue(valueString: string, valueType: string, parameterName: string): string | boolean {
+function readValue(value: string | boolean, valueType: string, parameterName: string): string | boolean {
     if (valueType === "boolean") {
-        return valueString === "true" || valueString === "t"
+        return value === true || value === "true" || value === "t"
             ? true
             : false;
     } else if (valueType === "enum") {
-        return valueString.toLowerCase();
+        return value.toString().toLowerCase();
     } else {
-        return valueString;
+        return value;
     }
 }
 

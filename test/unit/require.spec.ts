@@ -33,14 +33,20 @@ export class RequireTests {
         }
     }
 
-    @Test("modules do not have their require paths adjusted")
-    public testRequireModule(): void {
+    @TestCase("", "src.fake")
+    @TestCase("/** @noResolution */", "fake")
+    @Test("noResolution on ambient modules causes no path alterations")
+    public testRequireModule(comment: string, expectedPath: string): void {
         const regex = /require\("(.*?)"\)/;
         const lua = util.transpileString(`
             import * as fake from "fake";
-            declare module "fake" {}
-        `);
-        Expect(regex.exec(lua)[1]).toBe("fake");
+        `, undefined, true, "src/file.ts", {
+            "module.d.ts": `
+                ${comment}
+                declare module "fake" {}
+            `,
+        });
+        Expect(regex.exec(lua)[1]).toBe(expectedPath);
     }
 
 }

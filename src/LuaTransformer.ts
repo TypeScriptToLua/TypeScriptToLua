@@ -2073,13 +2073,13 @@ export class LuaTransformer {
         // Transpile body
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
-            // Arrays
-            return this.transformForOfArrayStatement(statement, body);
-
-        } else if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
+        if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
             // LuaIterators
             return this.transformForOfLuaIteratorStatement(statement, body);
+
+        } else if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
+            // Arrays
+            return this.transformForOfArrayStatement(statement, body);
 
         } else {
             // TS Iterables

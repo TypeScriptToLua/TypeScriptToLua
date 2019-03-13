@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, FocusTest } from "alsatian";
 import * as ts from "typescript";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
@@ -526,6 +526,27 @@ export class LuaLoopTests
         const code = `const arr = ["a", "b", "c"];
             /** @luaIterator */
             interface Iter extends Iterable<string> {}
+            function luaIter(): Iter {
+                let i = 0;
+                return (() => arr[i++]) as any;
+            }
+            let result = "";
+            for (let e of luaIter()) { result += e; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("abc");
+    }
+
+    @Test("forof array lua iterator")
+    public forofArrayLuaIterator(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            interface Iter extends Array<string> {}
             function luaIter(): Iter {
                 let i = 0;
                 return (() => arr[i++]) as any;

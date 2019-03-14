@@ -4,6 +4,7 @@ import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 export class ExpressionTests {
 
@@ -165,8 +166,11 @@ export class ExpressionTests {
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
         Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
-            .toThrowError(TranspileError,
-                "Bitwise >> operator (use >>> instead) is/are not supported for target Lua 5.3.");
+            .toThrowError(TranspileError, TSTLErrors.UnsupportedKind(
+                "Bitwise >> operator (use >>> instead)",
+                ts.SyntaxKind.GreaterThanGreaterThanToken,
+                undefined
+            ).message);
     }
 
     @TestCase("1+1", "1 + 1;")

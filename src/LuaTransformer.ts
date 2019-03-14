@@ -2554,15 +2554,6 @@ export class LuaTransformer {
         isPostfix: boolean
     ): tstl.CallExpression
     {
-        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
-            // Check is we need to use string concat operator
-            const typeLeft = this.checker.getTypeAtLocation(lhs);
-            const typeRight = this.checker.getTypeAtLocation(rhs);
-            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                replacementOperator = tstl.SyntaxKind.ConcatOperator;
-            }
-        }
-
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         let right = this.transformExpression(rhs);
 
@@ -2686,6 +2677,16 @@ export class LuaTransformer {
                 return tstl.SyntaxKind.OrOperator;
             case ts.SyntaxKind.MinusToken:
                 return tstl.SyntaxKind.SubractionOperator;
+            case ts.SyntaxKind.PlusToken:
+                if (ts.isBinaryExpression(node)) {
+                    // Check is we need to use string concat operator
+                    const typeLeft = this.checker.getTypeAtLocation(node.left);
+                    const typeRight = this.checker.getTypeAtLocation(node.right);
+                    if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                        return tstl.SyntaxKind.ConcatOperator;
+                    }
+                }
+                return tstl.SyntaxKind.AdditionOperator;
             case ts.SyntaxKind.AsteriskToken:
                 return tstl.SyntaxKind.MultiplicationOperator;
             case ts.SyntaxKind.AsteriskAsteriskToken:
@@ -2726,15 +2727,6 @@ export class LuaTransformer {
         replacementOperator: ts.BinaryOperator
     ): tstl.Statement
     {
-        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
-            // Check is we need to use string concat operator
-            const typeLeft = this.checker.getTypeAtLocation(lhs);
-            const typeRight = this.checker.getTypeAtLocation(rhs);
-            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                replacementOperator = tstl.SyntaxKind.ConcatOperator;
-            }
-        }
-
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         const right = this.transformExpression(rhs);
 

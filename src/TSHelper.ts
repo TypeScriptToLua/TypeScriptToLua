@@ -275,13 +275,13 @@ export class TSHelper {
             case ts.SyntaxKind.SlashEqualsToken:
                 return [true, ts.SyntaxKind.SlashToken];
             case ts.SyntaxKind.PercentEqualsToken:
-                return [true, ts.SyntaxKind.PercentEqualsToken];
+                return [true, ts.SyntaxKind.PercentToken];
             case ts.SyntaxKind.AsteriskEqualsToken:
                 return [true, ts.SyntaxKind.AsteriskToken];
             case ts.SyntaxKind.AmpersandEqualsToken:
                 return [true, ts.SyntaxKind.AmpersandToken];
             case ts.SyntaxKind.AsteriskAsteriskEqualsToken:
-                return [true, ts.SyntaxKind.AsteriskEqualsToken];
+                return [true, ts.SyntaxKind.AsteriskToken];
             case ts.SyntaxKind.LessThanLessThanEqualsToken:
                 return [true, ts.SyntaxKind.LessThanLessThanToken];
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:

@@ -2331,15 +2331,6 @@ export class LuaTransformer {
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 return this.transformBinaryBitOperation(tsOriginal, left, right, operator);
-            case ts.SyntaxKind.PlusToken:
-                if (ts.isBinaryExpression(tsOriginal)) {
-                    // Replace string + with ..
-                    const typeLeft = this.checker.getTypeAtLocation(tsOriginal.left);
-                    const typeRight = this.checker.getTypeAtLocation(tsOriginal.right);
-                    if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                        return tstl.createBinaryExpression(left, right, tstl.SyntaxKind.ConcatOperator, tsOriginal);
-                    }
-                }
             default:
                 const luaOperator = this.transformBinaryOperator(operator, tsOriginal);
                 return tstl.createBinaryExpression(left, right, luaOperator, tsOriginal);
@@ -2646,22 +2637,10 @@ export class LuaTransformer {
             // Bitwise operators
             case ts.SyntaxKind.BarToken:
                 return tstl.SyntaxKind.BitwiseOrOperator;
-            case ts.SyntaxKind.PlusToken:
-                return tstl.SyntaxKind.AdditionOperator;
             case ts.SyntaxKind.CaretToken:
                 return tstl.SyntaxKind.BitwiseExclusiveOrOperator;
-            case ts.SyntaxKind.MinusToken:
-                return tstl.SyntaxKind.SubractionOperator;
-            case ts.SyntaxKind.SlashToken:
-                return tstl.SyntaxKind.DivisionOperator;
-            case ts.SyntaxKind.PercentToken:
-                return tstl.SyntaxKind.ModuloOperator;
-            case ts.SyntaxKind.AsteriskToken:
-                return tstl.SyntaxKind.MultiplicationOperator;
             case ts.SyntaxKind.AmpersandToken:
                 return tstl.SyntaxKind.BitwiseAndOperator;
-            case ts.SyntaxKind.AsteriskAsteriskToken:
-                return tstl.SyntaxKind.PowerOperator;
             case ts.SyntaxKind.LessThanLessThanToken:
                 return tstl.SyntaxKind.BitwiseLeftShiftOperator;
             case ts.SyntaxKind.GreaterThanGreaterThanToken:

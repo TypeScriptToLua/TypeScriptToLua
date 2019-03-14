@@ -318,14 +318,17 @@ export class LuaTransformer {
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
 
-        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-
         if (!statement.importClause) {
+            const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             result.push(tstl.createExpressionStatement(requireCall));
             return result;
         }
 
         const imports = statement.importClause.namedBindings;
+        const type = this.checker.getTypeAtLocation(imports);
+        const shouldResolve = !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution);
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
+
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
@@ -379,11 +382,12 @@ export class LuaTransformer {
         }
     }
 
-    private createModuleRequire(moduleSpecifier: ts.StringLiteral): tstl.CallExpression {
-        const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
-        const resolvedModuleSpecifier = tstl.createStringLiteral(this.getImportPath(importPath));
-
-        return tstl.createCallExpression(tstl.createIdentifier("require"), [resolvedModuleSpecifier]);
+    private createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
+        const modulePathString = resolveModule
+            ? this.getImportPath(moduleSpecifier.text.replace(new RegExp("\"", "g"), ""))
+            : moduleSpecifier.text;
+        const modulePath = tstl.createStringLiteral(modulePathString);
+        return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath]);
     }
 
     public transformClassDeclaration(

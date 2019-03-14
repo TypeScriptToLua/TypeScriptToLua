@@ -281,7 +281,7 @@ export class TSHelper {
             case ts.SyntaxKind.AmpersandEqualsToken:
                 return [true, ts.SyntaxKind.AmpersandToken];
             case ts.SyntaxKind.AsteriskAsteriskEqualsToken:
-                return [true, ts.SyntaxKind.AsteriskToken];
+                return [true, ts.SyntaxKind.AsteriskAsteriskToken];
             case ts.SyntaxKind.LessThanLessThanEqualsToken:
                 return [true, ts.SyntaxKind.LessThanLessThanToken];
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:

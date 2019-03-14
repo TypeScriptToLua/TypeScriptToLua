@@ -167,7 +167,7 @@ export class ExpressionTests {
     public bitOperatorOverride53Unsupported(input: string): void {
         Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
             .toThrowError(TranspileError, TSTLErrors.UnsupportedKind(
-                "Bitwise >> operator (use >>> instead)",
+                "right shift operator (use >>> instead)",
                 ts.SyntaxKind.GreaterThanGreaterThanToken,
                 undefined
             ).message);

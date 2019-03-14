@@ -2331,7 +2331,15 @@ export class LuaTransformer {
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 return this.transformBinaryBitOperation(tsOriginal, left, right, operator);
-
+            case ts.SyntaxKind.PlusToken:
+                if (ts.isBinaryExpression(tsOriginal)) {
+                    // Replace string + with ..
+                    const typeLeft = this.checker.getTypeAtLocation(tsOriginal.left);
+                    const typeRight = this.checker.getTypeAtLocation(tsOriginal.right);
+                    if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                        return tstl.createBinaryExpression(left, right, tstl.SyntaxKind.ConcatOperator, tsOriginal);
+                    }
+                }
             default:
                 const luaOperator = this.transformBinaryOperator(operator, tsOriginal);
                 return tstl.createBinaryExpression(left, right, luaOperator, tsOriginal);
@@ -2364,16 +2372,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 return this.transformBinaryBitOperation(expression, lhs, rhs, expression.operatorToken.kind);
-            case ts.SyntaxKind.PlusToken: {
-                // Replace string + with ..
-                const typeLeft = this.checker.getTypeAtLocation(expression.left);
-                const typeRight = this.checker.getTypeAtLocation(expression.right);
-                if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                    return tstl.createBinaryExpression(lhs, rhs, tstl.SyntaxKind.ConcatOperator, expression);
-                }
-
-                return this.transformBinaryOperation(lhs, rhs, expression.operatorToken.kind, expression);
-            }
+            case ts.SyntaxKind.PlusToken:
             case ts.SyntaxKind.AmpersandAmpersandToken:
             case ts.SyntaxKind.BarBarToken:
             case ts.SyntaxKind.MinusToken:
@@ -2389,8 +2388,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.EqualsEqualsEqualsToken:
             case ts.SyntaxKind.ExclamationEqualsToken:
             case ts.SyntaxKind.ExclamationEqualsEqualsToken:
-                const luaOperator = this.transformBinaryOperator(expression.operatorToken.kind, expression);
-                return tstl.createBinaryExpression(lhs, rhs, luaOperator, expression);
+                return this.transformBinaryOperation(lhs, rhs, expression.operatorToken.kind, expression);
             case ts.SyntaxKind.EqualsToken:
                 return this.transformAssignmentExpression(expression);
             case ts.SyntaxKind.InKeyword:
@@ -2596,7 +2594,7 @@ export class LuaTransformer {
             return this.createImmediatelyInvokedFunctionExpression(
                 [objAndIndexDeclaration, tmpDeclaration, assignStatement],
                 tmp,
-                lhs.parent
+                expression
             );
 
         } else if (isPostfix) {
@@ -2616,7 +2614,7 @@ export class LuaTransformer {
             return this.createImmediatelyInvokedFunctionExpression(
                 [tmpDeclaration, assignStatement],
                 tmpIdentifier,
-                lhs.parent
+                expression
             );
 
         } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
@@ -2625,21 +2623,21 @@ export class LuaTransformer {
             // ${left} = ____TS_tmp;
             // return ____TS_tmp
             const tmpIdentifier = tstl.createIdentifier("____TS_tmp");
-            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, lhs.parent);
+            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, expression);
             const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
             const assignStatement = this.transformAssignment(lhs, tmpIdentifier);
             return this.createImmediatelyInvokedFunctionExpression(
                 [tmpDeclaration, assignStatement],
                 tmpIdentifier,
-                lhs.parent
+                expression
             );
 
         } else {
             // Simple expressions
             // ${left} = ${right}; return ${right}
-            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, lhs.parent);
+            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, expression);
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
-            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, lhs.parent);
+            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, expression);
         }
     }
 

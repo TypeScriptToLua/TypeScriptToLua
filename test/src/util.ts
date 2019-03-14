@@ -12,16 +12,16 @@ import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
 export function transpileString(
-    str: string,
+    str: string | { [filename: string]: string },
     options?: CompilerOptions,
     ignoreDiagnostics = true,
-    filePath = "file.ts",
-    extraFiles?: { [filename: string]: string }): string {
+    filePath = "file.ts"
+): string {
     if (options) {
         if (options.noHeader === undefined) {
             options.noHeader = true;
         }
-        return compilerTranspileString(str, options, ignoreDiagnostics, filePath, extraFiles);
+        return compilerTranspileString(str, options, ignoreDiagnostics, filePath);
     } else {
         return compilerTranspileString(
             str,
@@ -32,8 +32,7 @@ export function transpileString(
                 noHeader: true,
             },
             ignoreDiagnostics,
-            filePath,
-            extraFiles
+            filePath
         );
     }
 }

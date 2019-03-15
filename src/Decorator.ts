@@ -13,6 +13,8 @@ export class Decorator {
                 return DecoratorKind.CustomConstructor;
             case "compilemembersonly":
                 return DecoratorKind.CompileMembersOnly;
+            case "noresolution":
+                return DecoratorKind.NoResolution;
             case "pureabstract":
                 return DecoratorKind.PureAbstract;
             case "phantom":
@@ -46,6 +48,7 @@ export enum DecoratorKind {
     MetaExtension = "MetaExtension",
     CustomConstructor = "CustomConstructor",
     CompileMembersOnly = "CompileMembersOnly",
+    NoResolution = "NoResolution",
     PureAbstract = "PureAbstract",
     Phantom = "Phantom",
     TupleReturn = "TupleReturn",

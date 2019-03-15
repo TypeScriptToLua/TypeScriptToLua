@@ -12,7 +12,7 @@ import * as fs from "fs";
 import { LuaTransformer } from "../../src/LuaTransformer";
 
 export function transpileString(
-    str: string,
+    str: string | { [filename: string]: string },
     options?: CompilerOptions,
     ignoreDiagnostics = true,
     filePath = "file.ts"

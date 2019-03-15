@@ -23,4 +23,12 @@ export class ObjectLiteralTests {
         const result = util.transpileAndExecute(`const x = ${input}; const o = {x}; return o.x;`);
         Expect(result).toBe(expected);
     }
+
+    @Test("undefined as object key")
+    public undefinedAsObjectKey(): void {
+        const code =
+            `const foo = {undefined: "foo"};
+            return foo.undefined;`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
 }

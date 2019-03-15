@@ -710,6 +710,22 @@ export class ClassTests {
         Expect(result).toBe("instance of b");
     }
 
+    @Test("Named Class Expression")
+    public namedClassExpression(): void {
+        const result = util.transpileAndExecute(
+            `const a = class MyClass {
+                public method() {
+                    return "foo";
+                }
+            }
+            let inst = new a();
+            return inst.method();`
+        );
+
+        // Assert
+        Expect(result).toBe("foo");
+    }
+
     @Test("classExpressionBaseClassMethod")
     public classExpressionBaseClassMethod(): void {
         const result = util.transpileAndExecute(
@@ -804,5 +820,16 @@ export class ClassTests {
             TranspileError,
             "Cannot construct classes with decorator '@extension' or '@metaExtension'."
         );
+    }
+
+    @Test("Class static instance of self")
+    public classStaticInstanceOfSelf(): void {
+        const code =
+            `class Foo {
+                bar = "foobar";
+                static instance = new Foo();
+            }
+            return Foo.instance.bar;`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
     }
 }

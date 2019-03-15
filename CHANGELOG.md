@@ -7,6 +7,13 @@
     * To remove the self parameter from all methods or functions in a class/interface/namespace add `/** @noSelf */`:
         ```/** @noSelf */ interface Foo {```
     * To remove the self parameter from all functions in a file, add `/** @noSelfInFile */` at the top.
+
+---
+    
+* **BREAKING CHANGE:** Directive `/** @luaIterator */` should now be put on types instead of on the functions returning them.
+
+---
+
 * Fixed a bug breaking named class expressions.
 * Fixed inconsistency between the meaning of `>>` and `>>>` in JS vs. Lua.
 * Added `/** @noResolution */` directive to prevent path resolution on declared modules.

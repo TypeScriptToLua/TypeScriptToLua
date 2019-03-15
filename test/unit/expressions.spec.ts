@@ -4,6 +4,7 @@ import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 import * as ts from "typescript";
 import * as util from "../src/util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 export class ExpressionTests {
 
@@ -114,10 +115,10 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = bit.bxor(a, b);")
     @TestCase("a<<b", "bit.lshift(a, b);")
     @TestCase("a<<=b", "a = bit.lshift(a, b);")
-    @TestCase("a>>b", "bit.rshift(a, b);")
-    @TestCase("a>>=b", "a = bit.rshift(a, b);")
-    @TestCase("a>>>b", "bit.arshift(a, b);")
-    @TestCase("a>>>=b", "a = bit.arshift(a, b);")
+    @TestCase("a>>b", "bit.arshift(a, b);")
+    @TestCase("a>>=b", "a = bit.arshift(a, b);")
+    @TestCase("a>>>b", "bit.rshift(a, b);")
+    @TestCase("a>>>=b", "a = bit.rshift(a, b);")
     @Test("Bitop [JIT]")
     public bitOperatorOverrideJIT(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
@@ -133,10 +134,10 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = bit32.bxor(a, b);")
     @TestCase("a<<b", "bit32.lshift(a, b);")
     @TestCase("a<<=b", "a = bit32.lshift(a, b);")
-    @TestCase("a>>b", "bit32.rshift(a, b);")
-    @TestCase("a>>=b", "a = bit32.rshift(a, b);")
-    @TestCase("a>>>b", "bit32.arshift(a, b);")
-    @TestCase("a>>>=b", "a = bit32.arshift(a, b);")
+    @TestCase("a>>b", "bit32.arshift(a, b);")
+    @TestCase("a>>=b", "a = bit32.arshift(a, b);")
+    @TestCase("a>>>b", "bit32.rshift(a, b);")
+    @TestCase("a>>>=b", "a = bit32.rshift(a, b);")
     @Test("Bitop [5.2]")
     public bitOperatorOverride52(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None };
@@ -152,20 +153,24 @@ export class ExpressionTests {
     @TestCase("a^=b", "a = a ~ b;")
     @TestCase("a<<b", "a << b;")
     @TestCase("a<<=b", "a = a << b;")
-    @TestCase("a>>b", "a >> b;")
-    @TestCase("a>>=b", "a = a >> b;")
+    @TestCase("a>>>b", "a >> b;")
+    @TestCase("a>>>=b", "a = a >> b;")
     @Test("Bitop [5.3]")
     public bitOperatorOverride53(input: string, lua: string): void {
         const options = { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None };
         Expect(util.transpileString(input, options)).toBe(lua);
     }
 
-    @TestCase("a>>>b")
-    @TestCase("a>>>=b")
+    @TestCase("a>>b")
+    @TestCase("a>>=b")
     @Test("Unsupported bitop 5.3")
     public bitOperatorOverride53Unsupported(input: string): void {
         Expect(() => util.transpileString(input, { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None }))
-            .toThrowError(TranspileError, "Bitwise >>> operator is/are not supported for target Lua 5.3.");
+            .toThrowError(TranspileError, TSTLErrors.UnsupportedKind(
+                "right shift operator (use >>> instead)",
+                ts.SyntaxKind.GreaterThanGreaterThanToken,
+                undefined
+            ).message);
     }
 
     @TestCase("1+1", "1 + 1;")
@@ -249,7 +254,7 @@ export class ExpressionTests {
     @TestCase("(inst.field + 3) & 3", (8 + 3) & 3)
     @TestCase("inst.field | 3", 8 | 3)
     @TestCase("inst.field << 3", 8 << 3)
-    @TestCase("inst.field >> 1", 8 >> 1)
+    @TestCase("inst.field >>> 1", 8 >> 1)
     @TestCase("inst.field = 3", 3)
     @TestCase(`"abc" + inst.field`, "abc8")
     @Test("Get accessor expression")
@@ -278,7 +283,7 @@ export class ExpressionTests {
     @TestCase("&= 3", (4 & 3) + 4)
     @TestCase("|= 3", (4 | 3) + 4)
     @TestCase("<<= 3", (4 << 3) + 4)
-    @TestCase(">>= 3", (4 >> 3) + 4)
+    @TestCase(">>>= 3", (4 >> 3) + 4)
     @Test("Set accessorExpression")
     public setAccessorBinary(expression: string, expected: any): void {
         const source = `class MyClass {`

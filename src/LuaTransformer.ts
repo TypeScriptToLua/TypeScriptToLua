@@ -397,10 +397,13 @@ export class LuaTransformer {
     {
         this.classStack.push(statement);
 
-        let className = statement.name ? this.transformIdentifier(statement.name) : nameOverride;
-        if (!className) {
+        if (statement.name === undefined && nameOverride === undefined) {
             throw TSTLErrors.MissingClassName(statement);
         }
+
+        let className = nameOverride !== undefined
+            ? nameOverride
+            : this.transformIdentifier(statement.name);
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(statement), this.checker);
 
@@ -1746,8 +1749,8 @@ export class LuaTransformer {
                 || expression.operator === ts.SyntaxKind.MinusMinusToken)) {
             // ++i, --i
             const replacementOperator = expression.operator === ts.SyntaxKind.PlusPlusToken
-                ? tstl.SyntaxKind.AdditionOperator
-                : tstl.SyntaxKind.SubractionOperator;
+                ? ts.SyntaxKind.PlusToken
+                : ts.SyntaxKind.MinusToken;
 
             return this.transformCompoundAssignmentStatement(
                 expression,
@@ -1760,8 +1763,8 @@ export class LuaTransformer {
         else if (ts.isPostfixUnaryExpression(expression)) {
             // i++, i--
             const replacementOperator = expression.operator === ts.SyntaxKind.PlusPlusToken
-                ? tstl.SyntaxKind.AdditionOperator
-                : tstl.SyntaxKind.SubractionOperator;
+                ? ts.SyntaxKind.PlusToken
+                : ts.SyntaxKind.MinusToken;
 
             return this.transformCompoundAssignmentStatement(
                 expression,
@@ -2309,9 +2312,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.NotEmittedStatement:
                 return undefined;
             case ts.SyntaxKind.ClassExpression:
-                const className = tstl.createIdentifier("____");
-                const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
-                return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
+                return this.transformClassExpression(expression as ts.ClassExpression);
             case ts.SyntaxKind.PartiallyEmittedExpression:
                 return this.transformExpression((expression as ts.PartiallyEmittedExpression).expression);
             default:
@@ -2320,23 +2321,23 @@ export class LuaTransformer {
     }
 
     public transformBinaryOperation(
-        node: ts.Node,
         left: tstl.Expression,
         right: tstl.Expression,
-        operator: tstl.BinaryOperator
+        operator: ts.BinaryOperator,
+        tsOriginal: ts.Node
     ): tstl.Expression
     {
         switch (operator) {
-            case tstl.SyntaxKind.BitwiseAndOperator:
-            case tstl.SyntaxKind.BitwiseOrOperator:
-            case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
-            case tstl.SyntaxKind.BitwiseLeftShiftOperator:
-            case tstl.SyntaxKind.BitwiseRightShiftOperator:
-            case tstl.SyntaxKind.BitwiseArithmeticRightShift:
-                return this.transformBinaryBitOperation(node, left, right, operator);
-
+            case ts.SyntaxKind.AmpersandToken:
+            case ts.SyntaxKind.BarToken:
+            case ts.SyntaxKind.CaretToken:
+            case ts.SyntaxKind.LessThanLessThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                return this.transformBinaryBitOperation(tsOriginal, left, right, operator);
             default:
-                return tstl.createBinaryExpression(left, right, operator, node);
+                const luaOperator = this.transformBinaryOperator(operator, tsOriginal);
+                return tstl.createBinaryExpression(left, right, luaOperator, tsOriginal);
         }
     }
 
@@ -2360,55 +2361,31 @@ export class LuaTransformer {
         // Transpile operators
         switch (expression.operatorToken.kind) {
             case ts.SyntaxKind.AmpersandToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseAndOperator);
             case ts.SyntaxKind.BarToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseOrOperator);
             case ts.SyntaxKind.CaretToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseExclusiveOrOperator);
             case ts.SyntaxKind.LessThanLessThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseLeftShiftOperator);
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseRightShiftOperator);
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.BitwiseArithmeticRightShift);
-            case ts.SyntaxKind.AmpersandAmpersandToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.AndOperator);
-            case ts.SyntaxKind.BarBarToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.OrOperator);
+                return this.transformBinaryBitOperation(expression, lhs, rhs, expression.operatorToken.kind);
             case ts.SyntaxKind.PlusToken:
-                // Replace string + with ..
-                const typeLeft = this.checker.getTypeAtLocation(expression.left);
-                const typeRight = this.checker.getTypeAtLocation(expression.right);
-                if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                    return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.ConcatOperator);
-                }
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.AdditionOperator);
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+            case ts.SyntaxKind.BarBarToken:
             case ts.SyntaxKind.MinusToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.SubractionOperator);
             case ts.SyntaxKind.AsteriskToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.MultiplicationOperator);
             case ts.SyntaxKind.AsteriskAsteriskToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.PowerOperator);
             case ts.SyntaxKind.SlashToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.DivisionOperator);
             case ts.SyntaxKind.PercentToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.ModuloOperator);
             case ts.SyntaxKind.GreaterThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.GreaterThanOperator);
             case ts.SyntaxKind.GreaterThanEqualsToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.GreaterEqualOperator);
             case ts.SyntaxKind.LessThanToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.LessThanOperator);
             case ts.SyntaxKind.LessThanEqualsToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.LessEqualOperator);
-            case ts.SyntaxKind.EqualsToken:
-                return this.transformAssignmentExpression(expression);
             case ts.SyntaxKind.EqualsEqualsToken:
             case ts.SyntaxKind.EqualsEqualsEqualsToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.EqualityOperator);
             case ts.SyntaxKind.ExclamationEqualsToken:
             case ts.SyntaxKind.ExclamationEqualsEqualsToken:
-                return this.transformBinaryOperation(expression, lhs, rhs, tstl.SyntaxKind.InequalityOperator);
+                return this.transformBinaryOperation(lhs, rhs, expression.operatorToken.kind, expression);
+            case ts.SyntaxKind.EqualsToken:
+                return this.transformAssignmentExpression(expression);
             case ts.SyntaxKind.InKeyword:
                 const indexExpression = tstl.createTableIndexExpression(rhs, lhs);
                 return tstl.createBinaryExpression(
@@ -2566,19 +2543,10 @@ export class LuaTransformer {
         expression: ts.Expression,
         lhs: ts.Expression,
         rhs: ts.Expression,
-        replacementOperator: tstl.BinaryOperator,
+        replacementOperator: ts.BinaryOperator,
         isPostfix: boolean
     ): tstl.CallExpression
     {
-        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
-            // Check is we need to use string concat operator
-            const typeLeft = this.checker.getTypeAtLocation(lhs);
-            const typeRight = this.checker.getTypeAtLocation(rhs);
-            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                replacementOperator = tstl.SyntaxKind.ConcatOperator;
-            }
-        }
-
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         let right = this.transformExpression(rhs);
 
@@ -2603,16 +2571,16 @@ export class LuaTransformer {
                 // local ____TS_tmp = ____TS_obj[____TS_index];
                 // ____TS_obj[____TS_index] = ____TS_tmp ${replacementOperator} ${right};
                 tmpDeclaration = tstl.createVariableDeclarationStatement(tmp, accessExpression);
-                const operatorExpression = this.transformBinaryOperation(expression, tmp, right, replacementOperator);
+                const operatorExpression = this.transformBinaryOperation(tmp, right, replacementOperator, expression);
                 assignStatement = tstl.createAssignmentStatement(accessExpression, operatorExpression);
             } else {
                 // local ____TS_tmp = ____TS_obj[____TS_index] ${replacementOperator} ${right};
                 // ____TS_obj[____TS_index] = ____TS_tmp;
                 const operatorExpression = this.transformBinaryOperation(
-                    expression,
                     accessExpression,
                     right,
-                    replacementOperator
+                    replacementOperator,
+                    expression
                 );
                 tmpDeclaration = tstl.createVariableDeclarationStatement(tmp, operatorExpression);
                 assignStatement = tstl.createAssignmentStatement(accessExpression, tmp);
@@ -2621,7 +2589,7 @@ export class LuaTransformer {
             return this.createImmediatelyInvokedFunctionExpression(
                 [objAndIndexDeclaration, tmpDeclaration, assignStatement],
                 tmp,
-                lhs.parent
+                expression
             );
 
         } else if (isPostfix) {
@@ -2632,16 +2600,16 @@ export class LuaTransformer {
             const tmpIdentifier = tstl.createIdentifier("____TS_tmp");
             const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, left);
             const operatorExpression = this.transformBinaryOperation(
-                expression,
                 tmpIdentifier,
                 right,
-                replacementOperator
+                replacementOperator,
+                expression
             );
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
             return this.createImmediatelyInvokedFunctionExpression(
                 [tmpDeclaration, assignStatement],
                 tmpIdentifier,
-                lhs.parent
+                expression
             );
 
         } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
@@ -2650,40 +2618,96 @@ export class LuaTransformer {
             // ${left} = ____TS_tmp;
             // return ____TS_tmp
             const tmpIdentifier = tstl.createIdentifier("____TS_tmp");
-            const operatorExpression = this.transformBinaryOperation(lhs.parent, left, right, replacementOperator);
+            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, expression);
             const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
             const assignStatement = this.transformAssignment(lhs, tmpIdentifier);
             return this.createImmediatelyInvokedFunctionExpression(
                 [tmpDeclaration, assignStatement],
                 tmpIdentifier,
-                lhs.parent
+                expression
             );
 
         } else {
             // Simple expressions
             // ${left} = ${right}; return ${right}
-            const operatorExpression = this.transformBinaryOperation(lhs.parent, left, right, replacementOperator);
+            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, expression);
             const assignStatement = this.transformAssignment(lhs, operatorExpression);
-            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, lhs.parent);
+            return this.createImmediatelyInvokedFunctionExpression([assignStatement], left, expression);
         }
+    }
+
+    public transformBinaryOperator(operator: ts.BinaryOperator, node: ts.Node): tstl.BinaryOperator {
+        switch (operator) {
+            // Bitwise operators
+            case ts.SyntaxKind.BarToken:
+                return tstl.SyntaxKind.BitwiseOrOperator;
+            case ts.SyntaxKind.CaretToken:
+                return tstl.SyntaxKind.BitwiseExclusiveOrOperator;
+            case ts.SyntaxKind.AmpersandToken:
+                return tstl.SyntaxKind.BitwiseAndOperator;
+            case ts.SyntaxKind.LessThanLessThanToken:
+                return tstl.SyntaxKind.BitwiseLeftShiftOperator;
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
+                throw TSTLErrors.UnsupportedKind("right shift operator (use >>> instead)", operator, node);
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
+                return tstl.SyntaxKind.BitwiseRightShiftOperator;
+            // Regular operators
+            case ts.SyntaxKind.AmpersandAmpersandToken:
+                return tstl.SyntaxKind.AndOperator;
+            case ts.SyntaxKind.BarBarToken:
+                return tstl.SyntaxKind.OrOperator;
+            case ts.SyntaxKind.MinusToken:
+                return tstl.SyntaxKind.SubractionOperator;
+            case ts.SyntaxKind.PlusToken:
+                if (ts.isBinaryExpression(node)) {
+                    // Check is we need to use string concat operator
+                    const typeLeft = this.checker.getTypeAtLocation(node.left);
+                    const typeRight = this.checker.getTypeAtLocation(node.right);
+                    if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                        return tstl.SyntaxKind.ConcatOperator;
+                    }
+                }
+                return tstl.SyntaxKind.AdditionOperator;
+            case ts.SyntaxKind.AsteriskToken:
+                return tstl.SyntaxKind.MultiplicationOperator;
+            case ts.SyntaxKind.AsteriskAsteriskToken:
+                return tstl.SyntaxKind.PowerOperator;
+            case ts.SyntaxKind.SlashToken:
+                return tstl.SyntaxKind.DivisionOperator;
+            case ts.SyntaxKind.PercentToken:
+                return tstl.SyntaxKind.ModuloOperator;
+            case ts.SyntaxKind.GreaterThanToken:
+                return tstl.SyntaxKind.GreaterThanOperator;
+            case ts.SyntaxKind.GreaterThanEqualsToken:
+                return tstl.SyntaxKind.GreaterEqualOperator;
+            case ts.SyntaxKind.LessThanToken:
+                return tstl.SyntaxKind.LessThanOperator;
+            case ts.SyntaxKind.LessThanEqualsToken:
+                return tstl.SyntaxKind.LessEqualOperator;
+            case ts.SyntaxKind.EqualsEqualsToken:
+            case ts.SyntaxKind.EqualsEqualsEqualsToken:
+                return tstl.SyntaxKind.EqualityOperator;
+            case ts.SyntaxKind.ExclamationEqualsToken:
+            case ts.SyntaxKind.ExclamationEqualsEqualsToken:
+                return tstl.SyntaxKind.InequalityOperator;
+            default:
+                throw TSTLErrors.UnsupportedKind("binary operator", operator, node);
+        }
+    }
+
+    public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
+        const className = tstl.createAnnonymousIdentifier();
+        const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
+        return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
     }
 
     public transformCompoundAssignmentStatement(
         node: ts.Node,
         lhs: ts.Expression,
         rhs: ts.Expression,
-        replacementOperator: tstl.BinaryOperator
+        replacementOperator: ts.BinaryOperator
     ): tstl.Statement
     {
-        if (replacementOperator === tstl.SyntaxKind.AdditionOperator) {
-            // Check is we need to use string concat operator
-            const typeLeft = this.checker.getTypeAtLocation(lhs);
-            const typeRight = this.checker.getTypeAtLocation(rhs);
-            if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
-                replacementOperator = tstl.SyntaxKind.ConcatOperator;
-            }
-        }
-
         const left = this.transformExpression(lhs) as tstl.IdentifierOrTableIndexExpression;
         const right = this.transformExpression(rhs);
 
@@ -2701,10 +2725,10 @@ export class LuaTransformer {
                 [obj, index], [this.transformExpression(objExpression), this.transformExpression(indexExpression)]);
             const accessExpression = tstl.createTableIndexExpression(obj, index);
             const operatorExpression = this.transformBinaryOperation(
-                node,
                 accessExpression,
                 tstl.createParenthesizedExpression(right),
-                replacementOperator
+                replacementOperator,
+                node
             );
             const assignStatement = tstl.createAssignmentStatement(accessExpression, operatorExpression);
             return tstl.createDoStatement([objAndIndexDeclaration, assignStatement]);
@@ -2712,7 +2736,7 @@ export class LuaTransformer {
         } else {
             // Simple statements
             // ${left} = ${left} ${replacementOperator} ${right}
-            const operatorExpression = this.transformBinaryOperation(node, left, right, replacementOperator);
+            const operatorExpression = this.transformBinaryOperation(left, right, replacementOperator, node);
             return this.transformAssignment(lhs, operatorExpression);
         }
     }
@@ -2764,28 +2788,28 @@ export class LuaTransformer {
         node: ts.Node,
         left: tstl.Expression,
         right: tstl.Expression,
-        operator: tstl.BinaryBitwiseOperator,
+        operator: ts.BinaryOperator,
         lib: string
     ): ExpressionVisitResult
     {
         let bitFunction: string;
         switch (operator) {
-            case tstl.SyntaxKind.BitwiseAndOperator:
+            case ts.SyntaxKind.AmpersandToken:
                 bitFunction = "band";
                 break;
-            case tstl.SyntaxKind.BitwiseOrOperator:
+            case ts.SyntaxKind.BarToken:
                 bitFunction = "bor";
                 break;
-            case tstl.SyntaxKind.BitwiseExclusiveOrOperator:
+            case ts.SyntaxKind.CaretToken:
                 bitFunction = "bxor";
                 break;
-            case tstl.SyntaxKind.BitwiseLeftShiftOperator:
+            case ts.SyntaxKind.LessThanLessThanToken:
                 bitFunction = "lshift";
                 break;
-            case tstl.SyntaxKind.BitwiseRightShiftOperator:
+            case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
                 bitFunction = "rshift";
                 break;
-            case tstl.SyntaxKind.BitwiseArithmeticRightShift:
+            case ts.SyntaxKind.GreaterThanGreaterThanToken:
                 bitFunction = "arshift";
                 break;
             default:
@@ -2802,7 +2826,7 @@ export class LuaTransformer {
         node: ts.Node,
         left: tstl.Expression,
         right: tstl.Expression,
-        operator: tstl.BinaryBitwiseOperator
+        operator: ts.BinaryOperator
     ): ExpressionVisitResult
     {
         switch (this.options.luaTarget) {
@@ -2816,10 +2840,8 @@ export class LuaTransformer {
                 return this.transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
             default:
-                if (operator === tstl.SyntaxKind.BitwiseArithmeticRightShift) {
-                    throw TSTLErrors.UnsupportedForTarget("Bitwise >>> operator", this.options.luaTarget, node);
-                }
-                return tstl.createBinaryExpression(left, right, operator, node);
+                const luaOperator = this.transformBinaryOperator(operator, node);
+                return tstl.createBinaryExpression(left, right, luaOperator, node);
         }
     }
 
@@ -2863,7 +2885,7 @@ export class LuaTransformer {
                     expression,
                     expression.operand,
                     ts.createLiteral(1),
-                    tstl.SyntaxKind.AdditionOperator,
+                    ts.SyntaxKind.PlusToken,
                     true
                 );
 
@@ -2872,7 +2894,7 @@ export class LuaTransformer {
                     expression,
                     expression.operand,
                     ts.createLiteral(1),
-                    tstl.SyntaxKind.SubractionOperator,
+                    ts.SyntaxKind.MinusToken,
                     true
                 );
 
@@ -2888,7 +2910,7 @@ export class LuaTransformer {
                     expression,
                     expression.operand,
                     ts.createLiteral(1),
-                    tstl.SyntaxKind.AdditionOperator,
+                    ts.SyntaxKind.PlusToken,
                     false
                 );
 
@@ -2897,7 +2919,7 @@ export class LuaTransformer {
                     expression,
                     expression.operand,
                     ts.createLiteral(1),
-                    tstl.SyntaxKind.SubractionOperator,
+                    ts.SyntaxKind.MinusToken,
                     false
                 );
 

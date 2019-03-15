@@ -262,32 +262,32 @@ export class TSHelper {
         return undefined;
     }
 
-    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, tstl.BinaryOperator] {
+    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, ts.BinaryOperator] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseOrOperator];
+                return [true, ts.SyntaxKind.BarToken];
             case ts.SyntaxKind.PlusEqualsToken:
-                return [true, tstl.SyntaxKind.AdditionOperator];
+                return [true, ts.SyntaxKind.PlusToken];
             case ts.SyntaxKind.CaretEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseExclusiveOrOperator];
+                return [true, ts.SyntaxKind.CaretToken];
             case ts.SyntaxKind.MinusEqualsToken:
-                return [true, tstl.SyntaxKind.SubractionOperator];
+                return [true, ts.SyntaxKind.MinusToken];
             case ts.SyntaxKind.SlashEqualsToken:
-                return [true, tstl.SyntaxKind.DivisionOperator];
+                return [true, ts.SyntaxKind.SlashToken];
             case ts.SyntaxKind.PercentEqualsToken:
-                return [true, tstl.SyntaxKind.ModuloOperator];
+                return [true, ts.SyntaxKind.PercentToken];
             case ts.SyntaxKind.AsteriskEqualsToken:
-                return [true, tstl.SyntaxKind.MultiplicationOperator];
+                return [true, ts.SyntaxKind.AsteriskToken];
             case ts.SyntaxKind.AmpersandEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseAndOperator];
+                return [true, ts.SyntaxKind.AmpersandToken];
             case ts.SyntaxKind.AsteriskAsteriskEqualsToken:
-                return [true, tstl.SyntaxKind.PowerOperator];
+                return [true, ts.SyntaxKind.AsteriskAsteriskToken];
             case ts.SyntaxKind.LessThanLessThanEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseLeftShiftOperator];
+                return [true, ts.SyntaxKind.LessThanLessThanToken];
             case ts.SyntaxKind.GreaterThanGreaterThanEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseRightShiftOperator];
+                return [true, ts.SyntaxKind.GreaterThanGreaterThanToken];
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken:
-                return [true, tstl.SyntaxKind.BitwiseArithmeticRightShift];
+                return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
         }
 
         return [false, undefined];

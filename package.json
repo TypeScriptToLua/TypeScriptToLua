@@ -59,7 +59,7 @@
         "@types/glob": "^5.0.35",
         "@types/node": "^9.6.23",
         "alsatian": "^2.3.0",
-        "codecov": "3.0.2",
+        "codecov": "^3.2.0",
         "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
         "flatted": "^2.0.0",

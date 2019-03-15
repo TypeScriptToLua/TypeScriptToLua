@@ -16,7 +16,11 @@ export function transpileString(
     options?: CompilerOptions,
     ignoreDiagnostics = true,
     filePath = "file.ts"
-): string {
+): string
+{
+    if (ignoreDiagnostics === false) {
+        ignoreDiagnostics = process.argv[2] === "--ignoreDiagnostics";
+    }
     if (options) {
         if (options.noHeader === undefined) {
             options.noHeader = true;
@@ -94,9 +98,9 @@ export function transpileAndExecute(
     ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics"
 ): any
 {
-    const wrappedTsString = `declare function JSONStringify(p: any): string;
-        ${tsHeader ? tsHeader : ""}
-        function __runTest(): any {${tsStr}}`;
+    const wrappedTsString = `${tsHeader ? tsHeader : ""}
+        declare function JSONStringify(this: void, p: any): string;
+        function __runTest(this: void): any {${tsStr}}`;
 
     const lua = `${luaHeader ? luaHeader : ""}
         ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnosticsOverride)}
@@ -112,7 +116,7 @@ export function transpileExecuteAndReturnExport(
     luaHeader?: string
 ): any
 {
-    const wrappedTsString = `declare function JSONStringify(p: any): string;
+    const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
         ${tsStr}`;
 
     const lua = `return (function()

@@ -5,7 +5,7 @@ import * as util from "../src/util";
 export class AssignmentDestructuringTests {
 
     private readonly assignmentDestruturingTs = `
-        declare function myFunc(): [number, string];
+        declare function myFunc(this: void): [number, string];
         let [a, b] = myFunc();`;
 
     @Test("Assignment destructuring [5.1]")

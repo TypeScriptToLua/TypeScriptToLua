@@ -249,6 +249,21 @@ export class TSHelper {
         return decMap;
     }
 
+    public static getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
+        const decMap = new Map<DecoratorKind, Decorator>();
+        if (file.statements.length > 0) {
+            const tags = ts.getJSDocTags(file.statements[0]);
+            for (const tag of tags) {
+                const tagName = tag.tagName.escapedText as string;
+                if (Decorator.isValid(tagName)) {
+                    const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+                    decMap.set(dec.kind, dec);
+                }
+            }
+        }
+        return decMap;
+    }
+
     // Search up until finding a node satisfying the callback
     public static findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (n: ts.Node) => n is T): T {
         let current = node;
@@ -559,6 +574,24 @@ export class TSHelper {
         return signatureDeclarations;
     }
 
+    public static hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeChecker): boolean {
+        const scopeDeclaration = TSHelper.findFirstNodeAbove(
+            declaration,
+            (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n)
+        );
+        if (!scopeDeclaration) {
+            return false;
+        }
+        if (ts.isSourceFile(scopeDeclaration)) {
+            return TSHelper.getCustomFileDirectives(scopeDeclaration).has(DecoratorKind.NoSelfInFile);
+        }
+        const scopeType = checker.getTypeAtLocation(scopeDeclaration);
+        if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+            return true;
+        }
+        return TSHelper.hasNoSelfAncestor(scopeDeclaration, checker);
+    }
+
     public static getDeclarationContextType(
         signatureDeclaration: ts.SignatureDeclaration,
         checker: ts.TypeChecker
@@ -571,22 +604,35 @@ export class TSHelper {
                 ? ContextType.Void
                 : ContextType.NonVoid;
         }
-        if (ts.isMethodDeclaration(signatureDeclaration) || ts.isMethodSignature(signatureDeclaration)) {
-            // Method
+
+        if (ts.isMethodSignature(signatureDeclaration)
+            || ts.isMethodDeclaration(signatureDeclaration)
+            || ts.isConstructSignatureDeclaration(signatureDeclaration)
+            || ts.isConstructorDeclaration(signatureDeclaration)
+            || (signatureDeclaration.parent && ts.isPropertyDeclaration(signatureDeclaration.parent))
+            || (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent)))
+        {
+            // Class/interface methods only respect @noSelf on their parent
+            const scopeDeclaration = TSHelper.findFirstNodeAbove(
+                signatureDeclaration,
+                (n): n is ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
+                    ts.isClassDeclaration(n)
+                    || ts.isClassExpression(n)
+                    || ts.isInterfaceDeclaration(n)
+            );
+            const scopeType = checker.getTypeAtLocation(scopeDeclaration);
+            if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+                return ContextType.Void;
+            }
             return ContextType.NonVoid;
         }
-        if (ts.isPropertySignature(signatureDeclaration.parent)
-            || ts.isPropertyDeclaration(signatureDeclaration.parent)
-            || ts.isPropertyAssignment(signatureDeclaration.parent)) {
-            // Lambda property
-            return ContextType.NonVoid;
+
+        // Walk up to find @noSelf or @noSelfOnFile
+        if (TSHelper.hasNoSelfAncestor(signatureDeclaration, checker)) {
+            return ContextType.Void;
         }
-        if (ts.isBinaryExpression(signatureDeclaration.parent)) {
-            // Function expression: check type being assigned to
-            return TSHelper.getFunctionContextType(
-                checker.getTypeAtLocation(signatureDeclaration.parent.left), checker);
-        }
-        return ContextType.Void;
+
+        return ContextType.NonVoid;
     }
 
     public static reduceContextTypes(contexts: ContextType[]): ContextType {

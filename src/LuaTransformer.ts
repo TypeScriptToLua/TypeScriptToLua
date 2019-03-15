@@ -1454,16 +1454,13 @@ export class LuaTransformer {
     private transformGeneratorFunction(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
-        transformedParameters: tstl.Identifier[],
-        dotsLiteral: tstl.DotsLiteral,
         spreadIdentifier?: tstl.Identifier
     ): [tstl.Statement[], Scope]
     {
         this.importLuaLibFeature(LuaLibFeature.Symbol);
         const [functionBody, functionScope] = this.transformFunctionBody(
             parameters,
-            body,
-            spreadIdentifier
+            body
         );
 
         const coroutineIdentifier = tstl.createIdentifier("____co");
@@ -1478,12 +1475,7 @@ export class LuaTransformer {
                     tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"),
                         tstl.createStringLiteral("create")
                     ),
-                    [tstl.createFunctionExpression(
-                            tstl.createBlock(functionBody),
-                            transformedParameters,
-                            dotsLiteral,
-                            spreadIdentifier),
-                    ]
+                    [tstl.createFunctionExpression(tstl.createBlock(functionBody))]
                 )
             );
 
@@ -1586,6 +1578,12 @@ export class LuaTransformer {
             //return ____it
             tstl.createReturnStatement([itIdentifier]),
         ];
+
+        if (spreadIdentifier) {
+            const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
+            block.unshift(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
+        }
+
         return [block, functionScope];
     }
 
@@ -1606,8 +1604,6 @@ export class LuaTransformer {
             ? this.transformGeneratorFunction(
                 functionDeclaration.parameters,
                 functionDeclaration.body,
-                params,
-                dotsLiteral,
                 restParamName
             )
             : this.transformFunctionBody(
@@ -3131,14 +3127,12 @@ export class LuaTransformer {
         const callPath = this.transformExpression(node.expression);
         const signatureDeclaration = signature && signature.getDeclaration();
         if (signatureDeclaration
-            && !ts.isPropertyAccessExpression(node.expression)
-            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.NonVoid
-            && !ts.isElementAccessExpression(node.expression))
+            && tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === ContextType.Void)
         {
+            parameters = this.transformArguments(node.arguments, signature);
+        } else {
             const context = this.isStrict ? ts.createNull() : ts.createIdentifier("_G");
             parameters = this.transformArguments(node.arguments, signature, context);
-        } else {
-            parameters = this.transformArguments(node.arguments, signature);
         }
 
         const expressionType = this.checker.getTypeAtLocation(node.expression);
@@ -3885,7 +3879,7 @@ export class LuaTransformer {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
-            throw TSTLErrors.UnsupportedMethodConversion(node);
+            throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
         const params = this.transformArguments(node.arguments);
         const caller = this.transformExpression(expression.expression);
@@ -4326,9 +4320,9 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
         } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
             if (toContext === ContextType.Void) {
-                throw TSTLErrors.UnsupportedFunctionConversion(node, toName);
+                throw TSTLErrors.UnsupportedNoSelfFunctionConversion(node, toName);
             } else {
-                throw TSTLErrors.UnsupportedMethodConversion(node, toName);
+                throw TSTLErrors.UnsupportedSelfFunctionConversion(node, toName);
             }
         }
 

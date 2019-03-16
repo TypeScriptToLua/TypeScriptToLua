@@ -147,7 +147,8 @@ export class TSHelper {
     }
 
     public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
+        const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
+        const typeNode = checker.typeToTypeNode(type, undefined, flags);
         return typeNode && TSHelper.isArrayTypeNode(typeNode);
     }
 

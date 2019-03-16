@@ -21,6 +21,16 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Array union access with empty tuple")
+    public arrayUnionAccessWithEmptyTuple(): void {
+        const result = util.transpileAndExecute(
+            `function makeArray(): number[] | [] { return [3,5,1]; }
+            const arr = makeArray();
+            return arr[1];`
+        );
+        Expect(result).toBe(5);
+    }
+
     @Test("Array union length")
     public arrayUnionLength(): void {
         const result = util.transpileAndExecute(

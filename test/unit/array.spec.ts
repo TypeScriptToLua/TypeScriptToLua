@@ -11,6 +11,15 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Readonly Array access")
+    public readonlyArrayAccess(): void {
+        const result = util.transpileAndExecute(
+            `const arr: ReadonlyArray<number> = [3,5,1];
+            return arr[1];`
+        );
+        Expect(result).toBe(5);
+    }
+
     @Test("Array union access")
     public arrayUnionAccess(): void {
         const result = util.transpileAndExecute(

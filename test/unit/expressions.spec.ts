@@ -498,7 +498,7 @@ export class ExpressionTests {
             expression: {name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false)},
         };
 
-        Expect(() => transformer.transformArrayCallExpression(mockNode as ts.CallExpression))
+        Expect(() => transformer.transformArrayCallExpression(mockNode as ts.CallExpression, undefined))
             .toThrowError(TranspileError, "Unsupported property on array: unknownFunction");
     }
 

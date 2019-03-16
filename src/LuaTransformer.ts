@@ -3155,52 +3155,52 @@ export class LuaTransformer {
         // If the function being called is of type owner.func, get the type of owner
         const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
 
+        const signature = this.checker.getResolvedSignature(node);
+
         if (tsHelper.isStandardLibraryType(ownerType, "Math", this.program)) {
-            return this.transformMathCallExpression(node);
+            return this.transformMathCallExpression(node, signature);
         }
 
         if (tsHelper.isStandardLibraryType(ownerType, "Console", this.program)) {
-            return this.transformConsoleCallExpression(node);
+            return this.transformConsoleCallExpression(node, signature);
         }
 
         if (tsHelper.isStandardLibraryType(ownerType, "StringConstructor", this.program)) {
             return tstl.createCallExpression(
                 this.transformStringExpression(node.expression.name),
-                this.transformArguments(node.arguments),
+                this.transformArguments(node.arguments, signature),
                 node
             );
         }
 
         if (tsHelper.isStandardLibraryType(ownerType, "ObjectConstructor", this.program)) {
-            return this.transformObjectCallExpression(node);
+            return this.transformObjectCallExpression(node, signature);
         }
 
         if (tsHelper.isStandardLibraryType(ownerType, "SymbolConstructor", this.program)) {
-            return this.transformSymbolCallExpression(node);
+            return this.transformSymbolCallExpression(node, signature);
         }
 
         switch (ownerType.flags) {
             case ts.TypeFlags.String:
             case ts.TypeFlags.StringLiteral:
-                return this.transformStringCallExpression(node);
+                return this.transformStringCallExpression(node, signature);
         }
 
         // if ownerType is a array, use only supported functions
         if (tsHelper.isExplicitArrayType(ownerType, this.checker)) {
-            return this.transformArrayCallExpression(node);
+            return this.transformArrayCallExpression(node, signature);
         }
 
         // if ownerType inherits from an array, use array calls where appropriate
         if (tsHelper.isArrayType(ownerType, this.checker) &&
             tsHelper.isDefaultArrayCallMethodName(node.expression.name.escapedText as string)) {
-            return this.transformArrayCallExpression(node);
+            return this.transformArrayCallExpression(node, signature);
         }
 
         if (tsHelper.isFunctionType(ownerType, this.checker)) {
-            return this.transformFunctionCallExpression(node);
+            return this.transformFunctionCallExpression(node, signature);
         }
-
-        const signature = this.checker.getResolvedSignature(node);
 
         // Get the type of the function
         if (node.expression.expression.kind === ts.SyntaxKind.SuperKeyword) {
@@ -3285,7 +3285,8 @@ export class LuaTransformer {
 
     public transformArguments<T extends ts.Expression>(
         params: ts.NodeArray<ts.Expression>,
-        sig?: ts.Signature, context?: T
+        sig?: ts.Signature,
+        context?: T
     ): tstl.Expression[]
     {
         const parameters: tstl.Expression[] = [];
@@ -3378,9 +3379,9 @@ export class LuaTransformer {
     }
 
     // Transpile a Math._ property
-    public transformMathCallExpression(node: ts.CallExpression): tstl.Expression {
+    public transformMathCallExpression(node: ts.CallExpression, signature: ts.Signature): tstl.Expression {
         const expression = node.expression as ts.PropertyAccessExpression;
-        const params = this.transformArguments(node.arguments);
+        const params = this.transformArguments(node.arguments, signature);
         const expressionName = expression.name.escapedText as string;
         switch (expressionName) {
             // math.tan(x / y)
@@ -3537,9 +3538,9 @@ export class LuaTransformer {
         throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
-    public transformStringCallExpression(node: ts.CallExpression): tstl.Expression {
+    public transformStringCallExpression(node: ts.CallExpression, signature: ts.Signature): tstl.Expression {
         const expression = node.expression as ts.PropertyAccessExpression;
-        const params = this.transformArguments(node.arguments);
+        const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
 
         const expressionName = expression.name.escapedText as string;
@@ -3681,9 +3682,13 @@ export class LuaTransformer {
     }
 
     // Transpile an Object._ property
-    public transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+    public transformObjectCallExpression(
+        expression: ts.CallExpression,
+        signature: ts.Signature
+    ): ExpressionVisitResult
+    {
         const method = expression.expression as ts.PropertyAccessExpression;
-        const parameters = this.transformArguments(expression.arguments);
+        const parameters = this.transformArguments(expression.arguments, signature);
         const caller = this.transformExpression(expression.expression);
         const methodName = method.name.escapedText;
 
@@ -3705,7 +3710,11 @@ export class LuaTransformer {
         }
     }
 
-    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+    public transformConsoleCallExpression(
+        expression: ts.CallExpression,
+        signature: ts.Signature
+    ): ExpressionVisitResult
+    {
         const method = expression.expression as ts.PropertyAccessExpression;
         const methodName = method.name.escapedText;
 
@@ -3718,7 +3727,7 @@ export class LuaTransformer {
                         tstl.createTableIndexExpression(
                             tstl.createIdentifier("string"),
                             tstl.createStringLiteral("format")),
-                        this.transformArguments(expression.arguments)
+                        this.transformArguments(expression.arguments, signature)
                     );
                     return tstl.createCallExpression(
                         tstl.createIdentifier("print"),
@@ -3728,10 +3737,10 @@ export class LuaTransformer {
                 // print([arguments])
                 return tstl.createCallExpression(
                     tstl.createIdentifier("print"),
-                    this.transformArguments(expression.arguments)
+                    this.transformArguments(expression.arguments, signature)
                 );
             case "assert":
-                const args = this.transformArguments(expression.arguments);
+                const args = this.transformArguments(expression.arguments, signature);
                 if (expression.arguments.length > 1
                     && this.isStringFormatTemplate(expression.arguments[1])) {
                     // assert([condition], string.format([arguments]))
@@ -3759,7 +3768,7 @@ export class LuaTransformer {
                         tstl.createTableIndexExpression(
                             tstl.createIdentifier("string"),
                             tstl.createStringLiteral("format")),
-                        this.transformArguments(expression.arguments)
+                        this.transformArguments(expression.arguments, signature)
                     );
                     const debugTracebackCall = tstl.createCallExpression(
                         tstl.createTableIndexExpression(
@@ -3777,7 +3786,7 @@ export class LuaTransformer {
                     tstl.createTableIndexExpression(
                         tstl.createIdentifier("debug"),
                         tstl.createStringLiteral("traceback")),
-                    this.transformArguments(expression.arguments)
+                    this.transformArguments(expression.arguments, signature)
                 );
                 return tstl.createCallExpression(
                     tstl.createIdentifier("print"),
@@ -3797,9 +3806,9 @@ export class LuaTransformer {
     }
 
     // Transpile a Symbol._ property
-    public transformSymbolCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+    public transformSymbolCallExpression(expression: ts.CallExpression, signature: ts.Signature): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
-        const parameters = this.transformArguments(expression.arguments);
+        const parameters = this.transformArguments(expression.arguments, signature);
         const methodName = method.name.escapedText;
 
         switch (methodName) {
@@ -3818,9 +3827,9 @@ export class LuaTransformer {
         }
     }
 
-    public transformArrayCallExpression(node: ts.CallExpression): tstl.CallExpression {
+    public transformArrayCallExpression(node: ts.CallExpression, signature: ts.Signature): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
-        const params = this.transformArguments(node.arguments);
+        const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
         const expressionName = expression.name.escapedText;
         switch (expressionName) {
@@ -3875,13 +3884,13 @@ export class LuaTransformer {
         }
     }
 
-    public transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
+    public transformFunctionCallExpression(node: ts.CallExpression, signature: ts.Signature): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
             throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
-        const params = this.transformArguments(node.arguments);
+        const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
         const expressionName = expression.name.escapedText;
         switch (expressionName) {

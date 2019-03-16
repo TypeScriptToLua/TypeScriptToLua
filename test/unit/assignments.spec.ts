@@ -663,6 +663,29 @@ export class AssignmentTests {
         Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
+    @Test("Valid lua lib function argument")
+    public validLuaLibFunctionArgument(): void {
+        const code =
+            `let result = "";
+            function foo(this: any, value: string) { result += value; }
+            const a = ['foo', 'bar'];
+            a.forEach(foo);
+            return result;`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @Test("Invalid lua lib function argument")
+    public invalidLuaLibFunctionArgument(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `declare function foo(this: void, value: string): void;
+            declare const a: string[];
+            a.forEach(foo);`;
+        const err = TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "callbackfn");
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
+    }
+
     @TestCases(validTestFunctionCasts)
     @Test("Valid function argument with cast")
     public validFunctionArgumentWithCast(testFunction: TestFunction, castedFunction: string): void {

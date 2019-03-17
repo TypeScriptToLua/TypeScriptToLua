@@ -1088,7 +1088,7 @@ export class LuaTransformer {
         }
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
+        const context = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
         const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
@@ -1594,7 +1594,7 @@ export class LuaTransformer {
         }
 
         const type = this.checker.getTypeAtLocation(functionDeclaration);
-        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
+        const context = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
@@ -1794,7 +1794,7 @@ export class LuaTransformer {
                 const expressionType = this.checker.getTypeAtLocation(statement.expression);
                 this.validateFunctionAssignment(statement, expressionType, returnType);
             }
-            if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
+            if (tsHelper.isInTupleReturnFunction(statement, this.checker, this.program)) {
                 // Parent function is a TupleReturn function
                 if (ts.isArrayLiteralExpression(statement.expression)) {
                     // If return expression is an array literal, leave out brackets.
@@ -2080,7 +2080,11 @@ export class LuaTransformer {
             // LuaIterators
             return this.transformForOfLuaIteratorStatement(statement, body);
 
-        } else if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
+        } else if (tsHelper.isArrayType(
+            this.checker.getTypeAtLocation(statement.expression),
+            this.checker,
+            this.program)
+        ) {
             // Arrays
             return this.transformForOfArrayStatement(statement, body);
 
@@ -2099,7 +2103,7 @@ export class LuaTransformer {
         const pairsIdentifier = tstl.createIdentifier("pairs");
         const expression = tstl.createCallExpression(pairsIdentifier, [this.transformExpression(statement.expression)]);
 
-        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker)) {
+        if (tsHelper.isArrayType(this.checker.getTypeAtLocation(statement.expression), this.checker, this.program)) {
             throw TSTLErrors.ForbiddenForIn(statement);
         }
 
@@ -2514,7 +2518,7 @@ export class LuaTransformer {
                 // Element access
                 indexExpression = this.transformExpression(expression.left.argumentExpression);
                 const argType = this.checker.getTypeAtLocation(expression.left.expression);
-                if (tsHelper.isArrayType(argType, this.checker)) {
+                if (tsHelper.isArrayType(argType, this.checker, this.program)) {
                     // Array access needs a +1
                     indexExpression = this.expressionPlusOne(indexExpression);
                 }
@@ -2548,7 +2552,8 @@ export class LuaTransformer {
 
         const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
             lhs,
-            this.checker
+            this.checker,
+            this.program
         );
         if (hasEffects) {
             // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
@@ -2709,7 +2714,8 @@ export class LuaTransformer {
 
         const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
             lhs,
-            this.checker
+            this.checker,
+            this.program
         );
         if (hasEffects) {
             // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
@@ -2999,7 +3005,7 @@ export class LuaTransformer {
     ): ExpressionVisitResult
     {
         const type = this.checker.getTypeAtLocation(node);
-        const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
+        const hasContext = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void;
         // Build parameter string
         const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(
             node.parameters,
@@ -3091,8 +3097,9 @@ export class LuaTransformer {
         let parameters: tstl.Expression[] = [];
 
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
-        const isTupleReturnForward =
-            node.parent && ts.isReturnStatement(node.parent) && tsHelper.isInTupleReturnFunction(node, this.checker);
+        const isTupleReturnForward = node.parent
+            && ts.isReturnStatement(node.parent)
+            && tsHelper.isInTupleReturnFunction(node, this.checker, this.program);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const isInSpread = node.parent && ts.isSpreadElement(node.parent);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
@@ -3186,12 +3193,12 @@ export class LuaTransformer {
         }
 
         // if ownerType is a array, use only supported functions
-        if (tsHelper.isExplicitArrayType(ownerType, this.checker)) {
+        if (tsHelper.isExplicitArrayType(ownerType, this.checker, this.program)) {
             return this.transformArrayCallExpression(node);
         }
 
         // if ownerType inherits from an array, use array calls where appropriate
-        if (tsHelper.isArrayType(ownerType, this.checker) &&
+        if (tsHelper.isArrayType(ownerType, this.checker, this.program) &&
             tsHelper.isDefaultArrayCallMethodName(node.expression.name.escapedText as string)) {
             return this.transformArrayCallExpression(node);
         }
@@ -3320,7 +3327,7 @@ export class LuaTransformer {
         if (tsHelper.isStringType(type)) {
             return this.transformStringProperty(node);
 
-        } else if (tsHelper.isArrayType(type, this.checker)) {
+        } else if (tsHelper.isArrayType(type, this.checker, this.program)) {
             const arrayPropertyAccess = this.transformArrayProperty(node);
             if (arrayPropertyAccess) {
                 return arrayPropertyAccess;
@@ -3485,7 +3492,7 @@ export class LuaTransformer {
             return this.transformConstEnumValue(type, node.argumentExpression.text, node);
         }
 
-        if (tsHelper.isArrayType(type, this.checker)) {
+        if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), node);
         } else if (tsHelper.isStringType(type)) {
             return tstl.createCallExpression(
@@ -3878,7 +3885,7 @@ export class LuaTransformer {
     public transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
+        if (tsHelper.getFunctionContextType(callerType, this.checker, this.program) === ContextType.Void) {
             throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
         const params = this.transformArguments(node.arguments);
@@ -4313,8 +4320,8 @@ export class LuaTransformer {
         fromTypeCache.add(toType);
 
         // Check function assignments
-        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker);
-        const toContext = tsHelper.getFunctionContextType(toType, this.checker);
+        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker, this.program);
+        const toContext = tsHelper.getFunctionContextType(toType, this.checker, this.program);
 
         if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);

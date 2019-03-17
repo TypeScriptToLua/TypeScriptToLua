@@ -140,15 +140,18 @@ export class TSHelper {
                (type.flags & ts.TypeFlags.StringLiteral) !== 0;
     }
 
-    public static isArrayTypeNode(typeNode: ts.TypeNode): boolean {
-        return typeNode.kind === ts.SyntaxKind.ArrayType || typeNode.kind === ts.SyntaxKind.TupleType ||
-               ((typeNode.kind === ts.SyntaxKind.UnionType || typeNode.kind === ts.SyntaxKind.IntersectionType) &&
-                (typeNode as ts.UnionOrIntersectionTypeNode).types.some(TSHelper.isArrayTypeNode));
-    }
+    public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+        if (type.isUnionOrIntersection()) {
+            return type.types.some(t => TSHelper.isExplicitArrayType(t, checker, program));
+        }
 
-    public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
-        return typeNode && TSHelper.isArrayTypeNode(typeNode);
+        if (TSHelper.isStandardLibraryType(type, "ReadonlyArray", program)) {
+            return true;
+        }
+
+        const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
+        const typeNode = checker.typeToTypeNode(type, undefined, flags);
+        return typeNode && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
     }
 
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
@@ -161,8 +164,8 @@ export class TSHelper {
         return TSHelper.isFunctionType(type, checker);
     }
 
-    public static isArrayType(type: ts.Type, checker: ts.TypeChecker): boolean {
-        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker));
+    public static isArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+        return TSHelper.forTypeOrAnySupertype(type, checker, t => TSHelper.isExplicitArrayType(t, checker, program));
     }
 
     public static isLuaIteratorType(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -180,12 +183,12 @@ export class TSHelper {
         }
     }
 
-    public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
+    public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker, program: ts.Program): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
             let functionType: ts.Type;
             if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
-                functionType = TSHelper.inferAssignedType(declaration, checker);
+                functionType = TSHelper.inferAssignedType(declaration, checker, program);
             } else {
                 functionType = checker.getTypeAtLocation(declaration);
             }
@@ -330,13 +333,17 @@ export class TSHelper {
 
     // If expression is property/element access with possible effects from being evaluated, returns true along with the
     // separated object and index expressions.
-    public static isAccessExpressionWithEvaluationEffects(node: ts.Expression, checker: ts.TypeChecker):
-        [boolean, ts.Expression, ts.Expression] {
+    public static isAccessExpressionWithEvaluationEffects(
+        node: ts.Expression,
+        checker: ts.TypeChecker,
+        program: ts.Program
+    ): [boolean, ts.Expression, ts.Expression]
+    {
         if (ts.isElementAccessExpression(node) &&
             (TSHelper.isExpressionWithEvaluationEffect(node.expression)
             || TSHelper.isExpressionWithEvaluationEffect(node.argumentExpression))) {
             const type = checker.getTypeAtLocation(node.expression);
-            if (TSHelper.isArrayType(type, checker)) {
+            if (TSHelper.isArrayType(type, checker, program)) {
                 // Offset arrays by one
                 const oneLit = ts.createNumericLiteral("1");
                 const exp = ts.createParen(node.argumentExpression);
@@ -446,10 +453,10 @@ export class TSHelper {
         ) !== undefined;
     }
 
-    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {
+    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker, program: ts.Program): ts.Type {
         if (ts.isParenthesizedExpression(expression.parent)) {
             // Ignore expressions wrapped in parenthesis
-            return this.inferAssignedType(expression.parent, checker);
+            return this.inferAssignedType(expression.parent, checker, program);
 
         } else if (ts.isCallOrNewExpression(expression.parent)) {
             // Expression being passed as argument to a function
@@ -462,7 +469,7 @@ export class TSHelper {
                         parentSignature.parameters[signatureIndex],
                         expression
                     );
-                    if (TSHelper.isArrayType(parameterType, checker)) {
+                    if (TSHelper.isArrayType(parameterType, checker, program)) {
                         // Check for elipses argument
                         const parentSignatureDeclaration = parentSignature.getDeclaration();
                         if (parentSignatureDeclaration) {
@@ -496,7 +503,7 @@ export class TSHelper {
 
         } else if (ts.isPropertyAssignment(expression.parent)) {
             // Expression being assigned to an object literal property
-            const objType = this.inferAssignedType(expression.parent.parent, checker);
+            const objType = this.inferAssignedType(expression.parent.parent, checker, program);
             const property = objType.getProperty(expression.parent.name.getText());
             if (!property) {
                 const stringPropertyType = objType.getStringIndexType();
@@ -509,7 +516,7 @@ export class TSHelper {
 
         } else if (ts.isArrayLiteralExpression(expression.parent)) {
             // Expression in an array literal
-            const arrayType = this.inferAssignedType(expression.parent, checker);
+            const arrayType = this.inferAssignedType(expression.parent, checker, program);
             if (ts.isTupleTypeNode(checker.typeToTypeNode(arrayType))) {
                 // Tuples
                 const i = expression.parent.elements.indexOf(expression);
@@ -530,7 +537,7 @@ export class TSHelper {
                 return checker.getTypeAtLocation(expression.parent.left);
             } else {
                 // Other binary expressions
-                return TSHelper.inferAssignedType(expression.parent, checker);
+                return TSHelper.inferAssignedType(expression.parent, checker, program);
             }
 
         } else if (ts.isAssertionExpression(expression.parent)) {
@@ -550,7 +557,8 @@ export class TSHelper {
 
     public static getSignatureDeclarations(
         signatures: ReadonlyArray<ts.Signature>,
-        checker: ts.TypeChecker
+        checker: ts.TypeChecker,
+        program: ts.Program
     ): ts.SignatureDeclaration[]
     {
         const signatureDeclarations: ts.SignatureDeclaration[] = [];
@@ -560,7 +568,7 @@ export class TSHelper {
                 && !TSHelper.getExplicitThisParameter(signatureDeclaration))
             {
                 // Infer type of function expressions/arrow functions
-                const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
+                const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker, program);
                 if (inferredType) {
                     const inferredSignatures = TSHelper.getAllCallSignatures(inferredType);
                     if (inferredSignatures.length > 0) {
@@ -650,20 +658,22 @@ export class TSHelper {
         return contexts.reduce(reducer, ContextType.None);
     }
 
-    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
+    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): ContextType {
         if (type.isTypeParameter()) {
             type = type.getConstraint() || type;
         }
 
         if (type.isUnion()) {
-            return TSHelper.reduceContextTypes(type.types.map(t => TSHelper.getFunctionContextType(t, checker)));
+            return TSHelper.reduceContextTypes(
+                type.types.map(t => TSHelper.getFunctionContextType(t, checker, program))
+            );
         }
 
         const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
         if (signatures.length === 0) {
             return ContextType.None;
         }
-        const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker);
+        const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker, program);
         return TSHelper.reduceContextTypes(
             signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
     }
@@ -677,7 +687,6 @@ export class TSHelper {
         const escapeSequences: Array<[RegExp, string]> = [
             [/[\\]/g, "\\\\"],
             [/[\']/g, "\\\'"],
-            [/[\`]/g, "\\\`"],
             [/[\"]/g, "\\\""],
             [/[\n]/g, "\\n"],
             [/[\r]/g, "\\r"],

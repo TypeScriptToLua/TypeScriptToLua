@@ -3691,8 +3691,7 @@ export class LuaTransformer {
     }
 
     // Transpile an Object._ property
-    public transformObjectCallExpression(expression: ts.CallExpression,): ExpressionVisitResult
-    {
+    public transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(expression);
         const parameters = this.transformArguments(expression.arguments);
@@ -3717,8 +3716,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult
-    {
+    public transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
         const methodName = method.name.escapedText;
         const signature = this.checker.getResolvedSignature(expression);

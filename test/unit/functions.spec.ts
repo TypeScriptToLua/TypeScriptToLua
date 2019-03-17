@@ -511,4 +511,16 @@ export class FunctionTests {
             }`;
         Expect(util.transpileAndExecute("return foo;", undefined, undefined, code)).toBe("foo");
     }
+
+    @Test("Function rest binding pattern")
+    public functionRestBindingPattern(): void {
+        const result = util.transpileAndExecute(
+            `function bar(foo: string, ...[bar, baz]: [string, string]) {
+                return bar + baz + foo;
+            }
+            return bar("abc", "def", "xyz");
+            `);
+
+        Expect(result).toBe("defxyzabc");
+    }
 }

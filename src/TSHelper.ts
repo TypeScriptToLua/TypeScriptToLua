@@ -687,7 +687,6 @@ export class TSHelper {
         const escapeSequences: Array<[RegExp, string]> = [
             [/[\\]/g, "\\\\"],
             [/[\']/g, "\\\'"],
-            [/[\`]/g, "\\\`"],
             [/[\"]/g, "\\\""],
             [/[\n]/g, "\\n"],
             [/[\r]/g, "\\r"],

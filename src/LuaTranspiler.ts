@@ -116,7 +116,6 @@ export class LuaTranspiler {
 
                 // Write output
                 ts.sys.writeFile(outPath, lua);
-                return 0;
             } catch (exception) {
                 /* istanbul ignore else: Testing else part would require to add a bug/exception to our code */
                 if (exception.node) {
@@ -130,6 +129,7 @@ export class LuaTranspiler {
                 }
             }
         }
+        return 0;
     }
 
     public transpileSourceFile(sourceFile: ts.SourceFile): string {

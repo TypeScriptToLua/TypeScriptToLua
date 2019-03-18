@@ -2,7 +2,9 @@ declare function error( value:string, level?:number ): never;
 
 
 // tslint:disable-next-line:variable-name
-const ____logError: any = print;
+let ____unhandledRejectionCallback = ( reason: string ) => {
+  (print as any)( "Unhandled rejected promise ", reason );
+};
 
 // The Promise A+ standard (https://promisesaplus.com/ Note 3.1) requires to call .then etc within a new stack
 // This might be implemented by something equivalent to
@@ -26,6 +28,10 @@ class PromiseImpl<T = never> {
 
   public static _setRunAtNextTickFunction( func: ( func: () => void ) => void ): void {
     ____runAtNextTick = func;
+  }
+
+  public static _setUnhandledRejectionCallback( func: ( reason: string ) => void ): void {
+    ____unhandledRejectionCallback = func;
   }
 
   public static resolve<T = never>(): PromiseImpl<T>;
@@ -289,7 +295,7 @@ class PromiseImpl<T = never> {
           return;
         }
       }
-      ____logError("Unhandled rejected promise ", this.reason );
+      ____unhandledRejectionCallback(this.reason );
     }
   }
 

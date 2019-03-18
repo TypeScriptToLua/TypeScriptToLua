@@ -1105,6 +1105,21 @@ export class AssignmentTests {
     @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
     @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
     @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in union tuple")
+    public functionExpressionTypeInferenceInUnionTuple(funcType: string, funcExp: string): void {
+        const code =
+            `interface I { callback: ${funcType}; }
+            let a: I[] | number = [{ callback: ${funcExp} }];
+            return a[0].callback("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
     @Test("Function expression type inference in as cast")
     public functionExpressionTypeInferenceInAsCast(funcType: string, funcExp: string): void {
         const code =

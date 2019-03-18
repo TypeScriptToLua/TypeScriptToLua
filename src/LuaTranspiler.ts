@@ -116,7 +116,7 @@ export class LuaTranspiler {
 
                 // Write output
                 ts.sys.writeFile(outPath, lua);
-                return 1;
+                return 0;
             } catch (exception) {
                 /* istanbul ignore else: Testing else part would require to add a bug/exception to our code */
                 if (exception.node) {

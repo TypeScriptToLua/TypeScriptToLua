@@ -493,6 +493,7 @@ export class ExpressionTests {
         const transformer = util.makeTestTransformer();
 
         const mockNode: any = {
+            kind: ts.SyntaxKind.CallExpression,
             arguments: [],
             caller: ts.createLiteral(false),
             expression: {name: ts.createIdentifier("unknownFunction"), expression: ts.createLiteral(false)},

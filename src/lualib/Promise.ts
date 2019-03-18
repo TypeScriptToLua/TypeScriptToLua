@@ -238,11 +238,15 @@ class PromiseImpl<T = never> {
   public finally(onFinally?: (() => void) | undefined | null): PromiseImpl<T> {
     return this.then(
        v => {
-        onFinally();
+         if ( onFinally ) {
+          onFinally();
+        }
         return v;
       },
       err => {
-        onFinally();
+        if ( onFinally ) {
+          onFinally();
+        }
         return error(err);
       }
     );

@@ -65,19 +65,19 @@ export class LuaTranspiler {
     }
 
     public emitFilesAndReportErrors(): number {
-        const error = this.reportErrors();
+        let error = this.reportErrors();
         if (error > 0) {
             return error;
         }
 
         this.program.getSourceFiles().forEach(sourceFile => {
-            this.emitSourceFile(sourceFile);
+            error = error || this.emitSourceFile(sourceFile);
         });
 
         // Copy lualib to target dir
         this.emitLuaLibIfRequired();
 
-        return 0;
+        return error;
     }
 
     public emitLuaLibIfRequired(): void{
@@ -88,7 +88,7 @@ export class LuaTranspiler {
         }
     }
 
-    public emitSourceFile(sourceFile: ts.SourceFile): void {
+    public emitSourceFile(sourceFile: ts.SourceFile): number {
         if (!sourceFile.isDeclarationFile) {
             try {
                 const rootDir = this.options.rootDir;
@@ -116,6 +116,7 @@ export class LuaTranspiler {
 
                 // Write output
                 ts.sys.writeFile(outPath, lua);
+                return 1;
             } catch (exception) {
                 /* istanbul ignore else: Testing else part would require to add a bug/exception to our code */
                 if (exception.node) {
@@ -123,6 +124,7 @@ export class LuaTranspiler {
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(`${sourceFile.fileName} (${1 + pos.line},${pos.character})\n${exception.stack}`);
+                    return 1;
                 } else {
                     throw exception;
                 }

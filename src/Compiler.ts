@@ -47,12 +47,12 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
     host.afterProgramCreate = program => {
         const transpiler = new LuaTranspiler(program.getProgram());
 
-        const status = transpiler.reportErrors();
+        let status = transpiler.reportErrors();
 
         while (true) {
             const currentFile = program.getSemanticDiagnosticsOfNextAffectedFile();
             if (!currentFile) { break; }
-            transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
+            status = status || transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
         }
 
         if (emitLuaLib) {

@@ -542,6 +542,27 @@ export class LuaLoopTests
         Expect(result).toBe("abc");
     }
 
+    @Test("forof array lua iterator")
+    public forofArrayLuaIterator(): void {
+        const code = `const arr = ["a", "b", "c"];
+            /** @luaIterator */
+            interface Iter extends Array<string> {}
+            function luaIter(): Iter {
+                let i = 0;
+                return (() => arr[i++]) as any;
+            }
+            let result = "";
+            for (let e of luaIter()) { result += e; }
+            return result;`;
+        const compilerOptions = {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ES2015,
+        };
+        const result = util.transpileAndExecute(code, compilerOptions);
+        Expect(result).toBe("abc");
+    }
+
     @Test("forof lua iterator with existing variable")
     public forofLuaIteratorExistingVar(): void {
         const code = `const arr = ["a", "b", "c"];

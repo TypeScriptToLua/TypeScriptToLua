@@ -1,4 +1,4 @@
-import { Expect, Test, TestCase, IgnoreTest, FocusTest } from "alsatian";
+import { Expect, Test, TestCase } from "alsatian";
 import * as util from "../src/util";
 
 export class ConsoleTests {
@@ -44,5 +44,24 @@ export class ConsoleTests {
         // Assert
         Expect(lua).toBe(expected);
     }
+
+    @Test("console.differentiation")
+    public testConsoleDifferentiation(): void {
+        // Transpile
+        const result = util.transpileExecuteAndReturnExport(`
+          export class Console {
+            test() { return 42; }
+          }
+
+          function test() {
+            const console = new Console();
+            return console.test();
+          }
+
+          export const result = test();
+        `, "result");
+        Expect(result).toBe(42);
+    }
+
 
 }

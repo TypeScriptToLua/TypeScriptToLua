@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.16.0
+* **BREAKING CHANGE:** All functions now take a `self` parameter. This means that without further action calls to declaration functions might be given an extra argument.
+    * To remove the self parameter from a single function add `this: void` to its declaration:     
+        ```declare function foo(this: void, ...)```
+    * To remove the self parameter from all methods or functions in a class/interface/namespace add `/** @noSelf */`:
+        ```/** @noSelf */ interface Foo {```
+    * To remove the self parameter from all functions in a file, add `/** @noSelfInFile */` at the top.
+
+---
+    
+* **BREAKING CHANGE:** Directive `/** @luaIterator */` should now be put on types instead of on the functions returning them.
+
+---
+
+* Fixed a bug breaking named class expressions.
+* Fixed inconsistency between the meaning of `>>` and `>>>` in JS vs. Lua.
+* Added `/** @noResolution */` directive to prevent path resolution on declared modules.
+* It is now possible to put `/** @luaIterator */` on types extending `Array<T>`.
+* Fixed issue with the moment static fields were initialized.
+* Fixed issue where `undefined` as property name was not transpiled correctly.
+* Various improvements to function/method self parameter inference.
+* Tstl options can now be defined in their own `tstl` block in tsconfig.json. For example:
+```
+{
+    "compilerOptions" : {}
+    "tstl": {
+        "luaTarget": "JIT"
+    }
+}
+```
+* Fixed issue when redeclaring TypeScript libraries/globals.
+* Fixed exception resolving function signatures.
+* Added support for automatically transpiling several `console` calls to their Lua equivalent:
+    * `console.log(...)` -> `print(...)`
+    * `console.assert(...)` -> `assert(...)`
+    * `console.trace(...)` -> `print(debug.traceback(...))`
+* Added support for `array.findIndex()`.
+* Fixed `array.sort()` not working with a compare function.
+* Added support for several common `Math.` functions and constants.
+* Added support for several common string instance functions such as `upper()`.
+
+## 0.15.2
+* Several improvements to module path resolution.
+* Removed header comment appearing in lualib.
+* Several package config improvements.
+* Static get/set accessors.
+
+## 0.15.1
+* Fixed array detection for unit and intersection types.
+* Support for import without `from`.
+* Added support for `WeakMap` and `WeakSet`.
+* Added support for `Object.keys` and `Object.assign`.
+* Added support for importing JSON files.
+* Fixed bug with where loop variables were not properly scoped.
+* Added support for ExportDeclarations
+
 ## 0.15.0
 * Now written for TypeScript 3.3.x!
 * Removed external CLI parser dependency and wrote our own `CommandLineParser.ts` to read CLI and tsconfig input.

@@ -5,13 +5,15 @@ interface LuaClass {
 
 declare interface LuaObject {
     constructor: LuaClass;
-    ____setters?: { [key: string]: (self: LuaObject, val: any) => void };
+    ____setters?: { [key: string]: (this: void, self: LuaObject, val: any) => void };
 }
 
-declare function rawget<T, K extends keyof T>(obj: T, key: K): T[K];
-declare function rawset<T, K extends keyof T>(obj: T, key: K, val: T[K]): void;
+declare function rawget<T, K extends keyof T>(this: void, obj: T, key: K): T[K];
+declare function rawset<T, K extends keyof T>(this: void, obj: T, key: K, val: T[K]): void;
 
-function __TS__NewIndex(classProto: LuaObject): (tbl: LuaObject, key: keyof LuaObject, val: any) => void {
+function __TS__NewIndex(this: void, classProto: LuaObject)
+    : (this: void, tbl: LuaObject, key: keyof LuaObject, val: any) => void
+{
     return (tbl, key, val) => {
         let proto = classProto;
         while (true) {

@@ -1,2 +1,2 @@
-nsMember = function()
+nsMember = function(self)
 end;

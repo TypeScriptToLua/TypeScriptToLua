@@ -11,10 +11,29 @@ export class ArrayTests {
         Expect(result).toBe(5);
     }
 
+    @Test("Readonly Array access")
+    public readonlyArrayAccess(): void {
+        const result = util.transpileAndExecute(
+            `const arr: ReadonlyArray<number> = [3,5,1];
+            return arr[1];`
+        );
+        Expect(result).toBe(5);
+    }
+
     @Test("Array union access")
     public arrayUnionAccess(): void {
         const result = util.transpileAndExecute(
             `function makeArray(): number[] | string[] { return [3,5,1]; }
+            const arr = makeArray();
+            return arr[1];`
+        );
+        Expect(result).toBe(5);
+    }
+
+    @Test("Array union access with empty tuple")
+    public arrayUnionAccessWithEmptyTuple(): void {
+        const result = util.transpileAndExecute(
+            `function makeArray(): number[] | [] { return [3,5,1]; }
             const arr = makeArray();
             return arr[1];`
         );

@@ -1,3 +1,3 @@
-varargsFunction = function(a, ...)
+varargsFunction = function(self, a, ...)
     local b = ({...});
 end;

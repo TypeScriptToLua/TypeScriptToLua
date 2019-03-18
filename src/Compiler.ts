@@ -89,7 +89,10 @@ const defaultCompilerOptions: CompilerOptions = {
 };
 
 export function createStringCompilerProgram(
-    input: string, options: CompilerOptions = defaultCompilerOptions, filePath = "file.ts"): ts.Program {
+    input: string | { [filename: string]: string },
+    options: CompilerOptions = defaultCompilerOptions,
+    filePath = "file.ts"
+): ts.Program {
     const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -100,8 +103,17 @@ export function createStringCompilerProgram(
         getNewLine: () => "\n",
 
         getSourceFile: (filename: string) => {
-            if (filename === filePath) {
-                return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
+            switch (typeof input) {
+                case "string":
+                    if (filename === filePath) {
+                        return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
+                    }
+                    break;
+                case "object":
+                    if (filename in input) {
+                        return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
+                    }
+                    break;
             }
             if (filename.indexOf(".d.ts") !== -1) {
                 if (!libCache[filename]) {
@@ -125,16 +137,17 @@ export function createStringCompilerProgram(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    return ts.createProgram([filePath], options, compilerHost);
+    const filePaths = typeof input === "string" ? [filePath] : Object.keys(input);
+    return ts.createProgram(filePaths, options, compilerHost);
 }
 
 export function transpileString(
-    str: string,
+    input: string | { [filename: string]: string },
     options: CompilerOptions = defaultCompilerOptions,
     ignoreDiagnostics = false,
     filePath = "file.ts"
 ): string {
-    const program = createStringCompilerProgram(str, options, filePath);
+    const program = createStringCompilerProgram(input, options, filePath);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);

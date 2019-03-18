@@ -1,27 +1,385 @@
-import { Expect, Test, TestCase } from "alsatian";
+import { Expect, Test, TestCase, TestCases } from "alsatian";
 import { TranspileError } from "../../src/TranspileError";
 
 import * as util from "../src/util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 const fs = require("fs");
 
-export class AssignmentTests {
+interface TestFunction {
+    value: string;
+    definition?: string;
+}
 
-    public static readonly funcAssignTestCode =
-        `let func: {(s: string): string} = function(s) { return s + "+func"; };
-         let lambda: (s: string) => string = s => s + "+lambda";
-         let thisFunc: {(this: Foo, s: string): string} = function(s) { return s + "+thisFunc"; };
-         let thisLambda: (this: Foo, s: string) => string = s => s + "+thisLambda";
-         class Foo {
-             method(s: string): string { return s + "+method"; }
-             lambdaProp: (s: string) => string = s => s + "+lambdaProp";
-             voidMethod(this: void, s: string): string { return s + "+voidMethod"; }
-             voidLambdaProp: (this: void, s: string) => string = s => s + "+voidLambdaProp";
-             static voidStaticMethod(this: void, s: string): string { return s + "+voidStaticMethod"; }
-             static voidStaticLambdaProp: (this: void, s: string) => string = s => s + "+voidStaticLambdaProp";
-             static staticMethod(s: string): string { return s + "+staticMethod"; }
-             static staticLambdaProp: (s: string) => string = s => s + "+staticLambdaProp";
-         }
-         const foo = new Foo();`;
+const selfTestFunctions: TestFunction[] = [
+    {
+        value: "selfFunc",
+        definition: `let selfFunc: {(this: any, s: string): string} = function(s) { return s; };`,
+    },
+    {
+        value: "selfLambda",
+        definition: `let selfLambda: (this: any, s: string) => string = s => s;`,
+    },
+    {
+        value: "anonFunc",
+        definition: `let anonFunc: {(s: string): string} = function(s) { return s; };`,
+    },
+    {
+        value: "anonLambda",
+        definition: `let anonLambda: (s: string) => string = s => s;`,
+    },
+    {
+        value: "methodClass.method",
+        definition: `class MethodClass { method(this: any, s: string): string { return s; } }
+            const methodClass = new MethodClass();`,
+    },
+    {
+        value: "anonMethodClass.anonMethod",
+        definition: `class AnonMethodClass { anonMethod(s: string): string { return s; } }
+            const anonMethodClass = new AnonMethodClass();`,
+    },
+    {
+        value: "funcPropClass.funcProp",
+        definition: `class FuncPropClass { funcProp: (this: any, s: string) => string = s => s; }
+            const funcPropClass = new FuncPropClass();`,
+    },
+    {
+        value: "anonFuncPropClass.anonFuncProp",
+        definition: `class AnonFuncPropClass { anonFuncProp: (s: string) => string = s => s; }
+            const anonFuncPropClass = new AnonFuncPropClass();`,
+    },
+    {
+        value: "StaticMethodClass.staticMethod",
+        definition: `class StaticMethodClass {
+                static staticMethod(this: any, s: string): string { return s; }
+            }`,
+    },
+    {
+        value: "AnonStaticMethodClass.anonStaticMethod",
+        definition: `class AnonStaticMethodClass { static anonStaticMethod(s: string): string { return s; } }`,
+    },
+    {
+        value: "StaticFuncPropClass.staticFuncProp",
+        definition: `class StaticFuncPropClass {
+                static staticFuncProp: (this: any, s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "AnonStaticFuncPropClass.anonStaticFuncProp",
+        definition: `class AnonStaticFuncPropClass {
+                static anonStaticFuncProp: (s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "FuncNs.nsFunc",
+        definition: `namespace FuncNs { export function nsFunc(s: string) { return s; } }`,
+    },
+    {
+        value: "FuncNestedNs.NestedNs.nestedNsFunc",
+        definition: `namespace FuncNestedNs {
+                export namespace NestedNs { export function nestedNsFunc(s: string) { return s; } }
+            }`,
+    },
+    {
+        value: "LambdaNs.nsLambda",
+        definition: `namespace LambdaNs {
+                export let nsLambda: (s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "LambdaNestedNs.NestedNs.nestedNsLambda",
+        definition: `namespace LambdaNestedNs {
+                export namespace NestedNs { export let nestedNsLambda: (s: string) => string = s => s }
+            }`,
+    },
+    {
+        value: "methodInterface.method",
+        definition: `interface MethodInterface { method(this: any, s: string): string; }
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }`,
+    },
+    {
+        value: "anonMethodInterface.anonMethod",
+        definition: `interface AnonMethodInterface { anonMethod(s: string): string; }
+            const anonMethodInterface: AnonMethodInterface = {
+                anonMethod: function(this: any, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "funcPropInterface.funcProp",
+        definition: `interface FuncPropInterface { funcProp: (this: any, s: string) => string; }
+            const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };`,
+    },
+    {
+        value: "anonFuncPropInterface.anonFuncProp",
+        definition: `interface AnonFuncPropInterface { anonFuncProp: (s: string) => string; }
+            const anonFuncPropInterface: AnonFuncPropInterface = { anonFuncProp: (s: string): string => s };`,
+    },
+    {
+        value: "anonMethodClassInNoSelfNs.method",
+        definition: `/** @noSelf */ namespace AnonMethodClassInNoSelfNs {
+                export class MethodClass {
+                    method(s: string): string { return s; }
+                }
+            }
+            const anonMethodClassInNoSelfNs = new AnonMethodClassInNoSelfNs.MethodClass();`,
+    },
+    {
+        value: "anonMethodInterfaceInNoSelfNs.method",
+        definition: `/** @noSelf */ namespace AnonMethodInterfaceInNoSelfNs {
+                export interface MethodInterface {
+                    method(s: string): string;
+                }
+            }
+            const anonMethodInterfaceInNoSelfNs: AnonMethodInterfaceInNoSelfNs.MethodInterface = {
+                method: function(s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "anonFunctionNestedInNoSelfClass",
+        definition: `/** @noSelf */ class AnonFunctionNestedInNoSelfClass {
+            method() { return function(s: string) { return s; } }
+        }
+        const anonFunctionNestedInNoSelfClass = (new AnonFunctionNestedInNoSelfClass).method();`,
+    },
+];
+
+const noSelfTestFunctions: TestFunction[] = [
+    {
+        value: "voidFunc",
+        definition: `let voidFunc: {(this: void, s: string): string} = function(s) { return s; };`,
+    },
+    {
+        value: "voidLambda",
+        definition: `let voidLambda: (this: void, s: string) => string = s => s;`,
+    },
+    {
+        value: "voidMethodClass.voidMethod",
+        definition: `class VoidMethodClass {
+                voidMethod(this: void, s: string): string { return s; }
+            }
+            const voidMethodClass = new VoidMethodClass();`,
+    },
+    {
+        value: "voidFuncPropClass.voidFuncProp",
+        definition: `class VoidFuncPropClass {
+                voidFuncProp: (this: void, s: string) => string = s => s;
+            }
+            const voidFuncPropClass = new VoidFuncPropClass();`,
+    },
+    {
+        value: "StaticVoidMethodClass.staticVoidMethod",
+        definition: `class StaticVoidMethodClass {
+                static staticVoidMethod(this: void, s: string): string { return s; }
+            }`,
+    },
+    {
+        value: "StaticVoidFuncPropClass.staticVoidFuncProp",
+        definition: `class StaticVoidFuncPropClass {
+                static staticVoidFuncProp: (this: void, s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "NoSelfFuncNs.noSelfNsFunc",
+        definition: `/** @noSelf */ namespace NoSelfFuncNs { export function noSelfNsFunc(s: string) { return s; } }`,
+    },
+    {
+        value: "NoSelfFuncNestedNs.NestedNs.noSelfNestedNsFunc",
+        definition: `/** @noSelf */ namespace NoSelfFuncNestedNs {
+                export namespace NestedNs { export function noSelfNestedNsFunc(s: string) { return s; } }
+            }`,
+    },
+    {
+        value: "NoSelfLambdaNs.noSelfNsLambda",
+        definition: `/** @noSelf */ namespace NoSelfLambdaNs {
+                export let noSelfNsLambda: (s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "NoSelfLambdaNestedNs.NestedNs.noSelfNestedNsLambda",
+        definition: `/** @noSelf */ namespace NoSelfLambdaNestedNs {
+                export namespace NestedNs { export let noSelfNestedNsLambda: (s: string) => string = s => s }
+            }`,
+    },
+    {
+        value: "noSelfMethodClass.noSelfMethod",
+        definition: `/** @noSelf */ class NoSelfMethodClass { noSelfMethod(s: string): string { return s; } }
+            const noSelfMethodClass = new NoSelfMethodClass();`,
+    },
+    {
+        value: "NoSelfStaticMethodClass.noSelfStaticMethod",
+        definition: `/** @noSelf */ class NoSelfStaticMethodClass {
+                static noSelfStaticMethod(s: string): string { return s; }
+            }`,
+    },
+    {
+        value: "noSelfFuncPropClass.noSelfFuncProp",
+        definition: `/** @noSelf */ class NoSelfFuncPropClass { noSelfFuncProp: (s: string) => string = s => s; }
+            const noSelfFuncPropClass = new NoSelfFuncPropClass();`,
+    },
+    {
+        value: "NoSelfStaticFuncPropClass.noSelfStaticFuncProp",
+        definition: `/** @noSelf */ class NoSelfStaticFuncPropClass {
+                static noSelfStaticFuncProp: (s: string) => string  = s => s;
+            }`,
+    },
+    {
+        value: "voidMethodInterface.voidMethod",
+        definition: `interface VoidMethodInterface {
+                voidMethod(this: void, s: string): string;
+            }
+            const voidMethodInterface: VoidMethodInterface = {
+                voidMethod(this: void, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "voidFuncPropInterface.voidFuncProp",
+        definition: `interface VoidFuncPropInterface {
+                voidFuncProp: (this: void, s: string) => string;
+            }
+            const voidFuncPropInterface: VoidFuncPropInterface = {
+                voidFuncProp: function(this: void, s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "noSelfMethodInterface.noSelfMethod",
+        definition: `/** @noSelf */ interface NoSelfMethodInterface { noSelfMethod(s: string): string; }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "noSelfFuncPropInterface.noSelfFuncProp",
+        definition: `/** @noSelf */ interface NoSelfFuncPropInterface { noSelfFuncProp(s: string): string; }
+            const noSelfFuncPropInterface: NoSelfFuncPropInterface = {
+                noSelfFuncProp: (s: string): string => s
+            };`,
+    },
+    {
+        value: "noSelfMethodClassExpression.noSelfMethod",
+        definition: `/** @noSelf */ const NoSelfMethodClassExpression = class {
+                noSelfMethod(s: string): string { return s; }
+            }
+            const noSelfMethodClassExpression = new NoSelfMethodClassExpression();`,
+    },
+    {
+        value: "anonFunctionNestedInClassInNoSelfNs",
+        definition: `/** @noSelf */ namespace AnonFunctionNestedInClassInNoSelfNs {
+            export class AnonFunctionNestedInClass {
+                method() { return function(s: string) { return s; } }
+            }
+        }
+        const anonFunctionNestedInClassInNoSelfNs =
+            (new AnonFunctionNestedInClassInNoSelfNs.AnonFunctionNestedInClass).method();`,
+    },
+];
+
+const noSelfInFileTestFunctions: TestFunction[] = [
+    {
+        value: "noSelfInFileFunc",
+        definition: `/** @noSelfInFile */ let noSelfInFileFunc: {(s: string): string} = function(s) { return s; };`,
+    },
+    {
+        value: "noSelfInFileLambda",
+        definition: `/** @noSelfInFile */ let noSelfInFileLambda: (s: string) => string = s => s;`,
+    },
+    {
+        value: "NoSelfInFileFuncNs.noSelfInFileNsFunc",
+        definition: `/** @noSelfInFile */ namespace NoSelfInFileFuncNs {
+                export function noSelfInFileNsFunc(s: string) { return s; }
+            }`,
+    },
+    {
+        value: "NoSelfInFileLambdaNs.noSelfInFileNsLambda",
+        definition: `/** @noSelfInFile */ namespace NoSelfInFileLambdaNs {
+                export let noSelfInFileNsLambda: (s: string) => string = s => s;
+            }`,
+    },
+    {
+        value: "noSelfInFileFuncNestedInClass",
+        definition: `/** @noSelfInFile */ class NoSelfInFileFuncNestedInClass {
+            method() { return function(s: string) { return s; } }
+        }
+        const noSelfInFileFuncNestedInClass = (new NoSelfInFileFuncNestedInClass).method();`,
+    },
+];
+
+const anonTestFunctionExpressions: TestFunction[] = [
+    {value: `s => s`},
+    {value: `(s => s)`},
+    {value: `function(s) { return s; }`},
+    {value: `(function(s) { return s; })`},
+];
+
+const selfTestFunctionExpressions: TestFunction[] = [
+    {value: `function(this: any, s) { return s; }`},
+    {value: `(function(this: any, s) { return s; })`},
+];
+
+const noSelfTestFunctionExpressions: TestFunction[] = [
+    {value: `function(this: void, s) { return s; }`},
+    {value: `(function(this: void, s) { return s; })`},
+];
+
+const anonTestFunctionType = "(s: string) => string";
+const selfTestFunctionType = "(this: any, s: string) => string";
+const noSelfTestFunctionType = "(this: void, s: string) => string";
+
+type TestFunctionCast = [
+    /*testFunction: */TestFunction,
+    /*castedFunction: */string,
+    /*isSelfConversion?: */boolean?
+];
+const validTestFunctionCasts: TestFunctionCast[] = [
+    [selfTestFunctions[0], `<${anonTestFunctionType}>(${selfTestFunctions[0].value})`],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${anonTestFunctionType})`],
+    [selfTestFunctions[0], `<${selfTestFunctionType}>(${selfTestFunctions[0].value})`],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${selfTestFunctionType})`],
+    [noSelfTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfTestFunctions[0].value})`],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
+    [noSelfInFileTestFunctions[0], `<${anonTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${anonTestFunctionType})`],
+    [noSelfInFileTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
+];
+const invalidTestFunctionCasts: TestFunctionCast[] = [
+    [noSelfTestFunctions[0], `<${anonTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${anonTestFunctionType})`, false],
+    [noSelfTestFunctions[0], `<${selfTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
+    [noSelfInFileTestFunctions[0], `<${selfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`, false],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
+    [selfTestFunctions[0], `<${noSelfTestFunctionType}>(${selfTestFunctions[0].value})`, true],
+    [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${noSelfTestFunctionType})`, true],
+];
+
+type TestFunctionAssignment = [
+    /*testFunction: */TestFunction,
+    /*functionType: */string,
+    /*isSelfConversion?: */boolean?
+];
+const validTestFunctionAssignments: TestFunctionAssignment[] = [
+    ...selfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
+    ...selfTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]),
+    ...noSelfTestFunctions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
+    ...noSelfInFileTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
+    ...noSelfInFileTestFunctions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
+    ...anonTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
+    ...anonTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]),
+    ...anonTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
+    ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
+    ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
+];
+const invalidTestFunctionAssignments: TestFunctionAssignment[] = [
+    ...selfTestFunctions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType, false]),
+    ...noSelfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType, true]),
+    ...noSelfTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
+    ...noSelfInFileTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
+    ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType, false]),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType, true]),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
+];
+
+export class AssignmentTests {
 
     @TestCase(`"abc"`, `"abc"`)
     @TestCase("3", "3")
@@ -101,7 +459,7 @@ export class AssignmentTests {
     @Test("TupleReturn assignment")
     public tupleReturnFunction(): void {
         const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): number[]\n`
+                   + `declare function abc(this: void): number[]\n`
                    + `let [a,b] = abc();`;
 
         const lua = util.transpileString(code);
@@ -111,7 +469,7 @@ export class AssignmentTests {
     @Test("TupleReturn Single assignment")
     public tupleReturnSingleAssignment(): void {
         const code = `/** @tupleReturn */\n`
-                   + `declare function abc(): [number, string];\n`
+                   + `declare function abc(this: void): [number, string];\n`
                    + `let a = abc();`
                    + `a = abc();`;
 
@@ -135,7 +493,7 @@ export class AssignmentTests {
     public tupleReturnNameSpace(): void {
         const code = `declare namespace def {\n`
                    + `/** @tupleReturn */\n`
-                   + `function abc() {}\n`
+                   + `function abc(this: void) {}\n`
                    + `}\n`
                    + `let [a,b] = def.abc();`;
 
@@ -203,518 +561,239 @@ export class AssignmentTests {
             .toThrowError(TranspileError, `Cannot use Lua keyword ${identifier} as identifier.`);
     }
 
-    @TestCase("func", "lambda", "foo+lambda")
-    @TestCase("func", "s => s", "foo")
-    @TestCase("func", "(s => s)", "foo")
-    @TestCase("func", "function(s) { return s; }", "foo")
-    @TestCase("func", "(function(s) { return s; })", "foo")
-    @TestCase("func", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("func", "s => foo.method(s)", "foo+method")
-    @TestCase("func", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("func", "Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("func", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("func", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("func", "foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("lambda", "func", "foo+func")
-    @TestCase("lambda", "s => s", "foo")
-    @TestCase("lambda", "(s => s)", "foo")
-    @TestCase("lambda", "function(s) { return s; }", "foo")
-    @TestCase("lambda", "(function(s) { return s; })", "foo")
-    @TestCase("lambda", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("lambda", "s => foo.method(s)", "foo+method")
-    @TestCase("lambda", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("lambda", "Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("lambda", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("lambda", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("lambda", "foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("Foo.voidStaticMethod", "func", "foo+func")
-    @TestCase("Foo.voidStaticMethod", "lambda", "foo+lambda")
-    @TestCase("Foo.voidStaticMethod", "s => s", "foo")
-    @TestCase("Foo.voidStaticMethod", "(s => s)", "foo")
-    @TestCase("Foo.voidStaticMethod", "function(s) { return s; }", "foo")
-    @TestCase("Foo.voidStaticMethod", "(function(s) { return s; })", "foo")
-    @TestCase("Foo.voidStaticMethod", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("Foo.voidStaticMethod", "s => foo.method(s)", "foo+method")
-    @TestCase("Foo.voidStaticMethod", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("Foo.voidStaticMethod", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("Foo.voidStaticMethod", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("Foo.voidStaticMethod", "foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("Foo.voidStaticLambdaProp", "func", "foo+func")
-    @TestCase("Foo.voidStaticLambdaProp", "lambda", "foo+lambda")
-    @TestCase("Foo.voidStaticLambdaProp", "s => s", "foo")
-    @TestCase("Foo.voidStaticLambdaProp", "(s => s)", "foo")
-    @TestCase("Foo.voidStaticLambdaProp", "function(s) { return s; }", "foo")
-    @TestCase("Foo.voidStaticLambdaProp", "(function(s) { return s; })", "foo")
-    @TestCase("Foo.voidStaticLambdaProp", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("Foo.voidStaticLambdaProp", "s => foo.method(s)", "foo+method")
-    @TestCase("Foo.voidStaticLambdaProp", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("Foo.voidStaticLambdaProp", "Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("Foo.voidStaticLambdaProp", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("Foo.voidStaticLambdaProp", "foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("foo.voidMethod", "func", "foo+func")
-    @TestCase("foo.voidMethod", "lambda", "foo+lambda")
-    @TestCase("foo.voidMethod", "s => s", "foo")
-    @TestCase("foo.voidMethod", "(s => s)", "foo")
-    @TestCase("foo.voidMethod", "function(s) { return s; }", "foo")
-    @TestCase("foo.voidMethod", "(function(s) { return s; })", "foo")
-    @TestCase("foo.voidMethod", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("foo.voidMethod", "s => foo.method(s)", "foo+method")
-    @TestCase("foo.voidMethod", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("foo.voidMethod", "Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("foo.voidMethod", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("foo.voidMethod", "foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("foo.voidLambdaProp", "func", "foo+func")
-    @TestCase("foo.voidLambdaProp", "lambda", "foo+lambda")
-    @TestCase("foo.voidLambdaProp", "s => s", "foo")
-    @TestCase("foo.voidLambdaProp", "(s => s)", "foo")
-    @TestCase("foo.voidLambdaProp", "function(s) { return s; }", "foo")
-    @TestCase("foo.voidLambdaProp", "(function(s) { return s; })", "foo")
-    @TestCase("foo.voidLambdaProp", "function(this: void, s: string) { return s; }", "foo")
-    @TestCase("foo.voidLambdaProp", "s => foo.method(s)", "foo+method")
-    @TestCase("foo.voidLambdaProp", "s => foo.lambdaProp(s)", "foo+lambdaProp")
-    @TestCase("foo.voidLambdaProp", "Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("foo.voidLambdaProp", "Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("foo.voidLambdaProp", "foo.voidMethod", "foo+voidMethod")
-    @TestCase("func", "<(s: string) => string>lambda", "foo+lambda")
-    @TestCase("func", "lambda as ((s: string) => string)", "foo+lambda")
+    @TestCases(validTestFunctionAssignments)
+    @Test("Valid function variable declaration")
+    public validFunctionDeclaration(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `const fn: ${functionType} = ${testFunction.value};
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(validTestFunctionAssignments)
     @Test("Valid function assignment")
-    public validFunctionAssignment(func: string, assignTo: string, expectResult: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo}; return ${func}("foo");`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
+    public validFunctionAssignment(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `let fn: ${functionType};
+            fn = ${testFunction.value};
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
     }
 
-    @TestCase("func", "foo+func")
-    @TestCase("lambda", "foo+lambda")
-    @TestCase("Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("foo.voidMethod", "foo+voidMethod")
-    @TestCase("foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("s => s", "foo")
-    @TestCase("(s => s)", "foo")
-    @TestCase("function(s) { return s; }", "foo")
-    @TestCase("(function(s) { return s; })", "foo")
-    @TestCase("function(this: void, s: string) { return s; }", "foo")
-    @TestCase("func", "foo+func", "string | ((s: string) => string)")
-    @TestCase("func", "foo+func", "T")
-    @TestCase("<(s: string) => string>func", "foo+func")
-    @TestCase("func as ((s: string) => string)", "foo+func")
-    @Test("Valid function argument")
-    public validFunctionArgument(func: string, expectResult: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function takesFunc<T extends ((s: string) => string)>(fn: ${funcType}) {
-                          return (fn as any)("foo");
-                      }
-                      return takesFunc(${func});`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
+    @TestCases(invalidTestFunctionAssignments)
+    @Test("Invalid function variable declaration")
+    public invalidFunctionDeclaration(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            const fn: ${functionType} = ${testFunction.value};`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
-    @TestCase("s => s", "foo")
-    @TestCase("(s => s)", "foo")
-    @TestCase("function(s) { return s; }", "foo")
-    @TestCase("(function(s) { return s; })", "foo")
-    @TestCase("function(this: void, s: string) { return s; }", "foo")
-    @Test("Valid function expression argument with no signature")
-    public validFunctionExpressionArgumentNoSignature(func: string, expectResult: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      const takesFunc: any = (fn: (s: string) => string) => {
-                          return (fn as any)("foo");
-                      }
-                      return takesFunc(${func});`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
-    }
-
-    @TestCase("func", "foo+func")
-    @TestCase("lambda", "foo+lambda")
-    @TestCase("Foo.voidStaticMethod", "foo+voidStaticMethod")
-    @TestCase("Foo.voidStaticLambdaProp", "foo+voidStaticLambdaProp")
-    @TestCase("foo.voidMethod", "foo+voidMethod")
-    @TestCase("foo.voidLambdaProp", "foo+voidLambdaProp")
-    @TestCase("s => s", "foo")
-    @TestCase("(s => s)", "foo")
-    @TestCase("function(s) { return s; }", "foo")
-    @TestCase("(function(s) { return s; })", "foo")
-    @TestCase("function(this: void, s: string) { return s; }", "foo")
-    @TestCase("func", "foo+func", "string | ((s: string) => string)")
-    @TestCase("<(s: string) => string>func", "foo+func")
-    @TestCase("func as ((s: string) => string)", "foo+func")
-    @Test("Valid function return")
-    public validFunctionReturn(func: string, expectResult: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsFunc(): ${funcType} {
-                          return ${func};
-                      }
-                      const fn = returnsFunc();
-                      return (fn as any)("foo");`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
-    }
-
-    @TestCase("foo.method", "foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("foo.method", "s => s", "foo")
-    @TestCase("foo.method", "function(s) { return s; }", "foo")
-    @TestCase("foo.method", "(function(s) { return s; })", "foo")
-    @TestCase("foo.method", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("foo.method", "s => func(s)", "foo+func")
-    @TestCase("foo.method", "s => lambda(s)", "foo+lambda")
-    @TestCase("foo.method", "Foo.staticMethod", "foo+staticMethod")
-    @TestCase("foo.method", "Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("foo.method", "thisFunc", "foo+thisFunc")
-    @TestCase("foo.method", "thisLambda", "foo+thisLambda")
-    @TestCase("foo.lambdaProp", "foo.method", "foo+method")
-    @TestCase("foo.lambdaProp", "s => s", "foo")
-    @TestCase("foo.lambdaProp", "(s => s)", "foo")
-    @TestCase("foo.lambdaProp", "function(s) { return s; }", "foo")
-    @TestCase("foo.lambdaProp", "(function(s) { return s; })", "foo")
-    @TestCase("foo.lambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("foo.lambdaProp", "s => func(s)", "foo+func")
-    @TestCase("foo.lambdaProp", "s => lambda(s)", "foo+lambda")
-    @TestCase("foo.lambdaProp", "Foo.staticMethod", "foo+staticMethod")
-    @TestCase("foo.lambdaProp", "Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("foo.lambdaProp", "thisFunc", "foo+thisFunc")
-    @TestCase("foo.lambdaProp", "thisLambda", "foo+thisLambda")
-    @TestCase("Foo.staticMethod", "foo.method", "foo+method")
-    @TestCase("Foo.staticMethod", "foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("Foo.staticMethod", "s => s", "foo")
-    @TestCase("Foo.staticMethod", "(s => s)", "foo")
-    @TestCase("Foo.staticMethod", "function(s) { return s; }", "foo")
-    @TestCase("Foo.staticMethod", "(function(s) { return s; })", "foo")
-    @TestCase("Foo.staticMethod", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("Foo.staticMethod", "s => func(s)", "foo+func")
-    @TestCase("Foo.staticMethod", "s => lambda(s)", "foo+lambda")
-    @TestCase("Foo.staticMethod", "Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("Foo.staticMethod", "thisFunc", "foo+thisFunc")
-    @TestCase("Foo.staticMethod", "thisLambda", "foo+thisLambda")
-    @TestCase("Foo.staticLambdaProp", "foo.method", "foo+method")
-    @TestCase("Foo.staticLambdaProp", "foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("Foo.staticLambdaProp", "s => s", "foo")
-    @TestCase("Foo.staticLambdaProp", "(s => s)", "foo")
-    @TestCase("Foo.staticLambdaProp", "function(s) { return s; }", "foo")
-    @TestCase("Foo.staticLambdaProp", "(function(s) { return s; })", "foo")
-    @TestCase("Foo.staticLambdaProp", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("Foo.staticLambdaProp", "s => func(s)", "foo+func")
-    @TestCase("Foo.staticLambdaProp", "s => lambda(s)", "foo+lambda")
-    @TestCase("Foo.staticLambdaProp", "Foo.staticMethod", "foo+staticMethod")
-    @TestCase("Foo.staticLambdaProp", "thisFunc", "foo+thisFunc")
-    @TestCase("Foo.staticLambdaProp", "thisLambda", "foo+thisLambda")
-    @TestCase("thisFunc", "foo.method", "foo+method")
-    @TestCase("thisFunc", "foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("thisFunc", "s => s", "foo")
-    @TestCase("thisFunc", "(s => s)", "foo")
-    @TestCase("thisFunc", "function(s) { return s; }", "foo")
-    @TestCase("thisFunc", "(function(s) { return s; })", "foo")
-    @TestCase("thisFunc", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("thisFunc", "s => func(s)", "foo+func")
-    @TestCase("thisFunc", "s => lambda(s)", "foo+lambda")
-    @TestCase("thisFunc", "Foo.staticMethod", "foo+staticMethod")
-    @TestCase("thisFunc", "Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("thisFunc", "thisLambda", "foo+thisLambda")
-    @TestCase("thisLambda", "foo.method", "foo+method")
-    @TestCase("thisLambda", "foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("thisLambda", "s => s", "foo")
-    @TestCase("thisLambda", "(s => s)", "foo")
-    @TestCase("thisLambda", "function(s) { return s; }", "foo")
-    @TestCase("thisLambda", "(function(s) { return s; })", "foo")
-    @TestCase("thisLambda", "function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("thisLambda", "s => func(s)", "foo+func")
-    @TestCase("thisLambda", "s => lambda(s)", "foo+lambda")
-    @TestCase("thisLambda", "Foo.staticMethod", "foo+staticMethod")
-    @TestCase("thisLambda", "Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("thisLambda", "thisFunc", "foo+thisFunc")
-    @TestCase("foo.method", "<(this: Foo, s: string) => string>foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("foo.method", "foo.lambdaProp as ((this: Foo, s: string) => string)", "foo+lambdaProp")
-    @Test("Valid method assignment")
-    public validMethodAssignment(func: string, assignTo: string, expectResult: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      ${func} = ${assignTo};
-                      foo.method = ${func};
-                      return foo.method("foo");`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
-    }
-
-    @TestCase("foo.method", "foo+method")
-    @TestCase("foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("Foo.staticMethod", "foo+staticMethod")
-    @TestCase("Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("thisFunc", "foo+thisFunc")
-    @TestCase("thisLambda", "foo+thisLambda")
-    @TestCase("s => s", "foo")
-    @TestCase("(s => s)", "foo")
-    @TestCase("function(s) { return s; }", "foo")
-    @TestCase("(function(s) { return s; })", "foo")
-    @TestCase("function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
-    @TestCase("foo.method", "foo+method", "T")
-    @TestCase("<(this: Foo, s: string) => string>foo.method", "foo+method")
-    @TestCase("foo.method as ((this: Foo, s: string) => string)", "foo+method")
-    @Test("Valid method argument")
-    public validMethodArgument(func: string, expectResult: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(this: Foo, s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function takesMethod<T extends ((this: Foo, s: string) => string)>(meth: ${funcType}) {
-                          foo.method = meth as any;
-                      }
-                      takesMethod(${func});
-                      return foo.method("foo");`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
-    }
-
-    @TestCase("foo.method", "foo+method")
-    @TestCase("foo.lambdaProp", "foo+lambdaProp")
-    @TestCase("Foo.staticMethod", "foo+staticMethod")
-    @TestCase("Foo.staticLambdaProp", "foo+staticLambdaProp")
-    @TestCase("thisFunc", "foo+thisFunc")
-    @TestCase("thisLambda", "foo+thisLambda")
-    @TestCase("s => s", "foo")
-    @TestCase("(s => s)", "foo")
-    @TestCase("function(s) { return s; }", "foo")
-    @TestCase("(function(s) { return s; })", "foo")
-    @TestCase("function(this: Foo, s: string) { return s; }", "foo")
-    @TestCase("foo.method", "foo+method", "string | ((this: Foo, s: string) => string)")
-    @TestCase("<(this: Foo, s: string) => string>foo.method", "foo+method")
-    @TestCase("foo.method as ((this: Foo, s: string) => string)", "foo+method")
-    @Test("Valid method return")
-    public validMethodReturn(func: string, expectResult: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(this: Foo, s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnMethod(): ${funcType} {
-                          return ${func};
-                      }
-                      foo.method = returnMethod() as any;
-                      return foo.method("foo");`;
-        const result = util.transpileAndExecute(code);
-        Expect(result).toBe(expectResult);
-    }
-
-    @TestCase("func", "foo.method")
-    @TestCase("func", "foo.lambdaProp")
-    @TestCase("func", "Foo.staticMethod")
-    @TestCase("func", "Foo.staticLambdaProp")
-    @TestCase("func", "function(this: Foo, s: string) { return s; }")
-    @TestCase("lambda", "foo.method")
-    @TestCase("lambda", "foo.lambdaProp")
-    @TestCase("lambda", "Foo.staticMethod")
-    @TestCase("lambda", "Foo.staticLambdaProp")
-    @TestCase("lambda", "function(this: Foo, s: string) { return s; }")
-    @TestCase("foo.voidMethod", "foo.method")
-    @TestCase("foo.voidMethod", "foo.lambdaProp")
-    @TestCase("foo.voidMethod", "Foo.staticMethod")
-    @TestCase("foo.voidMethod", "Foo.staticLambdaProp")
-    @TestCase("foo.voidMethod", "function(this: Foo, s: string) { return s; }")
-    @TestCase("foo.voidLambdaProp", "foo.method")
-    @TestCase("foo.voidLambdaProp", "foo.lambdaProp")
-    @TestCase("foo.voidLambdaProp", "Foo.staticMethod")
-    @TestCase("foo.voidLambdaProp", "Foo.staticLambdaProp")
-    @TestCase("foo.voidLambdaProp", "function(this: Foo, s: string) { return s; }")
-    @TestCase("Foo.voidStaticMethod", "foo.method")
-    @TestCase("Foo.voidStaticMethod", "foo.lambdaProp")
-    @TestCase("Foo.voidStaticMethod", "Foo.staticMethod")
-    @TestCase("Foo.voidStaticMethod", "Foo.staticLambdaProp")
-    @TestCase("Foo.voidStaticMethod", "function(this: Foo, s: string) { return s; }")
-    @TestCase("Foo.voidStaticLambdaProp", "foo.method")
-    @TestCase("Foo.voidStaticLambdaProp", "foo.lambdaProp")
-    @TestCase("Foo.voidStaticLambdaProp", "Foo.staticMethod")
-    @TestCase("Foo.voidStaticLambdaProp", "Foo.staticLambdaProp")
-    @TestCase("Foo.voidStaticLambdaProp", "function(this: Foo, s: string) { return s; }")
-    @TestCase("func", "(foo.method as (string | ((this: Foo, s: string) => string)))")
-    @TestCase("func", "<(s: string) => string>foo.method")
-    @TestCase("func", "foo.method as ((s: string) => string)")
+    @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function assignment")
-    public invalidFunctionAssignment(func: string, assignTo: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+    public invalidFunctionAssignment(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            let fn: ${functionType};
+            fn = ${testFunction.value};`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
-    @TestCase("foo.method")
-    @TestCase("foo.lambdaProp")
-    @TestCase("Foo.staticMethod")
-    @TestCase("Foo.staticLambdaProp")
-    @TestCase("thisFunc")
-    @TestCase("thisLambda")
-    @TestCase("function(this: Foo, s: string) { return s; }")
-    @TestCase("foo.method", "string | ((s: string) => string)")
-    @TestCase("foo.method", "T")
+    @TestCases(validTestFunctionCasts)
+    @Test("Valid function assignment with cast")
+    public validFunctionAssignmentWithCast(testFunction: TestFunction, castedFunction: string): void {
+        const code =
+            `let fn: typeof ${testFunction.value};
+            fn = ${castedFunction};
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(invalidTestFunctionCasts)
+    @Test("Invalid function assignment with cast")
+    public invalidFunctionAssignmentWithCast(
+        testFunction: TestFunction,
+        castedFunction: string,
+        isSelfConversion: boolean
+    ): void {
+        const code =
+            `${testFunction.definition || ""}
+            let fn: typeof ${testFunction.value};
+            fn = ${castedFunction};`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
+    }
+
+    @TestCases(validTestFunctionAssignments)
+    @Test("Valid function argument")
+    public validFunctionArgument(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `function takesFunction(fn: ${functionType}) {
+                return fn("foobar");
+            }
+            return takesFunction(${testFunction.value});`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function argument")
-    public invalidFunctionArgument(func: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesFunc<T extends ((s: string) => string)>(fn: ${funcType});
-                      takesFunc(${func});`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from method to function \"fn\". To fix, wrap the method in an arrow function.");
+    public invalidFunctionArgument(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            declare function takesFunction(fn: ${functionType});
+            takesFunction(${testFunction.value});`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
-    @TestCase("<(s: string) => string>foo.method")
-    @TestCase("foo.method as ((s: string) => string)")
-    @Test("Invalid function argument cast")
-    public invalidFunctionArgumentCast(func: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesFunc<T extends ((s: string) => string)>(fn: (s: string) => string);
-                      takesFunc(${func});`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+    @TestCases(validTestFunctionCasts)
+    @Test("Valid function argument with cast")
+    public validFunctionArgumentWithCast(testFunction: TestFunction, castedFunction: string): void {
+        const code =
+            `function takesFunction(fn: typeof ${testFunction.value}) {
+                return fn("foobar");
+            }
+            return takesFunction(${castedFunction});`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
     }
 
-    @TestCase("foo.method")
-    @TestCase("foo.lambdaProp")
-    @TestCase("Foo.staticMethod")
-    @TestCase("Foo.staticLambdaProp")
-    @TestCase("thisFunc")
-    @TestCase("thisLambda")
-    @TestCase("function(this: Foo, s: string) { return s; }")
-    @TestCase("foo.method", "string | ((s: string) => string)")
-    @TestCase("foo.method", "T")
-    @TestCase("<(s: string) => string>foo.method")
-    @TestCase("foo.method as ((s: string) => string)")
+    @TestCases(invalidTestFunctionCasts)
+    @Test("Invalid function argument with cast")
+    public invalidFunctionArgumentWithCast(
+        testFunction: TestFunction,
+        castedFunction: string,
+        isSelfConversion: boolean
+    ): void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            declare function takesFunction(fn: typeof ${testFunction.value});
+            takesFunction(${castedFunction});`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
+    }
+
+    // TODO: Fix function expression inference with generic types. The following should work, but doesn't:
+    //     function takesFunction<T extends (this: void, s: string) => string>(fn: T) { ... }
+    //     takesFunction(s => s); // Error: cannot convert method to function
+    // @TestCases(validTestFunctionAssignments) // Use this instead of other TestCases when fixed
+    @TestCases(selfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]))
+    @TestCases(selfTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]))
+    @TestCases(noSelfTestFunctions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]))
+    @TestCases(selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]))
+    @TestCases(selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]))
+    @TestCases(noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]))
+    @Test("Valid function generic argument")
+    public validFunctionGenericArgument(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `function takesFunction<T extends ${functionType}>(fn: T) {
+                return fn("foobar");
+            }
+            return takesFunction(${testFunction.value});`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(invalidTestFunctionAssignments)
+    @Test("Invalid function generic argument")
+    public invalidFunctionGenericArgument(testFunction: TestFunction, functionType: string, isSelfConversion: boolean)
+        : void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            declare function takesFunction<T extends ${functionType}>(fn: T);
+            takesFunction(${testFunction.value});`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
+    }
+
+    @TestCases(anonTestFunctionExpressions.map(f => [f, "0", "'foobar'"]))
+    @TestCases(selfTestFunctionExpressions.map(f => [f, "0", "'foobar'"]))
+    @TestCases(noSelfTestFunctionExpressions.map(f => [f, "'foobar'"]))
+    @Test("Valid function expression argument with no signature")
+    public validFunctionExpressionArgumentNoSignature(testFunction: TestFunction, ...args: string[]): void {
+        const code =
+            `const takesFunction: any = (fn: (this: void, ...args: any[]) => any, ...args: any[]) => {
+                return fn(...args);
+            }
+            return takesFunction(${testFunction.value}, ${args.join(", ")});`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(validTestFunctionAssignments)
+    @Test("Valid function return")
+    public validFunctionReturn(testFunction: TestFunction, functionType: string): void {
+        const code =
+            `function returnsFunction(): ${functionType} {
+                return ${testFunction.value};
+            }
+            const fn = returnsFunction();
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
+    }
+
+    @TestCases(invalidTestFunctionAssignments)
     @Test("Invalid function return")
-    public invalidFunctionReturn(func: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsFunc<T extends ((s: string) => string)>(): ${funcType} {
-                          return ${func};
-                      }`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+    public invalidFunctionReturn(testFunction: TestFunction, functionType: string, isSelfConversion: boolean): void {
+        const code =
+            `${testFunction.definition || ""}
+            function returnsFunction(): ${functionType} {
+                return ${testFunction.value};
+            }`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
-    @TestCase("foo.method", "func")
-    @TestCase("foo.method", "lambda")
-    @TestCase("foo.method", "Foo.voidStaticMethod")
-    @TestCase("foo.method", "Foo.voidStaticLambdaProp")
-    @TestCase("foo.method", "foo.voidMethod")
-    @TestCase("foo.method", "foo.voidLambdaProp")
-    @TestCase("foo.method", "function(this: void, s: string) { return s; }")
-    @TestCase("foo.lambdaProp", "func")
-    @TestCase("foo.lambdaProp", "lambda")
-    @TestCase("foo.lambdaProp", "Foo.voidStaticMethod")
-    @TestCase("foo.lambdaProp", "Foo.voidStaticLambdaProp")
-    @TestCase("foo.lambdaProp", "foo.voidMethod")
-    @TestCase("foo.lambdaProp", "foo.voidLambdaProp")
-    @TestCase("foo.lambdaProp", "function(this: void, s: string) { return s; }")
-    @TestCase("Foo.staticMethod", "func")
-    @TestCase("Foo.staticMethod", "lambda")
-    @TestCase("Foo.staticMethod", "Foo.voidStaticMethod")
-    @TestCase("Foo.staticMethod", "Foo.voidStaticLambdaProp")
-    @TestCase("Foo.staticMethod", "foo.voidMethod")
-    @TestCase("Foo.staticMethod", "foo.voidLambdaProp")
-    @TestCase("Foo.staticMethod", "function(this: void, s: string) { return s; }")
-    @TestCase("Foo.staticLambdaProp", "func")
-    @TestCase("Foo.staticLambdaProp", "lambda")
-    @TestCase("Foo.staticLambdaProp", "Foo.voidStaticMethod")
-    @TestCase("Foo.staticLambdaProp", "Foo.voidStaticLambdaProp")
-    @TestCase("Foo.staticLambdaProp", "foo.voidMethod")
-    @TestCase("Foo.staticLambdaProp", "foo.voidLambdaProp")
-    @TestCase("Foo.staticLambdaProp", "function(this: void, s: string) { return s; }")
-    @TestCase("thisFunc", "func")
-    @TestCase("thisFunc", "lambda")
-    @TestCase("thisFunc", "Foo.voidStaticMethod")
-    @TestCase("thisFunc", "Foo.voidStaticLambdaProp")
-    @TestCase("thisFunc", "foo.voidMethod")
-    @TestCase("thisFunc", "foo.voidLambdaProp")
-    @TestCase("thisFunc", "function(this: void, s: string) { return s; }")
-    @TestCase("thisLambda", "func")
-    @TestCase("thisLambda", "lambda")
-    @TestCase("thisLambda", "Foo.voidStaticMethod")
-    @TestCase("thisLambda", "Foo.voidStaticLambdaProp")
-    @TestCase("thisLambda", "foo.voidMethod")
-    @TestCase("thisLambda", "foo.voidLambdaProp")
-    @TestCase("thisLambda", "function(this: void, s: string) { return s; }")
-    @TestCase("foo.method", "(func as string | ((s: string) => string))")
-    @TestCase("foo.method", "<(this: Foo, s: string) => string>func")
-    @TestCase("foo.method", "func as ((this: Foo, s: string) => string)")
-    @Test("Invalid method assignment")
-    public invalidMethodAssignment(func: string, assignTo: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode} ${func} = ${assignTo};`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare"
-            + " the function with an explicit 'this' parameter.");
+    @TestCases(validTestFunctionCasts)
+    @Test("Valid function return with cast")
+    public validFunctionReturnWithCast(testFunction: TestFunction, castedFunction: string): void {
+        const code =
+            `function returnsFunction(): typeof ${testFunction.value} {
+                return ${castedFunction};
+            }
+            const fn = returnsFunction();
+            return fn("foobar");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
     }
 
-    @TestCase("func")
-    @TestCase("lambda")
-    @TestCase("Foo.voidStaticMethod")
-    @TestCase("Foo.voidStaticLambdaProp")
-    @TestCase("foo.voidMethod")
-    @TestCase("foo.voidLambdaProp")
-    @TestCase("function(this: void, s: string) { return s; }")
-    @TestCase("func", "string | ((this: Foo, s: string) => string)")
-    @TestCase("func", "T")
-    @Test("Invalid method argument")
-    public invalidMethodArgument(func: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(this: Foo, s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesMethod<T extends ((this: Foo, s: string) => string)>(meth: ${funcType});
-                      takesMethod(${func});`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from function to method \"meth\". To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
-    }
-
-    @TestCase("<(this: Foo, s: string) => string>func")
-    @TestCase("func as ((this: Foo, s: string) => string)")
-    @Test("Invalid method argument cast")
-    public invalidMethodArgumentCast(func: string): void {
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      declare function takesMethod<T extends ((this: Foo, s: string) => string)>(
-                          meth: (this: Foo, s: string) => string);
-                      takesMethod(${func});`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
-    }
-
-    @TestCase("func")
-    @TestCase("lambda")
-    @TestCase("Foo.voidStaticMethod")
-    @TestCase("Foo.voidStaticLambdaProp")
-    @TestCase("foo.voidMethod")
-    @TestCase("foo.voidLambdaProp")
-    @TestCase("function(this: void, s: string) { return s; }")
-    @TestCase("func", "string | ((this: Foo, s: string) => string)")
-    @TestCase("func", "T")
-    @TestCase("<(this: Foo, s: string) => string>func")
-    @TestCase("func as ((this: Foo, s: string) => string)")
-    @Test("Invalid method return")
-    public invalidMethodReturn(func: string, funcType?: string): void {
-        if (!funcType) {
-            funcType = "(this: Foo, s: string) => string";
-        }
-        const code = `${AssignmentTests.funcAssignTestCode}
-                      function returnsMethod<T extends ((this: Foo, s: string) => string)>(): ${funcType} {
-                          return ${func};
-                      }`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function "
-            + "or declare the function with an explicit 'this' parameter.");
+    @TestCases(invalidTestFunctionCasts)
+    @Test("Invalid function return with cast")
+    public invalidFunctionReturnWithCast(
+        testFunction: TestFunction,
+        castedFunction: string,
+        isSelfConversion: boolean
+    ): void
+    {
+        const code =
+            `${testFunction.definition || ""}
+            function returnsFunction(): typeof ${testFunction.value} {
+                return ${castedFunction};
+            }`;
+        const err = isSelfConversion
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+        Expect(() => util.transpileString(code, undefined, false)).toThrowError(TranspileError, err.message);
     }
 
     @Test("Interface method assignment")
@@ -735,7 +814,7 @@ export class AssignmentTests {
 
     @Test("Valid function tuple assignment")
     public validFunctionTupleAssignment(): void {
-        const code = `interface Func { (s: string): string; }
+        const code = `interface Func { (this: void, s: string): string; }
                       function getTuple(): [number, Func] { return [1, s => s]; }
                       let [i, f]: [number, Func] = getTuple();
                       return f("foo");`;
@@ -745,13 +824,14 @@ export class AssignmentTests {
 
     @Test("Invalid function tuple assignment")
     public invalidFunctionTupleAssignment(): void {
-        const code = `interface Func { (s: string): string; }
+        const code = `interface Func { (this: void, s: string): string; }
                       interface Meth { (this: {}, s: string): string; }
                       declare function getTuple(): [number, Meth];
                       let [i, f]: [number, Func] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function. To fix, wrap the method in an arrow function.");
+            TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined).message
+        );
     }
 
     @Test("Valid method tuple assignment")
@@ -769,14 +849,14 @@ export class AssignmentTests {
 
     @Test("Invalid method tuple assignment")
     public invalidMethodTupleAssignment(): void {
-        const code = `interface Func { (s: string): string; }
+        const code = `interface Func { (this: void, s: string): string; }
                       interface Meth { (this: {}, s: string): string; }
                       declare function getTuple(): [number, Func];
                       let [i, f]: [number, Meth] = getTuple();`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from function to method. To fix, wrap the function in an arrow function or declare"
-            + " the function with an explicit 'this' parameter.");
+            TSTLErrors.UnsupportedSelfFunctionConversion(undefined).message
+        );
     }
 
     @Test("Valid interface method assignment")
@@ -798,13 +878,14 @@ export class AssignmentTests {
                       const b: B = a;`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported conversion from method to function \"fn\". To fix, wrap the method in an arrow function.");
+            TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn").message
+        );
     }
 
-    @TestCase("(s: string) => string", ["foo"], "foobar")
-    @TestCase("{(s: string): string}", ["foo"], "foobar")
-    @TestCase("(s1: string, s2: string) => string", ["foo", "baz"], "foobaz")
-    @TestCase("{(s1: string, s2: string): string}", ["foo", "baz"], "foobaz")
+    @TestCase("(this: any, s: string) => string", ["foo"], "foobar")
+    @TestCase("{(this: any, s: string): string}", ["foo"], "foobar")
+    @TestCase("(this: any, s1: string, s2: string) => string", ["foo", "baz"], "foobaz")
+    @TestCase("{(this: any, s1: string, s2: string): string}", ["foo", "baz"], "foobaz")
     @Test("Valid function overload assignment")
     public validFunctionOverloadAssignment(assignType: string, args: string[], expectResult: string): void {
         const code = `interface O {
@@ -818,22 +899,52 @@ export class AssignmentTests {
         Expect(result).toBe(expectResult);
     }
 
-    @TestCase("(s: string) => string")
-    @TestCase("(s1: string, s2: string) => string")
-    @TestCase("{(s: string): string}")
-    @TestCase("{(this: {}, s1: string, s2: string): string}")
+    @TestCase("(this: void, s: string) => string")
+    @TestCase("(this: void, s1: string, s2: string) => string")
+    @TestCase("{(this: void, s: string): string}")
+    @TestCase("{(this: any, s1: string, s2: string): string}")
     @Test("Invalid function overload assignment")
     public invalidFunctionOverloadAssignment(assignType: string): void {
         const code = `interface O {
-                          (this: {}, s1: string, s2: string): string;
-                          (s: string): string;
+                          (this: any, s1: string, s2: string): string;
+                          (this: void, s: string): string;
                       }
                       declare const o: O;
                       let f: ${assignType} = o;`;
         Expect(() => util.transpileString(code)).toThrowError(
             TranspileError,
-            "Unsupported assignment of mixed function/method overload. "
-            + "Overloads should either be all functions or all methods, but not both.");
+            TSTLErrors.UnsupportedOverloadAssignment(undefined).message
+        );
+    }
+
+    @TestCase("noSelf")
+    @TestCase("noSelfInFile")
+    @Test("noSelf function method argument")
+    public noSelfFunctionMethodArgument(noSelfTag: string): void {
+        const header =
+            `/** @${noSelfTag} */ namespace NS {
+                export class C {
+                    method(fn: (s: string) => string) { return fn("foo"); }
+                }
+            }
+            function foo(this: void, s: string) { return s; }`;
+        const code =
+            `const c = new NS.C();
+            return c.method(foo);`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header, false)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string")
+    @TestCase("(this: any, s: string) => string")
+    @TestCase("(s: string) => string")
+    @Test("Function expression type inference in binary operator")
+    public functionExpressionTypeInferenceInBinaryOp(funcType: string): void {
+        const header = `declare const undefinedFunc: ${funcType};`;
+        const code =
+            `let func: ${funcType} = s => s;
+            func = undefinedFunc || (s => s);
+            return func("foo");`;
+        Expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
     }
 
     @TestCase("s => s")
@@ -871,6 +982,14 @@ export class AssignmentTests {
             }
             ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
             return foo.method("foo") + foo.func("bar");`;
+        Expect(util.transpileAndExecute(code)).toBe("foobar");
+    }
+
+    @Test("Function expression type inference in object literal assigned to narrower type")
+    public functionEXpressionTypeInferenceInObjectLiteralAssignedToNarrowerType(): void {
+        const code =
+            `let foo: {} = {bar: s => s};
+            return (foo as {bar: (a: any) => any}).bar("foobar");`;
         Expect(util.transpileAndExecute(code)).toBe("foobar");
     }
 
@@ -961,6 +1080,68 @@ export class AssignmentTests {
             ${assignTo} = [${funcExp}];
             const foo: Foo = {method: ${method}};
             return foo.method("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in union")
+    public functionExpressionTypeInferenceInUnion(funcType: string, funcExp: string): void {
+        const code =
+            `type U = string | number | (${funcType});
+            const u: U = ${funcExp};
+            return (u as ${funcType})("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in as cast")
+    public functionExpressionTypeInferenceInAsCast(funcType: string, funcExp: string): void {
+        const code =
+            `const fn: ${funcType} = (${funcExp}) as (${funcType});
+            return fn("foo");`;
+            console.log(code);
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in type assertion")
+    public functionExpressionTypeInferenceInTypeAssert(funcType: string, funcExp: string): void {
+        const code =
+            `const fn: ${funcType} = <${funcType}>(${funcExp});
+            return fn("foo");`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
+    }
+
+    @TestCase("(this: void, s: string) => string", "s => s")
+    @TestCase("(this: any, s: string) => string", "s => s")
+    @TestCase("(s: string) => string", "s => s")
+    @TestCase("(this: void, s: string) => string", "function(s) { return s; }")
+    @TestCase("(this: any, s: string) => string", "function(s) { return s; }")
+    @TestCase("(s: string) => string", "function(s) { return s; }")
+    @Test("Function expression type inference in constructor")
+    public functionExpresssionTypeInferenceInConstructor(funcType: string, funcExp: string): void {
+        const code =
+            `class C {
+                result: string;
+                constructor(fn: (s: string) => string) { this.result = fn("foo"); }
+            }
+            const c = new C(s => s);
+            return c.result;`;
         Expect(util.transpileAndExecute(code)).toBe("foo");
     }
 

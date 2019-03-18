@@ -1169,6 +1169,12 @@ export class LuaTransformer {
 
         headerStatements.push(...defaultValueDeclarations);
 
+        // Push spread operator here
+        if (spreadIdentifier) {
+            const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
+            headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
+        }
+
         // Add object binding patterns
         let identifierIndex = 0;
         const bindingPatternDeclarations: tstl.Statement[] = [];
@@ -1180,12 +1186,6 @@ export class LuaTransformer {
         });
 
         headerStatements.push(...bindingPatternDeclarations);
-
-        // Push spread operator here
-        if (spreadIdentifier) {
-            const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
-            headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
-        }
 
         const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
 

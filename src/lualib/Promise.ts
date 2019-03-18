@@ -24,6 +24,10 @@ interface Deferred< T, TResult > {
 
 class PromiseImpl<T = never> {
 
+  public static _setRunAtNextTickFunction( func: ( func: () => void ) => void ): void {
+    ____runAtNextTick = func;
+  }
+
   public static resolve<T = never>(): PromiseImpl<T>;
   public static resolve<T = never>( value: T | PromiseImpl<T> ): PromiseImpl<T>;
   public static resolve<T = never>( value?: T | PromiseImpl<T> ): PromiseImpl<T> {

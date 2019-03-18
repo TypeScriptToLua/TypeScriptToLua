@@ -38,7 +38,7 @@ export class LuaTranspiler {
         return options;
     }
 
-    private reportErrors(): number {
+    public reportErrors(): number {
         // Get all diagnostics, ignore unsupported extension
         const diagnostics = ts.getPreEmitDiagnostics(this.program).filter(diag => diag.code !== 6054);
         diagnostics.forEach(diag => this.reportDiagnostic(diag));
@@ -75,13 +75,17 @@ export class LuaTranspiler {
         });
 
         // Copy lualib to target dir
+        this.emitLuaLibIfRequired();
+
+        return 0;
+    }
+
+    public emitLuaLibIfRequired(): void{
         if (this.options.luaLibImport === LuaLibImportKind.Require
             || this.options.luaLibImport === LuaLibImportKind.Always
         ) {
             this.emitLuaLib();
         }
-
-        return 0;
     }
 
     public emitSourceFile(sourceFile: ts.SourceFile): void {

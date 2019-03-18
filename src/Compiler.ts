@@ -43,10 +43,23 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
         host = ts.createWatchCompilerHost(fileNames, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
     }
 
+    let emitLuaLib = true;
     host.afterProgramCreate = program => {
         const transpiler = new LuaTranspiler(program.getProgram());
 
-        const status = transpiler.emitFilesAndReportErrors();
+        const status = transpiler.reportErrors();
+
+        while (true) {
+            const currentFile = program.getSemanticDiagnosticsOfNextAffectedFile();
+            if (!currentFile) { break; }
+            transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
+        }
+
+        if (emitLuaLib) {
+            transpiler.emitLuaLibIfRequired();
+            emitLuaLib = false;
+        }
+
         const errorDiagnostic: ts.Diagnostic = {
             category: undefined,
             code: 6194,

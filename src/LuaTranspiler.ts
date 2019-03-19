@@ -75,17 +75,13 @@ export class LuaTranspiler {
         });
 
         // Copy lualib to target dir
-        this.emitLuaLibIfRequired();
-
-        return error;
-    }
-
-    public emitLuaLibIfRequired(): void{
         if (this.options.luaLibImport === LuaLibImportKind.Require
             || this.options.luaLibImport === LuaLibImportKind.Always
         ) {
             this.emitLuaLib();
         }
+
+        return error;
     }
 
     public emitSourceFile(sourceFile: ts.SourceFile): number {

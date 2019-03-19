@@ -65,13 +65,15 @@ export class LuaTranspiler {
     }
 
     public emitFilesAndReportErrors(): number {
-        let error = this.reportErrors();
-        if (error > 0) {
-            return error;
+        let status = this.reportErrors();
+
+        if (status > 0) {
+            return status;
         }
 
         this.program.getSourceFiles().forEach(sourceFile => {
-            error = error || this.emitSourceFile(sourceFile);
+            const sourceStatus = this.emitSourceFile(sourceFile);
+            status |= sourceStatus;
         });
 
         // Copy lualib to target dir
@@ -81,7 +83,7 @@ export class LuaTranspiler {
             this.emitLuaLib();
         }
 
-        return error;
+        return status;
     }
 
     public emitSourceFile(sourceFile: ts.SourceFile): number {

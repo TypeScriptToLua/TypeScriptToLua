@@ -56,7 +56,8 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
                 while (true) {
                     const currentFile = program.getSemanticDiagnosticsOfNextAffectedFile();
                     if (!currentFile) { break; }
-                    status = status || transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
+                    const fileStatus = transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
+                    status |= fileStatus;
                 }
             }
             // do a full recompile after transpiler error.

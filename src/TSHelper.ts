@@ -183,12 +183,12 @@ export class TSHelper {
         }
     }
 
-    public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker, program: ts.Program): boolean {
+    public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
             let functionType: ts.Type;
             if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
-                functionType = TSHelper.inferAssignedType(declaration, checker, program);
+                functionType = TSHelper.inferAssignedType(declaration, checker);
             } else {
                 functionType = checker.getTypeAtLocation(declaration);
             }
@@ -453,99 +453,8 @@ export class TSHelper {
         ) !== undefined;
     }
 
-    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker, program: ts.Program): ts.Type {
-        if (ts.isParenthesizedExpression(expression.parent)) {
-            // Ignore expressions wrapped in parenthesis
-            return this.inferAssignedType(expression.parent, checker, program);
-
-        } else if (ts.isCallOrNewExpression(expression.parent)) {
-            // Expression being passed as argument to a function
-            const argumentIndex = expression.parent.arguments.indexOf(expression);
-            if (argumentIndex >= 0) {
-                const parentSignature = checker.getResolvedSignature(expression.parent);
-                if (parentSignature.parameters.length > 0) { // In case function type is 'any'
-                    const signatureIndex = Math.min(argumentIndex, parentSignature.parameters.length - 1);
-                    let parameterType = checker.getTypeOfSymbolAtLocation(
-                        parentSignature.parameters[signatureIndex],
-                        expression
-                    );
-                    if (TSHelper.isArrayType(parameterType, checker, program)) {
-                        // Check for elipses argument
-                        const parentSignatureDeclaration = parentSignature.getDeclaration();
-                        if (parentSignatureDeclaration) {
-                            let declarationIndex = signatureIndex;
-                            if (this.getExplicitThisParameter(parentSignatureDeclaration)) {
-                                // Ignore 'this' parameter
-                                ++declarationIndex;
-                            }
-                            const parameterDeclaration = parentSignatureDeclaration.parameters[declarationIndex];
-                            if ((parameterType.flags & ts.TypeFlags.Object) !== 0
-                                && ((parameterType as ts.ObjectType).objectFlags & ts.ObjectFlags.Reference) !== 0
-                                && parameterDeclaration.dotDotDotToken)
-                            {
-                                // Determine type from elipsis array/tuple type
-                                const parameterTypeReference = (parameterType as ts.TypeReference);
-                                parameterType = parameterTypeReference.typeArguments[argumentIndex - declarationIndex];
-                            }
-                        }
-                    }
-                    return parameterType;
-                }
-            }
-
-        } else if (ts.isReturnStatement(expression.parent)) {
-            // Expression being returned from a function
-            return this.getContainingFunctionReturnType(expression.parent, checker);
-
-        } else if (ts.isPropertyDeclaration(expression.parent)) {
-            // Expression being assigned to a class property
-            return checker.getTypeAtLocation(expression.parent);
-
-        } else if (ts.isPropertyAssignment(expression.parent)) {
-            // Expression being assigned to an object literal property
-            const objType = this.inferAssignedType(expression.parent.parent, checker, program);
-            const property = objType.getProperty(expression.parent.name.getText());
-            if (!property) {
-                const stringPropertyType = objType.getStringIndexType();
-                if (stringPropertyType) {
-                    return stringPropertyType;
-                }
-            } else {
-                return checker.getTypeAtLocation(property.valueDeclaration);
-            }
-
-        } else if (ts.isArrayLiteralExpression(expression.parent)) {
-            // Expression in an array literal
-            const arrayType = this.inferAssignedType(expression.parent, checker, program);
-            if (ts.isTupleTypeNode(checker.typeToTypeNode(arrayType))) {
-                // Tuples
-                const i = expression.parent.elements.indexOf(expression);
-                const elementType = (arrayType as ts.TypeReference).typeArguments[i];
-                return elementType;
-            } else {
-                // Standard arrays
-                return arrayType.getNumberIndexType();
-            }
-
-        } else if (ts.isVariableDeclaration(expression.parent)) {
-            // Expression assigned to declaration
-            return checker.getTypeAtLocation(expression.parent.name);
-
-        } else if (ts.isBinaryExpression(expression.parent)) {
-            if (expression.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
-                // Expression assigned to variable
-                return checker.getTypeAtLocation(expression.parent.left);
-            } else {
-                // Other binary expressions
-                return TSHelper.inferAssignedType(expression.parent, checker, program);
-            }
-
-        } else if (ts.isAssertionExpression(expression.parent)) {
-            // Expression being cast
-            return checker.getTypeFromTypeNode(expression.parent.type);
-        }
-
-        return checker.getTypeAtLocation(expression);
+    public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {
+        return checker.getContextualType(expression) || checker.getTypeAtLocation(expression);
     }
 
     public static getAllCallSignatures(type: ts.Type): ReadonlyArray<ts.Signature> {
@@ -557,8 +466,7 @@ export class TSHelper {
 
     public static getSignatureDeclarations(
         signatures: ReadonlyArray<ts.Signature>,
-        checker: ts.TypeChecker,
-        program: ts.Program
+        checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {
         const signatureDeclarations: ts.SignatureDeclaration[] = [];
@@ -568,7 +476,7 @@ export class TSHelper {
                 && !TSHelper.getExplicitThisParameter(signatureDeclaration))
             {
                 // Infer type of function expressions/arrow functions
-                const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker, program);
+                const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
                     const inferredSignatures = TSHelper.getAllCallSignatures(inferredType);
                     if (inferredSignatures.length > 0) {
@@ -658,14 +566,14 @@ export class TSHelper {
         return contexts.reduce(reducer, ContextType.None);
     }
 
-    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): ContextType {
+    public static getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
         if (type.isTypeParameter()) {
             type = type.getConstraint() || type;
         }
 
         if (type.isUnion()) {
             return TSHelper.reduceContextTypes(
-                type.types.map(t => TSHelper.getFunctionContextType(t, checker, program))
+                type.types.map(t => TSHelper.getFunctionContextType(t, checker))
             );
         }
 
@@ -673,7 +581,7 @@ export class TSHelper {
         if (signatures.length === 0) {
             return ContextType.None;
         }
-        const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker, program);
+        const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker);
         return TSHelper.reduceContextTypes(
             signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
     }

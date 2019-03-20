@@ -1088,7 +1088,7 @@ export class LuaTransformer {
         }
 
         const type = this.checker.getTypeAtLocation(node);
-        const context = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void
+        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
         const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
@@ -1594,7 +1594,7 @@ export class LuaTransformer {
         }
 
         const type = this.checker.getTypeAtLocation(functionDeclaration);
-        const context = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void
+        const context = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void
             ? this.createSelfIdentifier()
             : undefined;
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
@@ -1794,7 +1794,7 @@ export class LuaTransformer {
                 const expressionType = this.checker.getTypeAtLocation(statement.expression);
                 this.validateFunctionAssignment(statement, expressionType, returnType);
             }
-            if (tsHelper.isInTupleReturnFunction(statement, this.checker, this.program)) {
+            if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
                 // Parent function is a TupleReturn function
                 if (ts.isArrayLiteralExpression(statement.expression)) {
                     // If return expression is an array literal, leave out brackets.
@@ -3005,7 +3005,7 @@ export class LuaTransformer {
     ): ExpressionVisitResult
     {
         const type = this.checker.getTypeAtLocation(node);
-        const hasContext = tsHelper.getFunctionContextType(type, this.checker, this.program) !== ContextType.Void;
+        const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
         // Build parameter string
         const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(
             node.parameters,
@@ -3099,7 +3099,7 @@ export class LuaTransformer {
         const isTupleReturn = tsHelper.isTupleReturnCall(node, this.checker);
         const isTupleReturnForward = node.parent
             && ts.isReturnStatement(node.parent)
-            && tsHelper.isInTupleReturnFunction(node, this.checker, this.program);
+            && tsHelper.isInTupleReturnFunction(node, this.checker);
         const isInDestructingAssignment = tsHelper.isInDestructingAssignment(node);
         const isInSpread = node.parent && ts.isSpreadElement(node.parent);
         const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
@@ -3892,7 +3892,7 @@ export class LuaTransformer {
     public transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.getFunctionContextType(callerType, this.checker, this.program) === ContextType.Void) {
+        if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
             throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
         const signature = this.checker.getResolvedSignature(node);
@@ -4328,8 +4328,8 @@ export class LuaTransformer {
         fromTypeCache.add(toType);
 
         // Check function assignments
-        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker, this.program);
-        const toContext = tsHelper.getFunctionContextType(toType, this.checker, this.program);
+        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker);
+        const toContext = tsHelper.getFunctionContextType(toType, this.checker);
 
         if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);

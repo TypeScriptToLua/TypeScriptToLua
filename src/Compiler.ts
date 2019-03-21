@@ -46,7 +46,6 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
     let fullRecompile = true;
     host.afterProgramCreate = program => {
         const transpiler = new LuaTranspiler(program.getProgram());
-
         let status = transpiler.reportErrors();
 
         if (status === 0) {
@@ -56,8 +55,16 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
                 while (true) {
                     const currentFile = program.getSemanticDiagnosticsOfNextAffectedFile();
                     if (!currentFile) { break; }
-                    const fileStatus = transpiler.emitSourceFile(currentFile.affected as ts.SourceFile);
-                    status |= fileStatus;
+
+                    if ("fileName" in currentFile.affected) { // test if currentFile.affected is `ts.SourceFile`
+                      const fileStatus = transpiler.emitSourceFile(currentFile.affected);
+                      status |= fileStatus;
+                    } else {
+                        for (const sourceFile of currentFile.affected.getSourceFiles()) {
+                            const fileStatus = transpiler.emitSourceFile(sourceFile);
+                            status |= fileStatus;
+                        }
+                    }
                 }
             }
             // do a full recompile after transpiler error.

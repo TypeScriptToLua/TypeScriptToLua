@@ -38,7 +38,7 @@ export class LuaTranspiler {
         return options;
     }
 
-    private reportErrors(): number {
+    public reportErrors(): number {
         // Get all diagnostics, ignore unsupported extension
         const diagnostics = ts.getPreEmitDiagnostics(this.program).filter(diag => diag.code !== 6054);
         diagnostics.forEach(diag => this.reportDiagnostic(diag));
@@ -65,13 +65,15 @@ export class LuaTranspiler {
     }
 
     public emitFilesAndReportErrors(): number {
-        const error = this.reportErrors();
-        if (error > 0) {
-            return error;
+        let status = this.reportErrors();
+
+        if (status > 0) {
+            return status;
         }
 
         this.program.getSourceFiles().forEach(sourceFile => {
-            this.emitSourceFile(sourceFile);
+            const sourceStatus = this.emitSourceFile(sourceFile);
+            status |= sourceStatus;
         });
 
         // Copy lualib to target dir
@@ -81,10 +83,10 @@ export class LuaTranspiler {
             this.emitLuaLib();
         }
 
-        return 0;
+        return status;
     }
 
-    public emitSourceFile(sourceFile: ts.SourceFile): void {
+    public emitSourceFile(sourceFile: ts.SourceFile): number {
         if (!sourceFile.isDeclarationFile) {
             try {
                 const rootDir = this.options.rootDir;
@@ -119,11 +121,13 @@ export class LuaTranspiler {
                     // Graciously handle transpilation errors
                     console.error("Encountered error parsing file: " + exception.message);
                     console.error(`${sourceFile.fileName} (${1 + pos.line},${pos.character})\n${exception.stack}`);
+                    return 1;
                 } else {
                     throw exception;
                 }
             }
         }
+        return 0;
     }
 
     public transpileSourceFile(sourceFile: ts.SourceFile): string {

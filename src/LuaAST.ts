@@ -70,7 +70,6 @@ export enum SyntaxKind {
     BitwiseOrOperator,
     BitwiseExclusiveOrOperator,
     BitwiseRightShiftOperator,
-    BitwiseArithmeticRightShift,
     BitwiseLeftShiftOperator,
     BitwiseNotOperator,  // Unary
 }
@@ -85,7 +84,7 @@ export type UnaryOperator = SyntaxKind.NegationOperator
 
 export type BinaryBitwiseOperator = SyntaxKind.BitwiseAndOperator | SyntaxKind.BitwiseOrOperator
     | SyntaxKind.BitwiseExclusiveOrOperator | SyntaxKind.BitwiseRightShiftOperator
-    | SyntaxKind.BitwiseArithmeticRightShift | SyntaxKind.BitwiseLeftShiftOperator;
+    | SyntaxKind.BitwiseLeftShiftOperator;
 
 export type BinaryOperator =
     SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator

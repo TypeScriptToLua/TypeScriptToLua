@@ -1,6 +1,6 @@
 import { Expect, Test, TestCase } from "alsatian";
 
-import { findConfigFile, parseCommandLine } from "../../src/CommandLineParser";
+import { findConfigFile, parseCommandLine, parseTsConfigString } from "../../src/CommandLineParser";
 import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
 
 export class CommandLineParserTests
@@ -225,5 +225,21 @@ export class CommandLineParserTests
     public findConfigNoPath(): void {
         const result = findConfigFile({ options: {}, fileNames: [], errors: [] });
         Expect(result.isValid).toBe(false);
+    }
+
+    @TestCase("{}", undefined)
+    @TestCase(`{ noHeader: true }`, true)
+    @TestCase(`{ noHeader: "true" }`, true)
+    @TestCase(`{ tstl: { noHeader: true } }`, true)
+    @TestCase(`{ tstl: { noHeader: "true" } }`, true)
+    @Test("TsConfig noHeader")
+    public tsConfigNoHeader(tsConfig: string, expected: boolean): void {
+        const result = parseTsConfigString(tsConfig, "");
+
+        if (result.isValid) {
+            Expect(result.result.options.noHeader).toBe(expected);
+        } else {
+            Expect(result.isValid).toBeTruthy();
+        }
     }
 }

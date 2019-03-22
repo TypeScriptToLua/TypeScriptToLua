@@ -21,6 +21,39 @@ export class LuaLibTests
         Expect(result).toBe(JSON.stringify(expected));
     }
 
+    @TestCase([], 3, -1)
+    @TestCase([0, 2, 4, 8], 10, -1)
+    @TestCase([0, 2, 4, 8], 8, 3)
+    @Test("array.findIndex[value]")
+    public findIndexByValue(inp: number[], searchEl: number, expected: number): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            return JSONStringify(arrTest.findIndex((elem, index) => {
+                return elem === ${searchEl};
+            }));`
+        );
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
+    @TestCase([0, 2, 4, 8], 3, 8)
+    @TestCase([0, 2, 4, 8], 1, 2)
+    @Test("array.findIndex[index]")
+    public findIndexByIndex(inp: number[], expected: number, value: number): void
+    {
+        const result = util.transpileAndExecute(
+            `let arrTest = ${JSON.stringify(inp)};
+            return JSONStringify(arrTest.findIndex((elem, index, arr) => {
+                return index === ${expected} && arr[${expected}] === ${value};
+            }));`
+        );
+
+        // Assert
+        Expect(result).toBe(expected);
+    }
+
     @TestCase([], "x => x")
     @TestCase([0, 1, 2, 3], "x => x")
     @TestCase([0, 1, 2, 3], "x => x*2")
@@ -352,6 +385,29 @@ export class LuaLibTests
         // Assert
         Expect(result).toBe(JSON.stringify(expected));
     }
+
+    @Test("array.sort with compare function")
+    @TestCase([1, 2, 3, 4, 5], "a - b", (a: number, b: number) => a - b)
+    @TestCase(["4", "5", "3", "2", "1"], "tonumber(a) - tonumber(b)", (a: string, b: string) => Number(a) - Number(b))
+    @TestCase(["4", "5", "3", "2", "1"], "tonumber(b) - tonumber(a)", (a: string, b: string) => Number(b) - Number(a))
+    public arraySortWithCompareFunction(
+        array: any[],
+        compareStr: string,
+        compareFn: (a: any, b: any) => number
+    ): void {
+        const result = util.transpileAndExecute(
+            `let testArray = ${JSON.stringify(array)};
+            testArray.sort((a, b) => ${compareStr});
+            return JSONStringify(testArray)`,
+            undefined,
+            undefined,
+            `declare function tonumber(this: void, e: any): number`
+        );
+
+        // Assert
+        Expect(result).toBe(JSON.stringify(array.sort(compareFn)));
+    }
+
     @TestCase("true", "4", "5", 4)
     @TestCase("false", "4", "5", 5)
     @TestCase("3", "4", "5", 4)

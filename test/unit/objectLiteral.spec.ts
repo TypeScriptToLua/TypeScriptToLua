@@ -9,7 +9,7 @@ export class ObjectLiteralTests {
     @TestCase(`{"a":3,b:"4"}`, `{a = 3, b = "4"};`)
     @TestCase(`{["a"]:3,b:"4"}`, `{a = 3, b = "4"};`)
     @TestCase(`{["a"+123]:3,b:"4"}`, `{["a" .. 123] = 3, b = "4"};`)
-    @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc()] = 3, b = "4"};`)
+    @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc(_G)] = 3, b = "4"};`)
     @TestCase(`{x}`, `{x = x};`)
     @Test("Object Literal")
     public objectLiteral(inp: string, out: string): void {
@@ -22,5 +22,13 @@ export class ObjectLiteralTests {
     public ShorthandPropertyAssignment(input: string, expected: number): void {
         const result = util.transpileAndExecute(`const x = ${input}; const o = {x}; return o.x;`);
         Expect(result).toBe(expected);
+    }
+
+    @Test("undefined as object key")
+    public undefinedAsObjectKey(): void {
+        const code =
+            `const foo = {undefined: "foo"};
+            return foo.undefined;`;
+        Expect(util.transpileAndExecute(code)).toBe("foo");
     }
 }

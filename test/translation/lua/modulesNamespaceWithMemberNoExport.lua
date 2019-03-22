@@ -3,7 +3,7 @@ exports.TestSpace = exports.TestSpace or {};
 local TestSpace = exports.TestSpace;
 do
     local innerFunc;
-    innerFunc = function()
+    innerFunc = function(self)
     end;
 end
 return exports;

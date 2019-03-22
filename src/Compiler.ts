@@ -43,10 +43,34 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
         host = ts.createWatchCompilerHost(fileNames, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
     }
 
+    let fullRecompile = true;
     host.afterProgramCreate = program => {
         const transpiler = new LuaTranspiler(program.getProgram());
+        let status = transpiler.reportErrors();
 
-        const status = transpiler.emitFilesAndReportErrors();
+        if (status === 0) {
+            if (fullRecompile) {
+                status = transpiler.emitFilesAndReportErrors();
+            } else {
+                while (true) {
+                    const currentFile = program.getSemanticDiagnosticsOfNextAffectedFile();
+                    if (!currentFile) { break; }
+
+                    if ("fileName" in currentFile.affected) { // test if currentFile.affected is `ts.SourceFile`
+                      const fileStatus = transpiler.emitSourceFile(currentFile.affected);
+                      status |= fileStatus;
+                    } else {
+                        for (const sourceFile of currentFile.affected.getSourceFiles()) {
+                            const fileStatus = transpiler.emitSourceFile(sourceFile);
+                            status |= fileStatus;
+                        }
+                    }
+                }
+            }
+            // do a full recompile after transpiler error.
+            fullRecompile = status !== 0;
+        }
+
         const errorDiagnostic: ts.Diagnostic = {
             category: undefined,
             code: 6194,
@@ -89,7 +113,10 @@ const defaultCompilerOptions: CompilerOptions = {
 };
 
 export function createStringCompilerProgram(
-    input: string, options: CompilerOptions = defaultCompilerOptions, filePath = "file.ts"): ts.Program {
+    input: string | { [filename: string]: string },
+    options: CompilerOptions = defaultCompilerOptions,
+    filePath = "file.ts"
+): ts.Program {
     const compilerHost =  {
         directoryExists: () => true,
         fileExists: (fileName): boolean => true,
@@ -100,8 +127,17 @@ export function createStringCompilerProgram(
         getNewLine: () => "\n",
 
         getSourceFile: (filename: string) => {
-            if (filename === filePath) {
-                return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
+            switch (typeof input) {
+                case "string":
+                    if (filename === filePath) {
+                        return ts.createSourceFile(filename, input, ts.ScriptTarget.Latest, false);
+                    }
+                    break;
+                case "object":
+                    if (filename in input) {
+                        return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
+                    }
+                    break;
             }
             if (filename.indexOf(".d.ts") !== -1) {
                 if (!libCache[filename]) {
@@ -125,16 +161,17 @@ export function createStringCompilerProgram(
         // Don't write output
         writeFile: (name, text, writeByteOrderMark) => undefined,
     };
-    return ts.createProgram([filePath], options, compilerHost);
+    const filePaths = typeof input === "string" ? [filePath] : Object.keys(input);
+    return ts.createProgram(filePaths, options, compilerHost);
 }
 
 export function transpileString(
-    str: string,
+    input: string | { [filename: string]: string },
     options: CompilerOptions = defaultCompilerOptions,
     ignoreDiagnostics = false,
     filePath = "file.ts"
 ): string {
-    const program = createStringCompilerProgram(str, options, filePath);
+    const program = createStringCompilerProgram(input, options, filePath);
 
     if (!ignoreDiagnostics) {
         const diagnostics = ts.getPreEmitDiagnostics(program);

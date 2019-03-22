@@ -6,7 +6,7 @@ interface LuaObject {
     constructor: LuaClass;
 }
 
-function __TS__InstanceOf(obj: LuaObject, classTbl: LuaClass): boolean {
+function __TS__InstanceOf(this: void, obj: LuaObject, classTbl: LuaClass): boolean {
     if (obj !== undefined) {
         let luaClass = obj.constructor;
         while (luaClass !== undefined) {

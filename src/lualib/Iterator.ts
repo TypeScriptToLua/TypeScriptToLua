@@ -1,4 +1,4 @@
-function __TS__Iterator<T>(iterable: Iterable<T>): () => T {
+function __TS__Iterator<T>(this: void, iterable: Iterable<T>): (this: void) => T {
     const iterator = iterable[Symbol.iterator]();
     return () => {
         const result = iterator.next();

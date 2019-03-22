@@ -5,7 +5,7 @@ import * as util from "../src/util";
 export class AssignmentDestructuringTests {
 
     private readonly assignmentDestruturingTs = `
-        declare function myFunc(): [number, string];
+        declare function myFunc(this: void): [number, string];
         let [a, b] = myFunc();`;
 
     @Test("Assignment destructuring [5.1]")
@@ -36,5 +36,28 @@ export class AssignmentDestructuringTests {
         );
         // Assert
         Expect(lua).toBe(`local a, b = unpack(myFunc());`);
+    }
+
+    @TestCase("function foo(): [] { return []; }; let [] = foo();")
+    @TestCase("let [] = ['a', 'b', 'c'];")
+    @TestCase("let [] = [];")
+    @TestCase("let [] = [] = [];")
+    @TestCase("function foo(): [] { return []; }; [] = foo();")
+    @TestCase("[] = ['a', 'b', 'c'];")
+    @TestCase("[] = [];")
+    @TestCase("[] = [] = [];")
+    @Test("Empty destructuring")
+    public emptyDestructuring(code: string): void {
+        Expect(() => util.transpileAndExecute(code)).not.toThrow();
+    }
+
+    @Test("Union destructuring")
+    public unionDestructuring(): void {
+        const code =
+            `function foo(): [string] | [] { return ["bar"]; }
+            let x: string;
+            [x] = foo();
+            return x;`;
+        Expect(util.transpileAndExecute(code)).toBe("bar");
     }
 }

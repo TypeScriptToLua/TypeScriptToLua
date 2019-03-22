@@ -4,7 +4,7 @@ do
     local myNestedNamespace = myNamespace.myNestedNamespace;
     do
         local nsMember;
-        nsMember = function()
+        nsMember = function(self)
         end;
     end
 end

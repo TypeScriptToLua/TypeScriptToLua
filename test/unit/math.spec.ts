@@ -8,6 +8,11 @@ export class MathTests {
     @TestCase("Math.cos()", "math.cos();")
     @TestCase("Math.sin()", "math.sin();")
     @TestCase("Math.min()", "math.min();")
+    @TestCase("Math.atan2(2, 3)", "math.atan(2 / 3);")
+    @TestCase("Math.log2(3)", `(math.log(3) / ${Math.LN2});`)
+    @TestCase("Math.log10(3)", `(math.log(3) / ${Math.LN10});`)
+    @TestCase("Math.log1p(3)", "math.log(1 + 3);")
+    @TestCase("Math.round(3.3)", "math.floor(3.3 + 0.5);")
     @TestCase("Math.PI", "math.pi;")
     @Test("Math")
     public math(inp: string, expected: string): void {
@@ -16,6 +21,20 @@ export class MathTests {
 
         // Assert
         Expect(lua).toBe(expected);
+    }
+
+    @TestCase("E")
+    @TestCase("LN10")
+    @TestCase("LN2")
+    @TestCase("LOG10E")
+    @TestCase("LOG2E")
+    @TestCase("SQRT1_2")
+    @TestCase("SQRT2")
+    @Test("Math constant")
+    public mathConstant(constant: string): void {
+        const epsilon = 0.000001;
+        const code = `return Math.abs(Math.${constant} - ${Math[constant]}) <= ${epsilon}`;
+        Expect(util.transpileAndExecute(code)).toBe(true);
     }
 
     @TestCase("++x", "x=4;y=6")
@@ -32,7 +51,7 @@ export class MathTests {
     @TestCase("x &= y", "x=2;y=6")
     @TestCase("x ^= y", "x=5;y=6")
     @TestCase("x <<= y", "x=192;y=6")
-    @TestCase("x >>= y", "x=0;y=6")
+    @TestCase("x >>>= y", "x=0;y=6")
     @Test("Operator assignment statements")
     public opAssignmentStatement(statement: string, expected: string): void {
         const result = util.transpileAndExecute(
@@ -57,7 +76,7 @@ export class MathTests {
     @TestCase("o.p &= a[0]", "o=2;a=6")
     @TestCase("o.p ^= a[0]", "o=5;a=6")
     @TestCase("o.p <<= a[0]", "o=192;a=6")
-    @TestCase("o.p >>= a[0]", "o=0;a=6")
+    @TestCase("o.p >>>= a[0]", "o=0;a=6")
     @Test("Operator assignment to simple property statements")
     public opSimplePropAssignmentStatement(statement: string, expected: string): void {
         const result = util.transpileAndExecute(
@@ -82,7 +101,7 @@ export class MathTests {
     @TestCase("o.p.d &= a[0][0]", "o=2;a=[6,11],[7,13]")
     @TestCase("o.p.d ^= a[0][0]", "o=5;a=[6,11],[7,13]")
     @TestCase("o.p.d <<= a[0][0]", "o=192;a=[6,11],[7,13]")
-    @TestCase("o.p.d >>= a[0][0]", "o=0;a=[6,11],[7,13]")
+    @TestCase("o.p.d >>>= a[0][0]", "o=0;a=[6,11],[7,13]")
     @Test("Operator assignment to deep property statements")
     public opDeepPropAssignmentStatement(statement: string, expected: string): void {
         const result = util.transpileAndExecute(
@@ -107,7 +126,7 @@ export class MathTests {
     @TestCase("of().p &= af()[i()]", "o=2;a=6")
     @TestCase("of().p ^= af()[i()]", "o=5;a=6")
     @TestCase("of().p <<= af()[i()]", "o=192;a=6")
-    @TestCase("of().p >>= af()[i()]", "o=0;a=6")
+    @TestCase("of().p >>>= af()[i()]", "o=0;a=6")
     @Test("Operator assignment to complex property statements")
     public opComplexPropAssignmentStatement(statement: string, expected: string): void {
         const result = util.transpileAndExecute(
@@ -135,7 +154,7 @@ export class MathTests {
     @TestCase("of().p.d &= af()[i()][i()]", "o=2;a=[7,6],[11,13];i=2")
     @TestCase("of().p.d ^= af()[i()][i()]", "o=5;a=[7,6],[11,13];i=2")
     @TestCase("of().p.d <<= af()[i()][i()]", "o=192;a=[7,6],[11,13];i=2")
-    @TestCase("of().p.d >>= af()[i()][i()]", "o=0;a=[7,6],[11,13];i=2")
+    @TestCase("of().p.d >>>= af()[i()][i()]", "o=0;a=[7,6],[11,13];i=2")
     @Test("Operator assignment to complex deep property statements")
     public opComplexDeepPropAssignmentStatement(statement: string, expected: string): void {
         const result = util.transpileAndExecute(
@@ -164,7 +183,7 @@ export class MathTests {
     @TestCase("x &= y", "2;x=2;y=6")
     @TestCase("x ^= y", "5;x=5;y=6")
     @TestCase("x <<= y", "192;x=192;y=6")
-    @TestCase("x >>= y", "0;x=0;y=6")
+    @TestCase("x >>>= y", "0;x=0;y=6")
     @TestCase("x + (y += 7)", "16;x=3;y=13")
     @TestCase("x + (y += 7)", "16;x=3;y=13")
     @TestCase("x++ + (y += 7)", "16;x=4;y=13")
@@ -192,7 +211,7 @@ export class MathTests {
     @TestCase("o.p &= a[0]", "2;o=2;a=6")
     @TestCase("o.p ^= a[0]", "5;o=5;a=6")
     @TestCase("o.p <<= a[0]", "192;o=192;a=6")
-    @TestCase("o.p >>= a[0]", "0;o=0;a=6")
+    @TestCase("o.p >>>= a[0]", "0;o=0;a=6")
     @TestCase("o.p + (a[0] += 7)", "16;o=3;a=13")
     @TestCase("o.p += (a[0] += 7)", "16;o=16;a=13")
     @TestCase("o.p++ + (a[0] += 7)", "16;o=4;a=13")
@@ -220,7 +239,7 @@ export class MathTests {
     @TestCase("of().p &= af()[i()]", "2;o=2;a=6")
     @TestCase("of().p ^= af()[i()]", "5;o=5;a=6")
     @TestCase("of().p <<= af()[i()]", "192;o=192;a=6")
-    @TestCase("of().p >>= af()[i()]", "0;o=0;a=6")
+    @TestCase("of().p >>>= af()[i()]", "0;o=0;a=6")
     @TestCase("of().p + (af()[i()] += 7)", "16;o=3;a=13")
     @TestCase("of().p += (af()[i()] += 7)", "16;o=16;a=13")
     @TestCase("of().p++ + (af()[i()] += 7)", "16;o=4;a=13")

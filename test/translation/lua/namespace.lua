@@ -1,6 +1,6 @@
 myNamespace = myNamespace or {};
 do
     local nsMember;
-    nsMember = function()
+    nsMember = function(self)
     end;
 end

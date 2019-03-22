@@ -8,7 +8,7 @@ export class DeclarationTests
         // Arrange
         const libLua = `function declaredFunction(x) return 3*x end`;
 
-        const tsHeader = `declare function declaredFunction(x: number): number;`;
+        const tsHeader = `declare function declaredFunction(this: void, x: number): number;`;
 
         const source = `return declaredFunction(2) + 4;`;
 
@@ -26,7 +26,7 @@ export class DeclarationTests
 
         const tsHeader = `
             /** @tupleReturn */
-            declare function declaredFunction(x: number): [number, number];`;
+            declare function declaredFunction(this: void, x: number): [number, number];`;
 
         const source = `
             const tuple = declaredFunction(3);
@@ -48,7 +48,7 @@ export class DeclarationTests
             function myNameSpace.declaredFunction(x) return 3*x end
         `;
 
-        const tsHeader = `declare namespace myNameSpace { function declaredFunction(x: number): number; }`;
+        const tsHeader = `declare namespace myNameSpace { function declaredFunction(this: void, x: number): number; }`;
 
         const source = `return myNameSpace.declaredFunction(2) + 4;`;
 
@@ -87,7 +87,8 @@ export class DeclarationTests
     public declarationFunctionCallback(): void {
         // Arrange
         const libLua = `function declaredFunction(callback) return callback(4) end`;
-        const tsHeader = `declare function declaredFunction(callback: (x: number) => number): number;`;
+        const tsHeader =
+            `declare function declaredFunction(this: void, callback: (this: void, x: number) => number): number;`;
 
         const source = `return declaredFunction(x => 2 * x);`;
 
@@ -108,7 +109,7 @@ export class DeclarationTests
 
         const tsHeader =
             `declare interface MyInterface {
-                declaredFunction(callback: (x: number) => number): number;
+                declaredFunction(callback: (this: void, x: number) => number): number;
             }
             declare var myInstance: MyInterface;`;
 

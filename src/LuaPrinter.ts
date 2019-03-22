@@ -2,7 +2,7 @@ import * as tstl from "./LuaAST";
 
 import * as path from "path";
 
-import {SourceNode} from "source-map";
+import {SourceNode, SourceMapGenerator, RawSourceMap, SourceMapConsumer} from "source-map";
 
 import { TSHelper as tsHelper } from "./TSHelper";
 import { LuaLibFeature, LuaLib } from "./LuaLib";
@@ -54,7 +54,23 @@ export class LuaPrinter {
     }
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): string {
-        return this.printImplementation(block, luaLibFeatures, sourceFile).toString();
+        if (this.options.inlineSourceMap === true) {
+            const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
+
+            const codeWithMap = rootSourceNode
+                // TODO is the file: part really required? and should this be handled in the printer?
+                .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+
+            let inlineSourceMap = this.printInlineSourceMap(codeWithMap.map);
+
+            // TODO: Put this behind a compiler option?
+            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
+            inlineSourceMap = stackTraceOverride + inlineSourceMap;
+
+            return codeWithMap.code + "\n" + inlineSourceMap;
+        } else {
+            return this.printImplementation(block, luaLibFeatures, sourceFile).toString();
+        }
     }
 
     public printWithSourceMap(
@@ -66,7 +82,33 @@ export class LuaPrinter {
             this.printImplementation(block, luaLibFeatures, sourceFile)
                 // TODO is the file: part really required? and should this be handled in the printer?
                 .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+
+
         return [codeWithMap.code, codeWithMap.map.toString()];
+    }
+
+    private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
+        const map = sourceMap.toString();
+        const base64Map = Buffer.from(map).toString('base64');
+
+        return "//# sourceMappingURL=data:application/json;base64," + base64Map;
+    }
+
+    private printStackTraceOverride(rootNode: SourceNode): string {
+        let line = 1;
+        const map = {};
+        rootNode.walk((chunk, mappedPosition) => {
+            if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
+                if (map[line] === undefined) {
+                    map[line] = mappedPosition.line;
+                } else {
+                    map[line] = Math.min(map[line], mappedPosition.line);
+                }
+            }
+            line += chunk.split("\n").length - 1;
+        });
+        console.log(map);
+        return "";
     }
 
     private printImplementation(

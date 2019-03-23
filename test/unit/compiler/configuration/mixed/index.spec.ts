@@ -38,6 +38,7 @@ export class MixedConfigurationTests
                 noHeader: false,
                 project: tsConfigPath,
                 noHoisting: false,
+                sourceMapTraceBack: false,
             } as CompilerOptions);
         } else {
             Expect(parsedArgs.isValid).toBeTruthy();

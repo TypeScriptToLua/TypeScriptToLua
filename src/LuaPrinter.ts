@@ -53,6 +53,14 @@ export class LuaPrinter {
     }
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): string {
+        // Add traceback lualib if sourcemap traceback option is enabled
+        if (this.options.sourceMapTraceBack) {
+            if (luaLibFeatures === undefined) {
+                luaLibFeatures = new Set();
+            }
+            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
+        }
+
         if (this.options.inlineSourceMap === true) {
             const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
 
@@ -60,11 +68,7 @@ export class LuaPrinter {
                 // TODO is the file: part really required? and should this be handled in the printer?
                 .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
 
-            let inlineSourceMap = this.printInlineSourceMap(codeWithMap.map);
-
-            // TODO: Put this behind a compiler option?
-            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
-            inlineSourceMap = stackTraceOverride + inlineSourceMap;
+            const inlineSourceMap = this.printInlineSourceMap(codeWithMap.map);
 
             return codeWithMap.code + "\n" + inlineSourceMap;
         } else {
@@ -95,7 +99,7 @@ export class LuaPrinter {
 
     private printStackTraceOverride(rootNode: SourceNode): string {
         let line = 1;
-        const map = {};
+        const map: {[line: number]: number} = {};
         rootNode.walk((chunk, mappedPosition) => {
             if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
                 if (map[line] === undefined) {
@@ -106,8 +110,15 @@ export class LuaPrinter {
             }
             line += chunk.split("\n").length - 1;
         });
-        console.log(map);
-        return "";
+
+        const mapItems = [];
+        for (const lineNr in map) {
+            mapItems.push(`["${lineNr}"] = ${map[lineNr]}`);
+        }
+
+        const mapString = "{" + mapItems.join(",") + "}";
+
+        return `__TS__SourceMapTraceBack("${this.sourceFile}", ${mapString});\n`;
     }
 
     private printImplementation(
@@ -136,11 +147,30 @@ export class LuaPrinter {
             }
         }
 
-        this.sourceFile = path.basename(sourceFile);
+        this.sourceFile = path.basename(sourceFile, ".ts");
 
         const blockNode =  this.createSourceNode(block, this.printBlock(block));
 
-        return this.concatNodes(header, blockNode);
+        let sourceNode = this.concatNodes(header, blockNode);
+
+        if (this.options.sourceMapTraceBack) {
+            const lastNode = block.statements[block.statements.length - 1];
+            if (tstl.isReturnStatement(lastNode)) {
+                const stackTraceOverride = this.printStackTraceOverride(sourceNode);
+
+                const leadingNodes = block.statements.slice(0, -1);
+
+                const leadingBlock = this.printBlock(tstl.createBlock(leadingNodes));
+                const returnNode = this.printReturnStatement(lastNode);
+
+                sourceNode = this.concatNodes(header, leadingBlock, stackTraceOverride, returnNode);
+            } else {
+                const stackTraceOverride = this.printStackTraceOverride(sourceNode);
+                sourceNode = this.concatNodes(sourceNode, stackTraceOverride);
+            }
+        }
+
+        return sourceNode;
     }
 
     private pushIndent(): void {

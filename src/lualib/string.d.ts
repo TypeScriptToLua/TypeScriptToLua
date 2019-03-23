@@ -1,6 +1,7 @@
 /** @luaIterator */
-interface GMatchResult extends Iterable<string> { }
+interface GMatchResult extends Array<string> { }
 
+/** @noSelf */
 declare namespace string {
     /** @tupleReturn */
     function gsub(source: string, searchValue: string, replaceValue: string): [string, number];

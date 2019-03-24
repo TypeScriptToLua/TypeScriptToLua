@@ -39,5 +39,5 @@ test("IncorrectUsage", () => {
             return new Point2D(1, 2).x;
             `,
         );
-    }).toThrowExactError(new TranspileError("!CustomConstructor expects 1 argument(s) but got 0."));
+    }).toThrowWithMessage(TranspileError, "!CustomConstructor expects 1 argument(s) but got 0.");
 });

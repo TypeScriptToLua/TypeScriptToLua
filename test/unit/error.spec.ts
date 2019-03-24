@@ -10,9 +10,7 @@ test("throwString", () => {
 test("throwError", () => {
     expect(() => {
         const lua = util.transpileString(`throw Error("Some Error")`);
-    }).toThrowExactError(
-        new TranspileError("Invalid throw expression, only strings can be thrown."),
-    );
+    }).toThrowWithMessage(TranspileError, "Invalid throw expression, only strings can be thrown.");
 });
 
 test.each([{ i: 0, expected: "A" }, { i: 1, expected: "B" }, { i: 2, expected: "C" }])(

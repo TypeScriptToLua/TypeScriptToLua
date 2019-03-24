@@ -64,11 +64,10 @@ test("Invalid heterogeneous enum", () => {
                 c,
             }`,
         );
-    }).toThrowExactError(
-        new TranspileError(
-            "Invalid heterogeneous enum. Enums should either specify no " +
-                "member values, or specify values (of the same type) for all members.",
-        ),
+    }).toThrowWithMessage(
+        TranspileError,
+        "Invalid heterogeneous enum. Enums should either specify no " +
+            "member values, or specify values (of the same type) for all members.",
     );
 });
 

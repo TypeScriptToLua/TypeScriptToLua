@@ -473,8 +473,8 @@ test.each([
 });
 
 test("Ellipsis binding pattern", () => {
-    expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrowExactError(
-        new Error("Ellipsis destruction is not allowed."),
+    expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrow(
+        "Ellipsis destruction is not allowed.",
     );
 });
 
@@ -578,8 +578,9 @@ test("TupleReturn in expression", () => {
 test.each(["and", "local", "nil", "not", "or", "repeat", "then", "until"])(
     "Keyword identifier error (%p)",
     identifier => {
-        expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowExactError(
-            new TranspileError(`Cannot use Lua keyword ${identifier} as identifier.`),
+        expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowWithMessage(
+            TranspileError,
+            `Cannot use Lua keyword ${identifier} as identifier.`,
         );
     },
 );
@@ -613,8 +614,8 @@ test.each(invalidTestFunctionAssignments)(
         const code = `${testFunction.definition || ""}
     const fn: ${functionType} = ${testFunction.value};`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -626,8 +627,8 @@ test.each(invalidTestFunctionAssignments)(
     let fn: ${functionType};
     fn = ${testFunction.value};`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -651,8 +652,8 @@ test.each(invalidTestFunctionCasts)(
     let fn: typeof ${testFunction.value};
     fn = ${castedFunction};`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -677,8 +678,8 @@ test.each(invalidTestFunctionAssignments)(
     declare function takesFunction(fn: ${functionType});
     takesFunction(${testFunction.value});`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -696,7 +697,7 @@ test("Invalid lua lib function argument", () => {
     const code = `declare function foo(this: void, value: string): void;
         declare const a: string[];
         a.forEach(foo);`;
-    const err = TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "callbackfn");
+    const err = TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "callbackfn");
     expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
 });
 
@@ -720,8 +721,8 @@ test.each(invalidTestFunctionCasts)(
     declare function takesFunction(fn: typeof ${testFunction.value});
     takesFunction(${castedFunction});`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -756,8 +757,8 @@ test.each(invalidTestFunctionAssignments)(
     declare function takesFunction<T extends ${functionType}>(fn: T);
     takesFunction(${testFunction.value});`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined, "fn")
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn");
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -798,8 +799,8 @@ test.each(invalidTestFunctionAssignments)(
         return ${testFunction.value};
     }`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -826,8 +827,8 @@ test.each(invalidTestFunctionCasts)(
         return ${castedFunction};
     }`;
         const err = isSelfConversion
-            ? TSTLErrors.UnsupportedSelfFunctionConversion(undefined)
-            : TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined);
+            ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
+            : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
     },
 );
@@ -862,7 +863,7 @@ test("Invalid function tuple assignment", () => {
                   declare function getTuple(): [number, Meth];
                   let [i, f]: [number, Func] = getTuple();`;
     expect(() => util.transpileString(code)).toThrowExactError(
-        new TranspileError(TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined).message),
+        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub),
     );
 });
 
@@ -884,7 +885,7 @@ test("Invalid method tuple assignment", () => {
                   declare function getTuple(): [number, Func];
                   let [i, f]: [number, Meth] = getTuple();`;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedSelfFunctionConversion(undefined),
+        TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub),
     );
 });
 
@@ -904,7 +905,7 @@ test("Invalid interface method assignment", () => {
                   declare const a: A;
                   const b: B = a;`;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedNoSelfFunctionConversion(undefined, "fn"),
+        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn"),
     );
 });
 
@@ -946,7 +947,7 @@ test.each([
                   declare const o: O;
                   let f: ${assignType} = o;`;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedOverloadAssignment(undefined),
+        TSTLErrors.UnsupportedOverloadAssignment(util.nodeStub),
     );
 });
 

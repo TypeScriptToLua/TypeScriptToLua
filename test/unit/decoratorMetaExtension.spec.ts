@@ -27,7 +27,6 @@ test("MetaExtension", () => {
 });
 
 test("IncorrectUsage", () => {
-    const expectedMessage = TSTLErrors.MissingMetaExtension(undefined).message;
     expect(() => {
         util.transpileString(
             `
@@ -39,7 +38,7 @@ test("IncorrectUsage", () => {
             }
             `,
         );
-    }).toThrowExactError(new TranspileError(expectedMessage));
+    }).toThrowExactError(TSTLErrors.MissingMetaExtension(util.nodeStub));
 });
 
 test("DontAllowInstantiation", () => {
@@ -53,9 +52,8 @@ test("DontAllowInstantiation", () => {
             const e = new Ext();
             `,
         );
-    }).toThrowExactError(
-        new TranspileError(
-            "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
-        ),
+    }).toThrowWithMessage(
+        TranspileError,
+        "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
     );
 });

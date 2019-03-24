@@ -374,7 +374,8 @@ test("switch dead code after return", () => {
 test("switch not allowed in 5.1", () => {
     expect(() =>
         util.transpileString(`switch ("abc") {}`, { luaTarget: LuaTarget.Lua51 }),
-    ).toThrowExactError(
-        new TranspileError("Switch statements is/are not supported for target Lua 5.1."),
+    ).toThrowWithMessage(
+        TranspileError,
+        "Switch statements is/are not supported for target Lua 5.1.",
     );
 });

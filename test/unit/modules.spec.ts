@@ -4,9 +4,7 @@ import * as util from "../util";
 test("defaultImport", () => {
     expect(() => {
         const lua = util.transpileString(`import TestClass from "test"`);
-    }).toThrowExactError(
-        new Error("Default Imports are not supported, please use named imports instead!"),
-    );
+    }).toThrow("Default Imports are not supported, please use named imports instead!");
 });
 
 test("lualibRequire", () => {

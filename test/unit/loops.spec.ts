@@ -288,7 +288,7 @@ test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
                 arrTest[key]++;
             }`,
         ),
-    ).toThrowExactError(
+    ).toThrowWithMessage(
         new TranspileError("Iterating over arrays with 'for ... in' is not allowed."),
     );
 });
@@ -684,7 +684,7 @@ test("forof lua iterator tuple-return single variable", () => {
         luaTarget: LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+    expect(() => util.transpileString(code, compilerOptions)).toThrowWithMessage(
         new TranspileError(
             "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
                 "You must use a destructuring statement to catch results from a lua iterator with " +
@@ -707,7 +707,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
         luaTarget: LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+    expect(() => util.transpileString(code, compilerOptions)).toThrowWithMessage(
         new TranspileError(
             "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
                 "You must use a destructuring statement to catch results from a lua iterator with " +

@@ -500,9 +500,9 @@ test("methodDefaultParameters", () => {
 test("Class without name error", () => {
     const transformer = util.makeTestTransformer();
 
-    expect(() =>
-        transformer.transformClassDeclaration({} as ts.ClassDeclaration),
-    ).toThrowExactError(new Error("Class declarations must have a name."));
+    expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration)).toThrow(
+        "Class declarations must have a name.",
+    );
 });
 
 test("CallSuperMethodNoArgs", () => {
@@ -713,10 +713,9 @@ test.each(["extension", "metaExtension"])("Class extends extension (%p)", extens
         /** @${extensionType} **/
         class B extends A {}
         class C extends B {}`;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        new TranspileError(
-            "Cannot extend classes with decorator '@extension' or '@metaExtension'.",
-        ),
+    expect(() => util.transpileString(code)).toThrowWithMessage(
+        TranspileError,
+        "Cannot extend classes with decorator '@extension' or '@metaExtension'.",
     );
 });
 
@@ -725,10 +724,9 @@ test.each(["extension", "metaExtension"])("Class construct extension (%p)", exte
         /** @${extensionType} **/
         class B extends A {}
         const b = new B();`;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        new TranspileError(
-            "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
-        ),
+    expect(() => util.transpileString(code)).toThrowWithMessage(
+        TranspileError,
+        "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
     );
 });
 

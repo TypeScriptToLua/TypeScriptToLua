@@ -4,7 +4,7 @@ import * as util from "../util";
 test("Unsuported string function", () => {
     expect(() => {
         util.transpileString(`return "test".testThisIsNoMember()`);
-    }).toThrowExactError(new TranspileError("Unsupported property on string: testThisIsNoMember"));
+    }).toThrowWithMessage(TranspileError, "Unsupported property on string: testThisIsNoMember");
 });
 
 test("Suported lua string function", () => {

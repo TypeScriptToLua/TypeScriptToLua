@@ -169,12 +169,10 @@ test.each(["a>>b", "a>>=b"])("Unsupported bitop 5.3 (%p)", input => {
             luaLibImport: LuaLibImportKind.None,
         }),
     ).toThrowExactError(
-        new TranspileError(
-            TSTLErrors.UnsupportedKind(
-                "right shift operator (use >>> instead)",
-                ts.SyntaxKind.GreaterThanGreaterThanToken,
-                undefined,
-            ).message,
+        TSTLErrors.UnsupportedKind(
+            "right shift operator (use >>> instead)",
+            ts.SyntaxKind.GreaterThanGreaterThanToken,
+            util.nodeStub,
         ),
     );
 });
@@ -457,9 +455,7 @@ test("Unknown unary postfix error", () => {
 
     expect(() =>
         transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression),
-    ).toThrowExactError(
-        new TranspileError("Unsupported unary postfix operator kind: AsteriskToken"),
-    );
+    ).toThrowWithMessage(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
 });
 
 test("Unknown unary postfix error", () => {
@@ -472,19 +468,16 @@ test("Unknown unary postfix error", () => {
 
     expect(() =>
         transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression),
-    ).toThrowExactError(
-        new TranspileError("Unsupported unary prefix operator kind: AsteriskToken"),
-    );
+    ).toThrowWithMessage(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
 });
 
 test("Incompatible fromCodePoint expression error", () => {
     const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
     const identifier = ts.createIdentifier("fromCodePoint");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
-        new TranspileError(
-            "string property fromCodePoint is/are not supported for target Lua jit.",
-        ),
+    expect(() => transformer.transformStringExpression(identifier)).toThrowWithMessage(
+        TranspileError,
+        "string property fromCodePoint is/are not supported for target Lua jit.",
     );
 });
 
@@ -492,8 +485,9 @@ test("Unknown string expression error", () => {
     const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
     const identifier = ts.createIdentifier("abcd");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
-        new TranspileError("string property abcd is/are not supported for target Lua jit."),
+    expect(() => transformer.transformStringExpression(identifier)).toThrowWithMessage(
+        TranspileError,
+        "string property abcd is/are not supported for target Lua jit.",
     );
 });
 
@@ -512,7 +506,7 @@ test("Unsupported array function error", () => {
 
     expect(() =>
         transformer.transformArrayCallExpression(mockNode as ts.CallExpression),
-    ).toThrowExactError(new TranspileError("Unsupported property on array: unknownFunction"));
+    ).toThrowWithMessage(TranspileError, "Unsupported property on array: unknownFunction");
 });
 
 test("Unsupported math property error", () => {
@@ -520,7 +514,7 @@ test("Unsupported math property error", () => {
 
     expect(() =>
         transformer.transformMathExpression(ts.createIdentifier("unknownProperty")),
-    ).toThrowExactError(new TranspileError("Unsupported property on math: unknownProperty"));
+    ).toThrowWithMessage(TranspileError, "Unsupported property on math: unknownProperty");
 });
 
 test("Unsupported object literal element error", () => {
@@ -537,7 +531,5 @@ test("Unsupported object literal element error", () => {
 
     expect(() =>
         transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression),
-    ).toThrowExactError(
-        new TranspileError("Unsupported object literal element kind: FalseKeyword"),
-    );
+    ).toThrowWithMessage(TranspileError, "Unsupported object literal element kind: FalseKeyword");
 });

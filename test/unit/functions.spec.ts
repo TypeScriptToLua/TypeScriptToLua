@@ -195,9 +195,9 @@ test("Invalid property access call transpilation", () => {
         expression: ts.createLiteral("abc"),
     };
 
-    expect(() =>
-        transformer.transformPropertyCall(mockObject as ts.CallExpression),
-    ).toThrowExactError(new Error("Tried to transpile a non-property call as property call."));
+    expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression)).toThrow(
+        "Tried to transpile a non-property call as property call.",
+    );
 });
 
 test("Function dead code after return", () => {

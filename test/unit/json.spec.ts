@@ -20,5 +20,5 @@ test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" }
 test("Empty JSON", () => {
     expect(() =>
         transpileString("", { resolveJsonModule: true, noHeader: true }, false, "file.json"),
-    ).toThrowExactError(new TranspileError("Invalid JSON file content"));
+    ).toThrowWithMessage(TranspileError, "Invalid JSON file content");
 });

@@ -93,10 +93,9 @@ test.each(["extension", "metaExtension"])("instanceof extension (%p)", extension
         class B extends A {}
         declare const foo: any;
         const result = foo instanceof B;`;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        new TranspileError(
-            "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.",
-        ),
+    expect(() => util.transpileString(code)).toThrowWithMessage(
+        TranspileError,
+        "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.",
     );
 });
 

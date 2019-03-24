@@ -29,9 +29,21 @@ The tests for this project can be executed using the standard `npm test`. This r
 
 Due to the time required to run all tests, it is impractical to run every test while developing part of the transpiler. To speed up the test run you can:
 
-- Use `npm test -- --watchAll` to start tests and rerun them on change
-- Use `npm test name` or interactive watching interface to run tests that match a file name pattern
-- Add `.only` to test definition to run a single test in the file
+- Use `npm test name` to run tests that match a file name pattern
+
+- Use `npm test -- --watchAll [name]` to start tests and rerun them on change
+
+- Check out `Watch Usage` in the watching interface to get information about filtering tests without restarting CLI
+
+- Use `.only` and `.skip` to filter executed tests in the file
+
+  ```ts
+  // Skipped
+  test("test", () => {});
+
+  // Executed
+  test.only("test", () => {});
+  ```
 
 ## Testing Guidelines
 When submitting a pull request with new functionality, we require some functional (transpile and execute Lua) to be added, to ensure the new functionality works as expected, and will continue to work that way.
@@ -39,7 +51,7 @@ When submitting a pull request with new functionality, we require some functiona
 Translation tests are discouraged as in most cases as we do not really care about the exact Lua output, as long as executing it results in the correct result (which is tested by functional tests).
 
 ## Coding Conventions
-Most coding conventions are enforced by the TSLint and Prettier. You can check your code locally by running `npm run lint`. CI process will fail if code does not pass the linter. You also might want to get extensions for your code editor to get immediate feedback.
+Most coding conventions are enforced by the TSLint and Prettier. You can check your code locally by running `npm run lint`. The CI build will fail if your code does not pass the linter. For better experience, you can install extensions for your code editor for [TSLint](https://palantir.github.io/tslint/usage/third-party-tools/) and [Prettier](https://prettier.io/docs/en/editors.html).
 
 Some extra conventions worth mentioning:
 * Do not abbreviate variable names. The exception here are inline lambda arguments, if it is obvious what the argument is you can abbreviate to the first letter, e.g: `statements.filter(s => ts.VariableStatement(s))`

@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import { TranspileError } from "../../src/TranspileError";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
@@ -473,8 +474,8 @@ test.each([
 });
 
 test("Ellipsis binding pattern", () => {
-    expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrow(
-        "Ellipsis destruction is not allowed.",
+    expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrowExactError(
+        TSTLErrors.ForbiddenEllipsisDestruction(util.nodeStub),
     );
 });
 
@@ -578,9 +579,8 @@ test("TupleReturn in expression", () => {
 test.each(["and", "local", "nil", "not", "or", "repeat", "then", "until"])(
     "Keyword identifier error (%p)",
     identifier => {
-        expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowWithMessage(
-            TranspileError,
-            `Cannot use Lua keyword ${identifier} as identifier.`,
+        expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowExactError(
+            TSTLErrors.KeywordIdentifier(ts.createIdentifier(identifier)),
         );
     },
 );

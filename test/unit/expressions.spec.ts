@@ -455,7 +455,13 @@ test("Unknown unary postfix error", () => {
 
     expect(() =>
         transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression),
-    ).toThrowWithMessage(TranspileError, "Unsupported unary postfix operator kind: AsteriskToken");
+    ).toThrowExactError(
+        TSTLErrors.UnsupportedKind(
+            "unary postfix operator",
+            ts.SyntaxKind.AsteriskToken,
+            util.nodeStub,
+        ),
+    );
 });
 
 test("Unknown unary postfix error", () => {
@@ -468,16 +474,25 @@ test("Unknown unary postfix error", () => {
 
     expect(() =>
         transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression),
-    ).toThrowWithMessage(TranspileError, "Unsupported unary prefix operator kind: AsteriskToken");
+    ).toThrowExactError(
+        TSTLErrors.UnsupportedKind(
+            "unary prefix operator",
+            ts.SyntaxKind.AsteriskToken,
+            util.nodeStub,
+        ),
+    );
 });
 
 test("Incompatible fromCodePoint expression error", () => {
     const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
     const identifier = ts.createIdentifier("fromCodePoint");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowWithMessage(
-        TranspileError,
-        "string property fromCodePoint is/are not supported for target Lua jit.",
+    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget(
+            "string property fromCodePoint",
+            LuaTarget.LuaJIT,
+            util.nodeStub,
+        ),
     );
 });
 
@@ -485,9 +500,8 @@ test("Unknown string expression error", () => {
     const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
 
     const identifier = ts.createIdentifier("abcd");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowWithMessage(
-        TranspileError,
-        "string property abcd is/are not supported for target Lua jit.",
+    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget("string property abcd", LuaTarget.LuaJIT, util.nodeStub),
     );
 });
 
@@ -506,7 +520,7 @@ test("Unsupported array function error", () => {
 
     expect(() =>
         transformer.transformArrayCallExpression(mockNode as ts.CallExpression),
-    ).toThrowWithMessage(TranspileError, "Unsupported property on array: unknownFunction");
+    ).toThrowExactError(TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub));
 });
 
 test("Unsupported math property error", () => {
@@ -514,7 +528,7 @@ test("Unsupported math property error", () => {
 
     expect(() =>
         transformer.transformMathExpression(ts.createIdentifier("unknownProperty")),
-    ).toThrowWithMessage(TranspileError, "Unsupported property on math: unknownProperty");
+    ).toThrowExactError(TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub));
 });
 
 test("Unsupported object literal element error", () => {
@@ -531,5 +545,11 @@ test("Unsupported object literal element error", () => {
 
     expect(() =>
         transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression),
-    ).toThrowWithMessage(TranspileError, "Unsupported object literal element kind: FalseKeyword");
+    ).toThrowExactError(
+        TSTLErrors.UnsupportedKind(
+            "object literal element",
+            ts.SyntaxKind.FalseKeyword,
+            util.nodeStub,
+        ),
+    );
 });

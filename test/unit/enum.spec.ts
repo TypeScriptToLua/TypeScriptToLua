@@ -1,6 +1,7 @@
 import * as util from "../util";
 
 import { TranspileError } from "../../src/TranspileError";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Declare const enum", () => {
     const testCode = `
@@ -64,11 +65,7 @@ test("Invalid heterogeneous enum", () => {
                 c,
             }`,
         );
-    }).toThrowWithMessage(
-        TranspileError,
-        "Invalid heterogeneous enum. Enums should either specify no " +
-            "member values, or specify values (of the same type) for all members.",
-    );
+    }).toThrowExactError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
 });
 
 test("String literal name in enum", () => {

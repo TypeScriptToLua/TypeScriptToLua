@@ -1,5 +1,7 @@
+import * as ts from "typescript";
 import { TranspileError } from "../../src/TranspileError";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Var Hoisting", () => {
     const code = `foo = "foo";
@@ -204,9 +206,7 @@ test.each([
     { code: `function makeFoo() { return new Foo(); } class Foo {}`, identifier: "Foo" },
     { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
 ])("No Hoisting (%p)", ({ code, identifier }) => {
-    expect(() => util.transpileString(code, { noHoisting: true })).toThrowWithMessage(
-        TranspileError,
-        `Identifier "${identifier}" was referenced before it was declared. The declaration ` +
-            "must be moved before the identifier's use, or hoisting must be enabled.",
+    expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
+        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier)),
     );
 });

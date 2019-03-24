@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import { TranspileError } from "../../src/TranspileError";
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
@@ -288,9 +289,7 @@ test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
                 arrTest[key]++;
             }`,
         ),
-    ).toThrowWithMessage(
-        new TranspileError("Iterating over arrays with 'for ... in' is not allowed."),
-    );
+    ).toThrowExactError(TSTLErrors.ForbiddenForIn(util.nodeStub));
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
@@ -684,12 +683,8 @@ test("forof lua iterator tuple-return single variable", () => {
         luaTarget: LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowWithMessage(
-        new TranspileError(
-            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
-                "You must use a destructuring statement to catch results from a lua iterator with " +
-                "the TupleReturn decorator.",
-        ),
+    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
     );
 });
 
@@ -707,12 +702,8 @@ test("forof lua iterator tuple-return single existing variable", () => {
         luaTarget: LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowWithMessage(
-        new TranspileError(
-            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
-                "You must use a destructuring statement to catch results from a lua iterator with " +
-                "the TupleReturn decorator.",
-        ),
+    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
     );
 });
 

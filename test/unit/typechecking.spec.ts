@@ -1,5 +1,6 @@
 import * as util from "../util";
 import { TranspileError } from "../../src/TranspileError";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {
     const result = util.transpileAndExecute(`return typeof ${inp};`);
@@ -93,9 +94,8 @@ test.each(["extension", "metaExtension"])("instanceof extension (%p)", extension
         class B extends A {}
         declare const foo: any;
         const result = foo instanceof B;`;
-    expect(() => util.transpileString(code)).toThrowWithMessage(
-        TranspileError,
-        "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.",
+    expect(() => util.transpileString(code)).toThrowExactError(
+        TSTLErrors.InvalidInstanceOfExtension(util.nodeStub),
     );
 });
 

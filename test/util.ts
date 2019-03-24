@@ -14,20 +14,18 @@ export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 declare global {
     namespace jest {
         interface Matchers<R> {
-            toThrowWithMessage(type: new (...args: any[]) => Error, message: string): void;
             toThrowExactError(error: Error): void;
         }
     }
 }
 
 expect.extend({
-    toThrowWithMessage(
+    toThrowExactError(
         callback: () => void,
-        type: new (...args: any[]) => Error,
-        message: string,
+        error: Error,
     ): { pass: boolean; message: () => string } {
         if (this.isNot) {
-            return { pass: true, message: () => "Inverted toThrowWithMessage is not implemented" };
+            return { pass: true, message: () => "Inverted toThrowExactError is not implemented" };
         }
 
         let executionError: Error | undefined;
@@ -39,19 +37,11 @@ expect.extend({
 
         expect(() => {
             if (executionError) throw executionError;
-        }).toThrowError(type);
+        }).toThrowError(error.constructor as any);
         expect(() => {
             if (executionError) throw executionError;
-        }).toThrowError(message);
+        }).toThrowError(error);
 
-        return { pass: true, message: () => "" };
-    },
-    toThrowExactError(
-        callback: () => void,
-        error: Error,
-    ): { pass: boolean; message: () => string } {
-        const matchers = this.isNot ? expect(callback).not : expect(callback);
-        matchers.toThrowWithMessage(error.constructor as ErrorConstructor, error.message);
         return { pass: true, message: () => "" };
     },
 });

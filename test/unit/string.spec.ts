@@ -1,10 +1,13 @@
 import { TranspileError } from "../../src/TranspileError";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Unsuported string function", () => {
     expect(() => {
         util.transpileString(`return "test".testThisIsNoMember()`);
-    }).toThrowWithMessage(TranspileError, "Unsupported property on string: testThisIsNoMember");
+    }).toThrowExactError(
+        TSTLErrors.UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub),
+    );
 });
 
 test("Suported lua string function", () => {

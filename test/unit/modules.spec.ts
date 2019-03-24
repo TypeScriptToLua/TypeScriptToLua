@@ -1,10 +1,11 @@
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("defaultImport", () => {
     expect(() => {
         const lua = util.transpileString(`import TestClass from "test"`);
-    }).toThrow("Default Imports are not supported, please use named imports instead!");
+    }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
 });
 
 test("lualibRequire", () => {

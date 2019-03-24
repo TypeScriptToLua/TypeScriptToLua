@@ -52,8 +52,5 @@ test("DontAllowInstantiation", () => {
             const e = new Ext();
             `,
         );
-    }).toThrowWithMessage(
-        TranspileError,
-        "Cannot construct classes with decorator '@extension' or '@metaExtension'.",
-    );
+    }).toThrowExactError(TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub));
 });

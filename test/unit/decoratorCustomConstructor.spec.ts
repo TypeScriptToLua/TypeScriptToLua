@@ -1,6 +1,7 @@
 import * as util from "../util";
 
 import { TranspileError } from "../../src/TranspileError";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("CustomCreate", () => {
     const luaHeader = `function Point2DCreate(x, y)
@@ -39,5 +40,7 @@ test("IncorrectUsage", () => {
             return new Point2D(1, 2).x;
             `,
         );
-    }).toThrowWithMessage(TranspileError, "!CustomConstructor expects 1 argument(s) but got 0.");
+    }).toThrowExactError(
+        TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub),
+    );
 });

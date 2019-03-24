@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Arrow Function Expression", () => {
     const result = util.transpileAndExecute(`let add = (a, b) => a+b; return add(1,2);`);
@@ -195,9 +196,9 @@ test("Invalid property access call transpilation", () => {
         expression: ts.createLiteral("abc"),
     };
 
-    expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression)).toThrow(
-        "Tried to transpile a non-property call as property call.",
-    );
+    expect(() =>
+        transformer.transformPropertyCall(mockObject as ts.CallExpression),
+    ).toThrowExactError(TSTLErrors.InvalidPropertyCall(util.nodeStub));
 });
 
 test("Function dead code after return", () => {

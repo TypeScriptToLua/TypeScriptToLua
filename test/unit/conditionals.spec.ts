@@ -1,6 +1,7 @@
 import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])("if (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
@@ -374,8 +375,7 @@ test("switch dead code after return", () => {
 test("switch not allowed in 5.1", () => {
     expect(() =>
         util.transpileString(`switch ("abc") {}`, { luaTarget: LuaTarget.Lua51 }),
-    ).toThrowWithMessage(
-        TranspileError,
-        "Switch statements is/are not supported for target Lua 5.1.",
+    ).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget("Switch statements", LuaTarget.Lua51, util.nodeStub),
     );
 });

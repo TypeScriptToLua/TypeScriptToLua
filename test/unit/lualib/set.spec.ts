@@ -125,6 +125,6 @@ test.each([
     { code: `let m = new Set([1, 2]); return m.size;`, expected: 2 },
     { code: `let m = new Set([1, 2]); m.clear(); return m.size;`, expected: 0 },
     { code: `let m = new Set([1, 2]); m.delete(2); return m.size;`, expected: 1 },
-])("set size", ({ code, expected }) => {
+])("set size (%p)", ({ code, expected }) => {
     expect(util.transpileAndExecute(code)).toBe(expected);
 });

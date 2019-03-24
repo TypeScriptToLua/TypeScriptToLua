@@ -1,1 +1,1 @@
-local test = "test";
+local foo = "bar";

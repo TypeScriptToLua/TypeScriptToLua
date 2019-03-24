@@ -1,2 +1,2 @@
-export let test;
-test = 1;
+export let foo;
+foo = 1;

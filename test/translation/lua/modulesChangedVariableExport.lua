@@ -1,3 +1,3 @@
 local exports = exports or {};
-exports.test = 1;
+exports.foo = 1;
 return exports;

@@ -1,149 +1,112 @@
-import { Expect, Test, TestCase } from "alsatian";
-
-import * as util from "../src/util";
+import * as util from "../util";
 import { TranspileError } from "../../src/TranspileError";
 
-export class TypeCheckingTests {
-    @TestCase("0")
-    @TestCase("30")
-    @TestCase("30_000")
-    @TestCase("30.00")
-    @Test("typeof number")
-    public typeofNumberTest(inp: string): void
-    {
-        const result = util.transpileAndExecute(`return typeof ${inp};`);
+test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {
+    const result = util.transpileAndExecute(`return typeof ${inp};`);
 
-        Expect(result).toBe("number");
-    }
+    expect(result).toBe("number");
+});
 
-    @TestCase("\"abc\"")
-    @TestCase("`abc`")
-    @Test("typeof string")
-    public typeofStringTest(inp: string): void
-    {
-        const result = util.transpileAndExecute(`return typeof ${inp};`);
+test.each(['"abc"', "`abc`"])("typeof string (%p)", inp => {
+    const result = util.transpileAndExecute(`return typeof ${inp};`);
 
-        Expect(result).toBe("string");
-    }
+    expect(result).toBe("string");
+});
 
-    @TestCase("false")
-    @TestCase("true")
-    @Test("typeof boolean")
-    public typeofBooleanTest(inp: string): void
-    {
-        const result = util.transpileAndExecute(`return typeof ${inp};`);
+test.each(["false", "true"])("typeof boolean (%p)", inp => {
+    const result = util.transpileAndExecute(`return typeof ${inp};`);
 
-        Expect(result).toBe("boolean");
-    }
+    expect(result).toBe("boolean");
+});
 
-    @TestCase("{}")
-    @TestCase("[]")
-    @Test("typeof object literal")
-    public typeofObjectLiteral(inp: string): void
-    {
-        const result = util.transpileAndExecute(`return typeof ${inp};`);
+test.each(["{}", "[]"])("typeof object literal (%p)", inp => {
+    const result = util.transpileAndExecute(`return typeof ${inp};`);
 
-        Expect(result).toBe("object");
-    }
+    expect(result).toBe("object");
+});
 
-    @Test("typeof class instance")
-    public typeofClassInstance(): void
-    {
-        const result = util.transpileAndExecute(`class myClass {} let inst = new myClass(); return typeof inst;`);
+test("typeof class instance", () => {
+    const result = util.transpileAndExecute(
+        `class myClass {} let inst = new myClass(); return typeof inst;`,
+    );
 
-        Expect(result).toBe("object");
-    }
+    expect(result).toBe("object");
+});
 
-    @Test("typeof function")
-    public typeofFunction(): void
-    {
-        const result = util.transpileAndExecute(`return typeof (() => 3);`);
+test("typeof function", () => {
+    const result = util.transpileAndExecute(`return typeof (() => 3);`);
 
-        Expect(result).toBe("function");
-    }
+    expect(result).toBe("function");
+});
 
-    @TestCase("null")
-    @TestCase("undefined")
-    @Test("typeof undefined")
-    public typeofUndefinedTest(inp: string): void
-    {
-        const result = util.transpileAndExecute(`return typeof ${inp};`);
+test.each(["null", "undefined"])("typeof undefined (%p)", inp => {
+    const result = util.transpileAndExecute(`return typeof ${inp};`);
 
-        Expect(result).toBe("nil");
-    }
+    expect(result).toBe("nil");
+});
 
-    @Test("instanceof")
-    public instanceOf(): void
-    {
-        const result = util.transpileAndExecute(
-            "class myClass {} let inst = new myClass(); return inst instanceof myClass;"
-        );
+test("instanceof", () => {
+    const result = util.transpileAndExecute(
+        "class myClass {} let inst = new myClass(); return inst instanceof myClass;",
+    );
 
-        Expect(result).toBeTruthy();
-    }
+    expect(result).toBeTruthy();
+});
 
-    @Test("instanceof inheritance")
-    public instanceOfInheritance(): void
-    {
-        const result = util.transpileAndExecute("class myClass {}\n"
-            + "class childClass extends myClass{}\n"
-            + "let inst = new childClass(); return inst instanceof myClass;");
+test("instanceof inheritance", () => {
+    const result = util.transpileAndExecute(
+        "class myClass {}\n" +
+            "class childClass extends myClass{}\n" +
+            "let inst = new childClass(); return inst instanceof myClass;",
+    );
 
-        Expect(result).toBeTruthy();
-    }
+    expect(result).toBeTruthy();
+});
 
-    @Test("instanceof inheritance false")
-    public instanceOfInheritanceFalse(): void
-    {
-        const result = util.transpileAndExecute("class myClass {}\n"
-            + "class childClass extends myClass{}\n"
-            + "let inst = new myClass(); return inst instanceof childClass;");
+test("instanceof inheritance false", () => {
+    const result = util.transpileAndExecute(
+        "class myClass {}\n" +
+            "class childClass extends myClass{}\n" +
+            "let inst = new myClass(); return inst instanceof childClass;",
+    );
 
-        Expect(result).toBe(false);
-    }
+    expect(result).toBe(false);
+});
 
-    @Test("null instanceof Object")
-    public nullInstanceOf(): void
-    {
-        const result = util.transpileAndExecute("return (<any>null) instanceof Object;");
+test("null instanceof Object", () => {
+    const result = util.transpileAndExecute("return (<any>null) instanceof Object;");
 
-        Expect(result).toBe(false);
-    }
+    expect(result).toBe(false);
+});
 
-    @Test("null instanceof Class")
-    public nullInstanceOfClass(): void
-    {
-        const result = util.transpileAndExecute("class myClass {} return (<any>null) instanceof myClass;");
+test("null instanceof Class", () => {
+    const result = util.transpileAndExecute(
+        "class myClass {} return (<any>null) instanceof myClass;",
+    );
 
-        Expect(result).toBe(false);
-    }
+    expect(result).toBe(false);
+});
 
-    @TestCase("extension")
-    @TestCase("metaExtension")
-    @Test("instanceof extension")
-    public instanceOfExtension(extensionType: string): void {
-        const code =
-            `declare class A {}
-            /** @${extensionType} **/
-            class B extends A {}
-            declare const foo: any;
-            const result = foo instanceof B;`;
-        Expect(() => util.transpileString(code)).toThrowError(
-            TranspileError,
-            "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'."
-        );
-    }
+test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
+    const code = `declare class A {}
+        /** @${extensionType} **/
+        class B extends A {}
+        declare const foo: any;
+        const result = foo instanceof B;`;
+    expect(() => util.transpileString(code)).toThrowExactError(
+        new TranspileError(
+            "Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.",
+        ),
+    );
+});
 
-    @Test("instanceof export")
-    public instanceOfExport(): void
-    {
-        const result = util.transpileExecuteAndReturnExport(
-            `export class myClass {}
-            let inst = new myClass();
-            export const result = inst instanceof myClass;`,
-            "result"
-        );
+test("instanceof export", () => {
+    const result = util.transpileExecuteAndReturnExport(
+        `export class myClass {}
+        let inst = new myClass();
+        export const result = inst instanceof myClass;`,
+        "result",
+    );
 
-        Expect(result).toBeTruthy();
-    }
-}
+    expect(result).toBeTruthy();
+});

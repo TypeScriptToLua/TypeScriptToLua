@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as glob from "glob";
-import {compile} from "./src/Compiler";
-import {LuaLib as luaLib, LuaLibFeature} from "./src/LuaLib";
+import { compile } from "./src/Compiler";
+import { LuaLib as luaLib, LuaLibFeature } from "./src/LuaLib";
 
 const bundlePath = "./dist/lualib/lualib_bundle.lua";
 

@@ -1,67 +1,77 @@
-import { Expect, Test, TestCase } from "alsatian";
-import * as util from "../src/util";
+import * as util from "../util";
 
-export class ConsoleTests {
+const compilerOptions = { lib: ["lib.es2015.d.ts", "lib.dom.d.ts"] };
 
-    @TestCase("console.log()", "print();")
-    @TestCase('console.log("Hello")', 'print("Hello");')
-    @TestCase('console.log("Hello %s", "there")', 'print(string.format("Hello %s", "there"));')
-    @TestCase('console.log("Hello %%s", "there")', 'print(string.format("Hello %%s", "there"));')
-    @TestCase('console.log("Hello", "There")', 'print("Hello", "There");')
-    @Test("console.log")
-    public testConsoleLog(inp: string, expected: string): void {
-        // Transpile
-        const lua = util.transpileString(inp);
+test.each([
+    { inp: "console.log()", expected: "print();" },
+    { inp: 'console.log("Hello")', expected: 'print("Hello");' },
+    {
+        inp: 'console.log("Hello %s", "there")',
+        expected: 'print(string.format("Hello %s", "there"));',
+    },
+    {
+        inp: 'console.log("Hello %%s", "there")',
+        expected: 'print(string.format("Hello %%s", "there"));',
+    },
+    { inp: 'console.log("Hello", "There")', expected: 'print("Hello", "There");' },
+])("console.log (%p)", ({ inp, expected }) => {
+    expect(util.transpileString(inp, compilerOptions)).toBe(expected);
+});
 
-        // Assert
-        Expect(lua).toBe(expected);
-    }
+test.each([
+    { inp: "console.trace()", expected: "print(debug.traceback());" },
+    { inp: 'console.trace("message")', expected: 'print(debug.traceback("message"));' },
+    {
+        inp: 'console.trace("Hello %s", "there")',
+        expected: 'print(debug.traceback(string.format("Hello %s", "there")));',
+    },
+    {
+        inp: 'console.trace("Hello %%s", "there")',
+        expected: 'print(debug.traceback(string.format("Hello %%s", "there")));',
+    },
+    {
+        inp: 'console.trace("Hello", "there")',
+        expected: 'print(debug.traceback("Hello", "there"));',
+    },
+])("console.trace (%p)", ({ inp, expected }) => {
+    expect(util.transpileString(inp, compilerOptions)).toBe(expected);
+});
 
-    @TestCase("console.trace()", "print(debug.traceback());")
-    @TestCase('console.trace("message")', 'print(debug.traceback("message"));')
-    @TestCase('console.trace("Hello %s", "there")', 'print(debug.traceback(string.format("Hello %s", "there")));')
-    @TestCase('console.trace("Hello %%s", "there")', 'print(debug.traceback(string.format("Hello %%s", "there")));')
-    @TestCase('console.trace("Hello", "there")', 'print(debug.traceback("Hello", "there"));')
-    @Test("console.trace")
-    public testConsoleTrace(inp: string, expected: string): void {
-        // Transpile
-        const lua = util.transpileString(inp);
+test.each([
+    { inp: "console.assert(false)", expected: "assert(false);" },
+    { inp: 'console.assert(false, "message")', expected: 'assert(false, "message");' },
+    {
+        inp: 'console.assert(false, "message %s", "info")',
+        expected: 'assert(false, string.format("message %s", "info"));',
+    },
+    {
+        inp: 'console.assert(false, "message %%s", "info")',
+        expected: 'assert(false, string.format("message %%s", "info"));',
+    },
+    {
+        inp: 'console.assert(false, "message", "more")',
+        expected: 'assert(false, "message", "more");',
+    },
+])("console.assert (%p)", ({ inp, expected }) => {
+    expect(util.transpileString(inp, compilerOptions)).toBe(expected);
+});
 
-        // Assert
-        Expect(lua).toBe(expected);
-    }
+test("console.differentiation", () => {
+    const result = util.transpileExecuteAndReturnExport(
+        `
+            export class Console {
+                test() { return 42; }
+            }
 
-    @TestCase("console.assert(false)", "assert(false);")
-    @TestCase('console.assert(false, "message")', 'assert(false, "message");')
-    @TestCase('console.assert(false, "message %s", "info")', 'assert(false, string.format("message %s", "info"));')
-    @TestCase('console.assert(false, "message %%s", "info")', 'assert(false, string.format("message %%s", "info"));')
-    @TestCase('console.assert(false, "message", "more")', 'assert(false, "message", "more");')
-    @Test("console.assert")
-    public testConsoleAssert(inp: string, expected: string): void {
-        // Transpile
-        const lua = util.transpileString(inp);
+            function test() {
+                const console = new Console();
+                return console.test();
+            }
 
-        // Assert
-        Expect(lua).toBe(expected);
-    }
-
-    @Test("console.differentiation")
-    public testConsoleDifferentiation(): void {
-        // Transpile
-        const result = util.transpileExecuteAndReturnExport(`
-          export class Console {
-            test() { return 42; }
-          }
-
-          function test() {
-            const console = new Console();
-            return console.test();
-          }
-
-          export const result = test();
-        `, "result");
-        Expect(result).toBe(42);
-    }
-
-
-}
+            export const result = test();
+        `,
+        "result",
+        compilerOptions,
+    );
+    expect(result).toBe(42);
+});

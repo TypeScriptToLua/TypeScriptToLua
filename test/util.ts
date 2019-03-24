@@ -1,47 +1,84 @@
+import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
+import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
+import {
+    createStringCompilerProgram,
+    transpileString as compilerTranspileString,
+} from "../src/Compiler";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../src/CompilerOptions";
+import { LuaTransformer } from "../src/LuaTransformer";
 
-import { Expect } from "alsatian";
-
-import { transpileString as compilerTranspileString, createStringCompilerProgram } from "../../src/Compiler";
-import { CompilerOptions, LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
-
-import {lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
-
-import * as fs from "fs";
-import { LuaTransformer } from "../../src/LuaTransformer";
-
-export function transpileString(
-    str: string | { [filename: string]: string },
-    options?: CompilerOptions,
-    ignoreDiagnostics = true,
-    filePath = "file.ts"
-): string
-{
-    if (ignoreDiagnostics === false) {
-        ignoreDiagnostics = process.argv[2] === "--ignoreDiagnostics";
-    }
-    if (options) {
-        if (options.noHeader === undefined) {
-            options.noHeader = true;
+declare global {
+    namespace jest {
+        interface Matchers<R> {
+            toThrowExactError(error: Error): void;
         }
-        return compilerTranspileString(str, options, ignoreDiagnostics, filePath);
-    } else {
-        return compilerTranspileString(
-            str,
-            {
-                luaLibImport: LuaLibImportKind.Require,
-                luaTarget: LuaTarget.Lua53,
-                target: ts.ScriptTarget.ES2015,
-                noHeader: true,
-            },
-            ignoreDiagnostics,
-            filePath
-        );
     }
 }
 
+expect.extend({
+    toThrowExactError(actual: () => void, error: Error): { pass: boolean; message: () => string } {
+        if (this.isNot) {
+            return { pass: true, message: () => "Inverted toThrowExactError is not implemented" };
+        }
+
+        let executionError: Error | undefined;
+        try {
+            actual();
+        } catch (err) {
+            executionError = err;
+        }
+
+        expect(() => {
+            if (executionError) throw executionError;
+        }).toThrowError(error);
+        expect(() => {
+            if (executionError) throw executionError;
+        }).toThrowError(error.constructor as ErrorConstructor);
+
+        return { pass: true, message: () => "" };
+    },
+});
+
+export function transpileString(
+    str: string | { [filename: string]: string },
+    options: CompilerOptions = {},
+    ignoreDiagnostics = true,
+    filePath = "file.ts",
+): string {
+    if (!ignoreDiagnostics) {
+        ignoreDiagnostics = Boolean(process.env.JEST_IGNORE_DIAGNOSTICS);
+    }
+
+    return compilerTranspileString(
+        str,
+        {
+            luaLibImport: LuaLibImportKind.Require,
+            luaTarget: LuaTarget.Lua53,
+            target: ts.ScriptTarget.ESNext,
+            lib: [
+                "lib.es2015.d.ts",
+                "lib.es2016.d.ts",
+                "lib.es2017.d.ts",
+                "lib.es2018.d.ts",
+                "lib.esnext.d.ts",
+            ],
+            noHeader: true,
+            ...options,
+        },
+        ignoreDiagnostics,
+        filePath,
+    );
+}
+
+const lualibContent = fs.readFileSync(
+    path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
+    "utf8",
+);
+const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8") + "\n";
 export function executeLua(luaStr: string, withLib = true): any {
+    luaStr = luaStr.replace(/require\("lualib_bundle"\)/g, lualibContent);
     if (withLib) {
         luaStr = minimalTestLib + luaStr;
     }
@@ -61,7 +98,10 @@ export function executeLua(luaStr: string, withLib = true): any {
         } else if (lua.lua_isstring(L, -1)) {
             return lua.lua_tojsstring(L, -1);
         } else {
-            throw new Error("Unsupported lua return type: " + to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))));
+            throw new Error(
+                "Unsupported lua return type: " +
+                    to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))),
+            );
         }
     } else {
         // If the lua VM did not terminate with status code LUA_OK an error occurred.
@@ -72,21 +112,9 @@ export function executeLua(luaStr: string, withLib = true): any {
     }
 }
 
-export function expectCodeEqual(code1: string, code2: string): void {
-    // Trim leading/trailing whitespace
-    let c1 = code1.trim();
-    let c2 = code2.trim();
-
-    // Unify indentation
-    c1 = c1.replace(/\s+/g, " ");
-    c2 = c2.replace(/\s+/g, " ");
-
-    Expect(c1).toBe(c2);
-}
-
 // Get a mock transformer to use for testing
 export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
-    const options = {luaTarget: target};
+    const options = { luaTarget: target };
     return new LuaTransformer(ts.createProgram([], options), options);
 }
 
@@ -95,15 +123,14 @@ export function transpileAndExecute(
     compilerOptions?: CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
-    ignoreDiagnosticsOverride = process.argv[2] === "--ignoreDiagnostics"
-): any
-{
+    ignoreDiagnostics = process.argv[2] === "--ignoreDiagnostics",
+): any {
     const wrappedTsString = `${tsHeader ? tsHeader : ""}
         declare function JSONStringify(this: void, p: any): string;
         function __runTest(this: void): any {${tsStr}}`;
 
     const lua = `${luaHeader ? luaHeader : ""}
-        ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnosticsOverride)}
+        ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnostics)}
         return __runTest();`;
 
     return executeLua(lua);
@@ -113,9 +140,8 @@ export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
     compilerOptions?: CompilerOptions,
-    luaHeader?: string
-): any
-{
+    luaHeader?: string,
+): any {
     const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
         ${tsStr}`;
 
@@ -127,13 +153,18 @@ export function transpileExecuteAndReturnExport(
     return executeLua(lua);
 }
 
-export function parseTypeScript(typescript: string, target: LuaTarget = LuaTarget.Lua53)
-    : [ts.SourceFile, ts.TypeChecker] {
+export function parseTypeScript(
+    typescript: string,
+    target: LuaTarget = LuaTarget.Lua53,
+): [ts.SourceFile, ts.TypeChecker] {
     const program = createStringCompilerProgram(typescript, { luaTarget: target });
     return [program.getSourceFile("file.ts"), program.getTypeChecker()];
 }
 
-export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined {
+export function findFirstChild(
+    node: ts.Node,
+    predicate: (node: ts.Node) => boolean,
+): ts.Node | undefined {
     for (const child of node.getChildren()) {
         if (predicate(child)) {
             return child;
@@ -146,7 +177,3 @@ export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => bool
     }
     return undefined;
 }
-
-const jsonlib = fs.readFileSync("test/src/json.lua") + "\n";
-
-export const minimalTestLib = jsonlib;

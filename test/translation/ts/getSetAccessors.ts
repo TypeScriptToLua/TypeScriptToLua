@@ -4,11 +4,11 @@ class MyClass {
         return this._field + 4;
     }
     public set field(v: number) {
-        this._field = v*2;
+        this._field = v * 2;
     }
 }
 
 let instance = new MyClass();
 instance.field = 4;
 const b = instance.field;
-const c = (4 + instance.field)*3;
+const c = (4 + instance.field) * 3;

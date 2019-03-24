@@ -1,1 +1,1 @@
-import {TestClass as RenamedClass} from "test"
+import { TestClass as RenamedClass } from "test";

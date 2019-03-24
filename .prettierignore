@@ -1,0 +1,6 @@
+/dist
+/coverage
+/__tests__/compiler/testfiles/invalid_syntax.ts
+
+/src
+*.md

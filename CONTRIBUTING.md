@@ -14,59 +14,24 @@ To get familiar with the project structure, here is a short overview of each dir
   * `src/targets/`
     - Version-specific transpiler overrides for the different Lua targets. The main transpiler transpiles Lua 5.0, each target-specific transpiler extends the transpiler of the version before it, so the 5.3 inherits 5.2 which inherits 5.1 which inherits 5.0. LuaJIT is based on 5.2 so inherits from the 5.2 transpiler.
   * *Compiler.ts* - Main entry point of the transpiler, this is what interfaces with the TypeScript compiler API.
-  * *Transpiler.ts* - Main transpiler code, transforms a TypeScript AST to a Lua string.
+  * *LuaTransformer.ts* - Main transpiler code, transforms a TypeScript AST to a Lua AST.
+  * *LuaPrinter.ts* - Transforms a Lua AST to a string.
   * *TSHelper.ts* - Helper methods used during the transpilation process.
-- `test/`
+- `__tests__/`
   * This directory contains all testing code for the transpiler.
-  * `test/src/`
-    - Contains all extra source and utility used to run tests.
-  * `test/unit/`
+  * `__tests__/unit/`
     - Unit/Functional tests for the transpiler. Tests in here are grouped by functionality they are testing. Generally each of these tests uses the transpiler to transpile some TypeScript to Lua, then executes it using the Fengari Lua VM. Assertion is done on the result of the lua code.
-  * `test/translation/`
+  * `__tests__/translation/`
     - **[Obsolete]** Contains tests that only check the transpiled Lua String. We prefer adding unit/functional tests over translation tests. This directory will probably be removed at some point.
 
 ## Running Tests
-The tests for this project can be executed using the standard `npm test`. This runs all tests (can take a while!).
+The tests for this project can be executed using the standard `npm test`. This runs all tests.
 
-### Testing while developing
-Due to the time required to run all tests, it is impractical to run every test while developing part of the transpiler. To speed up the test run you can import `FocusTest` or `FocusTests` from Alsatian. If a class is decorated with `@FocusTests`, all other test classes will be ignored. Similarly, if any test method is decorated with `@FocusTest`, only `@FocusTest` methods will be run during `npm test`.
+Due to the time required to run all tests, it is impractical to run every test while developing part of the transpiler. To speed up the test run you can:
 
-For example:
-```ts
-import { Expect, FocusTests, Test, TestCase } from "alsatian";
-
-@FocusTests
-export class FunctionTests {
-    // All tests in here will be executed.
-}
-
-// All other tests will be ignored.
-```
-
-Or
-
-```ts
-import { Expect, FocusTest, Test, TestCase } from "alsatian";
-
-export class FunctionTests {
-    @FocusTest
-    @Test("Example test 1")
-    public test1(): void { // Will be executed
-    }
-    
-    @FocusTest
-    @Test("Example test 2")
-    public test2(): void { // Will also be executed
-    }
-    
-    @Test("Example test 3")
-    public test3(): void { // Will be ignored
-    }
-}
-
-// All other tests will be ignored.
-```
-
+- Use `npm test -- --watchAll` to start tests and rerun them on change
+- Use `npm test name` or interactive watching interface to run tests that match a file name pattern
+- Add `.only` to test definition to run a single test in the file
 
 ## Testing Guidelines
 When submitting a pull request with new functionality, we require some functional (transpile and execute Lua) to be added, to ensure the new functionality works as expected, and will continue to work that way.
@@ -74,7 +39,9 @@ When submitting a pull request with new functionality, we require some functiona
 Translation tests are discouraged as in most cases as we do not really care about the exact Lua output, as long as executing it results in the correct result (which is tested by functional tests).
 
 ## Coding Conventions
-Most coding conventions are enforced by the ts-lint configuration. The test process will fail if code does not pass the linter. Some extra conventions worth mentioning:
+Most coding conventions are enforced by the TSLint and Prettier. You can check your code locally by running `npm run lint`. CI process will fail if code does not pass the linter. You also might want to get extensions for your code editor to get immediate feedback.
+
+Some extra conventions worth mentioning:
 * Do not abbreviate variable names. The exception here are inline lambda arguments, if it is obvious what the argument is you can abbreviate to the first letter, e.g: `statements.filter(s => ts.VariableStatement(s))`
 * Readability of code is more important than the amount of space it takes. If extra line breaks make your code more readable, add them.
 * Functional style is encouraged!

@@ -59,7 +59,7 @@ export function transpileString(
     return compilerTranspileString(
         str,
         {
-            luaLibImport: LuaLibImportKind.Require,
+            luaLibImport: LuaLibImportKind.Inline,
             luaTarget: LuaTarget.Lua53,
             noHeader: true,
             skipLibCheck: true,

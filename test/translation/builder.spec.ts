@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as util from "../util";
+import { LuaLibImportKind } from "../../src/CompilerOptions";
 
 const files: Array<{ ts: string; lua: string }> = [];
 const fileContents: { [key: string]: Buffer } = {};
@@ -37,7 +38,9 @@ function BufferToTestString(b: Buffer): string {
 }
 
 test.each(files)("Transformation Tests (%p)", ({ ts, lua }) => {
-    expect(util.transpileString(BufferToTestString(fileContents[ts]))).toEqual(
-        BufferToTestString(fileContents[lua]),
-    );
+    expect(
+        util.transpileString(BufferToTestString(fileContents[ts]), {
+            luaLibImport: LuaLibImportKind.Require,
+        }),
+    ).toEqual(BufferToTestString(fileContents[lua]));
 });

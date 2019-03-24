@@ -23,7 +23,13 @@ function waitForFileExists(filePath: string): Promise<void> {
 
 test.each([
     {
-        args: ["-w", "--types", "node", path.join(__dirname, "./testfiles/watch.ts")],
+        args: [
+            "--types",
+            "node",
+            "--skipLibCheck",
+            "-w",
+            path.join(__dirname, "./testfiles/watch.ts"),
+        ],
         fileToChange: path.join(__dirname, "./testfiles/watch.ts"),
     },
     {

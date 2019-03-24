@@ -22,6 +22,7 @@ test("Outfile absoulte path", () => {
     compile([
         "--types",
         "node",
+        "--skipLibCheck",
         "--outFile",
         outFileAbsPath,
         path.join(__dirname, "./testfiles/out_file.ts"),
@@ -34,6 +35,7 @@ test("Outfile relative path", () => {
     compile([
         "--types",
         "node",
+        "--skipLibCheck",
         "--outDir",
         __dirname,
         "--outFile",

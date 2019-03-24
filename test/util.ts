@@ -61,6 +61,8 @@ export function transpileString(
         {
             luaLibImport: LuaLibImportKind.Require,
             luaTarget: LuaTarget.Lua53,
+            noHeader: true,
+            skipLibCheck: true,
             target: ts.ScriptTarget.ESNext,
             lib: [
                 "lib.es2015.d.ts",
@@ -69,7 +71,6 @@ export function transpileString(
                 "lib.es2018.d.ts",
                 "lib.esnext.d.ts",
             ],
-            noHeader: true,
             ...options,
         },
         ignoreDiagnostics,

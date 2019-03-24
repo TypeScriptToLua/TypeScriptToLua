@@ -19,11 +19,11 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let input: number = ${inp};
-        if (input === 0) {
-            return 0;
-        } else {
-            return 1;
-        }`,
+            if (input === 0) {
+                return 0;
+            } else {
+                return 1;
+            }`,
         );
 
         expect(result).toBe(expected);
@@ -214,23 +214,23 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 2 }, { inp: 2, expected:
         const result = util.transpileAndExecute(
             `let result: number = -1;
 
-    switch (<number>${inp}) {
-        case 0: {
-            let x = 0;
-            result = 0;
-            break;
-        }
-        case 1: {
-            let x = 1;
-            result = x;
-        }
-        case 2: {
-            let x = 2;
-            result = x;
-            break;
-        }
-    }
-    return result;`,
+            switch (<number>${inp}) {
+                case 0: {
+                    let x = 0;
+                    result = 0;
+                    break;
+                }
+                case 1: {
+                    let x = 1;
+                    result = x;
+                }
+                case 2: {
+                    let x = 2;
+                    result = x;
+                    break;
+                }
+            }
+            return result;`,
         );
 
         expect(result).toBe(expected);

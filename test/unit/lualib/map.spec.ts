@@ -16,8 +16,10 @@ test("map iterable constructor", () => {
 });
 
 test("map iterable constructor map", () => {
-    const result = util.transpileAndExecute(`let mymap = new Map(new Map([["a", "c"],["b", "d"]]));
-                                      return mymap.has("a") && mymap.has("b");`);
+    const result = util.transpileAndExecute(`
+        let mymap = new Map(new Map([["a", "c"],["b", "d"]]));
+        return mymap.has("a") && mymap.has("b");
+    `);
 
     expect(result).toBe(true);
 });

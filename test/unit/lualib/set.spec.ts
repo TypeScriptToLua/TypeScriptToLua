@@ -119,12 +119,12 @@ test("set values", () => {
     expect(result).toBe(18);
 });
 
-test("set size", () => {
-    expect(util.transpileAndExecute(`let m = new Set(); return m.size;`)).toBe(0);
-    expect(util.transpileAndExecute(`let m = new Set(); m.add(1); return m.size;`)).toBe(1);
-    expect(util.transpileAndExecute(`let m = new Set([1, 2]); return m.size;`)).toBe(2);
-    expect(util.transpileAndExecute(`let m = new Set([1, 2]); m.clear(); return m.size;`)).toBe(0);
-    expect(util.transpileAndExecute(`let m = new Set([1, 2]); m.delete(2); return m.size;`)).toBe(
-        1,
-    );
+test.each([
+    { code: `let m = new Set(); return m.size;`, expected: 0 },
+    { code: `let m = new Set(); m.add(1); return m.size;`, expected: 1 },
+    { code: `let m = new Set([1, 2]); return m.size;`, expected: 2 },
+    { code: `let m = new Set([1, 2]); m.clear(); return m.size;`, expected: 0 },
+    { code: `let m = new Set([1, 2]); m.delete(2); return m.size;`, expected: 1 },
+])("set size", ({ code, expected }) => {
+    expect(util.transpileAndExecute(code)).toBe(expected);
 });

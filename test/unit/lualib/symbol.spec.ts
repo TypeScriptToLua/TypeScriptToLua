@@ -4,8 +4,8 @@ test.each([{}, { description: 1 }, { description: "name" }])(
     "symbol.toString() (%p)",
     ({ description }) => {
         const result = util.transpileAndExecute(`
-    return Symbol(${JSON.stringify(description)}).toString();
-`);
+            return Symbol(${JSON.stringify(description)}).toString();
+        `);
 
         expect(result).toBe(`Symbol(${description || ""})`);
     },
@@ -15,8 +15,8 @@ test.each([{}, { description: 1 }, { description: "name" }])(
     "symbol.description (%p)",
     ({ description }) => {
         const result = util.transpileAndExecute(`
-    return Symbol(${JSON.stringify(description)}).description;
-`);
+            return Symbol(${JSON.stringify(description)}).description;
+        `);
 
         expect(result).toBe(description);
     },

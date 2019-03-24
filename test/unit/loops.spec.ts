@@ -22,25 +22,25 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i = 0;
-    while (i < arrTest.length) {
-        if (i % 2 == 0) {
-            i++;
-            continue;
-        }
-        let j = 2;
-        while (j > 0) {
-            if (j == 2) {
-                j--
-                continue;
-            }
-            arrTest[i] = j;
-            j--;
-        }
+            let i = 0;
+            while (i < arrTest.length) {
+                if (i % 2 == 0) {
+                    i++;
+                    continue;
+                }
+                let j = 2;
+                while (j > 0) {
+                    if (j == 2) {
+                        j--
+                        continue;
+                    }
+                    arrTest[i] = j;
+                    j--;
+                }
 
-        i++;
-    }
-    return JSONStringify(arrTest);`,
+                i++;
+            }
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -52,25 +52,25 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i = 0;
-    do {
-        if (i % 2 == 0) {
-            i++;
-            continue;
-        }
-        let j = 2;
-        do {
-            if (j == 2) {
-                j--
-                continue;
-            }
-            arrTest[i] = j;
-            j--;
-        } while (j > 0)
+            let i = 0;
+            do {
+                if (i % 2 == 0) {
+                    i++;
+                    continue;
+                }
+                let j = 2;
+                do {
+                    if (j == 2) {
+                        j--
+                        continue;
+                    }
+                    arrTest[i] = j;
+                    j--;
+                } while (j > 0)
 
-        i++;
-    } while (i < arrTest.length)
-    return JSONStringify(arrTest);`,
+                i++;
+            } while (i < arrTest.length)
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -93,11 +93,11 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i: number;
-    for (i = 0 * 1; i < arrTest.length; ++i) {
-        arrTest[i] = arrTest[i] + 1;
-    }
-    return JSONStringify(arrTest);`,
+            let i: number;
+            for (i = 0 * 1; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`,
         );
         expect(result).toBe(JSON.stringify(expected));
     },
@@ -108,20 +108,19 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    for (let i = 0; i < arrTest.length; i++) {
-        if (i % 2 == 0) {
-            continue;
-        }
+            for (let i = 0; i < arrTest.length; i++) {
+                if (i % 2 == 0) {
+                    continue;
+                }
 
-        for (let j = 0; j < 2; j++) {
-            if (j == 1) {
-                continue;
+                for (let j = 0; j < 2; j++) {
+                    if (j == 1) {
+                        continue;
+                    }
+                    arrTest[i] = j;
+                }
             }
-            arrTest[i] = j;
-        }
-    }
-    return JSONStringify(arrTest);
-    `,
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -133,10 +132,10 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-        for (let i = 0; arrTest.length > i; i++) {
-            arrTest[i] = arrTest[i] + 1;
-        }
-        return JSONStringify(arrTest);`,
+            for (let i = 0; arrTest.length > i; i++) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -161,11 +160,11 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i = 0;
-    for (; i < arrTest.length; ++i) {
-        arrTest[i] = arrTest[i] + 1;
-    }
-    return JSONStringify(arrTest);`,
+            let i = 0;
+            for (; i < arrTest.length; ++i) {
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -177,15 +176,15 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i = 0;
-    for (;; ++i) {
-        if (i >= arrTest.length) {
-            break;
-        }
+            let i = 0;
+            for (;; ++i) {
+                if (i >= arrTest.length) {
+                    break;
+                }
 
-        arrTest[i] = arrTest[i] + 1;
-    }
-    return JSONStringify(arrTest);`,
+                arrTest[i] = arrTest[i] + 1;
+            }
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -197,17 +196,17 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
-    let i = 0;
-    for (;;) {
-        if (i >= arrTest.length) {
-            break;
-        }
+            let i = 0;
+            for (;;) {
+                if (i >= arrTest.length) {
+                    break;
+                }
 
-        arrTest[i] = arrTest[i] + 1;
+                arrTest[i] = arrTest[i] + 1;
 
-        i++;
-    }
-    return JSONStringify(arrTest);`,
+                i++;
+            }
+            return JSONStringify(arrTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -256,9 +255,11 @@ test.each([
 });
 
 test("for scope", () => {
-    const code = `let i = 42;
+    const code = `
+        let i = 42;
         for (let i = 0; i < 10; ++i) {}
-        return i;`;
+        return i;
+    `;
     expect(util.transpileAndExecute(code)).toBe(42);
 });
 
@@ -297,15 +298,14 @@ test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let obj = ${JSON.stringify(inp)};
-    for (let i in obj) {
-        if (obj[i] % 2 == 0) {
-            continue;
-        }
+            for (let i in obj) {
+                if (obj[i] % 2 == 0) {
+                    continue;
+                }
 
-        obj[i] = 0;
-    }
-    return JSONStringify(obj);
-    `,
+                obj[i] = 0;
+            }
+            return JSONStringify(obj);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -330,12 +330,12 @@ test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
-    let arrResultTest = [];
-    let value: number;
-    for (value of objTest) {
-        arrResultTest.push(value + 1)
-    }
-    return JSONStringify(arrResultTest);`,
+            let arrResultTest = [];
+            let value: number;
+            for (value of objTest) {
+                arrResultTest.push(value + 1)
+            }
+            return JSONStringify(arrResultTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -347,11 +347,11 @@ test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
-    let arrResultTest = [];
-    for (let [a,b] of objTest) {
-        arrResultTest.push(a + b)
-    }
-    return JSONStringify(arrResultTest);`,
+            let arrResultTest = [];
+            for (let [a,b] of objTest) {
+                arrResultTest.push(a + b)
+            }
+            return JSONStringify(arrResultTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -363,13 +363,13 @@ test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
-    let arrResultTest = [];
-    let a: number;
-    let b: number;
-    for ([a,b] of objTest) {
-        arrResultTest.push(a + b)
-    }
-    return JSONStringify(arrResultTest);`,
+            let arrResultTest = [];
+            let a: number;
+            let b: number;
+            for ([a,b] of objTest) {
+                arrResultTest.push(a + b)
+            }
+            return JSONStringify(arrResultTest);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -381,22 +381,22 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let testArr = ${JSON.stringify(inp)};
-    let a = 0;
-    for (let i of testArr) {
-        if (i % 2 == 0) {
-            a++;
-            continue;
-        }
+            let a = 0;
+            for (let i of testArr) {
+                if (i % 2 == 0) {
+                    a++;
+                    continue;
+                }
 
-        for (let j of [0, 1]) {
-            if (j == 1) {
-                continue;
+                for (let j of [0, 1]) {
+                    if (j == 1) {
+                        continue;
+                    }
+                    testArr[a] = j;
+                }
+                a++;
             }
-            testArr[a] = j;
-        }
-        a++;
-    }
-    return JSONStringify(testArr);`,
+            return JSONStringify(testArr);`,
         );
 
         expect(result).toBe(JSON.stringify(expected));
@@ -404,7 +404,8 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
 );
 
 test("forof with iterator", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         function iter(): IterableIterator<string> {
             let i = 0;
             return {
@@ -416,7 +417,8 @@ test("forof with iterator", () => {
         for (let e of iter()) {
             result += e;
         }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -427,7 +429,8 @@ test("forof with iterator", () => {
 });
 
 test("forof with iterator and existing variable", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         function iter(): IterableIterator<string> {
             let i = 0;
             return {
@@ -440,7 +443,8 @@ test("forof with iterator and existing variable", () => {
         for (e of iter()) {
             result += e;
         }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -451,7 +455,8 @@ test("forof with iterator and existing variable", () => {
 });
 
 test("forof destructuring with iterator", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         function iter(): IterableIterator<[string, string]> {
             let i = 0;
             return {
@@ -463,7 +468,8 @@ test("forof destructuring with iterator", () => {
         for (let [a, b] of iter()) {
             result += a + b;
         }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -474,7 +480,8 @@ test("forof destructuring with iterator", () => {
 });
 
 test("forof destructuring with iterator and existing variables", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         function iter(): IterableIterator<[string, string]> {
             let i = 0;
             return {
@@ -488,7 +495,8 @@ test("forof destructuring with iterator and existing variables", () => {
         for ([a, b] of iter()) {
             result += a + b;
         }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -499,7 +507,8 @@ test("forof destructuring with iterator and existing variables", () => {
 });
 
 test("forof lua iterator", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
         function luaIter(): Iter {
@@ -508,7 +517,8 @@ test("forof lua iterator", () => {
         }
         let result = "";
         for (let e of luaIter()) { result += e; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -519,7 +529,8 @@ test("forof lua iterator", () => {
 });
 
 test("forof array lua iterator", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Array<string> {}
         function luaIter(): Iter {
@@ -528,7 +539,8 @@ test("forof array lua iterator", () => {
         }
         let result = "";
         for (let e of luaIter()) { result += e; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -539,7 +551,8 @@ test("forof array lua iterator", () => {
 });
 
 test("forof lua iterator with existing variable", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
         function luaIter(): Iter {
@@ -549,7 +562,8 @@ test("forof lua iterator with existing variable", () => {
         let result = "";
         let e: string;
         for (e of luaIter()) { result += e; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -560,7 +574,8 @@ test("forof lua iterator with existing variable", () => {
 });
 
 test("forof lua iterator destructuring", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<[string, string]> {}
         function luaIter(): Iter {
@@ -569,7 +584,8 @@ test("forof lua iterator destructuring", () => {
         }
         let result = "";
         for (let [a, b] of luaIter()) { result += a + b; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -580,7 +596,8 @@ test("forof lua iterator destructuring", () => {
 });
 
 test("forof lua iterator destructuring with existing variables", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<[string, string]> {}
         function luaIter(): Iter {
@@ -591,7 +608,8 @@ test("forof lua iterator destructuring with existing variables", () => {
         let a: string;
         let b: string;
         for ([a, b] of luaIter()) { result += a + b; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -602,7 +620,8 @@ test("forof lua iterator destructuring with existing variables", () => {
 });
 
 test("forof lua iterator tuple-return", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         /** @tupleReturn */
         interface Iter extends Iterable<[string, string]> {}
@@ -614,7 +633,8 @@ test("forof lua iterator tuple-return", () => {
         }
         let result = "";
         for (let [a, b] of luaIter()) { result += a + b; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -625,7 +645,8 @@ test("forof lua iterator tuple-return", () => {
 });
 
 test("forof lua iterator tuple-return with existing variables", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         /** @tupleReturn */
         interface Iter extends Iterable<[string, string]> {}
@@ -639,7 +660,8 @@ test("forof lua iterator tuple-return with existing variables", () => {
         let a: string;
         let b: string;
         for ([a, b] of luaIter()) { result += a + b; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -650,11 +672,13 @@ test("forof lua iterator tuple-return with existing variables", () => {
 });
 
 test("forof lua iterator tuple-return single variable", () => {
-    const code = `/** @luaIterator */
+    const code = `
+        /** @luaIterator */
         /** @tupleReturn */
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
-        for (let x of luaIter()) {}`;
+        for (let x of luaIter()) {}
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -670,12 +694,14 @@ test("forof lua iterator tuple-return single variable", () => {
 });
 
 test("forof lua iterator tuple-return single existing variable", () => {
-    const code = `/** @luaIterator */
+    const code = `
+        /** @luaIterator */
         /** @tupleReturn */
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
         let x: [string, string];
-        for (x of luaIter()) {}`;
+        for (x of luaIter()) {}
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -691,7 +717,8 @@ test("forof lua iterator tuple-return single existing variable", () => {
 });
 
 test("forof forwarded lua iterator", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
         function luaIter(): Iter {
@@ -705,7 +732,8 @@ test("forof forwarded lua iterator", () => {
         }
         let result = "";
         for (let a of forward()) { result += a; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,
@@ -716,7 +744,8 @@ test("forof forwarded lua iterator", () => {
 });
 
 test("forof forwarded lua iterator with tupleReturn", () => {
-    const code = `const arr = ["a", "b", "c"];
+    const code = `
+        const arr = ["a", "b", "c"];
         /** @luaIterator */
         /** @tupleReturn */
         interface Iter extends Iterable<[string, string]> {}
@@ -732,7 +761,8 @@ test("forof forwarded lua iterator with tupleReturn", () => {
         }
         let result = "";
         for (let [a, b] of forward()) { result += a + b; }
-        return result;`;
+        return result;
+    `;
     const compilerOptions = {
         luaLibImport: LuaLibImportKind.Require,
         luaTarget: LuaTarget.Lua53,

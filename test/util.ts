@@ -52,10 +52,6 @@ export function transpileString(
     ignoreDiagnostics = true,
     filePath = "file.ts",
 ): string {
-    if (!ignoreDiagnostics) {
-        ignoreDiagnostics = Boolean(process.env.JEST_IGNORE_DIAGNOSTICS);
-    }
-
     return compilerTranspileString(
         str,
         {
@@ -129,7 +125,7 @@ export function transpileAndExecute(
     compilerOptions?: CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
-    ignoreDiagnostics = process.argv[2] === "--ignoreDiagnostics",
+    ignoreDiagnostics = false,
 ): any {
     const wrappedTsString = `${tsHeader ? tsHeader : ""}
         declare function JSONStringify(this: void, p: any): string;

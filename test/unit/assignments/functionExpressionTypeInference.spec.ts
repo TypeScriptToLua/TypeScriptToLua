@@ -9,7 +9,7 @@ test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", no
         function foo(this: void, s: string) { return s; }`;
     const code = `const c = new NS.C();
         return c.method(foo);`;
-    expect(util.transpileAndExecute(code, undefined, undefined, header, false)).toBe("foo");
+    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
 });
 
 test.each([

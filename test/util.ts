@@ -125,14 +125,13 @@ export function transpileAndExecute(
     compilerOptions?: CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
-    ignoreDiagnostics = false,
 ): any {
     const wrappedTsString = `${tsHeader ? tsHeader : ""}
         declare function JSONStringify(this: void, p: any): string;
         function __runTest(this: void): any {${tsStr}}`;
 
     const lua = `${luaHeader ? luaHeader : ""}
-        ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnostics)}
+        ${transpileString(wrappedTsString, compilerOptions, false)}
         return __runTest();`;
 
     return executeLua(lua);

@@ -65,13 +65,13 @@ test("weakSet delete", () => {
     expect(contains).toBe(true);
 });
 
-test("weakSet has no set features", () => {
-    const transpileAndExecute = (tsStr: string) =>
-        util.transpileAndExecute(tsStr, undefined, undefined, undefined, true);
-    expect(transpileAndExecute(`return new WeakSet().size`)).toBe(undefined);
-    expect(() => transpileAndExecute(`new WeakSet().clear()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakSet().keys()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakSet().values()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakSet().entries()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakSet().forEach(() => {})`)).toThrow();
+test("weakSet has no set features (size)", () => {
+    expect(util.transpileAndExecute(`return (new WeakSet() as any).size`)).toBe(undefined);
 });
+
+test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
+    "weakSet has no set features (%p)",
+    call => {
+        expect(() => util.transpileAndExecute(`(new WeakSet() as any).${call}`)).toThrow();
+    },
+);

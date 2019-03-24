@@ -110,13 +110,13 @@ test("weakMap set", () => {
     expect(value).toBe(5);
 });
 
-test("weakMap has no map features", () => {
-    const transpileAndExecute = (tsStr: string) =>
-        util.transpileAndExecute(tsStr, undefined, undefined, undefined, true);
-    expect(transpileAndExecute(`return new WeakMap().size`)).toBe(undefined);
-    expect(() => transpileAndExecute(`new WeakMap().clear()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakMap().keys()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakMap().values()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakMap().entries()`)).toThrow();
-    expect(() => transpileAndExecute(`new WeakMap().forEach(() => {})`)).toThrow();
+test("weakMap has no map features (size)", () => {
+    expect(util.transpileAndExecute(`return (new WeakMap() as any).size`)).toBe(undefined);
 });
+
+test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
+    "weakMap has no map features (%p)",
+    call => {
+        expect(() => util.transpileAndExecute(`(new WeakMap() as any).${call}`)).toThrow();
+    },
+);

@@ -64,5 +64,5 @@ test.each([
 
         expect(initialResultLua).not.toEqual(updatedResultLua);
     },
-    10000,
+    20000,
 );

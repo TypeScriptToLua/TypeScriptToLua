@@ -1,9 +1,7 @@
-import { TSHelper as tsHelper } from "../../src/TSHelper";
-
 import * as ts from "typescript";
-import * as util from "../util";
-
 import { DecoratorKind } from "../../src/Decorator";
+import { TSHelper as tsHelper } from "../../src/TSHelper";
+import * as util from "../util";
 
 enum TestEnum {
     testA = 1,

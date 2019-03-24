@@ -1,6 +1,4 @@
 import * as util from "../util";
-import * as path from "path";
-import { CompilerOptions } from "../../src/CompilerOptions";
 
 test.each([
     {

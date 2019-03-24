@@ -1,7 +1,5 @@
-import * as util from "../util";
-
-import { TranspileError } from "../../src/TranspileError";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test("CustomCreate", () => {
     const luaHeader = `function Point2DCreate(x, y)

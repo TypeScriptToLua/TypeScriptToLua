@@ -1,7 +1,6 @@
-import { TranspileError } from "../../src/TranspileError";
 import { LuaTarget } from "../../src/CompilerOptions";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])("if (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(

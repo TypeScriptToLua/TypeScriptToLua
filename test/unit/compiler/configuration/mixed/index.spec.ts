@@ -1,9 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-
-import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 import { parseCommandLine } from "../../../../../src/CommandLineParser";
+import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 
 test("tsconfig.json mixed with cmd line args", () => {
     const rootPath = __dirname;

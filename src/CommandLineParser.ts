@@ -1,8 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-
-import {CompilerOptions, LuaTarget, LuaLibImportKind} from "./CompilerOptions";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 
 export type CLIParseResult = ParseResult<ParsedCommandLine>;
 

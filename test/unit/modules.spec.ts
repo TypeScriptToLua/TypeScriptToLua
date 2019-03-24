@@ -1,6 +1,6 @@
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test("defaultImport", () => {
     expect(() => {

@@ -1,9 +1,7 @@
-import { TranspileError } from "../../src/TranspileError";
-import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
-
 import * as ts from "typescript";
-import * as util from "../util";
+import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test.each([
     { input: "i++", lua: "i = i + 1;" },

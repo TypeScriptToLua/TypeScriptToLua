@@ -1,7 +1,5 @@
-import * as util from "../util";
-
-import { TranspileError } from "../../src/TranspileError";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test("throwString", () => {
     const lua = util.transpileString(`throw "Some Error"`);

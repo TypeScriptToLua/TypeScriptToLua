@@ -1,12 +1,11 @@
 import * as path from "path";
 import * as ts from "typescript";
-
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {DecoratorKind} from "./Decorator";
+import { CompilerOptions, LuaTarget } from "./CompilerOptions";
+import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
-import {LuaLib, LuaLibFeature} from "./LuaLib";
-import {ContextType, TSHelper as tsHelper} from "./TSHelper";
-import {TSTLErrors} from "./TSTLErrors";
+import { LuaLibFeature } from "./LuaLib";
+import { ContextType, TSHelper as tsHelper } from "./TSHelper";
+import { TSTLErrors } from "./TSTLErrors";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;

@@ -1,4 +1,4 @@
-import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 import * as util from "../util";
 
 const assignmentDestruturingTs = `

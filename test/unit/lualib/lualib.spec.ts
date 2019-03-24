@@ -1,6 +1,4 @@
-import * as ts from "typescript";
 import * as util from "../../util";
-import { LuaLibImportKind } from "../../../src/CompilerOptions";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forEach (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(

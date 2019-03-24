@@ -1,6 +1,5 @@
-import * as util from "../../util";
-
 import { LuaLibImportKind, LuaTarget } from "../../../src/CompilerOptions";
+import * as util from "../../util";
 
 test("map constructor", () => {
     const result = util.transpileAndExecute(`let mymap = new Map(); return mymap.size;`, {

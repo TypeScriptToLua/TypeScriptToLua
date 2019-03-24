@@ -1,9 +1,7 @@
+import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as tstl from "./LuaAST";
-
+import { LuaLib, LuaLibFeature } from "./LuaLib";
 import { TSHelper as tsHelper } from "./TSHelper";
-import { LuaLibFeature, LuaLib } from "./LuaLib";
-import { CompilerOptions } from "./CompilerOptions";
-import { LuaLibImportKind } from "./CompilerOptions";
 
 export class LuaPrinter {
     /* tslint:disable:object-literal-sort-keys */

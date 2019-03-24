@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { TranspileError } from "../../src/TranspileError";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 

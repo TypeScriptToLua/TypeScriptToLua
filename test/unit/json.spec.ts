@@ -1,7 +1,6 @@
 import { transpileString } from "../../src/Compiler";
-import { TranspileError } from "../../src/TranspileError";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" } }'])(
     "JSON (%p)",

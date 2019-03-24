@@ -1,5 +1,5 @@
 import { findConfigFile, parseCommandLine, parseTsConfigString } from "../../src/CommandLineParser";
-import { LuaTarget, LuaLibImportKind } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
 
 test.each([
     { args: [""], expected: LuaLibImportKind.Inline },

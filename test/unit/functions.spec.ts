@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test("Arrow Function Expression", () => {
     const result = util.transpileAndExecute(`let add = (a, b) => a+b; return add(1,2);`);

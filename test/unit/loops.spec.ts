@@ -1,8 +1,7 @@
 import * as ts from "typescript";
-import { TranspileError } from "../../src/TranspileError";
 import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(

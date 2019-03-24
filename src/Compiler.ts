@@ -1,10 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-
 import * as CommandLineParser from "./CommandLineParser";
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {LuaTranspiler} from "./LuaTranspiler";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
+import { LuaTranspiler } from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
     const parseResult = CommandLineParser.parseCommandLine(argv);

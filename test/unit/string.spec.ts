@@ -1,6 +1,5 @@
-import { TranspileError } from "../../src/TranspileError";
-import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
 test("Unsuported string function", () => {
     expect(() => {

@@ -1,5 +1,5 @@
+import { LuaLibImportKind, LuaTarget } from "../../../../src/CompilerOptions";
 import * as util from "../../../util";
-import { LuaTarget, LuaLibImportKind } from "../../../../src/CompilerOptions";
 
 test.each([LuaTarget.LuaJIT, "jit", "JiT"])("Options luaTarget case-insensitive (%p)", target => {
     const options = { luaTarget: target as LuaTarget };

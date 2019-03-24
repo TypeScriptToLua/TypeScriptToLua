@@ -36,7 +36,10 @@ test.each([
         const fileToChangeOut = fileToChange.replace(".ts", ".lua");
         const originalTS = fs.readFileSync(fileToChange);
 
-        const child = fork(path.join(__dirname, "watcher_proccess.js"), [], { silent: true });
+        const child = fork(path.join(__dirname, "watcher_proccess.ts"), [], {
+            silent: true,
+            execArgv: ["--require", "ts-node/register/transpile-only"],
+        });
 
         testsCleanup.push(() => {
             try {

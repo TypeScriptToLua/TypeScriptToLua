@@ -1,5 +1,5 @@
 {
-    "extends": "./__tests__/tslint.json",
+    "extends": "./test/tslint.json",
     "rules": {
         "arrow-parens": [true, "ban-single-arg-parens"],
         "import-spacing": true,

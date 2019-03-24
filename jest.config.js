@@ -2,8 +2,8 @@
 const isCI = require("is-ci");
 
 /** @type {Partial<import('@jest/types').Config.DefaultOptions>} */
-module.exports = {
-    testMatch: ["**/__tests__/**/*.test.ts"],
+const config = {
+    testMatch: ["**/test/**/*.spec.ts"],
     collectCoverageFrom: ["<rootDir>/src/**/*", "!<rootDir>/src/lualib/**/*"],
     watchPathIgnorePatterns: ["/watch\\.ts$"],
 
@@ -12,8 +12,10 @@ module.exports = {
     preset: "ts-jest",
     globals: {
         "ts-jest": {
-            tsConfig: "<rootDir>/__tests__/tsconfig.json",
+            tsConfig: "<rootDir>/test/tsconfig.json",
             diagnostics: { warnOnly: !isCI },
         },
     },
 };
+
+module.exports = config;

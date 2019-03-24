@@ -23,7 +23,7 @@
         "test-fast": "cross-env JEST_IGNORE_DIAGNOSTICS=true jest",
         "lint": "npm run lint:tslint && npm run lint:prettier",
         "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",
-        "lint:tslint": "tslint -p . && tslint -p __tests__ && tslint src/lualib/*.ts",
+        "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
         "release-major": "npm version major",
         "release-minor": "npm version minor",
         "release-patch": "npm version patch",

@@ -17,11 +17,11 @@ To get familiar with the project structure, here is a short overview of each dir
   * *LuaTransformer.ts* - Main transpiler code, transforms a TypeScript AST to a Lua AST.
   * *LuaPrinter.ts* - Transforms a Lua AST to a string.
   * *TSHelper.ts* - Helper methods used during the transpilation process.
-- `__tests__/`
+- `test/`
   * This directory contains all testing code for the transpiler.
-  * `__tests__/unit/`
+  * `test/unit/`
     - Unit/Functional tests for the transpiler. Tests in here are grouped by functionality they are testing. Generally each of these tests uses the transpiler to transpile some TypeScript to Lua, then executes it using the Fengari Lua VM. Assertion is done on the result of the lua code.
-  * `__tests__/translation/`
+  * `test/translation/`
     - **[Obsolete]** Contains tests that only check the transpiled Lua String. We prefer adding unit/functional tests over translation tests. This directory will probably be removed at some point.
 
 ## Running Tests

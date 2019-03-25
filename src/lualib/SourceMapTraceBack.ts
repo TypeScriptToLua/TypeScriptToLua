@@ -2,30 +2,31 @@ declare const debug: {
     traceback: (this: void, ...args: any[]) => string;
 };
 
-type FileTracebackTable = {[filename: string]: (this: void, ...args: any[]) => string};
-declare const _G: {[key: string]: any} & {["traceback"]: FileTracebackTable};
+declare const _G: {[key: string]: any} & {__originalTraceback: (this: void, ...args: any[]) => string};
 
-declare function print(this: void, ...messages: any[]): void;
-
+// TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
+// get some metadata about transpilation.
 function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[line: number]: number}): void {
-    _G["traceback"] = _G["traceback"] || {};
-    _G["traceback"][fileName] = _G["traceback"][fileName] || debug.traceback;
+    _G["__sourcemap"] = _G["__sourcemap"] || {};
+    _G["__sourcemap"][fileName] = sourceMap;
 
-    debug.traceback = (...args: any[]) => {
-        let trace = _G["traceback"][fileName](...args);
+    if (_G.__originalTraceback === undefined) {
+        _G.__originalTraceback = debug.traceback;
+        debug.traceback = (...args: any[]) => {
+            const trace = _G["__originalTraceback"](...args);
 
-        const matches = string.gmatch(trace, `${fileName}.lua:(%d+)`);
-        for (const match of matches) {
-            if (match in sourceMap) {
-                const [result, _] = string.gsub(
-                    trace,
-                    `${fileName}.lua:${match}`,
-                    `${fileName}.ts:${sourceMap[match] || "??"}`
-                );
-                trace = result;
-            }
-        }
+            const [result, occurrences] = string.gsub(
+                trace,
+                "([^\\]+).lua:(%d+)",
+                (file, line) => {
+                    if (_G["__sourcemap"][file] && _G["__sourcemap"][file][line]) {
+                        return `${file}.ts:${_G["__sourcemap"][file][line]}`;
+                    }
+                    return `${file}.lua:${line}`;
+                }
+            );
 
-        return trace;
-    };
+            return result;
+        };
+    }
 }

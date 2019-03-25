@@ -16,12 +16,14 @@ test("Declaration function call tupleReturn", () => {
 
     const tsHeader = `
         /** @tupleReturn */
-        declare function declaredFunction(this: void, x: number): [number, number];`;
+        declare function declaredFunction(this: void, x: number): [number, number];
+    `;
 
     const source = `
         const tuple = declaredFunction(3);
         const [destructedLeft, destructedRight] = declaredFunction(2);
-        return \`\${tuple[0] + destructedLeft},\${tuple[1] + destructedRight}\`;`;
+        return \`\${tuple[0] + destructedLeft},\${tuple[1] + destructedRight}\`;
+    `;
 
     const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
     expect(result).toBe("5,12");
@@ -52,7 +54,8 @@ test("Declaration interface function call", () => {
         declare interface MyInterface {
             declaredFunction(x: number): number;
         }
-        declare var myInterfaceInstance: MyInterface;`;
+        declare var myInterfaceInstance: MyInterface;
+    `;
 
     const source = `return myInterfaceInstance.declaredFunction(3);`;
 
@@ -74,12 +77,15 @@ test("Declaration instance function callback", () => {
     const libLua = `
         myInstance = {}
         myInstance.x = 10
-        function myInstance:declaredFunction(callback) return callback(self.x) end`;
+        function myInstance:declaredFunction(callback) return callback(self.x) end
+    `;
 
-    const tsHeader = `declare interface MyInterface {
+    const tsHeader = `
+        declare interface MyInterface {
             declaredFunction(callback: (this: void, x: number) => number): number;
         }
-        declare var myInstance: MyInterface;`;
+        declare var myInstance: MyInterface;
+    `;
 
     const source = `return myInstance.declaredFunction(x => 2 * x);`;
 

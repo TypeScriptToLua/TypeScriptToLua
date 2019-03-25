@@ -238,8 +238,7 @@ test.each([{ inp: [1, 2, 3], expected: 3 }, { inp: [1, 2, 3, 4, 5], expected: 3 
     ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let [x, y, z] = ${JSON.stringify(inp)}
-    return z;
-    `,
+            return z;`,
         );
 
         expect(result).toBe(expected);
@@ -250,8 +249,7 @@ test.each([{ inp: [1] }, { inp: [1, 2, 3] }])("array.push (%p)", ({ inp }) => {
     const result = util.transpileAndExecute(
         `let testArray = [0];
         testArray.push(${inp.join(", ")});
-        return JSONStringify(testArray);
-        `,
+        return JSONStringify(testArray);`,
     );
 
     expect(result).toBe(JSON.stringify([0].concat(inp)));

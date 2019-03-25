@@ -40,9 +40,11 @@ test.each(validTestFunctionAssignments)(
 test.each(validTestFunctionCasts)(
     "Valid function assignment with cast (%p)",
     (testFunction, castedFunction) => {
-        const code = `let fn: typeof ${testFunction.value};
-    fn = ${castedFunction};
-    return fn("foobar");`;
+        const code = `
+            let fn: typeof ${testFunction.value};
+            fn = ${castedFunction};
+            return fn("foobar");
+        `;
         expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
             "foobar",
         );
@@ -52,10 +54,12 @@ test.each(validTestFunctionCasts)(
 test.each(validTestFunctionAssignments)(
     "Valid function argument (%p)",
     (testFunction, functionType) => {
-        const code = `function takesFunction(fn: ${functionType}) {
-            return fn("foobar");
-        }
-        return takesFunction(${testFunction.value});`;
+        const code = `
+            function takesFunction(fn: ${functionType}) {
+                return fn("foobar");
+            }
+            return takesFunction(${testFunction.value});
+        `;
         expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
             "foobar",
         );
@@ -74,10 +78,12 @@ test("Valid lua lib function argument", () => {
 test.each(validTestFunctionCasts)(
     "Valid function argument with cast (%p)",
     (testFunction, castedFunction) => {
-        const code = `function takesFunction(fn: typeof ${testFunction.value}) {
-        return fn("foobar");
-    }
-    return takesFunction(${castedFunction});`;
+        const code = `
+            function takesFunction(fn: typeof ${testFunction.value}) {
+                return fn("foobar");
+            }
+            return takesFunction(${castedFunction});
+        `;
         expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
             "foobar",
         );
@@ -98,10 +104,12 @@ test.each([
         (f): TestFunctionAssignment => [f, noSelfTestFunctionType],
     ),
 ])("Valid function generic argument (%p)", (testFunction, functionType) => {
-    const code = `function takesFunction<T extends ${functionType}>(fn: T) {
+    const code = `
+        function takesFunction<T extends ${functionType}>(fn: T) {
             return fn("foobar");
         }
-        return takesFunction(${testFunction.value});`;
+        return takesFunction(${testFunction.value});
+    `;
     expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
         "foobar",
     );
@@ -112,10 +120,12 @@ test.each([
     ...selfTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["0", "'foobar'"]]),
     ...noSelfTestFunctionExpressions.map((f): [TestFunction, string[]] => [f, ["'foobar'"]]),
 ])("Valid function expression argument with no signature (%p)", (testFunction, args) => {
-    const code = `const takesFunction: any = (fn: (this: void, ...args: any[]) => any, ...args: any[]) => {
+    const code = `
+        const takesFunction: any = (fn: (this: void, ...args: any[]) => any, ...args: any[]) => {
             return fn(...args);
         }
-        return takesFunction(${testFunction.value}, ${args.join(", ")});`;
+        return takesFunction(${testFunction.value}, ${args.join(", ")});
+    `;
     expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
         "foobar",
     );
@@ -124,11 +134,13 @@ test.each([
 test.each(validTestFunctionAssignments)(
     "Valid function return (%p)",
     (testFunction, functionType) => {
-        const code = `function returnsFunction(): ${functionType} {
-            return ${testFunction.value};
-        }
-        const fn = returnsFunction();
-        return fn("foobar");`;
+        const code = `
+            function returnsFunction(): ${functionType} {
+                return ${testFunction.value};
+            }
+            const fn = returnsFunction();
+            return fn("foobar");
+        `;
         expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
             "foobar",
         );
@@ -139,10 +151,10 @@ test.each(validTestFunctionCasts)(
     "Valid function return with cast (%p)",
     (testFunction, castedFunction) => {
         const code = `function returnsFunction(): typeof ${testFunction.value} {
-        return ${castedFunction};
-    }
-    const fn = returnsFunction();
-    return fn("foobar");`;
+                          return ${castedFunction};
+                      }
+                      const fn = returnsFunction();
+                      return fn("foobar");`;
         expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe(
             "foobar",
         );

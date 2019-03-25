@@ -683,7 +683,8 @@ test("Class Method Runtime Override", () => {
 });
 
 test("Exported class super call", () => {
-    const code = `export class Foo {
+    const code = `
+        export class Foo {
             prop: string;
             constructor(prop: string) { this.prop = prop; }
         }
@@ -692,47 +693,56 @@ test("Exported class super call", () => {
                 super("bar");
             }
         }
-        export const baz = (new Bar()).prop;`;
+        export const baz = (new Bar()).prop;
+    `;
     expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("bar");
 });
 
 test.each([{ input: "(new Foo())", expectResult: "foo" }, { input: "Foo", expectResult: "bar" }])(
     "Class method name collision (%p)",
     ({ input, expectResult }) => {
-        const code = `class Foo {
-        public method() { return "foo"; }
-        public static method() { return "bar"; }
-    }
-    return ${input}.method();`;
+        const code = `
+            class Foo {
+                public method() { return "foo"; }
+                public static method() { return "bar"; }
+            }
+            return ${input}.method();
+        `;
         expect(util.transpileAndExecute(code)).toBe(expectResult);
     },
 );
 
 test.each(["extension", "metaExtension"])("Class extends extension (%p)", extensionType => {
-    const code = `declare class A {}
+    const code = `
+        declare class A {}
         /** @${extensionType} **/
         class B extends A {}
-        class C extends B {}`;
+        class C extends B {}
+    `;
     expect(() => util.transpileString(code)).toThrowExactError(
         TSTLErrors.InvalidExtendsExtension(util.nodeStub),
     );
 });
 
 test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
-    const code = `declare class A {}
+    const code = `
+        declare class A {}
         /** @${extensionType} **/
         class B extends A {}
-        const b = new B();`;
+        const b = new B();
+    `;
     expect(() => util.transpileString(code)).toThrowExactError(
         TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub),
     );
 });
 
 test("Class static instance of self", () => {
-    const code = `class Foo {
+    const code = `
+        class Foo {
             bar = "foobar";
             static instance = new Foo();
         }
-        return Foo.instance.bar;`;
+        return Foo.instance.bar;
+    `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });

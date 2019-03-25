@@ -264,37 +264,41 @@ test.each([
     { args: ["bar"], expectResult: "foobar" },
     { args: ["baz", "bar"], expectResult: "bazbar" },
 ])("Function overload (%p)", ({ args, expectResult }) => {
-    const code = `class O {
-                      prop = "foo";
-                      method(s: string): string;
-                      method(this: void, s1: string, s2: string): string;
-                      method(s1: string) {
-                          if (typeof this === "string") {
-                              return this + s1;
-                          }
-                          return this.prop + s1;
-                      }
-                  };
-                  const o = new O();
-                  return o.method(${args.map(a => '"' + a + '"').join(", ")});`;
+    const code = `
+        class O {
+            prop = "foo";
+            method(s: string): string;
+            method(this: void, s1: string, s2: string): string;
+            method(s1: string) {
+                if (typeof this === "string") {
+                    return this + s1;
+                }
+                return this.prop + s1;
+            }
+        };
+        const o = new O();
+        return o.method(${args.map(a => '"' + a + '"').join(", ")});
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(expectResult);
 });
 
 test("Nested Function", () => {
-    const code = `class C {
-                      private prop = "bar";
-                      public outer() {
-                          const o = {
-                              prop: "foo",
-                              innerFunc: function() { return this.prop; },
-                              innerArrow: () => this.prop
-                          };
-                          return o.innerFunc() + o.innerArrow();
-                      }
-                  }
-                  let c = new C();
-                  return c.outer();`;
+    const code = `
+        class C {
+            private prop = "bar";
+            public outer() {
+                const o = {
+                    prop: "foo",
+                    innerFunc: function() { return this.prop; },
+                    innerArrow: () => this.prop
+                };
+                return o.innerFunc() + o.innerArrow();
+            }
+        }
+        let c = new C();
+        return c.outer();
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foobar");
 });
@@ -302,79 +306,84 @@ test("Nested Function", () => {
 test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])(
     "Dot vs Colon method call (%p)",
     ({ s1, s2 }) => {
-        const result = util.transpileAndExecute(
-            `class MyClass {
-        dotMethod(this: void, s: string) {
-            return s;
-        }
-        colonMethod(s: string) {
-            return s;
-        }
-    }
-    const inst = new MyClass();
-    return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");`,
-        );
+        const result = util.transpileAndExecute(`
+            class MyClass {
+                dotMethod(this: void, s: string) {
+                    return s;
+                }
+                colonMethod(s: string) {
+                    return s;
+                }
+            }
+            const inst = new MyClass();
+            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");
+        `);
         expect(result).toBe(s1 === s2);
     },
 );
 
 test("Element access call", () => {
-    const code = `class C {
-        prop = "bar";
-        method(s: string) { return s + this.prop; }
-    }
-    const c = new C();
-    return c['method']("foo");
+    const code = `
+        class C {
+            prop = "bar";
+            method(s: string) { return s + this.prop; }
+        }
+        const c = new C();
+        return c['method']("foo");
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foobar");
 });
 
 test("Element access call no args", () => {
-    const code = `class C {
-        prop = "bar";
-        method() { return this.prop; }
-    }
-    const c = new C();
-    return c['method']();
+    const code = `
+    class C {
+            prop = "bar";
+            method() { return this.prop; }
+        }
+        const c = new C();
+        return c['method']();
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("bar");
 });
 
 test("Complex element access call", () => {
-    const code = `class C {
-        prop = "bar";
-        method(s: string) { return s + this.prop; }
-    }
-    function getC() { return new C(); }
-    return getC()['method']("foo");
+    const code = `
+        class C {
+            prop = "bar";
+            method(s: string) { return s + this.prop; }
+        }
+        function getC() { return new C(); }
+        return getC()['method']("foo");
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foobar");
 });
 
 test("Complex element access call no args", () => {
-    const code = `class C {
-        prop = "bar";
-        method() { return this.prop; }
-    }
-    function getC() { return new C(); }
-    return getC()['method']();
+    const code = `
+        class C {
+            prop = "bar";
+            method() { return this.prop; }
+        }
+        function getC() { return new C(); }
+        return getC()['method']();
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("bar");
 });
 
 test("Complex element access call statement", () => {
-    const code = `let foo: string;
-    class C {
-        prop = "bar";
-        method(s: string) { foo = s + this.prop; }
-    }
-    function getC() { return new C(); }
-    getC()['method']("foo");
-    return foo;
+    const code = `
+        let foo: string;
+        class C {
+            prop = "bar";
+            method(s: string) { foo = s + this.prop; }
+        }
+        function getC() { return new C(); }
+        getC()['method']("foo");
+        return foo;
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foobar");
@@ -383,18 +392,19 @@ test("Complex element access call statement", () => {
 test.each([{ iterations: 1, expectedResult: 1 }, { iterations: 2, expectedResult: 42 }])(
     "Generator functions value (%p)",
     ({ iterations, expectedResult }) => {
-        const code = `function* seq(value: number) {
-    let a = yield value + 1;
-    return 42;
-}
-const gen = seq(0);
-let ret: number;
-for(let i = 0; i < ${iterations}; ++i)
-{
-    ret = gen.next(i).value;
-}
-return ret;
-`;
+        const code = `
+            function* seq(value: number) {
+                let a = yield value + 1;
+                return 42;
+            }
+            const gen = seq(0);
+            let ret: number;
+            for(let i = 0; i < ${iterations}; ++i)
+            {
+                ret = gen.next(i).value;
+            }
+            return ret;
+        `;
         const result = util.transpileAndExecute(code);
         expect(result).toBe(expectedResult);
     },
@@ -403,65 +413,71 @@ return ret;
 test.each([{ iterations: 1, expectedResult: false }, { iterations: 2, expectedResult: true }])(
     "Generator functions done (%p)",
     ({ iterations, expectedResult }) => {
-        const code = `function* seq(value: number) {
-    let a = yield value + 1;
-    return 42;
-}
-const gen = seq(0);
-let ret: boolean;
-for(let i = 0; i < ${iterations}; ++i)
-{
-    ret = gen.next(i).done;
-}
-return ret;
-`;
+        const code = `
+            function* seq(value: number) {
+                let a = yield value + 1;
+                return 42;
+            }
+            const gen = seq(0);
+            let ret: boolean;
+            for(let i = 0; i < ${iterations}; ++i)
+            {
+                ret = gen.next(i).done;
+            }
+            return ret;
+        `;
         const result = util.transpileAndExecute(code);
         expect(result).toBe(expectedResult);
     },
 );
 
 test("Generator for..of", () => {
-    const code = `function* seq() {
-        yield(1);
-        yield(2);
-        yield(3);
-        return 4;
-    }
-    let result = 0;
-    for(let i of seq())
-    {
-        result = result * 10 + i;
-    }
-    return result`;
+    const code = `
+        function* seq() {
+            yield(1);
+            yield(2);
+            yield(3);
+            return 4;
+        }
+        let result = 0;
+        for(let i of seq())
+        {
+            result = result * 10 + i;
+        }
+        return result
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(123);
 });
 
 test("Function local overriding export", () => {
-    const code = `export const foo = 5;
+    const code = `
+        export const foo = 5;
         function bar(foo: number) {
             return foo;
         }
-        export const result = bar(7);`;
+        export const result = bar(7);
+    `;
     expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(7);
 });
 
 test("Function using global as this", () => {
-    const code = `var foo = "foo";
+    const code = `
+        var foo = "foo";
         function bar(this: any) {
             return this.foo;
-        }`;
+        }
+    `;
     expect(util.transpileAndExecute("return foo;", undefined, undefined, code)).toBe("foo");
 });
 
 test("Function rest binding pattern", () => {
-    const result = util.transpileAndExecute(
-        `function bar(foo: string, ...[bar, baz]: [string, string]) {
+    const result = util.transpileAndExecute(`
+        function bar(foo: string, ...[bar, baz]: [string, string]) {
             return bar + baz + foo;
         }
         return bar("abc", "def", "xyz");
-        `,
-    );
+    `);
 
     expect(result).toBe("defxyzabc");
 });

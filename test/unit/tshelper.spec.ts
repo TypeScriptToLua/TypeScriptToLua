@@ -38,7 +38,8 @@ test("IsFileModuleNull", () => {
 });
 
 test("GetCustomDecorators single", () => {
-    const source = `/** @compileMembersOnly */
+    const source = `
+        /** @compileMembersOnly */
         enum TestEnum {
             val1 = 0,
             val2 = 2,
@@ -46,7 +47,8 @@ test("GetCustomDecorators single", () => {
             val4 = "bye",
         }
 
-        const a = TestEnum.val1;`;
+        const a = TestEnum.val1;
+    `;
 
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
@@ -59,7 +61,8 @@ test("GetCustomDecorators single", () => {
 });
 
 test("GetCustomDecorators multiple", () => {
-    const source = `/** @compileMembersOnly
+    const source = `
+        /** @compileMembersOnly
         * @Phantom */
         enum TestEnum {
             val1 = 0,
@@ -68,7 +71,8 @@ test("GetCustomDecorators multiple", () => {
             val4 = "bye",
         }
 
-        const a = TestEnum.val1;`;
+        const a = TestEnum.val1;
+    `;
 
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
@@ -82,7 +86,8 @@ test("GetCustomDecorators multiple", () => {
 });
 
 test("GetCustomDecorators single jsdoc", () => {
-    const source = `/** @compileMembersOnly */
+    const source = `
+        /** @compileMembersOnly */
         enum TestEnum {
             val1 = 0,
             val2 = 2,
@@ -90,7 +95,8 @@ test("GetCustomDecorators single jsdoc", () => {
             val4 = "bye",
         }
 
-        const a = TestEnum.val1;`;
+        const a = TestEnum.val1;
+    `;
 
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
@@ -103,7 +109,8 @@ test("GetCustomDecorators single jsdoc", () => {
 });
 
 test("GetCustomDecorators multiple jsdoc", () => {
-    const source = `/** @phantom
+    const source = `
+        /** @phantom
         * @CompileMembersOnly */
         enum TestEnum {
             val1 = 0,
@@ -112,7 +119,8 @@ test("GetCustomDecorators multiple jsdoc", () => {
             val4 = "bye",
         }
 
-        const a = TestEnum.val1;`;
+        const a = TestEnum.val1;
+    `;
 
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
@@ -126,7 +134,8 @@ test("GetCustomDecorators multiple jsdoc", () => {
 });
 
 test("GetCustomDecorators multiple default jsdoc", () => {
-    const source = `/**
+    const source = `
+        /**
         * @description abc
         * @phantom
         * @compileMembersOnly */
@@ -137,7 +146,8 @@ test("GetCustomDecorators multiple default jsdoc", () => {
             val4 = "bye",
         }
 
-        const a = TestEnum.val1;`;
+        const a = TestEnum.val1;
+    `;
 
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);

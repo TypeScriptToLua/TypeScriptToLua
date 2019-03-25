@@ -198,9 +198,11 @@ test.each([
 });
 
 test("Binary Comma Statement in For Loop", () => {
-    const code = `let x: number, y: number;
+    const code = `
+        let x: number, y: number;
         for (x = 0, y = 17; x < 5; ++x, --y) {}
-        return y;`;
+        return y;
+    `;
     expect(util.transpileAndExecute(code)).toBe(12);
 });
 
@@ -262,17 +264,16 @@ test.each([
     { expression: "inst.field = 3", expected: 3 },
     { expression: `"abc" + inst.field`, expected: "abc8" },
 ])("Get accessor expression (%p)", ({ expression, expected }) => {
-    const source =
-        `class MyClass {` +
-        `    public _field: number;` +
-        `    public get field(): number { return this._field + 4; }` +
-        `    public set field(v: number) { this._field = v; }` +
-        `}` +
-        `var inst = new MyClass();` +
-        `inst._field = 4;` +
-        `return ${expression};`;
-
-    const result = util.transpileAndExecute(source);
+    const result = util.transpileAndExecute(`
+        class MyClass {
+            public _field: number;
+            public get field(): number { return this._field + 4; }
+            public set field(v: number) { this._field = v; }
+        }
+        var inst = new MyClass();
+        inst._field = 4;
+        return ${expression};
+    `);
 
     expect(result).toBe(expected);
 });
@@ -288,17 +289,16 @@ test.each([
     { expression: "<<= 3", expected: (4 << 3) + 4 },
     { expression: ">>>= 3", expected: (4 >> 3) + 4 },
 ])("Set accessorExpression (%p)", ({ expression, expected }) => {
-    const source =
-        `class MyClass {` +
-        `    public _field: number = 4;` +
-        `    public get field(): number { return this._field; }` +
-        `    public set field(v: number) { this._field = v + 4; }` +
-        `}` +
-        `var inst = new MyClass();` +
-        `inst.field ${expression};` +
-        `return inst._field;`;
-
-    const result = util.transpileAndExecute(source);
+    const result = util.transpileAndExecute(`
+        class MyClass {
+            public _field: number = 4;
+            public get field(): number { return this._field; }
+            public set field(v: number) { this._field = v + 4; }
+        }
+        var inst = new MyClass();
+        inst.field ${expression};
+        return inst._field;
+    `);
 
     expect(result).toBe(expected);
 });
@@ -309,30 +309,29 @@ test.each([
     { expression: "inst.superField", expected: 5 },
     { expression: "inst.superBaseField", expected: 4 },
 ])("Inherited accessors (%p)", ({ expression, expected }) => {
-    const source =
-        `class MyBaseClass {` +
-        `    public _baseField: number;` +
-        `    public get baseField(): number { return this._baseField + 6; }` +
-        `    public set baseField(v: number) { this._baseField = v; }` +
-        `}` +
-        `class MyClass extends MyBaseClass {` +
-        `    public _field: number;` +
-        `    public get field(): number { return this._field + 4; }` +
-        `    public set field(v: number) { this._field = v; }` +
-        `}` +
-        `class MySuperClass extends MyClass {` +
-        `    public _superField: number;` +
-        `    public get superField(): number { return this._superField + 2; }` +
-        `    public set superField(v: number) { this._superField = v; }` +
-        `    public get superBaseField() { return this.baseField - 3; }` +
-        `}` +
-        `var inst = new MySuperClass();` +
-        `inst.baseField = 1;` +
-        `inst.field = 2;` +
-        `inst.superField = 3;` +
-        `return ${expression};`;
-
-    const result = util.transpileAndExecute(source);
+    const result = util.transpileAndExecute(`
+        class MyBaseClass {
+            public _baseField: number;
+            public get baseField(): number { return this._baseField + 6; }
+            public set baseField(v: number) { this._baseField = v; }
+        }
+        class MyClass extends MyBaseClass {
+            public _field: number;
+            public get field(): number { return this._field + 4; }
+            public set field(v: number) { this._field = v; }
+        }
+        class MySuperClass extends MyClass {
+            public _superField: number;
+            public get superField(): number { return this._superField + 2; }
+            public set superField(v: number) { this._superField = v; }
+            public get superBaseField() { return this.baseField - 3; }
+        }
+        var inst = new MySuperClass();
+        inst.baseField = 1;
+        inst.field = 2;
+        inst.superField = 3;
+        return ${expression}
+    `);
     expect(result).toBe(expected);
 });
 
@@ -437,9 +436,11 @@ test("Block expression", () => {
 });
 
 test("Non-null expression", () => {
-    const result = util.transpileAndExecute(`function abc(): number | undefined { return 3; }
+    const result = util.transpileAndExecute(`
+        function abc(): number | undefined { return 3; }
         const a: number = abc()!;
-        return a;`);
+        return a;
+    `);
     expect(result).toBe(3);
 });
 

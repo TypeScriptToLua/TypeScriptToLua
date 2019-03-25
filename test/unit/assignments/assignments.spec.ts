@@ -67,75 +67,84 @@ test("Ellipsis binding pattern", () => {
 });
 
 test("Tuple Assignment", () => {
-    const code = `function abc(): [number, number] { return [1, 2]; };
-                  let t: [number, number] = abc();
-                  return t[0] + t[1];`;
+    const code = `
+        function abc(): [number, number] { return [1, 2]; };
+        let t: [number, number] = abc();
+        return t[0] + t[1];
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(3);
 });
 
 test("TupleReturn assignment", () => {
-    const code =
-        `/** @tupleReturn */\n` +
-        `declare function abc(this: void): number[]\n` +
-        `let [a,b] = abc();`;
+    const code = `
+        /** @tupleReturn */
+        declare function abc(this: void): number[]
+        let [a,b] = abc();
+    `;
 
     const lua = util.transpileString(code);
     expect(lua).toBe("local a, b = abc();");
 });
 
 test("TupleReturn Single assignment", () => {
-    const code =
-        `/** @tupleReturn */\n` +
-        `declare function abc(this: void): [number, string];\n` +
-        `let a = abc();` +
-        `a = abc();`;
+    const code = `
+        /** @tupleReturn */
+        declare function abc(this: void): [number, string];
+        let a = abc();
+        a = abc();
+    `;
 
     const lua = util.transpileString(code);
     expect(lua).toBe("local a = ({abc()});\na = ({abc()});");
 });
 
 test("TupleReturn interface assignment", () => {
-    const code =
-        `interface def {\n` +
-        `/** @tupleReturn */\n` +
-        `abc();\n` +
-        `} declare const jkl : def;\n` +
-        `let [a,b] = jkl.abc();`;
+    const code = `
+        interface def {
+        /** @tupleReturn */
+        abc();
+        } declare const jkl : def;
+        let [a,b] = jkl.abc();
+    `;
 
     const lua = util.transpileString(code);
     expect(lua).toBe("local a, b = jkl:abc();");
 });
 
 test("TupleReturn namespace assignment", () => {
-    const code =
-        `declare namespace def {\n` +
-        `/** @tupleReturn */\n` +
-        `function abc(this: void) {}\n` +
-        `}\n` +
-        `let [a,b] = def.abc();`;
+    const code = `
+        declare namespace def {
+        /** @tupleReturn */
+        function abc(this: void) {}
+        }
+        let [a,b] = def.abc();
+    `;
 
     const lua = util.transpileString(code);
     expect(lua).toBe("local a, b = def.abc();");
 });
 
 test("TupleReturn method assignment", () => {
-    const code =
-        `declare class def {\n` +
-        `/** @tupleReturn */\n` +
-        `abc() { return [1,2,3]; }\n` +
-        `} const jkl = new def();\n` +
-        `let [a,b] = jkl.abc();`;
+    const code = `
+        declare class def {
+        /** @tupleReturn */
+        abc() { return [1,2,3]; }
+        } const jkl = new def();
+        let [a,b] = jkl.abc();
+    `;
 
     const lua = util.transpileString(code);
     expect(lua).toBe("local jkl = def.new();\nlocal a, b = jkl:abc();");
 });
 
 test("TupleReturn functional", () => {
-    const code = `/** @tupleReturn */
-    function abc(): [number, string] { return [3, "a"]; }
-    const [a, b] = abc();
-    return b + a;`;
+    const code = `
+        /** @tupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        const [a, b] = abc();
+        return b + a;
+    `;
 
     const result = util.transpileAndExecute(code);
 
@@ -143,10 +152,12 @@ test("TupleReturn functional", () => {
 });
 
 test("TupleReturn single", () => {
-    const code = `/** @tupleReturn */
-    function abc(): [number, string] { return [3, "a"]; }
-    const res = abc();
-    return res.length`;
+    const code = `
+        /** @tupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        const res = abc();
+        return res.length
+    `;
 
     const result = util.transpileAndExecute(code);
 
@@ -154,9 +165,11 @@ test("TupleReturn single", () => {
 });
 
 test("TupleReturn in expression", () => {
-    const code = `/** @tupleReturn */
-    function abc(): [number, string] { return [3, "a"]; }
-    return abc()[1] + abc()[0];`;
+    const code = `
+        /** @tupleReturn */
+        function abc(): [number, string] { return [3, "a"]; }
+        return abc()[1] + abc()[0];
+    `;
 
     const result = util.transpileAndExecute(code);
 
@@ -173,9 +186,11 @@ test.each(["and", "local", "nil", "not", "or", "repeat", "then", "until"])(
 );
 
 test("String table access", () => {
-    const code = `const dict : {[key:string]:any} = {};
-                  dict["a b"] = 3;
-                  return dict["a b"];`;
+    const code = `
+        const dict : {[key:string]:any} = {};
+        dict["a b"] = 3;
+        return dict["a b"];
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(3);
 });

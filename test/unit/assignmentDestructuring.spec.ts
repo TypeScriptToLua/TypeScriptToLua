@@ -43,9 +43,11 @@ test.each([
 });
 
 test("Union destructuring", () => {
-    const code = `function foo(): [string] | [] { return ["bar"]; }
+    const code = `
+        function foo(): [string] | [] { return ["bar"]; }
         let x: string;
         [x] = foo();
-        return x;`;
+        return x;
+    `;
     expect(util.transpileAndExecute(code)).toBe("bar");
 });

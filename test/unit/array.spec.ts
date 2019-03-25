@@ -77,11 +77,13 @@ test.each([
     { member: "length", expected: 1 },
 ])("Derived array access (%p)", ({ member, expected }) => {
     const luaHeader = `local arr = {name="array", firstElement=function(self) return self[1]; end};`;
-    const typeScriptHeader = `interface CustomArray<T> extends Array<T>{
+    const typeScriptHeader = `
+        interface CustomArray<T> extends Array<T>{
             name:string,
             firstElement():number;
         };
-        declare const arr: CustomArray<number>;`;
+        declare const arr: CustomArray<number>;
+    `;
 
     const result = util.transpileAndExecute(
         `
@@ -126,9 +128,11 @@ test("Array delete return false", () => {
 });
 
 test("Array property access", () => {
-    const code = `type A = number[] & {foo?: string};
+    const code = `
+        type A = number[] & {foo?: string};
         const a: A = [1,2,3];
         a.foo = "bar";
-        return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;`;
+        return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;
+    `;
     expect(util.transpileAndExecute(code)).toBe("bar123");
 });

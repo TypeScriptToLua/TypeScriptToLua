@@ -12,7 +12,8 @@ test("MetaExtension", () => {
             public static test() {
                 return 5;
             }
-        }`;
+        }
+    `;
 
     const result = util.transpileAndExecute(
         `return debug.getregistry()["_LOADED"].test();`,
@@ -26,29 +27,25 @@ test("MetaExtension", () => {
 
 test("IncorrectUsage", () => {
     expect(() => {
-        util.transpileString(
-            `
+        util.transpileString(`
             /** @metaExtension */
             class LoadedExt {
                 public static test() {
                     return 5;
                 }
             }
-            `,
-        );
+        `);
     }).toThrowExactError(TSTLErrors.MissingMetaExtension(util.nodeStub));
 });
 
 test("DontAllowInstantiation", () => {
     expect(() => {
-        util.transpileString(
-            `
+        util.transpileString(`
             declare class _LOADED {}
             /** @metaExtension */
             class Ext extends _LOADED {
             }
             const e = new Ext();
-            `,
-        );
+        `);
     }).toThrowExactError(TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub));
 });

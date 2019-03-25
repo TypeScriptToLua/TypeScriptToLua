@@ -56,21 +56,23 @@ test("Const enum without initializer in some values", () => {
 
 test("Invalid heterogeneous enum", () => {
     expect(() => {
-        const lua = util.transpileString(
-            `enum TestEnum {
+        util.transpileString(`
+            enum TestEnum {
                 a,
                 b = "ok",
                 c,
-            }`,
-        );
+            }
+        `);
     }).toThrowExactError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
 });
 
 test("String literal name in enum", () => {
-    const code = `enum TestEnum {
+    const code = `
+        enum TestEnum {
             ["name"] = "foo"
         }
-        return TestEnum["name"];`;
+        return TestEnum["name"];
+    `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foo");
 });

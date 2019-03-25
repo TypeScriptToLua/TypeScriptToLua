@@ -59,9 +59,9 @@ test.each([...testCases, ...testCasesDefault])(
     "testBindingPatternDeclarations (%p)",
     ({ bindingString, objectString, returnVariable }) => {
         const result = util.transpileAndExecute(`
-    let ${bindingString} = ${objectString};
-    return ${returnVariable};
-`);
+            let ${bindingString} = ${objectString};
+            return ${returnVariable};
+        `);
         expect(result).toBe(true);
     },
 );
@@ -81,12 +81,12 @@ test.each(testCases)(
     "Object bindings with call expressions (%p)",
     ({ bindingString, objectString, returnVariable }) => {
         const result = util.transpileAndExecute(`
-    function call() {
-        return ${objectString};
-    }
-    let ${bindingString} = call();
-    return ${returnVariable};
-`);
+            function call() {
+                return ${objectString};
+            }
+            let ${bindingString} = call();
+            return ${returnVariable};
+        `);
         expect(result).toBe(true);
     },
 );

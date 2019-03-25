@@ -54,21 +54,21 @@ test("instanceof", () => {
 });
 
 test("instanceof inheritance", () => {
-    const result = util.transpileAndExecute(
-        "class myClass {}\n" +
-            "class childClass extends myClass{}\n" +
-            "let inst = new childClass(); return inst instanceof myClass;",
-    );
+    const result = util.transpileAndExecute(`
+        class myClass {}
+        class childClass extends myClass{}
+        let inst = new childClass(); return inst instanceof myClass;
+    `);
 
     expect(result).toBeTruthy();
 });
 
 test("instanceof inheritance false", () => {
-    const result = util.transpileAndExecute(
-        "class myClass {}\n" +
-            "class childClass extends myClass{}\n" +
-            "let inst = new myClass(); return inst instanceof childClass;",
-    );
+    const result = util.transpileAndExecute(`
+        class myClass {}
+        class childClass extends myClass{}
+        let inst = new myClass(); return inst instanceof childClass;
+    `);
 
     expect(result).toBe(false);
 });
@@ -88,11 +88,13 @@ test("null instanceof Class", () => {
 });
 
 test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
-    const code = `declare class A {}
+    const code = `
+        declare class A {}
         /** @${extensionType} **/
         class B extends A {}
         declare const foo: any;
-        const result = foo instanceof B;`;
+        const result = foo instanceof B;
+    `;
     expect(() => util.transpileString(code)).toThrowExactError(
         TSTLErrors.InvalidInstanceOfExtension(util.nodeStub),
     );

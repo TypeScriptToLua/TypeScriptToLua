@@ -1,7 +1,9 @@
 import * as util from "../../util";
 
-const initRefsTs = `let ref = {};
-                      let ref2 = () => {};`;
+const initRefsTs = `
+    let ref = {};
+    let ref2 = () => {};
+`;
 
 test("weakSet constructor", () => {
     const result = util.transpileAndExecute(`

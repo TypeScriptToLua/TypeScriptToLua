@@ -54,10 +54,12 @@ test("Nested module with dot in name", () => {
 });
 
 test("Access this in module", () => {
-    const header = `module M {
+    const header = `
+        module M {
             export const foo = "foo";
             export function bar() { return this.foo + "bar"; }
-        }`;
+        }
+    `;
     const code = `return M.bar();`;
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
 });

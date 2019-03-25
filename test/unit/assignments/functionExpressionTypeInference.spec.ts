@@ -1,14 +1,18 @@
 import * as util from "../../util";
 
 test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", noSelfTag => {
-    const header = `/** @${noSelfTag} */ namespace NS {
+    const header = `
+        /** @${noSelfTag} */ namespace NS {
             export class C {
                 method(fn: (s: string) => string) { return fn("foo"); }
             }
         }
-        function foo(this: void, s: string) { return s; }`;
-    const code = `const c = new NS.C();
-        return c.method(foo);`;
+        function foo(this: void, s: string) { return s; }
+    `;
+    const code = `
+        const c = new NS.C();
+        return c.method(foo);
+    `;
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
 });
 
@@ -18,23 +22,27 @@ test.each([
     "(s: string) => string",
 ])("Function expression type inference in binary operator (%p)", funcType => {
     const header = `declare const undefinedFunc: ${funcType};`;
-    const code = `let func: ${funcType} = s => s;
+    const code = `
+        let func: ${funcType} = s => s;
         func = undefinedFunc || (s => s);
-        return func("foo");`;
+        return func("foo");
+    `;
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
 });
 
 test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { return s; })"])(
     "Function expression type inference in class (%p)",
     funcExp => {
-        const code = `class Foo {
-        func: (this: void, s: string) => string = ${funcExp};
-        method: (s: string) => string = ${funcExp};
-        static staticFunc: (this: void, s: string) => string = ${funcExp};
-        static staticMethod: (s: string) => string = ${funcExp};
-    }
-    const foo = new Foo();
-    return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");`;
+        const code = `
+            class Foo {
+                func: (this: void, s: string) => string = ${funcExp};
+                method: (s: string) => string = ${funcExp};
+                static staticFunc: (this: void, s: string) => string = ${funcExp};
+                static staticMethod: (s: string) => string = ${funcExp};
+            }
+            const foo = new Foo();
+            return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");
+        `;
         expect(util.transpileAndExecute(code)).toBe("abcd");
     },
 );
@@ -49,18 +57,22 @@ test.each([
     { assignTo: "let foo: Foo; foo", funcExp: "function(s) { return s; }" },
     { assignTo: "let foo: Foo; foo", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in object literal (%p)", ({ assignTo, funcExp }) => {
-    const code = `interface Foo {
+    const code = `
+        interface Foo {
             func(this: void, s: string): string;
             method(this: this, s: string): string;
         }
         ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
-        return foo.method("foo") + foo.func("bar");`;
+        return foo.method("foo") + foo.func("bar");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
 
 test("Function expression type inference in object literal assigned to narrower type", () => {
-    const code = `let foo: {} = {bar: s => s};
-        return (foo as {bar: (a: any) => any}).bar("foobar");`;
+    const code = `
+        let foo: {} = {bar: s => s};
+        return (foo as {bar: (a: any) => any}).bar("foobar");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
 
@@ -76,11 +88,13 @@ test.each([
 ])(
     "Function expression type inference in object literal (generic key) (%p)",
     ({ assignTo, funcExp }) => {
-        const code = `interface Foo {
-            [f: string]: (this: void, s: string) => string;
-        }
-        ${assignTo} = {func: ${funcExp}};
-        return foo.func("foo");`;
+        const code = `
+            interface Foo {
+                [f: string]: (this: void, s: string) => string;
+            }
+            ${assignTo} = {func: ${funcExp}};
+            return foo.func("foo");
+        `;
         expect(util.transpileAndExecute(code)).toBe("foo");
     },
 );
@@ -183,7 +197,8 @@ test.each([
         funcExp: "(function(s) { return s; })",
     },
 ])("Function expression type inference in tuple (%p)", ({ assignTo, func, method, funcExp }) => {
-    const code = `interface Foo {
+    const code = `
+        interface Foo {
             method(s: string): string;
         }
         interface Func {
@@ -194,7 +209,8 @@ test.each([
         }
         ${assignTo} = [${funcExp}, ${funcExp}];
         const foo: Foo = {method: ${method}};
-        return foo.method("foo") + ${func}("bar");`;
+        return foo.method("foo") + ${func}("bar");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
 
@@ -232,7 +248,8 @@ test.each([
         funcExp: "(function(s) { return s; })",
     },
 ])("Function expression type inference in array (%p)", ({ assignTo, method, funcExp }) => {
-    const code = `interface Foo {
+    const code = `
+        interface Foo {
             method(s: string): string;
         }
         interface Method {
@@ -240,7 +257,8 @@ test.each([
         }
         ${assignTo} = [${funcExp}];
         const foo: Foo = {method: ${method}};
-        return foo.method("foo");`;
+        return foo.method("foo");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
 
@@ -252,9 +270,11 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in union (%p)", ({ funcType, funcExp }) => {
-    const code = `type U = string | number | (${funcType});
+    const code = `
+        type U = string | number | (${funcType});
         const u: U = ${funcExp};
-        return (u as ${funcType})("foo");`;
+        return (u as ${funcType})("foo");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
 
@@ -266,9 +286,11 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in union tuple (%p)", ({ funcType, funcExp }) => {
-    const code = `interface I { callback: ${funcType}; }
+    const code = `
+        interface I { callback: ${funcType}; }
         let a: I[] | number = [{ callback: ${funcExp} }];
-        return a[0].callback("foo");`;
+        return a[0].callback("foo");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
 
@@ -280,8 +302,10 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in as cast (%p)", ({ funcType, funcExp }) => {
-    const code = `const fn: ${funcType} = (${funcExp}) as (${funcType});
-        return fn("foo");`;
+    const code = `
+        const fn: ${funcType} = (${funcExp}) as (${funcType});
+        return fn("foo");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
 
@@ -293,8 +317,10 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in type assertion (%p)", ({ funcType, funcExp }) => {
-    const code = `const fn: ${funcType} = <${funcType}>(${funcExp});
-        return fn("foo");`;
+    const code = `
+        const fn: ${funcType} = <${funcType}>(${funcExp});
+        return fn("foo");
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
 
@@ -306,11 +332,13 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in constructor (%p)", ({ funcType, funcExp }) => {
-    const code = `class C {
+    const code = `
+        class C {
             result: string;
             constructor(fn: (s: string) => string) { this.result = fn("foo"); }
         }
         const c = new C(s => s);
-        return c.result;`;
+        return c.result;
+    `;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });

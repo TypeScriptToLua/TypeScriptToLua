@@ -134,9 +134,11 @@ test("Tuple Non-Static Method Return Destruct", () => {
 });
 
 test("Tuple Return on Arrow Function", () => {
-    const code = `const fn = /** @tupleReturn */ (s: string) => [s, "bar"];
+    const code = `
+        const fn = /** @tupleReturn */ (s: string) => [s, "bar"];
         const [a, b] = fn("foo");
-        return a + b;`;
+        return a + b;
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);
@@ -144,10 +146,12 @@ test("Tuple Return on Arrow Function", () => {
 });
 
 test("Tuple Return Inference", () => {
-    const code = `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+    const code = `
+        /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         const fn: Fn = s => [s, "bar"];
         const [a, b] = fn("foo");
-        return a + b;`;
+        return a + b;
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);
@@ -155,12 +159,14 @@ test("Tuple Return Inference", () => {
 });
 
 test("Tuple Return Inference as Argument", () => {
-    const code = `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+    const code = `
+        /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         function foo(fn: Fn) {
             const [a, b] = fn("foo");
             return a + b;
         }
-        return foo(s => [s, "bar"]);`;
+        return foo(s => [s, "bar"]);
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);
@@ -168,12 +174,14 @@ test("Tuple Return Inference as Argument", () => {
 });
 
 test("Tuple Return Inference as Elipsis Argument", () => {
-    const code = `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+    const code = `
+        /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         function foo(a: number, ...fn: Fn[]) {
             const [a, b] = fn[0]("foo");
             return a + b;
         }
-        return foo(7, s => [s, "bar"]);`;
+        return foo(7, s => [s, "bar"]);
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);
@@ -181,12 +189,14 @@ test("Tuple Return Inference as Elipsis Argument", () => {
 });
 
 test("Tuple Return Inference as Elipsis Tuple Argument", () => {
-    const code = `/** @tupleReturn */ interface Fn { (s: string): [string, string] }
+    const code = `
+        /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         function foo(a: number, ...fn: [number, Fn]) {
             const [a, b] = fn[1]("foo");
             return a + b;
         }
-        return foo(7, 17, s => [s, "bar"]);`;
+        return foo(7, 17, s => [s, "bar"]);
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);
@@ -194,13 +204,15 @@ test("Tuple Return Inference as Elipsis Tuple Argument", () => {
 });
 
 test("Tuple Return in Spread", () => {
-    const code = `/** @tupleReturn */ function foo(): [string, string] {
+    const code = `
+        /** @tupleReturn */ function foo(): [string, string] {
             return ["foo", "bar"];
         }
         function bar(a: string, b: string) {
             return a + b;
         }
-        return bar(...foo());`;
+        return bar(...foo());
+    `;
     const lua = util.transpileString(code);
     expect(lua).not.toContain("unpack");
     const result = util.executeLua(lua);

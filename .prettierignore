@@ -1,6 +1,7 @@
 /dist
 /coverage
 /test/compiler/testfiles/invalid_syntax.ts
+/test/translation/ts/characterEscapeSequence.ts
 
 /src
 *.md

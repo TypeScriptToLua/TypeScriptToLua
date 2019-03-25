@@ -1800,8 +1800,13 @@ export class LuaTransformer {
                     // If return expression is an array literal, leave out brackets.
                     return tstl.createReturnStatement(statement.expression.elements
                         .map(elem => this.transformExpression(elem)));
-                } else if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)) {
-                    // If return expression is not another TupleReturn call, unpack it
+                }
+
+                const expressionType = this.checker.getTypeAtLocation(statement.expression);
+                if (!tsHelper.isTupleReturnCall(statement.expression, this.checker)
+                    && tsHelper.isArrayType(expressionType, this.checker, this.program))
+                {
+                    // If return expression is an array-type and not another TupleReturn call, unpack it
                     const expression = this.createUnpackCall(
                         this.transformExpression(statement.expression),
                         statement.expression

@@ -184,7 +184,7 @@ export class TSHelper {
                 // Only check function type for directive if it is declared as an interface or type alias
                 const declaration = signature.getDeclaration();
                 const isInterfaceOrAlias = declaration && declaration.parent
-                    && (ts.isInterfaceDeclaration(declaration.parent)
+                    && ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration))
                         || ts.isTypeAliasDeclaration(declaration.parent));
                 if (!isInterfaceOrAlias) {
                     return false;

@@ -340,6 +340,31 @@ export class TupleTests {
         Expect(result).toBe("3foobar");
     }
 
+    @Test("Tuple Return on Interface Method Overload")
+    public tupleReturnOnInterfaceMethodOverload(): void {
+        const code =
+            `interface Foo {
+                foo(a: number): number;
+                /** @tupleReturn */ foo(a: string, b: string): [string, string];
+            }
+            const bar = ({
+                foo: (a: number | string, b?: string): number | [string, string] => {
+                    if (typeof a === "number") {
+                        return a;
+                    } else {
+                        return [a, b as string];
+                    }
+                }
+            }) as Foo;
+            const a = bar.foo(3);
+            const [b, c] = bar.foo("foo", "bar");
+            return a + b + c`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("3foobar");
+    }
+
     @Test("Tuple Return vs Non-Tuple Return Overload")
     public tupleReturnVsNonTupleReturnOverload(): void {
         const luaHeader =

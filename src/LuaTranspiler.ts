@@ -1,12 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as tstl from "./LuaAST";
-
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {LuaPrinter} from "./LuaPrinter";
-import {LuaTransformer} from "./LuaTransformer";
+import { LuaPrinter } from "./LuaPrinter";
+import { LuaTransformer } from "./LuaTransformer";
 
 export class LuaTranspiler {
     private program: ts.Program;

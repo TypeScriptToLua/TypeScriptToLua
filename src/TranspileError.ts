@@ -1,9 +1,8 @@
 import * as ts from "typescript";
 
 export class TranspileError extends Error {
-    public node: ts.Node;
-    constructor(message: string, node: ts.Node) {
+    public name = 'TranspileError';
+    constructor(message: string, public node: ts.Node) {
         super(message);
-        this.node = node;
     }
 }

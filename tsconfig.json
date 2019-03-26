@@ -1,12 +1,11 @@
 {
     "compilerOptions": {
-        "noImplicitThis" : true,
-        "alwaysStrict" : true,
-        "outDir": "./dist/",
-        "rootDir": "./src/",
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "rootDir": "./src",
+        "outDir": "./dist",
         "declaration": true,
         "sourceMap": true,
-        "experimentalDecorators": true,
         "target": "es2017",
         "module": "commonjs"
     },

@@ -1,3 +1,7 @@
 {
-    "luaTarget": "JIT"
+    "luaTarget": "JIT",
+    "compilerOptions": {
+        "types": [],
+        "skipLibCheck": true
+    }
 }

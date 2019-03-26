@@ -1,17 +1,12 @@
-import { Expect, Test, TestCase } from "alsatian";
-
-import * as util from "../src/util";
 import { TSTLErrors } from "../../src/TSTLErrors";
-import { TranspileError } from "../../src/TranspileError";
+import * as util from "../util";
 
-export class ImportExportTests
-{
-    @TestCase("export { default } from '...'")
-    @TestCase("export { x as default } from '...';")
-    @TestCase("export { default as x } from '...';")
-    @Test("Export default keyword disallowed")
-    public exportDefaultKeywordError(exportStatement: string): void {
-        const expectedTest = TSTLErrors.UnsupportedDefaultExport(undefined).message;
-        Expect(() => util.transpileString(exportStatement)).toThrowError(TranspileError, expectedTest);
-    }
-}
+test.each([
+    "export { default } from '...'",
+    "export { x as default } from '...';",
+    "export { default as x } from '...';",
+])("Export default keyword disallowed (%p)", exportStatement => {
+    expect(() => util.transpileString(exportStatement)).toThrowExactError(
+        TSTLErrors.UnsupportedDefaultExport(util.nodeStub),
+    );
+});

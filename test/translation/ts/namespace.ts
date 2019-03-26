@@ -1,3 +1,0 @@
-namespace myNamespace {
-    function nsMember() {}
-}

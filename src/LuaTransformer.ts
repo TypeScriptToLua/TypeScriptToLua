@@ -1,12 +1,11 @@
 import * as path from "path";
 import * as ts from "typescript";
-
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {DecoratorKind} from "./Decorator";
+import { CompilerOptions, LuaTarget } from "./CompilerOptions";
+import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
-import {LuaLib, LuaLibFeature} from "./LuaLib";
-import {ContextType, TSHelper as tsHelper} from "./TSHelper";
-import {TSTLErrors} from "./TSTLErrors";
+import { LuaLibFeature } from "./LuaLib";
+import { ContextType, TSHelper as tsHelper } from "./TSHelper";
+import { TSTLErrors } from "./TSTLErrors";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;
@@ -3056,7 +3055,7 @@ export class LuaTransformer {
         if (classDecorators.has(DecoratorKind.CustomConstructor)) {
             const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
             if (!customDecorator.args[0]) {
-                throw TSTLErrors.InvalidDecoratorArgumentNumber("!CustomConstructor", 0, 1, node);
+                throw TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, node);
             }
             return tstl.createCallExpression(
                 tstl.createIdentifier(customDecorator.args[0]),

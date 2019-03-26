@@ -1,68 +1,74 @@
-import { AsyncTest, Expect, Setup, TestCase, Timeout } from "alsatian";
 import { fork } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-export class CompilerWatchModeTest {
+let testsCleanup: Array<() => void> = [];
+afterEach(() => {
+    testsCleanup.forEach(x => x());
+    testsCleanup = [];
+});
 
-    @TestCase(["-w", path.join(__dirname, "./testfiles/watch.ts")],
-              path.join(__dirname, "./testfiles/watch.ts"))
-    @TestCase(["-w", "-p", path.join(__dirname, "./projects/watchmode/")],
-              path.join(__dirname, "./projects/watchmode/watch.ts"))
-    @AsyncTest("Watch single File")
-    @Timeout(16000)
-    public async testSingle(args: string[], fileToChange: string): Promise<void> {
-        fileToChange = fileToChange;
+function waitForFileExists(filePath: string): Promise<void> {
+    return new Promise<void>(resolve => {
+        const intervalTimerId = setInterval(() => {
+            if (fs.existsSync(filePath)) {
+                clearInterval(intervalTimerId);
+                resolve();
+            }
+        }, 100);
+
+        testsCleanup.push(() => clearInterval(intervalTimerId));
+    });
+}
+
+test.each([
+    {
+        args: [
+            "--types",
+            "node",
+            "--skipLibCheck",
+            "-w",
+            path.join(__dirname, "./testfiles/watch.ts"),
+        ],
+        fileToChange: path.join(__dirname, "./testfiles/watch.ts"),
+    },
+    {
+        args: ["-w", "-p", path.join(__dirname, "./projects/watchmode/")],
+        fileToChange: path.join(__dirname, "./projects/watchmode/watch.ts"),
+    },
+])(
+    "Watch single File (%p)",
+    async ({ args, fileToChange }) => {
         const fileToChangeOut = fileToChange.replace(".ts", ".lua");
-
-        const child = fork(path.join(__dirname, "watcher_proccess.js"));
-        child.send(args);
-
-        await this.waitForFileExists(fileToChangeOut, 9000)
-                  .catch(err => console.error(err));
-
-        Expect(fs.existsSync(fileToChangeOut)).toBe(true);
-
-        const initialResultLua = fs.readFileSync(fileToChangeOut);
         const originalTS = fs.readFileSync(fileToChange);
 
-        fs.unlinkSync(fileToChangeOut);
+        const child = fork(path.join(__dirname, "watcher_proccess.ts"), [], {
+            silent: true,
+            execArgv: ["--require", "ts-node/register/transpile-only"],
+        });
 
+        testsCleanup.push(() => {
+            try {
+                fs.unlinkSync(fileToChangeOut);
+            } catch (err) {
+                if (err.code !== "ENOENT") throw err;
+            }
+            fs.writeFileSync(fileToChange, originalTS);
+            child.kill();
+        });
+
+        child.send(args);
+
+        await waitForFileExists(fileToChangeOut);
+        const initialResultLua = fs.readFileSync(fileToChangeOut, "utf8");
+
+        fs.unlinkSync(fileToChangeOut);
         fs.writeFileSync(fileToChange, "class MyTest2 {}");
 
-        await this.waitForFileExists(fileToChangeOut, 5000)
-                  .catch(err => console.error(err));
+        await waitForFileExists(fileToChangeOut);
+        const updatedResultLua = fs.readFileSync(fileToChangeOut, "utf8");
 
-        const updatedResultLua = fs.readFileSync(fileToChangeOut).toString();
-
-        Expect(initialResultLua).not.toEqual(updatedResultLua);
-
-        fs.writeFileSync(fileToChange, originalTS);
-
-        fs.unlinkSync(fileToChangeOut);
-
-        child.kill();
-    }
-
-    private waitForFileExists(filepath: string, timeout: number = 3000): Promise<void> {
-        const interval = 200;
-        return new Promise((resolve, reject) => {
-            const intervalTimerId = setInterval(
-            () => {
-                if (fs.existsSync(filepath)) {
-                    clearTimeout(timeoutId);
-                    clearInterval(intervalTimerId);
-                    resolve();
-                }
-            },
-            interval);
-
-            const timeoutId = setTimeout(
-            () => {
-                clearInterval(intervalTimerId);
-                reject(new Error("Wating for file timed out!"));
-            },
-            timeout);
-        });
-    }
-}
+        expect(initialResultLua).not.toEqual(updatedResultLua);
+    },
+    20000,
+);

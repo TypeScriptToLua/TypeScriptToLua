@@ -1,48 +1,113 @@
-import { Expect, FocusTest, Test, TestCase } from "alsatian";
+import * as util from "../util";
 
-import * as util from "../src/util";
-import * as path from "path";
-import { CompilerOptions } from "../../src/CompilerOptions";
-
-export class RequireTests {
-
-    @TestCase("file.ts", "./folder/Module", "folder.Module", { rootDir: "." }, false)
-    @TestCase("file.ts", "./folder/Module", "folder.Module", { rootDir: "./" }, false)
-    @TestCase("src/file.ts", "./folder/Module", "src.folder.Module", { rootDir: "." }, false)
-    @TestCase("file.ts", "folder/Module", "folder.Module", { rootDir: ".", baseUrl: "." }, false)
-    @TestCase("file.ts", "folder/Module", "folder.Module", { rootDir: "./", baseUrl: "." }, false)
-    @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "src" }, false)
-    @TestCase("src/file.ts", "./folder/Module", "folder.Module", { rootDir: "./src" }, false)
-    @TestCase("file.ts", "../Module", "", { rootDir: "./src" }, true)
-    @TestCase("src/dir/file.ts", "../Module", "Module", { rootDir: "./src" }, false)
-    @TestCase("src/dir/dir/file.ts", "../../dir/Module", "dir.Module", { rootDir: "./src" }, false)
-    @Test("require paths root from --baseUrl or --rootDir")
-    public testRequirePath(
-        filePath: string,
-        usedPath: string,
-        expectedPath: string,
-        options: CompilerOptions,
-        throwsError: boolean): void {
+test.each([
+    {
+        filePath: "file.ts",
+        usedPath: "./folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: "." },
+        throwsError: false,
+    },
+    {
+        filePath: "file.ts",
+        usedPath: "./folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: "./" },
+        throwsError: false,
+    },
+    {
+        filePath: "src/file.ts",
+        usedPath: "./folder/Module",
+        expectedPath: "src.folder.Module",
+        options: { rootDir: "." },
+        throwsError: false,
+    },
+    {
+        filePath: "file.ts",
+        usedPath: "folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: ".", baseUrl: "." },
+        throwsError: false,
+    },
+    {
+        filePath: "file.ts",
+        usedPath: "folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: "./", baseUrl: "." },
+        throwsError: false,
+    },
+    {
+        filePath: "src/file.ts",
+        usedPath: "./folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: "src" },
+        throwsError: false,
+    },
+    {
+        filePath: "src/file.ts",
+        usedPath: "./folder/Module",
+        expectedPath: "folder.Module",
+        options: { rootDir: "./src" },
+        throwsError: false,
+    },
+    {
+        filePath: "file.ts",
+        usedPath: "../Module",
+        expectedPath: "",
+        options: { rootDir: "./src" },
+        throwsError: true,
+    },
+    {
+        filePath: "src/dir/file.ts",
+        usedPath: "../Module",
+        expectedPath: "Module",
+        options: { rootDir: "./src" },
+        throwsError: false,
+    },
+    {
+        filePath: "src/dir/dir/file.ts",
+        usedPath: "../../dir/Module",
+        expectedPath: "dir.Module",
+        options: { rootDir: "./src" },
+        throwsError: false,
+    },
+])(
+    "require paths root from --baseUrl or --rootDir (%p)",
+    ({ filePath, usedPath, expectedPath, options, throwsError }) => {
         if (throwsError) {
-            Expect(() => util.transpileString(`import * from "${usedPath}";`, options, true, filePath)).toThrow();
+            expect(() =>
+                util.transpileString(`import * from "${usedPath}";`, options, true, filePath),
+            ).toThrow();
         } else {
-            const lua = util.transpileString(`import * from "${usedPath}";`, options, true, filePath);
+            const lua = util.transpileString(
+                `import * from "${usedPath}";`,
+                options,
+                true,
+                filePath,
+            );
             const regex = /require\("(.*?)"\)/;
             const match = regex.exec(lua);
-            Expect(match[1]).toBe(expectedPath);
+            expect(match[1]).toBe(expectedPath);
         }
-    }
+    },
+);
 
-    @TestCase("", "src.fake")
-    @TestCase("/** @noResolution */", "fake")
-    @Test("noResolution on ambient modules causes no path alterations")
-    public testRequireModule(comment: string, expectedPath: string): void {
-        const lua = util.transpileString({
-            "src/file.ts": `import * as fake from "fake";`,
-            "module.d.ts": `${comment} declare module "fake" {}`,
-        }, undefined, true, "src/file.ts");
+test.each([
+    { comment: "", expectedPath: "src.fake" },
+    { comment: "/** @noResolution */", expectedPath: "fake" },
+])(
+    "noResolution on ambient modules causes no path alterations (%p)",
+    ({ comment, expectedPath }) => {
+        const lua = util.transpileString(
+            {
+                "src/file.ts": `import * as fake from "fake";`,
+                "module.d.ts": `${comment} declare module "fake" {}`,
+            },
+            undefined,
+            true,
+            "src/file.ts",
+        );
         const regex = /require\("(.*?)"\)/;
-        Expect(regex.exec(lua)[1]).toBe(expectedPath);
-    }
-
-}
+        expect(regex.exec(lua)[1]).toBe(expectedPath);
+    },
+);

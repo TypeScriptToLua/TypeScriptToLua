@@ -1,1 +1,1 @@
-const test = true;
+const foo = true;

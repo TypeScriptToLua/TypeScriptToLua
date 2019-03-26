@@ -1,13 +1,10 @@
 {
     "compilerOptions": {
-        "experimentalDecorators": true,
-        "sourceMap": true,
         "target": "es2017",
+        "types": ["node", "jest"],
+
+        "noEmit": true,
         "module": "commonjs"
     },
-    "exclude": [
-        "translation/ts/*",
-        "compiler/projects/*",
-        "compiler/testfiles/*"
-    ]
+    "exclude": ["translation/transformation", "compiler/projects", "compiler/testfiles"]
 }

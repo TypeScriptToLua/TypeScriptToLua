@@ -1,7 +1,6 @@
 import * as ts from "typescript";
-
-import {TranspileError} from "./TranspileError";
-import {TSHelper as tsHelper} from "./TSHelper";
+import { TranspileError } from "./TranspileError";
+import { TSHelper as tsHelper } from "./TSHelper";
 
 export class TSTLErrors {
     public static CouldNotFindEnumMember = (enumDeclaration: ts.EnumDeclaration, enumMember: string, node: ts.Node) =>

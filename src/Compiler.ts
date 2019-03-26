@@ -1,10 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-
 import * as CommandLineParser from "./CommandLineParser";
-import {CompilerOptions, LuaLibImportKind, LuaTarget} from "./CompilerOptions";
-import {LuaTranspiler} from "./LuaTranspiler";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
+import { LuaTranspiler } from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
     const parseResult = CommandLineParser.parseCommandLine(argv);
@@ -105,7 +104,7 @@ export function compileFilesWithOptions(fileNames: string[], options: CompilerOp
     transpiler.emitFilesAndReportErrors();
 }
 
-const libCache: {[key: string]: string} = {};
+const libCache: {[key: string]: ts.SourceFile} = {};
 
 const defaultCompilerOptions: CompilerOptions = {
     luaLibImport: LuaLibImportKind.Require,
@@ -122,7 +121,7 @@ export function createStringCompilerProgram(
         fileExists: (fileName): boolean => true,
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
-        getDefaultLibFileName: () => "lib.es6.d.ts",
+        getDefaultLibFileName: ts.getDefaultLibFileName,
         getDirectories: () => [],
         getNewLine: () => "\n",
 
@@ -139,19 +138,17 @@ export function createStringCompilerProgram(
                     }
                     break;
             }
-            if (filename.indexOf(".d.ts") !== -1) {
-                if (!libCache[filename]) {
-                    const typeScriptDir = path.dirname(require.resolve("typescript"));
-                    const filePath = path.join(typeScriptDir, filename);
-                    if (fs.existsSync(filePath)) {
-                        libCache[filename] = fs.readFileSync(filePath).toString();
-                    } else {
-                        const pathWithLibPrefix = path.join(typeScriptDir, "lib." + filename);
-                        libCache[filename] = fs.readFileSync(pathWithLibPrefix).toString();
-                    }
-                }
-                return ts.createSourceFile(filename, libCache[filename], ts.ScriptTarget.Latest, false);
+
+            if (filename.startsWith('lib.')) {
+                if (libCache[filename]) return libCache[filename];
+                const typeScriptDir = path.dirname(require.resolve("typescript"));
+                const filePath = path.join(typeScriptDir, filename);
+                const content = fs.readFileSync(filePath, 'utf8');
+
+                libCache[filename] = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, false);
+                return libCache[filename];
             }
+
             return undefined;
         },
 

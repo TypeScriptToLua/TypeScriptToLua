@@ -1,13 +1,11 @@
-import * as tstl from "./LuaAST";
-
 import * as path from "path";
 
 import {SourceNode, SourceMapGenerator, RawSourceMap, SourceMapConsumer} from "source-map";
 
+import * as tstl from "./LuaAST";
+import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
+import { LuaLib, LuaLibFeature } from "./LuaLib";
 import { TSHelper as tsHelper } from "./TSHelper";
-import { LuaLibFeature, LuaLib } from "./LuaLib";
-import { CompilerOptions } from "./CompilerOptions";
-import { LuaLibImportKind } from "./CompilerOptions";
 
 type SourceChunk = string | SourceNode;
 

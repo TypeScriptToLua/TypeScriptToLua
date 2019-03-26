@@ -1,34 +1,28 @@
-import { Expect, Test, TestCase } from "alsatian";
-
-import * as util from "../src/util";
+import * as util from "../util";
 const fs = require("fs");
 
-export class ObjectLiteralTests {
+test.each([
+    { inp: `{a:3,b:"4"}`, out: `{a = 3, b = "4"};` },
+    { inp: `{"a":3,b:"4"}`, out: `{a = 3, b = "4"};` },
+    { inp: `{["a"]:3,b:"4"}`, out: `{a = 3, b = "4"};` },
+    { inp: `{["a"+123]:3,b:"4"}`, out: `{["a" .. 123] = 3, b = "4"};` },
+    { inp: `{[myFunc()]:3,b:"4"}`, out: `{[myFunc(_G)] = 3, b = "4"};` },
+    { inp: `{x}`, out: `{x = x};` },
+])("Object Literal (%p)", ({ inp, out }) => {
+    const lua = util.transpileString(`const myvar = ${inp};`);
+    expect(lua).toBe(`local myvar = ${out}`);
+});
 
-    @TestCase(`{a:3,b:"4"}`, `{a = 3, b = "4"};`)
-    @TestCase(`{"a":3,b:"4"}`, `{a = 3, b = "4"};`)
-    @TestCase(`{["a"]:3,b:"4"}`, `{a = 3, b = "4"};`)
-    @TestCase(`{["a"+123]:3,b:"4"}`, `{["a" .. 123] = 3, b = "4"};`)
-    @TestCase(`{[myFunc()]:3,b:"4"}`, `{[myFunc(_G)] = 3, b = "4"};`)
-    @TestCase(`{x}`, `{x = x};`)
-    @Test("Object Literal")
-    public objectLiteral(inp: string, out: string): void {
-        const lua = util.transpileString(`const myvar = ${inp};`);
-        Expect(lua).toBe(`local myvar = ${out}`);
-    }
-
-    @TestCase("3", 3)
-    @Test("Shorthand Property Assignment")
-    public ShorthandPropertyAssignment(input: string, expected: number): void {
+test.each([{ input: "3", expected: 3 }])(
+    "Shorthand Property Assignment (%p)",
+    ({ input, expected }) => {
         const result = util.transpileAndExecute(`const x = ${input}; const o = {x}; return o.x;`);
-        Expect(result).toBe(expected);
-    }
+        expect(result).toBe(expected);
+    },
+);
 
-    @Test("undefined as object key")
-    public undefinedAsObjectKey(): void {
-        const code =
-            `const foo = {undefined: "foo"};
-            return foo.undefined;`;
-        Expect(util.transpileAndExecute(code)).toBe("foo");
-    }
-}
+test("undefined as object key", () => {
+    const code = `const foo = {undefined: "foo"};
+        return foo.undefined;`;
+    expect(util.transpileAndExecute(code)).toBe("foo");
+});

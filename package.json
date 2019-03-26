@@ -19,34 +19,37 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "pretest": "npm run clean && npm run style-check && npm run build && tsc -p ./test/tsconfig.json",
-        "test": "node ./test/runner.js",
-        "posttest": "npm run clean",
-        "coverage": "nyc --source-map=true npm test && nyc report --reporter=text-lcov > coverage.lcov",
-        "coverage-html": "nyc --source-map=true npm test && nyc report --reporter=html",
-        "test-threaded": "npm run pretest && node ./test/threaded_runner.js && npm run posttest",
-        "test-fast": "npm run pretest && node ./test/runner.js --ignoreDiagnostics && npm run posttest",
-        "clean": "rimraf \"src/**/*.js\" \"src/**/*.js.map\" \"test/**/*.js\" \"test/**/*.js.map\" \"test/compiler/testfiles/*.lua\"",
-        "release-patch": "npm version patch",
-        "release-minor": "npm version minor",
+        "pretest": "ts-node --transpile-only ./build_lualib.ts",
+        "test": "jest",
+        "lint": "npm run lint:tslint && npm run lint:prettier",
+        "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",
+        "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
         "release-major": "npm version major",
+        "release-minor": "npm version minor",
+        "release-patch": "npm version patch",
         "preversion": "npm run build && npm test",
-        "postversion": "git push && git push --tags",
-        "style-check": "tslint -p . && tslint -c ./tslint.json src/lualib/*.ts"
+        "postversion": "git push && git push --tags"
     },
     "bin": {
         "tstl": "./dist/tstl.js"
     },
-    "nyc": {
-        "all": true,
-        "extension": [
-            ".ts"
-        ],
-        "include": [
-            "src/**/*"
-        ],
-        "exclude": [
-            "src/lualib/*"
+    "prettier": {
+        "endOfLine": "lf",
+        "printWidth": 100,
+        "proseWrap": "always",
+        "tabWidth": 4,
+        "trailingComma": "all",
+        "overrides": [
+            {
+                "files": [
+                    "**/*.md",
+                    "**/*.yml",
+                    "**/.*.yml"
+                ],
+                "options": {
+                    "tabWidth": 2
+                }
+            }
         ]
     },
     "engines": {
@@ -58,16 +61,15 @@
     },
     "devDependencies": {
         "@types/glob": "^5.0.35",
+        "@types/jest": "^24.0.11",
         "@types/node": "^9.6.23",
-        "alsatian": "^2.3.0",
-        "codecov": "^3.2.0",
-        "deep-equal": "^1.0.1",
         "fengari": "^0.1.2",
-        "flatted": "^2.0.0",
         "glob": "^7.1.2",
-        "nyc": "^13.3.0",
+        "jest": "^24.5.0",
+        "jest-circus": "^24.5.0",
+        "prettier": "^1.16.4",
         "rimraf": "^2.6.3",
-        "threads": "^0.12.0",
+        "ts-jest": "^24.0.0",
         "ts-node": "^7.0.0",
         "tslint": "^5.10.0"
     }

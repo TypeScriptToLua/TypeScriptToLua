@@ -1,47 +1,47 @@
-import { Expect, SetupFixture, Teardown, Test, TestCase } from "alsatian";
 import * as fs from "fs";
 import * as path from "path";
 import { compile } from "../../src/Compiler";
 
-export class CompilerOutFileTests {
+let outFileRelPath: string;
+let outFileAbsPath: string;
 
-    private outFileRelPath: string;
-    private outFileAbsPath: string;
+beforeAll(() => {
+    outFileRelPath = "./testfiles/out_file.script";
+    outFileAbsPath = path.join(__dirname, outFileRelPath);
+});
 
-    @SetupFixture
-    public setupFixture() {
-        this.outFileRelPath = "./testfiles/out_file.script";
-        this.outFileAbsPath = path.join(__dirname, this.outFileRelPath);
-    }
+afterEach(() => {
+    fs.unlink(outFileAbsPath, err => {
+        if (err) {
+            throw err;
+        }
+    });
+});
 
-    @Test("Outfile absoulte path")
-    public outFileAbsTest() {
-        // Compile project
-        compile(["--outFile", this.outFileAbsPath, path.join(__dirname, "./testfiles/out_file.ts")]);
+test("Outfile absoulte path", () => {
+    compile([
+        "--types",
+        "node",
+        "--skipLibCheck",
+        "--outFile",
+        outFileAbsPath,
+        path.join(__dirname, "./testfiles/out_file.ts"),
+    ]);
 
-        Expect(fs.existsSync(this.outFileAbsPath)).toBe(true);
-    }
+    expect(fs.existsSync(outFileAbsPath)).toBe(true);
+});
 
-    @Test("Outfile relative path")
-    public outFileRelTest() {
-        // Compile project
-        compile([
-            "--outDir",
-            __dirname,
-            "--outFile",
-            this.outFileRelPath,
-            path.join(__dirname, "./testfiles/out_file.ts"),
-        ]);
+test("Outfile relative path", () => {
+    compile([
+        "--types",
+        "node",
+        "--skipLibCheck",
+        "--outDir",
+        __dirname,
+        "--outFile",
+        outFileRelPath,
+        path.join(__dirname, "./testfiles/out_file.ts"),
+    ]);
 
-        Expect(fs.existsSync(this.outFileAbsPath)).toBe(true);
-    }
-
-    @Teardown
-    public teardown() {
-        fs.unlink(this.outFileAbsPath, (err) => {
-            if (err) {
-                throw err;
-            }
-        });
-    }
-}
+    expect(fs.existsSync(outFileAbsPath)).toBe(true);
+});

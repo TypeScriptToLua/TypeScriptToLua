@@ -52,7 +52,7 @@ export class LuaPrinter {
         this.currentIndent = "";
     }
 
-    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): string {
+    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceBack) {
             if (luaLibFeatures === undefined) {
@@ -61,40 +61,31 @@ export class LuaPrinter {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
-        if (this.options.inlineSourceMap === true) {
-            const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
+        const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
 
-            const codeWithMap = rootSourceNode
-                // TODO is the file: part really required? and should this be handled in the printer?
-                .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+        const codeWithSourceMap = rootSourceNode
+            // TODO is the file: part really required? and should this be handled in the printer?
+            .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
 
-            const inlineSourceMap = this.printInlineSourceMap(codeWithMap.map);
+        let codeResult = codeWithSourceMap.code;
 
-            return codeWithMap.code + "\n" + inlineSourceMap;
-        } else {
-            return this.printImplementation(block, luaLibFeatures, sourceFile).toString();
+        if (this.options.inlineSourceMap) {
+            codeResult += "\n" + this.printInlineSourceMap(codeWithSourceMap.map);
         }
-    }
 
-    public printWithSourceMap(
-        block: tstl.Block,
-        luaLibFeatures?: Set<LuaLibFeature>,
-        sourceFile?: string): [string, string] {
+        if (this.options.sourceMapTraceBack) {
+            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
+            codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
+        }
 
-        const codeWithMap =
-            this.printImplementation(block, luaLibFeatures, sourceFile)
-                // TODO is the file: part really required? and should this be handled in the printer?
-                .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
-
-
-        return [codeWithMap.code, codeWithMap.map.toString()];
+        return [codeResult, codeWithSourceMap.map.toString()];
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
         const map = sourceMap.toString();
         const base64Map = Buffer.from(map).toString('base64');
 
-        return "//# sourceMappingURL=data:application/json;base64," + base64Map;
+        return `//# sourceMappingURL=data:application/json;base64,${base64Map}\n`;
     }
 
     private printStackTraceOverride(rootNode: SourceNode): string {
@@ -118,7 +109,7 @@ export class LuaPrinter {
 
         const mapString = "{" + mapItems.join(",") + "}";
 
-        return `__TS__SourceMapTraceBack("${this.sourceFile}", ${mapString});\n`;
+        return `__TS__SourceMapTraceBack("${this.sourceFile}", ${mapString});`;
     }
 
     private printImplementation(
@@ -149,28 +140,13 @@ export class LuaPrinter {
 
         this.sourceFile = path.basename(sourceFile, ".ts");
 
-        const blockNode =  this.createSourceNode(block, this.printBlock(block));
-
-        let sourceNode = this.concatNodes(header, blockNode);
-
         if (this.options.sourceMapTraceBack) {
-            const lastNode = block.statements[block.statements.length - 1];
-            if (tstl.isReturnStatement(lastNode)) {
-                const stackTraceOverride = this.printStackTraceOverride(sourceNode);
-
-                const leadingNodes = block.statements.slice(0, -1);
-
-                const leadingBlock = this.printBlock(tstl.createBlock(leadingNodes));
-                const returnNode = this.printReturnStatement(lastNode);
-
-                sourceNode = this.concatNodes(header, leadingBlock, stackTraceOverride, returnNode);
-            } else {
-                const stackTraceOverride = this.printStackTraceOverride(sourceNode);
-                sourceNode = this.concatNodes(sourceNode, stackTraceOverride);
-            }
+            header += "{#SourceMapTraceback}\n";
         }
 
-        return sourceNode;
+        const fileBlockNode =  this.createSourceNode(block, this.printBlock(block));
+
+        return this.concatNodes(header, fileBlockNode);
     }
 
     private pushIndent(): void {

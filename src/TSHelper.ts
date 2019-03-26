@@ -173,9 +173,25 @@ export class TSHelper {
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
-            const type = checker.getTypeAtLocation(node.expression);
+            const signature = checker.getResolvedSignature(node);
+            if (signature) {
+                if (TSHelper.getCustomSignatureDirectives(signature, checker).has(DecoratorKind.TupleReturn)) {
+                    return true;
+                }
 
+                // Only check function type for directive if it is declared as an interface or type alias
+                const declaration = signature.getDeclaration();
+                const isInterfaceOrAlias = declaration && declaration.parent
+                    && ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration))
+                        || ts.isTypeAliasDeclaration(declaration.parent));
+                if (!isInterfaceOrAlias) {
+                    return false;
+                }
+            }
+
+            const type = checker.getTypeAtLocation(node.expression);
             return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.TupleReturn);
+
         } else {
             return false;
         }
@@ -190,8 +206,18 @@ export class TSHelper {
             } else {
                 functionType = checker.getTypeAtLocation(declaration);
             }
+
+            // Check all overloads for directive
+            const signatures = functionType.getCallSignatures();
+            if (signatures && signatures.some(
+                s => TSHelper.getCustomSignatureDirectives(s, checker).has(DecoratorKind.TupleReturn)))
+            {
+                return true;
+            }
+
             const decorators = TSHelper.getCustomDecorators(functionType, checker);
             return decorators.has(DecoratorKind.TupleReturn);
+
         } else {
             return false;
         }
@@ -207,12 +233,12 @@ export class TSHelper {
     }
 
     public static collectCustomDecorators(
-        symbol: ts.Symbol,
+        source: ts.Symbol | ts.Signature,
         checker: ts.TypeChecker,
         decMap: Map<DecoratorKind, Decorator>
     ): void
     {
-        const comments = symbol.getDocumentationComment(checker);
+        const comments = source.getDocumentationComment(checker);
         const decorators = comments.filter(comment => comment.kind === "text")
                                .map(comment => comment.text.split("\n"))
                                .reduce((a, b) => a.concat(b), [])
@@ -231,7 +257,7 @@ export class TSHelper {
                 console.warn(`Encountered unknown decorator ${decStr}.`);
             }
         });
-        symbol.getJsDocTags().forEach(tag => {
+        source.getJsDocTags().forEach(tag => {
             if (Decorator.isValid(tag.name)) {
                 const dec = new Decorator(tag.name, tag.text ? tag.text.split(" ") : []);
                 decMap.set(dec.kind, dec);
@@ -263,6 +289,14 @@ export class TSHelper {
             }
         }
         return decMap;
+    }
+
+    public static getCustomSignatureDirectives(signature: ts.Signature, checker: ts.TypeChecker)
+        : Map<DecoratorKind, Decorator>
+    {
+        const directivesMap = new Map<DecoratorKind, Decorator>();
+        TSHelper.collectCustomDecorators(signature, checker, directivesMap);
+        return directivesMap;
     }
 
     // Search up until finding a node satisfying the callback

@@ -254,4 +254,135 @@ export class TupleTests {
         const result = util.executeLua(lua);
         Expect(result).toBe("foobar");
     }
+
+    @Test("Tuple Return on Type Alias")
+    public tupleReturnOnTypeAlias(): void {
+        const code =
+            `/** @tupleReturn */ type Fn = () => [number, number];
+            const fn: Fn = () => [1, 2];
+            const [a, b] = fn();
+            return a + b;`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe(3);
+    }
+
+    @Test("Tuple Return on Interface")
+    public tupleReturnOnInterface(): void {
+        const code =
+            `/** @tupleReturn */ interface Fn { (): [number, number]; }
+            const fn: Fn = () => [1, 2];
+            const [a, b] = fn();
+            return a + b;`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe(3);
+    }
+
+    @Test("Tuple Return on Interface Signature")
+    public tupleReturnOnInterfaceSignature(): void {
+        const code =
+            `interface Fn {
+                /** @tupleReturn */ (): [number, number];
+            }
+            const fn: Fn = () => [1, 2];
+            const [a, b] = fn();
+            return a + b;`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe(3);
+    }
+
+    @Test("Tuple Return on Overload")
+    public tupleReturnOnOverload(): void {
+        const code =
+            `function fn(a: number): number;
+            /** @tupleReturn */ function fn(a: string, b: string): [string, string];
+            function fn(a: number | string, b?: string): number | [string, string] {
+                if (typeof a === "number") {
+                    return a;
+                } else {
+                    return [a, b as string];
+                }
+            }
+            const a = fn(3);
+            const [b, c] = fn("foo", "bar");
+            return a + b + c`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("3foobar");
+    }
+
+    @Test("Tuple Return on Interface Overload")
+    public tupleReturnOnInterfaceOverload(): void {
+        const code =
+            `interface Fn {
+                (a: number): number;
+                /** @tupleReturn */ (a: string, b: string): [string, string];
+            }
+            const fn = ((a: number | string, b?: string): number | [string, string] => {
+                if (typeof a === "number") {
+                    return a;
+                } else {
+                    return [a, b as string];
+                }
+            }) as Fn;
+            const a = fn(3);
+            const [b, c] = fn("foo", "bar");
+            return a + b + c`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("3foobar");
+    }
+
+    @Test("Tuple Return on Interface Method Overload")
+    public tupleReturnOnInterfaceMethodOverload(): void {
+        const code =
+            `interface Foo {
+                foo(a: number): number;
+                /** @tupleReturn */ foo(a: string, b: string): [string, string];
+            }
+            const bar = ({
+                foo: (a: number | string, b?: string): number | [string, string] => {
+                    if (typeof a === "number") {
+                        return a;
+                    } else {
+                        return [a, b as string];
+                    }
+                }
+            }) as Foo;
+            const a = bar.foo(3);
+            const [b, c] = bar.foo("foo", "bar");
+            return a + b + c`;
+        const lua = util.transpileString(code);
+        Expect(lua).not.toContain("unpack");
+        const result = util.executeLua(lua);
+        Expect(result).toBe("3foobar");
+    }
+
+    @Test("Tuple Return vs Non-Tuple Return Overload")
+    public tupleReturnVsNonTupleReturnOverload(): void {
+        const luaHeader =
+            `function fn(a, b)
+                if type(a) == "number" then
+                    return {a, a + 1}
+                else
+                    return a, b
+                end
+            end`;
+        const tsHeader =
+            `declare function fn(this: void, a: number): [number, number];
+            /** @tupleReturn */ declare function fn(this: void, a: string, b: string): [string, string];`;
+        const code =
+            `const [a, b] = fn(3);
+            const [c, d] = fn("foo", "bar");
+            return (a + b) + c + d;`;
+        const result = util.transpileAndExecute(code, undefined, luaHeader, tsHeader);
+        Expect(result).toBe("7foobar");
+    }
 }

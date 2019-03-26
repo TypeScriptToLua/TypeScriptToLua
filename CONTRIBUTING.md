@@ -31,7 +31,7 @@ Due to the time required to run all tests, it is impractical to run every test w
 
 - Use `npm test name` to run tests that match a file name pattern
 
-- Use `npm test -- --watchAll [name]` to start tests and rerun them on change
+- Use `npm test -- --watch [name]` to start tests and rerun them on change
 
 - Check out `Watch Usage` in the watching interface to get information about filtering tests without restarting CLI
 

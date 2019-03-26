@@ -6,5 +6,5 @@
         "noEmit": true,
         "module": "commonjs"
     },
-    "exclude": ["translation/ts", "compiler/projects", "compiler/testfiles"]
+    "exclude": ["translation/transformation", "compiler/projects", "compiler/testfiles"]
 }

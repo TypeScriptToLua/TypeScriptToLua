@@ -38,15 +38,15 @@ Changelog can be found in [CHANGELOG.md](https://github.com/TypeScriptToLua/Type
 `tstl -p path/to/tsconfig.json --watch`
 
 **Example tsconfig.json**
-```
+```json
 {
+    "extends": "typescript-to-lua/tsconfig-lua.json",
     "compilerOptions": {
-        "noImplicitAny" : true,
-        "noImplicitThis" : true,
-        "alwaysStrict" : true,
-        "strictNullChecks": true
+        "strict": true
     },
-    "luaTarget": "JIT"
+    "tstl": {
+      "luaTarget": "JIT"
+    }
 }
 ```
 

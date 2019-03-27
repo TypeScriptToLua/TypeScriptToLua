@@ -10,6 +10,7 @@
         "transpiler"
     ],
     "files": [
+        "tsconfig-lua.json",
         "dist/**/*.js",
         "dist/**/*.lua",
         "dist/**/*.ts"

@@ -52,7 +52,7 @@ const optionDeclarations: {[key: string]: CLIOption<any>} = {
         describe: "Disables hoisting.",
         type: "boolean",
     } as CLIOption<boolean>,
-    sourceMapTraceBack: {
+    sourceMapTraceback: {
         default: false,
         describe: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",

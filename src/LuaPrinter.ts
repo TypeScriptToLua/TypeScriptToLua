@@ -52,7 +52,7 @@ export class LuaPrinter {
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
-        if (this.options.sourceMapTraceBack) {
+        if (this.options.sourceMapTraceback) {
             if (luaLibFeatures === undefined) {
                 luaLibFeatures = new Set();
             }
@@ -71,7 +71,7 @@ export class LuaPrinter {
             codeResult += "\n" + this.printInlineSourceMap(codeWithSourceMap.map);
         }
 
-        if (this.options.sourceMapTraceBack) {
+        if (this.options.sourceMapTraceback) {
             const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
             codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
         }
@@ -138,7 +138,7 @@ export class LuaPrinter {
 
         this.sourceFile = path.basename(sourceFile, ".ts");
 
-        if (this.options.sourceMapTraceBack) {
+        if (this.options.sourceMapTraceback) {
             header += "{#SourceMapTraceback}\n";
         }
 

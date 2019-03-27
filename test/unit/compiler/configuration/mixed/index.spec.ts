@@ -32,7 +32,7 @@ test("tsconfig.json mixed with cmd line args", () => {
             noHeader: false,
             project: tsConfigPath,
             noHoisting: false,
-            sourceMapTraceBack: false,
+            sourceMapTraceback: false,
         } as CompilerOptions);
     } else {
         expect(parsedArgs.isValid).toBeTruthy();

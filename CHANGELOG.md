@@ -2,14 +2,14 @@
 
 ## 0.16.0
 * **BREAKING CHANGE:** All functions now take a `self` parameter. This means that without further action calls to declaration functions might be given an extra argument.
-    * To remove the self parameter from a single function add `this: void` to its declaration:     
+    * To remove the self parameter from a single function add `this: void` to its declaration:
         ```declare function foo(this: void, ...)```
     * To remove the self parameter from all methods or functions in a class/interface/namespace add `/** @noSelf */`:
         ```/** @noSelf */ interface Foo {```
     * To remove the self parameter from all functions in a file, add `/** @noSelfInFile */` at the top.
 
 ---
-    
+
 * **BREAKING CHANGE:** Directive `/** @luaIterator */` should now be put on types instead of on the functions returning them.
 
 ---
@@ -82,14 +82,14 @@
 * Fixed several bugs with functions and context parameters.
 
 ## 0.13.0
-* Reworked how functions are transpiled, see https://github.com/Perryvw/TypescriptToLua/wiki/Differences-Between-Functions-and-Methods
+* Reworked how functions are transpiled, see https://github.com/TypeScriptToLua/TypescriptToLua/wiki/Differences-Between-Functions-and-Methods
 * Improved handling of types extending Array.
 * Fixed several bugs with classes.
 * Fixed issues with inherited accessors.
 
 ## 0.12.0
 * Added detection of types extending Array.
-* Added new JSDoc-style compiler directives, deprecated the old `!` decorators, see https://github.com/Perryvw/TypescriptToLua/wiki/Compiler-Directives
+* Added new JSDoc-style compiler directives, deprecated the old `!` decorators, see https://github.com/TypeScriptToLua/TypescriptToLua/wiki/Compiler-Directives
 * Fixed bug with constructor default values.
 * The Lualib is no longer included when not used.
 * Fixed bug with unpack in LuaJIT.

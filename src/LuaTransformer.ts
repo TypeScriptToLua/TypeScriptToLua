@@ -3888,6 +3888,10 @@ export class LuaTransformer {
                     parameters,
                     node
                 );
+            case "flat":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFlat, node, caller, ...params);
+            case "flatMap":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFlatMap, node, caller, ...params);
             default:
                 throw TSTLErrors.UnsupportedProperty("array", expressionName as string, node);
         }

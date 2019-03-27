@@ -378,6 +378,39 @@ test.each([
 });
 
 test.each([
+    { array: [1, [2, 3], 4], expected: [1, 2, 3, 4] },
+    { array: [1, [2, 3], 4], depth: 0, expected: [1, [2, 3], 4] },
+    { array: [1, [[2], [3]], 4], expected: [1, [2], [3], 4] },
+    { array: [1, [[[2], [3]]], 4], depth: Infinity, expected: [1, 2, 3, 4] },
+])("array.flat (%p)", ({ array, depth, expected }) => {
+    // TODO: Remove once `Infinity` would be implemented
+    const luaDepth = depth === Infinity ? "1 / 0" : depth;
+    const result = util.transpileAndExecute(`
+        return JSONStringify(${JSON.stringify(array)}.flat(${luaDepth}))
+    `);
+
+    expect(JSON.parse(result)).toEqual(expected);
+});
+
+test.each([
+    { array: [1, [2, 3], [4]], map: <T>(value: T) => value },
+    { array: [1, 2, 3], map: (v: number) => v * 2 },
+    { array: [1, 2, 3], map: (v: number) => [v, v * 2] },
+    { array: [1, 2, 3], map: (v: number) => [v, [v]] },
+    { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i] },
+])("array.flatMap (%p)", ({ array, map }) => {
+    const result = util.transpileAndExecute(`
+        const array = ${JSON.stringify(array)};
+        const result = array.flatMap(${map.toString()});
+        return JSONStringify(result);
+    `);
+
+    // TODO(node 12): array.flatMap(map)
+    const expected = [].concat(...(array as any[]).map(map));
+    expect(JSON.parse(result)).toEqual(expected);
+});
+
+test.each([
     { condition: "true", lhs: "4", rhs: "5", expected: 4 },
     { condition: "false", lhs: "4", rhs: "5", expected: 5 },
     { condition: "3", lhs: "4", rhs: "5", expected: 4 },

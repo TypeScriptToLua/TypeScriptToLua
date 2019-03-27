@@ -29,6 +29,7 @@ export enum LuaLibFeature {
     NewIndex = "NewIndex",
     ObjectAssign = "ObjectAssign",
     ObjectEntries = "ObjectEntries",
+    ObjectFromEntries = "ObjectFromEntries",
     ObjectKeys = "ObjectKeys",
     ObjectValues = "ObjectValues",
     Set = "Set",
@@ -43,6 +44,7 @@ export enum LuaLibFeature {
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
     Iterator: [LuaLibFeature.Symbol],
+    ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],

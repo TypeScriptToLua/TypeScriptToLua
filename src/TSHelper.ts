@@ -25,6 +25,8 @@ const defaultArrayCallMethodNames = new Set<string>([
     "slice",
     "splice",
     "join",
+    "flat",
+    "flatMap",
 ]);
 
 const defaultArrayPropertyNames = new Set<string>([

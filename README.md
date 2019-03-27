@@ -40,8 +40,9 @@ Changelog can be found in [CHANGELOG.md](https://github.com/TypeScriptToLua/Type
 **Example tsconfig.json**
 ```json
 {
-    "extends": "typescript-to-lua/tsconfig-lua.json",
     "compilerOptions": {
+        "target": "esnext",
+        "lib": ["es2015", "es2016", "es2017", "es2018", "esnext"],
         "strict": true
     },
     "tstl": {

@@ -3707,6 +3707,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...parameters);
             case "entries":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectEntries, expression, ...parameters);
+            case "fromEntries":
+                return this.transformLuaLibFunction(LuaLibFeature.ObjectFromEntries, expression, ...parameters);
             case "keys":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectKeys, expression, ...parameters);
             case "values":

@@ -441,7 +441,7 @@ test.each([
     { initial: "{}", parameters: "{a: 3}", expected: { a: 3 } },
     { initial: "{a: 3}", parameters: "{a: 5}", expected: { a: 5 } },
     { initial: "{a: 3}", parameters: "{b: 5},{c: 7}", expected: { a: 3, b: 5, c: 7 } },
-])("Object.Assign (%p)", ({ initial, parameters, expected }) => {
+])("Object.assign (%p)", ({ initial, parameters, expected }) => {
     const jsonResult = util.transpileAndExecute(`
         return JSONStringify(Object.assign(${initial},${parameters}));
     `);
@@ -516,4 +516,41 @@ test.each([
             expect(foundValues.indexOf(key) >= 0).toBeTruthy();
         }
     }
+});
+
+// https://github.com/Microsoft/TypeScript/pull/26149
+const objectFromEntriesDeclaration = `
+    interface ObjectConstructor {
+        fromEntries<T>(entries: ReadonlyArray<[string, T]> | Iterable<[string, T]>): Record<string, T>;
+        fromEntries(entries: ReadonlyArray<[string, any]> | Iterable<[string, any]>): Record<string, any>;
+    }
+`;
+
+test.each([
+    { entries: [], expected: [] },
+    { entries: [["a", 1], ["b", 2]], expected: { a: 1, b: 2 } },
+    { entries: [["a", 1], ["a", 2]], expected: { a: 2 } },
+])("Object.fromEntries (%p)", ({ entries, expected }) => {
+    const result = util.transpileAndExecute(
+        `const obj = Object.fromEntries(${JSON.stringify(entries)});
+        return JSONStringify(obj);`,
+        undefined,
+        undefined,
+        objectFromEntriesDeclaration,
+    );
+
+    expect(JSON.parse(result)).toEqual(expected);
+});
+
+test("Object.fromEntries (Map)", () => {
+    const result = util.transpileAndExecute(
+        `const map = new Map([["foo", "bar"]]);
+        const obj = Object.fromEntries(map);
+        return JSONStringify(obj);`,
+        undefined,
+        undefined,
+        objectFromEntriesDeclaration,
+    );
+
+    expect(JSON.parse(result)).toEqual({ foo: "bar" });
 });

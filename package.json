@@ -34,25 +34,6 @@
     "bin": {
         "tstl": "./dist/tstl.js"
     },
-    "prettier": {
-        "endOfLine": "lf",
-        "printWidth": 100,
-        "proseWrap": "always",
-        "tabWidth": 4,
-        "trailingComma": "all",
-        "overrides": [
-            {
-                "files": [
-                    "**/*.md",
-                    "**/*.yml",
-                    "**/.*.yml"
-                ],
-                "options": {
-                    "tabWidth": 2
-                }
-            }
-        ]
-    },
     "engines": {
         "node": ">=8.5.0"
     },

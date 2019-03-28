@@ -12,17 +12,16 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[lin
     _G["__TS__sourcemap"] = _G["__TS__sourcemap"] || {};
     _G["__TS__sourcemap"][fileName] = sourceMap;
 
-    if (_G.__originalTraceback === undefined) {
-        _G.__originalTraceback = debug.traceback;
+    if (_G.__TS__originalTraceback === undefined) {
+        _G.__TS__originalTraceback = debug.traceback;
         debug.traceback = (thread, message, level) => {
             const trace = _G["__TS__originalTraceback"](thread, message, level);
-
             const [result, occurrences] = string.gsub(
                 trace,
-                "([^\\]+).lua:(%d+)",
+                "(%S+).lua:(%d+)",
                 (file, line) => {
-                    if (_G["__TS__sourcemap"][file] && _G["__TS__sourcemap"][file][line]) {
-                        return `${file}.ts:${_G["__TS__sourcemap"][file][line]}`;
+                    if (_G["__TS__sourcemap"][file + ".lua"] && _G["__TS__sourcemap"][file + ".lua"][line]) {
+                        return `${file}.ts:${_G["__TS__sourcemap"][file + ".lua"][line]}`;
                     }
                     return `${file}.lua:${line}`;
                 }

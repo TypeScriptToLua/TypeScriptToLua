@@ -107,7 +107,7 @@ export class LuaPrinter {
 
         const mapString = "{" + mapItems.join(",") + "}";
 
-        return `__TS__SourceMapTraceBack("${this.sourceFile}", ${mapString});`;
+        return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
     private printImplementation(
@@ -136,7 +136,7 @@ export class LuaPrinter {
             }
         }
 
-        this.sourceFile = path.basename(sourceFile, ".ts");
+        this.sourceFile = path.basename(sourceFile);
 
         if (this.options.sourceMapTraceback) {
             header += "{#SourceMapTraceback}\n";

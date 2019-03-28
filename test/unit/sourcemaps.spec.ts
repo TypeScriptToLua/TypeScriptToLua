@@ -24,6 +24,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
     const sourceMap = JSON.parse(sourceMapJson);
 
     // Yes, this is the filename the test VM gives this file...
+    console.log(sourceMap);
     expect(sourceMap[`[string "--\r..."]`]).toBeDefined();
 
     expectCorrectMapping(typeScriptSource, transpiledLua, sourceMap, [

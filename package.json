@@ -23,7 +23,7 @@
         "pretest": "ts-node --transpile-only ./build_lualib.ts",
         "test": "jest",
         "lint": "npm run lint:tslint && npm run lint:prettier",
-        "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",
+        "lint:prettier": "prettier --check **/*.{js,ts,yml,json} || (echo 'Run `npm run lint:prettier -- --write` or `yarn lint:prettier --write` to fix it.' && exit 1)",
         "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
         "release-major": "npm version major",
         "release-minor": "npm version minor",

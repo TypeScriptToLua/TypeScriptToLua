@@ -28,7 +28,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
     expect(sourceMapFiles.length).toBe(1);
     expect(sourceMap[sourceMapFiles[0]]).toBeDefined();
 
-    expectCorrectMapping(typeScriptSource, transpiledLua, sourceMap, [
+    expectCorrectMapping(typeScriptSource, transpiledLua, sourceMap[sourceMapFiles[0]], [
         ["function abc()", "abc = function("],
         ["return \"foo\"", "return \"foo\""]
     ]);
@@ -45,7 +45,7 @@ function expectCorrectMapping(
     for (const [tsPattern, luaPattern] of patterns) {
         const originalLine = lineOf(original, "function abc()") + 1; // Add 1 for util-added header
         const luaLine = lineOf(lua, "abc = function(");
-        const mappedLuaLine = sourceMap[`[string "--\r..."]`][luaLine.toString()];
+        const mappedLuaLine = sourceMap[luaLine.toString()];
 
         expect(mappedLuaLine).toBe(originalLine);
     }

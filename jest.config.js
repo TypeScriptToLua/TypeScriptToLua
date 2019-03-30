@@ -1,6 +1,6 @@
 const isCI = require("is-ci");
 
-/** @type {Partial<import('@jest/types').Config.DefaultOptions>} */
+/** @type {Partial<import("@jest/types").Config.DefaultOptions>} */
 module.exports = {
     testMatch: ["**/test/**/*.spec.ts"],
     collectCoverageFrom: ["<rootDir>/src/**/*", "!<rootDir>/src/lualib/**/*"],

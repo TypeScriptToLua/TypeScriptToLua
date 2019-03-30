@@ -1851,7 +1851,10 @@ export class LuaTransformer {
     public transformDoStatement(statement: ts.DoStatement): tstl.RepeatStatement {
         return tstl.createRepeatStatement(
             tstl.createBlock(this.transformLoopBody(statement)),
-            tstl.createUnaryExpression(this.transformExpression(statement.expression), tstl.SyntaxKind.NotOperator),
+            tstl.createUnaryExpression(
+                tstl.createParenthesizedExpression(this.transformExpression(statement.expression)),
+                tstl.SyntaxKind.NotOperator
+            ),
             statement
         );
     }
@@ -2204,7 +2207,10 @@ export class LuaTransformer {
 
             result.push(catchAssignment);
 
-            const notTryResult = tstl.createUnaryExpression(tryResult, tstl.SyntaxKind.NotOperator);
+            const notTryResult = tstl.createUnaryExpression(
+                tstl.createParenthesizedExpression(tryResult),
+                tstl.SyntaxKind.NotOperator
+            );
             result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
 
         } else {
@@ -2859,10 +2865,10 @@ export class LuaTransformer {
         const val1Function = this.wrapInFunctionCall(val1);
         const val2Function = this.wrapInFunctionCall(val2);
 
-        // ((condition and (() => v1)) or (() => v2))()
+        // (condition and (() => v1) or (() => v2))()
         const conditionAnd = tstl.createBinaryExpression(condition, val1Function, tstl.SyntaxKind.AndOperator);
         const orExpression = tstl.createBinaryExpression(conditionAnd, val2Function, tstl.SyntaxKind.OrOperator);
-        return tstl.createCallExpression(orExpression, [], expression);
+        return tstl.createCallExpression(tstl.createParenthesizedExpression(orExpression), [], expression);
     }
 
     public transformConditionalExpression(expression: ts.ConditionalExpression): tstl.Expression {
@@ -2874,7 +2880,7 @@ export class LuaTransformer {
         const val1 = this.transformExpression(expression.whenTrue);
         const val2 = this.transformExpression(expression.whenFalse);
 
-        // (condition and v1) or v2
+        // condition and v1 or v2
         const conditionAnd = tstl.createBinaryExpression(condition, val1, tstl.SyntaxKind.AndOperator);
         return tstl.createBinaryExpression(
             conditionAnd,
@@ -3230,8 +3236,10 @@ export class LuaTransformer {
                 parameters = this.transformArguments(node.arguments, signature);
                 const rawGetIdentifier = tstl.createIdentifier("rawget");
                 const rawGetCall = tstl.createCallExpression(rawGetIdentifier, [expr, ...parameters]);
-                return tstl.createBinaryExpression(
-                    rawGetCall, tstl.createNilLiteral(), tstl.SyntaxKind.InequalityOperator, node);
+                return tstl.createParenthesizedExpression(
+                    tstl.createBinaryExpression(
+                        rawGetCall, tstl.createNilLiteral(), tstl.SyntaxKind.InequalityOperator, node)
+                    );
             } else {
                 const parameters = this.transformArguments(node.arguments, signature);
                 const table = this.transformExpression(node.expression.expression);
@@ -3567,20 +3575,24 @@ export class LuaTransformer {
                     node.arguments.length === 1
                         ? this.createStringCall("find", node, caller, params[0])
                         : this.createStringCall(
-                              "find", node, caller, params[0],
-                              this.expressionPlusOne(params[1]),
-                              tstl.createBooleanLiteral(true)
+                                "find", node, caller, params[0],
+                                this.expressionPlusOne(params[1]),
+                                tstl.createBooleanLiteral(true)
                             );
 
-                return tstl.createBinaryExpression(
+                return tstl.createParenthesizedExpression(
                     tstl.createBinaryExpression(
-                        stringExpression,
-                        tstl.createNumericLiteral(0),
-                        tstl.SyntaxKind.OrOperator
-                    ),
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.SubractionOperator,
-                    node
+                        tstl.createParenthesizedExpression(
+                            tstl.createBinaryExpression(
+                                stringExpression,
+                                tstl.createNumericLiteral(0),
+                                tstl.SyntaxKind.OrOperator
+                            )
+                        ),
+                        tstl.createNumericLiteral(1),
+                        tstl.SyntaxKind.SubractionOperator,
+                        node
+                    )
                 );
             case "substr":
                 if (node.arguments.length === 1) {
@@ -3589,7 +3601,11 @@ export class LuaTransformer {
                 } else {
                     const arg1 = params[0];
                     const arg2 = params[1];
-                    const sumArg = tstl.createBinaryExpression(arg1, arg2, tstl.SyntaxKind.AdditionOperator);
+                    const sumArg = tstl.createBinaryExpression(
+                        tstl.createParenthesizedExpression(arg1),
+                        arg2,
+                        tstl.SyntaxKind.AdditionOperator
+                    );
                     return this.createStringCall("sub", node, caller, this.expressionPlusOne(arg1), sumArg);
                 }
             case "substring":
@@ -3951,11 +3967,13 @@ export class LuaTransformer {
         const condition = tstl.createBinaryExpression(typeCall, tableString, tstl.SyntaxKind.EqualityOperator);
         const andClause = tstl.createBinaryExpression(condition, objectString, tstl.SyntaxKind.AndOperator);
 
-        return tstl.createBinaryExpression(
-            andClause,
-            tstl.cloneNode(typeCall),
-            tstl.SyntaxKind.OrOperator,
-            node
+        return tstl.createParenthesizedExpression(
+            tstl.createBinaryExpression(
+                andClause,
+                tstl.cloneNode(typeCall),
+                tstl.SyntaxKind.OrOperator,
+                node
+            )
         );
     }
 
@@ -3994,24 +4012,29 @@ export class LuaTransformer {
         return this.createSelfIdentifier(thisKeyword);
     }
 
-    public transformTemplateExpression(expression: ts.TemplateExpression): tstl.BinaryExpression {
-        const parts: tstl.Expression[] = [tstl.createStringLiteral(tsHelper.escapeString(expression.head.text))];
+    public transformTemplateExpression(expression: ts.TemplateExpression): tstl.Expression {
+        const parts: tstl.Expression[] = [];
+        const head = tsHelper.escapeString(expression.head.text);
+        if (head.length > 0) {
+            parts.push(tstl.createStringLiteral(head, expression.head));
+        }
         expression.templateSpans.forEach(span => {
             const expr = this.transformExpression(span.expression);
-            const text = tstl.createStringLiteral(tsHelper.escapeString(span.literal.text));
+            parts.push(tstl.createCallExpression(tstl.createIdentifier("tostring"), [expr]));
 
-            // tostring(expr).."text"
-            parts.push(tstl.createBinaryExpression(
-                tstl.createCallExpression(tstl.createIdentifier("tostring"), [expr]),
-                text,
-                tstl.SyntaxKind.ConcatOperator)
-            );
+            const text = tsHelper.escapeString(span.literal.text);
+            if (text.length > 0) {
+                parts.push(tstl.createStringLiteral(text, span.literal));
+            }
         });
+        if (parts.length === 1) {
+            return parts[0];
+        }
         return parts.reduce((prev, current) => tstl.createBinaryExpression(
             prev,
             current,
             tstl.SyntaxKind.ConcatOperator)
-        ) as tstl.BinaryExpression;
+        );
     }
 
     public transformPropertyName(propertyName: ts.PropertyName): tstl.Expression {
@@ -4401,6 +4424,9 @@ export class LuaTransformer {
     }
 
     private expressionPlusOne(expression: tstl.Expression): tstl.BinaryExpression {
+        if (tstl.isBinaryExpression(expression)) {
+            expression = tstl.createParenthesizedExpression(expression);
+        }
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 

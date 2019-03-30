@@ -337,28 +337,15 @@ export class LuaPrinter {
     }
 
     private printUnaryExpression(expression: tstl.UnaryExpression): string {
-        const operand = this.needsParentheses(expression.operand)
-            ? `(${this.printExpression(expression.operand)})`
-            : this.printExpression(expression.operand);
+        const operand = this.printExpression(expression.operand);
         return `${this.printOperator(expression.operator)}${operand}`;
     }
 
     private printBinaryExpression(expression: tstl.BinaryExpression): string {
-        const left = this.needsParentheses(expression.left)
-            ? `(${this.printExpression(expression.left)})`
-            : this.printExpression(expression.left);
-
-        const right = this.needsParentheses(expression.right)
-            ? `(${this.printExpression(expression.right)})`
-            : this.printExpression(expression.right);
-
+        const left = this.printExpression(expression.left);
+        const right = this.printExpression(expression.right);
         const operator = this.printOperator(expression.operator);
         return `${left} ${operator} ${right}`;
-    }
-
-    private needsParentheses(expression: tstl.Expression): boolean {
-        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression)
-            || tstl.isFunctionExpression(expression);
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): string {
@@ -367,9 +354,7 @@ export class LuaPrinter {
 
     private printCallExpression(expression: tstl.CallExpression): string {
         const params = expression.params ? expression.params.map(e => this.printExpression(e)).join(", ") : "";
-        return this.needsParentheses(expression.expression)
-            ? `(${this.printExpression(expression.expression)})(${params})`
-            : `${this.printExpression(expression.expression)}(${params})`;
+        return `${this.printExpression(expression.expression)}(${params})`;
     }
 
     private printMethodCallExpression(expression: tstl.MethodCallExpression): string {

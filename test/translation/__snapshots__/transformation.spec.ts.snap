@@ -14,7 +14,7 @@ local backQuoteInTemplateString = \\"\` \` \`\\";
 local escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\' \`\\";
 local escapedCharsInDoubleQUotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\'\\";
 local escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\' \`\\";
-local nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. (tostring(\\"Level 1: \\\\n\\\\t\\\\t \\" .. (tostring(\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. (tostring(\\"Last level \\\\n --\\") .. \\" \\\\n --\\")) .. \\" \\\\n --\\")) .. \\" \\\\n --\\");"
+local nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. tostring(\\"Level 1: \\\\n\\\\t\\\\t \\" .. tostring(\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. tostring(\\"Last level \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\") .. \\" \\\\n --\\";"
 `;
 
 exports[`Transformation (classExtension1) 1`] = `
@@ -94,7 +94,7 @@ exports[`Transformation (continueNested) 1`] = `
     local i = 0;
     while i < 5 do
         do
-            if (i % 2) == 0 then
+            if i % 2 == 0 then
                 goto __continue1;
             end
             do
@@ -121,7 +121,7 @@ exports[`Transformation (continueNestedConcurrent) 1`] = `
     local i = 0;
     while i < 5 do
         do
-            if (i % 2) == 0 then
+            if i % 2 == 0 then
                 goto __continue1;
             end
             do
@@ -560,7 +560,7 @@ exports[`Transformation (tryCatch) 1`] = `
     local ____TS_try, er = pcall(function()
         local a = 42;
     end);
-    if not ____TS_try then
+    if not (____TS_try) then
         local b = \\"fail\\";
     end
 end"
@@ -571,7 +571,7 @@ exports[`Transformation (tryCatchFinally) 1`] = `
     local ____TS_try, er = pcall(function()
         local a = 42;
     end);
-    if not ____TS_try then
+    if not (____TS_try) then
         local b = \\"fail\\";
     end
     do

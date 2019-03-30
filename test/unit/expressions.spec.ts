@@ -177,10 +177,10 @@ test.each(["a>>b", "a>>=b"])("Unsupported bitop 5.3 (%p)", input => {
 
 test.each([
     { input: "1+1", lua: "1 + 1;" },
-    { input: "-1+1", lua: "(-1) + 1;" },
-    { input: "1*30+4", lua: "(1 * 30) + 4;" },
+    { input: "-1+1", lua: "-1 + 1;" },
+    { input: "1*30+4", lua: "1 * 30 + 4;" },
     { input: "1*(3+4)", lua: "1 * (3 + 4);" },
-    { input: "1*(3+4*2)", lua: "1 * (3 + (4 * 2));" },
+    { input: "1*(3+4*2)", lua: "1 * (3 + 4 * 2);" },
 ])("Binary expressions ordering parentheses (%p)", ({ input, lua }) => {
     expect(util.transpileString(input)).toBe(lua);
 });

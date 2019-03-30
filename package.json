@@ -21,7 +21,7 @@
         "build-lualib": "ts-node ./build_lualib.ts",
         "pretest": "ts-node --transpile-only ./build_lualib.ts",
         "test": "jest",
-        "lint": "npm run lint:tslint && npm run lint:prettier",
+        "lint": "npm run lint:tslint",
         "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",
         "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
         "release-major": "npm version major",

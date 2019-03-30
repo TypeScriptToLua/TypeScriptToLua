@@ -141,21 +141,23 @@ export class LuaTranspiler {
         // Transform AST
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        return this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
+        const [code, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
+        return code;
     }
 
     public transpileSourceFileWithSourceMap(sourceFile: ts.SourceFile): [string, string] {
         // Transform AST
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        return this.luaPrinter.printWithSourceMap(luaAST, lualibFeatureSet, sourceFile.fileName);
+        return this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
     }
 
     public transpileSourceFileKeepAST(sourceFile: ts.SourceFile): [tstl.Block, string] {
         // Transform AST
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        return [luaAST, this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName)];
+        const [code, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
+        return [luaAST, code];
     }
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {

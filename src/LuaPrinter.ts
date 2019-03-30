@@ -50,50 +50,45 @@ export class LuaPrinter {
         this.currentIndent = "";
     }
 
-    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): string {
-        if (this.options.inlineSourceMap === true) {
-            const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
-
-            const codeWithMap = rootSourceNode
-                // TODO is the file: part really required? and should this be handled in the printer?
-                .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
-
-            let inlineSourceMap = this.printInlineSourceMap(codeWithMap.map);
-
-            // TODO: Put this behind a compiler option?
-            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
-            inlineSourceMap = stackTraceOverride + inlineSourceMap;
-
-            return codeWithMap.code + "\n" + inlineSourceMap;
-        } else {
-            return this.printImplementation(block, luaLibFeatures, sourceFile).toString();
+    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): [string, string] {
+        // Add traceback lualib if sourcemap traceback option is enabled
+        if (this.options.sourceMapTraceback) {
+            if (luaLibFeatures === undefined) {
+                luaLibFeatures = new Set();
+            }
+            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
-    }
 
-    public printWithSourceMap(
-        block: tstl.Block,
-        luaLibFeatures?: Set<LuaLibFeature>,
-        sourceFile?: string): [string, string] {
+        const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
 
-        const codeWithMap =
-            this.printImplementation(block, luaLibFeatures, sourceFile)
-                // TODO is the file: part really required? and should this be handled in the printer?
-                .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+        const codeWithSourceMap = rootSourceNode
+            // TODO is the file: part really required? and should this be handled in the printer?
+            .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
 
+        let codeResult = codeWithSourceMap.code;
 
-        return [codeWithMap.code, codeWithMap.map.toString()];
+        if (this.options.inlineSourceMap) {
+            codeResult += "\n" + this.printInlineSourceMap(codeWithSourceMap.map);
+        }
+
+        if (this.options.sourceMapTraceback) {
+            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
+            codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
+        }
+
+        return [codeResult, codeWithSourceMap.map.toString()];
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
         const map = sourceMap.toString();
         const base64Map = Buffer.from(map).toString('base64');
 
-        return "//# sourceMappingURL=data:application/json;base64," + base64Map;
+        return `//# sourceMappingURL=data:application/json;base64,${base64Map}\n`;
     }
 
     private printStackTraceOverride(rootNode: SourceNode): string {
         let line = 1;
-        const map = {};
+        const map: {[line: number]: number} = {};
         rootNode.walk((chunk, mappedPosition) => {
             if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
                 if (map[line] === undefined) {
@@ -104,8 +99,15 @@ export class LuaPrinter {
             }
             line += chunk.split("\n").length - 1;
         });
-        console.log(map);
-        return "";
+
+        const mapItems = [];
+        for (const lineNr in map) {
+            mapItems.push(`["${lineNr}"] = ${map[lineNr]}`);
+        }
+
+        const mapString = "{" + mapItems.join(",") + "}";
+
+        return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
     private printImplementation(
@@ -136,9 +138,13 @@ export class LuaPrinter {
 
         this.sourceFile = path.basename(sourceFile);
 
-        const blockNode =  this.createSourceNode(block, this.printBlock(block));
+        if (this.options.sourceMapTraceback) {
+            header += "{#SourceMapTraceback}\n";
+        }
 
-        return this.concatNodes(header, blockNode);
+        const fileBlockNode =  this.createSourceNode(block, this.printBlock(block));
+
+        return this.concatNodes(header, fileBlockNode);
     }
 
     private pushIndent(): void {

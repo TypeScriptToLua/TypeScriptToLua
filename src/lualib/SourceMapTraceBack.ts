@@ -2,19 +2,32 @@ declare const debug: {
     traceback: (this: void, ...args: any[]) => string;
 };
 
-declare function getfenv(obj: any): {[key: string]: any};
+type TraceBackFunction = (this: void, thread?: any, message?: string, level?: number) => string;
 
-function __TS__SourceMapTraceBack(fileName: string, sourceMap: {[line: number]: number}): void {
-    getfenv(1)["traceback"] = getfenv(1)["traceback"] || {};
-    getfenv(1)["traceback"][fileName] = getfenv(1)["traceback"][fileName] || debug.traceback;
-    debug.traceback = (...args: any[]) => {
-        let trace = getfenv(1)["traceback"][fileName](...args);
+declare const _G: {[key: string]: any} & {__TS__originalTraceback: TraceBackFunction};
 
-        const matches = string.gmatch(trace, `${fileName}.lua:(%d+)`);
-        for (const match in matches) {
-            trace = string.gsub(trace, `${fileName}.lua:${match}`, `${fileName}.ts:${sourceMap[match] || "??"}`);
-        }
+// TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
+// get some metadata about transpilation.
+function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[line: number]: number}): void {
+    _G["__TS__sourcemap"] = _G["__TS__sourcemap"] || {};
+    _G["__TS__sourcemap"][fileName] = sourceMap;
 
-        return trace;
-    };
+    if (_G.__TS__originalTraceback === undefined) {
+        _G.__TS__originalTraceback = debug.traceback;
+        debug.traceback = (thread, message, level) => {
+            const trace = _G["__TS__originalTraceback"](thread, message, level);
+            const [result, occurrences] = string.gsub(
+                trace,
+                "(%S+).lua:(%d+)",
+                (file, line) => {
+                    if (_G["__TS__sourcemap"][file + ".lua"] && _G["__TS__sourcemap"][file + ".lua"][line]) {
+                        return `${file}.ts:${_G["__TS__sourcemap"][file + ".lua"][line]}`;
+                    }
+                    return `${file}.lua:${line}`;
+                }
+            );
+
+            return result;
+        };
+    }
 }

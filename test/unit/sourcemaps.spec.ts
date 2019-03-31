@@ -4,8 +4,8 @@ import { SourceMapConsumer, Position } from "source-map";
 
 test.each([
     {
-        typeScriptSource: 
-            `const abc = "foo";
+        typeScriptSource: `
+            const abc = "foo";
             const def = "bar";
             
             const xyz = "baz";`,
@@ -17,11 +17,11 @@ test.each([
             { luaPattern: `"foo"`, typeScriptPattern: `"foo"` },
             { luaPattern: `"bar"`, typeScriptPattern: `"bar"` },
             { luaPattern: `"baz"`, typeScriptPattern: `"baz"` },
-        ]
+        ],
     },
     {
-        typeScriptSource: 
-            `function abc() {
+        typeScriptSource: `
+            function abc() {
                 return def();
             }
             function def() {
@@ -33,10 +33,9 @@ test.each([
             { luaPattern: "abc = function(", typeScriptPattern: "abc() {" },
             { luaPattern: "def = function(", typeScriptPattern: "def() {" },
             { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
-        ]
+        ],
     },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
-
     // Act
     const { lua, sourceMap } = util.transpileStringResult(typeScriptSource);
 
@@ -49,7 +48,8 @@ test.each([
 
         const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
 
-        expect({ line: mappedPosition.line, column: mappedPosition.column }).toEqual(typescriptPosition);
+        const mappedLineColumn = { line: mappedPosition.line, column: mappedPosition.column };
+        expect(mappedLineColumn).toEqual(typescriptPosition);
     }
 });
 

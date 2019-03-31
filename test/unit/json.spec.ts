@@ -1,13 +1,15 @@
-import { transpileString } from "../../src/Compiler";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
+import * as ts from "typescript";
+
+const jsonOptions = { resolveJsonModule: true, noHeader: true, moduleResolution: ts.ModuleResolutionKind.NodeJs };
 
 test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" } }'])(
     "JSON (%p)",
     json => {
-        const lua = transpileString(
+        const lua = util.transpileString(
             json,
-            { resolveJsonModule: true, noHeader: true },
+            jsonOptions,
             false,
             "file.json",
         ).replace(/^return ([\s\S]+);$/, "return JSONStringify($1);");
@@ -19,6 +21,6 @@ test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" }
 
 test("Empty JSON", () => {
     expect(() =>
-        transpileString("", { resolveJsonModule: true, noHeader: true }, false, "file.json"),
+        util.transpileString("", jsonOptions, false, "file.json"),
     ).toThrowExactError(TSTLErrors.InvalidJsonFileContent(util.nodeStub));
 });

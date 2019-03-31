@@ -6,6 +6,12 @@ import * as tstl from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 
+export interface TranspileResult {
+    lua: string;
+    luaAST: tstl.Node;
+    sourceMap: string;
+}
+
 export class LuaTranspiler {
     private program: ts.Program;
 
@@ -89,13 +95,7 @@ export class LuaTranspiler {
             try {
                 const rootDir = this.options.rootDir;
 
-                let lua, sourceMap;
-
-                if (this.options.sourceMap) {
-                    [lua, sourceMap] = this.transpileSourceFileWithSourceMap(sourceFile);
-                } else {
-                    lua = this.transpileSourceFile(sourceFile);
-                }
+                const { lua, luaAST, sourceMap } = this.transpileSourceFile(sourceFile);
 
                 let outPath = sourceFile.fileName;
                 if (this.options.outDir !== this.options.rootDir) {
@@ -137,27 +137,13 @@ export class LuaTranspiler {
         return 0;
     }
 
-    public transpileSourceFile(sourceFile: ts.SourceFile): string {
+    public transpileSourceFile(sourceFile: ts.SourceFile): TranspileResult {
         // Transform AST
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        const [code, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
-        return code;
-    }
+        const [lua, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
 
-    public transpileSourceFileWithSourceMap(sourceFile: ts.SourceFile): [string, string] {
-        // Transform AST
-        const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
-        // Print AST
-        return this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
-    }
-
-    public transpileSourceFileKeepAST(sourceFile: ts.SourceFile): [tstl.Block, string] {
-        // Transform AST
-        const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
-        // Print AST
-        const [code, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
-        return [luaAST, code];
+        return { lua, luaAST, sourceMap };
     }
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {

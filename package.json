@@ -19,7 +19,7 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "pretest": "ts-node --transpile-only ./build_lualib.ts",
+        "pretest": "npm run build",
         "test": "jest",
         "lint": "npm run lint:tslint",
         "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",

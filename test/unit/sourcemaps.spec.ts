@@ -1,24 +1,79 @@
 import * as util from "../util";
 import { LuaLibImportKind } from "../../src/CompilerOptions";
+import { SourceMapConsumer, Position } from "source-map";
+
+test.each([
+    {
+        typeScriptSource: 
+            `const abc = "foo";
+            const def = "bar";
+            
+            const xyz = "baz";`,
+
+        assertPatterns: [
+            { luaPattern: "abc", typeScriptPattern: "abc" },
+            { luaPattern: "def", typeScriptPattern: "def" },
+            { luaPattern: "xyz", typeScriptPattern: "xyz" },
+            { luaPattern: `"foo"`, typeScriptPattern: `"foo"` },
+            { luaPattern: `"bar"`, typeScriptPattern: `"bar"` },
+            { luaPattern: `"baz"`, typeScriptPattern: `"baz"` },
+        ]
+    },
+    {
+        typeScriptSource: 
+            `function abc() {
+                return def();
+            }
+            function def() {
+                return "foo";
+            }
+            return abc();`,
+
+        assertPatterns: [
+            { luaPattern: "abc = function(", typeScriptPattern: "abc() {" },
+            { luaPattern: "def = function(", typeScriptPattern: "def() {" },
+            { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
+        ]
+    },
+])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
+
+    // Act
+    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource);
+
+    // Assert
+    const consumer = await new SourceMapConsumer(sourceMap);
+
+    for (const { luaPattern, typeScriptPattern } of assertPatterns) {
+        const luaPosition = lineAndColumnOf(lua, luaPattern);
+        const mappedPosition = consumer.originalPositionFor(luaPosition);
+
+        const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
+
+        expect({ line: mappedPosition.line, column: mappedPosition.column }).toEqual(typescriptPosition);
+    }
+});
 
 test("sourceMapTraceback saves sourcemap in _G", () => {
+    // Arrange
     const typeScriptSource = `
         function abc() {
             return "foo";
         }
         return JSONStringify(_G.__TS__sourcemap);`;
 
-    const options = {sourceMapTraceback: true, luaLibImport: LuaLibImportKind.Inline};
+    const options = { sourceMapTraceback: true, luaLibImport: LuaLibImportKind.Inline };
 
+    // Act
     const transpiledLua = util.transpileString(typeScriptSource, options);
 
     const sourceMapJson = util.transpileAndExecute(
         typeScriptSource,
         options,
         undefined,
-        "declare const _G: {__TS__sourcemap: any};"
+        "declare const _G: {__TS__sourcemap: any};",
     );
 
+    // Assert
     expect(sourceMapJson).toBeDefined();
 
     const sourceMap = JSON.parse(sourceMapJson);
@@ -28,46 +83,42 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
     expect(sourceMapFiles.length).toBe(1);
     expect(sourceMap[sourceMapFiles[0]]).toBeDefined();
 
-    expectCorrectMapping(typeScriptSource, transpiledLua, sourceMap[sourceMapFiles[0]], [
-        ["function abc()", "abc = function("],
-        ["return \"foo\"", "return \"foo\""]
-    ]);
+    const assertPatterns = [
+        { luaPattern: "abc = function(", typeScriptPattern: "abc() {" },
+        { luaPattern: `return "foo"`, typeScriptPattern: `return "foo"` },
+    ];
+
+    for (const { luaPattern, typeScriptPattern } of assertPatterns) {
+        const luaPosition = lineAndColumnOf(transpiledLua, luaPattern);
+        const mappedLine = sourceMap[sourceMapFiles[0]][luaPosition.line.toString()];
+
+        const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
+
+        // Add 1 to account for transpiledAndExecute-added function header
+        expect(mappedLine).toEqual(typescriptPosition.line + 1);
+    }
 });
 
 // Helper functions
 
-function expectCorrectMapping(
-    original: string,
-    lua: string,
-    sourceMap: {[line: string]: number},
-    patterns: Array<[string, string]>
-): void {
-    for (const [tsPattern, luaPattern] of patterns) {
-        const originalLine = lineOf(original, "function abc()") + 1; // Add 1 for util-added header
-        const luaLine = lineOf(lua, "abc = function(");
-        const mappedLuaLine = sourceMap[luaLine.toString()];
-
-        expect(mappedLuaLine).toBe(originalLine);
-    }
-}
-
-// Find the line of the first occurrence of a pattern.
-function lineOf(text: string, pattern: string): number {
+function lineAndColumnOf(text: string, pattern: string): Position {
     const pos = text.indexOf(pattern);
     if (pos === -1) {
-        return pos;
+        return { line: -1, column: -1 };
     }
 
     const lineLengths = text.split("\n").map(s => s.length);
 
     let totalPos = 0;
     for (let line = 1; line <= lineLengths.length; line++) {
-        // Add length of the line + 1 for the removed \n
-        totalPos += lineLengths[line - 1] + 1;
-        if (pos < totalPos) {
-            return line;
+        // Add + 1 for the removed \n
+        const lineLength = lineLengths[line - 1] + 1;
+        if (pos < totalPos + lineLength) {
+            return { line, column: pos - totalPos };
         }
+
+        totalPos += lineLengths[line - 1] + 1;
     }
 
-    return -1;
+    return { line: -1, column: -1 };
 }

@@ -1,8 +1,9 @@
 {
     "name": "typescript-to-lua",
-    "license": "MIT",
     "version": "0.16.1",
-    "repository": "https://github.com/Perryvw/TypescriptToLua",
+    "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
+    "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
+    "license": "MIT",
     "keywords": [
         "typescript",
         "lua",
@@ -19,10 +20,10 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && npm run build-lualib",
         "build-lualib": "ts-node ./build_lualib.ts",
-        "pretest": "npm run build",
+        "pretest": "ts-node --transpile-only ./build_lualib.ts",
         "test": "jest",
-        "lint": "npm run lint:tslint",
-        "lint:prettier": "prettier --check **/*.{js,ts,yml,json}",
+        "lint": "npm run lint:tslint && npm run lint:prettier",
+        "lint:prettier": "prettier --check **/*.{js,ts,yml,json} || (echo 'Run `npm run lint:prettier -- --write` or `yarn lint:prettier --write` to fix it.' && exit 1)",
         "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
         "release-major": "npm version major",
         "release-minor": "npm version minor",
@@ -33,30 +34,10 @@
     "bin": {
         "tstl": "./dist/tstl.js"
     },
-    "prettier": {
-        "endOfLine": "lf",
-        "printWidth": 100,
-        "proseWrap": "always",
-        "tabWidth": 4,
-        "trailingComma": "all",
-        "overrides": [
-            {
-                "files": [
-                    "**/*.md",
-                    "**/*.yml",
-                    "**/.*.yml"
-                ],
-                "options": {
-                    "tabWidth": 2
-                }
-            }
-        ]
-    },
     "engines": {
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "source-map": "^0.7.3",
         "typescript": "^3.3.1"
     },
     "devDependencies": {

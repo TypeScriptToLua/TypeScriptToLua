@@ -118,7 +118,7 @@ export class LuaPrinter {
         let header = "";
 
         if (this.options.noHeader === undefined || this.options.noHeader === false) {
-            header += `--[[ Generated with https://github.com/Perryvw/TypescriptToLua ]]\n`;
+            header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
         }
 
         if (luaLibFeatures) {

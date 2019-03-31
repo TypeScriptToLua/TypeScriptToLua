@@ -17,6 +17,8 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    ArrayFlat = "ArrayFlat",
+    ArrayFlatMap = "ArrayFlatMap",
     ClassIndex = "ClassIndex",
     ClassNewIndex = "ClassNewIndex",
     FunctionApply = "FunctionApply",
@@ -29,6 +31,7 @@ export enum LuaLibFeature {
     NewIndex = "NewIndex",
     ObjectAssign = "ObjectAssign",
     ObjectEntries = "ObjectEntries",
+    ObjectFromEntries = "ObjectFromEntries",
     ObjectKeys = "ObjectKeys",
     ObjectValues = "ObjectValues",
     Set = "Set",
@@ -43,7 +46,10 @@ export enum LuaLibFeature {
 }
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
+    ArrayFlat: [LuaLibFeature.ArrayConcat],
+    ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     Iterator: [LuaLibFeature.Symbol],
+    ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],

@@ -3579,10 +3579,10 @@ export class LuaTransformer {
                     node.arguments.length === 1
                         ? this.createStringCall("find", node, caller, params[0])
                         : this.createStringCall(
-                                "find", node, caller, params[0],
-                                this.expressionPlusOne(params[1]),
-                                tstl.createBooleanLiteral(true)
-                            );
+                            "find", node, caller, params[0],
+                            this.expressionPlusOne(params[1]),
+                            tstl.createBooleanLiteral(true)
+                        );
 
                 return tstl.createParenthesizedExpression(
                     tstl.createBinaryExpression(

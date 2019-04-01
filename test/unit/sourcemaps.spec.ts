@@ -35,6 +35,16 @@ test.each([
             { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
         ],
     },
+    {
+        typeScriptSource: `
+            const enum abc { foo = 2, bar = 4 };
+            const xyz = abc.foo;`,
+
+        assertPatterns: [
+            { luaPattern: "xyz", typeScriptPattern: "xyz" },
+            { luaPattern: "2", typeScriptPattern: "abc.foo" },
+        ],
+    },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
     const { lua, sourceMap } = util.transpileStringResult(typeScriptSource);

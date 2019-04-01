@@ -125,7 +125,7 @@ export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
         node.line = sourcePosition.line;
-        node.line = sourcePosition.line;
+        node.column = sourcePosition.column;
     }
 
     return node;

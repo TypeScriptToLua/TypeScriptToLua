@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.17.0
+* We now support source maps in the [standard JS v3 format](https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?hl=en_US&pli=1&pli=1). You can generate source maps with the `--sourceMap` CLI argument, or by adding `sourceMap: true` to your tsconfig. Inline source maps are also supported with `--inlineSourceMap` CLI/tsconfig parameter.
+* Also added support for `--sourceMapTraceback`, which will add an override to Lua's `debug.traceback()` to each file, so source maps will automatically be applied to Lua stacktraces (i.e. in errors).
+
+* Made watch mode incremental.
+
+* Added support for `Object.fromEntries`, `array.flat` and `array.flatMap`.
+
+* **BREAKING CHANGE:** Directive `@tupleReturn` should now be specified **per overload**.
+
+* Fixed a bug where rest parameters would not transpile correctly.
+* Fixed an issue with escaped backticks.
+* Various small fixes function inference and array detection.
+
+* Changed testing framework to [jest](https://github.com/facebook/jest).
+
+
 ## 0.16.0
 * **BREAKING CHANGE:** All functions now take a `self` parameter. This means that without further action calls to declaration functions might be given an extra argument.
     * To remove the self parameter from a single function add `this: void` to its declaration:

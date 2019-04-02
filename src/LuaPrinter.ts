@@ -7,18 +7,6 @@ import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { LuaLib, LuaLibFeature } from "./LuaLib";
 import { TSHelper as tsHelper } from "./TSHelper";
 
-type FunctionDefinition = (tstl.VariableDeclarationStatement | tstl.AssignmentStatement) & {
-    right: [tstl.FunctionExpression];
-};
-
-function isFunctionDeclaration(statement: tstl.VariableDeclarationStatement | tstl.AssignmentStatement)
-    : statement is FunctionDefinition
-{
-    return statement.left.length === 1
-        && statement.right
-        && statement.right.length === 1
-        && tstl.isFunctionExpression(statement.right[0]);
-}
 type SourceChunk = string | SourceNode;
 
 export class LuaPrinter {
@@ -242,7 +230,7 @@ export class LuaPrinter {
 
         chunks.push(this.indent("local "));
 
-        if (isFunctionDeclaration(statement)) {
+        if (tstl.isFunctionDefinition(statement)) {
             const name = this.printExpression(statement.left[0]);
             chunks.push(this.printFunctionExpression(statement.right[0], name));
             chunks.push("\n");
@@ -265,11 +253,11 @@ export class LuaPrinter {
 
         chunks.push(this.indent());
 
-        if (isFunctionDeclaration(statement)
-            && (statement.right[0].flags & tstl.FunctionExpressionFlags.Expression) === 0)
+        if (tstl.isFunctionDefinition(statement)
+            && (statement.right[0].flags & tstl.FunctionExpressionFlags.Declaration) !== 0)
         {
             const name = this.printExpression(statement.left[0]);
-            if (!name.toString().match(/[^A-Za-z0-9_\.]/)) {
+            if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
                 chunks.push(this.printFunctionExpression(statement.right[0], name));
                 chunks.push("\n");
                 return this.createSourceNode(statement, chunks);

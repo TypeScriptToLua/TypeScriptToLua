@@ -652,6 +652,11 @@ export class TSHelper {
         return match && match[0] === str;
     }
 
+    public static isValidLuaFunctionDeclarationName(str: string): boolean {
+        const match = str.match(/[a-zA-Z0-9_\.]+/);
+        return match && match[0] === str;
+    }
+
     public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
         const falsibleFlags = ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral

@@ -537,7 +537,9 @@ export class LuaTransformer {
                 const constructorFunction = tstl.createFunctionExpression(
                     tstl.createBlock(constructorBody),
                     [this.createSelfIdentifier()],
-                    tstl.createDotsLiteral()
+                    tstl.createDotsLiteral(),
+                    undefined,
+                    tstl.FunctionExpressionFlags.Declaration
                 );
                 result.push(tstl.createAssignmentStatement(
                     this.createConstructorName(className),
@@ -899,7 +901,7 @@ export class LuaTransformer {
                 undefined,
                 tstl.createDotsLiteral(),
                 undefined,
-                tstl.FunctionExpressionFlags.None,
+                tstl.FunctionExpressionFlags.Declaration,
                 statement
             ),
             statement
@@ -1016,7 +1018,13 @@ export class LuaTransformer {
 
         const result = tstl.createAssignmentStatement(
             this.createConstructorName(className),
-            tstl.createFunctionExpression(block, params, dotsLiteral, restParamName, undefined, undefined),
+            tstl.createFunctionExpression(
+                block,
+                params,
+                dotsLiteral,
+                restParamName,
+                tstl.FunctionExpressionFlags.Declaration
+            ),
             statement
         );
 
@@ -1034,7 +1042,10 @@ export class LuaTransformer {
         const [body] = this.transformFunctionBody(getAccessor.parameters, getAccessor.body);
         const accessorFunction = tstl.createFunctionExpression(
             tstl.createBlock(body),
-            [this.createSelfIdentifier()]
+            [this.createSelfIdentifier()],
+            undefined,
+            undefined,
+            tstl.FunctionExpressionFlags.Declaration
         );
 
         const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
@@ -1069,7 +1080,8 @@ export class LuaTransformer {
             tstl.createBlock(body),
             params,
             dot,
-            restParam
+            restParam,
+            tstl.FunctionExpressionFlags.Declaration
         );
 
         const classNameWithExport = this.addExportToIdentifier(tstl.cloneIdentifier(className));
@@ -1117,7 +1129,7 @@ export class LuaTransformer {
             paramNames,
             dots,
             restParamName,
-            tstl.FunctionExpressionFlags.None,
+            tstl.FunctionExpressionFlags.Declaration,
             node.body
         );
 
@@ -1633,7 +1645,13 @@ export class LuaTransformer {
                 restParamName
             );
         const block = tstl.createBlock(body);
-        const functionExpression = tstl.createFunctionExpression(block, params, dotsLiteral, restParamName);
+        const functionExpression = tstl.createFunctionExpression(
+            block,
+            params,
+            dotsLiteral,
+            restParamName,
+            tstl.FunctionExpressionFlags.Declaration
+        );
         // Remember symbols referenced in this function for hoisting later
         if (!this.options.noHoisting && name.symbolId !== undefined) {
             const scope = this.peekScope();
@@ -3051,10 +3069,7 @@ export class LuaTransformer {
         // Build parameter string
         const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(node.parameters, context);
 
-        let flags = !ts.isFunctionDeclaration(node)
-            ? tstl.FunctionExpressionFlags.Expression
-            : tstl.FunctionExpressionFlags.None;
-
+        let flags = tstl.FunctionExpressionFlags.None;
         let body: ts.Block;
         if (ts.isBlock(node.body)) {
             body = node.body;
@@ -3117,6 +3132,7 @@ export class LuaTransformer {
             // Strip parenthesis from casts
             return this.transformExpression(expression.expression);
         }
+
         return tstl.createParenthesizedExpression(
             this.transformExpression(expression.expression),
             expression
@@ -3646,7 +3662,7 @@ export class LuaTransformer {
                     const arg2 = params[1];
                     const sumArg = tstl.createBinaryExpression(
                         tstl.createParenthesizedExpression(arg1),
-                        arg2,
+                        tstl.createParenthesizedExpression(arg2),
                         tstl.SyntaxKind.AdditionOperator
                     );
                     return this.createStringCall("sub", node, caller, this.expressionPlusOne(arg1), sumArg);
@@ -4057,10 +4073,12 @@ export class LuaTransformer {
 
     public transformTemplateExpression(expression: ts.TemplateExpression): tstl.Expression {
         const parts: tstl.Expression[] = [];
+
         const head = tsHelper.escapeString(expression.head.text);
         if (head.length > 0) {
             parts.push(tstl.createStringLiteral(head, expression.head));
         }
+
         expression.templateSpans.forEach(span => {
             const expr = this.transformExpression(span.expression);
             parts.push(tstl.createCallExpression(tstl.createIdentifier("tostring"), [expr]));
@@ -4070,9 +4088,7 @@ export class LuaTransformer {
                 parts.push(tstl.createStringLiteral(text, span.literal));
             }
         });
-        if (parts.length === 1) {
-            return parts[0];
-        }
+
         return parts.reduce((prev, current) => tstl.createBinaryExpression(
             prev,
             current,

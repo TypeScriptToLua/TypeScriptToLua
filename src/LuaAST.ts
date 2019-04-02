@@ -592,7 +592,7 @@ export function createStringLiteral(value: string | ts.__String, tsOriginal?: ts
 export enum FunctionExpressionFlags {
     None = 0x0,
     Inline = 0x1, // Keep function on same line
-    Expression = 0x2, // Prefer assignment to expression syntax `foo = function()` instead of `function foo()`
+    Declaration = 0x2, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
 }
 
 export interface FunctionExpression extends Expression {
@@ -863,3 +863,16 @@ export function createTableIndexExpression(
 }
 
 export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
+
+export type FunctionDefinition = (VariableDeclarationStatement | AssignmentStatement) & {
+    right: [FunctionExpression];
+};
+
+export function isFunctionDefinition(statement: VariableDeclarationStatement | AssignmentStatement)
+    : statement is FunctionDefinition
+{
+    return statement.left.length === 1
+        && statement.right
+        && statement.right.length === 1
+        && isFunctionExpression(statement.right[0]);
+}

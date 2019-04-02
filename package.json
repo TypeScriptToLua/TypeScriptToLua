@@ -1,6 +1,6 @@
 {
     "name": "typescript-to-lua",
-    "version": "0.16.1",
+    "version": "0.17.0",
     "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
     "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
     "license": "MIT",
@@ -23,8 +23,9 @@
         "pretest": "ts-node --transpile-only ./build_lualib.ts",
         "test": "jest",
         "lint": "npm run lint:tslint && npm run lint:prettier",
-        "lint:prettier": "prettier --check **/*.{js,ts,yml,json} || (echo 'Run `npm run lint:prettier -- --write` or `yarn lint:prettier --write` to fix it.' && exit 1)",
+        "lint:prettier": "prettier --check **/*.{js,ts,yml,json} || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
+        "fix:prettier": "prettier --check --write **/*.{js,ts,yml,json}",
         "release-major": "npm version major",
         "release-minor": "npm version minor",
         "release-patch": "npm version patch",
@@ -38,6 +39,7 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
+        "source-map": "^0.7.3",
         "typescript": "^3.3.1"
     },
     "devDependencies": {

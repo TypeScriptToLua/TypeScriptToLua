@@ -6,6 +6,12 @@ import * as tstl from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 
+export interface TranspileResult {
+    lua: string;
+    luaAST: tstl.Node;
+    sourceMap: string;
+}
+
 export class LuaTranspiler {
     private program: ts.Program;
 
@@ -89,7 +95,7 @@ export class LuaTranspiler {
             try {
                 const rootDir = this.options.rootDir;
 
-                const lua = this.transpileSourceFile(sourceFile);
+                const { lua, luaAST, sourceMap } = this.transpileSourceFile(sourceFile);
 
                 let outPath = sourceFile.fileName;
                 if (this.options.outDir !== this.options.rootDir) {
@@ -112,6 +118,9 @@ export class LuaTranspiler {
 
                 // Write output
                 ts.sys.writeFile(outPath, lua);
+                if (this.options.sourceMap) {
+                    ts.sys.writeFile(outPath + ".map", sourceMap);
+                }
             } catch (exception) {
                 /* istanbul ignore else: Testing else part would require to add a bug/exception to our code */
                 if (exception.node) {
@@ -128,18 +137,13 @@ export class LuaTranspiler {
         return 0;
     }
 
-    public transpileSourceFile(sourceFile: ts.SourceFile): string {
+    public transpileSourceFile(sourceFile: ts.SourceFile): TranspileResult {
         // Transform AST
         const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
         // Print AST
-        return this.luaPrinter.print(luaAST, lualibFeatureSet);
-    }
+        const [lua, sourceMap] = this.luaPrinter.print(luaAST, lualibFeatureSet, sourceFile.fileName);
 
-    public transpileSourceFileKeepAST(sourceFile: ts.SourceFile): [tstl.Block, string] {
-        // Transform AST
-        const [luaAST, lualibFeatureSet] = this.luaTransformer.transformSourceFile(sourceFile);
-        // Print AST
-        return [luaAST, this.luaPrinter.print(luaAST, lualibFeatureSet)];
+        return { lua, luaAST, sourceMap };
     }
 
     public reportDiagnostic(diagnostic: ts.Diagnostic): void {

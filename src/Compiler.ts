@@ -3,7 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import * as CommandLineParser from "./CommandLineParser";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
-import { LuaTranspiler } from "./LuaTranspiler";
+import { LuaTranspiler, TranspileResult } from "./LuaTranspiler";
 
 export function compile(argv: string[]): void {
     const parseResult = CommandLineParser.parseCommandLine(argv);
@@ -167,7 +167,7 @@ export function transpileString(
     options: CompilerOptions = defaultCompilerOptions,
     ignoreDiagnostics = false,
     filePath = "file.ts"
-): string {
+): TranspileResult {
     const program = createStringCompilerProgram(input, options, filePath);
 
     if (!ignoreDiagnostics) {
@@ -182,7 +182,5 @@ export function transpileString(
 
     const transpiler = new LuaTranspiler(program);
 
-    const result = transpiler.transpileSourceFile(program.getSourceFile(filePath));
-
-    return result.trim();
+    return transpiler.transpileSourceFile(program.getSourceFile(filePath));
 }

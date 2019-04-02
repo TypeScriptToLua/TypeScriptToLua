@@ -3,6 +3,19 @@ import * as tstl from "./LuaAST";
 import { LuaLib, LuaLibFeature } from "./LuaLib";
 import { TSHelper as tsHelper } from "./TSHelper";
 
+type FunctionDefinition = (tstl.VariableDeclarationStatement | tstl.AssignmentStatement) & {
+    right: [tstl.FunctionExpression];
+};
+
+function isFunctionDeclaration(statement: tstl.VariableDeclarationStatement | tstl.AssignmentStatement)
+    : statement is FunctionDefinition
+{
+    return statement.left.length === 1
+        && statement.right
+        && statement.right.length === 1
+        && tstl.isFunctionExpression(statement.right[0]);
+}
+
 export class LuaPrinter {
     /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
@@ -115,6 +128,10 @@ export class LuaPrinter {
     }
 
     private printDoStatement(statement: tstl.DoStatement): string {
+        if (!statement.statements || statement.statements.length === 0) {
+            return "";
+        }
+
         let result = this.indent("do\n");
         this.pushIndent();
         result += this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)).join("");
@@ -125,6 +142,11 @@ export class LuaPrinter {
     }
 
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): string {
+        if (isFunctionDeclaration(statement)) {
+            const name = this.printExpression(statement.left[0]);
+            return this.indent(`local ${this.printFunctionExpression(statement.right[0], name)}\n`);
+        }
+
         const left = this.indent(`local ${statement.left.map(e => this.printExpression(e)).join(", ")}`);
         if (statement.right) {
             return left + ` = ${statement.right.map(e => this.printExpression(e)).join(", ")};\n`;
@@ -134,6 +156,15 @@ export class LuaPrinter {
     }
 
     private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): string {
+        if (isFunctionDeclaration(statement)
+            && (statement.right[0].flags & tstl.FunctionExpressionFlags.Expression) === 0)
+        {
+            const name = this.printExpression(statement.left[0]);
+            if (!name.match(/[^A-Za-z0-9_\.]/)) {
+                return this.indent(`${this.printFunctionExpression(statement.right[0], name)}\n`);
+            }
+        }
+
         return this.indent(
             `${statement.left.map(e => this.printExpression(e)).join(", ")} = ` +
             `${statement.right.map(e => this.printExpression(e)).join(", ")};\n`);
@@ -299,17 +330,23 @@ export class LuaPrinter {
         }
     }
 
-    private printFunctionExpression(expression: tstl.FunctionExpression): string {
+    private printFunctionExpression(expression: tstl.FunctionExpression, name?: string): string {
         const paramterArr: string[] = expression.params ? expression.params.map(i => this.printIdentifier(i)) : [];
         if (expression.dots) {
             paramterArr.push(this.printDotsLiteral(expression.dots));
         }
 
-        let result = `function(${paramterArr.join(", ")})\n`;
-        this.pushIndent();
-        result += this.printBlock(expression.body);
-        this.popIndent();
-        result += this.indent("end");
+        let result = `function${name ? ` ${name}` : ""}(${paramterArr.join(", ")})`;
+
+        if ((expression.flags & tstl.FunctionExpressionFlags.Inline) !== 0) {
+            result += ` ${this.printBlock(expression.body).trim()} end`;
+
+        } else {
+            this.pushIndent();
+            result += "\n" + this.printBlock(expression.body);
+            this.popIndent();
+            result += this.indent("end");
+        }
 
         return result;
     }

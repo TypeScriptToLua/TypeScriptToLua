@@ -25,7 +25,7 @@ interface SymbolInfo {
 
 interface FunctionDefinitionInfo {
     referencedSymbols: Set<tstl.SymbolId>;
-    assignment?: tstl.AssignmentStatement;
+    definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
 }
 
 interface Scope {
@@ -882,6 +882,7 @@ export class LuaTransformer {
                 undefined,
                 tstl.createDotsLiteral(),
                 undefined,
+                tstl.FunctionExpressionFlags.None,
                 statement
             )
         );
@@ -1665,7 +1666,7 @@ export class LuaTransformer {
                     table = this.transformIdentifier(statement.initializer);
                 } else {
                     // Contain the expression in a temporary variable
-                    table = tstl.createIdentifier("____");
+                    table = tstl.createAnnonymousIdentifier();
                     statements.push(tstl.createVariableDeclarationStatement(
                         table, this.transformExpression(statement.initializer)));
                 }
@@ -2297,9 +2298,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.DeleteExpression:
                 return this.transformDeleteExpression(expression as ts.DeleteExpression);
             case ts.SyntaxKind.FunctionExpression:
-                return this.transformFunctionExpression(expression as ts.ArrowFunction, this.createSelfIdentifier());
             case ts.SyntaxKind.ArrowFunction:
-                return this.transformFunctionExpression(expression as ts.ArrowFunction, tstl.createIdentifier("____"));
+                return this.transformFunctionExpression(expression as ts.ArrowFunction);
             case ts.SyntaxKind.NewExpression:
                 return this.transformNewExpression(expression as ts.NewExpression);
             case ts.SyntaxKind.ParenthesizedExpression:
@@ -2984,7 +2984,7 @@ export class LuaTransformer {
                 const identifier = this.transformIdentifier(element.name);
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
-                const expression = this.transformFunctionExpression(element, this.createSelfIdentifier());
+                const expression = this.transformFunctionExpression(element);
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
@@ -3009,18 +3009,28 @@ export class LuaTransformer {
         );
     }
 
-    public transformFunctionExpression(
-        node: ts.FunctionLikeDeclaration,
-        context: tstl.Identifier | undefined
-    ): ExpressionVisitResult
-    {
+    public transformFunctionExpression(node: ts.FunctionLikeDeclaration): ExpressionVisitResult {
         const type = this.checker.getTypeAtLocation(node);
-        const hasContext = tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void;
+
+        let context: tstl.Identifier | undefined;
+        if (tsHelper.getFunctionContextType(type, this.checker) !== ContextType.Void) {
+            if (ts.isArrowFunction(node)) {
+                // dummy context for arrow functions with parameters
+                if (node.parameters.length > 0) {
+                    context = tstl.createAnnonymousIdentifier();
+                }
+            } else {
+                // self context
+                context = this.createSelfIdentifier();
+            }
+        }
+
         // Build parameter string
-        const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(
-            node.parameters,
-            hasContext ? context : undefined
-        );
+        const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(node.parameters, context);
+
+        let flags = !ts.isFunctionDeclaration(node)
+            ? tstl.FunctionExpressionFlags.Expression
+            : tstl.FunctionExpressionFlags.None;
 
         let body: ts.Block;
         if (ts.isBlock(node.body)) {
@@ -3030,6 +3040,7 @@ export class LuaTransformer {
             body = ts.createBlock([returnExpression]);
             returnExpression.parent = body;
             body.parent = node.body.parent;
+            flags |= tstl.FunctionExpressionFlags.Inline;
         }
         const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
@@ -3038,6 +3049,7 @@ export class LuaTransformer {
             paramNames,
             dotsLiteral,
             spreadIdentifier,
+            flags,
             node
         );
     }
@@ -4294,11 +4306,13 @@ export class LuaTransformer {
             }
             if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {
                 // local
-                const isFunctionType = functionDeclaration
-                    || (tsOriginal && ts.isVariableDeclaration(tsOriginal) && tsOriginal.initializer
-                        && tsHelper.isFunctionTypeAtLocation(tsOriginal.initializer, this.checker));
-                if (isFunctionType) {
-                    // Split declaration and assignment for cuntions to allow recursion
+                const isPossibleWrappedFunction = !functionDeclaration
+                    && tsOriginal
+                    && ts.isVariableDeclaration(tsOriginal)
+                    && tsOriginal.initializer
+                    && tsHelper.isFunctionTypeAtLocation(tsOriginal.initializer, this.checker);
+                if (isPossibleWrappedFunction) {
+                    // Split declaration and assignment for wrapped function types to allow recursion
                     declaration = tstl.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent);
                     assignment = tstl.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
 
@@ -4329,7 +4343,7 @@ export class LuaTransformer {
             // Remember function definitions for hoisting later
             const functionSymbolId = (lhs as tstl.Identifier).symbolId;
             if (functionSymbolId !== undefined) {
-                this.peekScope().functionDefinitions.get(functionSymbolId).assignment = assignment;
+                this.peekScope().functionDefinitions.get(functionSymbolId).definition = declaration || assignment;
             }
         }
 
@@ -4500,7 +4514,7 @@ export class LuaTransformer {
         if (scope.functionDefinitions) {
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
                 if (functionSymbolId !== symbolId // Don't recurse into self
-                    && declaration.pos < functionDefinition.assignment.pos // Ignore functions before symbol declaration
+                    && declaration.pos < functionDefinition.definition.pos // Ignore functions before symbol declaration
                     && functionDefinition.referencedSymbols.has(symbolId)
                     && this.shouldHoist(functionSymbolId, scope))
                 {
@@ -4534,12 +4548,12 @@ export class LuaTransformer {
         }
 
         const result = statements.slice();
-        const hoistedFunctions: tstl.AssignmentStatement[] = [];
+        const hoistedFunctions: Array<tstl.VariableDeclarationStatement | tstl.AssignmentStatement> = [];
         for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
             if (this.shouldHoist(functionSymbolId, scope)) {
-                const i = result.indexOf(functionDefinition.assignment);
+                const i = result.indexOf(functionDefinition.definition);
                 result.splice(i, 1);
-                hoistedFunctions.push(functionDefinition.assignment);
+                hoistedFunctions.push(functionDefinition.definition);
             }
         }
         if (hoistedFunctions.length > 0) {

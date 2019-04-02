@@ -8,6 +8,7 @@ import {
 } from "../src/Compiler";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../src/CompilerOptions";
 import { LuaTransformer } from "../src/LuaTransformer";
+import { TranspileResult } from "../src/LuaTranspiler";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
@@ -46,12 +47,50 @@ expect.extend({
     },
 });
 
+function compilerTranspile(
+    str: string | { [filename: string]: string },
+    options: CompilerOptions = {},
+    ignoreDiagnostics = true,
+    filePath = "file.ts",
+): TranspileResult {
+    return compilerTranspileString(
+        str,
+        {
+            luaLibImport: LuaLibImportKind.Inline,
+            luaTarget: LuaTarget.Lua53,
+            noHeader: true,
+            skipLibCheck: true,
+            target: ts.ScriptTarget.ESNext,
+            lib: [
+                "lib.es2015.d.ts",
+                "lib.es2016.d.ts",
+                "lib.es2017.d.ts",
+                "lib.es2018.d.ts",
+                "lib.esnext.d.ts",
+            ],
+            ...options,
+        },
+        ignoreDiagnostics,
+        filePath,
+    );
+}
+
 export function transpileString(
     str: string | { [filename: string]: string },
     options: CompilerOptions = {},
     ignoreDiagnostics = true,
     filePath = "file.ts",
 ): string {
+    const { lua } = transpileStringResult(str, options, ignoreDiagnostics, filePath);
+    return lua.trim();
+}
+
+export function transpileStringResult(
+    str: string | { [filename: string]: string },
+    options: CompilerOptions = {},
+    ignoreDiagnostics = true,
+    filePath = "file.ts",
+): TranspileResult {
     return compilerTranspileString(
         str,
         {

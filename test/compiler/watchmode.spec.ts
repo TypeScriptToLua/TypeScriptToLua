@@ -40,7 +40,7 @@ test.each([
     "Watch single File (%p)",
     async ({ args, fileToChange }) => {
         const fileToChangeOut = fileToChange.replace(".ts", ".lua");
-        const originalTS = fs.readFileSync(fileToChange);
+        const originalTS = fs.readFileSync(fileToChange, "utf-8");
 
         const child = fork(path.join(__dirname, "watcher_proccess.ts"), [], {
             silent: true,
@@ -60,13 +60,13 @@ test.each([
         child.send(args);
 
         await waitForFileExists(fileToChangeOut);
-        const initialResultLua = fs.readFileSync(fileToChangeOut, "utf8");
+        const initialResultLua = fs.readFileSync(fileToChangeOut, "utf-8");
 
         fs.unlinkSync(fileToChangeOut);
         fs.writeFileSync(fileToChange, "class MyTest2 {}");
 
         await waitForFileExists(fileToChangeOut);
-        const updatedResultLua = fs.readFileSync(fileToChangeOut, "utf8");
+        const updatedResultLua = fs.readFileSync(fileToChangeOut, "utf-8");
 
         expect(initialResultLua).not.toEqual(updatedResultLua);
     },

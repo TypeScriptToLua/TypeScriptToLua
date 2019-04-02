@@ -20,7 +20,7 @@ compile([
     "./src/lualib",
     "--noHeader",
     "true",
-    ...glob.sync("./src/lualib/*.ts"),
+    ...glob.sync("./src/lualib/**/*.ts"),
 ]);
 
 if (fs.existsSync(bundlePath)) {

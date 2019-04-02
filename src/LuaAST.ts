@@ -98,10 +98,9 @@ export type Operator = UnaryOperator | BinaryOperator;
 
 export type SymbolId = number;
 
-// TODO For future sourcemap support?
 export interface TextRange {
-    pos: number;
-    end: number;
+    line?: number;
+    column?: number;
 }
 
 export interface Node extends TextRange {
@@ -110,13 +109,12 @@ export interface Node extends TextRange {
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
-    let pos = -1;
-    let end = -1;
-    if (tsOriginal) {
-        pos = tsOriginal.pos;
-        end = tsOriginal.end;
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        return {kind, parent, line: sourcePosition.line, column: sourcePosition.column};
+    } else {
+        return {kind, parent};
     }
-    return {kind, parent, pos, end};
 }
 
 export function cloneNode<T extends Node>(node: T): T {
@@ -124,8 +122,12 @@ export function cloneNode<T extends Node>(node: T): T {
 }
 
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
-    node.pos = tsOriginal.pos;
-    node.end = tsOriginal.end;
+    const sourcePosition = getSourcePosition(tsOriginal);
+    if (sourcePosition) {
+        node.line = sourcePosition.line;
+        node.column = sourcePosition.column;
+    }
+
     return node;
 }
 
@@ -136,18 +138,30 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
     if (Array.isArray(node)) {
         node.forEach(n => {
             n.parent = parent;
-            if (n.pos === -1 || n.end === -1) {
-                n.pos = parent.pos;
-                n.end = parent.end;
-            }
         });
     } else {
         node.parent = parent;
-        if (node.pos === -1 || node.end === -1) {
-            node.pos = parent.pos;
-            node.end = parent.end;
-        }
     }
+}
+
+function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
+    if (sourceNode !== undefined && sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
+
+        const { line, character } = ts.getLineAndCharacterOfPosition(
+            sourceNode.getSourceFile(),
+            sourceNode.pos + sourceNode.getLeadingTriviaWidth()
+        );
+
+        return { line, column: character };
+    }
+}
+
+export function getOriginalPos(node: Node): TextRange {
+    while (node.line === undefined && node.parent !== undefined) {
+        node = node.parent;
+    }
+
+    return { line: node.line, column: node.column };
 }
 
 export interface Block extends Node {
@@ -812,8 +826,8 @@ export function createIdentifier(
     return expression;
 }
 
-export function cloneIdentifier(identifier: Identifier): Identifier {
-    return createIdentifier(identifier.text, undefined, identifier.symbolId);
+export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): Identifier {
+    return createIdentifier(identifier.text, tsOriginal, identifier.symbolId);
 }
 
 export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {

@@ -34,6 +34,7 @@ interface Scope {
     referencedSymbols?: Set<tstl.SymbolId>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
+    loopContinued?: boolean;
 }
 
 export class LuaTransformer {
@@ -1925,7 +1926,7 @@ export class LuaTransformer {
         const scope = this.popScope();
         const scopeId = scope.id;
 
-        if (this.options.luaTarget === LuaTarget.Lua51) {
+        if (!scope.loopContinued) {
             return body;
         }
 
@@ -2246,8 +2247,10 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, statement);
         }
 
+        const scope = this.findScope(ScopeType.Loop);
+        scope.loopContinued = true;
         return tstl.createGotoStatement(
-            `__continue${this.findScope(ScopeType.Loop).id}`,
+            `__continue${scope.id}`,
             statement
         );
     }

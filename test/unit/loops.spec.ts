@@ -763,21 +763,23 @@ test("forof forwarded lua iterator with tupleReturn", () => {
 });
 
 test.each([
-    "while (a < b) { i++; }",
-    "do { i++; } while (a < b)",
-    "for (let i = 0; i < 3; i++) {}",
-    "for (let a in b) {}",
-    "for (let a of b) {}",
+    "while (a < b) { i++; continue; }",
+    "do { i++; continue; } while (a < b)",
+    "for (let i = 0; i < 3; i++) { continue; }",
+    "for (let a in b) { continue; }",
+    "for (let a of b) { continue; }",
 ])("loop versions (%p)", loop => {
-    const lua51 = util.transpileString(loop, { luaTarget: LuaTarget.Lua51 });
-    const lua52 = util.transpileString(loop, { luaTarget: LuaTarget.Lua52 });
-    const lua53 = util.transpileString(loop, { luaTarget: LuaTarget.Lua53 });
-    const luajit = util.transpileString(loop, { luaTarget: LuaTarget.LuaJIT });
+    const lua51 = { luaTarget: LuaTarget.Lua51 };
+    const lua52 = { luaTarget: LuaTarget.Lua52 };
+    const lua53 = { luaTarget: LuaTarget.Lua53 };
+    const luajit = { luaTarget: LuaTarget.LuaJIT };
 
-    expect(lua51.indexOf("::__continue1::") !== -1).toBe(false); // No labels in 5.1
-    expect(lua52.indexOf("::__continue1::") !== -1).toBe(true); // Labels from 5.2 onwards
-    expect(lua53.indexOf("::__continue1::") !== -1).toBe(true);
-    expect(luajit.indexOf("::__continue1::") !== -1).toBe(true);
+    expect(() => util.transpileString(loop, lua51)).toThrowError(
+        TSTLErrors.UnsupportedForTarget("Continue statement", LuaTarget.Lua51, undefined)
+    );
+    expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
+    expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);
+    expect(util.transpileString(loop, luajit).indexOf("::__continue1::") !== -1).toBe(true);
 });
 
 test("for dead code after return", () => {

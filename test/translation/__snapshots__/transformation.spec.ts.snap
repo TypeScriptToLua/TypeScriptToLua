@@ -149,10 +149,7 @@ end"
 exports[`Transformation (do) 1`] = `
 "local e = 10;
 repeat
-    do
-        e = e - 1;
-    end
-    ::__continue1::
+    e = e - 1;
 until not (e > 0);"
 `;
 
@@ -224,7 +221,6 @@ exports[`Transformation (for) 1`] = `
 "do
     local i = 1;
     while i <= 100 do
-        ::__continue1::
         i = i + 1;
     end
 end"
@@ -232,7 +228,6 @@ end"
 
 exports[`Transformation (forIn) 1`] = `
 "for i in pairs({a = 1, b = 2, c = 3, d = 4}) do
-    ::__continue1::
 end"
 `;
 
@@ -240,7 +235,6 @@ exports[`Transformation (forOf) 1`] = `
 "local ____TS_array = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 for ____TS_index = 1, #____TS_array do
     local i = ____TS_array[____TS_index];
-    ::__continue1::
 end"
 `;
 
@@ -613,9 +607,6 @@ local test2 = 10;"
 exports[`Transformation (while) 1`] = `
 "local d = 10;
 while d > 0 do
-    do
-        d = d - 1;
-    end
-    ::__continue1::
+    d = d - 1;
 end"
 `;

@@ -2,7 +2,7 @@
 
 ## 0.17.0
 * We now support source maps in the [standard JS v3 format](https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?hl=en_US&pli=1&pli=1). You can generate source maps with the `--sourceMap` CLI argument, or by adding `sourceMap: true` to your tsconfig. Inline source maps are also supported with `--inlineSourceMap` CLI/tsconfig parameter.
-* Also added support for `--sourceMapTraceback`, which will add an override to Lua's `debug.traceback()` to each file, so source maps will automatically be applied to Lua stacktraces (i.e. in errors).
+* Also added [tstl option](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki#tstl-specific-options) `--sourceMapTraceback`, which will add an override to Lua's `debug.traceback()` to each file, so source maps will automatically be applied to Lua stacktraces (i.e. in errors).
 
 * Made watch mode incremental.
 

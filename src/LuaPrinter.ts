@@ -468,14 +468,16 @@ export class LuaPrinter {
         if (expression.dots) {
             parameterChunks.push(this.printDotsLiteral(expression.dots));
         }
-        return ["(", ...this.joinChunks(", ", parameterChunks), ")"];
+
+        return this.joinChunks(", ", parameterChunks);
     }
 
     private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push("function");
+        chunks.push("function(");
         chunks.push(...this.printFunctionParameters(expression));
+        chunks.push(")");
 
         if (tstl.isInlineFunctionExpression(expression)) {
             const returnStatement = expression.body.statements[0];
@@ -505,8 +507,9 @@ export class LuaPrinter {
 
         chunks.push("function ");
         chunks.push(this.printExpression(statement.left[0]));
+        chunks.push("(");
         chunks.push(...this.printFunctionParameters(expression));
-        chunks.push("\n");
+        chunks.push(")\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(expression.body));

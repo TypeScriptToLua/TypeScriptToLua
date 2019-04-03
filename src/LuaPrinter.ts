@@ -213,25 +213,37 @@ export class LuaPrinter {
 
     private printDoStatement(statement: tstl.DoStatement): SourceNode {
         const chunks: SourceChunk[] = [];
-        chunks.push(this.indent("do\n"));
-        this.pushIndent();
-        chunks.push(...this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)));
-        this.popIndent();
-        chunks.push(this.indent("end\n"));
+
+        if (statement.statements && statement.statements.length > 0) {
+            chunks.push(this.indent("do\n"));
+            this.pushIndent();
+            chunks.push(...this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)));
+            this.popIndent();
+            chunks.push(this.indent("end\n"));
+        }
 
         return this.concatNodes(...chunks);
     }
 
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): SourceNode {
         const chunks: SourceChunk[] = [];
-        chunks.push(this.indent("local "));
-        chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
 
-        if (statement.right) {
-            chunks.push(" = ");
-            chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
+        chunks.push(this.indent("local "));
+
+        if (tstl.isFunctionDefinition(statement)) {
+            // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
+            chunks.push(this.printFunctionDefinition(statement));
+            chunks.push("\n");
+
+        } else {
+            chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
+
+            if (statement.right) {
+                chunks.push(" = ");
+                chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
+            }
+            chunks.push(";\n");
         }
-        chunks.push(";\n");
 
         return this.concatNodes(...chunks);
     }
@@ -240,6 +252,19 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent());
+
+        if (tstl.isFunctionDefinition(statement)
+            && (statement.right[0].flags & tstl.FunctionExpressionFlags.Declaration) !== 0)
+        {
+            // Use `function foo()` instead of `foo = function()`
+            const name = this.printExpression(statement.left[0]);
+            if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
+                chunks.push(this.printFunctionDefinition(statement));
+                chunks.push("\n");
+                return this.createSourceNode(statement, chunks);
+            }
+        }
+
         chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
         chunks.push(" = ");
         chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
@@ -359,7 +384,6 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(...this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e))));
-
         chunks.push(";\n");
 
         return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
@@ -436,7 +460,7 @@ export class LuaPrinter {
         }
     }
 
-    private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
+    private printFunctionParameters(expression: tstl.FunctionExpression): SourceChunk[] {
         const parameterChunks: SourceNode[] = expression.params
             ? expression.params.map(i => this.printIdentifier(i))
             : [];
@@ -445,10 +469,46 @@ export class LuaPrinter {
             parameterChunks.push(this.printDotsLiteral(expression.dots));
         }
 
+        return this.joinChunks(", ", parameterChunks);
+    }
+
+    private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push("function(");
-        chunks.push(...this.joinChunks(", ", parameterChunks));
+        chunks.push(...this.printFunctionParameters(expression));
+        chunks.push(")");
+
+        if (tstl.isInlineFunctionExpression(expression)) {
+            const returnStatement = expression.body.statements[0];
+            chunks.push(" ");
+            const returnNode: SourceChunk[] = [
+                "return ",
+                ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
+                ";",
+            ];
+            chunks.push(this.createSourceNode(returnStatement, returnNode));
+            chunks.push(" end");
+
+        } else {
+            chunks.push("\n");
+            this.pushIndent();
+            chunks.push(this.printBlock(expression.body));
+            this.popIndent();
+            chunks.push(this.indent("end"));
+        }
+
+        return this.createSourceNode(expression, chunks);
+    }
+
+    private printFunctionDefinition(statement: tstl.FunctionDefinition): SourceNode {
+        const expression = statement.right[0];
+        const chunks: SourceChunk[] = [];
+
+        chunks.push("function ");
+        chunks.push(this.printExpression(statement.left[0]));
+        chunks.push("(");
+        chunks.push(...this.printFunctionParameters(expression));
         chunks.push(")\n");
 
         this.pushIndent();
@@ -482,14 +542,18 @@ export class LuaPrinter {
 
         chunks.push("{");
 
-        if (expression.fields) {
-            expression.fields.forEach((f, i) => {
-                if (i < expression.fields.length - 1) {
-                    chunks.push(this.printTableFieldExpression(f), ", ");
-                } else {
-                    chunks.push(this.printTableFieldExpression(f));
-                }
-            });
+        if (expression.fields && expression.fields.length > 0) {
+            if (expression.fields.length === 1) {
+                // Inline tables with only one entry
+                chunks.push(this.printTableFieldExpression(expression.fields[0]));
+
+            } else {
+                chunks.push("\n");
+                this.pushIndent();
+                expression.fields.forEach(f => chunks.push(this.indent(), this.printTableFieldExpression(f), ",\n"));
+                this.popIndent();
+                chunks.push(this.indent());
+            }
         }
 
         chunks.push("}");
@@ -501,12 +565,7 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printOperator(expression.operator));
-
-        if (this.needsParentheses(expression.operand)) {
-            chunks.push("(", this.printExpression(expression.operand), ")");
-        } else {
-            chunks.push(this.printExpression(expression.operand));
-        }
+        chunks.push(this.printExpression(expression.operand));
 
         return this.createSourceNode(expression, chunks);
     }
@@ -514,26 +573,11 @@ export class LuaPrinter {
     private printBinaryExpression(expression: tstl.BinaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        if (this.needsParentheses(expression.left)) {
-            chunks.push("(", this.printExpression(expression.left), ")");
-        } else {
-            chunks.push(this.printExpression(expression.left));
-        }
-
+        chunks.push(this.printExpression(expression.left));
         chunks.push(" ", this.printOperator(expression.operator), " ");
-
-        if (this.needsParentheses(expression.right)) {
-            chunks.push("(", this.printExpression(expression.right), ")");
-        } else {
-            chunks.push(this.printExpression(expression.right));
-        }
+        chunks.push(this.printExpression(expression.right));
 
         return this.createSourceNode(expression, chunks);
-    }
-
-    private needsParentheses(expression: tstl.Expression): boolean {
-        return tstl.isBinaryExpression(expression) || tstl.isUnaryExpression(expression)
-            || tstl.isFunctionExpression(expression);
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
@@ -544,11 +588,7 @@ export class LuaPrinter {
         const chunks = [];
         const parameterChunks = this.joinChunks(", ", expression.params.map(e => this.printExpression(e)));
 
-        if (this.needsParentheses(expression.expression)) {
-            chunks.push("(", this.printExpression(expression.expression), ")(", ...parameterChunks, ")");
-        } else {
-            chunks.push(this.printExpression(expression.expression), "(", ...parameterChunks, ")");
-        }
+        chunks.push(this.printExpression(expression.expression), "(", ...parameterChunks, ")");
 
         return this.concatNodes(...chunks);
     }

@@ -121,11 +121,17 @@ export function cloneNode<T extends Node>(node: T): T {
     return Object.assign({}, node);
 }
 
+export function setNodePosition<T extends Node>(node: T, position: TextRange): T {
+    node.line = position.line;
+    node.column = position.column;
+
+    return node;
+}
+
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        node.line = sourcePosition.line;
-        node.column = sourcePosition.column;
+        setNodePosition(node, sourcePosition);
     }
 
     return node;
@@ -589,20 +595,19 @@ export function createStringLiteral(value: string | ts.__String, tsOriginal?: ts
     return expression;
 }
 
-// There is no export function statement/declaration because those are just syntax sugar
-//
-// `function f () body end` becomes `f = function () body` end
-// `function t.a.b.c.f () body end` becomes `t.a.b.c.f = function () body end`
-// `local function f () body end` becomes `local f; f = function () body end` NOT `local f = function () body end`
-// See https://www.lua.org/manual/5.3/manual.html 3.4.11
-//
-// We should probably create helper functions to create the different export function declarations
+export enum FunctionExpressionFlags {
+    None = 0x0,
+    Inline = 0x1, // Keep function on same line
+    Declaration = 0x2, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
+}
+
 export interface FunctionExpression extends Expression {
     kind: SyntaxKind.FunctionExpression;
     params?: Identifier[];
     dots?: DotsLiteral;
     restParamName?: Identifier;
     body: Block;
+    flags: FunctionExpressionFlags;
 }
 
 export function isFunctionExpression(node: Node): node is FunctionExpression {
@@ -614,6 +619,7 @@ export function createFunctionExpression(
     params?: Identifier[],
     dots?: DotsLiteral,
     restParamName?: Identifier,
+    flags = FunctionExpressionFlags.None,
     tsOriginal?: ts.Node,
     parent?: Node
 ): FunctionExpression
@@ -627,6 +633,7 @@ export function createFunctionExpression(
     expression.dots = dots;
     setParent(restParamName, expression);
     expression.restParamName = restParamName;
+    expression.flags = flags;
     return expression;
 }
 
@@ -862,3 +869,27 @@ export function createTableIndexExpression(
 }
 
 export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
+
+export type FunctionDefinition = (VariableDeclarationStatement | AssignmentStatement) & {
+    right: [FunctionExpression];
+};
+
+export function isFunctionDefinition(statement: VariableDeclarationStatement | AssignmentStatement)
+    : statement is FunctionDefinition
+{
+    return statement.left.length === 1
+        && statement.right
+        && statement.right.length === 1
+        && isFunctionExpression(statement.right[0]);
+}
+
+export type InlineFunctionExpression = FunctionExpression & {
+    body: { statements: [ReturnStatement]; };
+};
+
+export function isInlineFunctionExpression(expression: FunctionExpression) : expression is InlineFunctionExpression {
+    return expression.body.statements
+        && expression.body.statements.length === 1
+        && isReturnStatement(expression.body.statements[0])
+        && (expression.flags & FunctionExpressionFlags.Inline) !== 0;
+}

@@ -652,6 +652,14 @@ export class TSHelper {
         return match && match[0] === str;
     }
 
+    // Checks that a name is valid for use in lua function declaration syntax:
+    // 'foo.bar' => passes ('function foo.bar()' is valid)
+    // 'getFoo().bar' => fails ('function getFoo().bar()' would be illegal)
+    public static isValidLuaFunctionDeclarationName(str: string): boolean {
+        const match = str.match(/[a-zA-Z0-9_\.]+/);
+        return match && match[0] === str;
+    }
+
     public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
         const falsibleFlags = ts.TypeFlags.Boolean
             | ts.TypeFlags.BooleanLiteral

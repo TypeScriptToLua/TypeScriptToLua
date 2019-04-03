@@ -7,7 +7,7 @@ test.each([
         typeScriptSource: `
             const abc = "foo";
             const def = "bar";
-            
+
             const xyz = "baz";`,
 
         assertPatterns: [
@@ -30,8 +30,8 @@ test.each([
             return abc();`,
 
         assertPatterns: [
-            { luaPattern: "abc = function(", typeScriptPattern: "abc() {" },
-            { luaPattern: "def = function(", typeScriptPattern: "def() {" },
+            { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
+            { luaPattern: "function def(", typeScriptPattern: "function def() {" },
             { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
         ],
     },
@@ -94,7 +94,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
     expect(sourceMap[sourceMapFiles[0]]).toBeDefined();
 
     const assertPatterns = [
-        { luaPattern: "abc = function(", typeScriptPattern: "abc() {" },
+        { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
         { luaPattern: `return "foo"`, typeScriptPattern: `return "foo"` },
     ];
 

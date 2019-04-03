@@ -376,24 +376,17 @@ export class LuaPrinter {
         return this.createSourceNode(statement, [this.indent("::"), statement.name, "::\n"]);
     }
 
-    private printReturnStatement(statement: tstl.ReturnStatement, inline?: boolean): SourceNode {
+    private printReturnStatement(statement: tstl.ReturnStatement): SourceNode {
         if (!statement.expressions || statement.expressions.length === 0) {
-            const ret = inline ? "return;" : this.indent("return;\n");
-            return this.createSourceNode(statement, ret);
+            return this.createSourceNode(statement, this.indent("return;\n"));
         }
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push("return ");
         chunks.push(...this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e))));
-        chunks.push(";");
+        chunks.push(";\n");
 
-        if (!inline) {
-            chunks.unshift(this.indent());
-            chunks.push("\n");
-        }
-
-        return this.createSourceNode(statement, chunks);
+        return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
     }
 
     private printBreakStatement(statement: tstl.BreakStatement): SourceNode {
@@ -467,7 +460,7 @@ export class LuaPrinter {
         }
     }
 
-    private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
+    private printFunctionParameters(expression: tstl.FunctionExpression): SourceChunk[] {
         const parameterChunks: SourceNode[] = expression.params
             ? expression.params.map(i => this.printIdentifier(i))
             : [];
@@ -475,50 +468,45 @@ export class LuaPrinter {
         if (expression.dots) {
             parameterChunks.push(this.printDotsLiteral(expression.dots));
         }
+        return ["(", ...this.joinChunks(", ", parameterChunks), ")"];
+    }
 
+    private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push("function(");
-        chunks.push(...this.joinChunks(", ", parameterChunks));
-        chunks.push(")");
+        chunks.push("function");
+        chunks.push(...this.printFunctionParameters(expression));
 
-        if (expression.body.statements && expression.body.statements.length === 1) {
-            const statement = expression.body.statements[0];
-            if (tstl.isReturnStatement(statement) && (expression.flags & tstl.FunctionExpressionFlags.Inline) !== 0) {
-                // Inline return-only functions with the flag
-                chunks.push(" ");
-                chunks.push(this.printReturnStatement(statement, true));
-                chunks.push(" end");
-                return this.createSourceNode(expression, chunks);
-            }
+        if (tstl.isInlineFunctionExpression(expression)) {
+            const returnStatement = expression.body.statements[0];
+            chunks.push(" ");
+            const returnNode: SourceChunk[] = [
+                "return ",
+                ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
+                ";",
+            ];
+            chunks.push(this.createSourceNode(returnStatement, returnNode));
+            chunks.push(" end");
+
+        } else {
+            chunks.push("\n");
+            this.pushIndent();
+            chunks.push(this.printBlock(expression.body));
+            this.popIndent();
+            chunks.push(this.indent("end"));
         }
-
-        chunks.push("\n");
-        this.pushIndent();
-        chunks.push(this.printBlock(expression.body));
-        this.popIndent();
-        chunks.push(this.indent("end"));
 
         return this.createSourceNode(expression, chunks);
     }
 
     private printFunctionDefinition(statement: tstl.FunctionDefinition): SourceNode {
         const expression = statement.right[0];
-        const parameterChunks: SourceNode[] = expression.params
-            ? expression.params.map(i => this.printIdentifier(i))
-            : [];
-
-        if (expression.dots) {
-            parameterChunks.push(this.printDotsLiteral(expression.dots));
-        }
-
         const chunks: SourceChunk[] = [];
 
         chunks.push("function ");
         chunks.push(this.printExpression(statement.left[0]));
-        chunks.push("(");
-        chunks.push(...this.joinChunks(", ", parameterChunks));
-        chunks.push(")\n");
+        chunks.push(...this.printFunctionParameters(expression));
+        chunks.push("\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(expression.body));

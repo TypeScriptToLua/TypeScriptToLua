@@ -882,3 +882,14 @@ export function isFunctionDefinition(statement: VariableDeclarationStatement | A
         && statement.right.length === 1
         && isFunctionExpression(statement.right[0]);
 }
+
+export type InlineFunctionExpression = FunctionExpression & {
+    body: { statements: [ReturnStatement]; };
+};
+
+export function isInlineFunctionExpression(expression: FunctionExpression) : expression is InlineFunctionExpression {
+    return expression.body.statements
+        && expression.body.statements.length === 1
+        && isReturnStatement(expression.body.statements[0])
+        && (expression.flags & FunctionExpressionFlags.Inline) !== 0;
+}

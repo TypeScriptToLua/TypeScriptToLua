@@ -768,7 +768,7 @@ test.each([
     "for (let i = 0; i < 3; i++) { continue; }",
     "for (let a in b) { continue; }",
     "for (let a of b) { continue; }",
-])("loop versions (%p)", loop => {
+])("loop continue in different lua versions (%p)", loop => {
     const lua51 = { luaTarget: LuaTarget.Lua51 };
     const lua52 = { luaTarget: LuaTarget.Lua52 };
     const lua53 = { luaTarget: LuaTarget.Lua53 };

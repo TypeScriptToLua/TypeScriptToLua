@@ -121,11 +121,17 @@ export function cloneNode<T extends Node>(node: T): T {
     return Object.assign({}, node);
 }
 
+export function setNodePosition<T extends Node>(node: T, position: TextRange): T {
+    node.line = position.line;
+    node.column = position.column;
+
+    return node;
+}
+
 export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        node.line = sourcePosition.line;
-        node.column = sourcePosition.column;
+        setNodePosition(node, sourcePosition);
     }
 
     return node;

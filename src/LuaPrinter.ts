@@ -232,8 +232,7 @@ export class LuaPrinter {
 
         if (tstl.isFunctionDefinition(statement)) {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
-            const name = this.printExpression(statement.left[0]);
-            chunks.push(this.printFunctionExpression(statement.right[0], name));
+            chunks.push(this.printFunctionDefinition(statement));
             chunks.push("\n");
 
         } else {
@@ -260,7 +259,7 @@ export class LuaPrinter {
             // Use `function foo()` instead of `foo = function()`
             const name = this.printExpression(statement.left[0]);
             if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
-                chunks.push(this.printFunctionExpression(statement.right[0], name));
+                chunks.push(this.printFunctionDefinition(statement));
                 chunks.push("\n");
                 return this.createSourceNode(statement, chunks);
             }
@@ -468,7 +467,7 @@ export class LuaPrinter {
         }
     }
 
-    private printFunctionExpression(expression: tstl.FunctionExpression, name?: SourceChunk): SourceNode {
+    private printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
         const parameterChunks: SourceNode[] = expression.params
             ? expression.params.map(i => this.printIdentifier(i))
             : [];
@@ -479,34 +478,52 @@ export class LuaPrinter {
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push("function");
-
-        if (name) {
-            chunks.push(" ");
-            chunks.push(name);
-        }
-
-        chunks.push("(");
+        chunks.push("function(");
         chunks.push(...this.joinChunks(", ", parameterChunks));
         chunks.push(")");
 
-        if (expression.body.statements
-            && expression.body.statements.length === 1
-            && tstl.isReturnStatement(expression.body.statements[0])
-            && (expression.flags & tstl.FunctionExpressionFlags.Inline) !== 0)
-        {
-            // Inline return-only functions with the flag
-            chunks.push(" ");
-            chunks.push(this.printReturnStatement(expression.body.statements[0] as tstl.ReturnStatement, true));
-            chunks.push(" end");
-
-        } else {
-            chunks.push("\n");
-            this.pushIndent();
-            chunks.push(this.printBlock(expression.body));
-            this.popIndent();
-            chunks.push(this.indent("end"));
+        if (expression.body.statements && expression.body.statements.length === 1) {
+            const statement = expression.body.statements[0];
+            if (tstl.isReturnStatement(statement) && (expression.flags & tstl.FunctionExpressionFlags.Inline) !== 0) {
+                // Inline return-only functions with the flag
+                chunks.push(" ");
+                chunks.push(this.printReturnStatement(statement, true));
+                chunks.push(" end");
+                return this.createSourceNode(expression, chunks);
+            }
         }
+
+        chunks.push("\n");
+        this.pushIndent();
+        chunks.push(this.printBlock(expression.body));
+        this.popIndent();
+        chunks.push(this.indent("end"));
+
+        return this.createSourceNode(expression, chunks);
+    }
+
+    private printFunctionDefinition(statement: tstl.FunctionDefinition): SourceNode {
+        const expression = statement.right[0];
+        const parameterChunks: SourceNode[] = expression.params
+            ? expression.params.map(i => this.printIdentifier(i))
+            : [];
+
+        if (expression.dots) {
+            parameterChunks.push(this.printDotsLiteral(expression.dots));
+        }
+
+        const chunks: SourceChunk[] = [];
+
+        chunks.push("function ");
+        chunks.push(this.printExpression(statement.left[0]));
+        chunks.push("(");
+        chunks.push(...this.joinChunks(", ", parameterChunks));
+        chunks.push(")\n");
+
+        this.pushIndent();
+        chunks.push(this.printBlock(expression.body));
+        this.popIndent();
+        chunks.push(this.indent("end"));
 
         return this.createSourceNode(expression, chunks);
     }

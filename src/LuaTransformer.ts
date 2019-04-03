@@ -4622,9 +4622,7 @@ export class LuaTransformer {
                 let assignment: tstl.AssignmentStatement | undefined;
                 if (declaration.right) {
                     assignment = tstl.createAssignmentStatement(declaration.left, declaration.right);
-                    // Preserve position info for sourcemap
-                    assignment.line = declaration.line;
-                    assignment.column = declaration.column;
+                    tstl.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
                 }
                 const i = result.indexOf(declaration);
                 if (i >= 0) {

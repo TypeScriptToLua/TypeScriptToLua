@@ -227,12 +227,28 @@ end"
 `;
 
 exports[`Transformation (forIn) 1`] = `
-"for i in pairs({a = 1, b = 2, c = 3, d = 4}) do
+"for i in pairs({
+    a = 1,
+    b = 2,
+    c = 3,
+    d = 4,
+}) do
 end"
 `;
 
 exports[`Transformation (forOf) 1`] = `
-"local ____TS_array = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+"local ____TS_array = {
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+};
 for ____TS_index = 1, #____TS_array do
     local i = ____TS_array[____TS_index];
 end"
@@ -585,7 +601,10 @@ f = noTupleReturn(_G);
 foo(_G, ({tupleReturn(_G)}));
 foo(_G, noTupleReturn(_G));
 function tupleReturnFromVar(self)
-    local r = {1, \\"baz\\"};
+    local r = {
+        1,
+        \\"baz\\",
+    };
     return table.unpack(r);
 end
 function tupleReturnForward(self)

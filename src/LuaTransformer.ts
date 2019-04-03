@@ -4621,10 +4621,8 @@ export class LuaTransformer {
             if (symbols.some(s => this.shouldHoist(s, scope))) {
                 let assignment: tstl.AssignmentStatement | undefined;
                 if (declaration.right) {
-                    assignment = tstl.createAssignmentStatement(
-                        declaration.left,
-                        declaration.right
-                    );
+                    assignment = tstl.createAssignmentStatement(declaration.left, declaration.right);
+                    // Preserve position info for sourcemap
                     assignment.line = declaration.line;
                     assignment.column = declaration.column;
                 }

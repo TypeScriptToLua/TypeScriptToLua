@@ -231,6 +231,7 @@ export class LuaPrinter {
         chunks.push(this.indent("local "));
 
         if (tstl.isFunctionDefinition(statement)) {
+            // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
             const name = this.printExpression(statement.left[0]);
             chunks.push(this.printFunctionExpression(statement.right[0], name));
             chunks.push("\n");
@@ -256,6 +257,7 @@ export class LuaPrinter {
         if (tstl.isFunctionDefinition(statement)
             && (statement.right[0].flags & tstl.FunctionExpressionFlags.Declaration) !== 0)
         {
+            // Use `function foo()` instead of `foo = function()`
             const name = this.printExpression(statement.left[0]);
             if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
                 chunks.push(this.printFunctionExpression(statement.right[0], name));
@@ -493,6 +495,7 @@ export class LuaPrinter {
             && tstl.isReturnStatement(expression.body.statements[0])
             && (expression.flags & tstl.FunctionExpressionFlags.Inline) !== 0)
         {
+            // Inline return-only functions with the flag
             chunks.push(" ");
             chunks.push(this.printReturnStatement(expression.body.statements[0] as tstl.ReturnStatement, true));
             chunks.push(" end");
@@ -531,14 +534,18 @@ export class LuaPrinter {
 
         chunks.push("{");
 
-        if (expression.fields) {
-            expression.fields.forEach((f, i) => {
-                if (i < expression.fields.length - 1) {
-                    chunks.push(this.printTableFieldExpression(f), ", ");
-                } else {
-                    chunks.push(this.printTableFieldExpression(f));
-                }
-            });
+        if (expression.fields && expression.fields.length > 0) {
+            if (expression.fields.length === 1) {
+                // Inline tables with only one entry
+                chunks.push(this.printTableFieldExpression(expression.fields[0]));
+
+            } else {
+                chunks.push("\n");
+                this.pushIndent();
+                expression.fields.forEach(f => chunks.push(this.indent(), this.printTableFieldExpression(f), ",\n"));
+                this.popIndent();
+                chunks.push(this.indent());
+            }
         }
 
         chunks.push("}");

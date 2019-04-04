@@ -1817,6 +1817,14 @@ export class LuaTransformer {
             );
         }
 
+        if (!ts.isCallLikeExpression(expression)) {
+            // Assign expression statements to dummy to make sure they're legal lua
+            return tstl.createVariableDeclarationStatement(
+                tstl.createAnnonymousIdentifier(),
+                this.transformExpression(expression)
+            );
+        }
+
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
 
@@ -3481,7 +3489,10 @@ export class LuaTransformer {
                 const logCall1 = tstl.createCallExpression(log1, params);
                 const e = tstl.createNumericLiteral(expressionName === "log10" ? Math.LN10 : Math.LN2);
                 const div = tstl.createBinaryExpression(logCall1, e, tstl.SyntaxKind.DivisionOperator);
-                return tstl.createParenthesizedExpression(div, node);
+                return ts.isExpressionStatement(node.parent)
+                    // if used as a stand-alone statement, needs to be a call expression to be valid lua
+                    ? this.createImmediatelyInvokedFunctionExpression([], div, node)
+                    : tstl.createParenthesizedExpression(div, node);
             }
 
             // math.log(1 + x)
@@ -4235,7 +4246,8 @@ export class LuaTransformer {
     {
         const body = statements ? statements.slice(0) : [];
         body.push(tstl.createReturnStatement(Array.isArray(result) ? result : [result]));
-        const iife = tstl.createFunctionExpression(tstl.createBlock(body));
+        const flags = statements.length === 0 ? tstl.FunctionExpressionFlags.Inline : tstl.FunctionExpressionFlags.None;
+        const iife = tstl.createFunctionExpression(tstl.createBlock(body), undefined, undefined, undefined, flags);
         return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), [], tsOriginal);
     }
 

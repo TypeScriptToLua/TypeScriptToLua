@@ -5,7 +5,7 @@ test.each([LuaTarget.LuaJIT, "jit", "JiT"])("Options luaTarget case-insensitive 
     const options = { luaTarget: target as LuaTarget };
     const result = util.transpileString("~a", options);
 
-    expect(result).toBe("bit.bnot(a);");
+    expect(result).toBe("local ____ = bit.bnot(a);");
 });
 
 test.each([LuaLibImportKind.None, "none", "NoNe"])(

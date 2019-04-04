@@ -8,9 +8,9 @@ test.each([
     { input: "++i", lua: "i = i + 1;" },
     { input: "i--", lua: "i = i - 1;" },
     { input: "--i", lua: "i = i - 1;" },
-    { input: "!a", lua: "not a;" },
-    { input: "-a", lua: "-a;" },
-    { input: "+a", lua: "a;" },
+    { input: "!a", lua: "local ____ = not a;" },
+    { input: "-a", lua: "local ____ = -a;" },
+    { input: "+a", lua: "local ____ = a;" },
     {
         input: "let a = delete tbl['test']",
         lua: "local a = (function()\n    tbl.test = nil;\n    return true;\nend)();",
@@ -106,18 +106,18 @@ test.each([
 });
 
 test.each([
-    { input: "~a", lua: "bit.bnot(a);" },
-    { input: "a&b", lua: "bit.band(a, b);" },
+    { input: "~a", lua: "local ____ = bit.bnot(a);" },
+    { input: "a&b", lua: "local ____ = bit.band(a, b);" },
     { input: "a&=b", lua: "a = bit.band(a, b);" },
-    { input: "a|b", lua: "bit.bor(a, b);" },
+    { input: "a|b", lua: "local ____ = bit.bor(a, b);" },
     { input: "a|=b", lua: "a = bit.bor(a, b);" },
-    { input: "a^b", lua: "bit.bxor(a, b);" },
+    { input: "a^b", lua: "local ____ = bit.bxor(a, b);" },
     { input: "a^=b", lua: "a = bit.bxor(a, b);" },
-    { input: "a<<b", lua: "bit.lshift(a, b);" },
+    { input: "a<<b", lua: "local ____ = bit.lshift(a, b);" },
     { input: "a<<=b", lua: "a = bit.lshift(a, b);" },
-    { input: "a>>b", lua: "bit.arshift(a, b);" },
+    { input: "a>>b", lua: "local ____ = bit.arshift(a, b);" },
     { input: "a>>=b", lua: "a = bit.arshift(a, b);" },
-    { input: "a>>>b", lua: "bit.rshift(a, b);" },
+    { input: "a>>>b", lua: "local ____ = bit.rshift(a, b);" },
     { input: "a>>>=b", lua: "a = bit.rshift(a, b);" },
 ])("Bitop [JIT] (%p)", ({ input, lua }) => {
     const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
@@ -125,18 +125,18 @@ test.each([
 });
 
 test.each([
-    { input: "~a", lua: "bit32.bnot(a);" },
-    { input: "a&b", lua: "bit32.band(a, b);" },
+    { input: "~a", lua: "local ____ = bit32.bnot(a);" },
+    { input: "a&b", lua: "local ____ = bit32.band(a, b);" },
     { input: "a&=b", lua: "a = bit32.band(a, b);" },
-    { input: "a|b", lua: "bit32.bor(a, b);" },
+    { input: "a|b", lua: "local ____ = bit32.bor(a, b);" },
     { input: "a|=b", lua: "a = bit32.bor(a, b);" },
-    { input: "a^b", lua: "bit32.bxor(a, b);" },
+    { input: "a^b", lua: "local ____ = bit32.bxor(a, b);" },
     { input: "a^=b", lua: "a = bit32.bxor(a, b);" },
-    { input: "a<<b", lua: "bit32.lshift(a, b);" },
+    { input: "a<<b", lua: "local ____ = bit32.lshift(a, b);" },
     { input: "a<<=b", lua: "a = bit32.lshift(a, b);" },
-    { input: "a>>b", lua: "bit32.arshift(a, b);" },
+    { input: "a>>b", lua: "local ____ = bit32.arshift(a, b);" },
     { input: "a>>=b", lua: "a = bit32.arshift(a, b);" },
-    { input: "a>>>b", lua: "bit32.rshift(a, b);" },
+    { input: "a>>>b", lua: "local ____ = bit32.rshift(a, b);" },
     { input: "a>>>=b", lua: "a = bit32.rshift(a, b);" },
 ])("Bitop [5.2] (%p)", ({ input, lua }) => {
     const options = { luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None };
@@ -144,16 +144,16 @@ test.each([
 });
 
 test.each([
-    { input: "~a", lua: "~a;" },
-    { input: "a&b", lua: "a & b;" },
+    { input: "~a", lua: "local ____ = ~a;" },
+    { input: "a&b", lua: "local ____ = a & b;" },
     { input: "a&=b", lua: "a = a & b;" },
-    { input: "a|b", lua: "a | b;" },
+    { input: "a|b", lua: "local ____ = a | b;" },
     { input: "a|=b", lua: "a = a | b;" },
-    { input: "a^b", lua: "a ~ b;" },
+    { input: "a^b", lua: "local ____ = a ~ b;" },
     { input: "a^=b", lua: "a = a ~ b;" },
-    { input: "a<<b", lua: "a << b;" },
+    { input: "a<<b", lua: "local ____ = a << b;" },
     { input: "a<<=b", lua: "a = a << b;" },
-    { input: "a>>>b", lua: "a >> b;" },
+    { input: "a>>>b", lua: "local ____ = a >> b;" },
     { input: "a>>>=b", lua: "a = a >> b;" },
 ])("Bitop [5.3] (%p)", ({ input, lua }) => {
     const options = { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None };
@@ -183,7 +183,7 @@ test.each([
     { input: "1*(3+4*2)", lua: "1 * (3 + 4 * 2);" },
     { input: "10-(4+5)", lua: "10 - (4 + 5);" },
 ])("Binary expressions ordering parentheses (%p)", ({ input, lua }) => {
-    expect(util.transpileString(input)).toBe(lua);
+    expect(util.transpileString(input)).toBe("local ____ = " + lua);
 });
 
 test.each([
@@ -208,11 +208,11 @@ test("Binary Comma Statement in For Loop", () => {
 });
 
 test("Null Expression", () => {
-    expect(util.transpileString("null")).toBe("nil;");
+    expect(util.transpileString("null")).toBe("local ____ = nil;");
 });
 
 test("Undefined Expression", () => {
-    expect(util.transpileString("undefined")).toBe("nil;");
+    expect(util.transpileString("undefined")).toBe("local ____ = nil;");
 });
 
 test.each([
@@ -552,4 +552,27 @@ test("Unsupported object literal element error", () => {
             util.nodeStub,
         ),
     );
+});
+
+test.each([
+    '"foobar"',
+    "17",
+    "true",
+    "{}",
+    "[]",
+    "[].length",
+    "foo() + foo()",
+    "!foo()",
+    "foo()",
+    "typeof foo",
+    '"bar" in foo',
+    "foo as Function",
+    "Math.log2(2)",
+    "Math.log10(2)",
+])("Expression statements", (input) => {
+    const code = `
+        declare function foo(): number;
+        ${input};
+    `;
+    expect(() => util.transpileString(code, undefined, false)).not.toThrow();
 });

@@ -565,14 +565,16 @@ test.each([
     "!foo()",
     "foo()",
     "typeof foo",
-    '"bar" in foo',
+    '"bar" in bar',
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
-])("Expression statements", input => {
+])("Expression statements (%p)", input => {
     const code = `
-        declare function foo(): number;
+        function foo() { return 17; }
+        const bar = {};
         ${input};
+        return 1;
     `;
-    expect(() => util.transpileString(code, undefined, false)).not.toThrow();
+    expect(util.transpileAndExecute(code)).toBe(1);
 });

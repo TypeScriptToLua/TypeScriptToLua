@@ -261,7 +261,7 @@ end"
 `;
 
 exports[`Transformation (getSetAccessors) 1`] = `
-"require(\\"lualib_bundle\\")
+"require(\\"lualib_bundle\\");
 MyClass = MyClass or {}
 MyClass.__index = MyClass
 MyClass.prototype = MyClass.prototype or {}

@@ -107,7 +107,7 @@ export class LuaPrinter {
 
         const mapString = "{" + mapItems.join(",") + "}";
 
-        return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString})`;
+        return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
     private printImplementation(
@@ -126,7 +126,7 @@ export class LuaPrinter {
             if ((this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
                 || this.options.luaLibImport === LuaLibImportKind.Always)
             {
-                header += `require("lualib_bundle")\n`;
+                header += `require("lualib_bundle");\n`;
             }
             // Inline lualib features
             else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)

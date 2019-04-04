@@ -34,13 +34,42 @@ test.each([
     { a: "test", b: "hello", c: "bye" },
     { a: "test", b: 42, c: "bye" },
     { a: "test", b: 42, c: 12 },
+    { a: "test", b: 42, c: true },
+    { a: false, b: 42, c: 12 },
 ])("Template Strings (%p)", ({ a, b, c }) => {
     const a1 = typeof a === "string" ? "'" + a + "'" : a;
     const b1 = typeof b === "string" ? "'" + b + "'" : b;
     const c1 = typeof c === "string" ? "'" + c + "'" : c;
 
-    const result = util.transpileAndExecute(
-        "let a = " + a1 + "; let b = " + b1 + "; let c = " + c1 + "; return `${a} ${b} test ${c}`;",
+    const result = util.transpileAndExecute(`
+        let a = ${a1};
+        let b = ${b1};
+        let c = ${c1};
+        return \`${a} ${b} test ${c}\`;
+        `
+    );
+
+    expect(result).toBe(`${a} ${b} test ${c}`);
+});
+
+test.each([
+    { a: 12, b: 23, c: 43 },
+    { a: "test", b: "hello", c: "bye" },
+    { a: "test", b: 42, c: "bye" },
+    { a: "test", b: 42, c: 12 },
+    { a: "test", b: 42, c: true },
+    { a: false, b: 42, c: 12 },
+])("String Concat Operator (%p)", ({ a, b, c }) => {
+    const a1 = typeof a === "string" ? "'" + a + "'" : a;
+    const b1 = typeof b === "string" ? "'" + b + "'" : b;
+    const c1 = typeof c === "string" ? "'" + c + "'" : c;
+
+    const result = util.transpileAndExecute(`
+        let a = ${a1};
+        let b = ${b1};
+        let c = ${c1};
+        return a + " " + b + " test " + c;
+        `
     );
 
     expect(result).toBe(`${a} ${b} test ${c}`);

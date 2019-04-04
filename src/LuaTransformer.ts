@@ -6,6 +6,7 @@ import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
+import { expression } from "@babel/template";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;
@@ -2396,6 +2397,10 @@ export class LuaTransformer {
                 return this.transformBinaryBitOperation(tsOriginal, left, right, operator);
             default:
                 const luaOperator = this.transformBinaryOperator(operator, tsOriginal);
+                if (luaOperator === tstl.SyntaxKind.ConcatOperator) {
+                    left = this.wrapInToStringForConcat(left);
+                    right = this.wrapInToStringForConcat(right);
+                }
                 return tstl.createBinaryExpression(left, right, luaOperator, tsOriginal);
         }
     }
@@ -4091,8 +4096,7 @@ export class LuaTransformer {
         }
 
         expression.templateSpans.forEach(span => {
-            const expr = this.transformExpression(span.expression);
-            parts.push(tstl.createCallExpression(tstl.createIdentifier("tostring"), [expr]));
+            parts.push(this.wrapInToStringForConcat(this.transformExpression(span.expression)));
 
             const text = tsHelper.escapeString(span.literal.text);
             if (text.length > 0) {
@@ -4487,12 +4491,28 @@ export class LuaTransformer {
 
     private wrapInFunctionCall(expression: tstl.Expression): tstl.FunctionExpression {
         const returnStatement = tstl.createReturnStatement([expression]);
-        return tstl.createFunctionExpression(tstl.createBlock([returnStatement]));
+        return tstl.createFunctionExpression(
+            tstl.createBlock([returnStatement]),
+            undefined,
+            undefined,
+            undefined,
+            tstl.FunctionExpressionFlags.Inline
+        );
     }
 
     private wrapInTable(...expressions: tstl.Expression[]): tstl.ParenthesizedExpression {
         const fields = expressions.map(e => tstl.createTableFieldExpression(e));
         return tstl.createParenthesizedExpression(tstl.createTableExpression(fields));
+    }
+
+    private wrapInToStringForConcat(expression: tstl.Expression): tstl.Expression {
+        if (tstl.isStringLiteral(expression)
+            || tstl.isNumericLiteral(expression)
+            || (tstl.isBinaryExpression(expression) && expression.operator === tstl.SyntaxKind.ConcatOperator))
+        {
+            return expression;
+        }
+        return tstl.createCallExpression(tstl.createIdentifier("tostring"), [expression]);
     }
 
     private expressionPlusOne(expression: tstl.Expression): tstl.BinaryExpression {

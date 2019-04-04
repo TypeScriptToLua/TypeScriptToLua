@@ -569,7 +569,7 @@ test.each([
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
-])("Expression statements", (input) => {
+])("Expression statements", input => {
     const code = `
         declare function foo(): number;
         ${input};

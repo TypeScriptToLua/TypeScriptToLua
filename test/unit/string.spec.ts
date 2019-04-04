@@ -46,8 +46,7 @@ test.each([
         let b = ${b1};
         let c = ${c1};
         return \`${a} ${b} test ${c}\`;
-        `
-    );
+        `);
 
     expect(result).toBe(`${a} ${b} test ${c}`);
 });
@@ -69,8 +68,7 @@ test.each([
         let b = ${b1};
         let c = ${c1};
         return a + " " + b + " test " + c;
-        `
-    );
+        `);
 
     expect(result).toBe(`${a} ${b} test ${c}`);
 });

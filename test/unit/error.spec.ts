@@ -3,7 +3,7 @@ import * as util from "../util";
 
 test("throwString", () => {
     const lua = util.transpileString(`throw "Some Error"`);
-    expect(lua).toBe(`error("Some Error");`);
+    expect(lua).toBe(`error("Some Error")`);
 });
 
 test("throwError", () => {

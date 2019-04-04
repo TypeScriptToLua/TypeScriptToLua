@@ -10,7 +10,7 @@ test("Assignment destructuring [5.1]", () => {
         luaTarget: LuaTarget.Lua51,
         luaLibImport: LuaLibImportKind.None,
     });
-    expect(lua).toBe(`local a, b = unpack(myFunc());`);
+    expect(lua).toBe(`local a, b = unpack(myFunc())`);
 });
 
 test("Assignment destructuring [5.2]", () => {
@@ -18,7 +18,7 @@ test("Assignment destructuring [5.2]", () => {
         luaTarget: LuaTarget.Lua52,
         luaLibImport: LuaLibImportKind.None,
     });
-    expect(lua).toBe(`local a, b = table.unpack(myFunc());`);
+    expect(lua).toBe(`local a, b = table.unpack(myFunc())`);
 });
 
 test("Assignment destructuring [JIT]", () => {
@@ -26,7 +26,7 @@ test("Assignment destructuring [JIT]", () => {
         luaTarget: LuaTarget.LuaJIT,
         luaLibImport: LuaLibImportKind.None,
     });
-    expect(lua).toBe(`local a, b = unpack(myFunc());`);
+    expect(lua).toBe(`local a, b = unpack(myFunc())`);
 });
 
 test.each([

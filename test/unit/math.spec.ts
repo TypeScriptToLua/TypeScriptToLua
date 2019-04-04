@@ -1,15 +1,15 @@
 import * as util from "../util";
 
 test.each([
-    { inp: "Math.cos()", expected: "math.cos();" },
-    { inp: "Math.sin()", expected: "math.sin();" },
-    { inp: "Math.min()", expected: "math.min();" },
-    { inp: "Math.atan2(2, 3)", expected: "math.atan(2 / 3);" },
-    { inp: "Math.log2(3)", expected: `(math.log(3) / ${Math.LN2});` },
-    { inp: "Math.log10(3)", expected: `(math.log(3) / ${Math.LN10});` },
-    { inp: "Math.log1p(3)", expected: "math.log(1 + 3);" },
-    { inp: "Math.round(3.3)", expected: "math.floor(3.3 + 0.5);" },
-    { inp: "Math.PI", expected: "math.pi;" },
+    { inp: "Math.cos()", expected: "math.cos()" },
+    { inp: "Math.sin()", expected: "math.sin()" },
+    { inp: "Math.min()", expected: "math.min()" },
+    { inp: "Math.atan2(2, 3)", expected: "math.atan(2 / 3)" },
+    { inp: "Math.log2(3)", expected: `(math.log(3) / ${Math.LN2})` },
+    { inp: "Math.log10(3)", expected: `(math.log(3) / ${Math.LN10})` },
+    { inp: "Math.log1p(3)", expected: "math.log(1 + 3)" },
+    { inp: "Math.round(3.3)", expected: "math.floor(3.3 + 0.5)" },
+    { inp: "Math.PI", expected: "math.pi" },
 ])("Math (%p)", ({ inp, expected }) => {
     const lua = util.transpileString(inp);
 

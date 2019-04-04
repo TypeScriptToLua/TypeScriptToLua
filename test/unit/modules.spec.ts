@@ -23,7 +23,7 @@ test("lualibRequireAlways", () => {
         luaTarget: LuaTarget.LuaJIT,
     });
 
-    expect(lua).toBe(`require("lualib_bundle");`);
+    expect(lua).toBe(`require("lualib_bundle")`);
 });
 
 test("Non-exported module", () => {

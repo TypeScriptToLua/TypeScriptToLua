@@ -13,7 +13,7 @@ test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" }
     json => {
         const lua = util
             .transpileString(json, jsonOptions, false, "file.json")
-            .replace(/^return ([\s\S]+);$/, "return JSONStringify($1);");
+            .replace(/^return ([\s\S]+)$/, "return JSONStringify($1)");
 
         const result = util.executeLua(lua);
         expect(JSON.parse(result)).toEqual(JSON.parse(json));

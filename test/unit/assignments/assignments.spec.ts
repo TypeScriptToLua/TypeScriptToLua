@@ -10,8 +10,8 @@ test.each([
     { inp: "false", out: "false" },
     { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
 ])("Const assignment (%p)", ({ inp, out }) => {
-    const lua = util.transpileString(`const myvar = ${inp};`);
-    expect(lua).toBe(`local myvar = ${out};`);
+    const lua = util.transpileString(`const myvar = ${inp}`);
+    expect(lua).toBe(`local myvar = ${out}`);
 });
 
 test.each([
@@ -22,8 +22,8 @@ test.each([
     { inp: "false", out: "false" },
     { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
 ])("Let assignment (%p)", ({ inp, out }) => {
-    const lua = util.transpileString(`let myvar = ${inp};`);
-    expect(lua).toBe(`local myvar = ${out};`);
+    const lua = util.transpileString(`let myvar = ${inp}`);
+    expect(lua).toBe(`local myvar = ${out}`);
 });
 
 test.each([
@@ -34,8 +34,8 @@ test.each([
     { inp: "false", out: "false" },
     { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
 ])("Var assignment (%p)", ({ inp, out }) => {
-    const lua = util.transpileString(`var myvar = ${inp};`);
-    expect(lua).toBe(`myvar = ${out};`);
+    const lua = util.transpileString(`var myvar = ${inp}`);
+    expect(lua).toBe(`myvar = ${out}`);
 });
 
 test.each(["var myvar;", "let myvar;", "const myvar = null;", "const myvar = undefined;"])(
@@ -84,7 +84,7 @@ test("TupleReturn assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = abc();");
+    expect(lua).toBe("local a, b = abc()");
 });
 
 test("TupleReturn Single assignment", () => {
@@ -96,7 +96,7 @@ test("TupleReturn Single assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local a = ({abc()});\na = ({abc()});");
+    expect(lua).toBe("local a = ({abc()})\na = ({abc()})");
 });
 
 test("TupleReturn interface assignment", () => {
@@ -109,7 +109,7 @@ test("TupleReturn interface assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = jkl:abc();");
+    expect(lua).toBe("local a, b = jkl:abc()");
 });
 
 test("TupleReturn namespace assignment", () => {
@@ -122,7 +122,7 @@ test("TupleReturn namespace assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = def.abc();");
+    expect(lua).toBe("local a, b = def.abc()");
 });
 
 test("TupleReturn method assignment", () => {
@@ -135,7 +135,7 @@ test("TupleReturn method assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local jkl = def.new();\nlocal a, b = jkl:abc();");
+    expect(lua).toBe("local jkl = def.new()\nlocal a, b = jkl:abc()");
 });
 
 test("TupleReturn functional", () => {

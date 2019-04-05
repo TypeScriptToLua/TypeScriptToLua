@@ -6,7 +6,6 @@ import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
-import { expression } from "@babel/template";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression | undefined;

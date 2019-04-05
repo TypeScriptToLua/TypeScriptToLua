@@ -37,9 +37,9 @@ test.each([
     { a: "test", b: 42, c: true },
     { a: false, b: 42, c: 12 },
 ])("Template Strings (%p)", ({ a, b, c }) => {
-    const a1 = typeof a === "string" ? "'" + a + "'" : a;
-    const b1 = typeof b === "string" ? "'" + b + "'" : b;
-    const c1 = typeof c === "string" ? "'" + c + "'" : c;
+    const a1 = typeof a === "string" ? `'${a}'` : a;
+    const b1 = typeof b === "string" ? `'${b}'` : b;
+    const c1 = typeof c === "string" ? `'${c}'` : c;
 
     const result = util.transpileAndExecute(`
         let a = ${a1};
@@ -59,9 +59,9 @@ test.each([
     { a: "test", b: 42, c: true },
     { a: false, b: 42, c: 12 },
 ])("String Concat Operator (%p)", ({ a, b, c }) => {
-    const a1 = typeof a === "string" ? "'" + a + "'" : a;
-    const b1 = typeof b === "string" ? "'" + b + "'" : b;
-    const c1 = typeof c === "string" ? "'" + c + "'" : c;
+    const a1 = typeof a === "string" ? `'${a}'` : a;
+    const b1 = typeof b === "string" ? `'${b}'` : b;
+    const c1 = typeof c === "string" ? `'${c}'` : c;
 
     const result = util.transpileAndExecute(`
         let a = ${a1};

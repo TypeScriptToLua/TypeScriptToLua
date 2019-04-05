@@ -2,12 +2,12 @@ import * as util from "../util";
 const fs = require("fs");
 
 test.each([
-    { inp: `{a:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n};' },
-    { inp: `{"a":3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n};' },
-    { inp: `{["a"]:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n};' },
-    { inp: `{["a"+123]:3,b:"4"}`, out: '{\n    ["a" .. 123] = 3,\n    b = "4",\n};' },
-    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4",\n};' },
-    { inp: `{x}`, out: `{x = x};` },
+    { inp: `{a:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
+    { inp: `{"a":3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
+    { inp: `{["a"]:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
+    { inp: `{["a"+123]:3,b:"4"}`, out: '{\n    ["a" .. 123] = 3,\n    b = "4",\n}' },
+    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4",\n}' },
+    { inp: `{x}`, out: `{x = x}` },
 ])("Object Literal (%p)", ({ inp, out }) => {
     const lua = util.transpileString(`const myvar = ${inp};`);
     expect(lua).toBe(`local myvar = ${out}`);

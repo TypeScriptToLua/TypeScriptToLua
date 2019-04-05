@@ -172,10 +172,48 @@ export class LuaPrinter {
     }
 
     private printBlock(block: tstl.Block): SourceNode {
-        return this.createSourceNode(
-            block,
-            this.ignoreDeadStatements(block.statements).map(s => this.printStatement(s))
+        return this.createSourceNode(block, this.printStatementArray(block.statements));
+    }
+
+    private statementMayRequireSemiColon(statement: tstl.Statement): boolean {
+        // Types of statements that could create ambiguous syntax if followed by parenthesis
+        return tstl.isVariableDeclarationStatement(statement)
+            || tstl.isAssignmentStatement(statement)
+            || tstl.isExpressionStatement(statement);
+    }
+
+    private nodeStartsWithParenthesis(sourceNode: SourceNode): boolean {
+        let result: boolean | undefined;
+        sourceNode.walk(chunk => {
+            if (result === undefined) {
+                chunk = chunk.trimLeft(); // Ignore leading whitespace
+
+                if (chunk.length > 0) {
+                    result = chunk.startsWith("(");
+                }
+            }
+        });
+        return result || false;
+    }
+
+    private printStatementArray(statements: tstl.Statement[]): SourceChunk[] {
+        const statementNodes: SourceNode[] = [];
+        statements = this.removeDeadAndEmptyStatements(statements);
+        statements.forEach(
+            (s, i) => {
+                const node = this.printStatement(s);
+
+                if (i > 0
+                    && this.statementMayRequireSemiColon(statements[i - 1])
+                    && this.nodeStartsWithParenthesis(node))
+                {
+                    statementNodes[i - 1].add(";");
+                }
+
+                statementNodes.push(node);
+            }
         );
+        return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];
     }
 
     private printStatement(statement: tstl.Statement): SourceNode {
@@ -214,13 +252,11 @@ export class LuaPrinter {
     private printDoStatement(statement: tstl.DoStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        if (statement.statements && statement.statements.length > 0) {
-            chunks.push(this.indent("do\n"));
-            this.pushIndent();
-            chunks.push(...this.ignoreDeadStatements(statement.statements).map(s => this.printStatement(s)));
-            this.popIndent();
-            chunks.push(this.indent("end\n"));
-        }
+        chunks.push(this.indent("do\n"));
+        this.pushIndent();
+        chunks.push(...this.printStatementArray(statement.statements));
+        this.popIndent();
+        chunks.push(this.indent("end"));
 
         return this.concatNodes(...chunks);
     }
@@ -233,7 +269,6 @@ export class LuaPrinter {
         if (tstl.isFunctionDefinition(statement)) {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
             chunks.push(this.printFunctionDefinition(statement));
-            chunks.push("\n");
 
         } else {
             chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
@@ -242,7 +277,6 @@ export class LuaPrinter {
                 chunks.push(" = ");
                 chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
             }
-            chunks.push(";\n");
         }
 
         return this.concatNodes(...chunks);
@@ -260,7 +294,6 @@ export class LuaPrinter {
             const name = this.printExpression(statement.left[0]);
             if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
                 chunks.push(this.printFunctionDefinition(statement));
-                chunks.push("\n");
                 return this.createSourceNode(statement, chunks);
             }
         }
@@ -268,7 +301,6 @@ export class LuaPrinter {
         chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
         chunks.push(" = ");
         chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
-        chunks.push(";\n");
 
         return this.createSourceNode(statement, chunks);
     }
@@ -292,10 +324,10 @@ export class LuaPrinter {
                 this.pushIndent();
                 chunks.push(this.printBlock(statement.elseBlock));
                 this.popIndent();
-                chunks.push(this.indent("end\n"));
+                chunks.push(this.indent("end"));
             }
         } else {
-            chunks.push(this.indent("end\n"));
+            chunks.push(this.indent("end"));
         }
 
         return this.concatNodes(...chunks);
@@ -310,7 +342,7 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("end\n"));
+        chunks.push(this.indent("end"));
 
         return this.concatNodes(...chunks);
     }
@@ -324,7 +356,7 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("until "), this.printExpression(statement.condtion), ";\n");
+        chunks.push(this.indent("until "), this.printExpression(statement.condtion));
 
         return this.concatNodes(...chunks);
     }
@@ -347,7 +379,7 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("end\n"));
+        chunks.push(this.indent("end"));
 
         return this.concatNodes(...chunks);
     }
@@ -363,38 +395,37 @@ export class LuaPrinter {
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
-        chunks.push(this.indent("end\n"));
+        chunks.push(this.indent("end"));
 
         return this.createSourceNode(statement, chunks);
     }
 
     private printGotoStatement(statement: tstl.GotoStatement): SourceNode {
-        return this.createSourceNode(statement, [this.indent("goto "), statement.label, ";\n"]);
+        return this.createSourceNode(statement, [this.indent("goto "), statement.label]);
     }
 
     private printLabelStatement(statement: tstl.LabelStatement): SourceNode {
-        return this.createSourceNode(statement, [this.indent("::"), statement.name, "::\n"]);
+        return this.createSourceNode(statement, [this.indent("::"), statement.name, "::"]);
     }
 
     private printReturnStatement(statement: tstl.ReturnStatement): SourceNode {
         if (!statement.expressions || statement.expressions.length === 0) {
-            return this.createSourceNode(statement, this.indent("return;\n"));
+            return this.createSourceNode(statement, this.indent("return"));
         }
 
         const chunks: SourceChunk[] = [];
 
         chunks.push(...this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e))));
-        chunks.push(";\n");
 
         return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
     }
 
     private printBreakStatement(statement: tstl.BreakStatement): SourceNode {
-        return this.createSourceNode(statement, this.indent("break;\n"));
+        return this.createSourceNode(statement, this.indent("break"));
     }
 
     private printExpressionStatement(statement: tstl.ExpressionStatement): SourceNode {
-        return this.concatNodes(this.indent(), this.printExpression(statement.expression), ";\n");
+        return this.concatNodes(this.indent(), this.printExpression(statement.expression));
     }
 
     // Expressions
@@ -485,7 +516,6 @@ export class LuaPrinter {
             const returnNode: SourceChunk[] = [
                 "return ",
                 ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
-                ";",
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
             chunks.push(" end");
@@ -621,10 +651,16 @@ export class LuaPrinter {
         return LuaPrinter.operatorMap[kind];
     }
 
-    private ignoreDeadStatements(statements: tstl.Statement[]): tstl.Statement[] {
+    private isEmptyStatement(statement: tstl.Statement): boolean {
+        return tstl.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
+    }
+
+    private removeDeadAndEmptyStatements(statements: tstl.Statement[]): tstl.Statement[] {
         const aliveStatements = [];
         for (const statement of statements) {
-            aliveStatements.push(statement);
+            if (!this.isEmptyStatement(statement)) {
+                aliveStatements.push(statement);
+            }
             if (tstl.isReturnStatement(statement)) {
                 break;
             }

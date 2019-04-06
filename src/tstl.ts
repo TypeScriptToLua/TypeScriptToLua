@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 import * as ts from "typescript";
-import { transpileFiles } from "./API";
+import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
-import { CompilerOptions } from "./CompilerOptions";
-import { emitTranspiledFiles } from "./Emit";
-import { getTranspileOutput } from "./Transpile";
 
 function createDiagnosticReporter(pretty: boolean): ts.DiagnosticReporter {
     const host: ts.FormatDiagnosticsHost = {
@@ -25,7 +22,7 @@ function createDiagnosticReporter(pretty: boolean): ts.DiagnosticReporter {
     };
 }
 
-function shouldBePretty(options?: CompilerOptions): boolean {
+function shouldBePretty(options?: tstl.CompilerOptions): boolean {
     return !options || options.pretty === undefined
         ? ts.sys.writeOutputIsTTY !== undefined && ts.sys.writeOutputIsTTY()
         : Boolean(options.pretty);
@@ -80,11 +77,11 @@ function executeCommandLine(argv: string[]): void {
             ts.createWatchProgram(host);
         }
     } else {
-        const { diagnostics, transpiledFiles } = transpileFiles(
+        const { diagnostics, transpiledFiles } = tstl.transpileFiles(
             commandLine.result.fileNames,
             commandLine.result.options
         );
-        emitTranspiledFiles(commandLine.result.options, transpiledFiles);
+        tstl.emitTranspiledFiles(commandLine.result.options, transpiledFiles);
 
         diagnostics.forEach(reportDiagnostic);
         if (diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0) {
@@ -101,7 +98,7 @@ function executeCommandLine(argv: string[]): void {
 
 function updateWatchCompilerHost(
     host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
-    options: CompilerOptions
+    options: tstl.CompilerOptions
 ): void {
     let fullRecompile = true;
     host.afterProgramCreate = builderProgram => {
@@ -123,12 +120,12 @@ function updateWatchCompilerHost(
             }
         }
 
-        const { diagnostics: emitDiagnostics, transpiledFiles } = getTranspileOutput({
+        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.getTranspileOutput({
             program,
             options,
             sourceFiles,
         });
-        emitTranspiledFiles(options, transpiledFiles);
+        tstl.emitTranspiledFiles(options, transpiledFiles);
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...preEmitDiagnostics,

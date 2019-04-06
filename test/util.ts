@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../src";
-import { createVirtualProgram } from "../src/API";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
@@ -167,7 +166,7 @@ export function parseTypeScript(
     typescript: string,
     target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
 ): [ts.SourceFile, ts.TypeChecker] {
-    const program = createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
+    const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
     return [program.getSourceFile("main.ts"), program.getTypeChecker()];
 }
 

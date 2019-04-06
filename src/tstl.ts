@@ -81,7 +81,9 @@ function executeCommandLine(argv: string[]): void {
             commandLine.result.fileNames,
             commandLine.result.options
         );
-        tstl.emitTranspiledFiles(commandLine.result.options, transpiledFiles);
+
+        const emitResult = tstl.emitTranspiledFiles(commandLine.result.options, transpiledFiles);
+        emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
         diagnostics.forEach(reportDiagnostic);
         if (diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0) {
@@ -125,7 +127,9 @@ function updateWatchCompilerHost(
             options,
             sourceFiles,
         });
-        tstl.emitTranspiledFiles(options, transpiledFiles);
+
+        const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);
+        emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...preEmitDiagnostics,

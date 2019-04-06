@@ -1,20 +1,24 @@
 import * as fs from "fs";
 import * as path from "path";
-import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { TranspiledFile } from "./Transpile";
 
 const trimExt = (filePath: string) =>
     path.join(path.dirname(filePath), path.basename(filePath, path.extname(filePath)));
 
+export interface OutputFile {
+    name: string;
+    text: string;
+}
+
 let lualibContent: string;
 export function emitTranspiledFiles(
     options: CompilerOptions,
-    transpiledFiles: Map<string, TranspiledFile>,
-    writeFile = ts.sys.writeFile
-): void {
+    transpiledFiles: Map<string, TranspiledFile>
+): OutputFile[] {
     const { rootDir, outDir, outFile, luaLibImport } = options;
 
+    const files: OutputFile[] = [];
     for (const [fileName, { lua, sourceMap, declaration, declarationMap }] of transpiledFiles) {
         let outPath = fileName;
         if (outDir !== rootDir) {
@@ -35,19 +39,19 @@ export function emitTranspiledFiles(
         }
 
         if (lua !== undefined) {
-            writeFile(outPath, lua);
+            files.push({ name: outPath, text: lua });
         }
 
         if (sourceMap !== undefined && options.sourceMap) {
-            writeFile(outPath + ".map", sourceMap);
+            files.push({ name: outPath + ".map", text: sourceMap });
         }
 
         if (declaration !== undefined) {
-            writeFile(trimExt(outPath) + ".d.ts", declaration);
+            files.push({ name: trimExt(outPath) + ".d.ts", text: declaration });
         }
 
         if (declarationMap !== undefined) {
-            writeFile(trimExt(outPath) + ".d.ts.map", declarationMap);
+            files.push({ name: trimExt(outPath) + ".d.ts.map", text: declarationMap });
         }
     }
 
@@ -60,6 +64,8 @@ export function emitTranspiledFiles(
         }
 
         const outPath = path.join(outDir, "lualib_bundle.lua");
-        writeFile(outPath, lualibContent);
+        files.push({ name: outPath, text: lualibContent });
     }
+
+    return files;
 }

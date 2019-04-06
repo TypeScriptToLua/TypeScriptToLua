@@ -62,8 +62,8 @@ export function transpileString(
 export function transpileStringResult(
     input: string | { [filename: string]: string },
     options: tstl.CompilerOptions = {},
-): tstl.TranspileStringResult {
-    return tstl.transpileString(input, {
+): tstl.VirtualProgramResult {
+    const optionsWithDefaults = {
         luaLibImport: tstl.LuaLibImportKind.Inline,
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
@@ -77,7 +77,11 @@ export function transpileStringResult(
             "lib.esnext.d.ts",
         ],
         ...options,
-    });
+    };
+
+    return typeof input === "string"
+        ? tstl.transpileString(input, optionsWithDefaults)
+        : tstl.transpileVirtualProgram(input, optionsWithDefaults);
 }
 
 const lualibContent = fs.readFileSync(

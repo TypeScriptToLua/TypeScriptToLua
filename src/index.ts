@@ -91,25 +91,36 @@ export function createVirtualProgram(
     return ts.createProgram(Object.keys(input), options, compilerHost);
 }
 
-export interface TranspileStringResult {
+export interface VirtualProgramResult {
     file: TranspiledFile;
     diagnostics: ts.Diagnostic[];
 }
 
 export function transpileString(
-    input: string | Record<string, string>,
+    content: string,
     options: CompilerOptions = {}
-): TranspileStringResult {
-    const programFiles = typeof input === "object" ? input : { "main.ts": input };
-    const mainFileName =
-        typeof input === "string"
-            ? "main.ts"
-            : Object.keys(input).find(x => /\bmain\.[a-z]+$/.test(x));
-    if (mainFileName === undefined) throw new Error('Input should have a file named "main"');
-
-    const program = createVirtualProgram(programFiles, options);
+): VirtualProgramResult {
+    const program = createVirtualProgram({ "main.ts": content }, options);
     const { diagnostics, transpiledFiles } = getTranspileOutput({ program, options });
+    const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
+        ...ts.getPreEmitDiagnostics(program),
+        ...diagnostics,
+    ]);
 
+    return { file: transpiledFiles.get("main.ts"), diagnostics: [...allDiagnostics] };
+}
+
+export function transpileVirtualProgram(
+    files: Record<string, string>,
+    options: CompilerOptions = {}
+): VirtualProgramResult {
+    const mainFileName = Object.keys(files).find(x => /\bmain\.[a-z]+$/.test(x));
+    if (mainFileName === undefined) {
+        throw new Error('Virtual program should have a file named "main"');
+    }
+
+    const program = createVirtualProgram(files, options);
+    const { diagnostics, transpiledFiles } = getTranspileOutput({ program, options });
     const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...diagnostics,

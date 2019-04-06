@@ -1,5 +1,9 @@
-import { findConfigFile, parseCommandLine, parseTsConfigString } from "../../src/CommandLineParser";
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src";
+import {
+    findConfigFile,
+    parseCommandLine,
+    parseConfigFileContent,
+} from "../../src/CommandLineParser";
 
 test.each([
     { args: [""], expected: LuaLibImportKind.Inline },
@@ -7,6 +11,7 @@ test.each([
     { args: ["--luaLibImport", "always"], expected: LuaLibImportKind.Always },
     { args: ["--luaLibImport", "inline"], expected: LuaLibImportKind.Inline },
     { args: ["--luaLibImport", "require"], expected: LuaLibImportKind.Require },
+    { args: ["--luaLibImport", "NoNe"], expected: LuaLibImportKind.None },
 ])("CLI parser luaLibImportKind (%p)", ({ args, expected }) => {
     const result = parseCommandLine(args);
     if (result.isValid === true) {
@@ -26,6 +31,7 @@ test.each([
     { args: ["--luaTarget", "5.1"], expected: LuaTarget.Lua51 },
     { args: ["--luaTarget", "5.2"], expected: LuaTarget.Lua52 },
     { args: ["--luaTarget", "jit"], expected: LuaTarget.LuaJIT },
+    { args: ["--luaTarget", "JiT"], expected: LuaTarget.LuaJIT },
     { args: ["--luaTarget", "JIT"], expected: LuaTarget.LuaJIT },
     { args: ["--luaTarget", "5.3"], expected: LuaTarget.Lua53 },
 ])("CLI parser luaTarget (%p)", ({ args, expected }) => {
@@ -225,7 +231,7 @@ test.each([
     { tsConfig: `{ tstl: { noHeader: true } }`, expected: true },
     { tsConfig: `{ tstl: { noHeader: "true" } }`, expected: true },
 ])("TsConfig noHeader (%p)", ({ tsConfig, expected }) => {
-    const result = parseTsConfigString(tsConfig, "");
+    const result = parseConfigFileContent(tsConfig, "");
 
     if (result.isValid) {
         expect(result.result.options.noHeader).toBe(expected);

@@ -1,4 +1,4 @@
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 

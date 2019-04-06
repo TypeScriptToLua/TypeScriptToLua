@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { compile } from "../../src/Compiler";
+import { runCli } from "./runner";
 
 /**
  * Find all files inside a dir, recursively.
@@ -78,17 +78,19 @@ test.each([
             "out_dir/test_src/main.lua",
         ],
     },
-])("Compile project (%p)", ({ projectName, tsconfig, expectedFiles }) => {
+])("Compile project (%p)", async ({ projectName, tsconfig, expectedFiles }) => {
     const relPathToProject = path.join("projects", projectName);
 
     // Setup we cant do this in beforeEach because we need the projectname
     existingFiles = getAllFiles(path.resolve(__dirname, relPathToProject));
     filesAfterCompile = [];
-    // Setup End
 
     const tsconfigPath = path.resolve(__dirname, relPathToProject, tsconfig);
 
-    compile(["-p", tsconfigPath]);
+    const { exitCode, output } = await runCli(["-p", tsconfigPath]);
+
+    expect(output).not.toContain("error TS");
+    expect(exitCode).toBe(0);
 
     filesAfterCompile = getAllFiles(path.resolve(__dirname, relPathToProject));
     expectedFiles = expectedFiles.map(relPath =>

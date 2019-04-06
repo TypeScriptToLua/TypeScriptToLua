@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -774,7 +774,7 @@ test.each([
     const lua53 = { luaTarget: LuaTarget.Lua53 };
     const luajit = { luaTarget: LuaTarget.LuaJIT };
 
-    expect(() => util.transpileString(loop, lua51)).toThrowError(
+    expect(() => util.transpileString(loop, lua51)).toThrowExactError(
         TSTLErrors.UnsupportedForTarget("Continue statement", LuaTarget.Lua51, undefined),
     );
     expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);

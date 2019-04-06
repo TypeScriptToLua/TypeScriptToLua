@@ -13,7 +13,7 @@ type ArgumentParseResult<T> =
     { isValid: true; result: T; increment?: number }
     | { isValid: false, errorMessage: string };
 
-interface ParsedCommandLine extends ts.ParsedCommandLine {
+export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
 
@@ -161,19 +161,13 @@ function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
         }
 
         const configPath = options.project;
-        const parsedJsonConfig = parseTsConfigFile(configPath, options);
-
-        return parsedJsonConfig;
+        const configContent = fs.readFileSync(configPath, "utf8");
+        return parseConfigFileContent(configContent, configPath, options);
     }
     return { isValid: true, result: parsedCommandLine };
 }
 
-export function parseTsConfigFile(filePath: string, existingOptions?: ts.CompilerOptions): CLIParseResult {
-    const configContents = fs.readFileSync(filePath).toString();
-    return parseTsConfigString(configContents, filePath, existingOptions);
-}
-
-export function parseTsConfigString(
+export function parseConfigFileContent(
     tsConfigString: string,
     configPath: string,
     existingOptions?: ts.CompilerOptions
@@ -183,7 +177,8 @@ export function parseTsConfigString(
         configJson.config,
         ts.sys,
         path.dirname(configPath),
-        existingOptions
+        existingOptions,
+        configPath
     );
 
     for (const key in parsedJsonConfig.raw) {

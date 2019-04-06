@@ -1,25 +1,20 @@
 import * as fs from "fs";
 import * as path from "path";
-import { compile } from "../../src/Compiler";
+import { runCli } from "./runner";
 
-let outFileRelPath: string;
-let outFileAbsPath: string;
-
-beforeAll(() => {
-    outFileRelPath = "./testfiles/out_file.script";
-    outFileAbsPath = path.join(__dirname, outFileRelPath);
-});
+const outFileRelPath = "./testfiles/out_file.script";
+const outFileAbsPath = path.join(__dirname, outFileRelPath);
 
 afterEach(() => {
-    fs.unlink(outFileAbsPath, err => {
-        if (err) {
-            throw err;
-        }
-    });
+    try {
+        fs.unlinkSync(outFileAbsPath);
+    } catch (err) {
+        if (err.code !== "ENOENT") throw err;
+    }
 });
 
-test("Outfile absoulte path", () => {
-    compile([
+test("Outfile absoulte path", async () => {
+    const { exitCode } = await runCli([
         "--types",
         "node",
         "--skipLibCheck",
@@ -28,11 +23,12 @@ test("Outfile absoulte path", () => {
         path.join(__dirname, "./testfiles/out_file.ts"),
     ]);
 
+    expect(exitCode).toBe(0);
     expect(fs.existsSync(outFileAbsPath)).toBe(true);
 });
 
-test("Outfile relative path", () => {
-    compile([
+test("Outfile relative path", async () => {
+    const { exitCode, output } = await runCli([
         "--types",
         "node",
         "--skipLibCheck",
@@ -43,5 +39,7 @@ test("Outfile relative path", () => {
         path.join(__dirname, "./testfiles/out_file.ts"),
     ]);
 
+    expect(output).not.toContain("error TS");
+    expect(exitCode).toBe(0);
     expect(fs.existsSync(outFileAbsPath)).toBe(true);
 });

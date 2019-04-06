@@ -1,6 +1,6 @@
+import { Position, SourceMapConsumer } from "source-map";
+import { LuaLibImportKind } from "../../src";
 import * as util from "../util";
-import { LuaLibImportKind } from "../../src/CompilerOptions";
-import { SourceMapConsumer, Position } from "source-map";
 
 test.each([
     {
@@ -47,7 +47,9 @@ test.each([
     },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
-    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource);
+    const {
+        file: { lua, sourceMap },
+    } = util.transpileStringResult(typeScriptSource);
 
     // Assert
     const consumer = await new SourceMapConsumer(sourceMap);

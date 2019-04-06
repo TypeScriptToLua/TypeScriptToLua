@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
+import { LuaLibImportKind } from "../../src";
 import * as util from "../util";
-import { LuaLibImportKind } from "../../src/CompilerOptions";
 
 const fixturesPath = path.join(__dirname, "./transformation");
 const fixtures = fs

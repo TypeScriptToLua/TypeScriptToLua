@@ -1,4 +1,4 @@
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import { LuaLibImportKind, LuaTarget } from "../../src";
 import * as util from "../util";
 
 test.each([{ inp: [] }, { inp: [1, 2, 3] }, { inp: [1, "test", 3] }])(
@@ -31,7 +31,7 @@ test("Spread Element Lua 5.3", () => {
 });
 
 test("Spread Element Lua JIT", () => {
-    const options = { luaTarget: "JiT" as LuaTarget, luaLibImport: LuaLibImportKind.None };
+    const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
     const lua = util.transpileString(`[...[0, 1, 2]]`, options);
     expect(lua).toBe("local ____ = {unpack({\n    0,\n    1,\n    2,\n})}");
 });

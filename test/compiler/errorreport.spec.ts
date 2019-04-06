@@ -1,24 +1,33 @@
+import * as fs from "fs";
 import * as path from "path";
-import { compileFilesWithOptions } from "../../src/Compiler";
+import { runCli } from "./runner";
 
-test.each([
-    {
-        errorMsg:
-            "Encountered error parsing file: Default Imports are not supported, please use named imports instead!",
-        fileName: "default_import.ts",
-    },
-])("Compile project (%p)", ({ errorMsg, fileName }) => {
-    jest.spyOn(console, "log").mockReturnValue(undefined);
-    const errorMock = jest.spyOn(console, "error").mockReturnValue(undefined);
-    const exitMock = jest.spyOn(process, "exit").mockReturnValue(undefined as never);
+const srcFilePath = path.resolve(__dirname, "testfiles", "default_import.ts");
+const outFilePath = path.resolve(__dirname, "testfiles", "default_import.lua");
 
-    fileName = path.resolve(__dirname, "testfiles", fileName);
-    compileFilesWithOptions([fileName], { outDir: ".", rootDir: ".", types: [] });
+afterEach(() => {
+    try {
+        fs.unlinkSync(outFilePath);
+    } catch (err) {
+        if (err.code !== "ENOENT") throw err;
+    }
+});
 
-    jest.restoreAllMocks();
+test("Compile project", async () => {
+    const { exitCode, output } = await runCli([
+        srcFilePath,
+        "--outDir",
+        ".",
+        "--rootDir",
+        ".",
+        "--types",
+        "node",
+    ]);
 
-    expect(exitMock).toHaveBeenCalledWith(1);
-    expect(errorMock).toHaveBeenCalledTimes(2);
-    expect(errorMock).toHaveBeenNthCalledWith(1, errorMsg);
-    expect(errorMock).toHaveBeenNthCalledWith(2, expect.any(String));
+    expect(exitCode).toBe(2);
+    expect(fs.existsSync(outFilePath)).toBe(true);
+    expect(output).toContain("Cannot find module './default_export'.");
+    expect(output).toContain(
+        "Default Imports are not supported, please use named imports instead!",
+    );
 });

@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
+import { CompilerOptions, LuaLibImportKind } from "../../../../../src";
 import { parseCommandLine } from "../../../../../src/CommandLineParser";
-import { CompilerOptions, LuaLibImportKind } from "../../../../../src/CompilerOptions";
 
 test("tsconfig.json mixed with cmd line args", () => {
     const rootPath = __dirname;
@@ -11,6 +11,8 @@ test("tsconfig.json mixed with cmd line args", () => {
         ts.parseConfigFileTextToJson(tsConfigPath, fs.readFileSync(tsConfigPath).toString()).config,
         ts.sys,
         path.dirname(tsConfigPath),
+        undefined,
+        tsConfigPath,
     );
 
     const parsedArgs = parseCommandLine([

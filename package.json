@@ -45,7 +45,7 @@
     "devDependencies": {
         "@types/glob": "^5.0.35",
         "@types/jest": "^24.0.11",
-        "@types/node": "^9.6.23",
+        "@types/node": "^11.13.0",
         "fengari": "^0.1.2",
         "glob": "^7.1.2",
         "jest": "^24.5.0",

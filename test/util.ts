@@ -2,13 +2,8 @@ import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import {
-    createStringCompilerProgram,
-    transpileString as compilerTranspileString,
-} from "../src/Compiler";
-import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../src/CompilerOptions";
-import { LuaTransformer } from "../src/LuaTransformer";
-import { TranspileResult } from "../src/LuaTranspiler";
+import * as tstl from "../src";
+import { createVirtualProgram } from "../src/API";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
@@ -36,81 +31,54 @@ expect.extend({
             executionError = err;
         }
 
-        expect(() => {
-            if (executionError) throw executionError;
-        }).toThrowError(error.constructor as any);
-        expect(() => {
-            if (executionError) throw executionError;
-        }).toThrowError(error);
+        // TODO:
+        expect(executionError).toBeDefined();
+        expect(executionError.message).toContain(error.message);
 
         return { pass: true, message: () => "" };
     },
 });
 
-function compilerTranspile(
-    str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
-    ignoreDiagnostics = true,
-    filePath = "file.ts",
-): TranspileResult {
-    return compilerTranspileString(
-        str,
-        {
-            luaLibImport: LuaLibImportKind.Inline,
-            luaTarget: LuaTarget.Lua53,
-            noHeader: true,
-            skipLibCheck: true,
-            target: ts.ScriptTarget.ESNext,
-            lib: [
-                "lib.es2015.d.ts",
-                "lib.es2016.d.ts",
-                "lib.es2017.d.ts",
-                "lib.es2018.d.ts",
-                "lib.esnext.d.ts",
-            ],
-            ...options,
-        },
-        ignoreDiagnostics,
-        filePath,
-    );
-}
-
 export function transpileString(
     str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
+    options: tstl.CompilerOptions = {},
     ignoreDiagnostics = true,
-    filePath = "file.ts",
 ): string {
-    const { lua } = transpileStringResult(str, options, ignoreDiagnostics, filePath);
+    const {
+        diagnostics,
+        file: { lua },
+    } = transpileStringResult(str, options);
+
+    const errors = diagnostics
+        .filter(d => d.category === ts.DiagnosticCategory.Error)
+        .filter(d => (ignoreDiagnostics ? d.code === 0 : true));
+
+    if (errors.length > 0) {
+        throw new Error(errors.map(d => d.messageText).join("\n"));
+    }
+
     return lua.trim();
 }
 
 export function transpileStringResult(
-    str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
-    ignoreDiagnostics = true,
-    filePath = "file.ts",
-): TranspileResult {
-    return compilerTranspileString(
-        str,
-        {
-            luaLibImport: LuaLibImportKind.Inline,
-            luaTarget: LuaTarget.Lua53,
-            noHeader: true,
-            skipLibCheck: true,
-            target: ts.ScriptTarget.ESNext,
-            lib: [
-                "lib.es2015.d.ts",
-                "lib.es2016.d.ts",
-                "lib.es2017.d.ts",
-                "lib.es2018.d.ts",
-                "lib.esnext.d.ts",
-            ],
-            ...options,
-        },
-        ignoreDiagnostics,
-        filePath,
-    );
+    input: string | { [filename: string]: string },
+    options: tstl.CompilerOptions = {},
+): tstl.TranspileStringResult {
+    return tstl.transpileString(input, {
+        luaLibImport: tstl.LuaLibImportKind.Inline,
+        luaTarget: tstl.LuaTarget.Lua53,
+        noHeader: true,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ESNext,
+        lib: [
+            "lib.es2015.d.ts",
+            "lib.es2016.d.ts",
+            "lib.es2017.d.ts",
+            "lib.es2018.d.ts",
+            "lib.esnext.d.ts",
+        ],
+        ...options,
+    });
 }
 
 const lualibContent = fs.readFileSync(
@@ -154,14 +122,16 @@ export function executeLua(luaStr: string, withLib = true): any {
 }
 
 // Get a mock transformer to use for testing
-export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
+export function makeTestTransformer(
+    target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
+): tstl.LuaTransformer {
     const options = { luaTarget: target };
-    return new LuaTransformer(ts.createProgram([], options), options);
+    return new tstl.LuaTransformer(ts.createProgram([], options), options);
 }
 
 export function transpileAndExecute(
     tsStr: string,
-    compilerOptions?: CompilerOptions,
+    compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
 ): any {
@@ -179,7 +149,7 @@ export function transpileAndExecute(
 export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
-    compilerOptions?: CompilerOptions,
+    compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
 ): any {
     const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
@@ -195,10 +165,10 @@ export function transpileExecuteAndReturnExport(
 
 export function parseTypeScript(
     typescript: string,
-    target: LuaTarget = LuaTarget.Lua53,
+    target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
 ): [ts.SourceFile, ts.TypeChecker] {
-    const program = createStringCompilerProgram(typescript, { luaTarget: target });
-    return [program.getSourceFile("file.ts"), program.getTypeChecker()];
+    const program = createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
+    return [program.getSourceFile("main.ts"), program.getTypeChecker()];
 }
 
 export function findFirstChild(

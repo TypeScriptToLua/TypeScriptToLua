@@ -736,4 +736,20 @@ export class TSHelper {
             return [false, undefined];
         }
     }
+
+    public static moduleHasEmittedBody(statement: ts.ModuleDeclaration)
+        : statement is ts.ModuleDeclaration & {body: ts.ModuleBlock | ts.ModuleDeclaration}
+    {
+        if (statement.body) {
+            if (ts.isModuleBlock(statement.body)) {
+                // Ignore if body has no emitted statements
+                return statement.body.statements.findIndex(
+                    s => !ts.isInterfaceDeclaration(s) && !ts.isTypeAliasDeclaration(s)
+                ) !== -1;
+            } else if (ts.isModuleDeclaration(statement.body)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -42,9 +42,9 @@ end"
 `;
 
 exports[`Transformation (classPureAbstract) 1`] = `
-"ClassB = ClassB or {}
+"ClassB = {}
 ClassB.__index = ClassB
-ClassB.prototype = ClassB.prototype or {}
+ClassB.prototype = {}
 ClassB.prototype.__index = ClassB.prototype
 ClassB.prototype.constructor = ClassB
 function ClassB.new(...)
@@ -192,7 +192,7 @@ TestEnum.baz = \\"val3\\""
 `;
 
 exports[`Transformation (exportStatement) 1`] = `
-"local exports = exports or {}
+"local exports = {}
 local xyz = 4
 exports.xyz = xyz
 exports.uwv = xyz
@@ -262,9 +262,9 @@ end"
 
 exports[`Transformation (getSetAccessors) 1`] = `
 "require(\\"lualib_bundle\\");
-MyClass = MyClass or {}
+MyClass = {}
 MyClass.__index = MyClass
-MyClass.prototype = MyClass.prototype or {}
+MyClass.prototype = {}
 MyClass.prototype.____getters = {}
 MyClass.prototype.__index = __TS__Index(MyClass.prototype)
 MyClass.prototype.____setters = {}
@@ -295,9 +295,9 @@ a.abc = \\"def\\""
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `
-"MyClass = MyClass or {}
+"MyClass = {}
 MyClass.__index = MyClass
-MyClass.prototype = MyClass.prototype or {}
+MyClass.prototype = {}
 MyClass.prototype.__index = MyClass.prototype
 MyClass.prototype.constructor = MyClass
 function MyClass.new(...)
@@ -313,16 +313,16 @@ end"
 `;
 
 exports[`Transformation (modulesChangedVariableExport) 1`] = `
-"local exports = exports or {}
+"local exports = {}
 exports.foo = 1
 return exports"
 `;
 
 exports[`Transformation (modulesClassExport) 1`] = `
-"local exports = exports or {}
-exports.TestClass = exports.TestClass or {}
+"local exports = {}
+exports.TestClass = {}
 exports.TestClass.__index = exports.TestClass
-exports.TestClass.prototype = exports.TestClass.prototype or {}
+exports.TestClass.prototype = {}
 exports.TestClass.prototype.__index = exports.TestClass.prototype
 exports.TestClass.prototype.constructor = exports.TestClass
 function exports.TestClass.new(...)
@@ -336,10 +336,10 @@ return exports"
 `;
 
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
-"local exports = exports or {}
-exports.TestClass = exports.TestClass or {}
+"local exports = {}
+exports.TestClass = {}
 exports.TestClass.__index = exports.TestClass
-exports.TestClass.prototype = exports.TestClass.prototype or {}
+exports.TestClass.prototype = {}
 exports.TestClass.prototype.__index = exports.TestClass.prototype
 exports.TestClass.prototype.constructor = exports.TestClass
 function exports.TestClass.new(...)
@@ -355,7 +355,7 @@ return exports"
 `;
 
 exports[`Transformation (modulesFunctionExport) 1`] = `
-"local exports = exports or {}
+"local exports = {}
 function exports.publicFunc(self)
 end
 return exports"
@@ -407,15 +407,14 @@ local RenamedClass = __TSTL_space_module.TestClass"
 exports[`Transformation (modulesImportWithoutFromClause) 1`] = `"require(\\"test\\")"`;
 
 exports[`Transformation (modulesNamespaceExport) 1`] = `
-"local exports = exports or {}
-exports.TestSpace = exports.TestSpace or {}
-local TestSpace = exports.TestSpace
+"local exports = {}
+exports.TestSpace = {}
 return exports"
 `;
 
 exports[`Transformation (modulesNamespaceExportEnum) 1`] = `
-"local exports = exports or {}
-exports.test = exports.test or {}
+"local exports = {}
+exports.test = {}
 local test = exports.test
 do
     test.TestEnum = {}
@@ -428,11 +427,11 @@ return exports"
 `;
 
 exports[`Transformation (modulesNamespaceNestedWithMemberExport) 1`] = `
-"local exports = exports or {}
-exports.TestSpace = exports.TestSpace or {}
+"local exports = {}
+exports.TestSpace = {}
 local TestSpace = exports.TestSpace
 do
-    TestSpace.TestNestedSpace = TestSpace.TestNestedSpace or {}
+    TestSpace.TestNestedSpace = {}
     local TestNestedSpace = TestSpace.TestNestedSpace
     do
         function TestNestedSpace.innerFunc(self)
@@ -442,11 +441,11 @@ end
 return exports"
 `;
 
-exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = TestSpace or {}"`;
+exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = {}"`;
 
 exports[`Transformation (modulesNamespaceWithMemberExport) 1`] = `
-"local exports = exports or {}
-exports.TestSpace = exports.TestSpace or {}
+"local exports = {}
+exports.TestSpace = {}
 local TestSpace = exports.TestSpace
 do
     function TestSpace.innerFunc(self)
@@ -456,9 +455,8 @@ return exports"
 `;
 
 exports[`Transformation (modulesNamespaceWithMemberNoExport) 1`] = `
-"local exports = exports or {}
-exports.TestSpace = exports.TestSpace or {}
-local TestSpace = exports.TestSpace
+"local exports = {}
+exports.TestSpace = {}
 do
     local function innerFunc(self)
     end
@@ -467,7 +465,7 @@ return exports"
 `;
 
 exports[`Transformation (modulesVariableExport) 1`] = `
-"local exports = exports or {}
+"local exports = {}
 exports.foo = \\"bar\\"
 return exports"
 `;
@@ -475,7 +473,7 @@ return exports"
 exports[`Transformation (modulesVariableNoExport) 1`] = `"local foo = \\"bar\\""`;
 
 exports[`Transformation (namespace) 1`] = `
-"myNamespace = myNamespace or {}
+"myNamespace = {}
 do
     local function nsMember(self)
     end
@@ -483,9 +481,9 @@ end"
 `;
 
 exports[`Transformation (namespaceMerge) 1`] = `
-"MergedClass = MergedClass or {}
+"MergedClass = {}
 MergedClass.__index = MergedClass
-MergedClass.prototype = MergedClass.prototype or {}
+MergedClass.prototype = {}
 MergedClass.prototype.__index = MergedClass.prototype
 MergedClass.prototype.constructor = MergedClass
 function MergedClass.new(...)
@@ -508,7 +506,6 @@ function MergedClass.prototype.methodB(self)
     self:methodA()
     self:propertyFunc()
 end
-MergedClass = MergedClass or {}
 do
     function MergedClass.namespaceFunc(self)
     end
@@ -521,10 +518,9 @@ MergedClass:namespaceFunc()"
 `;
 
 exports[`Transformation (namespaceNested) 1`] = `
-"myNamespace = myNamespace or {}
+"myNamespace = {}
 do
-    myNamespace.myNestedNamespace = myNamespace.myNestedNamespace or {}
-    local myNestedNamespace = myNamespace.myNestedNamespace
+    local myNestedNamespace = {}
     do
         local function nsMember(self)
         end

@@ -121,7 +121,7 @@ export class LuaTransformer {
                 // local exports = {}
                 statements.unshift(
                     tstl.createVariableDeclarationStatement(
-                        tstl.createIdentifier("exports"),
+                        this.createExportsIdentifier(),
                         tstl.createTableExpression()
                     )
                 );
@@ -129,7 +129,7 @@ export class LuaTransformer {
                 // return exports
                 statements.push(
                     tstl.createReturnStatement(
-                        [tstl.createIdentifier("exports")]
+                        [this.createExportsIdentifier()]
                     )
                 );
             }
@@ -291,7 +291,7 @@ export class LuaTransformer {
             const body = tstl.createBlock(
                 [tstl.createAssignmentStatement(
                     tstl.createTableIndexExpression(
-                        tstl.createIdentifier("exports"),
+                        this.createExportsIdentifier(),
                         forKey
                     ),
                     forValue
@@ -4179,7 +4179,7 @@ export class LuaTransformer {
     public createExportedIdentifier(identifier: tstl.Identifier): tstl.TableIndexExpression {
         const exportTable = this.currentNamespace
             ? this.transformIdentifier(this.currentNamespace.name as ts.Identifier)
-            : tstl.createIdentifier("exports");
+            : this.createExportsIdentifier();
 
         return tstl.createTableIndexExpression(
             exportTable,
@@ -4302,6 +4302,10 @@ export class LuaTransformer {
 
     private createSelfIdentifier(tsOriginal?: ts.Node): tstl.Identifier {
         return tstl.createIdentifier("self", tsOriginal);
+    }
+
+    private createExportsIdentifier(): tstl.Identifier {
+        return tstl.createIdentifier("____exports");
     }
 
     private createLocalOrExportedOrGlobalDeclaration(

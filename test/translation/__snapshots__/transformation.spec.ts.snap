@@ -192,29 +192,29 @@ TestEnum.baz = \\"val3\\""
 `;
 
 exports[`Transformation (exportStatement) 1`] = `
-"local exports = {}
+"local ____exports = {}
 local xyz = 4
-exports.xyz = xyz
-exports.uwv = xyz
+____exports.xyz = xyz
+____exports.uwv = xyz
 do
     local __TSTL_export = require(\\"xyz\\")
     for ____exportKey, ____exportValue in pairs(__TSTL_export) do
-        exports[____exportKey] = ____exportValue
+        ____exports[____exportKey] = ____exportValue
     end
 end
 do
     local __TSTL_xyz = require(\\"xyz\\")
     local abc = __TSTL_xyz.abc
     local def = __TSTL_xyz.def
-    exports.abc = abc
-    exports.def = def
+    ____exports.abc = abc
+    ____exports.def = def
 end
 do
     local __TSTL_xyz = require(\\"xyz\\")
     local def = __TSTL_xyz.abc
-    exports.def = def
+    ____exports.def = def
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (for) 1`] = `
@@ -313,52 +313,52 @@ end"
 `;
 
 exports[`Transformation (modulesChangedVariableExport) 1`] = `
-"local exports = {}
-exports.foo = 1
-return exports"
+"local ____exports = {}
+____exports.foo = 1
+return ____exports"
 `;
 
 exports[`Transformation (modulesClassExport) 1`] = `
-"local exports = {}
-exports.TestClass = {}
-exports.TestClass.__index = exports.TestClass
-exports.TestClass.prototype = {}
-exports.TestClass.prototype.__index = exports.TestClass.prototype
-exports.TestClass.prototype.constructor = exports.TestClass
-function exports.TestClass.new(...)
-    local self = setmetatable({}, exports.TestClass.prototype)
+"local ____exports = {}
+____exports.TestClass = {}
+____exports.TestClass.__index = ____exports.TestClass
+____exports.TestClass.prototype = {}
+____exports.TestClass.prototype.__index = ____exports.TestClass.prototype
+____exports.TestClass.prototype.constructor = ____exports.TestClass
+function ____exports.TestClass.new(...)
+    local self = setmetatable({}, ____exports.TestClass.prototype)
     self:____constructor(...)
     return self
 end
-function exports.TestClass.prototype.____constructor(self)
+function ____exports.TestClass.prototype.____constructor(self)
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
-"local exports = {}
-exports.TestClass = {}
-exports.TestClass.__index = exports.TestClass
-exports.TestClass.prototype = {}
-exports.TestClass.prototype.__index = exports.TestClass.prototype
-exports.TestClass.prototype.constructor = exports.TestClass
-function exports.TestClass.new(...)
-    local self = setmetatable({}, exports.TestClass.prototype)
+"local ____exports = {}
+____exports.TestClass = {}
+____exports.TestClass.__index = ____exports.TestClass
+____exports.TestClass.prototype = {}
+____exports.TestClass.prototype.__index = ____exports.TestClass.prototype
+____exports.TestClass.prototype.constructor = ____exports.TestClass
+function ____exports.TestClass.new(...)
+    local self = setmetatable({}, ____exports.TestClass.prototype)
     self:____constructor(...)
     return self
 end
-function exports.TestClass.prototype.____constructor(self)
+function ____exports.TestClass.prototype.____constructor(self)
 end
-function exports.TestClass.prototype.memberFunc(self)
+function ____exports.TestClass.prototype.memberFunc(self)
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesFunctionExport) 1`] = `
-"local exports = {}
-function exports.publicFunc(self)
+"local ____exports = {}
+function ____exports.publicFunc(self)
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesFunctionNoExport) 1`] = `
@@ -407,15 +407,15 @@ local RenamedClass = __TSTL_space_module.TestClass"
 exports[`Transformation (modulesImportWithoutFromClause) 1`] = `"require(\\"test\\")"`;
 
 exports[`Transformation (modulesNamespaceExport) 1`] = `
-"local exports = {}
-exports.TestSpace = {}
-return exports"
+"local ____exports = {}
+____exports.TestSpace = {}
+return ____exports"
 `;
 
 exports[`Transformation (modulesNamespaceExportEnum) 1`] = `
-"local exports = {}
-exports.test = {}
-local test = exports.test
+"local ____exports = {}
+____exports.test = {}
+local test = ____exports.test
 do
     test.TestEnum = {}
     test.TestEnum.foo = \\"foo\\"
@@ -423,13 +423,13 @@ do
     test.TestEnum.bar = \\"bar\\"
     test.TestEnum.bar = \\"bar\\"
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesNamespaceNestedWithMemberExport) 1`] = `
-"local exports = {}
-exports.TestSpace = {}
-local TestSpace = exports.TestSpace
+"local ____exports = {}
+____exports.TestSpace = {}
+local TestSpace = ____exports.TestSpace
 do
     TestSpace.TestNestedSpace = {}
     local TestNestedSpace = TestSpace.TestNestedSpace
@@ -438,36 +438,36 @@ do
         end
     end
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = {}"`;
 
 exports[`Transformation (modulesNamespaceWithMemberExport) 1`] = `
-"local exports = {}
-exports.TestSpace = {}
-local TestSpace = exports.TestSpace
+"local ____exports = {}
+____exports.TestSpace = {}
+local TestSpace = ____exports.TestSpace
 do
     function TestSpace.innerFunc(self)
     end
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesNamespaceWithMemberNoExport) 1`] = `
-"local exports = {}
-exports.TestSpace = {}
+"local ____exports = {}
+____exports.TestSpace = {}
 do
     local function innerFunc(self)
     end
 end
-return exports"
+return ____exports"
 `;
 
 exports[`Transformation (modulesVariableExport) 1`] = `
-"local exports = {}
-exports.foo = \\"bar\\"
-return exports"
+"local ____exports = {}
+____exports.foo = \\"bar\\"
+return ____exports"
 `;
 
 exports[`Transformation (modulesVariableNoExport) 1`] = `"local foo = \\"bar\\""`;

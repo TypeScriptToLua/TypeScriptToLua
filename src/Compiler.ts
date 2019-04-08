@@ -33,14 +33,9 @@ export function compile(argv: string[]): void {
 
 /* istanbul ignore next: tested in test/compiler/watchmode.spec with subproccess */
 export function watchWithOptions(fileNames: string[], options: CompilerOptions): void {
-    let host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>;
-    let config = false;
-    if (options.project) {
-        config = true;
-        host = ts.createWatchCompilerHost(options.project, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
-    } else {
-        host = ts.createWatchCompilerHost(fileNames, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
-    }
+    const host = options.project !== undefined
+        ? ts.createWatchCompilerHost(options.project, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram)
+        : ts.createWatchCompilerHost(fileNames, options, ts.sys, ts.createSemanticDiagnosticsBuilderProgram);
 
     let fullRecompile = true;
     host.afterProgramCreate = program => {
@@ -71,7 +66,7 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
         }
 
         const errorDiagnostic: ts.Diagnostic = {
-            category: undefined,
+            category: ts.DiagnosticCategory.Error,
             code: 6194,
             file: undefined,
             length: 0,
@@ -82,10 +77,13 @@ export function watchWithOptions(fileNames: string[], options: CompilerOptions):
             errorDiagnostic.messageText = "Found Errors. Watching for file changes.";
             errorDiagnostic.code = 6193;
         }
-        host.onWatchStatusChange(errorDiagnostic, host.getNewLine(), program.getCompilerOptions());
+
+        if (host.onWatchStatusChange) {
+            host.onWatchStatusChange(errorDiagnostic, host.getNewLine(), program.getCompilerOptions());
+        }
     };
 
-    if (config) {
+    if (options.project !== undefined) {
         ts.createWatchProgram(
             host as ts.WatchCompilerHostOfConfigFile<ts.SemanticDiagnosticsBuilderProgram>
         );
@@ -118,8 +116,8 @@ export function createStringCompilerProgram(
 ): ts.Program {
     const compilerHost =  {
         directoryExists: () => true,
-        fileExists: (fileName): boolean => true,
-        getCanonicalFileName: fileName => fileName,
+        fileExists: () => true,
+        getCanonicalFileName: (fileName: string) => fileName,
         getCurrentDirectory: () => "",
         getDefaultLibFileName: ts.getDefaultLibFileName,
         getDirectories: () => [],
@@ -156,7 +154,7 @@ export function createStringCompilerProgram(
 
         useCaseSensitiveFileNames: () => false,
         // Don't write output
-        writeFile: (name, text, writeByteOrderMark) => undefined,
+        writeFile: () => undefined,
     };
     const filePaths = typeof input === "string" ? [filePath] : Object.keys(input);
     return ts.createProgram(filePaths, options, compilerHost);
@@ -182,5 +180,10 @@ export function transpileString(
 
     const transpiler = new LuaTranspiler(program);
 
-    return transpiler.transpileSourceFile(program.getSourceFile(filePath));
+    const sourceFile = program.getSourceFile(filePath);
+    if (sourceFile !== undefined) {
+        return transpiler.transpileSourceFile(sourceFile);
+    } else {
+        throw new Error(`Could not find file ${filePath} in created program.`);
+    }
 }

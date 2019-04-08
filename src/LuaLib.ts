@@ -66,8 +66,9 @@ export class LuaLib {
         function load(feature: LuaLibFeature): void {
             if (!loadedFeatures.has(feature)) {
                 loadedFeatures.add(feature);
-                if (luaLibDependencies[feature]) {
-                    luaLibDependencies[feature].forEach(load);
+                const dependencies = luaLibDependencies[feature];
+                if (dependencies) {
+                    dependencies.forEach(load);
                 }
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
                 result += fs.readFileSync(featureFile).toString() + "\n";

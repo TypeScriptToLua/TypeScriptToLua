@@ -321,16 +321,17 @@ return ____exports"
 exports[`Transformation (modulesClassExport) 1`] = `
 "local ____exports = {}
 ____exports.TestClass = {}
-____exports.TestClass.__index = ____exports.TestClass
-____exports.TestClass.prototype = {}
-____exports.TestClass.prototype.__index = ____exports.TestClass.prototype
-____exports.TestClass.prototype.constructor = ____exports.TestClass
-function ____exports.TestClass.new(...)
-    local self = setmetatable({}, ____exports.TestClass.prototype)
+local TestClass = ____exports.TestClass
+TestClass.__index = TestClass
+TestClass.prototype = {}
+TestClass.prototype.__index = TestClass.prototype
+TestClass.prototype.constructor = TestClass
+function TestClass.new(...)
+    local self = setmetatable({}, TestClass.prototype)
     self:____constructor(...)
     return self
 end
-function ____exports.TestClass.prototype.____constructor(self)
+function TestClass.prototype.____constructor(self)
 end
 return ____exports"
 `;
@@ -338,18 +339,19 @@ return ____exports"
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
 "local ____exports = {}
 ____exports.TestClass = {}
-____exports.TestClass.__index = ____exports.TestClass
-____exports.TestClass.prototype = {}
-____exports.TestClass.prototype.__index = ____exports.TestClass.prototype
-____exports.TestClass.prototype.constructor = ____exports.TestClass
-function ____exports.TestClass.new(...)
-    local self = setmetatable({}, ____exports.TestClass.prototype)
+local TestClass = ____exports.TestClass
+TestClass.__index = TestClass
+TestClass.prototype = {}
+TestClass.prototype.__index = TestClass.prototype
+TestClass.prototype.constructor = TestClass
+function TestClass.new(...)
+    local self = setmetatable({}, TestClass.prototype)
     self:____constructor(...)
     return self
 end
-function ____exports.TestClass.prototype.____constructor(self)
+function TestClass.prototype.____constructor(self)
 end
-function ____exports.TestClass.prototype.memberFunc(self)
+function TestClass.prototype.memberFunc(self)
 end
 return ____exports"
 `;

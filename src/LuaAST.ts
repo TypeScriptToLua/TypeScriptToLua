@@ -132,7 +132,11 @@ export function setNodePosition<T extends Node>(node: T, position: TextRange): T
     return node;
 }
 
-export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
+export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal: ts.Node): T | undefined {
+    if (node === undefined) {
+        return undefined;
+    }
+
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
         setNodePosition(node, sourcePosition);

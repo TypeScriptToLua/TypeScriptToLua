@@ -316,7 +316,7 @@ export class TSHelper {
         return undefined;
     }
 
-    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [true, ts.BinaryOperator] | [false, undefined] {
+    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [true, ts.BinaryOperator] | [false, never] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
                 return [true, ts.SyntaxKind.BarToken];
@@ -344,7 +344,7 @@ export class TSHelper {
                 return [true, ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken];
         }
 
-        return [false, undefined];
+        return [false, undefined as never];
     }
 
     public static isExpressionStatement(node: ts.Expression): boolean {
@@ -373,7 +373,7 @@ export class TSHelper {
         node: ts.Expression,
         checker: ts.TypeChecker,
         program: ts.Program
-    ): [true, ts.Expression, ts.Expression] | [false, undefined, undefined]
+    ): [true, ts.Expression, ts.Expression] | [false, never, never]
     {
         if (ts.isElementAccessExpression(node) &&
             (TSHelper.isExpressionWithEvaluationEffect(node.expression)
@@ -391,7 +391,7 @@ export class TSHelper {
         } else if (ts.isPropertyAccessExpression(node) && TSHelper.isExpressionWithEvaluationEffect(node.expression)) {
             return [true, node.expression, ts.createStringLiteral(node.name.text)];
         }
-        return [false, undefined, undefined];
+        return [false, undefined as never, undefined as never];
     }
 
     public static isDefaultArrayCallMethodName(methodName: string): boolean {
@@ -741,7 +741,7 @@ export class TSHelper {
     public static isEnumMember(
         enumDeclaration: ts.EnumDeclaration,
         value: ts.Expression
-    ): [true, ts.PropertyName] | [false, undefined] {
+    ): [true, ts.PropertyName] | [false, never] {
         if (ts.isIdentifier(value)) {
             const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === value.text);
             if (enumMember !== undefined) {
@@ -751,10 +751,10 @@ export class TSHelper {
                     return [true, enumMember.name];
                 }
             } else {
-                return [false, undefined];
+                return [false, undefined as never];
             }
         } else {
-            return [false, undefined];
+            return [false, undefined as never];
         }
     }
 }

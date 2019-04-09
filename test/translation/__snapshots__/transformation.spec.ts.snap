@@ -294,6 +294,13 @@ exports[`Transformation (interfaceIndex) 1`] = `
 a.abc = \\"def\\""
 `;
 
+exports[`Transformation (luaTable) 1`] = `
+"tbl = {}
+tbl.value = 5
+local value = tbl.value
+local tblLength = #tbl"
+`;
+
 exports[`Transformation (methodRestArguments) 1`] = `
 "MyClass = MyClass or {}
 MyClass.__index = MyClass

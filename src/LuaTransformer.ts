@@ -1825,6 +1825,17 @@ export class LuaTransformer {
             );
         }
 
+        if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
+            const ownerType = this.checker.getTypeAtLocation(expression.expression.expression);
+            const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
+            if (classDecorators.has(DecoratorKind.LuaTable)) {
+                const tableCallExpression = this.transformLuaTableCallExpression(expression, true);
+                if (tableCallExpression) {
+                    return tableCallExpression;
+                }
+            }
+        }
+
         return tstl.createExpressionStatement(this.transformExpression(expression));
     }
 
@@ -3104,7 +3115,7 @@ export class LuaTransformer {
         );
     }
 
-    public transformNewExpression(node: ts.NewExpression): tstl.CallExpression {
+    public transformNewExpression(node: ts.NewExpression): tstl.Expression {
         const name = this.transformExpression(node.expression);
         const sig = this.checker.getResolvedSignature(node);
         const params = node.arguments
@@ -3130,6 +3141,10 @@ export class LuaTransformer {
                 this.transformArguments(node.arguments),
                 node
             );
+        }
+
+        if (classDecorators.has(DecoratorKind.LuaTable)) {
+            return tstl.createTableExpression();
         }
 
         return tstl.createCallExpression(
@@ -3263,6 +3278,15 @@ export class LuaTransformer {
 
         if (tsHelper.isStandardLibraryType(ownerType, "SymbolConstructor", this.program)) {
             return this.transformSymbolCallExpression(node);
+        }
+
+        const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
+
+        if (classDecorators.has(DecoratorKind.LuaTable)) {
+            const tableCallExpression = this.transformLuaTableCallExpression(node, false);
+            if (tableCallExpression) {
+                return tableCallExpression;
+            }
         }
 
         switch (ownerType.flags) {
@@ -3429,6 +3453,10 @@ export class LuaTransformer {
             return tstl.createIdentifier(property, node);
         }
 
+        if (decorators.has(DecoratorKind.LuaTable)) {
+            return this.transformLuaTableProperty(node);
+        }
+
         // Catch math expressions
         if (ts.isIdentifier(node.expression)) {
             const ownerType = this.checker.getTypeAtLocation(node.expression);
@@ -3565,6 +3593,16 @@ export class LuaTransformer {
                     this.transformExpression(node.expression), tstl.SyntaxKind.LengthOperator, node);
             default:
                 return undefined;
+        }
+    }
+
+    public transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
+        switch (node.name.escapedText) {
+            case "length":
+                return tstl.createUnaryExpression(
+                    this.transformExpression(node.expression), tstl.SyntaxKind.LengthOperator, node);
+            default:
+                throw TSTLErrors.UnsupportedProperty("string", node.name.escapedText as string, node);
         }
     }
 
@@ -3924,6 +3962,58 @@ export class LuaTransformer {
                     this.options.luaTarget,
                     expression
                 );
+        }
+    }
+
+    public transformLuaTableCallExpression<T extends boolean>(
+        expression: ts.CallExpression,
+        isWithinExpressionStatement: T
+    ): T extends true ? tstl.Statement : tstl.Expression;
+    public transformLuaTableCallExpression(
+        expression: ts.CallExpression,
+        isWithinExpressionStatement: boolean
+    ): tstl.Statement | tstl.Expression {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const methodName = method.name.escapedText;
+        const signature = this.checker.getResolvedSignature(expression);
+        const tableName = (method.expression as ts.Identifier).escapedText;
+        const luaTable = tstl.createIdentifier(tableName);
+
+        if (expression.arguments.length === 0) {
+            throw TSTLErrors.ForbiddenLuaTableUseExpression(
+                expression,
+                "A parameter is required for set() or get() on a '@LuaTable' object."
+            );
+        }
+
+        const params = this.transformArguments(expression.arguments, signature);
+        const indexExpression = tstl.createTableIndexExpression(luaTable, params[0], expression);
+
+        switch (methodName) {
+            case "get":
+                if (isWithinExpressionStatement === true) {
+                    isWithinExpressionStatement = false;
+                    return tstl.createVariableDeclarationStatement(
+                        tstl.createAnnonymousIdentifier(),
+                        indexExpression
+                    );
+                } else {
+                    return indexExpression;
+                }
+            case "set":
+                if (params.length < 2) {
+                    throw TSTLErrors.ForbiddenLuaTableUseExpression(
+                        expression,
+                        "Two parameters are required for set() on a '@LuaTable' object."
+                    );
+                }
+                if (isWithinExpressionStatement) {
+                    return tstl.createAssignmentStatement(indexExpression, params.splice(1), expression);
+                } else {
+                    throw TSTLErrors.ForbiddenLuaTableSetExpression(expression);
+                }
+            default:
+                return undefined;
         }
     }
 

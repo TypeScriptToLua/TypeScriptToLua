@@ -25,6 +25,8 @@ export class Decorator {
                 return DecoratorKind.NoClassOr;
             case "luaiterator":
                 return DecoratorKind.LuaIterator;
+            case "luatable":
+                return DecoratorKind.LuaTable;
             case "noself":
                 return DecoratorKind.NoSelf;
             case "noselfinfile":
@@ -54,6 +56,7 @@ export enum DecoratorKind {
     TupleReturn = "TupleReturn",
     NoClassOr = "NoClassOr",
     LuaIterator = "LuaIterator",
+    LuaTable = "LuaTable",
     NoSelf = "NoSelf",
     NoSelfInFile = "NoSelfInFile",
 }

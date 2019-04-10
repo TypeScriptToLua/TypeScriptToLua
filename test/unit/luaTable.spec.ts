@@ -13,9 +13,9 @@ declare let tbl: Table;
 `;
 
 test("LuaTable set() cannot be used in an expression position", () => {
-    expect(() => util.transpileString(tableLib + `const exp = tbl.set("value", 5)`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableSetExpression(util.nodeStub),
-    );
+    expect(() =>
+        util.transpileString(tableLib + `const exp = tbl.set("value", 5)`),
+    ).toThrowExactError(TSTLErrors.ForbiddenLuaTableSetExpression(util.nodeStub));
 });
 
 test("LuaTables can have other properties", () => {

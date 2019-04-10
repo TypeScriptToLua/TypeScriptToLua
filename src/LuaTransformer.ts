@@ -3978,42 +3978,41 @@ export class LuaTransformer {
         const signature = this.checker.getResolvedSignature(expression);
         const tableName = (method.expression as ts.Identifier).escapedText;
         const luaTable = tstl.createIdentifier(tableName);
-
-        if (expression.arguments.length === 0) {
-            throw TSTLErrors.ForbiddenLuaTableUseExpression(
-                expression,
-                "A parameter is required for set() or get() on a '@LuaTable' object."
-            );
-        }
-
         const params = this.transformArguments(expression.arguments, signature);
-        const indexExpression = tstl.createTableIndexExpression(luaTable, params[0], expression);
+
+        const getIndexExpression = () => {
+            if (expression.arguments.length === 0) {
+                throw TSTLErrors.ForbiddenLuaTableUseException(
+                    expression,
+                    "A parameter is required for set() or get() on a '@LuaTable' object."
+                );
+            } else {
+                return tstl.createTableIndexExpression(luaTable, params[0], expression);
+            }
+        }
 
         switch (methodName) {
             case "get":
-                if (isWithinExpressionStatement === true) {
-                    isWithinExpressionStatement = false;
+                if (isWithinExpressionStatement) {
                     return tstl.createVariableDeclarationStatement(
                         tstl.createAnnonymousIdentifier(),
-                        indexExpression
+                        getIndexExpression()
                     );
                 } else {
-                    return indexExpression;
+                    return getIndexExpression();
                 }
             case "set":
                 if (params.length < 2) {
-                    throw TSTLErrors.ForbiddenLuaTableUseExpression(
+                    throw TSTLErrors.ForbiddenLuaTableUseException(
                         expression,
                         "Two parameters are required for set() on a '@LuaTable' object."
                     );
                 }
                 if (isWithinExpressionStatement) {
-                    return tstl.createAssignmentStatement(indexExpression, params.splice(1), expression);
+                    return tstl.createAssignmentStatement(getIndexExpression(), params.splice(1), expression);
                 } else {
                     throw TSTLErrors.ForbiddenLuaTableSetExpression(expression);
                 }
-            default:
-                return undefined;
         }
     }
 

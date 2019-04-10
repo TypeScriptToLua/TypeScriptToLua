@@ -517,7 +517,7 @@ export class LuaPrinter {
             chunks.push(" ");
             const returnNode: SourceChunk[] = [
                 "return ",
-                ...this.joinChunks(", ", returnStatement.expressions!.map(e => this.printExpression(e))),
+                ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
             chunks.push(" end");

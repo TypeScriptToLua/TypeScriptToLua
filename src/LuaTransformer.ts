@@ -3989,7 +3989,7 @@ export class LuaTransformer {
             } else {
                 return tstl.createTableIndexExpression(luaTable, params[0], expression);
             }
-        }
+        };
 
         switch (methodName) {
             case "get":

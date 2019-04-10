@@ -1,1 +1,1 @@
-class MyTest2 {}
+class MyTest {}

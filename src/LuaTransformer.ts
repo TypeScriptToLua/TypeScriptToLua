@@ -250,8 +250,9 @@ export class LuaTransformer {
 
         if (statement.exportClause) {
             if (statement.exportClause.elements.some(e =>
-                (e.name && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
-                || (e.propertyName && e.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword))
+                (e.name !== undefined && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
+                || (e.propertyName !== undefined
+                    && e.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword))
             ) {
                 throw TSTLErrors.UnsupportedDefaultExport(statement);
             }
@@ -4790,17 +4791,20 @@ export class LuaTransformer {
             }
 
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+                if (functionDefinition.definition === undefined) {
+                    // TODO
+                    throw new Error("Expected functionDefinition.definition to be set, but it isn't.");
+                }
                 const { line, column } = tstl.getOriginalPos(functionDefinition.definition);
-                const definitionPos = ts.getPositionOfLineAndCharacter(
-                    this.currentSourceFile,
-                    line,
-                    column);
-                if (functionSymbolId !== symbolId // Don't recurse into self
-                    && declaration.pos < definitionPos // Ignore functions before symbol declaration
-                    && functionDefinition.referencedSymbols.has(symbolId)
-                    && this.shouldHoist(functionSymbolId, scope))
-                {
-                    return true;
+                if (line !== undefined && column !== undefined) {
+                    const definitionPos = ts.getPositionOfLineAndCharacter(this.currentSourceFile, line, column);
+                    if (functionSymbolId !== symbolId // Don't recurse into self
+                        && declaration.pos < definitionPos // Ignore functions before symbol declaration
+                        && functionDefinition.referencedSymbols.has(symbolId)
+                        && this.shouldHoist(functionSymbolId, scope))
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -4833,6 +4837,10 @@ export class LuaTransformer {
         const hoistedFunctions: Array<tstl.VariableDeclarationStatement | tstl.AssignmentStatement> = [];
         for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
             if (this.shouldHoist(functionSymbolId, scope)) {
+                if (functionDefinition.definition === undefined) {
+                    // TODO
+                    throw new Error("Expected functionDefinition.definition to be set, but it isn't.");
+                }
                 const i = result.indexOf(functionDefinition.definition);
                 result.splice(i, 1);
                 hoistedFunctions.push(functionDefinition.definition);

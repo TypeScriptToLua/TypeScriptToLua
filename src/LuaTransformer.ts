@@ -1297,15 +1297,13 @@ export class LuaTransformer {
             const element = pattern.elements[index];
             if (ts.isBindingElement(element)) {
                 if (ts.isArrayBindingPattern(element.name) || ts.isObjectBindingPattern(element.name)) {
-                    if (element.propertyName === undefined) {
-                        // TODO
-                        throw new Error("Expected bindingElement.propertyName to be set, but it isn't.");
-                    }
                     // nested binding pattern
                     const propertyName = isObjectBindingPattern
                         ? element.propertyName
                         : ts.createNumericLiteral(String(index + 1));
-                    propertyAccessStack.push(propertyName);
+                    if (propertyName !== undefined) {
+                        propertyAccessStack.push(propertyName);
+                    }
                     yield* this.transformBindingPattern(element.name, table, propertyAccessStack);
                 } else {
                     // Disallow ellipsis destructure

@@ -27,5 +27,6 @@ if (fs.existsSync(bundlePath)) {
     fs.unlinkSync(bundlePath);
 }
 
-const bundle = luaLib.loadFeatures(Object.keys(LuaLibFeature).map(lib => LuaLibFeature[lib]));
+const features = Object.keys(LuaLibFeature).map(lib => LuaLibFeature[lib as keyof typeof LuaLibFeature]);
+const bundle = luaLib.loadFeatures(features);
 fs.writeFileSync(bundlePath, bundle);

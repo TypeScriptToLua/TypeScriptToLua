@@ -232,6 +232,10 @@ export class LuaTransformer {
 
     public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
         if (statement.moduleSpecifier === undefined) {
+            if (statement.exportClause === undefined) {
+                throw new Error("Impossible, either moduleSpecifier or exportClause should be defined.");
+            }
+
             const result = [];
             for (const exportElement of statement.exportClause.elements) {
                 result.push(
@@ -392,7 +396,7 @@ export class LuaTransformer {
 
     private createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
         const modulePathString = resolveModule
-            ? this.getImportPath(moduleSpecifier.text.replace(new RegExp("\"", "g"), ""))
+            ? this.getImportPath(moduleSpecifier.text.replace(new RegExp("\"", "g"), ""), moduleSpecifier)
             : moduleSpecifier.text;
         const modulePath = tstl.createStringLiteral(modulePathString);
         return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath]);
@@ -963,10 +967,14 @@ export class LuaTransformer {
             m => tsHelper.isGetAccessorOverride(m, classDeclarataion, this.checker)
         );
         for (const getter of getOverrides) {
+            const getterName = getter.name !== undefined
+                ? this.expectExpression(this.transformPropertyName(getter.name))
+                : tstl.createAnnonymousIdentifier();
+
             const resetGetter = tstl.createExpressionStatement(
                 tstl.createCallExpression(
                     tstl.createIdentifier("rawset"),
-                    [this.createSelfIdentifier(), this.transformPropertyName(getter.name), tstl.createNilLiteral()]
+                    [this.createSelfIdentifier(), getterName, tstl.createNilLiteral()]
                 )
             );
             statements.push(resetGetter);
@@ -1064,6 +1072,10 @@ export class LuaTransformer {
         classDeclaration: ts.ClassLikeDeclaration
     ): StatementVisitResult
     {
+        if (getAccessor.body === undefined) {
+            return undefined;
+        }
+
         const name = this.transformIdentifier(getAccessor.name as ts.Identifier);
 
         const [body] = this.transformFunctionBody(getAccessor.parameters, getAccessor.body);
@@ -1098,6 +1110,10 @@ export class LuaTransformer {
         classDeclaration: ts.ClassLikeDeclaration
     ): StatementVisitResult
     {
+        if (setAccessor.body === undefined) {
+            return undefined;
+        }
+
         const name = this.transformIdentifier(setAccessor.name as ts.Identifier);
 
         const [params, dot, restParam] = this.transformParameters(setAccessor.parameters, this.createSelfIdentifier());
@@ -1280,6 +1296,10 @@ export class LuaTransformer {
             const element = pattern.elements[index];
             if (ts.isBindingElement(element)) {
                 if (ts.isArrayBindingPattern(element.name) || ts.isObjectBindingPattern(element.name)) {
+                    if (element.propertyName === undefined) {
+                        // TODO
+                        throw new Error("Expected bindingElement.propertyName to be set, but it isn't.");
+                    }
                     // nested binding pattern
                     const propertyName = isObjectBindingPattern
                         ? element.propertyName
@@ -1704,7 +1724,7 @@ export class LuaTransformer {
 
     public transformVariableDeclaration(statement: ts.VariableDeclaration): StatementVisitResult
     {
-        if (statement.initializer) {
+        if (statement.initializer && statement.type) {
             // Validate assignment
             const initializerType = this.checker.getTypeAtLocation(statement.initializer);
             const varType = this.checker.getTypeFromTypeNode(statement.type);
@@ -2342,11 +2362,19 @@ export class LuaTransformer {
     }
 
     public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
+        if (statement.expression === undefined) {
+            // TODO
+            throw new Error("Invalid throw statement");
+        }
+
         const type = this.checker.getTypeAtLocation(statement.expression);
         if (tsHelper.isStringType(type)) {
             const error = tstl.createIdentifier("error");
             return tstl.createExpressionStatement(
-                tstl.createCallExpression(error, [this.transformExpression(statement.expression)]),
+                tstl.createCallExpression(
+                    error,
+                    this.filterUndefined([this.transformExpression(statement.expression)])
+                ),
                 statement
             );
         } else {
@@ -2612,10 +2640,10 @@ export class LuaTransformer {
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
                 right = expression.right.elements.length > 0
-                    ? expression.right.elements.map(e => this.transformExpression(e))
+                    ? this.filterUndefined(expression.right.elements.map(e => this.transformExpression(e)))
                     : [tstl.createNilLiteral()];
             } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
-                right = [this.transformExpression(expression.right)];
+                right = this.filterUndefined([this.transformExpression(expression.right)]);
             } else {
                 right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
@@ -2696,13 +2724,18 @@ export class LuaTransformer {
             this.checker,
             this.program
         );
-        if (hasEffects) {
+        if (hasEffects && objExpression && indexExpression) {
             // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
             // local __TS_obj, __TS_index = ${objExpression}, ${indexExpression};
             const obj = tstl.createIdentifier("____TS_obj");
             const index = tstl.createIdentifier("____TS_index");
             const objAndIndexDeclaration = tstl.createVariableDeclarationStatement(
-                [obj, index], [this.transformExpression(objExpression), this.transformExpression(indexExpression)]);
+                [obj, index],
+                this.filterUndefined(
+                    [this.transformExpression(objExpression),
+                    this.transformExpression(indexExpression)]
+                )
+            );
             const accessExpression = tstl.createTableIndexExpression(obj, index);
 
             const tmp = tstl.createIdentifier("____TS_tmp");
@@ -2863,14 +2896,19 @@ export class LuaTransformer {
             this.checker,
             this.program
         );
-        if (hasEffects) {
+        if (hasEffects && objExpression && indexExpression) {
             // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
             // local __TS_obj, __TS_index = ${objExpression}, ${indexExpression};
             // ____TS_obj[____TS_index] = ____TS_obj[____TS_index] ${replacementOperator} ${right};
             const obj = tstl.createIdentifier("____TS_obj");
             const index = tstl.createIdentifier("____TS_index");
             const objAndIndexDeclaration = tstl.createVariableDeclarationStatement(
-                [obj, index], [this.transformExpression(objExpression), this.transformExpression(indexExpression)]);
+                [obj, index],
+                this.filterUndefined([
+                    this.transformExpression(objExpression),
+                    this.transformExpression(indexExpression),
+                ])
+            );
             const accessExpression = tstl.createTableIndexExpression(obj, index);
             const operatorExpression = this.transformBinaryOperation(
                 accessExpression,
@@ -3102,7 +3140,10 @@ export class LuaTransformer {
         const values: tstl.TableFieldExpression[] = [];
 
         node.elements.forEach(child => {
-            values.push(tstl.createTableFieldExpression(this.transformExpression(child), undefined, child));
+            const childExpression = this.transformExpression(child);
+            if (childExpression) {
+                values.push(tstl.createTableFieldExpression(childExpression, undefined, child));
+            }
         });
 
         return tstl.createTableExpression(values, node);
@@ -3112,15 +3153,15 @@ export class LuaTransformer {
         const properties: tstl.TableFieldExpression[] = [];
         // Add all property assignments
         node.properties.forEach(element => {
-            const name = this.transformPropertyName(element.name);
+            const name = element.name ? this.transformPropertyName(element.name) : undefined;
             if (ts.isPropertyAssignment(element)) {
-                const expression = this.transformExpression(element.initializer);
+                const expression = this.expectExpression(this.transformExpression(element.initializer));
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 const identifier = this.transformIdentifier(element.name);
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
-                const expression = this.transformFunctionExpression(element);
+                const expression = this.expectExpression(this.transformFunctionExpression(element));
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, node);
@@ -3189,11 +3230,11 @@ export class LuaTransformer {
         );
     }
 
-    public transformNewExpression(node: ts.NewExpression): tstl.CallExpression {
-        const name = this.transformExpression(node.expression);
-        const sig = this.checker.getResolvedSignature(node);
+    public transformNewExpression(node: ts.NewExpression): ExpressionVisitResult {
+        const name = this.expectExpression(this.transformExpression(node.expression));
+        const signature = this.checker.getResolvedSignature(node);
         const params = node.arguments
-            ? this.transformArguments(node.arguments, sig)
+            ? this.transformArguments(node.arguments, signature)
             : [tstl.createBooleanLiteral(true)];
 
         const type = this.checker.getTypeAtLocation(node);
@@ -3210,9 +3251,10 @@ export class LuaTransformer {
             if (customDecorator === undefined || customDecorator.args[0] === undefined) {
                 throw TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, node);
             }
+
             return tstl.createCallExpression(
                 tstl.createIdentifier(customDecorator.args[0]),
-                this.transformArguments(node.arguments),
+                this.transformArguments(node.arguments || ([] as ts.Expression[])),
                 node
             );
         }
@@ -3238,12 +3280,21 @@ export class LuaTransformer {
 
     public transformSuperKeyword(expression: ts.SuperExpression): ExpressionVisitResult {
         const classDeclaration = this.classStack[this.classStack.length - 1];
-        const extendsExpression = tsHelper.getExtendedTypeNode(classDeclaration, this.checker).expression;
+        const typeNode = tsHelper.getExtendedTypeNode(classDeclaration, this.checker);
+        if (typeNode === undefined) {
+            // TODO
+            throw new Error("Failed to find supertype for super expression!");
+        }
+        const extendsExpression = typeNode.expression;
         let baseClassName: tstl.IdentifierOrTableIndexExpression;
         if (ts.isIdentifier(extendsExpression)) {
             // Use "baseClassName" if base is a simple identifier
             baseClassName = this.addExportToIdentifier(this.transformIdentifier(extendsExpression));
         } else {
+            if (classDeclaration.name === undefined) {
+                throw TSTLErrors.MissingClassName(expression);
+            }
+
             // Use "className.____super" if the base is not a simple identifier
             baseClassName = tstl.createTableIndexExpression(
                 this.addExportToIdentifier(this.transformIdentifier(classDeclaration.name)),
@@ -3470,7 +3521,7 @@ export class LuaTransformer {
     }
 
     private transformArguments<T extends ts.Expression>(
-        params: ts.NodeArray<ts.Expression>,
+        params: ts.NodeArray<ts.Expression> | ts.Expression[],
         sig?: ts.Signature,
         context?: T
     ): tstl.Expression[]
@@ -4276,12 +4327,22 @@ export class LuaTransformer {
         }
 
         const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
+        if (currentScope === undefined) {
+            // TODO
+            throw new Error("Invalid scope");
+        }
+
         const scopeSymbol = this.checker.getSymbolAtLocation(currentScope)
             ? this.checker.getSymbolAtLocation(currentScope)
             : this.checker.getTypeAtLocation(currentScope).getSymbol();
 
+        if (scopeSymbol === undefined || scopeSymbol.exports === undefined) {
+            return false;
+        }
+        const scopeSymbolExports = scopeSymbol.exports;
+
         const it: Iterable<ts.Symbol> = {
-            [Symbol.iterator]: () => scopeSymbol.exports.values(), // Why isn't ts.SymbolTable.values() iterable?
+            [Symbol.iterator]: () => scopeSymbolExports.values(), // Why isn't ts.SymbolTable.values() iterable?
         };
         for (const symbol of it) {
             if (symbol === symbolInfo.symbol) {
@@ -4360,18 +4421,21 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), [], tsOriginal);
     }
 
-    private createUnpackCall(expression: tstl.Expression, tsOriginal: ts.Node): tstl.Expression {
+    private createUnpackCall(expression: tstl.Expression | undefined, tsOriginal: ts.Node): tstl.Expression {
         switch (this.options.luaTarget) {
             case LuaTarget.Lua51:
             case LuaTarget.LuaJIT:
-                return tstl.createCallExpression(tstl.createIdentifier("unpack"), [expression], tsOriginal);
-
+                return tstl.createCallExpression(
+                    tstl.createIdentifier("unpack"),
+                    this.filterUndefined([expression]),
+                    tsOriginal
+                );
             case LuaTarget.Lua52:
             case LuaTarget.Lua53:
             default:
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("unpack")),
-                    [expression],
+                    this.filterUndefined([expression]),
                     tsOriginal
                 );
         }
@@ -4381,10 +4445,16 @@ export class LuaTransformer {
         if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
             return path.resolve(this.options.baseUrl, relativePath);
         }
+
+        if (this.currentSourceFile === undefined) {
+            // TODO
+            throw new Error("Expected source file to be set, but it isn't.");
+        }
+
         return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
     }
 
-    private getImportPath(relativePath: string): string {
+    private getImportPath(relativePath: string, node: ts.Node): string {
         const rootDir = this.options.rootDir ? path.resolve(this.options.rootDir) : path.resolve(".");
         const absoluteImportPath = path.format(path.parse(this.getAbsoluteImportPath(relativePath)));
         const absoluteRootDirPath = path.format(path.parse(rootDir));
@@ -4392,7 +4462,7 @@ export class LuaTransformer {
             return this.formatPathToLuaPath(
                 absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
         } else {
-            throw TSTLErrors.UnresolvableRequirePath(undefined,
+            throw TSTLErrors.UnresolvableRequirePath(node,
                 `Cannot create require path. Module does not exist within --rootDir`,
                 relativePath);
         }
@@ -4489,6 +4559,11 @@ export class LuaTransformer {
                         ? this.peekScope()
                         : this.findScope(ScopeType.Function | ScopeType.File);
 
+                    if (scope === undefined) {
+                        // TODO
+                        throw new Error("Invalid scope");
+                    }
+
                     if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
                     scope.variableDeclarations.push(declaration);
                 }
@@ -4505,8 +4580,12 @@ export class LuaTransformer {
         if (!this.options.noHoisting && functionDeclaration) {
             // Remember function definitions for hoisting later
             const functionSymbolId = (lhs as tstl.Identifier).symbolId;
-            if (functionSymbolId !== undefined) {
-                this.peekScope().functionDefinitions.get(functionSymbolId).definition = declaration || assignment;
+            const scope = this.peekScope();
+            if (functionSymbolId && scope && scope.functionDefinitions) {
+                const definitions = scope.functionDefinitions.get(functionSymbolId);
+                if (definitions) {
+                    definitions.definition = declaration || assignment;
+                }
             }
         }
 
@@ -4566,14 +4645,19 @@ export class LuaTransformer {
         if ((ts.isArrayTypeNode(toTypeNode) || ts.isTupleTypeNode(toTypeNode))
             && (ts.isArrayTypeNode(fromTypeNode) || ts.isTupleTypeNode(fromTypeNode))) {
             // Recurse into arrays/tuples
-            const fromTypeReference = fromType as ts.TypeReference;
-            const toTypeReference = toType as ts.TypeReference;
-            const count = Math.min(fromTypeReference.typeArguments.length, toTypeReference.typeArguments.length);
+            const fromTypeArguments = (fromType as ts.TypeReference).typeArguments;
+            const toTypeArguments = (toType as ts.TypeReference).typeArguments;
+
+            if (fromTypeArguments === undefined || toTypeArguments === undefined) {
+                return;
+            }
+
+            const count = Math.min(fromTypeArguments.length, toTypeArguments.length);
             for (let i = 0; i < count; ++i) {
                 this.validateFunctionAssignment(
                     node,
-                    fromTypeReference.typeArguments[i],
-                    toTypeReference.typeArguments[i],
+                    fromTypeArguments[i],
+                    toTypeArguments[i],
                     toName
                 );
             }
@@ -4585,12 +4669,18 @@ export class LuaTransformer {
         {
             // Recurse into interfaces
             toType.symbol.members.forEach((toMember, memberName) => {
-                const fromMember = fromType.symbol.members.get(memberName);
-                if (fromMember) {
-                    const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
-                    const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
-                    this.validateFunctionAssignment(
-                        node, fromMemberType, toMemberType, toName ? `${toName}.${memberName}` : memberName.toString());
+                if (fromType.symbol.members) {
+                    const fromMember = fromType.symbol.members.get(memberName);
+                    if (fromMember) {
+                        const toMemberType = this.checker.getTypeOfSymbolAtLocation(toMember, node);
+                        const fromMemberType = this.checker.getTypeOfSymbolAtLocation(fromMember, node);
+                        this.validateFunctionAssignment(
+                            node, fromMemberType, toMemberType,
+                            toName
+                                ? `${toName}.${memberName}`
+                                : memberName.toString()
+                        );
+                    }
                 }
             });
         }
@@ -4650,11 +4740,12 @@ export class LuaTransformer {
                     throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
                 }
 
-            } else {
+            } else if (symbolId !== undefined) {
+                const sid = symbolId; // Capture non-undefined variable
                 //Mark symbol as seen in all current scopes
                 this.scopeStack.forEach(s => {
                     if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
-                    s.referencedSymbols.add(symbolId);
+                    s.referencedSymbols.add(sid);
                 });
             }
         }
@@ -4693,6 +4784,11 @@ export class LuaTransformer {
         }
 
         if (scope.functionDefinitions) {
+            if (this.currentSourceFile === undefined) {
+                // TODO
+                throw new Error("Expected currentSourceFile to be defined, but it isn't.");
+            }
+
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
                 const { line, column } = tstl.getOriginalPos(functionDefinition.definition);
                 const definitionPos = ts.getPositionOfLineAndCharacter(
@@ -4756,7 +4852,7 @@ export class LuaTransformer {
         const result = statements.slice();
         const hoistedLocals: tstl.Identifier[] = [];
         for (const declaration of scope.variableDeclarations) {
-            const symbols = declaration.left.map(i => i.symbolId).filter(s => s !== undefined);
+            const symbols = this.filterUndefined(declaration.left.map(i => i.symbolId));
             if (symbols.some(s => this.shouldHoist(s, scope))) {
                 let assignment: tstl.AssignmentStatement | undefined;
                 if (declaration.right) {

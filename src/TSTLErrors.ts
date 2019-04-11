@@ -74,7 +74,7 @@ export class TSTLErrors {
     public static UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
         new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
 
-    public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
+    public static UnsupportedForTarget = (functionality: string, version: string | undefined, node: ts.Node) =>
         new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
 
     public static UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {

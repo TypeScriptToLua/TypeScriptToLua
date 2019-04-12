@@ -120,12 +120,14 @@ test("Inline sourcemaps", () => {
         return abc();`;
 
     const compilerOptions: CompilerOptions = {
-        inlineSourceMap: true
+        inlineSourceMap: true,
     };
 
     const { lua, sourceMap } = util.transpileStringResult(typeScriptSource, compilerOptions);
 
-    const inlineSourceMapMatch = lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/);
+    const inlineSourceMapMatch = lua.match(
+        /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
+    );
     expect(inlineSourceMapMatch !== null && inlineSourceMapMatch !== undefined).toBe(true);
 
     const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();

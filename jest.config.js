@@ -1,5 +1,3 @@
-const isCI = require("is-ci");
-
 /** @type {Partial<import("@jest/types").Config.DefaultOptions>} */
 module.exports = {
     testMatch: ["**/test/**/*.spec.ts"],
@@ -12,7 +10,7 @@ module.exports = {
     globals: {
         "ts-jest": {
             tsConfig: "<rootDir>/test/tsconfig.json",
-            diagnostics: { warnOnly: !isCI },
+            diagnostics: { warnOnly: false },
         },
     },
 };

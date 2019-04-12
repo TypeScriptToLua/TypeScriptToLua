@@ -3205,8 +3205,14 @@ export class LuaTransformer {
         const [paramNames, dotsLiteral, spreadIdentifier] = this.transformParameters(node.parameters, context);
 
         let flags = tstl.FunctionExpressionFlags.None;
+
+        if (node.body === undefined) {
+            // TODO
+            throw new Error("Functions without body not supported");
+        }
+
         let body: ts.Block;
-        if (node.body && ts.isBlock(node.body)) {
+        if (ts.isBlock(node.body)) {
             body = node.body;
         } else {
             const returnExpression = ts.createReturn(node.body);
@@ -3217,6 +3223,7 @@ export class LuaTransformer {
             }
             flags |= tstl.FunctionExpressionFlags.Inline;
         }
+
         const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
         return tstl.createFunctionExpression(

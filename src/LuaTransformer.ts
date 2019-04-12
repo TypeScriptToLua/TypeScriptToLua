@@ -613,6 +613,14 @@ export class LuaTransformer {
             );
         }
 
+        // className.name = className
+        result.push(
+            tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("name")),
+                tstl.createStringLiteral(className.text)
+            )
+        );
+
         // className.____getters = {}
         if (statement.members.some(m => ts.isGetAccessor(m) && tsHelper.isStatic(m))) {
             const classGetters = tstl.createTableIndexExpression(
@@ -2762,8 +2770,10 @@ export class LuaTransformer {
     }
 
     public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
-        const className = tstl.createAnnonymousIdentifier();
-        const classDeclaration =  this.transformClassDeclaration(expression as ts.ClassExpression, className);
+        const className = expression.name !== undefined
+            ? this.transformIdentifier(expression.name)
+            : tstl.createAnnonymousIdentifier();
+        const classDeclaration =  this.transformClassDeclaration(expression, className);
         return this.createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
     }
 

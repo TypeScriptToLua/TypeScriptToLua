@@ -43,6 +43,7 @@ end"
 
 exports[`Transformation (classPureAbstract) 1`] = `
 "ClassB = {}
+ClassB.name = \\"ClassB\\"
 ClassB.__index = ClassB
 ClassB.prototype = {}
 ClassB.prototype.__index = ClassB.prototype
@@ -263,6 +264,7 @@ end"
 exports[`Transformation (getSetAccessors) 1`] = `
 "require(\\"lualib_bundle\\");
 MyClass = {}
+MyClass.name = \\"MyClass\\"
 MyClass.__index = MyClass
 MyClass.prototype = {}
 MyClass.prototype.____getters = {}
@@ -303,6 +305,7 @@ local tblLength = #tbl"
 
 exports[`Transformation (methodRestArguments) 1`] = `
 "MyClass = {}
+MyClass.name = \\"MyClass\\"
 MyClass.__index = MyClass
 MyClass.prototype = {}
 MyClass.prototype.__index = MyClass.prototype
@@ -329,6 +332,7 @@ exports[`Transformation (modulesClassExport) 1`] = `
 "local ____exports = {}
 ____exports.TestClass = {}
 local TestClass = ____exports.TestClass
+TestClass.name = \\"TestClass\\"
 TestClass.__index = TestClass
 TestClass.prototype = {}
 TestClass.prototype.__index = TestClass.prototype
@@ -347,6 +351,7 @@ exports[`Transformation (modulesClassWithMemberExport) 1`] = `
 "local ____exports = {}
 ____exports.TestClass = {}
 local TestClass = ____exports.TestClass
+TestClass.name = \\"TestClass\\"
 TestClass.__index = TestClass
 TestClass.prototype = {}
 TestClass.prototype.__index = TestClass.prototype
@@ -491,6 +496,7 @@ end"
 
 exports[`Transformation (namespaceMerge) 1`] = `
 "MergedClass = {}
+MergedClass.name = \\"MergedClass\\"
 MergedClass.__index = MergedClass
 MergedClass.prototype = {}
 MergedClass.prototype.__index = MergedClass.prototype

@@ -746,3 +746,54 @@ test("Class static instance of self", () => {
     `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
+
+test("Class name", () => {
+    const code = `
+        class Foo {}
+        return Foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class name via constructor", () => {
+    const code = `
+        class Foo {}
+        const foo = new Foo();
+        return foo.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class expression name", () => {
+    const code = `
+        const foo = class Foo {};
+        return foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class expression name via constructor", () => {
+    const code = `
+        const foo = class Foo {};
+        const bar = new foo();
+        return bar.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class annonymous expression name", () => {
+    const code = `
+        const foo = class {};
+        return foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("____");
+});
+
+test("Class annonymous expression name via constructor", () => {
+    const code = `
+        const foo = class {};
+        const bar = new foo();
+        return bar.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("____");
+});

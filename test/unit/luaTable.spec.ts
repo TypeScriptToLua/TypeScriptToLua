@@ -46,3 +46,13 @@ test.each([
         TSTLErrors.InvalidExtendsLuaTable(util.nodeStub),
     );
 });
+
+test.each([
+    `/** @luaTable */ class Table {}`,
+    `/** @luaTable */ export class Table {}`,
+    `/** @luaTable */ const c = class Table {}`,
+])("LuaTable classes must be declared (%p)", (code) => {
+    expect(() => util.transpileString(code)).toThrowExactError(
+        TSTLErrors.ForbiddenLuaTableNonDeclaration(util.nodeStub),
+    );
+});

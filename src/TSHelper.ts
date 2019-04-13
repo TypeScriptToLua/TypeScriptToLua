@@ -131,6 +131,10 @@ export class TSHelper {
         return false;
     }
 
+    public static isDeclared(node: ts.Node): boolean {
+        return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.DeclareKeyword);
+    }
+
     public static isStatic(node: ts.Node): boolean {
         return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
     }

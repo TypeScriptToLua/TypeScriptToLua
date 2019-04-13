@@ -442,6 +442,11 @@ export class LuaTransformer {
             }
         }
 
+        // LuaTable classes must be declared
+        if (decorators.has(DecoratorKind.LuaTable) && !tsHelper.isDeclared(statement)) {
+            throw TSTLErrors.ForbiddenLuaTableNonDeclaration(statement);
+        }
+
         // Get all properties with value
         const properties = statement.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
 

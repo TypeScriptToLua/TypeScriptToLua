@@ -19,6 +19,9 @@ export class TSTLErrors {
         `A '@LuaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
         node);
 
+    public static ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
+        new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
+
     public static InvalidExtendsLuaTable = (node: ts.Node) =>
         new TranspileError(`Cannot extend classes with the decorator '@luaTable'.`, node);
 

@@ -136,3 +136,36 @@ test("Array property access", () => {
     `;
     expect(util.transpileAndExecute(code)).toBe("bar123");
 });
+
+test.each([{ length: 0, result: 0 }, { length: 1, result: 1 }, { length: 7, result: 3 }])(
+    "Array length set",
+    ({ length, result }) => {
+        const code = `
+        const arr = [1, 2, 3];
+        arr.length = ${length};
+        return arr.length;
+    `;
+        expect(util.transpileAndExecute(code)).toBe(result);
+    },
+);
+
+test.each([
+    { length: 0, result: "0/0" },
+    { length: 1, result: "1/1" },
+    { length: 7, result: "7/3" },
+])("Array length set as expression", ({ length, result }) => {
+    const code = `
+        const arr = [1, 2, 3];
+        const l = arr.length = ${length};
+        return \`\${l}/\${arr.length}\`;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(result);
+});
+
+test.each([-1, -7])("Invalid array length set", length => {
+    const code = `
+        const arr = [1, 2, 3];
+        arr.length = ${length};
+    `;
+    expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${length}`);
+});

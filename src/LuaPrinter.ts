@@ -83,7 +83,7 @@ export class LuaPrinter {
         const map = sourceMap.toString();
         const base64Map = Buffer.from(map).toString('base64');
 
-        return `//# sourceMappingURL=data:application/json;base64,${base64Map}\n`;
+        return `--# sourceMappingURL=data:application/json;base64,${base64Map}\n`;
     }
 
     private printStackTraceOverride(rootNode: SourceNode): string {

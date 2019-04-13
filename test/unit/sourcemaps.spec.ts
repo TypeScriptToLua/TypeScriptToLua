@@ -1,5 +1,5 @@
 import * as util from "../util";
-import { LuaLibImportKind } from "../../src/CompilerOptions";
+import { LuaLibImportKind, CompilerOptions } from "../../src/CompilerOptions";
 import { SourceMapConsumer, Position } from "source-map";
 
 test.each([
@@ -107,6 +107,33 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
         // Add 1 to account for transpiledAndExecute-added function header
         expect(mappedLine).toEqual(typescriptPosition.line + 1);
     }
+});
+
+test("Inline sourcemaps", () => {
+    const typeScriptSource = `
+        function abc() {
+            return def();
+        }
+        function def() {
+            return "foo";
+        }
+        return abc();`;
+
+    const compilerOptions: CompilerOptions = {
+        inlineSourceMap: true,
+    };
+
+    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource, compilerOptions);
+
+    const inlineSourceMapMatch = lua.match(
+        /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
+    );
+    expect(inlineSourceMapMatch !== null && inlineSourceMapMatch !== undefined).toBe(true);
+
+    const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
+    expect(sourceMap).toBe(inlineSourceMap);
+
+    expect(util.executeLua(lua)).toBe("foo");
 });
 
 // Helper functions

@@ -2022,8 +2022,7 @@ export class LuaTransformer {
                 return tstl.createVariableDeclarationStatement(
                     (variableStatements[0] as tstl.VariableDeclarationStatement).left, expression);
             } else {
-                // TODO: TSTLErrors
-                throw new Error("ForOf variable declarations produced empty variable list.");
+                throw TSTLErrors.MissingForOfVariables(initializer);
             }
 
         } else {
@@ -2362,8 +2361,7 @@ export class LuaTransformer {
 
     public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
         if (statement.expression === undefined) {
-            // TODO
-            throw new Error("Invalid throw statement");
+            throw TSTLErrors.InvalidThrowExpression(statement);
         }
 
         const type = this.checker.getTypeAtLocation(statement.expression);
@@ -2388,8 +2386,7 @@ export class LuaTransformer {
 
         const scope = this.findScope(ScopeType.Loop);
         if (scope === undefined) {
-            //TODO
-            throw new Error("Tried to pop non-existing scope.");
+            throw TSTLErrors.UndefinedScope();
         }
 
         scope.loopContinued = true;
@@ -3207,8 +3204,7 @@ export class LuaTransformer {
         let flags = tstl.FunctionExpressionFlags.None;
 
         if (node.body === undefined) {
-            // TODO
-            throw new Error("Functions without body not supported");
+            throw TSTLErrors.UnsupportedFunctionWithoutBody(node);
         }
 
         let body: ts.Block;
@@ -3288,9 +3284,9 @@ export class LuaTransformer {
         const classDeclaration = this.classStack[this.classStack.length - 1];
         const typeNode = tsHelper.getExtendedTypeNode(classDeclaration, this.checker);
         if (typeNode === undefined) {
-            // TODO
-            throw new Error("Failed to find supertype for super expression!");
+            throw TSTLErrors.UnknownSuperType(expression);
         }
+
         const extendsExpression = typeNode.expression;
         let baseClassName: tstl.IdentifierOrTableIndexExpression;
         if (ts.isIdentifier(extendsExpression)) {
@@ -4334,8 +4330,7 @@ export class LuaTransformer {
 
         const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
         if (currentScope === undefined) {
-            // TODO
-            throw new Error("Invalid scope");
+            throw TSTLErrors.UndefinedScope();
         }
 
         const scopeSymbol = this.checker.getSymbolAtLocation(currentScope)
@@ -4453,8 +4448,7 @@ export class LuaTransformer {
         }
 
         if (this.currentSourceFile === undefined) {
-            // TODO
-            throw new Error("Expected source file to be set, but it isn't.");
+            throw TSTLErrors.MissingSourceFile();
         }
 
         return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
@@ -4566,8 +4560,7 @@ export class LuaTransformer {
                         : this.findScope(ScopeType.Function | ScopeType.File);
 
                     if (scope === undefined) {
-                        // TODO
-                        throw new Error("Invalid scope");
+                        throw TSTLErrors.UndefinedScope();
                     }
 
                     if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
@@ -4791,15 +4784,14 @@ export class LuaTransformer {
 
         if (scope.functionDefinitions) {
             if (this.currentSourceFile === undefined) {
-                // TODO
-                throw new Error("Expected currentSourceFile to be defined, but it isn't.");
+                throw TSTLErrors.MissingSourceFile();
             }
 
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
                 if (functionDefinition.definition === undefined) {
-                    // TODO
-                    throw new Error("Expected functionDefinition.definition to be set, but it isn't.");
+                    throw TSTLErrors.UndefinedFunctionDefinition(functionSymbolId);
                 }
+
                 const { line, column } = tstl.getOriginalPos(functionDefinition.definition);
                 if (line !== undefined && column !== undefined) {
                     const definitionPos = ts.getPositionOfLineAndCharacter(this.currentSourceFile, line, column);
@@ -4841,11 +4833,11 @@ export class LuaTransformer {
         const result = statements.slice();
         const hoistedFunctions: Array<tstl.VariableDeclarationStatement | tstl.AssignmentStatement> = [];
         for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
+            if (functionDefinition.definition === undefined) {
+                throw TSTLErrors.UndefinedFunctionDefinition(functionSymbolId);
+            }
+
             if (this.shouldHoist(functionSymbolId, scope)) {
-                if (functionDefinition.definition === undefined) {
-                    // TODO
-                    throw new Error("Expected functionDefinition.definition to be set, but it isn't.");
-                }
                 const i = result.indexOf(functionDefinition.definition);
                 result.splice(i, 1);
                 hoistedFunctions.push(functionDefinition.definition);
@@ -4955,8 +4947,7 @@ export class LuaTransformer {
         if (filteredItems.every(i => cast(i))) {
             return filteredItems as TCast[];
         } else {
-            // TODO: TSTLErrors
-            throw new Error("Could not cast all elements to desired type.");
+            throw TSTLErrors.CouldNotCast(cast.name);
         }
     }
 

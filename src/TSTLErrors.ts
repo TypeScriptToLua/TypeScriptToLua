@@ -32,6 +32,9 @@ export class TSTLErrors {
     public static InvalidNewExpressionOnExtension = (node: ts.Node) =>
         new TranspileError(`Cannot construct classes with decorator '@extension' or '@metaExtension'.`, node);
 
+    public static InvalidExportDeclaration = (declaration: ts.ExportDeclaration) =>
+        new TranspileError("Encountered invalid export declaration without exports and without module.", declaration);
+
     public static InvalidExtendsExtension = (node: ts.Node) =>
         new TranspileError(`Cannot extend classes with decorator '@extension' or '@metaExtension'.`, node);
 
@@ -61,6 +64,9 @@ export class TSTLErrors {
 
     public static MissingForOfVariables = (node: ts.Node) =>
         new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
+
+    public static MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
+        new TranspileError("Unsupported function declaration without name.", declaration);
 
     public static MissingMetaExtension = (node: ts.Node) =>
         new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
@@ -95,7 +101,7 @@ export class TSTLErrors {
     public static UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
         new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
 
-    public static UnsupportedForTarget = (functionality: string, version: string | undefined, node: ts.Node) =>
+    public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
         new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
 
     public static UnsupportedFunctionWithoutBody = (node: ts.FunctionLikeDeclaration) =>

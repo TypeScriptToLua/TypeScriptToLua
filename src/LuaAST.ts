@@ -896,7 +896,7 @@ export type InlineFunctionExpression = FunctionExpression & {
 };
 
 export function isInlineFunctionExpression(expression: FunctionExpression) : expression is InlineFunctionExpression {
-    return expression.body.statements
+    return expression.body.statements !== undefined
         && expression.body.statements.length === 1
         && isReturnStatement(expression.body.statements[0])
         && (expression.body.statements[0] as ReturnStatement).expressions !== undefined

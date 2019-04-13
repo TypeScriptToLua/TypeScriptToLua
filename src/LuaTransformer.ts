@@ -44,6 +44,7 @@ export class LuaTransformer {
     ]);
 
     private isStrict = true;
+    private luaTarget: LuaTarget;
 
     private checker: ts.TypeChecker;
     protected options: CompilerOptions;
@@ -78,9 +79,7 @@ export class LuaTransformer {
                             && this.options.target !== undefined
                             && this.options.target >= ts.ScriptTarget.ES2015);
 
-        if (!this.options.luaTarget) {
-            this.options.luaTarget = LuaTarget.LuaJIT;
-        }
+        this.luaTarget = options.luaTarget || LuaTarget.LuaJIT;
 
         this.setupState();
     }
@@ -235,7 +234,7 @@ export class LuaTransformer {
     public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
         if (statement.moduleSpecifier === undefined) {
             if (statement.exportClause === undefined) {
-                throw new Error("Impossible, either moduleSpecifier or exportClause should be defined.");
+                throw TSTLErrors.InvalidExportDeclaration(statement);
             }
 
             const result = [];
@@ -967,13 +966,12 @@ export class LuaTransformer {
             statements.push(assignClassField);
         }
 
-        const getOverrides = classDeclarataion.members.filter(
-            m => tsHelper.isGetAccessorOverride(m, classDeclarataion, this.checker)
-        );
+        const getOverrides = classDeclarataion.members.filter(m =>
+            tsHelper.isGetAccessorOverride(m, classDeclarataion, this.checker)
+        ) as ts.GetAccessorDeclaration[];
+
         for (const getter of getOverrides) {
-            const getterName = getter.name !== undefined
-                ? this.expectExpression(this.transformPropertyName(getter.name))
-                : tstl.createAnnonymousIdentifier();
+            const getterName = this.expectExpression(this.transformPropertyName(getter.name));
 
             const resetGetter = tstl.createExpressionStatement(
                 tstl.createCallExpression(
@@ -1686,7 +1684,11 @@ export class LuaTransformer {
             : undefined;
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
-        const name = this.transformIdentifier(functionDeclaration.name!);
+        if (functionDeclaration.name === undefined) {
+            throw TSTLErrors.MissingFunctionName(functionDeclaration);
+        }
+
+        const name = this.transformIdentifier(functionDeclaration.name);
         const [body, functionScope] = functionDeclaration.asteriskToken
             ? this.transformGeneratorFunction(
                 functionDeclaration.parameters,
@@ -2255,8 +2257,8 @@ export class LuaTransformer {
     }
 
     public transformSwitchStatement(statement: ts.SwitchStatement): StatementVisitResult {
-        if (this.options.luaTarget === LuaTarget.Lua51) {
-            throw TSTLErrors.UnsupportedForTarget("Switch statements", this.options.luaTarget, statement);
+        if (this.luaTarget === LuaTarget.Lua51) {
+            throw TSTLErrors.UnsupportedForTarget("Switch statements", this.luaTarget, statement);
         }
 
         this.pushScope(ScopeType.Switch, statement);
@@ -2314,7 +2316,7 @@ export class LuaTransformer {
         const breakableScope = this.findScope(ScopeType.Loop | ScopeType.Switch);
 
         if (breakableScope === undefined) {
-            throw new Error("Tried to pop non-existing break scope!");
+            throw TSTLErrors.UndefinedScope();
         }
 
         if (breakableScope.type === ScopeType.Switch) {
@@ -2383,8 +2385,8 @@ export class LuaTransformer {
     }
 
     public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
-        if (this.options.luaTarget === LuaTarget.Lua51) {
-            throw TSTLErrors.UnsupportedForTarget("Continue statement", this.options.luaTarget, statement);
+        if (this.luaTarget === LuaTarget.Lua51) {
+            throw TSTLErrors.UnsupportedForTarget("Continue statement", this.luaTarget, statement);
         }
 
         const scope = this.findScope(ScopeType.Loop);
@@ -2956,9 +2958,9 @@ export class LuaTransformer {
         operator: tstl.UnaryBitwiseOperator
     ): ExpressionVisitResult
     {
-        switch (this.options.luaTarget) {
+        switch (this.luaTarget) {
             case LuaTarget.Lua51:
-                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.luaTarget, node);
 
             case LuaTarget.Lua52:
                 return this.transformUnaryBitLibOperation(node, expression, operator, "bit32");
@@ -3016,9 +3018,9 @@ export class LuaTransformer {
         operator: ts.BinaryOperator
     ): ExpressionVisitResult
     {
-        switch (this.options.luaTarget) {
+        switch (this.luaTarget) {
             case LuaTarget.Lua51:
-                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.options.luaTarget, node);
+                throw TSTLErrors.UnsupportedForTarget("Bitwise operations", this.luaTarget, node);
 
             case LuaTarget.Lua52:
                 return this.transformBinaryBitLibOperation(node, left, right, operator, "bit32");
@@ -3261,7 +3263,7 @@ export class LuaTransformer {
 
             return tstl.createCallExpression(
                 tstl.createIdentifier(customDecorator.args[0]),
-                this.transformArguments(node.arguments || ([] as ts.Expression[])),
+                this.transformArguments(node.arguments || []),
                 node
             );
         }
@@ -3939,7 +3941,7 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `string property ${identifierString}`,
-                    this.options.luaTarget,
+                    this.luaTarget,
                     identifier
                 );
         }
@@ -3967,7 +3969,7 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `object property ${methodName}`,
-                    this.options.luaTarget,
+                    this.luaTarget,
                     expression
                 );
         }
@@ -4055,7 +4057,7 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `console property ${methodName}`,
-                    this.options.luaTarget,
+                    this.luaTarget,
                     expression
                 );
         }
@@ -4082,7 +4084,7 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedForTarget(
                     `symbol property ${methodName}`,
-                    this.options.luaTarget,
+                    this.luaTarget,
                     expression
                 );
         }
@@ -4428,7 +4430,7 @@ export class LuaTransformer {
     }
 
     private createUnpackCall(expression: tstl.Expression | undefined, tsOriginal: ts.Node): tstl.Expression {
-        switch (this.options.luaTarget) {
+        switch (this.luaTarget) {
             case LuaTarget.Lua51:
             case LuaTarget.LuaJIT:
                 return tstl.createCallExpression(
@@ -4749,12 +4751,13 @@ export class LuaTransformer {
                 }
 
             } else if (symbolId !== undefined) {
-                const sid = symbolId; // Capture non-undefined variable
                 //Mark symbol as seen in all current scopes
-                this.scopeStack.forEach(s => {
-                    if (!s.referencedSymbols) { s.referencedSymbols = new Set(); }
-                    s.referencedSymbols.add(sid);
-                });
+                for (const scope of this.scopeStack) {
+                    if (!scope.referencedSymbols) {
+                        scope.referencedSymbols = new Set();
+                    }
+                    scope.referencedSymbols.add(symbolId);
+                }
             }
         }
         return symbolId;
@@ -4911,7 +4914,7 @@ export class LuaTransformer {
         const scope = this.scopeStack.pop();
 
         if (scope === undefined) {
-            throw new Error("Tried to pop from empty scope stack!");
+            throw TSTLErrors.UndefinedScope();
         }
 
         return scope;
@@ -4963,8 +4966,6 @@ export class LuaTransformer {
     private expectExpression(visitResult: ExpressionVisitResult): tstl.Expression {
         if (visitResult === undefined) {
             throw new Error("Expected single visit result expression, but found undefined");
-        } else if (Array.isArray(visitResult)) {
-            throw new Error("Expected single visit result expression, but found multiple");
         } else {
             return visitResult;
         }

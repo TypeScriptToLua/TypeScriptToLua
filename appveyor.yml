@@ -2,9 +2,11 @@
 environment:
   nodejs_version: "8"
 
-# Cache dependencies
-cache:
-  - node_modules
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
+# Maximum number of concurrent jobs for the project
+max_jobs: 2
 
 # Install scripts. (runs after repo cloning)
 install:
@@ -21,7 +23,7 @@ test_script:
   # run tests
   - npm run lint
   - npm run build
-  - npm test
+  - npm test -- --coverage
 
 # Don't actually build.
 build: off

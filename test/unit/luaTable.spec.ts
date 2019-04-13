@@ -37,3 +37,12 @@ test.each([
         TSTLErrors.ForbiddenLuaTableUseException(util.nodeStub, errorDescription),
     );
 });
+
+test.each([
+    `class Ext extends Table {}`,
+    `const c = class Ext extends Table {}`,
+])("Cannot extend LuaTable class (%p)", (code) => {
+    expect(() => util.transpileString(tableLib + code)).toThrowExactError(
+        TSTLErrors.InvalidExtendsLuaTable(util.nodeStub),
+    );
+});

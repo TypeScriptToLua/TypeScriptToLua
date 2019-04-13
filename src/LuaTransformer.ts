@@ -434,6 +434,14 @@ export class LuaTransformer {
             }
         }
 
+        // You cannot extend LuaTable classes
+        if (extendsType) {
+            const decorators = tsHelper.getCustomDecorators(extendsType, this.checker);
+            if (decorators.has(DecoratorKind.LuaTable)) {
+                throw TSTLErrors.InvalidExtendsLuaTable(statement);
+            }
+        }
+
         // Get all properties with value
         const properties = statement.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
 

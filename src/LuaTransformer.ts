@@ -4016,36 +4016,35 @@ export class LuaTransformer {
         const luaTable = tstl.createIdentifier(tableName);
         const params = this.transformArguments(expression.arguments, signature);
 
-        const getIndexExpression = () => {
-            if (expression.arguments.length === 0) {
-                throw TSTLErrors.ForbiddenLuaTableUseException(
-                    expression,
-                    "A parameter is required for set() or get() on a '@LuaTable' object."
-                );
-            } else {
-                return tstl.createTableIndexExpression(luaTable, params[0], expression);
-            }
-        };
-
         switch (methodName) {
             case "get":
+                if (expression.arguments.length !== 1) {
+                    throw TSTLErrors.ForbiddenLuaTableUseException(
+                        expression,
+                        "One parameter is required for get() on a '@LuaTable' object."
+                    );
+                }
                 if (isWithinExpressionStatement) {
                     return tstl.createVariableDeclarationStatement(
                         tstl.createAnnonymousIdentifier(),
-                        getIndexExpression()
+                        tstl.createTableIndexExpression(luaTable, params[0], expression)
                     );
                 } else {
-                    return getIndexExpression();
+                    return tstl.createTableIndexExpression(luaTable, params[0], expression);
                 }
             case "set":
-                if (params.length < 2) {
+                if (params.length !== 2) {
                     throw TSTLErrors.ForbiddenLuaTableUseException(
                         expression,
                         "Two parameters are required for set() on a '@LuaTable' object."
                     );
                 }
                 if (isWithinExpressionStatement) {
-                    return tstl.createAssignmentStatement(getIndexExpression(), params.splice(1), expression);
+                    return tstl.createAssignmentStatement(
+                        tstl.createTableIndexExpression(luaTable, params[0], expression),
+                        params.splice(1),
+                        expression
+                    );
                 } else {
                     throw TSTLErrors.ForbiddenLuaTableSetExpression(expression);
                 }

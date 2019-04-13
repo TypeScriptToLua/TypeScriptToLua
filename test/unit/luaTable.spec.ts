@@ -29,10 +29,12 @@ test("LuaTable new and length", () => {
 });
 
 test.each([
-    [`tbl.get()`, "A parameter is required for set() or get() on a '@LuaTable' object."],
+    [`tbl.get()`, "One parameter is required for get() on a '@LuaTable' object."],
+    [`tbl.get("field", "field2")`, "One parameter is required for get() on a '@LuaTable' object."],
     [`tbl.set()`, "Two parameters are required for set() on a '@LuaTable' object."],
     [`tbl.set("field")`, "Two parameters are required for set() on a '@LuaTable' object."],
-])("Invalid LuaTable use (%p)", (invalidCode, errorDescription) => {
+    [`tbl.set("field", 0, 1)`, "Two parameters are required for set() on a '@LuaTable' object."],
+])("Forbidden LuaTable use (%p)", (invalidCode, errorDescription) => {
     expect(() => util.transpileString(tableLib + invalidCode)).toThrowExactError(
         TSTLErrors.ForbiddenLuaTableUseException(util.nodeStub, errorDescription),
     );

@@ -752,4 +752,30 @@ export class TSHelper {
         }
         return false;
     }
+
+    public static isArrayLengthAssignment(
+        expression: ts.BinaryExpression,
+        checker: ts.TypeChecker,
+        program: ts.Program
+    ): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression; }
+    {
+        if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+            return false;
+        }
+
+        if (!ts.isPropertyAccessExpression(expression.left) && !ts.isElementAccessExpression(expression.left)) {
+            return false;
+        }
+
+        const type = checker.getTypeAtLocation(expression.left.expression);
+        if (!TSHelper.isArrayType(type, checker, program)) {
+            return false;
+        }
+
+        const name = ts.isPropertyAccessExpression(expression.left)
+            ? expression.left.name.escapedText as string
+            : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
+
+        return name === "length";
+    }
 }

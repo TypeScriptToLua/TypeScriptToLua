@@ -2505,6 +2505,18 @@ export class LuaTransformer {
         const leftType = this.checker.getTypeAtLocation(expression.left);
         this.validateFunctionAssignment(expression.right, rightType, leftType);
 
+        if (tsHelper.isArrayLengthAssignment(expression, this.checker, this.program)) {
+            // array.length = x
+            return tstl.createExpressionStatement(
+                this.transformLuaLibFunction(
+                    LuaLibFeature.ArraySetLength,
+                    expression,
+                    this.transformExpression(expression.left.expression),
+                    this.transformExpression(expression.right)
+                )
+            );
+        }
+
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
             const left = expression.left.elements.length > 0
@@ -2538,6 +2550,16 @@ export class LuaTransformer {
         const rightType = this.checker.getTypeAtLocation(expression.right);
         const leftType = this.checker.getTypeAtLocation(expression.left);
         this.validateFunctionAssignment(expression.right, rightType, leftType);
+
+        if (tsHelper.isArrayLengthAssignment(expression, this.checker, this.program)) {
+            // array.length = x
+            return this.transformLuaLibFunction(
+                LuaLibFeature.ArraySetLength,
+                expression,
+                this.transformExpression(expression.left.expression),
+                this.transformExpression(expression.right)
+            );
+        }
 
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment

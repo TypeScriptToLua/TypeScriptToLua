@@ -1,5 +1,10 @@
 function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): number {
-    if (length < 0) {
+    if (length < 0
+        || length !== length // NaN
+        || length === (1 / 0) // Infinity
+        || length === (-1 / 0) // -Infinity
+        || Math.floor(length) !== length) // non-integer
+    {
         // tslint:disable-next-line:no-string-throw
         throw `invalid array length: ${length}`;
     }

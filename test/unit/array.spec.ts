@@ -162,10 +162,17 @@ test.each([
     expect(util.transpileAndExecute(code)).toBe(result);
 });
 
-test.each([-1, -7])("Invalid array length set", length => {
+test.each([
+    { length: -1, result: -1 },
+    { length: -7, result: -7 },
+    { length: 0.1, result: 0.1 },
+    { length: "0 / 0", result: "NaN" },
+    { length: "1 / 0", result: "Infinity" },
+    { length: "-1 / 0", result: "-Infinity" },
+])("Invalid array length set", ({ length, result }) => {
     const code = `
         const arr = [1, 2, 3];
         arr.length = ${length};
     `;
-    expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${length}`);
+    expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${result}`);
 });

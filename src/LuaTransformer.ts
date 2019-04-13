@@ -789,7 +789,10 @@ export class LuaTransformer {
         const hasStaticSetters = tsHelper.hasSetAccessorInClassOrAncestor(statement, true, this.checker);
 
         if (extendsType) {
-            const extendedTypeNode = tsHelper.getExtendedTypeNode(statement, this.checker)!;
+            const extendedTypeNode = tsHelper.getExtendedTypeNode(statement, this.checker);
+            if (extendedTypeNode === undefined) {
+                throw TSTLErrors.UndefinedTypeNode(statement);
+            }
             const baseName = this.transformExpression(extendedTypeNode.expression);
 
             // className.____super = baseName

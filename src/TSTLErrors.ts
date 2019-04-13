@@ -68,6 +68,15 @@ export class TSTLErrors {
     public static MissingSourceFile = () =>
         new Error("Expected transformer.sourceFile to be set, but it isn't.");
 
+    public static UndefinedFunctionDefinition = (functionSymbolId: number) =>
+        new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
+
+    public static UndefinedScope = () =>
+        new Error("Expected to pop a scope, but found undefined.");
+
+    public static UndefinedTypeNode = (node: ts.Node) =>
+        new TranspileError("Failed to resolve required type node.", node);
+
     public static UnknownSuperType = (node: ts.Node) =>
         new TranspileError("Unable to resolve type of super expression.", node);
 
@@ -156,10 +165,4 @@ export class TSTLErrors {
             node
         );
     }
-
-    public static UndefinedFunctionDefinition = (functionSymbolId: number) =>
-        new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
-
-    public static UndefinedScope = () =>
-        new Error("Expected to pop a scope, but found undefined.");
 }

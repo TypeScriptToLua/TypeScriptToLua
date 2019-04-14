@@ -223,3 +223,8 @@ export function findFirstChild(
     }
     return undefined;
 }
+
+export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
+    expect(subject).toBeDefined();
+    return true; // If this was false the expect would have thrown an error
+}

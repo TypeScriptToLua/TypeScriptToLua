@@ -88,11 +88,8 @@ test.each([
             const regex = /require\("(.*?)"\)/;
             const match = regex.exec(lua);
 
-            if (match !== null) {
+            if (util.expectToBeDefined(match)) {
                 expect(match[1]).toBe(expectedPath);
-            } else {
-                // Fail test
-                expect(match).toBeDefined();
             }
         }
     },
@@ -116,11 +113,8 @@ test.each([
         const regex = /require\("(.*?)"\)/;
         const match = regex.exec(lua);
 
-        if (match !== null) {
+        if (util.expectToBeDefined(match)) {
             expect(match[1]).toBe(expectedPath);
-        } else {
-            // Fail test
-            expect(match).toBeDefined();
         }
     },
 );

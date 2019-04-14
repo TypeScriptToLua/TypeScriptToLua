@@ -49,16 +49,13 @@ test("GetCustomDecorators single", () => {
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
 
-    if (identifier !== undefined) {
+    if (util.expectToBeDefined(identifier)) {
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
 
         expect(decorators.size).toBe(1);
         expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
-    } else {
-        // Fail test
-        expect(identifier).toBeDefined();
     }
 });
 
@@ -79,7 +76,7 @@ test("GetCustomDecorators multiple", () => {
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
 
-    if (identifier !== undefined) {
+    if (util.expectToBeDefined(identifier)) {
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -87,9 +84,6 @@ test("GetCustomDecorators multiple", () => {
         expect(decorators.size).toBe(2);
         expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
         expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
-    } else {
-        // Fail test
-        expect(identifier).toBeDefined();
     }
 });
 
@@ -109,16 +103,13 @@ test("GetCustomDecorators single jsdoc", () => {
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
 
-    if (identifier !== undefined) {
+    if (util.expectToBeDefined(identifier)) {
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
 
         expect(decorators.size).toBe(1);
         expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
-    } else {
-        // Fail test
-        expect(identifier).toBeDefined();
     }
 });
 
@@ -139,7 +130,7 @@ test("GetCustomDecorators multiple jsdoc", () => {
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
 
-    if (identifier !== undefined) {
+    if (util.expectToBeDefined(identifier)) {
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -147,9 +138,6 @@ test("GetCustomDecorators multiple jsdoc", () => {
         expect(decorators.size).toBe(2);
         expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
         expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
-    } else {
-        // Fail test
-        expect(identifier).toBeDefined();
     }
 });
 
@@ -172,7 +160,7 @@ test("GetCustomDecorators multiple default jsdoc", () => {
     const [sourceFile, typeChecker] = util.parseTypeScript(source);
     const identifier = util.findFirstChild(sourceFile, ts.isEnumDeclaration);
 
-    if (identifier !== undefined) {
+    if (util.expectToBeDefined(identifier)) {
         const enumType = typeChecker.getTypeAtLocation(identifier);
 
         const decorators = tsHelper.getCustomDecorators(enumType, typeChecker);
@@ -180,8 +168,5 @@ test("GetCustomDecorators multiple default jsdoc", () => {
         expect(decorators.size).toBe(2);
         expect(decorators.has(DecoratorKind.Phantom)).toBeTruthy();
         expect(decorators.has(DecoratorKind.CompileMembersOnly)).toBeTruthy();
-    } else {
-        // Fail test
-        expect(identifier).toBeDefined();
     }
 });

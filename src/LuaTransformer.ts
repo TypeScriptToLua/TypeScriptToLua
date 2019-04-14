@@ -1353,10 +1353,15 @@ export class LuaTransformer {
 
         const symbol = this.checker.getSymbolAtLocation(statement.name);
         const hasExports = symbol !== undefined && this.checker.getExportsOfModule(symbol).length > 0;
-        const isFirstDeclaration = symbol !== undefined
-            && symbol.declarations[0] === statement
-            // TS allows an empty namespace before a class of the same name
-            && symbol.declarations.findIndex(d => ts.isClassLike(d)) === -1;
+
+        // This is NOT the first declaration if:
+        // - declared as a module before this (ignore interfaces with same name)
+        // - declared as a class or function at all (TS requires these to be before module, unless module is empty)
+        const isFirstDeclaration =
+            symbol === undefined
+            || (symbol.declarations.findIndex(d => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) === -1
+                && statement === symbol.declarations.find(ts.isModuleDeclaration));
+
         if (isFirstDeclaration) {
             const isExported = (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0;
             if (isExported && this.currentNamespace) {

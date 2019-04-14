@@ -1058,7 +1058,9 @@ export class LuaTransformer {
                 && firstStatement.expression.expression.kind === ts.SyntaxKind.SuperKeyword)
             {
                 const superCall = body.shift();
-                bodyStatements.unshift(superCall);
+                if (superCall) {
+                    bodyStatements.unshift(superCall);
+                }
             }
         }
 

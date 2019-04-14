@@ -2601,8 +2601,8 @@ export class LuaTransformer {
                 this.transformLuaLibFunction(
                     LuaLibFeature.ArraySetLength,
                     expression,
-                    this.transformExpression(expression.left.expression),
-                    this.transformExpression(expression.right)
+                    this.expectExpression(this.transformExpression(expression.left.expression)),
+                    this.expectExpression(this.transformExpression(expression.right))
                 )
             );
         }
@@ -2649,8 +2649,8 @@ export class LuaTransformer {
             return this.transformLuaLibFunction(
                 LuaLibFeature.ArraySetLength,
                 expression,
-                this.transformExpression(expression.left.expression),
-                this.transformExpression(expression.right)
+                this.expectExpression(this.transformExpression(expression.left.expression)),
+                this.expectExpression(this.transformExpression(expression.right))
             );
         }
 

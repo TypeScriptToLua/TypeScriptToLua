@@ -1,5 +1,8 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "paths": { "*": ["types/*"] },
+        "strict": true,
         "target": "es2017",
         "types": ["node", "jest"],
 

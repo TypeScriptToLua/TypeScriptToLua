@@ -198,7 +198,13 @@ export function parseTypeScript(
     target: LuaTarget = LuaTarget.Lua53,
 ): [ts.SourceFile, ts.TypeChecker] {
     const program = createStringCompilerProgram(typescript, { luaTarget: target });
-    return [program.getSourceFile("file.ts"), program.getTypeChecker()];
+    const sourceFile = program.getSourceFile("file.ts");
+
+    if (sourceFile === undefined) {
+        throw new Error("Could not find source file file.ts in program.");
+    }
+
+    return [sourceFile, program.getTypeChecker()];
 }
 
 export function findFirstChild(

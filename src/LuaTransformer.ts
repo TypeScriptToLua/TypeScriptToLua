@@ -3638,7 +3638,7 @@ export class LuaTransformer {
                 return tstl.createUnaryExpression(
                     this.transformExpression(node.expression), tstl.SyntaxKind.LengthOperator, node);
             default:
-                throw TSTLErrors.UnsupportedProperty("string", node.name.escapedText as string, node);
+                throw TSTLErrors.UnsupportedProperty("LuaTable", node.name.escapedText as string, node);
         }
     }
 

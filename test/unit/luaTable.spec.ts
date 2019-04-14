@@ -28,6 +28,12 @@ test("LuaTable new and length", () => {
     expect(util.executeLua(lua)).toEqual(0);
 });
 
+test("Cannot set LuaTable length", () => {
+    expect(() =>
+        util.transpileString(tableLib + `tbl = new Table();\ntbl.length = 2;`),
+    ).toThrowExactError(TSTLErrors.ForbiddenLuaTableUseException(util.nodeStub, "A LuaTable object's length cannot be re-assigned."));
+});
+
 test.each([
     [`tbl.get()`, "One parameter is required for get() on a '@LuaTable' object."],
     [`tbl.get("field", "field2")`, "One parameter is required for get() on a '@LuaTable' object."],

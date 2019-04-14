@@ -2517,6 +2517,7 @@ export class LuaTransformer {
         const rightType = this.checker.getTypeAtLocation(expression.right);
         const leftType = this.checker.getTypeAtLocation(expression.left);
         this.validateFunctionAssignment(expression.right, rightType, leftType);
+        this.validatePropertyAssignment(expression);
 
         if (tsHelper.isArrayLengthAssignment(expression, this.checker, this.program)) {
             // array.length = x
@@ -4613,6 +4614,22 @@ export class LuaTransformer {
                         node, fromMemberType, toMemberType, toName ? `${toName}.${memberName}` : memberName.toString());
                 }
             });
+        }
+    }
+
+    private validatePropertyAssignment(node: ts.Node): void {
+        if (ts.isBinaryExpression(node) && ts.isPropertyAccessExpression(node.left)) {
+            const leftType = this.checker.getTypeAtLocation(node.left.expression);
+            const decorators = tsHelper.getCustomDecorators(leftType, this.checker);
+            if (decorators.has(DecoratorKind.LuaTable)) {
+                switch (node.left.name.escapedText as string) {
+                    case "length":
+                        throw TSTLErrors.ForbiddenLuaTableUseException(
+                            node,
+                            `A LuaTable object's length cannot be re-assigned.`
+                        );
+                }
+            }
         }
     }
 

@@ -60,7 +60,7 @@ export class LuaTranspiler {
     }
 
     public emitLuaLib(): string {
-        const outPath = path.join(this.options.outDir, "lualib_bundle.lua");
+        const outPath = path.join(this.options.outDir || "", "lualib_bundle.lua");
         fs.copyFileSync(
             path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
             outPath
@@ -93,14 +93,14 @@ export class LuaTranspiler {
     public emitSourceFile(sourceFile: ts.SourceFile): number {
         if (!sourceFile.isDeclarationFile) {
             try {
-                const rootDir = this.options.rootDir;
+                const rootDir = this.options.rootDir || "";
 
                 const { lua, luaAST, sourceMap } = this.transpileSourceFile(sourceFile);
 
                 let outPath = sourceFile.fileName;
                 if (this.options.outDir !== this.options.rootDir) {
                     const relativeSourcePath = path.resolve(sourceFile.fileName).replace(path.resolve(rootDir), "");
-                    outPath = path.join(this.options.outDir, relativeSourcePath);
+                    outPath = path.join(this.options.outDir || "", relativeSourcePath);
                 }
 
                 // change extension or rename to outFile
@@ -109,7 +109,7 @@ export class LuaTranspiler {
                         outPath = this.options.outFile;
                     } else {
                         // append to workingDir or outDir
-                        outPath = path.resolve(this.options.outDir, this.options.outFile);
+                        outPath = path.resolve(this.options.outDir || "", this.options.outFile);
                     }
                 } else {
                     const fileNameLua = path.basename(outPath, path.extname(outPath)) + ".lua";

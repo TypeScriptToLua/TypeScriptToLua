@@ -393,12 +393,12 @@ test.each([
 });
 
 test.each([
-    { array: [1, [2, 3], [4]], map: <T>(value: T) => value },
-    { array: [1, 2, 3], map: (v: number) => v * 2 },
-    { array: [1, 2, 3], map: (v: number) => [v, v * 2] },
-    { array: [1, 2, 3], map: (v: number) => [v, [v]] },
-    { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i] },
-])("array.flatMap (%p)", ({ array, map }) => {
+    { array: [1, [2, 3], [4]], map: <T>(value: T) => value, expected: [1, 2, 3, 4] },
+    { array: [1, 2, 3], map: (v: number) => v * 2, expected: [2, 4, 6] },
+    { array: [1, 2, 3], map: (v: number) => [v, v * 2], expected: [1, 2, 2, 4, 3, 6] },
+    { array: [1, 2, 3], map: (v: number) => [v, [v]], expected: [1, [1], 2, [2], 3, [3]] },
+    { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i], expected: [0, 4, 12] },
+])("array.flatMap (%p)", ({ array, map, expected }) => {
     const result = util.transpileAndExecute(`
         const array = ${JSON.stringify(array)};
         const result = array.flatMap(${map.toString()});
@@ -406,7 +406,6 @@ test.each([
     `);
 
     // TODO(node 12): array.flatMap(map)
-    const expected = [].concat(...(array as any[]).map(map));
     expect(JSON.parse(result)).toEqual(expected);
 });
 
@@ -447,9 +446,7 @@ test.each([
     `);
 
     const result = JSON.parse(jsonResult);
-    for (const key in expected) {
-        expect(result[key]).toBe(expected[key]);
-    }
+    expect(result).toEqual(expected);
 });
 
 test.each([

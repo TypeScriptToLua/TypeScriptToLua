@@ -1007,7 +1007,10 @@ export class LuaTransformer {
             return undefined;
         }
 
-        const bodyStatements: tstl.Statement[] = this.transformClassInstanceFields(classDeclaration, instanceFields);
+        const bodyWithFieldInitializers: tstl.Statement[] = this.transformClassInstanceFields(
+            classDeclaration,
+            instanceFields
+        );
 
         // Check for field declarations in constructor
         const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
@@ -1027,7 +1030,7 @@ export class LuaTransformer {
                         tstl.SyntaxKind.OrOperator
                     )
                 );
-                bodyStatements.push(assignement);
+                bodyWithFieldInitializers.push(assignement);
             } else {
                 // self.declarationName = declarationName
                 const assignement = tstl.createAssignmentStatement(
@@ -1037,7 +1040,7 @@ export class LuaTransformer {
                     ),
                     declarationName
                 );
-                bodyStatements.push(assignement);
+                bodyWithFieldInitializers.push(assignement);
             }
         }
 
@@ -1050,8 +1053,8 @@ export class LuaTransformer {
 
         const [body] = this.transformFunctionBody(statement.parameters, statement.body, restParamName);
 
-        // Put super call before all other statements
-        if (statement.body && statement.body.statements.length > 0) {
+        // If there are field initializers and the first statement is a super call, hoist the super call to the top
+        if (bodyWithFieldInitializers.length > 0 && statement.body && statement.body.statements.length > 0) {
             const firstStatement = statement.body.statements[0];
             if (ts.isExpressionStatement(firstStatement)
                 && ts.isCallExpression(firstStatement.expression)
@@ -1059,14 +1062,14 @@ export class LuaTransformer {
             {
                 const superCall = body.shift();
                 if (superCall) {
-                    bodyStatements.unshift(superCall);
+                    bodyWithFieldInitializers.unshift(superCall);
                 }
             }
         }
 
-        bodyStatements.push(...body);
+        bodyWithFieldInitializers.push(...body);
 
-        const block: tstl.Block = tstl.createBlock(bodyStatements);
+        const block: tstl.Block = tstl.createBlock(bodyWithFieldInitializers);
 
         const result = tstl.createAssignmentStatement(
             this.createConstructorName(className),

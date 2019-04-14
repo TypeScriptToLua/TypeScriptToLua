@@ -22,7 +22,6 @@ test_script:
   - node --version
   - npm --version
   # run tests
-  - npm run lint
   - npm run build
   - npm test
 

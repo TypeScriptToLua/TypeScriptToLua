@@ -774,8 +774,8 @@ test.each([
     const lua53 = { luaTarget: LuaTarget.Lua53 };
     const luajit = { luaTarget: LuaTarget.LuaJIT };
 
-    expect(() => util.transpileString(loop, lua51)).toThrowError(
-        TSTLErrors.UnsupportedForTarget("Continue statement", LuaTarget.Lua51, undefined),
+    expect(() => util.transpileString(loop, lua51)).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget("Continue statement", LuaTarget.Lua51, ts.createContinue()),
     );
     expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
     expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);

@@ -43,14 +43,14 @@ export class LuaPrinter {
     private options: CompilerOptions;
     private currentIndent: string;
 
-    private sourceFile: string;
+    private sourceFile = "";
 
     public constructor(options: CompilerOptions) {
         this.options = options;
         this.currentIndent = "";
     }
 
-    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile?: string): [string, string] {
+    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
             if (luaLibFeatures === undefined) {
@@ -113,7 +113,7 @@ export class LuaPrinter {
     private printImplementation(
         block: tstl.Block,
         luaLibFeatures?: Set<LuaLibFeature>,
-        sourceFile?: string): SourceNode {
+        sourceFile = ""): SourceNode {
 
         let header = "";
 
@@ -162,13 +162,15 @@ export class LuaPrinter {
     private createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[]): SourceNode {
         const originalPos = tstl.getOriginalPos(node);
 
-        return originalPos !== undefined
+        return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
             ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks)
-            : new SourceNode(undefined, undefined, this.sourceFile, chunks);
+            // tslint:disable-next-line:no-null-keyword
+            : new SourceNode(null, null, this.sourceFile, chunks);
     }
 
     private concatNodes(...chunks: SourceChunk[]): SourceNode {
-        return new SourceNode(undefined, undefined, this.sourceFile, chunks);
+        // tslint:disable-next-line:no-null-keyword
+        return new SourceNode(null, null, this.sourceFile, chunks);
     }
 
     private printBlock(block: tstl.Block): SourceNode {
@@ -616,19 +618,26 @@ export class LuaPrinter {
 
     private printCallExpression(expression: tstl.CallExpression): SourceNode {
         const chunks = [];
-        const parameterChunks = this.joinChunks(", ", expression.params.map(e => this.printExpression(e)));
 
-        chunks.push(this.printExpression(expression.expression), "(", ...parameterChunks, ")");
+        const parameterChunks = expression.params !== undefined
+            ? expression.params.map(e => this.printExpression(e))
+            : [];
+
+        chunks.push(this.printExpression(expression.expression), "(", ...this.joinChunks(", ", parameterChunks), ")");
 
         return this.concatNodes(...chunks);
     }
 
     private printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
         const prefix = this.printExpression(expression.prefixExpression);
-        const parameterChunks = this.joinChunks(", ", expression.params.map(e => this.printExpression(e)));
+
+        const parameterChunks = expression.params !== undefined
+            ? expression.params.map(e => this.printExpression(e))
+            : [];
+
         const name = this.printIdentifier(expression.name);
 
-        return this.concatNodes(prefix, ":", name, "(", ...parameterChunks, ")");
+        return this.concatNodes(prefix, ":", name, "(", ...this.joinChunks(", ", parameterChunks), ")");
     }
 
     private printIdentifier(expression: tstl.Identifier): SourceNode {

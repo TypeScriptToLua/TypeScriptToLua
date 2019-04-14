@@ -128,12 +128,13 @@ test("Inline sourcemaps", () => {
     const inlineSourceMapMatch = lua.match(
         /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
     );
-    expect(inlineSourceMapMatch !== null && inlineSourceMapMatch !== undefined).toBe(true);
 
-    const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
-    expect(sourceMap).toBe(inlineSourceMap);
+    if (util.expectToBeDefined(inlineSourceMapMatch)) {
+        const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
+        expect(sourceMap).toBe(inlineSourceMap);
 
-    expect(util.executeLua(lua)).toBe("foo");
+        expect(util.executeLua(lua)).toBe("foo");
+    }
 });
 
 // Helper functions

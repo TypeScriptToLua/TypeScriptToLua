@@ -5,9 +5,9 @@ test.each([{ inp: [] }, { inp: [1, 2, 3] }, { inp: [1, "test", 3] }])(
     "Spread Element Push (%p)",
     ({ inp }) => {
         const result = util.transpileAndExecute(
-            `return JSONStringify([].push(...${JSON.stringify(inp)}));`,
+            `return JSONStringify(([] as Array<string | number>).push(...${JSON.stringify(inp)}));`,
         );
-        expect(result).toBe([].push(...inp));
+        expect(result).toBe(([] as Array<string | number>).push(...inp));
     },
 );
 

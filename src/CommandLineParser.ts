@@ -163,7 +163,7 @@ function updateParsedCommandLine(
         const hasTwoDashes = args[i].startsWith("--");
         const parameterValue = args[i].substr(hasTwoDashes ? 2 : 1);
         let argumentName = optionDeclarations[parameterValue] && parameterValue;
-        if (!hasTwoDashes && !argumentName) {
+        if (!hasTwoDashes && argumentName === undefined) {
             for (const key in optionDeclarations) {
                 if ((optionDeclarations[key].aliases || []).includes(parameterValue)) {
                     argumentName = key;
@@ -172,7 +172,7 @@ function updateParsedCommandLine(
             }
         }
 
-        if (argumentName) {
+        if (argumentName !== undefined) {
             const argumentResult = getArgumentValue(argumentName, i, args);
             if (argumentResult.isValid === true) {
                 parsedCommandLine.options[argumentName] = argumentResult.result;

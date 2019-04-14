@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
-        "noImplicitThis": true,
-        "alwaysStrict": true,
+        "strict": true,
         "rootDir": "./src",
         "outDir": "./dist",
         "declaration": true,

@@ -2,6 +2,9 @@
 environment:
   nodejs_version: "8"
 
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
 # Cache dependencies
 cache:
   - node_modules
@@ -19,7 +22,6 @@ test_script:
   - node --version
   - npm --version
   # run tests
-  - npm run lint
   - npm run build
   - npm test
 

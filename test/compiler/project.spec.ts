@@ -6,7 +6,7 @@ import { runCli } from "./runner";
  * Find all files inside a dir, recursively.
  */
 function getAllFiles(dir: string): string[] {
-    return fs.readdirSync(dir).reduce((files, file) => {
+    return fs.readdirSync(dir).reduce((files: string[], file) => {
         const name = path.join(dir, file);
         const isDirectory = fs.statSync(name).isDirectory();
         return isDirectory ? [...files, ...getAllFiles(name)] : [...files, name];

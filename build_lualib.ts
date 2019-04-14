@@ -25,7 +25,4 @@ if (fs.existsSync(bundlePath)) {
     fs.unlinkSync(bundlePath);
 }
 
-fs.writeFileSync(
-    bundlePath,
-    LuaLib.loadFeatures(Object.keys(tstl.LuaLibFeature).map(lib => tstl.LuaLibFeature[lib])),
-);
+fs.writeFileSync(bundlePath, LuaLib.loadFeatures(Object.values(tstl.LuaLibFeature)));

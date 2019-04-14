@@ -81,7 +81,10 @@ test.each([
             const lua = util.transpileString(input, options);
             const regex = /require\("(.*?)"\)/;
             const match = regex.exec(lua);
-            expect(match[1]).toBe(expectedPath);
+
+            if (util.expectToBeDefined(match)) {
+                expect(match[1]).toBe(expectedPath);
+            }
         }
     },
 );
@@ -97,6 +100,10 @@ test.each([
             "module.d.ts": `${comment} declare module "fake" {}`,
         });
         const regex = /require\("(.*?)"\)/;
-        expect(regex.exec(lua)[1]).toBe(expectedPath);
+        const match = regex.exec(lua);
+
+        if (util.expectToBeDefined(match)) {
+            expect(match[1]).toBe(expectedPath);
+        }
     },
 );

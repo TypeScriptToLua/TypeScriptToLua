@@ -170,7 +170,13 @@ export function parseTypeScript(
     target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
 ): [ts.SourceFile, ts.TypeChecker] {
     const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
-    return [program.getSourceFile("main.ts"), program.getTypeChecker()];
+    const sourceFile = program.getSourceFile("main.ts");
+
+    if (sourceFile === undefined) {
+        throw new Error("Could not find source file main.ts in program.");
+    }
+
+    return [sourceFile, program.getTypeChecker()];
 }
 
 export function findFirstChild(
@@ -188,4 +194,9 @@ export function findFirstChild(
         }
     }
     return undefined;
+}
+
+export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
+    expect(subject).toBeDefined();
+    return true; // If this was false the expect would have thrown an error
 }

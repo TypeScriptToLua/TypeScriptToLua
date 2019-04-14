@@ -3,7 +3,7 @@ export class Decorator {
         return this.getDecoratorKind(decoratorKindString) !== undefined;
     }
 
-    public static getDecoratorKind(decoratorKindString: string): DecoratorKind {
+    public static getDecoratorKind(decoratorKindString: string): DecoratorKind | undefined {
         switch (decoratorKindString.toLowerCase()) {
             case "extension":
                 return DecoratorKind.Extension;
@@ -21,8 +21,6 @@ export class Decorator {
                 return DecoratorKind.Phantom;
             case "tuplereturn":
                 return DecoratorKind.TupleReturn;
-            case "noclassor":
-                return DecoratorKind.NoClassOr;
             case "luaiterator":
                 return DecoratorKind.LuaIterator;
             case "noself":
@@ -38,7 +36,12 @@ export class Decorator {
     public args: string[];
 
     constructor(name: string, args: string[]) {
-        this.kind = Decorator.getDecoratorKind(name);
+        const kind = Decorator.getDecoratorKind(name);
+        if (kind === undefined) {
+            throw new Error(`Failed to parse decorator '${name}'`);
+        }
+
+        this.kind = kind;
         this.args = args;
     }
 }
@@ -52,7 +55,6 @@ export enum DecoratorKind {
     PureAbstract = "PureAbstract",
     Phantom = "Phantom",
     TupleReturn = "TupleReturn",
-    NoClassOr = "NoClassOr",
     LuaIterator = "LuaIterator",
     NoSelf = "NoSelf",
     NoSelfInFile = "NoSelfInFile",

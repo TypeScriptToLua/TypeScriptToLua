@@ -484,51 +484,31 @@ test("Unknown unary postfix error", () => {
 });
 
 test("Incompatible fromCodePoint expression error", () => {
-    const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
-
-    const identifier = ts.createIdentifier("fromCodePoint");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
+    expect(() => util.transpileString("const abc = String.fromCodePoint(123);")).toThrowExactError(
         TSTLErrors.UnsupportedForTarget(
             "string property fromCodePoint",
-            LuaTarget.LuaJIT,
+            LuaTarget.Lua53,
             util.nodeStub,
         ),
     );
 });
 
 test("Unknown string expression error", () => {
-    const transformer = util.makeTestTransformer(LuaTarget.LuaJIT);
-
-    const identifier = ts.createIdentifier("abcd");
-    expect(() => transformer.transformStringExpression(identifier)).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("string property abcd", LuaTarget.LuaJIT, util.nodeStub),
+    expect(() => util.transpileString("const abc = String.abcd();")).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget("string property abcd", LuaTarget.Lua53, util.nodeStub),
     );
 });
 
 test("Unsupported array function error", () => {
-    const transformer = util.makeTestTransformer();
-
-    const mockNode: any = {
-        kind: ts.SyntaxKind.CallExpression,
-        arguments: [],
-        caller: ts.createLiteral(false),
-        expression: {
-            name: ts.createIdentifier("unknownFunction"),
-            expression: ts.createLiteral(false),
-        },
-    };
-
-    expect(() =>
-        transformer.transformArrayCallExpression(mockNode as ts.CallExpression),
-    ).toThrowExactError(TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub));
+    expect(() => util.transpileString("const abc = [].unknownFunction();")).toThrowExactError(
+        TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub),
+    );
 });
 
 test("Unsupported math property error", () => {
-    const transformer = util.makeTestTransformer();
-
-    expect(() =>
-        transformer.transformMathExpression(ts.createIdentifier("unknownProperty")),
-    ).toThrowExactError(TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub));
+    expect(() => util.transpileString("const abc = Math.unknownProperty;")).toThrowExactError(
+        TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub),
+    );
 });
 
 test("Unsupported object literal element error", () => {

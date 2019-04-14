@@ -746,3 +746,80 @@ test("Class static instance of self", () => {
     `;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
+
+test("Class name", () => {
+    const code = `
+        class Foo {}
+        return Foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class name via constructor", () => {
+    const code = `
+        class Foo {}
+        const foo = new Foo();
+        return foo.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class expression name", () => {
+    const code = `
+        const foo = class Foo {};
+        return foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class expression name via constructor", () => {
+    const code = `
+        const foo = class Foo {};
+        const bar = new foo();
+        return bar.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("Foo");
+});
+
+test("Class annonymous expression name", () => {
+    const code = `
+        const foo = class {};
+        return foo.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("____");
+});
+
+test("Class annonymous expression name via constructor", () => {
+    const code = `
+        const foo = class {};
+        const bar = new foo();
+        return bar.constructor.name;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("____");
+});
+
+test("Class field override in subclass", () => {
+    const code = `
+        class Foo {
+            field = "foo";
+        }
+        class Bar extends Foo {
+            field = "bar";
+        }
+        return (new Foo()).field + (new Bar()).field;`;
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test("Class field override in subclass with constructors", () => {
+    const code = `
+        class Foo {
+            field = "foo";
+            constructor() {}
+        }
+        class Bar extends Foo {
+            field = "bar";
+            constructor() { super(); }
+        }
+        return (new Foo()).field + (new Bar()).field;`;
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});

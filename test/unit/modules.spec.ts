@@ -63,3 +63,13 @@ test("Access this in module", () => {
     const code = `return M.bar();`;
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
 });
+
+test("Module merged with interface", () => {
+    const header = `
+        interface Foo {}
+        module Foo {
+            export function bar() { return "foobar"; }
+        }`;
+    const code = `return Foo.bar();`;
+    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+});

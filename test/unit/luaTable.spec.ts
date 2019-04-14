@@ -31,7 +31,12 @@ test("LuaTable new and length", () => {
 test("Cannot set LuaTable length", () => {
     expect(() =>
         util.transpileString(tableLib + `tbl = new Table();\ntbl.length = 2;`),
-    ).toThrowExactError(TSTLErrors.ForbiddenLuaTableUseException(util.nodeStub, "A LuaTable object's length cannot be re-assigned."));
+    ).toThrowExactError(
+        TSTLErrors.ForbiddenLuaTableUseException(
+            util.nodeStub,
+            "A LuaTable object's length cannot be re-assigned.",
+        ),
+    );
 });
 
 test.each([
@@ -46,20 +51,20 @@ test.each([
     );
 });
 
-test.each([
-    `class Ext extends Table {}`,
-    `const c = class Ext extends Table {}`,
-])("Cannot extend LuaTable class (%p)", (code) => {
-    expect(() => util.transpileString(tableLib + code)).toThrowExactError(
-        TSTLErrors.InvalidExtendsLuaTable(util.nodeStub),
-    );
-});
+test.each([`class Ext extends Table {}`, `const c = class Ext extends Table {}`])(
+    "Cannot extend LuaTable class (%p)",
+    code => {
+        expect(() => util.transpileString(tableLib + code)).toThrowExactError(
+            TSTLErrors.InvalidExtendsLuaTable(util.nodeStub),
+        );
+    },
+);
 
 test.each([
     `/** @luaTable */ class Table {}`,
     `/** @luaTable */ export class Table {}`,
     `/** @luaTable */ const c = class Table {}`,
-])("LuaTable classes must be declared (%p)", (code) => {
+])("LuaTable classes must be declared (%p)", code => {
     expect(() => util.transpileString(code)).toThrowExactError(
         TSTLErrors.ForbiddenLuaTableNonDeclaration(util.nodeStub),
     );

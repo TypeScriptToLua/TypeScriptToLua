@@ -1011,6 +1011,19 @@ export class LuaTransformer {
         );
 
         const [body] = this.transformFunctionBody(statement.parameters, statement.body, restParamName);
+
+        // Put super call before all other statements
+        if (statement.body && statement.body.statements.length > 0) {
+            const firstStatement = statement.body.statements[0];
+            if (ts.isExpressionStatement(firstStatement)
+                && ts.isCallExpression(firstStatement.expression)
+                && firstStatement.expression.expression.kind === ts.SyntaxKind.SuperKeyword)
+            {
+                const superCall = body.shift();
+                bodyStatements.unshift(superCall);
+            }
+        }
+
         bodyStatements.push(...body);
 
         const block: tstl.Block = tstl.createBlock(bodyStatements);

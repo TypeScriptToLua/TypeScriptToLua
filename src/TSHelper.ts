@@ -77,10 +77,7 @@ export class TSHelper {
     }
 
     public static isFileModule(sourceFile: ts.SourceFile): boolean {
-        if (sourceFile) {
-            return sourceFile.statements.some(TSHelper.isStatementExported);
-        }
-        return false;
+        return sourceFile.statements.some(TSHelper.isStatementExported);
     }
 
     public static isStatementExported(statement: ts.Statement): boolean {

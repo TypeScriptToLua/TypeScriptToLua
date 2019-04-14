@@ -22,7 +22,8 @@ test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])(
     "Math constant (%p)",
     constant => {
         const epsilon = 0.000001;
-        const code = `return Math.abs(Math.${constant} - ${Math[constant]}) <= ${epsilon}`;
+        const jsValue: number = (Math as Math & {[key: string]: any})[constant];
+        const code = `return Math.abs(Math.${constant} - ${jsValue}) <= ${epsilon}`;
         expect(util.transpileAndExecute(code)).toBe(true);
     },
 );

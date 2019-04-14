@@ -87,7 +87,13 @@ test.each([
             );
             const regex = /require\("(.*?)"\)/;
             const match = regex.exec(lua);
-            expect(match[1]).toBe(expectedPath);
+
+            if (match !== null) {
+                expect(match[1]).toBe(expectedPath);
+            } else {
+                // Fail test
+                expect(match).toBeDefined();
+            }
         }
     },
 );
@@ -108,6 +114,13 @@ test.each([
             "src/file.ts",
         );
         const regex = /require\("(.*?)"\)/;
-        expect(regex.exec(lua)[1]).toBe(expectedPath);
+        const match = regex.exec(lua);
+
+        if (match !== null) {
+            expect(match[1]).toBe(expectedPath);
+        } else {
+            // Fail test
+            expect(match).toBeDefined();
+        }
     },
 );

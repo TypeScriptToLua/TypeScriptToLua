@@ -64,7 +64,6 @@ export function transpileStringResult(
     options: tstl.CompilerOptions = {},
 ): tstl.VirtualProgramResult {
     const optionsWithDefaults = {
-        luaLibImport: tstl.LuaLibImportKind.Inline,
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
         skipLibCheck: true,

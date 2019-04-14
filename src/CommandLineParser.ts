@@ -1,68 +1,56 @@
-import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
-
-export type CLIParseResult = ParseResult<ParsedCommandLine>;
-
-type ParseResult<T> =
-    { isValid: true; result: T }
-    | { isValid: false, errorMessage: string};
-
-type ArgumentParseResult<T> =
-    { isValid: true; result: T; increment?: number }
-    | { isValid: false, errorMessage: string };
+import * as diagnostics from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
 }
 
-interface BaseCLIOption {
-    aliases: string[];
+interface CommandLineOptionBase {
     describe: string;
-    type: string;
+    aliases?: string[];
 }
 
-interface CLIOption<T> extends BaseCLIOption {
-    choices: T[];
-    default: T;
+interface CommandLineOptionOfEnum extends CommandLineOptionBase {
+    type: "enum";
+    choices: string[];
 }
 
-const optionDeclarations: {[key: string]: CLIOption<any>} = {
+interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
+    type: "boolean";
+}
+
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+const optionDeclarations: Record<string, CommandLineOption> = {
     luaLibImport: {
-        choices: [LuaLibImportKind.Inline, LuaLibImportKind.Require, LuaLibImportKind.Always, LuaLibImportKind.None],
-        default: LuaLibImportKind.Inline,
         describe: "Specifies how js standard features missing in lua are imported.",
         type: "enum",
-    } as CLIOption<string>,
+        choices: Object.values(LuaLibImportKind),
+    },
     luaTarget: {
         aliases: ["lt"],
-        choices: [LuaTarget.LuaJIT, LuaTarget.Lua53, LuaTarget.Lua52, LuaTarget.Lua51],
-        default: LuaTarget.LuaJIT,
         describe: "Specify Lua target version.",
         type: "enum",
-    } as CLIOption<string>,
+        choices: Object.values(LuaTarget),
+    },
     noHeader: {
-        default: false,
         describe: "Specify if a header will be added to compiled files.",
         type: "boolean",
-    } as CLIOption<boolean>,
+    },
     noHoisting: {
-        default: false,
         describe: "Disables hoisting.",
         type: "boolean",
-    } as CLIOption<boolean>,
+    },
     sourceMapTraceback: {
-        default: false,
         describe: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
-    } as CLIOption<boolean>,
+    },
 };
 
-export const { version } = require("../package.json");
+export const version = `Version ${require("../package.json").version}`;
 
 const helpString =
-    `Version ${version}\n` +
     "Syntax:   tstl [options] [files...]\n\n" +
 
     "Examples: tstl path/to/file.ts [...]\n" +
@@ -72,42 +60,70 @@ const helpString =
     "for the typescript compiler (For a list of options use tsc -h).\n" +
     "Some tsc options might have no effect.";
 
-/**
- * Parse the supplied arguments.
- * The result will include arguments supplied via CLI and arguments from tsconfig.
- */
-export function parseCommandLine(args: string[]): CLIParseResult
-{
-    let commandLine = ts.parseCommandLine(args);
+export function getHelpString(): string {
+    let result = helpString + "\n\n";
 
-    // Run diagnostics to check for invalid tsc options
-    const diagnosticsResult = runTsDiagnostics(commandLine);
-    if (diagnosticsResult.isValid === false) {
-        return diagnosticsResult;
+    result += "Options:\n";
+    for (const [optionName, option] of Object.entries(optionDeclarations)) {
+        const aliasStrings = (option.aliases || []).map(a => "-" + a);
+
+        const optionString = aliasStrings.concat(["--" + optionName]).join("|");
+
+        const parameterDescribe = option.type === "enum" ? option.choices.join("|") : option.type;
+
+        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - parameterDescribe.length));
+
+        result += `\n ${optionString} <${parameterDescribe}>${spacing}${option.describe}\n`;
     }
 
-    // This will add TS and TSTL options from a tsconfig
-    const configResult = readTsConfig(commandLine);
-    if (configResult.isValid === true) {
-        commandLine = configResult.result;
-    } else {
-        return { isValid: false, errorMessage: configResult.errorMessage };
+    return result;
+}
+
+export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
+    for (const key in parsedConfigFile.raw) {
+        const option = optionDeclarations[key];
+        if (!option) continue;
+
+        const value = readValue(parsedConfigFile.raw[key], option.type);
+        if (option.type === "enum" && !option.choices.includes(value as string)) {
+            parsedConfigFile.errors.push(
+                diagnostics.argumentForOptionMustBe(key, option.choices.join(", "))
+            );
+        } else {
+            // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
+            //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
+            if (parsedConfigFile.options[key] === undefined) {
+                parsedConfigFile.options[key] = value;
+            }
+        }
     }
 
-    // Run diagnostics to check for invalid tsconfig
-    const diagnosticsResult2 = runTsDiagnostics(commandLine);
-    if (diagnosticsResult2.isValid === false) {
-        return diagnosticsResult2;
+    // Eventually we will only look for the tstl object for tstl options
+    if (parsedConfigFile.raw.tstl) {
+        for (const key in parsedConfigFile.raw.tstl) {
+            const option = optionDeclarations[key];
+            if (!option) continue;
+
+            const value = readValue(parsedConfigFile.raw.tstl[key], option.type);
+            if (option.type === "enum" && !option.choices.includes(value as string)) {
+                parsedConfigFile.errors.push(
+                    diagnostics.argumentForOptionMustBe(key, option.choices.join(", "))
+                );
+            } else {
+                if (parsedConfigFile.options[key] === undefined) {
+                    parsedConfigFile.options[key] = value;
+                }
+            }
+        }
     }
 
-    // Merge TSTL CLI options in (highest priority) will also set defaults if none specified
-    const tstlCLIResult = parseTSTLOptions(commandLine, args);
-    if (tstlCLIResult.isValid === true) {
-        commandLine = tstlCLIResult.result;
-    } else {
-        return { isValid: false, errorMessage: tstlCLIResult.errorMessage };
-    }
+    return parsedConfigFile;
+}
 
+export function parseCommandLine(args: string[]): ParsedCommandLine {
+    const commandLine = updateParsedCommandLine(ts.parseCommandLine(args), args);
+
+    // TODO: Remove
     if (commandLine.options.project && !commandLine.options.rootDir) {
         commandLine.options.rootDir = path.dirname(commandLine.options.project);
     }
@@ -120,165 +136,66 @@ export function parseCommandLine(args: string[]): CLIParseResult
         commandLine.options.outDir = commandLine.options.rootDir;
     }
 
-    return { isValid: true, result: commandLine as ParsedCommandLine };
+    return commandLine;
 }
 
-export function getHelpString(): string {
-    let result = helpString + "\n\n";
+function updateParsedCommandLine(
+    parsedCommandLine: ts.ParsedCommandLine,
+    args: string[]
+): ParsedCommandLine {
+    // Generate a list of valid option names and aliases
+    const optionNames = Object.keys(optionDeclarations)
+        .map(n => `--${n}`)
+        .concat(...Object.values(optionDeclarations).map(o => (o.aliases || []).map(a => `-${a}`)));
 
-    result += "Options:\n";
-    for (const optionName in optionDeclarations) {
-        const option = optionDeclarations[optionName];
-        const aliasStrings = option.aliases
-            ? option.aliases.map(a => "-" + a)
-            : [];
+    // Ignore errors caused by tstl specific compiler options
+    const tsInvalidCompilerOptionErrorCode = 5023;
+    parsedCommandLine.errors = parsedCommandLine.errors.filter(err => {
+        return !(
+            err.code === tsInvalidCompilerOptionErrorCode &&
+            optionNames.some(optionName => String(err.messageText).endsWith(`'${optionName}'.`))
+        );
+    });
 
-        const optionString = aliasStrings.concat(["--" + optionName]).join("|");
-
-        const parameterDescribe = option.choices
-            ? option.choices.join("|")
-            : option.type;
-
-        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - parameterDescribe.length));
-
-        result += `\n ${optionString} <${parameterDescribe}>${spacing}${option.describe}\n`;
-    }
-
-    return result;
-}
-
-function readTsConfig(parsedCommandLine: ts.ParsedCommandLine): CLIParseResult
-{
-    const options = parsedCommandLine.options;
-
-    // Load config
-    if (options.project) {
-        const findProjectPathResult = findConfigFile(options);
-        if (findProjectPathResult.isValid === true) {
-            options.project = findProjectPathResult.result;
-        } else {
-            return { isValid: false, errorMessage: findProjectPathResult.errorMessage };
-        }
-
-        const configPath = options.project;
-        const configContent = fs.readFileSync(configPath, "utf8");
-        return parseConfigFileContent(configContent, configPath, options);
-    }
-    return { isValid: true, result: parsedCommandLine };
-}
-
-export function parseConfigFileContent(
-    tsConfigString: string,
-    configPath: string,
-    existingOptions?: ts.CompilerOptions
-): CLIParseResult {
-    const configJson = ts.parseConfigFileTextToJson(configPath, tsConfigString);
-    const parsedJsonConfig = ts.parseJsonConfigFileContent(
-        configJson.config,
-        ts.sys,
-        path.dirname(configPath),
-        existingOptions,
-        configPath
-    );
-
-    for (const key in parsedJsonConfig.raw) {
-        const option = optionDeclarations[key];
-        if (option !== undefined) {
-            const value = readValue(parsedJsonConfig.raw[key], option.type, key);
-            if (option.choices) {
-                if (option.choices.indexOf(value) < 0) {
-                    return {
-                        isValid: false,
-                        errorMessage: `Unknown ${key} value '${value}'.\nAccepted values: ${option.choices}`,
-                    };
-                }
-            }
-            // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
-            //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
-            parsedJsonConfig.options[key] = value;
-        }
-    }
-
-    // Eventually we will only look for the tstl object for tstl options
-    if (parsedJsonConfig.raw.tstl) {
-        for (const key in parsedJsonConfig.raw.tstl) {
-            const option = optionDeclarations[key];
-            if (option !== undefined) {
-                const value = readValue(parsedJsonConfig.raw.tstl[key], option.type, key);
-                if (option.choices) {
-                    if (option.choices.indexOf(value) < 0) {
-                        return {
-                            isValid: false,
-                            errorMessage: `Unknown ${key} value '${value}'.\nAccepted values: ${option.choices}`,
-                        };
-                    }
-                }
-
-                parsedJsonConfig.options[key] = value;
-            }
-        }
-    }
-
-    return { isValid: true, result: parsedJsonConfig };
-}
-
-function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CLIParseResult {
-    const result = {};
     for (let i = 0; i < args.length; i++) {
-        if (args[i].startsWith("--")) {
-            const argumentName = args[i].substr(2);
-            const option = optionDeclarations[argumentName];
-            if (option) {
-                const argumentResult = getArgumentValue(argumentName, i, args);
-                if (argumentResult.isValid === true) {
-                    result[argumentName] = argumentResult.result;
-                    // Skip value from being considered as option
-                    i += argumentResult.increment !== undefined ? argumentResult.increment : 1;
-                } else {
-                    return { isValid: false, errorMessage: argumentResult.errorMessage };
-                }
-            }
-        } else if (args[i].startsWith("-")) {
-            const argument = args[i].substr(1);
-            let argumentName: string;
+        if (!args[i].startsWith("-")) continue;
+
+        const hasTwoDashes = args[i].startsWith("--");
+        const parameterValue = args[i].substr(hasTwoDashes ? 2 : 1);
+        let argumentName = optionDeclarations[parameterValue] && parameterValue;
+        if (!hasTwoDashes && !argumentName) {
             for (const key in optionDeclarations) {
-                if (optionDeclarations[key].aliases && optionDeclarations[key].aliases.indexOf(argument) >= 0) {
+                if ((optionDeclarations[key].aliases || []).includes(parameterValue)) {
                     argumentName = key;
                     break;
                 }
             }
+        }
 
-            if (argumentName) {
-                const argumentResult = getArgumentValue(argumentName, i, args);
-                if (argumentResult.isValid === true) {
-                    result[argumentName] = argumentResult.result;
-                    // Skip value from being considered as option
-                    i += argumentResult.increment !== undefined ? argumentResult.increment : 1;
-                } else {
-                    return { isValid: false, errorMessage: argumentResult.errorMessage };
-                }
+        if (argumentName) {
+            const argumentResult = getArgumentValue(argumentName, i, args);
+            if (argumentResult.isValid === true) {
+                parsedCommandLine.options[argumentName] = argumentResult.result;
+                // Skip value from being considered as option
+                i += argumentResult.increment;
+            } else {
+                parsedCommandLine.errors.push(argumentResult.error);
             }
         }
     }
-    for (const option in result) {
-        commandLine.options[option] = result[option];
-    }
-    // Add defaults if not set
-    const defaultOptions = getDefaultOptions();
-    for (const option in defaultOptions) {
-        if (!commandLine.options[option]) {
-            commandLine.options[option] = defaultOptions[option];
-        }
-    }
-    return { isValid: true, result: commandLine };
+
+    return parsedCommandLine;
 }
+
+type ArgumentParseResult =
+    | { isValid: true; result: string | boolean; increment: number }
+    | { isValid: false; error: ts.Diagnostic };
 
 function getArgumentValue(
     argumentName: string,
     argumentIndex: number,
     args: string[]
-): ArgumentParseResult<string | boolean>
-{
+): ArgumentParseResult {
     const option = optionDeclarations[argumentName];
     const argument = args[argumentIndex + 1];
 
@@ -288,119 +205,47 @@ function getArgumentValue(
     }
 
     if (argument === undefined) {
-        return { isValid: false, errorMessage: `Missing value for parameter ${argumentName}`};
+        return { isValid: false, error: diagnostics.compilerOptionExpectsAnArgument(argumentName) };
     }
 
-    const value = readValue(argument, option.type, argumentName);
+    const value = readValue(argument, option.type);
 
-    if (option.choices) {
-        if (option.choices.indexOf(value) < 0) {
-            return {
-                isValid: false,
-                errorMessage: `Unknown ${argumentName} value '${value}'. Accepted values are: ${option.choices}`,
-            };
-        }
+    if (option.type === "enum" && option.choices && !option.choices.includes(value as string)) {
+        return {
+            isValid: false,
+            error: diagnostics.argumentForOptionMustBe(
+                `--${argumentName}`,
+                option.choices.join(", ")
+            ),
+        };
     }
 
-    return { isValid: true, result: value };
+    return { isValid: true, result: value, increment: 1 };
 }
 
-function readValue(value: string | boolean, valueType: string, parameterName: string): string | boolean {
-    if (valueType === "boolean") {
-        return value === true || value === "true" || value === "t"
-            ? true
-            : false;
-    } else if (valueType === "enum") {
+function readValue(value: string | boolean, type: CommandLineOption["type"]): string | boolean {
+    if (type === "boolean") {
+        return value === true || value === "true" || value === "t";
+    } else if (type === "enum") {
         return value.toString().toLowerCase();
-    } else {
-        return value;
     }
 }
 
-function getDefaultOptions(): CompilerOptions {
-    const options: CompilerOptions = {};
+export function parseConfigFileWithSystem(
+    configFileName: string,
+    commandLineOptions: CompilerOptions,
+    system = ts.sys
+): ParsedCommandLine {
+    const { config, error } = ts.readConfigFile(configFileName, system.readFile);
+    if (error) return { options: {}, fileNames: [], errors: [error] };
 
-    for (const optionName in optionDeclarations) {
-        if (optionDeclarations[optionName].default !== undefined) {
-            options[optionName] = optionDeclarations[optionName].default;
-        }
-    }
+    const parsedConfigFile = ts.parseJsonConfigFileContent(
+        config,
+        system,
+        path.dirname(configFileName),
+        commandLineOptions,
+        configFileName
+    );
 
-    return options;
-}
-
-/** Check the current state of the ParsedCommandLine for errors */
-function runTsDiagnostics(commandLine: ts.ParsedCommandLine): ParseResult<boolean> {
-    // Remove files that dont exist
-    commandLine.fileNames = commandLine.fileNames.filter(file => fs.existsSync(file) || fs.existsSync(file + ".ts"));
-
-    const tsInvalidCompilerOptionErrorCode = 5023;
-    if (commandLine.errors.length !== 0) {
-        // Generate a list of valid option names and aliases
-        const optionNames: string[] = [];
-        for (const key of Object.keys(optionDeclarations)) {
-            optionNames.push(key);
-            const alias = optionDeclarations[key].aliases;
-            if (alias) {
-                if (typeof alias === "string") {
-                    optionNames.push(alias);
-                } else {
-                    optionNames.push(...alias);
-                }
-            }
-        }
-
-        for (const err of commandLine.errors) {
-            // Ignore errors caused by tstl specific compiler options
-            if (err.code === tsInvalidCompilerOptionErrorCode) {
-                let ignore = false;
-                for (const optionName of optionNames) {
-                    if (err.messageText.toString().indexOf(optionName) !== -1) {
-                        ignore = true;
-                        break;
-                    }
-                }
-
-                if (!ignore) {
-                    return { isValid: false, errorMessage: `error TS${err.code}: ${err.messageText}`};
-                }
-            }
-        }
-    }
-
-    return { isValid: true, result: true };
-}
-
-/** Find configFile, function from ts api seems to be broken? */
-export function findConfigFile(options: ts.CompilerOptions): ParseResult<string> {
-    if (!options.project) {
-        return { isValid: false, errorMessage: `error no base path provided, could not find config.`};
-    }
-    let configPath = options.project;
-    // If the project path is wrapped in double quotes, remove them
-    if (/^".*"$/.test(configPath)) {
-        configPath = configPath.substring(1, configPath.length - 1);
-    }
-    /* istanbul ignore if: Testing else part is not really possible via automated tests */
-    if (!path.isAbsolute(configPath)) {
-        // TODO check if options.project can even contain non absolute paths
-        configPath = path.join(process.cwd(), configPath);
-    }
-    if (fs.statSync(configPath).isDirectory()) {
-        configPath = path.join(configPath, "tsconfig.json");
-    } else if (fs.statSync(configPath).isFile() && path.extname(configPath) === ".ts") {
-        // Search for tsconfig upwards in directory hierarchy starting from the file path
-        const dir = path.dirname(configPath).split(path.sep);
-        for (let i = dir.length; i > 0; i--) {
-            const searchPath = dir.slice(0, i).join("/") + path.sep + "tsconfig.json";
-
-            // If tsconfig.json was found, stop searching
-            if (ts.sys.fileExists(searchPath)) {
-                configPath = searchPath;
-                break;
-            }
-        }
-    }
-
-    return { isValid: true, result: configPath };
+    return updateParsedConfigFile(parsedConfigFile);
 }

@@ -1,11 +1,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import { parseConfigFileContent } from "./CommandLineParser";
+import { parseConfigFileWithSystem } from "./CommandLineParser";
 import { CompilerOptions } from "./CompilerOptions";
 import { getTranspileOutput, TranspilationResult, TranspiledFile } from "./Transpile";
 
-export { parseConfigFileContent } from "./CommandLineParser";
+export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
 export { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";
@@ -30,17 +30,12 @@ export function transpileFiles(
 }
 
 export function transpileProject(fileName: string, options?: CompilerOptions): TranspilationResult {
-    const parseResult = parseConfigFileContent(
-        fs.readFileSync(fileName, "utf8"),
-        fileName,
-        options
-    );
-    if (parseResult.isValid === false) {
-        // TODO: Return diagnostics
-        throw new Error(parseResult.errorMessage);
+    const parseResult = parseConfigFileWithSystem(fileName, options);
+    if (parseResult.errors.length > 0) {
+        return { diagnostics: parseResult.errors, transpiledFiles: new Map() };
     }
 
-    return transpileFiles(parseResult.result.fileNames, parseResult.result.options);
+    return transpileFiles(parseResult.fileNames, parseResult.options);
 }
 
 const libCache: { [key: string]: ts.SourceFile } = {};

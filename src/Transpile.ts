@@ -91,11 +91,11 @@ export function getTranspileOutput({
             preEmitDiagnostics.push(...program.getSemanticDiagnostics());
         }
 
-        if (options.declaration || options.composite) {
+        if (preEmitDiagnostics.length === 0 && (options.declaration || options.composite)) {
             preEmitDiagnostics.push(...program.getDeclarationDiagnostics());
         }
 
-        if (preEmitDiagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length > 0) {
+        if (preEmitDiagnostics.length > 0) {
             return { diagnostics: preEmitDiagnostics, transpiledFiles };
         }
     }
@@ -180,11 +180,7 @@ export function getTranspileOutput({
 
     programOptions.noEmit = programNoEmit;
 
-    if (
-        noEmit ||
-        (noEmitOnError &&
-            diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length > 0)
-    ) {
+    if (noEmit || (noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles.clear();
     }
 

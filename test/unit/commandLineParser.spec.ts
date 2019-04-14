@@ -1,241 +1,178 @@
-import { LuaLibImportKind, LuaTarget } from "../../src";
-import {
-    findConfigFile,
-    parseCommandLine,
-    parseConfigFileContent,
-} from "../../src/CommandLineParser";
+import * as ts from "typescript";
+import * as tstl from "../../src";
 
 test.each([
-    { args: [""], expected: LuaLibImportKind.Inline },
-    { args: ["--luaLibImport", "none"], expected: LuaLibImportKind.None },
-    { args: ["--luaLibImport", "always"], expected: LuaLibImportKind.Always },
-    { args: ["--luaLibImport", "inline"], expected: LuaLibImportKind.Inline },
-    { args: ["--luaLibImport", "require"], expected: LuaLibImportKind.Require },
-    { args: ["--luaLibImport", "NoNe"], expected: LuaLibImportKind.None },
+    { args: ["--luaLibImport", "none"], expected: tstl.LuaLibImportKind.None },
+    { args: ["--luaLibImport", "always"], expected: tstl.LuaLibImportKind.Always },
+    { args: ["--luaLibImport", "inline"], expected: tstl.LuaLibImportKind.Inline },
+    { args: ["--luaLibImport", "require"], expected: tstl.LuaLibImportKind.Require },
+    { args: ["--luaLibImport", "NoNe"], expected: tstl.LuaLibImportKind.None },
 ])("CLI parser luaLibImportKind (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.luaLibImport).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.luaLibImport).toBe(expected);
 });
 
 test("CLI parser invalid luaLibImportKind", () => {
-    const result = parseCommandLine(["--luaLibImport", "invalid"]);
-    expect(result.isValid).toBe(false);
+    const result = tstl.parseCommandLine(["--luaLibImport", "invalid"]);
+    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
 });
 
 test.each([
-    { args: [""], expected: LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "5.1"], expected: LuaTarget.Lua51 },
-    { args: ["--luaTarget", "5.2"], expected: LuaTarget.Lua52 },
-    { args: ["--luaTarget", "jit"], expected: LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "JiT"], expected: LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "JIT"], expected: LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "5.3"], expected: LuaTarget.Lua53 },
+    { args: ["--luaTarget", "5.1"], expected: tstl.LuaTarget.Lua51 },
+    { args: ["--luaTarget", "5.2"], expected: tstl.LuaTarget.Lua52 },
+    { args: ["--luaTarget", "jit"], expected: tstl.LuaTarget.LuaJIT },
+    { args: ["--luaTarget", "JiT"], expected: tstl.LuaTarget.LuaJIT },
+    { args: ["--luaTarget", "JIT"], expected: tstl.LuaTarget.LuaJIT },
+    { args: ["--luaTarget", "5.3"], expected: tstl.LuaTarget.Lua53 },
 ])("CLI parser luaTarget (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.luaTarget).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.luaTarget).toBe(expected);
 });
 
 test.each([
-    { args: ["-lt", "5.1"], expected: LuaTarget.Lua51 },
-    { args: ["-lt", "5.2"], expected: LuaTarget.Lua52 },
-    { args: ["-lt", "jit"], expected: LuaTarget.LuaJIT },
-    { args: ["-lt", "JIT"], expected: LuaTarget.LuaJIT },
-    { args: ["-lt", "5.3"], expected: LuaTarget.Lua53 },
+    { args: ["-lt", "5.1"], expected: tstl.LuaTarget.Lua51 },
+    { args: ["-lt", "5.2"], expected: tstl.LuaTarget.Lua52 },
+    { args: ["-lt", "jit"], expected: tstl.LuaTarget.LuaJIT },
+    { args: ["-lt", "JIT"], expected: tstl.LuaTarget.LuaJIT },
+    { args: ["-lt", "5.3"], expected: tstl.LuaTarget.Lua53 },
 ])("CLI parser luaTarget (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.luaTarget).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.luaTarget).toBe(expected);
 });
 
 test("CLI parser invalid luaTarget", () => {
-    const result = parseCommandLine(["--luatTarget", "invalid"]);
-    expect(result.isValid).toBe(false);
+    const result = tstl.parseCommandLine(["--luaTarget", "invalid"]);
+
+    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
 });
 
 test.each([
-    { args: [""], expected: false },
     { args: ["--noHeader", "true"], expected: true },
     { args: ["--noHeader", "false"], expected: false },
     { args: ["--noHeader"], expected: true },
     { args: ["--noHeader", "--noHoisting"], expected: true },
 ])("CLI parser noHeader (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.noHeader).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.noHeader).toBe(expected);
 });
 
 test.each([
-    { args: [""], expected: false },
     { args: ["--noHoisting", "true"], expected: true },
     { args: ["--noHoisting", "false"], expected: false },
     { args: ["--noHoisting"], expected: true },
     { args: ["--noHoisting", "--noHeader"], expected: true },
 ])("CLI parser noHoisting (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.noHoisting).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.noHoisting).toBe(expected);
 });
 
 test.each([
-    { args: [""], expected: false },
     { args: ["--project", "tsconfig.json"], expected: true },
     { args: ["-p", "tsconfig.json"], expected: true },
 ])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.project !== undefined).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.project !== undefined).toBe(expected);
 });
 
 test("CLI Parser Multiple Options", () => {
     const commandLine = "--project tsconfig.json --noHeader --noHoisting -lt 5.3";
-    const result = parseCommandLine(commandLine.split(" "));
+    const result = tstl.parseCommandLine(commandLine.split(" "));
 
-    if (result.isValid === true) {
-        expect(result.result.options.project).toBeDefined();
-        expect(result.result.options.noHeader).toBe(true);
-        expect(result.result.options.noHoisting).toBe(true);
-        expect(result.result.options.luaTarget).toBe(LuaTarget.Lua53);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.project).toBe("tsconfig.json");
+    expect(result.options.noHeader).toBe(true);
+    expect(result.options.noHoisting).toBe(true);
+    expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua53);
 });
 
 test.each([
-    { args: [""], expected: false },
+    { args: [""], expected: undefined },
     { args: ["--help"], expected: true },
     { args: ["-h"], expected: true },
 ])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.help === true).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(args);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.help).toBe(expected);
 });
 
 test.each([
-    { args: [""], expected: false },
+    { args: [""], expected: undefined },
     { args: ["--version"], expected: true },
     { args: ["-v"], expected: true },
 ])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = parseCommandLine(args);
-    if (result.isValid === true) {
-        expect(result.result.options.version === true).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
-});
+    const result = tstl.parseCommandLine(args);
 
-test.each([
-    { option: "luaTarget", expected: LuaTarget.LuaJIT },
-    { option: "noHeader", expected: false },
-    { option: "luaLibImport", expected: "inline" },
-    { option: "rootDir", expected: process.cwd() },
-    { option: "outDir", expected: process.cwd() },
-])("defaultOption (%p)", ({ option, expected }) => {
-    const parsedCommandLine = parseCommandLine([]);
-    if (parsedCommandLine.isValid) {
-        expect(expected).toBe(parsedCommandLine.result.options[option]);
-    } else {
-        expect(parsedCommandLine.isValid).toBeTruthy();
-    }
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.version).toBe(expected);
 });
 
 test("ValidLuaTarget", () => {
-    const parsedCommandLine = parseCommandLine(["--luaTarget", "5.3"]);
-    if (parsedCommandLine.isValid) {
-        expect(parsedCommandLine.result.options["luaTarget"]).toBe("5.3");
-    } else {
-        expect(parsedCommandLine.isValid).toBeTruthy();
-    }
+    const result = tstl.parseCommandLine(["--luaTarget", "5.3"]);
+
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.luaTarget).toBe("5.3");
 });
 
 test("InvalidLuaTarget", () => {
     // Don't check error message because the yargs library messes the message up.
-    const result = parseCommandLine(["--luaTarget", "42"]);
-    expect(result.isValid).toBe(false);
+    const result = tstl.parseCommandLine(["--luaTarget", "42"]);
+
+    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
 });
 
 test("InvalidArgumentTSTL", () => {
     // Don't check error message because the yargs library messes the message up.
-    const result = parseCommandLine(["--invalidTarget", "test"]);
-    expect(result.isValid).toBe(false);
+    const result = tstl.parseCommandLine(["--invalidTarget", "test"]);
+
+    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
 });
 
 test("outDir", () => {
-    const parsedCommandLine = parseCommandLine(["--outDir", "./test"]);
+    const result = tstl.parseCommandLine(["--outDir", "./test"]);
 
-    if (parsedCommandLine.isValid) {
-        expect(parsedCommandLine.result.options["outDir"]).toBe("./test");
-    } else {
-        expect(parsedCommandLine.isValid).toBeTruthy();
-    }
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.outDir).toBe("./test");
 });
 
 test("rootDir", () => {
-    const parsedCommandLine = parseCommandLine(["--rootDir", "./test"]);
+    const result = tstl.parseCommandLine(["--rootDir", "./test"]);
 
-    if (parsedCommandLine.isValid) {
-        expect(parsedCommandLine.result.options["rootDir"]).toBe("./test");
-        expect(parsedCommandLine.result.options["outDir"]).toBe("./test");
-    } else {
-        expect(parsedCommandLine.isValid).toBeTruthy();
-    }
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.rootDir).toBe("./test");
+    expect(result.options.outDir).toBe("./test");
 });
 
 test("outDirAndRooDir", () => {
-    const parsedCommandLine = parseCommandLine([
-        "--outDir",
-        "./testOut",
-        "--rootDir",
-        "./testRoot",
-    ]);
+    const result = tstl.parseCommandLine(["--outDir", "./testOut", "--rootDir", "./testRoot"]);
 
-    if (parsedCommandLine.isValid) {
-        expect(parsedCommandLine.result.options["outDir"]).toBe("./testOut");
-        expect(parsedCommandLine.result.options["rootDir"]).toBe("./testRoot");
-    } else {
-        expect(parsedCommandLine.isValid).toBeTruthy();
-    }
-});
-
-test("Find config no path", () => {
-    const result = findConfigFile({ options: {}, fileNames: [], errors: [] });
-    expect(result.isValid).toBe(false);
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.outDir).toBe("./testOut");
+    expect(result.options.rootDir).toBe("./testRoot");
 });
 
 test.each([
-    { tsConfig: "{}" },
     { tsConfig: `{ noHeader: true }`, expected: true },
     { tsConfig: `{ noHeader: "true" }`, expected: true },
     { tsConfig: `{ tstl: { noHeader: true } }`, expected: true },
     { tsConfig: `{ tstl: { noHeader: "true" } }`, expected: true },
 ])("TsConfig noHeader (%p)", ({ tsConfig, expected }) => {
-    const result = parseConfigFileContent(tsConfig, "");
+    const configJson = ts.parseConfigFileTextToJson("", tsConfig);
+    const parsedJsonConfig = ts.parseJsonConfigFileContent(configJson.config, ts.sys, "");
+    const result = tstl.updateParsedConfigFile(parsedJsonConfig);
 
-    if (result.isValid) {
-        expect(result.result.options.noHeader).toBe(expected);
-    } else {
-        expect(result.isValid).toBeTruthy();
-    }
+    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+    expect(result.options.noHeader).toBe(expected);
 });

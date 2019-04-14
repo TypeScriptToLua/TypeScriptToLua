@@ -117,7 +117,7 @@ export class LuaPrinter {
 
         let header = "";
 
-        if (this.options.noHeader === undefined || this.options.noHeader === false) {
+        if (!this.options.noHeader) {
             header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
         }
 
@@ -129,8 +129,11 @@ export class LuaPrinter {
                 header += `require("lualib_bundle");\n`;
             }
             // Inline lualib features
-            else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
-            {
+            else if (
+                (this.options.luaLibImport === undefined ||
+                    this.options.luaLibImport === LuaLibImportKind.Inline) &&
+                luaLibFeatures.size > 0
+            ) {
                 header += "-- Lua Library inline imports\n";
                 header += LuaLib.loadFeatures(luaLibFeatures);
             }

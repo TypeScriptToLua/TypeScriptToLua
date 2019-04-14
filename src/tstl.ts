@@ -1,111 +1,248 @@
 #!/usr/bin/env node
+import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
+import * as cliDiagnostics from "./diagnostics";
 
 function createDiagnosticReporter(pretty: boolean): ts.DiagnosticReporter {
-    const host: ts.FormatDiagnosticsHost = {
-        getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
-        getNewLine: () => ts.sys.newLine,
-        getCanonicalFileName: fileName =>
-            ts.sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase(),
-    };
-
-    if (!pretty) {
-        return diagnostic => ts.sys.write(ts.formatDiagnostic(diagnostic, host));
-    }
-
-    return diagnostic => {
-        ts.sys.write(
-            ts.formatDiagnosticsWithColorAndContext([diagnostic], host) + host.getNewLine()
-        );
-    };
+    return (ts as any).createDiagnosticReporter(ts.sys, pretty);
 }
 
-function shouldBePretty(options?: tstl.CompilerOptions): boolean {
+function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
+    return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
+}
+
+function shouldBePretty(options?: ts.CompilerOptions): boolean {
     return !options || options.pretty === undefined
         ? ts.sys.writeOutputIsTTY !== undefined && ts.sys.writeOutputIsTTY()
         : Boolean(options.pretty);
 }
 
-let reportDiagnostic = createDiagnosticReporter(shouldBePretty());
+let reportDiagnostic = createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
-    if (shouldBePretty(options)) {
-        reportDiagnostic = createDiagnosticReporter(true);
+    reportDiagnostic = createDiagnosticReporter(shouldBePretty(options));
+}
+
+export function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefined {
+    const { project } = commandLine.options;
+    if (!project) {
+        if (commandLine.fileNames.length === 0) {
+            const searchPath = path.posix.normalize(ts.sys.getCurrentDirectory());
+            return ts.findConfigFile(searchPath, ts.sys.fileExists);
+        }
+        return;
+    }
+
+    if (commandLine.fileNames.length !== 0) {
+        reportDiagnostic(cliDiagnostics.optionProjectCannotBeMixedWithSourceFilesOnACommandLine());
+        ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+        return;
+    }
+
+    let fileOrDirectory = path.posix.normalize(project);
+    if (!path.isAbsolute(fileOrDirectory)) {
+        fileOrDirectory = path.posix.join(ts.sys.getCurrentDirectory(), fileOrDirectory);
+    }
+
+    if (!fileOrDirectory || ts.sys.directoryExists(fileOrDirectory)) {
+        const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
+        if (ts.sys.fileExists(configFileName)) {
+            return configFileName;
+        } else {
+            reportDiagnostic(
+                cliDiagnostics.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project)
+            );
+            ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+        }
+    } else {
+        if (ts.sys.fileExists(fileOrDirectory)) {
+            return fileOrDirectory;
+        } else {
+            reportDiagnostic(cliDiagnostics.theSpecifiedPathDoesNotExist(project));
+            ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+        }
     }
 }
 
-function executeCommandLine(argv: string[]): void {
-    const commandLine = CommandLineParser.parseCommandLine(argv);
-    if (commandLine.isValid === false) {
-        // TODO: Use diagnostics
-        console.error(`Invalid CLI input: ${commandLine.errorMessage}`);
+function executeCommandLine(args: string[]): void {
+    if (args.length > 0 && args[0].startsWith("-")) {
+        const firstOption = args[0].slice(args[0].startsWith("--") ? 2 : 1).toLowerCase();
+        if (firstOption === "build" || firstOption === "b") {
+            return performBuild(args.slice(1));
+        }
+    }
+
+    const commandLine = CommandLineParser.parseCommandLine(args);
+
+    if (commandLine.options.build) {
+        reportDiagnostic(cliDiagnostics.optionBuildMustBeFirstCommandLineArgument());
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }
 
-    updateReportDiagnostic(commandLine.result.options);
+    if (commandLine.errors.length > 0) {
+        commandLine.errors.forEach(reportDiagnostic);
+        return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+    }
 
-    if (commandLine.result.options.help) {
+    if (commandLine.options.version) {
+        console.log(CommandLineParser.version);
+        return ts.sys.exit(ts.ExitStatus.Success);
+    }
+
+    if (commandLine.options.help) {
         console.log(CommandLineParser.version);
         console.log(CommandLineParser.getHelpString());
         return ts.sys.exit(ts.ExitStatus.Success);
     }
 
-    if (commandLine.result.options.version) {
-        console.log(CommandLineParser.version);
-        return ts.sys.exit(ts.ExitStatus.Success);
-    }
-
-    if (commandLine.result.options.watch) {
-        if (commandLine.result.options.project) {
-            const host = ts.createWatchCompilerHost(
-                commandLine.result.options.project,
-                commandLine.result.options,
-                ts.sys,
-                ts.createSemanticDiagnosticsBuilderProgram
-            );
-            updateWatchCompilerHost(host, commandLine.result.options);
-            ts.createWatchProgram(host);
-        } else {
-            const host = ts.createWatchCompilerHost(
-                commandLine.result.fileNames,
-                commandLine.result.options,
-                ts.sys,
-                ts.createSemanticDiagnosticsBuilderProgram
-            );
-            updateWatchCompilerHost(host, commandLine.result.options);
-            ts.createWatchProgram(host);
-        }
-    } else {
-        const { diagnostics, transpiledFiles } = tstl.transpileFiles(
-            commandLine.result.fileNames,
-            commandLine.result.options
+    const configFileName = locateConfigFile(commandLine);
+    const commandLineOptions = commandLine.options;
+    if (configFileName) {
+        const configParseResult = CommandLineParser.parseConfigFileWithSystem(
+            configFileName,
+            commandLineOptions
         );
 
-        const emitResult = tstl.emitTranspiledFiles(commandLine.result.options, transpiledFiles);
-        emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
-
-        diagnostics.forEach(reportDiagnostic);
-        if (diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length === 0) {
-            return ts.sys.exit(ts.ExitStatus.Success);
-        }
-
-        if (transpiledFiles.size === 0) {
-            return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+        updateReportDiagnostic(configParseResult.options);
+        if (configParseResult.options.watch) {
+            createWatchOfConfigFile(configFileName, commandLineOptions);
         } else {
-            return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsGenerated);
+            performCompilation(
+                configParseResult.fileNames,
+                configParseResult.projectReferences,
+                configParseResult.options,
+                ts.getConfigFileParsingDiagnostics(configParseResult)
+            );
+        }
+    } else {
+        updateReportDiagnostic(commandLineOptions);
+        if (commandLineOptions.watch) {
+            createWatchOfFilesAndCompilerOptions(commandLine.fileNames, commandLineOptions);
+        } else {
+            performCompilation(
+                commandLine.fileNames,
+                commandLine.projectReferences,
+                commandLineOptions
+            );
         }
     }
 }
 
-function updateWatchCompilerHost(
-    host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
+function performBuild(_args: string[]): void {
+    console.log("Option '--build' is not supported.");
+    return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+}
+
+function performCompilation(
+    rootNames: string[],
+    projectReferences: ReadonlyArray<ts.ProjectReference> | undefined,
+    options: tstl.CompilerOptions,
+    configFileParsingDiagnostics?: ReadonlyArray<ts.Diagnostic>
+): void {
+    const program = ts.createProgram({
+        rootNames,
+        options,
+        projectReferences,
+        configFileParsingDiagnostics,
+    });
+
+    const { transpiledFiles, diagnostics: emitDiagnostics } = tstl.getTranspileOutput({
+        program,
+        options,
+    });
+
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([
+        ...ts.getPreEmitDiagnostics(program),
+        ...emitDiagnostics,
+    ]);
+
+    const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);
+    emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
+
+    diagnostics.forEach(reportDiagnostic);
+    const exitCode =
+        diagnostics.length === 0
+            ? ts.ExitStatus.Success
+            : transpiledFiles.size === 0
+            ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped
+            : ts.ExitStatus.DiagnosticsPresent_OutputsGenerated;
+
+    return ts.sys.exit(exitCode);
+}
+
+function createWatchOfConfigFile(
+    configFileName: string,
+    optionsToExtend: tstl.CompilerOptions
+): void {
+    const watchCompilerHost = ts.createWatchCompilerHost(
+        configFileName,
+        optionsToExtend,
+        ts.sys,
+        ts.createSemanticDiagnosticsBuilderProgram,
+        undefined,
+        createWatchStatusReporter(optionsToExtend)
+    );
+
+    updateWatchCompilationHost(watchCompilerHost, optionsToExtend);
+    ts.createWatchProgram(watchCompilerHost);
+}
+
+function createWatchOfFilesAndCompilerOptions(
+    rootFiles: string[],
     options: tstl.CompilerOptions
 ): void {
+    const watchCompilerHost = ts.createWatchCompilerHost(
+        rootFiles,
+        options,
+        ts.sys,
+        ts.createSemanticDiagnosticsBuilderProgram,
+        undefined,
+        createWatchStatusReporter(options)
+    );
+
+    updateWatchCompilationHost(watchCompilerHost, options);
+    ts.createWatchProgram(watchCompilerHost);
+}
+
+interface ConfigFileSnapshot {
+    options: tstl.CompilerOptions;
+    configFileParsingDiagnostics: ts.Diagnostic[];
+}
+
+function updateWatchCompilationHost(
+    host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
+    optionsToExtend: tstl.CompilerOptions
+): void {
     let fullRecompile = true;
+    const configFileMap = new WeakMap<ts.TsConfigSourceFile, ConfigFileSnapshot>();
+
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
-        const preEmitDiagnostics = ts.getPreEmitDiagnostics(program);
+        const compilerOptions = builderProgram.getCompilerOptions();
+
+        let options = optionsToExtend;
+        let configFileParsingDiagnostics: ts.Diagnostic[] = [];
+        const configFile = compilerOptions.configFile as ts.TsConfigSourceFile | undefined;
+        const configFilePath = compilerOptions.configFilePath as string | undefined;
+        if (configFile && configFilePath) {
+            if (configFileMap.has(configFile)) {
+                ({ options, configFileParsingDiagnostics } = configFileMap.get(configFile)!);
+            } else {
+                const parsedConfigFile = CommandLineParser.updateParsedConfigFile(
+                    ts.parseJsonSourceFileConfigFileContent(
+                        configFile,
+                        ts.sys,
+                        path.dirname(configFilePath),
+                        optionsToExtend,
+                        configFilePath
+                    )
+                );
+
+                ({ options, errors: configFileParsingDiagnostics } = parsedConfigFile);
+                configFileMap.set(configFile, { options, configFileParsingDiagnostics });
+            }
+        }
 
         let sourceFiles: ts.SourceFile[] | undefined;
         if (!fullRecompile) {
@@ -132,7 +269,11 @@ function updateWatchCompilerHost(
         emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
-            ...preEmitDiagnostics,
+            ...configFileParsingDiagnostics,
+            ...program.getOptionsDiagnostics(),
+            ...program.getSyntacticDiagnostics(),
+            ...program.getGlobalDiagnostics(),
+            ...program.getSemanticDiagnostics(),
             ...emitDiagnostics,
         ]);
 
@@ -142,23 +283,10 @@ function updateWatchCompilerHost(
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 
-        const watchErrorSummaryDiagnostic: ts.Diagnostic = {
-            file: undefined,
-            start: undefined,
-            length: undefined,
-
-            category: ts.DiagnosticCategory.Message,
-            code: errors.length === 1 ? 6193 : 6194,
-            messageText:
-                errors.length === 1
-                    ? "Found 1 error. Watching for file changes."
-                    : `Found ${errors.length} errors. Watching for file changes.`,
-        };
-
         host.onWatchStatusChange(
-            watchErrorSummaryDiagnostic,
+            cliDiagnostics.watchErrorSummary(errors.length),
             host.getNewLine(),
-            builderProgram.getCompilerOptions()
+            compilerOptions
         );
     };
 }

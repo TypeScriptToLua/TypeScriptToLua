@@ -300,7 +300,10 @@ exports[`Transformation (luaTable) 1`] = `
 "tbl = {}
 tbl.value = 5
 local value = tbl.value
-local tblLength = #tbl"
+local tblLength = #tbl
+itbl.value = 5
+local ivalue = itbl.value
+local ilength = #tbl"
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `

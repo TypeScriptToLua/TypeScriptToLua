@@ -10,3 +10,15 @@ tbl = new Table();
 tbl.set("value", 5);
 const value = tbl.get("value");
 const tblLength = tbl.length;
+
+/** @LuaTable */
+declare interface InterfaceTable<K extends {} = {}, V = any> {
+    readonly length: number;
+    set(key: K, value: V): void;
+    get(key: K): V;
+}
+
+declare const itbl: InterfaceTable;
+itbl.set("value", 5);
+const ivalue = itbl.get("value");
+const ilength = tbl.length;

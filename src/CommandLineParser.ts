@@ -121,22 +121,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
 }
 
 export function parseCommandLine(args: string[]): ParsedCommandLine {
-    const commandLine = updateParsedCommandLine(ts.parseCommandLine(args), args);
-
-    // TODO: Remove
-    if (commandLine.options.project && !commandLine.options.rootDir) {
-        commandLine.options.rootDir = path.dirname(commandLine.options.project);
-    }
-
-    if (!commandLine.options.rootDir) {
-        commandLine.options.rootDir = process.cwd();
-    }
-
-    if (!commandLine.options.outDir) {
-        commandLine.options.outDir = commandLine.options.rootDir;
-    }
-
-    return commandLine;
+    return updateParsedCommandLine(ts.parseCommandLine(args), args);
 }
 
 function updateParsedCommandLine(

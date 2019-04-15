@@ -42,7 +42,7 @@
         "no-var-keyword": true,
         "object-literal-shorthand": true,
         "only-arrow-functions": [true, "allow-declarations", "allow-named-functions"],
-        "prefer-const": true,
+        "prefer-const": [true, { "destructuring": "all" }],
         "radix": true,
         "switch-default": false,
         "triple-equals": [true, "allow-null-check"],

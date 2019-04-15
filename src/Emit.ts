@@ -16,8 +16,13 @@ export function emitTranspiledFiles(
     options: CompilerOptions,
     transpiledFiles: Map<string, TranspiledFile>
 ): OutputFile[] {
+    let { rootDir, outDir, outFile, luaLibImport } = options;
+
     // TODO:
-    const { rootDir = "", outDir = "", outFile, luaLibImport } = options;
+    const configFileName = options.configFilePath as string | undefined;
+    if (configFileName && rootDir === undefined) rootDir = path.dirname(configFileName);
+    if (rootDir === undefined) rootDir = process.cwd();
+    if (outDir === undefined) outDir = rootDir;
 
     const files: OutputFile[] = [];
     for (const [fileName, { lua, sourceMap, declaration, declarationMap }] of transpiledFiles) {

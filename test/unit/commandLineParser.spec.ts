@@ -152,7 +152,6 @@ test("rootDir", () => {
 
     expect(result.errors.map(err => err.messageText)).toHaveLength(0);
     expect(result.options.rootDir).toBe("./test");
-    expect(result.options.outDir).toBe("./test");
 });
 
 test("outDirAndRooDir", () => {

@@ -47,15 +47,14 @@ test.each([
     },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
-    const {
-        file: { lua, sourceMap },
-    } = util.transpileStringResult(typeScriptSource);
+    const { file } = util.transpileStringResult(typeScriptSource);
 
     // Assert
-    const consumer = await new SourceMapConsumer(sourceMap);
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
 
+    const consumer = await new SourceMapConsumer(file.sourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
-        const luaPosition = lineAndColumnOf(lua, luaPattern);
+        const luaPosition = lineAndColumnOf(file.lua, luaPattern);
         const mappedPosition = consumer.originalPositionFor(luaPosition);
 
         const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
@@ -125,17 +124,18 @@ test("Inline sourcemaps", () => {
         inlineSourceMap: true,
     };
 
-    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource, compilerOptions);
+    const { file } = util.transpileStringResult(typeScriptSource, compilerOptions);
+    if (!util.expectToBeDefined(file.lua)) return;
 
-    const inlineSourceMapMatch = lua.match(
+    const inlineSourceMapMatch = file.lua.match(
         /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
     );
 
     if (util.expectToBeDefined(inlineSourceMapMatch)) {
         const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
-        expect(sourceMap).toBe(inlineSourceMap);
+        expect(file.sourceMap).toBe(inlineSourceMap);
 
-        expect(util.executeLua(lua)).toBe("foo");
+        expect(util.executeLua(file.lua)).toBe("foo");
     }
 });
 

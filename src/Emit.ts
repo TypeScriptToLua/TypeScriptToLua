@@ -16,7 +16,8 @@ export function emitTranspiledFiles(
     options: CompilerOptions,
     transpiledFiles: Map<string, TranspiledFile>
 ): OutputFile[] {
-    const { rootDir, outDir, outFile, luaLibImport } = options;
+    // TODO:
+    const { rootDir = "", outDir = "", outFile, luaLibImport } = options;
 
     const files: OutputFile[] = [];
     for (const [fileName, { lua, sourceMap, declaration, declarationMap }] of transpiledFiles) {
@@ -32,7 +33,7 @@ export function emitTranspiledFiles(
                 outPath = outFile;
             } else {
                 // append to workingDir or outDir
-                outPath = path.resolve(options.outDir, outFile);
+                outPath = path.resolve(outDir, outFile);
             }
         } else {
             outPath = trimExt(outPath) + ".lua";

@@ -21,8 +21,8 @@ export async function runCli(args: string[]): Promise<CliResult> {
     const child = forkCli(args);
 
     let output = "";
-    child.stdout.on("data", data => (output += data));
-    child.stderr.on("data", data => (output += data));
+    child.stdout!.on("data", data => (output += data));
+    child.stderr!.on("data", data => (output += data));
 
     return new Promise(resolve => {
         child.on("close", exitCode => resolve({ exitCode, output }));

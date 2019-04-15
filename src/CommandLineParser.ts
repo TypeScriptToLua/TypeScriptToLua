@@ -224,16 +224,17 @@ function getArgumentValue(
 }
 
 function readValue(value: string | boolean, type: CommandLineOption["type"]): string | boolean {
-    if (type === "boolean") {
-        return value === true || value === "true" || value === "t";
-    } else if (type === "enum") {
-        return value.toString().toLowerCase();
+    switch (type) {
+        case "boolean":
+            return value === true || value === "true" || value === "t";
+        case "enum":
+            return value.toString().toLowerCase();
     }
 }
 
 export function parseConfigFileWithSystem(
     configFileName: string,
-    commandLineOptions: CompilerOptions,
+    commandLineOptions?: CompilerOptions,
     system = ts.sys
 ): ParsedCommandLine {
     const { config, error } = ts.readConfigFile(configFileName, system.readFile);

@@ -43,7 +43,7 @@ const libCache: { [key: string]: ts.SourceFile } = {};
 /** @internal */
 export function createVirtualProgram(
     input: Record<string, string>,
-    options?: CompilerOptions
+    options: CompilerOptions = {}
 ): ts.Program {
     const compilerHost: ts.CompilerHost = {
         fileExists: () => true,
@@ -86,40 +86,29 @@ export function createVirtualProgram(
     return ts.createProgram(Object.keys(input), options, compilerHost);
 }
 
-export interface VirtualProgramResult {
-    file: TranspiledFile;
+export interface TranspileStringResult {
     diagnostics: ts.Diagnostic[];
+    file?: TranspiledFile;
 }
 
 export function transpileString(
-    content: string,
+    main: string,
     options: CompilerOptions = {}
-): VirtualProgramResult {
-    const program = createVirtualProgram({ "main.ts": content }, options);
-    const { diagnostics, transpiledFiles } = getTranspileOutput({ program, options });
-    const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
-        ...ts.getPreEmitDiagnostics(program),
-        ...diagnostics,
-    ]);
-
-    return { file: transpiledFiles.get("main.ts"), diagnostics: [...allDiagnostics] };
+): TranspileStringResult {
+    const { diagnostics, transpiledFiles } = transpileVirtualProgram({ "main.ts": main }, options);
+    return { diagnostics, file: transpiledFiles.get("main.ts") };
 }
 
 export function transpileVirtualProgram(
     files: Record<string, string>,
     options: CompilerOptions = {}
-): VirtualProgramResult {
-    const mainFileName = Object.keys(files).find(x => /\bmain\.[a-z]+$/.test(x));
-    if (mainFileName === undefined) {
-        throw new Error('Virtual program should have a file named "main"');
-    }
-
+): TranspilationResult {
     const program = createVirtualProgram(files, options);
-    const { diagnostics, transpiledFiles } = getTranspileOutput({ program, options });
+    const transpileOutput = getTranspileOutput({ program, options });
     const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
-        ...diagnostics,
+        ...transpileOutput.diagnostics,
     ]);
 
-    return { file: transpiledFiles.get(mainFileName), diagnostics: [...allDiagnostics] };
+    return { ...transpileOutput, diagnostics: [...allDiagnostics] };
 }

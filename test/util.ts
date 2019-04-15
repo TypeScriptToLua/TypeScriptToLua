@@ -31,8 +31,9 @@ expect.extend({
         }
 
         // TODO:
-        expect(executionError).toBeDefined();
-        expect(executionError.message).toContain(error.message);
+        if (expectToBeDefined(executionError)) {
+            expect(executionError.message).toContain(error.message);
+        }
 
         return { pass: true, message: () => "" };
     },
@@ -43,10 +44,8 @@ export function transpileString(
     options: tstl.CompilerOptions = {},
     ignoreDiagnostics = true,
 ): string {
-    const {
-        diagnostics,
-        file: { lua },
-    } = transpileStringResult(str, options);
+    const { diagnostics, file } = transpileStringResult(str, options);
+    if (!expectToBeDefined(file) || !expectToBeDefined(file.lua)) return "";
 
     const errors = diagnostics
         .filter(d => d.category === ts.DiagnosticCategory.Error)
@@ -56,13 +55,13 @@ export function transpileString(
         throw new Error(errors.map(d => d.messageText).join("\n"));
     }
 
-    return lua.trim();
+    return file.lua.trim();
 }
 
 export function transpileStringResult(
-    input: string | { [filename: string]: string },
+    input: string | Record<string, string>,
     options: tstl.CompilerOptions = {},
-): tstl.VirtualProgramResult {
+): Required<tstl.TranspileStringResult> {
     const optionsWithDefaults = {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
@@ -78,9 +77,17 @@ export function transpileStringResult(
         ...options,
     };
 
-    return typeof input === "string"
-        ? tstl.transpileString(input, optionsWithDefaults)
-        : tstl.transpileVirtualProgram(input, optionsWithDefaults);
+    const { diagnostics, transpiledFiles } = tstl.transpileVirtualProgram(
+        typeof input === "string" ? { "main.ts": input } : input,
+        optionsWithDefaults,
+    );
+
+    const mainFileName = [...transpiledFiles.keys()].find(x => /\bmain\.[a-z]+$/.test(x));
+    if (mainFileName === undefined) {
+        throw new Error('Program should have a file named "main"');
+    }
+
+    return { diagnostics, file: transpiledFiles.get(mainFileName)! };
 }
 
 const lualibContent = fs.readFileSync(

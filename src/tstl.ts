@@ -283,7 +283,7 @@ function updateWatchCompilationHost(
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 
-        host.onWatchStatusChange(
+        host.onWatchStatusChange!(
             cliDiagnostics.watchErrorSummary(errors.length),
             host.getNewLine(),
             compilerOptions

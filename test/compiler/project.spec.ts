@@ -18,7 +18,7 @@ let filesAfterCompile: string[];
 
 afterEach(() => {
     // Remove files that were created by the test
-    const createdFiles = filesAfterCompile.filter(v => existingFiles.indexOf(v) < 0);
+    const createdFiles = filesAfterCompile.filter(v => !existingFiles.includes(v));
     for (const file of createdFiles) {
         fs.unlinkSync(file);
     }
@@ -35,11 +35,6 @@ test.each([
     {
         projectName: "basic",
         tsconfig: ".",
-        expectedFiles: ["lualib_bundle.lua", "test_src/test_lib/file.lua", "test_src/main.lua"],
-    },
-    {
-        projectName: "basic",
-        tsconfig: "test_src/main.ts",
         expectedFiles: ["lualib_bundle.lua", "test_src/test_lib/file.lua", "test_src/main.lua"],
     },
     {

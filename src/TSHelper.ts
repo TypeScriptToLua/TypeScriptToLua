@@ -77,10 +77,7 @@ export class TSHelper {
     }
 
     public static isFileModule(sourceFile: ts.SourceFile): boolean {
-        if (sourceFile) {
-            return sourceFile.statements.some(TSHelper.isStatementExported);
-        }
-        return false;
+        return sourceFile.statements.some(TSHelper.isStatementExported);
     }
 
     public static isStatementExported(statement: ts.Statement): boolean {
@@ -155,12 +152,12 @@ export class TSHelper {
 
         const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
         const typeNode = checker.typeToTypeNode(type, undefined, flags);
-        return typeNode && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
+        return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
     }
 
     public static isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {
         const typeNode = checker.typeToTypeNode(type, undefined, ts.NodeBuilderFlags.InTypeAlias);
-        return typeNode && ts.isFunctionTypeNode(typeNode);
+        return typeNode !== undefined && ts.isFunctionTypeNode(typeNode);
     }
 
     public static isFunctionTypeAtLocation(node: ts.Node, checker: ts.TypeChecker): boolean {
@@ -229,11 +226,11 @@ export class TSHelper {
         }
     }
 
-    public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type {
+    public static getContainingFunctionReturnType(node: ts.Node, checker: ts.TypeChecker): ts.Type | undefined {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
             const signature = checker.getSignatureFromDeclaration(declaration);
-            return checker.getReturnTypeOfSignature(signature);
+            return signature === undefined ? undefined : checker.getReturnTypeOfSignature(signature);
         }
         return undefined;
     }
@@ -306,7 +303,9 @@ export class TSHelper {
     }
 
     // Search up until finding a node satisfying the callback
-    public static findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (n: ts.Node) => n is T): T {
+    public static findFirstNodeAbove<T extends ts.Node>(
+        node: ts.Node, callback: (n: ts.Node) => n is T
+    ): T | undefined {
         let current = node;
         while (current.parent) {
             if (callback(current.parent)) {
@@ -318,7 +317,7 @@ export class TSHelper {
         return undefined;
     }
 
-    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [boolean, ts.BinaryOperator] {
+    public static isBinaryAssignmentToken(token: ts.SyntaxKind): [true, ts.BinaryOperator] | [false, undefined] {
         switch (token) {
             case ts.SyntaxKind.BarEqualsToken:
                 return [true, ts.SyntaxKind.BarToken];
@@ -375,7 +374,7 @@ export class TSHelper {
         node: ts.Expression,
         checker: ts.TypeChecker,
         program: ts.Program
-    ): [boolean, ts.Expression, ts.Expression]
+    ): [true, ts.Expression, ts.Expression] | [false, undefined, undefined]
     {
         if (ts.isElementAccessExpression(node) &&
             (TSHelper.isExpressionWithEvaluationEffect(node.expression)
@@ -400,7 +399,9 @@ export class TSHelper {
         return defaultArrayCallMethodNames.has(methodName);
     }
 
-    public static getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration {
+    public static getExplicitThisParameter(
+        signatureDeclaration: ts.SignatureDeclaration
+    ): ts.ParameterDeclaration | undefined {
         return signatureDeclaration.parameters.find(
             param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
     }
@@ -409,7 +410,7 @@ export class TSHelper {
         classDeclaration: ts.ClassLikeDeclarationBase,
         callback: (classDeclaration: ts.ClassLikeDeclarationBase) => boolean,
         checker: ts.TypeChecker
-    ): ts.ClassLikeDeclarationBase
+    ): ts.ClassLikeDeclarationBase | undefined
     {
         if (callback(classDeclaration)) {
             return classDeclaration;
@@ -421,7 +422,16 @@ export class TSHelper {
         }
 
         const symbol = extendsType.getSymbol();
-        const declaration = symbol.getDeclarations().find(ts.isClassLike);
+        if (symbol === undefined) {
+            return undefined;
+        }
+
+        const symbolDeclarations = symbol.getDeclarations();
+        if (symbolDeclarations === undefined) {
+            return undefined;
+        }
+
+        const declaration = symbolDeclarations.find(ts.isClassLike);
         if (!declaration) {
             return undefined;
         }
@@ -481,7 +491,7 @@ export class TSHelper {
 
         const hasInitializedField = (e: ts.ClassElement) =>
             ts.isPropertyDeclaration(e)
-            && e.initializer
+            && e.initializer !== undefined
             && TSHelper.isSamePropertyName(e.name, element.name);
 
         return TSHelper.findInClassOrAncestor(
@@ -574,6 +584,11 @@ export class TSHelper {
                     || ts.isClassExpression(n)
                     || ts.isInterfaceDeclaration(n)
             );
+
+            if (scopeDeclaration === undefined) {
+                return ContextType.NonVoid;
+            }
+
             const scopeType = checker.getTypeAtLocation(scopeDeclaration);
             if (scopeType && TSHelper.getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
                 return ContextType.Void;
@@ -653,7 +668,7 @@ export class TSHelper {
 
     public static isValidLuaIdentifier(str: string): boolean {
         const match = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
-        return match && match[0] === str;
+        return match !== undefined && match !== null && match[0] === str;
     }
 
     // Checks that a name is valid for use in lua function declaration syntax:
@@ -661,7 +676,7 @@ export class TSHelper {
     // 'getFoo().bar' => fails ('function getFoo().bar()' would be illegal)
     public static isValidLuaFunctionDeclarationName(str: string): boolean {
         const match = str.match(/[a-zA-Z0-9_\.]+/);
-        return match && match[0] === str;
+        return match !== undefined && match !== null && match[0] === str;
     }
 
     public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
@@ -724,7 +739,10 @@ export class TSHelper {
         return this.isStandardLibraryDeclaration(declaration, program);
     }
 
-    public static isEnumMember(enumDeclaration: ts.EnumDeclaration, value: ts.Expression): [boolean, ts.PropertyName] {
+    public static isEnumMember(
+        enumDeclaration: ts.EnumDeclaration,
+        value: ts.Expression
+    ): [true, ts.PropertyName] | [false, undefined] {
         if (ts.isIdentifier(value)) {
             const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === value.text);
             if (enumMember !== undefined) {

@@ -3,6 +3,9 @@ import { TranspileError } from "./TranspileError";
 import { TSHelper as tsHelper } from "./TSHelper";
 
 export class TSTLErrors {
+    public static CouldNotCast = (castName: string) =>
+        new Error(`Failed to cast all elements to expected type using ${castName}.`);
+
     public static CouldNotFindEnumMember = (enumDeclaration: ts.EnumDeclaration, enumMember: string, node: ts.Node) =>
         new TranspileError(`Could not find ${enumMember} in ${enumDeclaration.name.text}`, node);
 
@@ -42,6 +45,9 @@ export class TSTLErrors {
     public static InvalidNewExpressionOnExtension = (node: ts.Node) =>
         new TranspileError(`Cannot construct classes with decorator '@extension' or '@metaExtension'.`, node);
 
+    public static InvalidExportDeclaration = (declaration: ts.ExportDeclaration) =>
+        new TranspileError("Encountered invalid export declaration without exports and without module.", declaration);
+
     public static InvalidExtendsExtension = (node: ts.Node) =>
         new TranspileError(`Cannot extend classes with decorator '@extension' or '@metaExtension'.`, node);
 
@@ -69,8 +75,29 @@ export class TSTLErrors {
     public static MissingClassName = (node: ts.Node) =>
         new TranspileError(`Class declarations must have a name.`, node);
 
+    public static MissingForOfVariables = (node: ts.Node) =>
+        new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
+
+    public static MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
+        new TranspileError("Unsupported function declaration without name.", declaration);
+
     public static MissingMetaExtension = (node: ts.Node) =>
         new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
+
+    public static MissingSourceFile = () =>
+        new Error("Expected transformer.sourceFile to be set, but it isn't.");
+
+    public static UndefinedFunctionDefinition = (functionSymbolId: number) =>
+        new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
+
+    public static UndefinedScope = () =>
+        new Error("Expected to pop a scope, but found undefined.");
+
+    public static UndefinedTypeNode = (node: ts.Node) =>
+        new TranspileError("Failed to resolve required type node.", node);
+
+    public static UnknownSuperType = (node: ts.Node) =>
+        new TranspileError("Unable to resolve type of super expression.", node);
 
     public static UnsupportedDefaultExport = (node: ts.Node) =>
         new TranspileError(`Default exports are not supported.`, node);
@@ -89,6 +116,9 @@ export class TSTLErrors {
 
     public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
         new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
+
+    public static UnsupportedFunctionWithoutBody = (node: ts.FunctionLikeDeclaration) =>
+        new TranspileError("Functions with undefined bodies are not supported.", node);
 
     public static UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {
         if (name) {

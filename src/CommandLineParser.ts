@@ -228,7 +228,7 @@ export function parseTsConfigString(
 }
 
 function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CLIParseResult {
-    const result = {};
+    const result: { [key: string]: string | boolean } = {};
     for (let i = 0; i < args.length; i++) {
         if (args[i].startsWith("--")) {
             const argumentName = args[i].substr(2);
@@ -245,7 +245,7 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
             }
         } else if (args[i].startsWith("-")) {
             const argument = args[i].substr(1);
-            let argumentName: string;
+            let argumentName: string | undefined;
             for (const key in optionDeclarations) {
                 if (optionDeclarations[key].aliases && optionDeclarations[key].aliases.indexOf(argument) >= 0) {
                     argumentName = key;
@@ -253,7 +253,7 @@ function parseTSTLOptions(commandLine: ts.ParsedCommandLine, args: string[]): CL
                 }
             }
 
-            if (argumentName) {
+            if (argumentName !== undefined) {
                 const argumentResult = getArgumentValue(argumentName, i, args);
                 if (argumentResult.isValid === true) {
                     result[argumentName] = argumentResult.result;

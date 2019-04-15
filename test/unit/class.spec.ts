@@ -797,3 +797,29 @@ test("Class annonymous expression name via constructor", () => {
     `;
     expect(util.transpileAndExecute(code)).toBe("____");
 });
+
+test("Class field override in subclass", () => {
+    const code = `
+        class Foo {
+            field = "foo";
+        }
+        class Bar extends Foo {
+            field = "bar";
+        }
+        return (new Foo()).field + (new Bar()).field;`;
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test("Class field override in subclass with constructors", () => {
+    const code = `
+        class Foo {
+            field = "foo";
+            constructor() {}
+        }
+        class Bar extends Foo {
+            field = "bar";
+            constructor() { super(); }
+        }
+        return (new Foo()).field + (new Bar()).field;`;
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});

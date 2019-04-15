@@ -109,6 +109,10 @@ export interface Node extends TextRange {
 }
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
+    if (tsOriginal === undefined) {
+        return {kind, parent};
+    }
+
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
         return {kind, parent, line: sourcePosition.line, column: sourcePosition.column};
@@ -128,7 +132,11 @@ export function setNodePosition<T extends Node>(node: T, position: TextRange): T
     return node;
 }
 
-export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T {
+export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal: ts.Node): T | undefined {
+    if (node === undefined) {
+        return undefined;
+    }
+
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
         setNodePosition(node, sourcePosition);
@@ -172,14 +180,14 @@ export function getOriginalPos(node: Node): TextRange {
 
 export interface Block extends Node {
     kind: SyntaxKind.Block;
-    statements?: Statement[];
+    statements: Statement[];
 }
 
 export function isBlock(node: Node): node is Block {
     return node.kind === SyntaxKind.Block;
 }
 
-export function createBlock(statements?: Statement[], tsOriginal?: ts.Node, parent?: Node): Block {
+export function createBlock(statements: Statement[], tsOriginal?: ts.Node, parent?: Node): Block {
     const block = createNode(SyntaxKind.Block, tsOriginal, parent) as Block;
     setParent(statements, block);
     block.statements = statements;
@@ -192,14 +200,14 @@ export interface Statement extends Node {
 
 export interface DoStatement extends Statement {
     kind: SyntaxKind.DoStatement;
-    statements?: Statement[];
+    statements: Statement[];
 }
 
 export function isDoStatement(node: Node): node is DoStatement {
     return node.kind === SyntaxKind.DoStatement;
 }
 
-export function createDoStatement(statements?: Statement[], tsOriginal?: ts.Node, parent?: Node): DoStatement {
+export function createDoStatement(statements: Statement[], tsOriginal?: ts.Node, parent?: Node): DoStatement {
     const statement = createNode(SyntaxKind.DoStatement, tsOriginal, parent) as DoStatement;
     setParent(statements, statement);
     statement.statements = statements;
@@ -257,7 +265,7 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 
 export function createAssignmentStatement(
     left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
-    right: Expression | Expression[],
+    right?: Expression | Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
 ): AssignmentStatement
@@ -273,7 +281,7 @@ export function createAssignmentStatement(
     if (Array.isArray(right)) {
         statement.right = right;
     } else {
-        statement.right = [right];
+        statement.right = right ? [right] : [];
     }
     return statement;
 }
@@ -878,18 +886,19 @@ export function isFunctionDefinition(statement: VariableDeclarationStatement | A
     : statement is FunctionDefinition
 {
     return statement.left.length === 1
-        && statement.right
+        && statement.right !== undefined
         && statement.right.length === 1
         && isFunctionExpression(statement.right[0]);
 }
 
 export type InlineFunctionExpression = FunctionExpression & {
-    body: { statements: [ReturnStatement]; };
+    body: { statements: [ReturnStatement & { expressions: Expression[] }]; };
 };
 
 export function isInlineFunctionExpression(expression: FunctionExpression) : expression is InlineFunctionExpression {
-    return expression.body.statements
+    return expression.body.statements !== undefined
         && expression.body.statements.length === 1
         && isReturnStatement(expression.body.statements[0])
+        && (expression.body.statements[0] as ReturnStatement).expressions !== undefined
         && (expression.flags & FunctionExpressionFlags.Inline) !== 0;
 }

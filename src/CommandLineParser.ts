@@ -50,15 +50,16 @@ const optionDeclarations: Record<string, CommandLineOption> = {
 
 export const version = `Version ${require("../package.json").version}`;
 
-const helpString =
-    "Syntax:   tstl [options] [files...]\n\n" +
+const helpString = `
+Syntax:   tstl [options] [files...]
 
-    "Examples: tstl path/to/file.ts [...]\n" +
-    "          tstl -p path/to/tsconfig.json\n\n" +
+Examples: tstl path/to/file.ts [...]
+          tstl -p path/to/tsconfig.json
 
-    "In addition to the options listed below you can also pass options\n" +
-    "for the typescript compiler (For a list of options use tsc -h).\n" +
-    "Some tsc options might have no effect.";
+In addition to the options listed below you can also pass options
+for the typescript compiler (For a list of options use tsc -h).
+Some tsc options might have no effect.
+`.trim();
 
 export function getHelpString(): string {
     let result = helpString + "\n\n";
@@ -69,11 +70,11 @@ export function getHelpString(): string {
 
         const optionString = aliasStrings.concat(["--" + optionName]).join("|");
 
-        const parameterDescribe = option.type === "enum" ? option.choices.join("|") : option.type;
+        const optionDescribe = option.type === "enum" ? option.choices.join("|") : option.type;
 
-        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - parameterDescribe.length));
+        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - optionDescribe.length));
 
-        result += `\n ${optionString} <${parameterDescribe}>${spacing}${option.describe}\n`;
+        result += `\n ${optionString} <${optionDescribe}>${spacing}${option.describe}\n`;
     }
 
     return result;
@@ -84,18 +85,12 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
         const option = optionDeclarations[key];
         if (!option) continue;
 
-        const value = readValue(parsedConfigFile.raw[key], option.type);
-        if (option.type === "enum" && !option.choices.includes(value as string)) {
-            parsedConfigFile.errors.push(
-                diagnostics.argumentForOptionMustBe(key, option.choices.join(", "))
-            );
-        } else {
-            // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
-            //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
-            if (parsedConfigFile.options[key] === undefined) {
-                parsedConfigFile.options[key] = value;
-            }
-        }
+        // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
+        //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
+
+        const { error, value } = readValue(key, option, parsedConfigFile.raw[key]);
+        if (error) parsedConfigFile.errors.push(error);
+        if (parsedConfigFile.options[key] === undefined) parsedConfigFile.options[key] = value;
     }
 
     // Eventually we will only look for the tstl object for tstl options
@@ -104,16 +99,9 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
             const option = optionDeclarations[key];
             if (!option) continue;
 
-            const value = readValue(parsedConfigFile.raw.tstl[key], option.type);
-            if (option.type === "enum" && !option.choices.includes(value as string)) {
-                parsedConfigFile.errors.push(
-                    diagnostics.argumentForOptionMustBe(key, option.choices.join(", "))
-                );
-            } else {
-                if (parsedConfigFile.options[key] === undefined) {
-                    parsedConfigFile.options[key] = value;
-                }
-            }
+            const { error, value } = readValue(key, option, parsedConfigFile.raw.tstl[key]);
+            if (error) parsedConfigFile.errors.push(error);
+            if (parsedConfigFile.options[key] === undefined) parsedConfigFile.options[key] = value;
         }
     }
 
@@ -146,74 +134,92 @@ function updateParsedCommandLine(
         if (!args[i].startsWith("-")) continue;
 
         const hasTwoDashes = args[i].startsWith("--");
-        const parameterValue = args[i].substr(hasTwoDashes ? 2 : 1);
-        let argumentName = optionDeclarations[parameterValue] && parameterValue;
-        if (!hasTwoDashes && argumentName === undefined) {
+        const argumentName = args[i].substr(hasTwoDashes ? 2 : 1);
+        let optionName = optionDeclarations[argumentName] && argumentName;
+        if (!hasTwoDashes && optionName === undefined) {
             for (const key in optionDeclarations) {
-                if ((optionDeclarations[key].aliases || []).includes(parameterValue)) {
-                    argumentName = key;
+                if ((optionDeclarations[key].aliases || []).includes(argumentName)) {
+                    optionName = key;
                     break;
                 }
             }
         }
 
-        if (argumentName !== undefined) {
-            const argumentResult = getArgumentValue(argumentName, i, args);
-            if (argumentResult.isValid === true) {
-                parsedCommandLine.options[argumentName] = argumentResult.result;
-                // Skip value from being considered as option
-                i += argumentResult.increment;
-            } else {
-                parsedCommandLine.errors.push(argumentResult.error);
-            }
+        if (optionName !== undefined) {
+            const { error, value, increment } = readCommandLineArgument(optionName, args[i + 1]);
+            if (error) parsedCommandLine.errors.push(error);
+            parsedCommandLine.options[optionName] = value;
+            i += increment;
         }
     }
 
     return parsedCommandLine;
 }
 
-type ArgumentParseResult =
-    | { isValid: true; result: string | boolean; increment: number }
-    | { isValid: false; error: ts.Diagnostic };
+interface CommandLineArgument extends ReadValueResult {
+    increment: number;
+}
 
-function getArgumentValue(
-    argumentName: string,
-    argumentIndex: number,
-    args: string[]
-): ArgumentParseResult {
-    const option = optionDeclarations[argumentName];
-    const argument = args[argumentIndex + 1];
+function readCommandLineArgument(optionName: string, value: any): CommandLineArgument {
+    const option = optionDeclarations[optionName];
 
-    if (option.type === "boolean" && (argument === undefined || argument.startsWith("-"))) {
-        // Set boolean arguments without supplied value to true
-        return { isValid: true, result: true, increment: 0 };
-    }
-
-    if (argument === undefined) {
-        return { isValid: false, error: diagnostics.compilerOptionExpectsAnArgument(argumentName) };
-    }
-
-    const value = readValue(argument, option.type);
-
-    if (option.type === "enum" && option.choices && !option.choices.includes(value as string)) {
+    if (option.type === "boolean") {
+        if (value === "true" || value === "false") {
+            value = value === "true";
+        } else {
+            // Set boolean arguments without supplied value to true
+            return { value: true, increment: 0 };
+        }
+    } else if (value === undefined) {
         return {
-            isValid: false,
-            error: diagnostics.argumentForOptionMustBe(
-                `--${argumentName}`,
-                option.choices.join(", ")
-            ),
+            error: diagnostics.compilerOptionExpectsAnArgument(optionName),
+            value: undefined,
+            increment: 0,
         };
     }
 
-    return { isValid: true, result: value, increment: 1 };
+    return { ...readValue(optionName, option, value), increment: 1 };
 }
 
-function readValue(value: string | boolean, type: CommandLineOption["type"]): string | boolean {
-    switch (type) {
-        case "boolean":
-            return value === true || value === "true" || value === "t";
-        case "enum":
-            return value.toString().toLowerCase();
+interface ReadValueResult {
+    error?: ts.Diagnostic;
+    value: any;
+}
+
+function readValue(optionName: string, option: CommandLineOption, value: unknown): ReadValueResult {
+    if (value === null) return { value };
+
+    switch (option.type) {
+        case "boolean": {
+            if (typeof value !== "boolean") {
+                return {
+                    value: undefined,
+                    error: diagnostics.compilerOptionRequiresAValueOfType(optionName, "boolean"),
+                };
+            }
+
+            return { value };
+        }
+
+        case "enum": {
+            if (typeof value !== "string") {
+                return {
+                    value: undefined,
+                    error: diagnostics.compilerOptionRequiresAValueOfType(optionName, "string"),
+                };
+            }
+
+            const normalizedValue = value.toLowerCase();
+            if (option.choices && !option.choices.includes(normalizedValue)) {
+                const optionChoices = option.choices.join(", ");
+                return {
+                    value: undefined,
+                    error: diagnostics.argumentForOptionMustBe(`--${optionName}`, optionChoices),
+                };
+            }
+
+            return { value: normalizedValue };
+        }
     }
 }
 

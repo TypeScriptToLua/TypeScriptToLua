@@ -24,6 +24,11 @@ const createCommandLineError = <Args extends any[]>(
     messageText: getMessage(...args),
 });
 
+export const compilerOptionRequiresAValueOfType = createCommandLineError(
+    5024,
+    (name: string, type: string) => `Compiler option '${name}' requires a value of type ${type}.`
+);
+
 export const optionProjectCannotBeMixedWithSourceFilesOnACommandLine = createCommandLineError(
     5042,
     () => "Option 'project' cannot be mixed with source files on a command line."

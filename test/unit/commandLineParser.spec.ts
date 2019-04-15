@@ -95,9 +95,7 @@ test("CLI parser invalid argument", () => {
 
 test.each([
     { tsConfig: `{ noHeader: true }`, expected: true },
-    { tsConfig: `{ noHeader: "true" }`, expected: true },
     { tsConfig: `{ tstl: { noHeader: true } }`, expected: true },
-    { tsConfig: `{ tstl: { noHeader: "true" } }`, expected: true },
 ])("TsConfig noHeader (%p)", ({ tsConfig, expected }) => {
     const configJson = ts.parseConfigFileTextToJson("", tsConfig);
     const parsedJsonConfig = ts.parseJsonConfigFileContent(configJson.config, ts.sys, "");

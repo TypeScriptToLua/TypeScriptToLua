@@ -76,16 +76,6 @@ test.each([
     expect(result.options.noHoisting).toBe(expected);
 });
 
-test.each([
-    { args: ["--project", "tsconfig.json"], expected: true },
-    { args: ["-p", "tsconfig.json"], expected: true },
-])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.project !== undefined).toBe(expected);
-});
-
 test("CLI Parser Multiple Options", () => {
     const commandLine = "--project tsconfig.json --noHeader --noHoisting -lt 5.3";
     const result = tstl.parseCommandLine(commandLine.split(" "));
@@ -97,69 +87,10 @@ test("CLI Parser Multiple Options", () => {
     expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua53);
 });
 
-test.each([
-    { args: [""], expected: undefined },
-    { args: ["--help"], expected: true },
-    { args: ["-h"], expected: true },
-])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.help).toBe(expected);
-});
-
-test.each([
-    { args: [""], expected: undefined },
-    { args: ["--version"], expected: true },
-    { args: ["-v"], expected: true },
-])("CLI parser project (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.version).toBe(expected);
-});
-
-test("ValidLuaTarget", () => {
-    const result = tstl.parseCommandLine(["--luaTarget", "5.3"]);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.luaTarget).toBe("5.3");
-});
-
-test("InvalidLuaTarget", () => {
-    // Don't check error message because the yargs library messes the message up.
-    const result = tstl.parseCommandLine(["--luaTarget", "42"]);
+test("CLI parser invalid argument", () => {
+    const result = tstl.parseCommandLine(["--invalidArgument"]);
 
     expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
-});
-
-test("InvalidArgumentTSTL", () => {
-    // Don't check error message because the yargs library messes the message up.
-    const result = tstl.parseCommandLine(["--invalidTarget", "test"]);
-
-    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
-});
-
-test("outDir", () => {
-    const result = tstl.parseCommandLine(["--outDir", "./test"]);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.outDir).toBe("./test");
-});
-
-test("rootDir", () => {
-    const result = tstl.parseCommandLine(["--rootDir", "./test"]);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.rootDir).toBe("./test");
-});
-
-test("outDirAndRooDir", () => {
-    const result = tstl.parseCommandLine(["--outDir", "./testOut", "--rootDir", "./testRoot"]);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.outDir).toBe("./testOut");
-    expect(result.options.rootDir).toBe("./testRoot");
 });
 
 test.each([

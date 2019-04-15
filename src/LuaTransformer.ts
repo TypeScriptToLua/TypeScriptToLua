@@ -3339,7 +3339,14 @@ export class LuaTransformer {
         }
 
         if (classDecorators.has(DecoratorKind.LuaTable)) {
-            return tstl.createTableExpression();
+            if (node.arguments && node.arguments.length > 0) {
+                throw TSTLErrors.ForbiddenLuaTableUseException(
+                    node,
+                    "No parameters are allowed when constructing a LuaTable object."
+                );
+            } else {
+                return tstl.createTableExpression();
+            }
         }
 
         return tstl.createCallExpression(

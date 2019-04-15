@@ -5,12 +5,24 @@ const tableLib = `
 /** @LuaTable */
 declare class Table<K extends {} = {}, V = any> {
     length: number;
+    constructor(notAllowed?: boolean);
     set(key?: K, value?: V): void;
     get(key?: K): V;
     other(): void;
 }
 declare let tbl: Table;
 `;
+
+test("LuaTables cannot be constructed with arguments", () => {
+    expect(() =>
+        util.transpileString(tableLib + `const table = new Table(true);`),
+    ).toThrowExactError(
+        TSTLErrors.ForbiddenLuaTableUseException(
+            util.nodeStub,
+            "No parameters are allowed when constructing a LuaTable object.",
+        ),
+    );
+});
 
 test("LuaTable set() cannot be used in an expression position", () => {
     expect(() =>

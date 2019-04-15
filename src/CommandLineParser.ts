@@ -222,11 +222,8 @@ export function parseConfigFileWithSystem(
     commandLineOptions?: CompilerOptions,
     system = ts.sys
 ): ParsedCommandLine {
-    const { config, error } = ts.readConfigFile(configFileName, system.readFile);
-    if (error) return { options: {}, fileNames: [], errors: [error] };
-
-    const parsedConfigFile = ts.parseJsonConfigFileContent(
-        config,
+    const parsedConfigFile = ts.parseJsonSourceFileConfigFileContent(
+        ts.readJsonConfigFile(configFileName, system.readFile),
         system,
         path.dirname(configFileName),
         commandLineOptions,

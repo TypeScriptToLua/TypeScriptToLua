@@ -11,6 +11,7 @@ module.exports = {
     ],
     watchPathIgnorePatterns: ["/watch\\.ts$"],
 
+    setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
     testEnvironment: "node",
     testRunner: "jest-circus/runner",
     preset: "ts-jest",

@@ -12,7 +12,7 @@ describe("command line", () => {
         const commandLine = "--project tsconfig.json --noHeader -t es3 -lt 5.3";
         const result = tstl.parseCommandLine(commandLine.split(" "));
 
-        expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+        expect(result.errors).not.toHaveDiagnostics();
         expect(result.options).toEqual({
             project: "tsconfig.json",
             noHeader: true,
@@ -24,14 +24,14 @@ describe("command line", () => {
     test("should error on invalid options", () => {
         const result = tstl.parseCommandLine(["--invalidArgument"]);
 
-        expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+        expect(result.errors).toHaveDiagnostics();
     });
 
     describe("enum options", () => {
         test("should parse enums", () => {
             const result = tstl.parseCommandLine(["--luaTarget", "5.1"]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua51);
         });
 
@@ -39,7 +39,7 @@ describe("command line", () => {
             for (const value of ["jit", "JiT", "JIT"]) {
                 const result = tstl.parseCommandLine(["--luaTarget", value]);
 
-                expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+                expect(result.errors).not.toHaveDiagnostics();
                 expect(result.options.luaTarget).toBe(tstl.LuaTarget.LuaJIT);
             }
         });
@@ -47,7 +47,7 @@ describe("command line", () => {
         test("should error on invalid value", () => {
             const result = tstl.parseCommandLine(["--luaTarget", "invalid"]);
 
-            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+            expect(result.errors).toHaveDiagnostics();
         });
     });
 
@@ -55,14 +55,14 @@ describe("command line", () => {
         test.each([true, false])("should parse booleans (%p)", value => {
             const result = tstl.parseCommandLine(["--noHeader", value.toString()]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(value);
         });
 
         test("should be case-sensitive", () => {
             const result = tstl.parseCommandLine(["--noHeader", "FALSE"]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(true);
             expect(result.fileNames).toEqual(["FALSE"]);
         });
@@ -70,14 +70,14 @@ describe("command line", () => {
         test("should be parsed without a value", () => {
             const result = tstl.parseCommandLine(["--noHeader"]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(true);
         });
 
         test("shouldn't parse following arguments as values", () => {
             const result = tstl.parseCommandLine(["--noHeader", "--noHoisting"]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(true);
             expect(result.options.noHoisting).toBe(true);
         });
@@ -85,7 +85,7 @@ describe("command line", () => {
         test("shouldn't parse following files as values", () => {
             const result = tstl.parseCommandLine(["--noHeader", "file.ts"]);
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(true);
         });
     });
@@ -110,7 +110,7 @@ describe("tsconfig", () => {
         test("should parse enums", () => {
             const result = parseConfigFileContent({ tstl: { luaTarget: "5.1" } });
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua51);
         });
 
@@ -118,7 +118,7 @@ describe("tsconfig", () => {
             for (const value of ["jit", "JiT", "JIT"]) {
                 const result = parseConfigFileContent({ tstl: { luaTarget: value } });
 
-                expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+                expect(result.errors).not.toHaveDiagnostics();
                 expect(result.options.luaTarget).toBe(tstl.LuaTarget.LuaJIT);
             }
         });
@@ -126,7 +126,7 @@ describe("tsconfig", () => {
         test("should error on invalid value", () => {
             const result = parseConfigFileContent({ tstl: { luaTarget: "invalid" } });
 
-            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+            expect(result.errors).toHaveDiagnostics();
         });
     });
 
@@ -134,14 +134,14 @@ describe("tsconfig", () => {
         test.each([true, false])("should parse booleans (%p)", value => {
             const result = parseConfigFileContent({ tstl: { noHeader: value } });
 
-            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(value);
         });
 
         test("shouldn't parse strings", () => {
             const result = parseConfigFileContent({ tstl: { noHeader: "true" } });
 
-            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+            expect(result.errors).toHaveDiagnostics();
             expect(result.options.noHeader).toBeUndefined();
         });
     });

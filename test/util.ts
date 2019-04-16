@@ -6,39 +6,6 @@ import * as tstl from "../src";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
-declare global {
-    namespace jest {
-        interface Matchers<R> {
-            toThrowExactError(error: Error): void;
-        }
-    }
-}
-
-expect.extend({
-    toThrowExactError(
-        callback: () => void,
-        error: Error,
-    ): { pass: boolean; message: () => string } {
-        if (this.isNot) {
-            return { pass: true, message: () => "Inverted toThrowExactError is not implemented" };
-        }
-
-        let executionError: Error | undefined;
-        try {
-            callback();
-        } catch (err) {
-            executionError = err;
-        }
-
-        // TODO:
-        if (expectToBeDefined(executionError)) {
-            expect(executionError.message).toContain(error.message);
-        }
-
-        return { pass: true, message: () => "" };
-    },
-});
-
 export function transpileString(
     str: string | { [filename: string]: string },
     options: tstl.CompilerOptions = {},
@@ -47,13 +14,8 @@ export function transpileString(
     const { diagnostics, file } = transpileStringResult(str, options);
     if (!expectToBeDefined(file) || !expectToBeDefined(file.lua)) return "";
 
-    const errors = diagnostics
-        .filter(d => d.category === ts.DiagnosticCategory.Error)
-        .filter(d => (ignoreDiagnostics ? d.code === 0 : true));
-
-    if (errors.length > 0) {
-        throw new Error(errors.map(d => d.messageText).join("\n"));
-    }
+    const errors = diagnostics.filter(diag => !ignoreDiagnostics || diag.code === 0);
+    expect(errors).not.toHaveDiagnostics();
 
     return file.lua.trim();
 }

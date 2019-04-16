@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { forkCli } from "./runner";
+import { forkCli } from "./run";
 
 let testsCleanup: Array<() => void> = [];
 afterEach(() => {

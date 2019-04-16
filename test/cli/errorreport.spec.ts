@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { runCli } from "./runner";
+import { runCli } from "./run";
 
 const srcFilePath = path.resolve(__dirname, "testfiles", "default_import.ts");
 const outFilePath = path.resolve(__dirname, "testfiles", "default_import.lua");

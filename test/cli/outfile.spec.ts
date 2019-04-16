@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { runCli } from "./runner";
+import { runCli } from "./run";
 
 const outFileRelPath = "./testfiles/out_file.script";
 const outFileAbsPath = path.join(__dirname, outFileRelPath);

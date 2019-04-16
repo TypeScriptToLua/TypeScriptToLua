@@ -1,6 +1,6 @@
 /dist
 /coverage
-/test/compiler/testfiles/invalid_syntax.ts
+/test/cli/testfiles/invalid_syntax.ts
 /test/translation/transformation/characterEscapeSequence.ts
 
 /src

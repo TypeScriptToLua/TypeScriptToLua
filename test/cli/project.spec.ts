@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { runCli } from "./runner";
+import { runCli } from "./run";
 
 /**
  * Find all files inside a dir, recursively.

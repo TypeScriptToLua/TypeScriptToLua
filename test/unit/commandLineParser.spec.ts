@@ -21,14 +21,14 @@ describe("command line", () => {
         });
     });
 
-    test("should error on invalid options", () => {
-        const result = tstl.parseCommandLine(["--invalidArgument"]);
+    test("should error on unknown options", () => {
+        const result = tstl.parseCommandLine(["--unknownOption"]);
 
         expect(result.errors).toHaveDiagnostics();
     });
 
     test("should parse options case-insensitively", () => {
-        const result = tstl.parseCommandLine(["--NOHEADER"]);
+        const result = tstl.parseCommandLine(["--NoHeader"]);
 
         expect(result.errors).not.toHaveDiagnostics();
         expect(result.options.noHeader).toBe(true);
@@ -106,18 +106,33 @@ describe("tsconfig", () => {
         return tstl.updateParsedConfigFile(ts.parseJsonConfigFileContent(config, ts.sys, ""));
     };
 
-    test("should support unscoped options", () => {
-        const unscoped = parseConfigFileContent({ noHeader: true });
-        const scoped = parseConfigFileContent({ tstl: { noHeader: true } });
+    test("should support root-level options", () => {
+        const rootLevel = parseConfigFileContent({ noHeader: true });
+        const namespaced = parseConfigFileContent({ tstl: { noHeader: true } });
 
-        expect(unscoped.options).toEqual(scoped.options);
+        expect(rootLevel.options).toEqual(namespaced.options);
+    });
+
+    test("should allow unknown root-level options", () => {
+        const result = parseConfigFileContent({ unknownOption: true });
+
+        expect(result.errors).not.toHaveDiagnostics();
+        expect(result.options.unknownOption).toBeUndefined();
+    });
+
+    test("should error on unknown namespaced options", () => {
+        const result = parseConfigFileContent({ tstl: { unknownOption: true } });
+
+        expect(result.errors).toHaveDiagnostics();
+        expect(result.options.unknownOption).toBeUndefined();
     });
 
     test("should parse options case-sensitively", () => {
-        const result = parseConfigFileContent({ tstl: { NOHEADER: true } });
+        const result = parseConfigFileContent({ tstl: { NoHeader: true } });
 
+        expect(result.errors).toHaveDiagnostics();
+        expect(result.options.NoHeader).toBeUndefined();
         expect(result.options.noHeader).toBeUndefined();
-        expect(result.options.NOHEADER).toBeUndefined();
     });
 
     describe("enum options", () => {

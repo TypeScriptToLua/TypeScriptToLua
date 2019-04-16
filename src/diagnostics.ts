@@ -15,7 +15,7 @@ export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
 const createCommandLineError = <Args extends any[]>(
     code: number,
     getMessage: (...args: Args) => string
-) => (...args: Args) => ({
+) => (...args: Args): ts.Diagnostic => ({
     file: undefined,
     start: undefined,
     length: undefined,
@@ -23,6 +23,11 @@ const createCommandLineError = <Args extends any[]>(
     code,
     messageText: getMessage(...args),
 });
+
+export const unknownCompilerOption = createCommandLineError(
+    5023,
+    (name: string) => `Unknown compiler option '${name}'.`
+);
 
 export const compilerOptionRequiresAValueOfType = createCommandLineError(
     5024,

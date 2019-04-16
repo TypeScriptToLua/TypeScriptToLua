@@ -101,7 +101,10 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
     if (parsedConfigFile.raw.tstl) {
         for (const key in parsedConfigFile.raw.tstl) {
             const option = optionDeclarations.find(option => option.name === key);
-            if (!option) continue;
+            if (!option) {
+                parsedConfigFile.errors.push(diagnostics.unknownCompilerOption(key));
+                continue;
+            }
 
             const { error, value } = readValue(option, parsedConfigFile.raw.tstl[key]);
             if (error) parsedConfigFile.errors.push(error);

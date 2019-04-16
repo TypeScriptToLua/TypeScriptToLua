@@ -279,3 +279,19 @@ test("Import hoisting (side-effect)", () => {
     const code = "return bar;";
     expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
 });
+
+test("Import hoisted before function", () => {
+    const importCode = `
+        let bar: any;
+        import {foo} from "myMod";
+        baz();
+        function baz() {
+            bar = foo;
+        }`;
+    const luaHeader = `
+        package.loaded["myMod"] = {foo = "foobar"}
+        ${util.transpileString(importCode)}`;
+    const tsHeader = "declare const bar: any;";
+    const code = "return bar;";
+    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+});

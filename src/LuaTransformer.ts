@@ -4978,11 +4978,11 @@ export class LuaTransformer {
 
         const scope = this.peekScope();
 
-        let result = this.hoistImportStatements(scope, statements);
-
-        result = this.hoistFunctionDefinitions(scope, result);
+        let result = this.hoistFunctionDefinitions(scope, statements);
 
         result = this.hoistVariableDeclarations(scope, result);
+
+        result = this.hoistImportStatements(scope, result);
 
         return result;
     }

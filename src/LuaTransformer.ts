@@ -274,13 +274,13 @@ export class LuaTransformer {
                 statement.moduleSpecifier
             );
 
-            const importResult = this.transformImportDeclaration(importDeclaration);
-
-            const result = Array.isArray(importResult) ? importResult : [importResult];
+            // Wrap in block to prevent imports from hoisting out of `do` statement
+            const block = ts.createBlock([importDeclaration]);
+            const importResult = this.transformBlock(block).statements;
 
             // Now the module is imported, add the imports to the export table
             for (const exportVariable of statement.exportClause.elements) {
-                result.push(
+                importResult.push(
                     tstl.createAssignmentStatement(
                         this.createExportedIdentifier(this.transformIdentifier(exportVariable.name)),
                         this.transformIdentifier(exportVariable.name)
@@ -289,7 +289,7 @@ export class LuaTransformer {
             }
 
             // Wrap this in a DoStatement to prevent polluting the scope.
-            return tstl.createDoStatement(this.filterUndefined(result), statement);
+            return tstl.createDoStatement(this.filterUndefined(importResult), statement);
         } else {
             const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             const tempModuleIdentifier = tstl.createIdentifier("__TSTL_export");

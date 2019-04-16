@@ -243,3 +243,39 @@ test.each([
         TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier)),
     );
 });
+
+test("Import hoisting (named)", () => {
+    const importCode = `
+        const bar = foo;
+        import {foo} from "myMod";`;
+    const luaHeader = `
+        package.loaded["myMod"] = {foo = "foobar"}
+        ${util.transpileString(importCode)}`;
+    const tsHeader = "declare const bar: any;";
+    const code = "return bar;";
+    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+});
+
+test("Import hoisting (namespace)", () => {
+    const importCode = `
+        const bar = myMod.foo;
+        import * as myMod from "myMod";`;
+    const luaHeader = `
+        package.loaded["myMod"] = {foo = "foobar"}
+        ${util.transpileString(importCode)}`;
+    const tsHeader = "declare const bar: any;";
+    const code = "return bar;";
+    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+});
+
+test("Import hoisting (side-effect)", () => {
+    const importCode = `
+        const bar = foo;
+        import "myMod";`;
+    const luaHeader = `
+        package.loaded["myMod"] = {_ = (function() foo = "foobar" end)()}
+        ${util.transpileString(importCode)}`;
+    const tsHeader = "declare const bar: any;";
+    const code = "return bar;";
+    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+});

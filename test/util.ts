@@ -77,7 +77,7 @@ export function transpileStringResult(
         ...options,
     };
 
-    const { diagnostics, transpiledFiles } = tstl.transpileVirtualProgram(
+    const { diagnostics, transpiledFiles } = tstl.transpileVirtualProject(
         typeof input === "string" ? { "main.ts": input } : input,
         optionsWithDefaults,
     );

@@ -86,20 +86,7 @@ export function createVirtualProgram(
     return ts.createProgram(Object.keys(input), options, compilerHost);
 }
 
-export interface TranspileStringResult {
-    diagnostics: ts.Diagnostic[];
-    file?: TranspiledFile;
-}
-
-export function transpileString(
-    main: string,
-    options: CompilerOptions = {}
-): TranspileStringResult {
-    const { diagnostics, transpiledFiles } = transpileVirtualProgram({ "main.ts": main }, options);
-    return { diagnostics, file: transpiledFiles.get("main.ts") };
-}
-
-export function transpileVirtualProgram(
+export function transpileVirtualProject(
     files: Record<string, string>,
     options: CompilerOptions = {}
 ): TranspilationResult {
@@ -111,4 +98,17 @@ export function transpileVirtualProgram(
     ]);
 
     return { ...transpileOutput, diagnostics: [...allDiagnostics] };
+}
+
+export interface TranspileStringResult {
+    diagnostics: ts.Diagnostic[];
+    file?: TranspiledFile;
+}
+
+export function transpileString(
+    main: string,
+    options: CompilerOptions = {}
+): TranspileStringResult {
+    const { diagnostics, transpiledFiles } = transpileVirtualProject({ "main.ts": main }, options);
+    return { diagnostics, file: transpiledFiles.get("main.ts") };
 }

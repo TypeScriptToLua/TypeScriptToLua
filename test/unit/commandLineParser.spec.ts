@@ -1,106 +1,148 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
 
-test.each([
-    { args: ["--luaLibImport", "none"], expected: tstl.LuaLibImportKind.None },
-    { args: ["--luaLibImport", "always"], expected: tstl.LuaLibImportKind.Always },
-    { args: ["--luaLibImport", "inline"], expected: tstl.LuaLibImportKind.Inline },
-    { args: ["--luaLibImport", "require"], expected: tstl.LuaLibImportKind.Require },
-    { args: ["--luaLibImport", "NoNe"], expected: tstl.LuaLibImportKind.None },
-])("CLI parser luaLibImportKind (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
+describe("command line", () => {
+    test("should support aliases", () => {
+        const full = tstl.parseCommandLine(["--luaTarget", "5.1"]);
+        const alias = tstl.parseCommandLine(["-lt", "5.1"]);
+        expect(full).toEqual(alias);
+    });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.luaLibImport).toBe(expected);
+    test("should support standard typescript options", () => {
+        const commandLine = "--project tsconfig.json --noHeader -t es3 -lt 5.3";
+        const result = tstl.parseCommandLine(commandLine.split(" "));
+
+        expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+        expect(result.options).toEqual({
+            project: "tsconfig.json",
+            noHeader: true,
+            target: ts.ScriptTarget.ES3,
+            luaTarget: tstl.LuaTarget.Lua53,
+        });
+    });
+
+    test("should error on invalid options", () => {
+        const result = tstl.parseCommandLine(["--invalidArgument"]);
+
+        expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+    });
+
+    describe("enum options", () => {
+        test("should parse enums", () => {
+            const result = tstl.parseCommandLine(["--luaTarget", "5.1"]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua51);
+        });
+
+        test("should be case-insensitive", () => {
+            for (const value of ["jit", "JiT", "JIT"]) {
+                const result = tstl.parseCommandLine(["--luaTarget", value]);
+
+                expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+                expect(result.options.luaTarget).toBe(tstl.LuaTarget.LuaJIT);
+            }
+        });
+
+        test("should error on invalid value", () => {
+            const result = tstl.parseCommandLine(["--luaTarget", "invalid"]);
+
+            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+        });
+    });
+
+    describe("boolean options", () => {
+        test.each([true, false])("should parse booleans (%p)", value => {
+            const result = tstl.parseCommandLine(["--noHeader", value.toString()]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(value);
+        });
+
+        test("should be case-sensitive", () => {
+            const result = tstl.parseCommandLine(["--noHeader", "FALSE"]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(true);
+            expect(result.fileNames).toEqual(["FALSE"]);
+        });
+
+        test("should be parsed without a value", () => {
+            const result = tstl.parseCommandLine(["--noHeader"]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(true);
+        });
+
+        test("shouldn't parse following arguments as values", () => {
+            const result = tstl.parseCommandLine(["--noHeader", "--noHoisting"]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(true);
+            expect(result.options.noHoisting).toBe(true);
+        });
+
+        test("shouldn't parse following files as values", () => {
+            const result = tstl.parseCommandLine(["--noHeader", "file.ts"]);
+
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(true);
+        });
+    });
 });
 
-test("CLI parser invalid luaLibImportKind", () => {
-    const result = tstl.parseCommandLine(["--luaLibImport", "invalid"]);
-    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
-});
+describe("tsconfig", () => {
+    const parseConfigFileContent = (config: any) => {
+        // Specifying `files` option disables automatic file searching, that includes all files in
+        // the project, making these tests slow. Empty file list is considered as an error.
+        config.files = ["src/index.ts"];
+        return tstl.updateParsedConfigFile(ts.parseJsonConfigFileContent(config, ts.sys, ""));
+    };
 
-test.each([
-    { args: ["--luaTarget", "5.1"], expected: tstl.LuaTarget.Lua51 },
-    { args: ["--luaTarget", "5.2"], expected: tstl.LuaTarget.Lua52 },
-    { args: ["--luaTarget", "jit"], expected: tstl.LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "JiT"], expected: tstl.LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "JIT"], expected: tstl.LuaTarget.LuaJIT },
-    { args: ["--luaTarget", "5.3"], expected: tstl.LuaTarget.Lua53 },
-])("CLI parser luaTarget (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
+    test("should support unscoped options", () => {
+        const unscoped = parseConfigFileContent({ noHeader: true });
+        const scoped = parseConfigFileContent({ tstl: { noHeader: true } });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.luaTarget).toBe(expected);
-});
+        expect(unscoped.options).toEqual(scoped.options);
+    });
 
-test.each([
-    { args: ["-lt", "5.1"], expected: tstl.LuaTarget.Lua51 },
-    { args: ["-lt", "5.2"], expected: tstl.LuaTarget.Lua52 },
-    { args: ["-lt", "jit"], expected: tstl.LuaTarget.LuaJIT },
-    { args: ["-lt", "JIT"], expected: tstl.LuaTarget.LuaJIT },
-    { args: ["-lt", "5.3"], expected: tstl.LuaTarget.Lua53 },
-])("CLI parser luaTarget (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
+    describe("enum options", () => {
+        test("should parse enums", () => {
+            const result = parseConfigFileContent({ tstl: { luaTarget: "5.1" } });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.luaTarget).toBe(expected);
-});
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua51);
+        });
 
-test("CLI parser invalid luaTarget", () => {
-    const result = tstl.parseCommandLine(["--luaTarget", "invalid"]);
+        test("should be case-insensitive", () => {
+            for (const value of ["jit", "JiT", "JIT"]) {
+                const result = parseConfigFileContent({ tstl: { luaTarget: value } });
 
-    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
-});
+                expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+                expect(result.options.luaTarget).toBe(tstl.LuaTarget.LuaJIT);
+            }
+        });
 
-test.each([
-    { args: ["--noHeader", "true"], expected: true },
-    { args: ["--noHeader", "false"], expected: false },
-    { args: ["--noHeader"], expected: true },
-    { args: ["--noHeader", "--noHoisting"], expected: true },
-])("CLI parser noHeader (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
+        test("should error on invalid value", () => {
+            const result = parseConfigFileContent({ tstl: { luaTarget: "invalid" } });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.noHeader).toBe(expected);
-});
+            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+        });
+    });
 
-test.each([
-    { args: ["--noHoisting", "true"], expected: true },
-    { args: ["--noHoisting", "false"], expected: false },
-    { args: ["--noHoisting"], expected: true },
-    { args: ["--noHoisting", "--noHeader"], expected: true },
-])("CLI parser noHoisting (%p)", ({ args, expected }) => {
-    const result = tstl.parseCommandLine(args);
+    describe("boolean options", () => {
+        test.each([true, false])("should parse booleans (%p)", value => {
+            const result = parseConfigFileContent({ tstl: { noHeader: value } });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.noHoisting).toBe(expected);
-});
+            expect(result.errors.map(err => err.messageText)).toHaveLength(0);
+            expect(result.options.noHeader).toBe(value);
+        });
 
-test("CLI Parser Multiple Options", () => {
-    const commandLine = "--project tsconfig.json --noHeader --noHoisting -lt 5.3";
-    const result = tstl.parseCommandLine(commandLine.split(" "));
+        test("shouldn't parse strings", () => {
+            const result = parseConfigFileContent({ tstl: { noHeader: "true" } });
 
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.project).toBe("tsconfig.json");
-    expect(result.options.noHeader).toBe(true);
-    expect(result.options.noHoisting).toBe(true);
-    expect(result.options.luaTarget).toBe(tstl.LuaTarget.Lua53);
-});
-
-test("CLI parser invalid argument", () => {
-    const result = tstl.parseCommandLine(["--invalidArgument"]);
-
-    expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
-});
-
-test.each([
-    { tsConfig: `{ noHeader: true }`, expected: true },
-    { tsConfig: `{ tstl: { noHeader: true } }`, expected: true },
-])("TsConfig noHeader (%p)", ({ tsConfig, expected }) => {
-    const configJson = ts.parseConfigFileTextToJson("", tsConfig);
-    const parsedJsonConfig = ts.parseJsonConfigFileContent(configJson.config, ts.sys, "");
-    const result = tstl.updateParsedConfigFile(parsedJsonConfig);
-
-    expect(result.errors.map(err => err.messageText)).toHaveLength(0);
-    expect(result.options.noHeader).toBe(expected);
+            expect(result.errors.map(err => err.messageText)).not.toHaveLength(0);
+            expect(result.options.noHeader).toBeUndefined();
+        });
+    });
 });

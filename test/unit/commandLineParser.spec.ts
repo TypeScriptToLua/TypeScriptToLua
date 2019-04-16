@@ -27,6 +27,13 @@ describe("command line", () => {
         expect(result.errors).toHaveDiagnostics();
     });
 
+    test("should parse options case-insensitively", () => {
+        const result = tstl.parseCommandLine(["--NOHEADER"]);
+
+        expect(result.errors).not.toHaveDiagnostics();
+        expect(result.options.noHeader).toBe(true);
+    });
+
     describe("enum options", () => {
         test("should parse enums", () => {
             const result = tstl.parseCommandLine(["--luaTarget", "5.1"]);
@@ -104,6 +111,13 @@ describe("tsconfig", () => {
         const scoped = parseConfigFileContent({ tstl: { noHeader: true } });
 
         expect(unscoped.options).toEqual(scoped.options);
+    });
+
+    test("should parse options case-sensitively", () => {
+        const result = parseConfigFileContent({ tstl: { NOHEADER: true } });
+
+        expect(result.options.noHeader).toBeUndefined();
+        expect(result.options.NOHEADER).toBeUndefined();
     });
 
     describe("enum options", () => {

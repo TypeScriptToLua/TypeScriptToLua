@@ -24,7 +24,7 @@ function updateReportDiagnostic(options?: ts.CompilerOptions): void {
     reportDiagnostic = createDiagnosticReporter(shouldBePretty(options));
 }
 
-export function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefined {
+function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefined {
     const { project } = commandLine.options;
     if (!project) {
         if (commandLine.fileNames.length === 0) {

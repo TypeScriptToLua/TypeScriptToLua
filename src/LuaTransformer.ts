@@ -342,7 +342,7 @@ export class LuaTransformer {
         if (!statement.importClause) {
             const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             result.push(tstl.createExpressionStatement(requireCall));
-            if (scope !== undefined && scope.importStatements) {
+            if (scope.importStatements) {
                 scope.importStatements.push(...result);
                 return undefined;
             } else {
@@ -398,7 +398,7 @@ export class LuaTransformer {
                     result.push(namedImport);
                 }
             });
-            if (scope !== undefined && scope.importStatements) {
+            if (scope.importStatements) {
                 scope.importStatements.push(...result);
                 return undefined;
             } else {
@@ -412,7 +412,7 @@ export class LuaTransformer {
                 statement
             );
             result.push(requireStatement);
-            if (scope !== undefined && scope.importStatements) {
+            if (scope.importStatements) {
                 scope.importStatements.push(...result);
                 return undefined;
             } else {

@@ -5,8 +5,9 @@ jest.setTimeout(20000);
 
 const cliPath = path.join(__dirname, "../../src/tstl.ts");
 
+const defaultArgs = ["--skipLibCheck", "--types", "node"];
 export function forkCli(args: string[]): ChildProcess {
-    return fork(cliPath, args, {
+    return fork(cliPath, [...defaultArgs, ...args], {
         stdio: "pipe",
         execArgv: ["--require", "ts-node/register/transpile-only"],
     });

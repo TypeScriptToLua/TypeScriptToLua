@@ -329,6 +329,9 @@ export class LuaTransformer {
         const result: tstl.Statement[] = [];
 
         const scope = this.peekScope();
+        if (scope === undefined) {
+            throw TSTLErrors.UndefinedScope();
+        }
         if (!this.options.noHoisting && !scope.importStatements) {
             scope.importStatements = [];
         }
@@ -1756,6 +1759,9 @@ export class LuaTransformer {
         // Remember symbols referenced in this function for hoisting later
         if (!this.options.noHoisting && name.symbolId !== undefined) {
             const scope = this.peekScope();
+            if (scope === undefined) {
+                throw TSTLErrors.UndefinedScope();
+            }
             if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
             const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
             scope.functionDefinitions.set(name.symbolId, functionInfo);
@@ -2309,7 +2315,11 @@ export class LuaTransformer {
         this.pushScope(ScopeType.Switch, statement);
 
         // Give the switch a unique name to prevent nested switches from acting up.
-        const switchName = `____TS_switch${this.peekScope().id}`;
+        const scope = this.peekScope();
+        if (scope === undefined) {
+            throw TSTLErrors.UndefinedScope();
+        }
+        const switchName = `____TS_switch${scope.id}`;
 
         const expression = this.transformExpression(statement.expression);
         const switchVariable = tstl.createIdentifier(switchName);
@@ -4658,7 +4668,10 @@ export class LuaTransformer {
             // Remember function definitions for hoisting later
             const functionSymbolId = (lhs as tstl.Identifier).symbolId;
             const scope = this.peekScope();
-            if (functionSymbolId && scope && scope.functionDefinitions) {
+            if (scope === undefined) {
+                throw TSTLErrors.UndefinedScope();
+            }
+            if (functionSymbolId && scope.functionDefinitions) {
                 const definitions = scope.functionDefinitions.get(functionSymbolId);
                 if (definitions) {
                     definitions.definition = declaration || assignment;
@@ -4834,7 +4847,7 @@ export class LuaTransformer {
         return this.scopeStack.slice().reverse().find(s => (scopeTypes & s.type) !== 0);
     }
 
-    protected peekScope(): Scope {
+    protected peekScope(): Scope | undefined {
         return this.scopeStack[this.scopeStack.length - 1];
     }
 
@@ -4977,6 +4990,9 @@ export class LuaTransformer {
         }
 
         const scope = this.peekScope();
+        if (scope === undefined) {
+            throw TSTLErrors.UndefinedScope();
+        }
 
         let result = this.hoistFunctionDefinitions(scope, statements);
 
@@ -5008,6 +5024,9 @@ export class LuaTransformer {
         const declaration = tstl.createVariableDeclarationStatement(variable, initializer, tsOriginal, parent);
         if (!this.options.noHoisting && variable.symbolId) {
             const scope = this.peekScope();
+            if (scope === undefined) {
+                throw TSTLErrors.UndefinedScope();
+            }
             if (!scope.variableDeclarations) { scope.variableDeclarations = []; }
             scope.variableDeclarations.push(declaration);
         }

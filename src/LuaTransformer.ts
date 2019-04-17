@@ -34,6 +34,7 @@ interface Scope {
     referencedSymbols?: Set<tstl.SymbolId>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
+    importStatements?: tstl.Statement[];
     loopContinued?: boolean;
 }
 
@@ -273,9 +274,9 @@ export class LuaTransformer {
                 statement.moduleSpecifier
             );
 
-            const importResult = this.transformImportDeclaration(importDeclaration);
-
-            const result = Array.isArray(importResult) ? importResult : [importResult];
+            // Wrap in block to prevent imports from hoisting out of `do` statement
+            const block = ts.createBlock([importDeclaration]);
+            const result = this.transformBlock(block).statements;
 
             // Now the module is imported, add the imports to the export table
             for (const exportVariable of statement.exportClause.elements) {
@@ -327,13 +328,23 @@ export class LuaTransformer {
 
         const result: tstl.Statement[] = [];
 
+        const scope = this.peekScope();
+        if (!this.options.noHoisting && !scope.importStatements) {
+            scope.importStatements = [];
+        }
+
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp("\"", "g"), "");
 
         if (!statement.importClause) {
             const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             result.push(tstl.createExpressionStatement(requireCall));
-            return result;
+            if (scope.importStatements) {
+                scope.importStatements.push(...result);
+                return undefined;
+            } else {
+                return result;
+            }
         }
 
         const imports = statement.importClause.namedBindings;
@@ -369,30 +380,41 @@ export class LuaTransformer {
                 if (importSpecifier.propertyName) {
                     const propertyIdentifier = this.transformIdentifier(importSpecifier.propertyName);
                     const propertyName = tstl.createStringLiteral(propertyIdentifier.text);
-                    const renamedImport = this.createHoistableVariableDeclarationStatement(
-                        importSpecifier.name,
+                    const renamedImport = tstl.createVariableDeclarationStatement(
+                        this.transformIdentifier(importSpecifier.name),
                         tstl.createTableIndexExpression(importUniqueName, propertyName),
                         importSpecifier);
                     result.push(renamedImport);
                 } else {
                     const name = tstl.createStringLiteral(importSpecifier.name.text);
-                    const namedImport = this.createHoistableVariableDeclarationStatement(
-                        importSpecifier.name,
+                    const namedImport = tstl.createVariableDeclarationStatement(
+                        this.transformIdentifier(importSpecifier.name),
                         tstl.createTableIndexExpression(importUniqueName, name),
                         importSpecifier
                     );
                     result.push(namedImport);
                 }
             });
-            return result;
+            if (scope.importStatements) {
+                scope.importStatements.push(...result);
+                return undefined;
+            } else {
+                return result;
+            }
+
         } else if (ts.isNamespaceImport(imports)) {
-            const requireStatement = this.createHoistableVariableDeclarationStatement(
-                imports.name,
+            const requireStatement = tstl.createVariableDeclarationStatement(
+                this.transformIdentifier(imports.name),
                 requireCall,
                 statement
             );
             result.push(requireStatement);
-            return result;
+            if (scope.importStatements) {
+                scope.importStatements.push(...result);
+                return undefined;
+            } else {
+                return result;
+            }
         }
     }
 
@@ -4882,6 +4904,14 @@ export class LuaTransformer {
         }
     }
 
+    protected hoistImportStatements(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+        if (!scope.importStatements) {
+            return statements;
+        }
+
+        return [...scope.importStatements, ...statements];
+    }
+
     protected hoistFunctionDefinitions(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
         if (!scope.functionDefinitions) {
             return statements;
@@ -4951,6 +4981,8 @@ export class LuaTransformer {
         let result = this.hoistFunctionDefinitions(scope, statements);
 
         result = this.hoistVariableDeclarations(scope, result);
+
+        result = this.hoistImportStatements(scope, result);
 
         return result;
     }

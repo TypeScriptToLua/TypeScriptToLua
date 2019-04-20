@@ -112,7 +112,6 @@ export function getTranspileOutput({
                 updateTranspiledFile(sourceFile.fileName, { lua, sourceMap });
             }
         } catch (err) {
-            /* istanbul ignore if: Testing it would require to add a bug/exception to our code */
             if (!(err instanceof TranspileError)) throw err;
 
             diagnostics.push({

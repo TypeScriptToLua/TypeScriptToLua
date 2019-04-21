@@ -18,32 +18,23 @@ export function emitTranspiledFiles(
 ): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 
-    if (rootDir === undefined) {
-        const configFileName = options.configFilePath as string | undefined;
-        // TODO: Use getCommonSourceDirectory
-        rootDir = configFileName ? path.dirname(configFileName) : process.cwd();
-    }
+    const configFileName = options.configFilePath as string | undefined;
+    // TODO: Use getCommonSourceDirectory
+    const baseDir = configFileName ? path.dirname(configFileName) : process.cwd();
 
-    if (outDir === undefined) {
-        outDir = rootDir;
-    }
+    rootDir = rootDir || baseDir;
+    outDir = outDir ? path.resolve(baseDir, outDir) : rootDir;
 
     const files: OutputFile[] = [];
     for (const [fileName, { lua, sourceMap, declaration, declarationMap }] of transpiledFiles) {
         let outPath = fileName;
         if (outDir !== rootDir) {
-            const relativeSourcePath = path.resolve(fileName).replace(path.resolve(rootDir), "");
-            outPath = path.join(outDir, relativeSourcePath);
+            outPath = path.resolve(outDir, path.relative(rootDir, fileName));
         }
 
         // change extension or rename to outFile
         if (outFile) {
-            if (path.isAbsolute(outFile)) {
-                outPath = outFile;
-            } else {
-                // append to workingDir or outDir
-                outPath = path.resolve(outDir, outFile);
-            }
+            outPath = path.isAbsolute(outFile) ? outFile : path.resolve(baseDir, outFile);
         } else {
             outPath = trimExt(outPath) + ".lua";
         }
@@ -75,10 +66,9 @@ export function emitTranspiledFiles(
             );
         }
 
-        let outPath = path.resolve(path.join(rootDir, "lualib_bundle.lua"));
+        let outPath = path.resolve(rootDir, "lualib_bundle.lua");
         if (outDir !== rootDir) {
-            const relativeSourcePath = path.resolve(outPath).replace(path.resolve(rootDir), "");
-            outPath = path.join(outDir, relativeSourcePath);
+            outPath = path.join(outDir, path.relative(rootDir, outPath));
         }
 
         files.push({ name: normalizeSlashes(outPath), text: lualibContent });

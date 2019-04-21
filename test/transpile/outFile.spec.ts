@@ -30,3 +30,15 @@ test("should support outFile with declaration", () => {
     expect(diagnostics).not.toHaveDiagnostics();
     expect(emittedFiles).toEqual(["output.d.ts", "output.script"]);
 });
+
+test("should resolve outFile relative to base directory", () => {
+    jest.spyOn(process, "cwd").mockReturnValue(__dirname);
+    const { diagnostics, emittedFiles, emitResult } = buildVirtualProject([inputFilePath], {
+        outFile: "output.script",
+        outDir: "out",
+        declaration: true,
+    });
+
+    expect(diagnostics).not.toHaveDiagnostics();
+    expect(emittedFiles).toEqual(["output.d.ts", "output.script"]);
+});

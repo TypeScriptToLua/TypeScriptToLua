@@ -96,6 +96,32 @@ describe("command line", () => {
             expect(result.options.noHeader).toBe(true);
         });
     });
+
+    describe("integration", () => {
+        test.each<[string, string, tstl.CompilerOptions]>([
+            ["noHeader", "false", { noHeader: false }],
+            ["noHeader", "true", { noHeader: true }],
+            ["noHoisting", "false", { noHoisting: false }],
+            ["noHoisting", "true", { noHoisting: true }],
+            ["sourceMapTraceback", "false", { sourceMapTraceback: false }],
+            ["sourceMapTraceback", "true", { sourceMapTraceback: true }],
+
+            ["luaLibImport", "none", { luaLibImport: tstl.LuaLibImportKind.None }],
+            ["luaLibImport", "always", { luaLibImport: tstl.LuaLibImportKind.Always }],
+            ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
+            ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
+
+            ["luaTarget", "5.1", { luaTarget: tstl.LuaTarget.Lua51 }],
+            ["luaTarget", "5.2", { luaTarget: tstl.LuaTarget.Lua52 }],
+            ["luaTarget", "5.3", { luaTarget: tstl.LuaTarget.Lua53 }],
+            ["luaTarget", "jit", { luaTarget: tstl.LuaTarget.LuaJIT }],
+        ])("--%s %s", (optionName, value, expected) => {
+            const result = tstl.parseCommandLine([`--${optionName}`, value]);
+
+            expect(result.errors).not.toHaveDiagnostics();
+            expect(result.options).toEqual(expected);
+        });
+    });
 });
 
 describe("tsconfig", () => {

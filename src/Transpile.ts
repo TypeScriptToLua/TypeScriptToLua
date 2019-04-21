@@ -61,7 +61,7 @@ export function transpile({
     printer,
     transformer,
 }: TranspileOptions): TranspileResult {
-    const options = program.getCompilerOptions();
+    const options = program.getCompilerOptions() as CompilerOptions;
     printer = printer || new LuaPrinter(options);
     transformer = transformer || new LuaTransformer(program, options);
 

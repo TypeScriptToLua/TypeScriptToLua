@@ -211,7 +211,7 @@ function updateWatchCompilationHost(
 
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
-        const options = builderProgram.getCompilerOptions();
+        const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
 
         let configFileParsingDiagnostics: ts.Diagnostic[] = [];
         const configFile = options.configFile as ts.TsConfigSourceFile | undefined;

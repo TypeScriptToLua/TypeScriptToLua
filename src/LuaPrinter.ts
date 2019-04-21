@@ -10,7 +10,6 @@ import { TSHelper as tsHelper } from "./TSHelper";
 type SourceChunk = string | SourceNode;
 
 export class LuaPrinter {
-    /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
         [tstl.SyntaxKind.AdditionOperator]: "+",
         [tstl.SyntaxKind.SubractionOperator]: "-",
@@ -38,7 +37,6 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };
-    /* tslint:enable:object-literal-sort-keys */
 
     private options: CompilerOptions;
     private currentIndent: string;
@@ -122,18 +120,15 @@ export class LuaPrinter {
         }
 
         if (luaLibFeatures) {
+            const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
             // Require lualib bundle
-            if ((this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
-                || this.options.luaLibImport === LuaLibImportKind.Always)
+            if ((luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
+                || luaLibImport === LuaLibImportKind.Always)
             {
                 header += `require("lualib_bundle");\n`;
             }
             // Inline lualib features
-            else if (
-                (this.options.luaLibImport === undefined ||
-                    this.options.luaLibImport === LuaLibImportKind.Inline) &&
-                luaLibFeatures.size > 0
-            ) {
+            else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
                 header += LuaLib.loadFeatures(luaLibFeatures);
             }

@@ -21,7 +21,6 @@ export function transpileFiles(
     const program = ts.createProgram(rootNames, options);
     const { transpiledFiles, diagnostics: transpileDiagnostics } = getTranspilationResult({
         program,
-        options,
     });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
@@ -94,7 +93,7 @@ export function transpileVirtualProject(
     options: CompilerOptions = {}
 ): TranspilationResult {
     const program = createVirtualProgram(files, options);
-    const result = getTranspilationResult({ program, options });
+    const result = getTranspilationResult({ program });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...result.diagnostics,

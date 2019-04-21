@@ -48,7 +48,6 @@ export interface TranspilationResult {
 
 export interface GetTranspilationResultOptions {
     program: ts.Program;
-    options: CompilerOptions;
     customTransformers?: ts.CustomTransformers;
     sourceFiles?: ts.SourceFile[];
     printer?: LuaPrinter;
@@ -57,13 +56,14 @@ export interface GetTranspilationResultOptions {
 
 export function getTranspilationResult({
     program,
-    options,
     customTransformers = {},
     sourceFiles: targetSourceFiles,
-    printer = new LuaPrinter(options),
-    transformer = new LuaTransformer(program, options),
+    printer,
+    transformer,
 }: GetTranspilationResultOptions): TranspilationResult {
-    const { noEmit, emitDeclarationOnly, noEmitOnError } = options;
+    const options = program.getCompilerOptions();
+    printer = printer || new LuaPrinter(options);
+    transformer = transformer || new LuaTransformer(program, options);
 
     const diagnostics: ts.Diagnostic[] = [];
     const transpiledFiles = new Map<string, TranspiledFile>();
@@ -75,7 +75,7 @@ export function getTranspilationResult({
         }
     };
 
-    if (noEmitOnError) {
+    if (options.noEmitOnError) {
         const preEmitDiagnostics = [
             ...program.getOptionsDiagnostics(),
             ...program.getGlobalDiagnostics(),
@@ -102,9 +102,9 @@ export function getTranspilationResult({
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         try {
-            const [luaAST, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
-            if (!noEmit && !emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(
+            const [luaAST, lualibFeatureSet] = transformer!.transformSourceFile(sourceFile);
+            if (!options.noEmit && !options.emitDeclarationOnly) {
+                const [lua, sourceMap] = printer!.print(
                     luaAST,
                     lualibFeatureSet,
                     sourceFile.fileName
@@ -146,13 +146,12 @@ export function getTranspilationResult({
 
     const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
         sourceFile.flags & ts.NodeFlags.JsonFile &&
-        !emitDeclarationOnly &&
+        !options.emitDeclarationOnly &&
         !program.isSourceFileFromExternalLibrary(sourceFile);
 
     // We always have to emit to get transformer diagnostics
-    const programOptions = program.getCompilerOptions();
-    const programNoEmit = programOptions.noEmit;
-    programOptions.noEmit = false;
+    const oldNoEmit = options.noEmit;
+    options.noEmit = false;
 
     if (targetSourceFiles) {
         for (const sourceFile of targetSourceFiles) {
@@ -177,9 +176,9 @@ export function getTranspilationResult({
             .forEach(processSourceFile);
     }
 
-    programOptions.noEmit = programNoEmit;
+    options.noEmit = oldNoEmit;
 
-    if (noEmit || (noEmitOnError && diagnostics.length > 0)) {
+    if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles.clear();
     }
 

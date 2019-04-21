@@ -149,7 +149,6 @@ function performCompilation(
 
     const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.getTranspilationResult({
         program,
-        options,
     });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
@@ -205,30 +204,22 @@ function createWatchOfFilesAndCompilerOptions(
     ts.createWatchProgram(watchCompilerHost);
 }
 
-interface ConfigFileSnapshot {
-    options: tstl.CompilerOptions;
-    configFileParsingDiagnostics: ts.Diagnostic[];
-}
-
 function updateWatchCompilationHost(
     host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
     optionsToExtend: tstl.CompilerOptions
 ): void {
     let fullRecompile = true;
-    const configFileMap = new WeakMap<ts.TsConfigSourceFile, ConfigFileSnapshot>();
+    const configFileMap = new WeakMap<ts.TsConfigSourceFile, ts.ParsedCommandLine>();
 
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
-        const compilerOptions = builderProgram.getCompilerOptions();
+        const options = builderProgram.getCompilerOptions();
 
-        let options = optionsToExtend;
         let configFileParsingDiagnostics: ts.Diagnostic[] = [];
-        const configFile = compilerOptions.configFile as ts.TsConfigSourceFile | undefined;
-        const configFilePath = compilerOptions.configFilePath as string | undefined;
+        const configFile = options.configFile as ts.TsConfigSourceFile | undefined;
+        const configFilePath = options.configFilePath as string | undefined;
         if (configFile && configFilePath) {
-            if (configFileMap.has(configFile)) {
-                ({ options, configFileParsingDiagnostics } = configFileMap.get(configFile)!);
-            } else {
+            if (!configFileMap.has(configFile)) {
                 const parsedConfigFile = CommandLineParser.updateParsedConfigFile(
                     ts.parseJsonSourceFileConfigFileContent(
                         configFile,
@@ -239,9 +230,12 @@ function updateWatchCompilationHost(
                     )
                 );
 
-                ({ options, errors: configFileParsingDiagnostics } = parsedConfigFile);
-                configFileMap.set(configFile, { options, configFileParsingDiagnostics });
+                configFileMap.set(configFile, parsedConfigFile);
             }
+
+            const parsedConfigFile = configFileMap.get(configFile)!;
+            Object.assign(options, parsedConfigFile.options);
+            configFileParsingDiagnostics = parsedConfigFile.errors;
         }
 
         let sourceFiles: ts.SourceFile[] | undefined;
@@ -261,7 +255,6 @@ function updateWatchCompilationHost(
 
         const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.getTranspilationResult({
             program,
-            options,
             sourceFiles,
         });
 
@@ -286,7 +279,7 @@ function updateWatchCompilationHost(
         host.onWatchStatusChange!(
             cliDiagnostics.watchErrorSummary(errors.length),
             host.getNewLine(),
-            compilerOptions
+            options
         );
     };
 }

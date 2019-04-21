@@ -18,7 +18,6 @@ export function buildVirtualProject(
     const program = ts.createProgram({ rootNames, options });
     const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.getTranspilationResult({
         program,
-        options,
     });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([

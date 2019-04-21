@@ -46,7 +46,7 @@ export interface TranspilationResult {
     transpiledFiles: Map<string, TranspiledFile>;
 }
 
-export interface GetTranspileOutputOptions {
+export interface GetTranspilationResultOptions {
     program: ts.Program;
     options: CompilerOptions;
     customTransformers?: ts.CustomTransformers;
@@ -55,14 +55,14 @@ export interface GetTranspileOutputOptions {
     transformer?: LuaTransformer;
 }
 
-export function getTranspileOutput({
+export function getTranspilationResult({
     program,
     options,
     customTransformers = {},
     sourceFiles: targetSourceFiles,
     printer = new LuaPrinter(options),
     transformer = new LuaTransformer(program, options),
-}: GetTranspileOutputOptions): TranspilationResult {
+}: GetTranspilationResultOptions): TranspilationResult {
     const { noEmit, emitDeclarationOnly, noEmitOnError } = options;
 
     const diagnostics: ts.Diagnostic[] = [];

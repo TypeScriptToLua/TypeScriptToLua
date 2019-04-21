@@ -14,16 +14,16 @@ export function buildVirtualProject(
 ): BuildVirtualProjectResult {
     options.skipLibCheck = true;
     options.types = [];
-    const program = ts.createProgram({ rootNames, options });
 
-    const { transpiledFiles, diagnostics: emitDiagnostics } = tstl.getTranspileOutput({
+    const program = ts.createProgram({ rootNames, options });
+    const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.getTranspilationResult({
         program,
         options,
     });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
-        ...emitDiagnostics,
+        ...transpileDiagnostics,
     ]);
 
     const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);

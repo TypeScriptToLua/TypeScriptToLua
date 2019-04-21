@@ -147,14 +147,14 @@ function performCompilation(
         configFileParsingDiagnostics,
     });
 
-    const { transpiledFiles, diagnostics: emitDiagnostics } = tstl.getTranspileOutput({
+    const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.getTranspilationResult({
         program,
         options,
     });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
-        ...emitDiagnostics,
+        ...transpileDiagnostics,
     ]);
 
     const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);
@@ -259,7 +259,7 @@ function updateWatchCompilationHost(
             }
         }
 
-        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.getTranspileOutput({
+        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.getTranspilationResult({
             program,
             options,
             sourceFiles,

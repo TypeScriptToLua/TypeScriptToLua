@@ -3,7 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "./CommandLineParser";
 import { CompilerOptions } from "./CompilerOptions";
-import { getTranspileOutput, TranspilationResult, TranspiledFile } from "./Transpile";
+import { getTranspilationResult, TranspilationResult, TranspiledFile } from "./Transpile";
 
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
 export { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
@@ -19,14 +19,17 @@ export function transpileFiles(
     options: CompilerOptions = {}
 ): TranspilationResult {
     const program = ts.createProgram(rootNames, options);
-    const { diagnostics, transpiledFiles } = getTranspileOutput({ program, options });
+    const { transpiledFiles, diagnostics: transpileDiagnostics } = getTranspilationResult({
+        program,
+        options,
+    });
 
-    const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
-        ...diagnostics,
+        ...transpileDiagnostics,
     ]);
 
-    return { transpiledFiles, diagnostics: [...allDiagnostics] };
+    return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
 export function transpileProject(fileName: string, options?: CompilerOptions): TranspilationResult {
@@ -91,13 +94,13 @@ export function transpileVirtualProject(
     options: CompilerOptions = {}
 ): TranspilationResult {
     const program = createVirtualProgram(files, options);
-    const transpileOutput = getTranspileOutput({ program, options });
-    const allDiagnostics = ts.sortAndDeduplicateDiagnostics([
+    const result = getTranspilationResult({ program, options });
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
-        ...transpileOutput.diagnostics,
+        ...result.diagnostics,
     ]);
 
-    return { ...transpileOutput, diagnostics: [...allDiagnostics] };
+    return { ...result, diagnostics: [...diagnostics] };
 }
 
 export interface TranspileStringResult {

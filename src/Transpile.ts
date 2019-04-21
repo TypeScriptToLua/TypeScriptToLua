@@ -117,7 +117,7 @@ export function transpile({
             diagnostics.push({
                 category: ts.DiagnosticCategory.Error,
                 code: 0,
-                file: sourceFile,
+                file: err.node.getSourceFile(),
                 start: err.node.getStart(),
                 length: err.node.getWidth(),
                 messageText: err.message,

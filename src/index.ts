@@ -3,7 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "./CommandLineParser";
 import { CompilerOptions } from "./CompilerOptions";
-import { getTranspilationResult, TranspilationResult, TranspiledFile } from "./Transpile";
+import { transpile, TranspileResult, TranspiledFile } from "./Transpile";
 
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
 export { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
@@ -17,11 +17,9 @@ export * from "./Transpile";
 export function transpileFiles(
     rootNames: string[],
     options: CompilerOptions = {}
-): TranspilationResult {
+): TranspileResult {
     const program = ts.createProgram(rootNames, options);
-    const { transpiledFiles, diagnostics: transpileDiagnostics } = getTranspilationResult({
-        program,
-    });
+    const { transpiledFiles, diagnostics: transpileDiagnostics } = transpile({ program });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
@@ -31,7 +29,7 @@ export function transpileFiles(
     return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
-export function transpileProject(fileName: string, options?: CompilerOptions): TranspilationResult {
+export function transpileProject(fileName: string, options?: CompilerOptions): TranspileResult {
     const parseResult = parseConfigFileWithSystem(fileName, options);
     if (parseResult.errors.length > 0) {
         return { diagnostics: parseResult.errors, transpiledFiles: new Map() };
@@ -91,9 +89,9 @@ export function createVirtualProgram(
 export function transpileVirtualProject(
     files: Record<string, string>,
     options: CompilerOptions = {}
-): TranspilationResult {
+): TranspileResult {
     const program = createVirtualProgram(files, options);
-    const result = getTranspilationResult({ program });
+    const result = transpile({ program });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...result.diagnostics,

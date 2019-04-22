@@ -43,12 +43,11 @@ export class LuaTransformer {
         "not", "or", "repeat", "return", "self", "then", "until", "while",
     ]);
 
-    private isStrict = true;
+    private isStrict: boolean;
     private luaTarget: LuaTarget;
 
     private checker: ts.TypeChecker;
     protected options: CompilerOptions;
-    protected program: ts.Program;
 
     private isModule = false;
 
@@ -69,17 +68,16 @@ export class LuaTransformer {
 
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
-    public constructor(program: ts.Program, options: CompilerOptions) {
+    public constructor(protected program: ts.Program) {
         this.checker = program.getTypeChecker();
-        this.options = options;
-        this.program = program;
+        this.options = program.getCompilerOptions();
         this.isStrict = this.options.alwaysStrict !== undefined
                         || (this.options.strict !== undefined && this.options.alwaysStrict !== false)
                         || (this.isModule
                             && this.options.target !== undefined
                             && this.options.target >= ts.ScriptTarget.ES2015);
 
-        this.luaTarget = options.luaTarget || LuaTarget.LuaJIT;
+        this.luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
 
         this.setupState();
     }

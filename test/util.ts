@@ -93,11 +93,8 @@ export function executeLua(luaStr: string, withLib = true): any {
 }
 
 // Get a mock transformer to use for testing
-export function makeTestTransformer(
-    target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
-): tstl.LuaTransformer {
-    const options = { luaTarget: target };
-    return new tstl.LuaTransformer(ts.createProgram([], options), options);
+export function makeTestTransformer(luaTarget = tstl.LuaTarget.Lua53): tstl.LuaTransformer {
+    return new tstl.LuaTransformer(ts.createProgram([], { luaTarget }));
 }
 
 export function transpileAndExecute(

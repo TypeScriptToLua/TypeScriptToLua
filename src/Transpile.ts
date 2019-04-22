@@ -48,22 +48,21 @@ export interface TranspileResult {
 
 export interface TranspileOptions {
     program: ts.Program;
-    customTransformers?: ts.CustomTransformers;
     sourceFiles?: ts.SourceFile[];
-    printer?: LuaPrinter;
+    customTransformers?: ts.CustomTransformers;
     transformer?: LuaTransformer;
+    printer?: LuaPrinter;
 }
 
 export function transpile({
     program,
-    customTransformers = {},
     sourceFiles: targetSourceFiles,
+    customTransformers = {},
+    transformer = new LuaTransformer(program),
     printer,
-    transformer,
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
     printer = printer || new LuaPrinter(options);
-    transformer = transformer || new LuaTransformer(program, options);
 
     const diagnostics: ts.Diagnostic[] = [];
     const transpiledFiles = new Map<string, TranspiledFile>();

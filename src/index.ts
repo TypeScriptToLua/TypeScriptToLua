@@ -3,16 +3,17 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "./CommandLineParser";
 import { CompilerOptions } from "./CompilerOptions";
-import { transpile, TranspileResult, TranspiledFile } from "./Transpile";
+import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
-export { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
+export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";
 export { LuaLibFeature } from "./LuaLib";
-export { LuaPrinter } from "./LuaPrinter";
-export { LuaTransformer } from "./LuaTransformer";
+export * from "./LuaPrinter";
+export * from "./LuaTransformer";
 export * from "./Transpile";
+export * from "./TranspileError";
 
 export function transpileFiles(
     rootNames: string[],

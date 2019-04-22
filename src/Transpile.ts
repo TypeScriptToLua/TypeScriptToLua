@@ -142,10 +142,10 @@ export function transpile({
         }
     };
 
-    const isEmittableJsonFile = (file: ts.SourceFile) =>
-        file.flags & ts.NodeFlags.JsonFile &&
+    const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
+        sourceFile.flags & ts.NodeFlags.JsonFile &&
         !options.emitDeclarationOnly &&
-        !program.isSourceFileFromExternalLibrary(file);
+        !program.isSourceFileFromExternalLibrary(sourceFile);
 
     // We always have to emit to get transformer diagnostics
     const oldNoEmit = options.noEmit;

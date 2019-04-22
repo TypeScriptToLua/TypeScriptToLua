@@ -5,7 +5,7 @@ import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 
 function getCustomTransformers(
-    options: CompilerOptions,
+    program: ts.Program,
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
@@ -129,7 +129,7 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(options, customTransformers, processSourceFile);
+    const transformers = getCustomTransformers(program, customTransformers, processSourceFile);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {
@@ -143,23 +143,22 @@ export function transpile({
         }
     };
 
-    const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
-        sourceFile.flags & ts.NodeFlags.JsonFile &&
+    const isEmittableJsonFile = (file: ts.SourceFile) =>
+        file.flags & ts.NodeFlags.JsonFile &&
         !options.emitDeclarationOnly &&
-        !program.isSourceFileFromExternalLibrary(sourceFile);
+        !program.isSourceFileFromExternalLibrary(file);
 
     // We always have to emit to get transformer diagnostics
     const oldNoEmit = options.noEmit;
     options.noEmit = false;
 
     if (targetSourceFiles) {
-        for (const sourceFile of targetSourceFiles) {
-            if (isEmittableJsonFile(sourceFile)) {
-                processSourceFile(sourceFile);
+        for (const file of targetSourceFiles) {
+            if (isEmittableJsonFile(file)) {
+                processSourceFile(file);
             } else {
                 diagnostics.push(
-                    ...program.emit(sourceFile, writeFile, undefined, false, transformers)
-                        .diagnostics
+                    ...program.emit(file, writeFile, undefined, false, transformers).diagnostics
                 );
             }
         }

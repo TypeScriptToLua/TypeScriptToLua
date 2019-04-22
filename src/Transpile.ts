@@ -59,10 +59,9 @@ export function transpile({
     sourceFiles: targetSourceFiles,
     customTransformers = {},
     transformer = new LuaTransformer(program),
-    printer,
+    printer = new LuaPrinter(program.getCompilerOptions()),
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
-    printer = printer || new LuaPrinter(options);
 
     const diagnostics: ts.Diagnostic[] = [];
     const transpiledFiles = new Map<string, TranspiledFile>();
@@ -101,9 +100,9 @@ export function transpile({
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         try {
-            const [luaAST, lualibFeatureSet] = transformer!.transformSourceFile(sourceFile);
+            const [luaAST, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer!.print(
+                const [lua, sourceMap] = printer.print(
                     luaAST,
                     lualibFeatureSet,
                     sourceFile.fileName

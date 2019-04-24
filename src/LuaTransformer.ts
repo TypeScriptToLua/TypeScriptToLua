@@ -2646,6 +2646,9 @@ export class LuaTransformer {
                     // Cannot use instanceof on extension classes
                     throw TSTLErrors.InvalidInstanceOfExtension(expression);
                 }
+                if (decorators.has(DecoratorKind.LuaTable)) {
+                    throw TSTLErrors.InvalidInstanceOfLuaTable(expression);
+                }
                 return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, expression, lhs, rhs);
 
             case ts.SyntaxKind.CommaToken:

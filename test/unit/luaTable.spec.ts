@@ -109,3 +109,11 @@ test.each([
         TSTLErrors.ForbiddenLuaTableNonDeclaration(util.nodeStub),
     );
 });
+
+test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
+    test.each([`tbl instanceof Table`])("Cannot use instanceof on a LuaTable class (%p)", code => {
+        expect(() => util.transpileString(tableLib + code)).toThrowExactError(
+            TSTLErrors.InvalidInstanceOfLuaTable(util.nodeStub),
+        );
+    });
+});

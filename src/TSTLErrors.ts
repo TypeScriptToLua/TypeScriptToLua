@@ -28,6 +28,9 @@ export class TSTLErrors {
     public static InvalidExtendsLuaTable = (node: ts.Node) =>
         new TranspileError(`Cannot extend classes with the decorator '@luaTable'.`, node);
 
+    public static InvalidInstanceOfLuaTable = (node: ts.Node) =>
+        new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
+
     public static ForbiddenLuaTableUseException = (node: ts.Node, description: string) =>
         new TranspileError(description, node);
 

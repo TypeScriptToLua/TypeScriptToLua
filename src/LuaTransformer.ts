@@ -1370,14 +1370,26 @@ export class LuaTransformer {
                     const expression = isObjectBindingPattern
                         ? tstl.createTableIndexExpression(tableExpression, tstl.createStringLiteral(propertyName.text))
                         : tstl.createTableIndexExpression(tableExpression, tstl.createNumericLiteral(index + 1));
+                    yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, expression);
                     if (element.initializer) {
-                        const defaultExpression = tstl.createBinaryExpression(expression,
-                            this.expectExpression(this.transformExpression(element.initializer)),
-                            tstl.SyntaxKind.OrOperator
+                        const identifier = this.shouldExportIdentifier(variableName)
+                            ? this.createExportedIdentifier(variableName)
+                            : variableName;
+                        yield tstl.createIfStatement(
+                            tstl.createBinaryExpression(
+                                identifier,
+                                tstl.createNilLiteral(),
+                                tstl.SyntaxKind.EqualityOperator
+                            ),
+                            tstl.createBlock(
+                                [
+                                    tstl.createAssignmentStatement(
+                                        identifier,
+                                        this.transformExpression(element.initializer)
+                                    ),
+                                ]
+                            )
                         );
-                        yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, defaultExpression);
-                    } else {
-                        yield* this.createLocalOrExportedOrGlobalDeclaration(variableName, expression);
                     }
                 }
             }

@@ -3,6 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "./CommandLineParser";
 import { CompilerOptions } from "./CompilerOptions";
+import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
@@ -15,25 +16,34 @@ export * from "./LuaTransformer";
 export * from "./Transpile";
 export * from "./TranspileError";
 
+export interface TranspileFilesResult {
+    diagnostics: ts.Diagnostic[];
+    emitResult: OutputFile[];
+}
+
 export function transpileFiles(
     rootNames: string[],
     options: CompilerOptions = {}
-): TranspileResult {
+): TranspileFilesResult {
     const program = ts.createProgram(rootNames, options);
     const { transpiledFiles, diagnostics: transpileDiagnostics } = transpile({ program });
+    const emitResult = emitTranspiledFiles(program.getCompilerOptions(), transpiledFiles);
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,
     ]);
 
-    return { transpiledFiles, diagnostics: [...diagnostics] };
+    return { diagnostics: [...diagnostics], emitResult };
 }
 
-export function transpileProject(fileName: string, options?: CompilerOptions): TranspileResult {
-    const parseResult = parseConfigFileWithSystem(fileName, options);
+export function transpileProject(
+    fileName: string,
+    optionsToExtend?: CompilerOptions
+): TranspileFilesResult {
+    const parseResult = parseConfigFileWithSystem(fileName, optionsToExtend);
     if (parseResult.errors.length > 0) {
-        return { diagnostics: parseResult.errors, transpiledFiles: new Map() };
+        return { diagnostics: parseResult.errors, emitResult: [] };
     }
 
     return transpileFiles(parseResult.fileNames, parseResult.options);

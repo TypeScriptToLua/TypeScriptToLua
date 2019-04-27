@@ -16,8 +16,7 @@ const options: tstl.CompilerOptions = {
 };
 
 // TODO: Check diagnostics
-const { transpiledFiles } = tstl.transpileFiles(glob.sync("./src/lualib/**/*.ts"), options);
-const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);
+const { emitResult } = tstl.transpileFiles(glob.sync("./src/lualib/**/*.ts"), options);
 emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
 const bundlePath = path.join(__dirname, "./dist/lualib/lualib_bundle.lua");

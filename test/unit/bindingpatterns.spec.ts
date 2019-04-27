@@ -98,6 +98,7 @@ test.each([
         objectString: "{x: false, y: [false]}",
         returnVariable: "z",
     },
+    { bindingString: "[x = true]", objectString: "[false]", returnVariable: "x" },
 ])(
     "Binding patterns handle false correctly (%p)",
     ({ bindingString, objectString, returnVariable }) => {

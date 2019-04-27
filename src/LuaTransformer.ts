@@ -1814,6 +1814,8 @@ export class LuaTransformer {
         } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
             // Destructuring types
 
+            const statements: tstl.Statement[] = [];
+
             // For nested bindings and object bindings, fall back to transformBindingPattern
             if (ts.isObjectBindingPattern(statement.name)
                 || statement.name.elements.some(elem => !ts.isBindingElement(elem) || !ts.isIdentifier(elem.name))) {
@@ -1847,10 +1849,12 @@ export class LuaTransformer {
             // Don't unpack TupleReturn decorated functions
             if (statement.initializer) {
                 if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
-                    return this.createLocalOrExportedOrGlobalDeclaration(
-                        vars,
-                        this.transformExpression(statement.initializer),
-                        statement
+                    statements.push(
+                        ...this.createLocalOrExportedOrGlobalDeclaration(
+                            vars,
+                            this.transformExpression(statement.initializer),
+                            statement
+                        )
                     );
                 } else {
                     // local vars = this.transpileDestructingAssignmentValue(node.initializer);
@@ -1858,15 +1862,45 @@ export class LuaTransformer {
                         this.expectExpression(this.transformExpression(statement.initializer)),
                         statement.initializer
                     );
-                    return this.createLocalOrExportedOrGlobalDeclaration(vars, initializer, statement);
+                    statements.push(...this.createLocalOrExportedOrGlobalDeclaration(vars, initializer, statement));
                 }
             } else {
-                return this.createLocalOrExportedOrGlobalDeclaration(
-                    vars,
-                    tstl.createNilLiteral(),
-                    statement
+                statements.push(
+                    ...this.createLocalOrExportedOrGlobalDeclaration(
+                        vars,
+                        tstl.createNilLiteral(),
+                        statement
+                    )
                 );
             }
+
+            statement.name.elements.forEach(element => {
+                if (!ts.isOmittedExpression(element) && element.initializer) {
+                    const variableName = this.transformIdentifier(element.name as ts.Identifier);
+                    const identifier = this.shouldExportIdentifier(variableName)
+                        ? this.createExportedIdentifier(variableName)
+                        : variableName;
+                    statements.push(
+                        tstl.createIfStatement(
+                            tstl.createBinaryExpression(
+                                identifier,
+                                tstl.createNilLiteral(),
+                                tstl.SyntaxKind.EqualityOperator
+                            ),
+                            tstl.createBlock(
+                                [
+                                    tstl.createAssignmentStatement(
+                                        identifier,
+                                        this.transformExpression(element.initializer)
+                                    ),
+                                ]
+                            )
+                        )
+                    );
+                }
+            });
+
+            return statements;
         }
     }
 

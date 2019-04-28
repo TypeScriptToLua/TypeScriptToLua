@@ -12,7 +12,7 @@ type SourceChunk = string | SourceNode;
 export class LuaPrinter {
     private static operatorMap: {[key in tstl.Operator]: string} = {
         [tstl.SyntaxKind.AdditionOperator]: "+",
-        [tstl.SyntaxKind.SubractionOperator]: "-",
+        [tstl.SyntaxKind.SubtractionOperator]: "-",
         [tstl.SyntaxKind.MultiplicationOperator]: "*",
         [tstl.SyntaxKind.DivisionOperator]: "/",
         [tstl.SyntaxKind.FloorDivisionOperator]: "//",
@@ -310,7 +310,7 @@ export class LuaPrinter {
 
         const prefix = isElseIf ? "elseif" : "if";
 
-        chunks.push(this.indent(prefix + " "), this.printExpression(statement.condtion), " then\n");
+        chunks.push(this.indent(prefix + " "), this.printExpression(statement.condition), " then\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.ifBlock));
@@ -336,7 +336,7 @@ export class LuaPrinter {
     private printWhileStatement(statement: tstl.WhileStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("while "), this.printExpression(statement.condtion), " do\n");
+        chunks.push(this.indent("while "), this.printExpression(statement.condition), " do\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
@@ -356,7 +356,7 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("until "), this.printExpression(statement.condtion));
+        chunks.push(this.indent("until "), this.printExpression(statement.condition));
 
         return this.concatNodes(...chunks);
     }
@@ -611,7 +611,7 @@ export class LuaPrinter {
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
-        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerEpxression), ")"]);
+        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerExpression), ")"]);
     }
 
     private printCallExpression(expression: tstl.CallExpression): SourceNode {

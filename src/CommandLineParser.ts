@@ -89,7 +89,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
         const option = optionDeclarations.find(option => option.name === key);
         if (!option) continue;
 
-        // console.warn(`[Deprectated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
+        // console.warn(`[Deprecated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
         //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
 
         const { error, value } = readValue(option, parsedConfigFile.raw[key]);

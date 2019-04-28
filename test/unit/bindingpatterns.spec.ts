@@ -90,3 +90,22 @@ test.each(testCases)(
         expect(result).toBe(true);
     },
 );
+
+test.each([
+    { bindingString: "{x, y = true}", objectString: "{x: false, y: false}", returnVariable: "y" },
+    {
+        bindingString: "{x, y: [z = true]}",
+        objectString: "{x: false, y: [false]}",
+        returnVariable: "z",
+    },
+    { bindingString: "[x = true]", objectString: "[false]", returnVariable: "x" },
+])(
+    "Binding patterns handle false correctly (%p)",
+    ({ bindingString, objectString, returnVariable }) => {
+        const result = util.transpileExecuteAndReturnExport(
+            `export const ${bindingString} = ${objectString};`,
+            returnVariable,
+        );
+        expect(result).toBe(false);
+    },
+);

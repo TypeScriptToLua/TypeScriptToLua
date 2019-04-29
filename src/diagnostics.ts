@@ -1,4 +1,14 @@
 import * as ts from "typescript";
+import { TranspileError } from './TranspileError';
+
+export const transpileError = (error: TranspileError) => ({
+    file: error.node.getSourceFile(),
+    start: error.node.getStart(),
+    length: error.node.getWidth(),
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    messageText: error.message,
+});
 
 export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) => ({
     file: undefined,

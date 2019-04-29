@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
+import { transpileError } from './diagnostics';
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
@@ -112,14 +113,7 @@ export function transpile({
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
 
-            diagnostics.push({
-                category: ts.DiagnosticCategory.Error,
-                code: 0,
-                file: err.node.getSourceFile(),
-                start: err.node.getStart(),
-                length: err.node.getWidth(),
-                messageText: err.message,
-            });
+            diagnostics.push(transpileError(err));
 
             updateTranspiledFile(sourceFile.fileName, {
                 lua: `error(${JSON.stringify(err.message)})\n`,

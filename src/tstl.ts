@@ -80,7 +80,9 @@ function executeCommandLine(args: string[]): void {
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }
 
-    if (commandLine.errors.length > 0) {
+    // TODO: ParsedCommandLine.errors isn't meant to contain warnings. Once root-level options
+    // support would be dropped it should be changed to `commandLine.errors.length > 0`.
+    if (commandLine.errors.some(e => e.category === ts.DiagnosticCategory.Error)) {
         commandLine.errors.forEach(reportDiagnostic);
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }

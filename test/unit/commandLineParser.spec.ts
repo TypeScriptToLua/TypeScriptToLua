@@ -132,10 +132,13 @@ describe("tsconfig", () => {
         return tstl.updateParsedConfigFile(ts.parseJsonConfigFileContent(config, ts.sys, ""));
     };
 
-    test("should support root-level options", () => {
+    test("should support deprecated root-level options", () => {
         const rootLevel = parseConfigFileContent({ noHeader: true });
         const namespaced = parseConfigFileContent({ tstl: { noHeader: true } });
 
+        expect(rootLevel.errors).toEqual([
+            expect.objectContaining({ category: ts.DiagnosticCategory.Warning }),
+        ]);
         expect(rootLevel.options).toEqual(namespaced.options);
     });
 

@@ -85,20 +85,23 @@ export function getHelpString(): string {
 }
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
+    let hasRootLevelOptions = false;
     for (const key in parsedConfigFile.raw) {
         const option = optionDeclarations.find(option => option.name === key);
         if (!option) continue;
 
-        // console.warn(`[Deprecated] TSTL options are moving to the luaConfig object. Adjust your tsconfig to `
-        //    + `look like { "compilerOptions": { <typescript options> }, "tstl": { <tstl options> } }`);
-
-        const { error, value } = readValue(option, parsedConfigFile.raw[key]);
-        if (error) parsedConfigFile.errors.push(error);
-        if (parsedConfigFile.options[key] === undefined) parsedConfigFile.options[key] = value;
+        if (parsedConfigFile.raw.tstl === undefined) parsedConfigFile.raw.tstl = {};
+        parsedConfigFile.raw.tstl[key] = parsedConfigFile.raw[key];
+        hasRootLevelOptions = true;
     }
 
-    // Eventually we will only look for the tstl object for tstl options
     if (parsedConfigFile.raw.tstl) {
+        if (hasRootLevelOptions) {
+            parsedConfigFile.errors.push(
+                diagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
+            );
+        }
+
         for (const key in parsedConfigFile.raw.tstl) {
             const option = optionDeclarations.find(option => option.name === key);
             if (!option) {

@@ -1,5 +1,20 @@
 import * as ts from "typescript";
 
+export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Warning,
+    code: 0,
+    messageText:
+        'TSTL options are moving to the "tstl" object. Adjust your tsconfig to look like\n' +
+        JSON.stringify({ tstl }, undefined, 4)
+            .split("\n")
+            .slice(1, -1)
+            .map(line => line.slice(4))
+            .join("\n"),
+});
+
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
     file: undefined,
     start: undefined,

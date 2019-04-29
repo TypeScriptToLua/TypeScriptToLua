@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { TranspileError } from './TranspileError';
+import { TranspileError } from "./TranspileError";
 
 export const transpileError = (error: TranspileError) => ({
     file: error.node.getSourceFile(),
@@ -7,6 +7,7 @@ export const transpileError = (error: TranspileError) => ({
     length: error.node.getWidth(),
     category: ts.DiagnosticCategory.Error,
     code: 0,
+    source: "typescript-to-lua",
     messageText: error.message,
 });
 
@@ -16,6 +17,7 @@ export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) =
     length: undefined,
     category: ts.DiagnosticCategory.Warning,
     code: 0,
+    source: "typescript-to-lua",
     messageText:
         'TSTL options are moving to the "tstl" object. Adjust your tsconfig to look like\n' +
         JSON.stringify({ tstl }, undefined, 4)

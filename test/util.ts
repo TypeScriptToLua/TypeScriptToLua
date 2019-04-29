@@ -14,7 +14,7 @@ export function transpileString(
     const { diagnostics, file } = transpileStringResult(str, options);
     if (!expectToBeDefined(file) || !expectToBeDefined(file.lua)) return "";
 
-    const errors = diagnostics.filter(diag => !ignoreDiagnostics || diag.code === 0);
+    const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
     expect(errors).not.toHaveDiagnostics();
 
     return file.lua.trim();

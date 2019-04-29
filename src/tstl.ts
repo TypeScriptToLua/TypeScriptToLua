@@ -6,7 +6,14 @@ import * as CommandLineParser from "./CommandLineParser";
 import * as cliDiagnostics from "./diagnostics";
 
 function createDiagnosticReporter(pretty: boolean): ts.DiagnosticReporter {
-    return (ts as any).createDiagnosticReporter(ts.sys, pretty);
+    const reporter: ts.DiagnosticReporter = (ts as any).createDiagnosticReporter(ts.sys, pretty);
+    return diagnostic => {
+        if (diagnostic.source === "typescript-to-lua") {
+            diagnostic = { ...diagnostic, code: ("TL" + diagnostic.code) as any };
+        }
+
+        reporter(diagnostic);
+    };
 }
 
 function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {

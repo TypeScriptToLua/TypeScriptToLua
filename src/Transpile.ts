@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
-import { transpileError } from './diagnostics';
+import { transpileError } from "./diagnostics";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";

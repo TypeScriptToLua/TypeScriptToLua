@@ -341,7 +341,7 @@ export class LuaTransformer {
 
         if (!statement.importClause) {
             const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-            result.push(tstl.createExpressionStatement(requireCall));
+            result.push(tstl.createExpressionStatement(requireCall, statement));
             if (scope.importStatements) {
                 scope.importStatements.push(...result);
                 return undefined;
@@ -663,7 +663,8 @@ export class LuaTransformer {
             result.push(
                 tstl.createVariableDeclarationStatement(
                     tstl.cloneIdentifier(className),
-                    this.addExportToIdentifier(tstl.cloneIdentifier(className))
+                    this.addExportToIdentifier(tstl.cloneIdentifier(className)),
+                    statement
                 )
             );
         }
@@ -672,7 +673,8 @@ export class LuaTransformer {
         result.push(
             tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("name")),
-                tstl.createStringLiteral(className.text)
+                tstl.createStringLiteral(className.text),
+                statement
             )
         );
 
@@ -724,7 +726,7 @@ export class LuaTransformer {
             tstl.createStringLiteral("prototype"),
             statement
         );
-        const classPrototypeTable = tstl.createTableExpression();
+        const classPrototypeTable = tstl.createTableExpression(undefined, statement);
         const assignClassPrototype = tstl.createAssignmentStatement(createClassPrototype(), classPrototypeTable);
         result.push(assignClassPrototype);
 
@@ -789,7 +791,8 @@ export class LuaTransformer {
             );
             const assignClassPrototypeIndex = tstl.createAssignmentStatement(
                 classPrototypeNewIndex,
-                this.transformLuaLibFunction(LuaLibFeature.NewIndex, undefined, createClassPrototype())
+                this.transformLuaLibFunction(LuaLibFeature.NewIndex, undefined, createClassPrototype()),
+                statement
             );
             result.push(assignClassPrototypeIndex);
         }
@@ -1997,16 +2000,16 @@ export class LuaTransformer {
         if (statement.elseStatement) {
             if (ts.isIfStatement(statement.elseStatement)) {
                 const elseStatement = this.transformIfStatement(statement.elseStatement) as tstl.IfStatement;
-                return tstl.createIfStatement(condition, ifBlock, elseStatement);
+                return tstl.createIfStatement(condition, ifBlock, elseStatement, statement);
             } else {
                 this.pushScope(ScopeType.Conditional, statement.elseStatement);
                 const elseStatements = this.performHoisting(this.transformBlockOrStatement(statement.elseStatement));
                 this.popScope();
-                const elseBlock = tstl.createBlock(elseStatements);
-                return tstl.createIfStatement(condition, ifBlock, elseBlock);
+                const elseBlock = tstl.createBlock(elseStatements, statement.elseStatement);
+                return tstl.createIfStatement(condition, ifBlock, elseBlock, statement);
             }
         }
-        return tstl.createIfStatement(condition, ifBlock);
+        return tstl.createIfStatement(condition, ifBlock, undefined, statement);
     }
 
     public transformWhileStatement(statement: ts.WhileStatement): StatementVisitResult {
@@ -2059,7 +2062,11 @@ export class LuaTransformer {
         }
 
         // while (condition) do ... end
-        result.push(tstl.createWhileStatement(tstl.createBlock(body), this.expectExpression(condition)));
+        result.push(tstl.createWhileStatement(
+            tstl.createBlock(body),
+            this.expectExpression(condition),
+            statement.condition
+        ));
 
         return tstl.createDoStatement(result, statement);
     }
@@ -2076,7 +2083,10 @@ export class LuaTransformer {
             if (variableStatements[0]) {
                 // we can safely assume that for vars are not exported and therefore declarationstatenents
                 return tstl.createVariableDeclarationStatement(
-                    (variableStatements[0] as tstl.VariableDeclarationStatement).left, expression);
+                    (variableStatements[0] as tstl.VariableDeclarationStatement).left,
+                    expression,
+                    initializer
+                );
             } else {
                 throw TSTLErrors.MissingForOfVariables(initializer);
             }
@@ -2091,7 +2101,7 @@ export class LuaTransformer {
             } else {
                 variables = this.transformExpression(initializer) as tstl.IdentifierOrTableIndexExpression;
             }
-            return tstl.createAssignmentStatement(variables, expression);
+            return tstl.createAssignmentStatement(variables, expression, initializer);
         }
     }
 
@@ -2125,23 +2135,25 @@ export class LuaTransformer {
         const arrayExpression = this.expectExpression(this.transformExpression(statement.expression));
 
         // Arrays use numeric for loop (performs better than ipairs)
-        const indexVariable = tstl.createIdentifier("____TS_index");
+        const indexVariable = tstl.createIdentifier("____TS_index", statement.initializer);
         if (!ts.isIdentifier(statement.expression)) {
             // Cache iterable expression if it's not a simple identifier
             // local ____TS_array = ${iterable};
             // for ____TS_index = 1, #____TS_array do
             //     local ${initializer} = ____TS_array[____TS_index]
-            const arrayVariable = tstl.createIdentifier("____TS_array");
-            const arrayAccess = tstl.createTableIndexExpression(arrayVariable, indexVariable);
+            const arrayVariable = tstl.createIdentifier("____TS_array", statement.expression);
+            const arrayAccess = tstl.createTableIndexExpression(arrayVariable, indexVariable, statement.initializer);
             const initializer = this.transformForOfInitializer(statement.initializer, arrayAccess);
             block.statements.splice(0, 0, initializer);
             return [
-                tstl.createVariableDeclarationStatement(arrayVariable, arrayExpression),
+                tstl.createVariableDeclarationStatement(arrayVariable, arrayExpression, statement.expression),
                 tstl.createForStatement(
                     block,
                     indexVariable,
                     tstl.createNumericLiteral(1),
-                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator)
+                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator),
+                    undefined,
+                    statement
                 ),
             ];
 
@@ -2149,14 +2161,20 @@ export class LuaTransformer {
             // Simple identifier version
             // for ____TS_index = 1, #${iterable} do
             //     local ${initializer} = ${iterable}[____TS_index]
-            const iterableAccess = tstl.createTableIndexExpression(arrayExpression, indexVariable);
+            const iterableAccess = tstl.createTableIndexExpression(
+                arrayExpression,
+                indexVariable,
+                statement.initializer
+            );
             const initializer = this.transformForOfInitializer(statement.initializer, iterableAccess);
             block.statements.splice(0, 0, initializer);
             return tstl.createForStatement(
                 block,
                 indexVariable,
                 tstl.createNumericLiteral(1),
-                tstl.createUnaryExpression(arrayExpression, tstl.SyntaxKind.LengthOperator)
+                tstl.createUnaryExpression(arrayExpression, tstl.SyntaxKind.LengthOperator),
+                undefined,
+                statement
             );
         }
     }
@@ -2177,7 +2195,8 @@ export class LuaTransformer {
                         this.filterUndefinedAndCast(
                             initializerVariable.elements.map(e => this.transformArrayBindingElement(e)),
                             tstl.isIdentifier),
-                        [luaIterator]
+                        [luaIterator],
+                        statement
                     );
 
                 } else {
@@ -2191,14 +2210,15 @@ export class LuaTransformer {
                 //     ${initializer} = ____TS_value0
                 if (ts.isArrayLiteralExpression(statement.initializer)) {
                     const tmps = statement.initializer.elements
-                        .map((_, i) => tstl.createIdentifier(`____TS_value${i}`));
+                        .map((_, i) => tstl.createIdentifier(`____TS_value${i}`, statement.initializer));
                     const assign = tstl.createAssignmentStatement(
                         statement.initializer.elements
                             .map(e => this.transformExpression(e)) as tstl.IdentifierOrTableIndexExpression[],
-                        tmps
+                        tmps,
+                        statement.initializer
                     );
                     block.statements.splice(0, 0, assign);
-                    return tstl.createForInStatement(block, tmps, [luaIterator]);
+                    return tstl.createForInStatement(block, tmps, [luaIterator], statement);
 
                 } else {
                     // Single variable is not allowed
@@ -2215,20 +2235,22 @@ export class LuaTransformer {
                 return tstl.createForInStatement(
                     block,
                     [this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier)],
-                    [luaIterator]
+                    [luaIterator],
+                    statement
                 );
 
             } else {
                 // Destructuring or variable NOT declared in for loop
                 // for ____TS_value in ${iterator} do
                 //     local ${initializer} = unpack(____TS_value)
-                const valueVariable = tstl.createIdentifier("____TS_value");
+                const valueVariable = tstl.createIdentifier("____TS_value", statement.initializer);
                 const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
                 block.statements.splice(0, 0, initializer);
                 return tstl.createForInStatement(
                     block,
                     [valueVariable],
-                    [luaIterator]
+                    [luaIterator],
+                    statement
                 );
             }
         }
@@ -2243,20 +2265,22 @@ export class LuaTransformer {
             return tstl.createForInStatement(
                 block,
                 [this.transformIdentifier(statement.initializer.declarations[0].name as ts.Identifier)],
-                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)]
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)],
+                statement
             );
 
         } else {
             // Destructuring or variable NOT declared in for loop
             // for ____TS_value in __TS__iterator(${iterator}) do
             //     local ${initializer} = ____TS_value
-            const valueVariable = tstl.createIdentifier("____TS_value");
+            const valueVariable = tstl.createIdentifier("____TS_value", statement.initializer);
             const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
             block.statements.splice(0, 0, initializer);
             return tstl.createForInStatement(
                 block,
                 [valueVariable],
-                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)]
+                [this.transformLuaLibFunction(LuaLibFeature.Iterator, statement.expression, iterable)],
+                statement
             );
         }
     }

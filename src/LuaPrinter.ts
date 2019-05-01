@@ -61,9 +61,11 @@ export class LuaPrinter {
 
         const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
 
+        const sourceRoot = this.options.sourceRoot
+            || (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
         const codeWithSourceMap = rootSourceNode
             // TODO is the file: part really required? and should this be handled in the printer?
-            .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+            .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua", sourceRoot});
 
         let codeResult = codeWithSourceMap.code;
 
@@ -155,8 +157,8 @@ export class LuaPrinter {
         this.currentIndent = this.currentIndent.slice(4);
     }
 
-    private indent(input: SourceChunk = ""): SourceChunk {
-        return this.concatNodes(this.currentIndent, input);
+    private indent(): SourceChunk {
+        return this.currentIndent;
     }
 
     private createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[]): SourceNode {
@@ -215,7 +217,8 @@ export class LuaPrinter {
                 statementNodes.push(node);
             }
         );
-        return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];
+        statementNodes.forEach(s => s.add("\n"));
+        return statementNodes;
     }
 
     private printStatement(statement: tstl.Statement): SourceNode {
@@ -254,19 +257,19 @@ export class LuaPrinter {
     private printDoStatement(statement: tstl.DoStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("do\n"));
+        chunks.push(this.indent(), "do\n");
         this.pushIndent();
         chunks.push(...this.printStatementArray(statement.statements));
         this.popIndent();
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(), "end");
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("local "));
+        chunks.push(this.indent(), "local ");
 
         if (tstl.isFunctionDefinition(statement)) {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
@@ -276,12 +279,12 @@ export class LuaPrinter {
             chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
 
             if (statement.right) {
-                chunks.push(" = ");
+                this.addToLastChunk(chunks, " = ");
                 chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
             }
         }
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printVariableAssignmentStatement(statement: tstl.AssignmentStatement): SourceNode {
@@ -301,7 +304,7 @@ export class LuaPrinter {
         }
 
         chunks.push(...this.joinChunks(", ", statement.left.map(e => this.printExpression(e))));
-        chunks.push(" = ");
+        this.addToLastChunk(chunks, " = ");
         chunks.push(...this.joinChunks(", ", statement.right.map(e => this.printExpression(e))));
 
         return this.createSourceNode(statement, chunks);
@@ -312,7 +315,7 @@ export class LuaPrinter {
 
         const prefix = isElseIf ? "elseif" : "if";
 
-        chunks.push(this.indent(prefix + " "), this.printExpression(statement.condtion), " then\n");
+        chunks.push(this.indent(), prefix + " ", this.printExpression(statement.condtion), " then\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.ifBlock));
@@ -322,45 +325,47 @@ export class LuaPrinter {
             if (tstl.isIfStatement(statement.elseBlock)) {
                 chunks.push(this.printIfStatement(statement.elseBlock, true));
             } else {
-                chunks.push(this.indent("else\n"));
+                const elseChunks: SourceChunk[] = [];
+                elseChunks.push(this.indent(), "else\n");
                 this.pushIndent();
-                chunks.push(this.printBlock(statement.elseBlock));
+                elseChunks.push(this.printBlock(statement.elseBlock));
                 this.popIndent();
-                chunks.push(this.indent("end"));
+                elseChunks.push(this.indent(), "end");
+                chunks.push(this.createSourceNode(statement.elseBlock, elseChunks));
             }
         } else {
-            chunks.push(this.indent("end"));
+            chunks.push(this.indent(), "end");
         }
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printWhileStatement(statement: tstl.WhileStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("while "), this.printExpression(statement.condtion), " do\n");
+        chunks.push(this.indent(), "while ", this.printExpression(statement.condtion), " do\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(), "end");
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printRepeatStatement(statement: tstl.RepeatStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent(`repeat\n`));
+        chunks.push(this.indent(), `repeat\n`);
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("until "), this.printExpression(statement.condtion));
+        chunks.push(this.indent(), "until ", this.printExpression(statement.condtion));
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printForStatement(statement: tstl.ForStatement): SourceNode {
@@ -370,7 +375,7 @@ export class LuaPrinter {
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("for "), ctrlVar, " = ", ctrlVarInit, ", ", limit);
+        chunks.push(this.indent(), "for ", ctrlVar, " = ", ctrlVarInit, ", ", limit);
 
         if (statement.stepExpression) {
             chunks.push(", ", this.printExpression(statement.stepExpression));
@@ -381,9 +386,9 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(), "end");
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     private printForInStatement(statement: tstl.ForInStatement): SourceNode {
@@ -392,27 +397,27 @@ export class LuaPrinter {
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("for "), names, " in ", expressions, " do\n");
+        chunks.push(this.indent(), "for ", names, " in ", expressions, " do\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(), "end");
 
         return this.createSourceNode(statement, chunks);
     }
 
     private printGotoStatement(statement: tstl.GotoStatement): SourceNode {
-        return this.createSourceNode(statement, [this.indent("goto "), statement.label]);
+        return this.createSourceNode(statement, [this.indent(), "goto ", statement.label]);
     }
 
     private printLabelStatement(statement: tstl.LabelStatement): SourceNode {
-        return this.createSourceNode(statement, [this.indent("::"), statement.name, "::"]);
+        return this.createSourceNode(statement, [this.indent(), "::", statement.name, "::"]);
     }
 
     private printReturnStatement(statement: tstl.ReturnStatement): SourceNode {
         if (!statement.expressions || statement.expressions.length === 0) {
-            return this.createSourceNode(statement, this.indent("return"));
+            return this.createSourceNode(statement, [this.indent(), "return"]);
         }
 
         const chunks: SourceChunk[] = [];
@@ -423,7 +428,7 @@ export class LuaPrinter {
     }
 
     private printBreakStatement(statement: tstl.BreakStatement): SourceNode {
-        return this.createSourceNode(statement, this.indent("break"));
+        return this.createSourceNode(statement, [this.indent(), "break"]);
     }
 
     private printExpressionStatement(statement: tstl.ExpressionStatement): SourceNode {
@@ -510,7 +515,7 @@ export class LuaPrinter {
 
         chunks.push("function(");
         chunks.push(...this.printFunctionParameters(expression));
-        chunks.push(")");
+        this.addToLastChunk(chunks, ")");
 
         if (tstl.isInlineFunctionExpression(expression)) {
             const returnStatement = expression.body.statements[0];
@@ -527,7 +532,8 @@ export class LuaPrinter {
             this.pushIndent();
             chunks.push(this.printBlock(expression.body));
             this.popIndent();
-            chunks.push(this.indent("end"));
+            chunks.push(this.indent());
+            chunks.push("end");
         }
 
         return this.createSourceNode(expression, chunks);
@@ -539,14 +545,14 @@ export class LuaPrinter {
 
         chunks.push("function ");
         chunks.push(this.printExpression(statement.left[0]));
-        chunks.push("(");
+        this.addToLastChunk(chunks, "(");
         chunks.push(...this.printFunctionParameters(expression));
-        chunks.push(")\n");
+        this.addToLastChunk(chunks, ")\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(expression.body));
         this.popIndent();
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(), "end");
 
         return this.createSourceNode(expression, chunks);
     }
@@ -582,13 +588,20 @@ export class LuaPrinter {
             } else {
                 chunks.push("\n");
                 this.pushIndent();
-                expression.fields.forEach(f => chunks.push(this.indent(), this.printTableFieldExpression(f), ",\n"));
+                expression.fields.forEach(
+                    f => {
+                        const fieldExpression = this.printTableFieldExpression(f);
+                        fieldExpression.prepend(this.indent()); // make indent part of the field expression
+                        chunks.push(fieldExpression);
+                        this.addToLastChunk(chunks, ",\n");
+                    }
+                );
                 this.popIndent();
                 chunks.push(this.indent());
             }
         }
 
-        chunks.push("}");
+        this.addToLastChunk(chunks, "}");
 
         return this.createSourceNode(expression, chunks);
     }
@@ -617,27 +630,36 @@ export class LuaPrinter {
     }
 
     private printCallExpression(expression: tstl.CallExpression): SourceNode {
-        const chunks = [];
+        const chunks: SourceChunk[] = [];
 
-        const parameterChunks = expression.params !== undefined
-            ? expression.params.map(e => this.printExpression(e))
-            : [];
+        chunks.push(this.printExpression(expression.expression));
+        this.addToLastChunk(chunks, "(");
 
-        chunks.push(this.printExpression(expression.expression), "(", ...this.joinChunks(", ", parameterChunks), ")");
+        if (expression.params !== undefined && expression.params.length > 0) {
+            chunks.push(...this.joinChunks(", ", expression.params.map(e => this.printExpression(e))));
+        }
 
-        return this.concatNodes(...chunks);
+        this.addToLastChunk(chunks, ")");
+
+        return this.createSourceNode(expression, chunks);
     }
 
     private printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
-        const prefix = this.printExpression(expression.prefixExpression);
+        const chunks: SourceChunk[] = [];
 
-        const parameterChunks = expression.params !== undefined
-            ? expression.params.map(e => this.printExpression(e))
-            : [];
+        chunks.push(this.printExpression(expression.prefixExpression));
+        this.addToLastChunk(chunks, ":");
 
-        const name = this.printIdentifier(expression.name);
+        chunks.push(this.printIdentifier(expression.name));
+        this.addToLastChunk(chunks, "(");
 
-        return this.concatNodes(prefix, ":", name, "(", ...this.joinChunks(", ", parameterChunks), ")");
+        if (expression.params !== undefined && expression.params.length > 0) {
+            chunks.push(...this.joinChunks(", ", expression.params.map(e => this.printExpression(e))));
+        }
+
+        this.addToLastChunk(chunks, ")");
+
+        return this.createSourceNode(expression, chunks);
     }
 
     private printIdentifier(expression: tstl.Identifier): SourceNode {
@@ -677,12 +699,32 @@ export class LuaPrinter {
         return aliveStatements;
     }
 
+    private addToLastChunk(chunks: SourceChunk[], newChunk: SourceChunk): void {
+        if (chunks.length === 0) {
+            chunks.push(newChunk);
+            return;
+        }
+
+        const lastChunk = chunks[chunks.length - 1];
+        if (typeof lastChunk === "string") {
+            chunks.push(newChunk);
+            return;
+        }
+
+        this.addToLastChunk(lastChunk.children, newChunk);
+    }
+
     private joinChunks(separator: string, chunks: SourceChunk[]): SourceChunk[] {
         const result = [];
         for (let i = 0; i < chunks.length; i++) {
-            result.push(chunks[i]);
+            const chunk = chunks[i];
+            result.push(chunk);
             if (i < chunks.length - 1) {
-                result.push(separator);
+                if (typeof chunk === "string") {
+                    result.push(separator);
+                } else {
+                    this.addToLastChunk(chunk.children, separator);
+                }
             }
         }
         return result;

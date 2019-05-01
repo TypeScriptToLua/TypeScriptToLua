@@ -30,8 +30,8 @@ test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tab
         util.transpileString(tableLib + `const table = new Table(true);`),
     ).toThrowExactError(
         TSTLErrors.ForbiddenLuaTableUseException(
-            util.nodeStub,
             "No parameters are allowed when constructing a LuaTable object.",
+            util.nodeStub,
         ),
     );
 });
@@ -63,28 +63,22 @@ test.each([tableLibClass])("LuaTable length", tableLib => {
 test.each([tableLibClass, tableLibInterface])("Cannot set LuaTable length", tableLib => {
     expect(() => util.transpileString(tableLib + `tbl.length = 2;`)).toThrowExactError(
         TSTLErrors.ForbiddenLuaTableUseException(
-            util.nodeStub,
             "A LuaTable object's length cannot be re-assigned.",
+            util.nodeStub,
         ),
     );
 });
 
 test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib => {
     test.each([
-        [`tbl.get()`, "One parameter is required for get() on a '@LuaTable' object."],
-        [
-            `tbl.get("field", "field2")`,
-            "One parameter is required for get() on a '@LuaTable' object.",
-        ],
-        [`tbl.set()`, "Two parameters are required for set() on a '@LuaTable' object."],
-        [`tbl.set("field")`, "Two parameters are required for set() on a '@LuaTable' object."],
-        [
-            `tbl.set("field", 0, 1)`,
-            "Two parameters are required for set() on a '@LuaTable' object.",
-        ],
+        [`tbl.get()`, "One parameter is required for get()."],
+        [`tbl.get("field", "field2")`, "One parameter is required for get()."],
+        [`tbl.set()`, "Two parameters are required for set()."],
+        [`tbl.set("field")`, "Two parameters are required for set()."],
+        [`tbl.set("field", 0, 1)`, "Two parameters are required for set()."],
     ])("Forbidden LuaTable use (%p)", (invalidCode, errorDescription) => {
         expect(() => util.transpileString(tableLib + invalidCode)).toThrowExactError(
-            TSTLErrors.ForbiddenLuaTableUseException(util.nodeStub, errorDescription),
+            TSTLErrors.ForbiddenLuaTableUseException(errorDescription, util.nodeStub),
         );
     });
 });

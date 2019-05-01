@@ -3376,8 +3376,8 @@ export class LuaTransformer {
         if (classDecorators.has(DecoratorKind.LuaTable)) {
             if (node.arguments && node.arguments.length > 0) {
                 throw TSTLErrors.ForbiddenLuaTableUseException(
-                    node,
-                    "No parameters are allowed when constructing a LuaTable object."
+                    "No parameters are allowed when constructing a LuaTable object.",
+                    node
                 );
             } else {
                 return tstl.createTableExpression();
@@ -4248,8 +4248,8 @@ export class LuaTransformer {
             case "get":
                 if (expression.arguments.length !== 1) {
                     throw TSTLErrors.ForbiddenLuaTableUseException(
-                        expression,
-                        "One parameter is required for get() on a '@LuaTable' object."
+                        "One parameter is required for get().",
+                        expression
                     );
                 }
                 if (isWithinExpressionStatement) {
@@ -4263,8 +4263,8 @@ export class LuaTransformer {
             case "set":
                 if (params.length !== 2) {
                     throw TSTLErrors.ForbiddenLuaTableUseException(
-                        expression,
-                        "Two parameters are required for set() on a '@LuaTable' object."
+                        "Two parameters are required for set().",
+                        expression
                     );
                 }
                 if (isWithinExpressionStatement) {
@@ -4896,8 +4896,8 @@ export class LuaTransformer {
                 switch (node.left.name.escapedText as string) {
                     case "length":
                         throw TSTLErrors.ForbiddenLuaTableUseException(
-                            node,
-                            `A LuaTable object's length cannot be re-assigned.`
+                            `A LuaTable object's length cannot be re-assigned.`,
+                            node
                         );
                 }
             }

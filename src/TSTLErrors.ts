@@ -31,8 +31,8 @@ export class TSTLErrors {
     public static InvalidInstanceOfLuaTable = (node: ts.Node) =>
         new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
 
-    public static ForbiddenLuaTableUseException = (node: ts.Node, description: string) =>
-        new TranspileError(description, node);
+    public static ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
+        new TranspileError(`Invalid @luaTable usage: ${description}`, node);
 
     public static HeterogeneousEnum = (node: ts.Node) => new TranspileError(
         `Invalid heterogeneous enum. Enums should either specify no member values, ` +

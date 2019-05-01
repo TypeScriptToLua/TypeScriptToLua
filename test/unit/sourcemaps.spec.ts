@@ -1,5 +1,5 @@
 import { Position, SourceMapConsumer } from "source-map";
-import { LuaLibImportKind, CompilerOptions } from "../../src";
+import * as tstl from "../../src";
 import * as util from "../util";
 
 test.each([
@@ -72,7 +72,10 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
         }
         return JSONStringify(_G.__TS__sourcemap);`;
 
-    const options = { sourceMapTraceback: true, luaLibImport: LuaLibImportKind.Inline };
+    const options: tstl.CompilerOptions = {
+        sourceMapTraceback: true,
+        luaLibImport: tstl.LuaLibImportKind.Inline,
+    };
 
     // Act
     const transpiledLua = util.transpileString(typeScriptSource, options);
@@ -120,9 +123,7 @@ test("Inline sourcemaps", () => {
         }
         return abc();`;
 
-    const compilerOptions: CompilerOptions = {
-        inlineSourceMap: true,
-    };
+    const compilerOptions: tstl.CompilerOptions = { inlineSourceMap: true };
 
     const { file } = util.transpileStringResult(typeScriptSource, compilerOptions);
     if (!util.expectToBeDefined(file.lua)) return;

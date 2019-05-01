@@ -1,4 +1,4 @@
-import { LuaLibImportKind, LuaTarget } from "../../src";
+import * as tstl from "../../src";
 import * as util from "../util";
 
 const assignmentDestruturingTs = `
@@ -7,24 +7,24 @@ const assignmentDestruturingTs = `
 
 test("Assignment destructuring [5.1]", () => {
     const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: LuaTarget.Lua51,
-        luaLibImport: LuaLibImportKind.None,
+        luaTarget: tstl.LuaTarget.Lua51,
+        luaLibImport: tstl.LuaLibImportKind.None,
     });
     expect(lua).toBe(`local a, b = unpack(myFunc())`);
 });
 
 test("Assignment destructuring [5.2]", () => {
     const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: LuaTarget.Lua52,
-        luaLibImport: LuaLibImportKind.None,
+        luaTarget: tstl.LuaTarget.Lua52,
+        luaLibImport: tstl.LuaLibImportKind.None,
     });
     expect(lua).toBe(`local a, b = table.unpack(myFunc())`);
 });
 
 test("Assignment destructuring [JIT]", () => {
     const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: LuaTarget.LuaJIT,
-        luaLibImport: LuaLibImportKind.None,
+        luaTarget: tstl.LuaTarget.LuaJIT,
+        luaLibImport: tstl.LuaLibImportKind.None,
     });
     expect(lua).toBe(`local a, b = unpack(myFunc())`);
 });

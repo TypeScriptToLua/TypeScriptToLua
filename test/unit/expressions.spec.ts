@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { LuaLibImportKind, LuaTarget } from "../../src";
+import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -99,8 +99,8 @@ test.each([
     // Bit operations not supported in 5.1, expect an exception
     expect(() =>
         util.transpileString(input, {
-            luaTarget: LuaTarget.Lua51,
-            luaLibImport: LuaLibImportKind.None,
+            luaTarget: tstl.LuaTarget.Lua51,
+            luaLibImport: tstl.LuaLibImportKind.None,
         }),
     ).toThrow();
 });
@@ -120,7 +120,7 @@ test.each([
     { input: "a>>>b", lua: "local ____ = bit.rshift(a, b)" },
     { input: "a>>>=b", lua: "a = bit.rshift(a, b)" },
 ])("Bitop [JIT] (%p)", ({ input, lua }) => {
-    const options = { luaTarget: LuaTarget.LuaJIT, luaLibImport: LuaLibImportKind.None };
+    const options = { luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None };
     expect(util.transpileString(input, options)).toBe(lua);
 });
 
@@ -139,7 +139,7 @@ test.each([
     { input: "a>>>b", lua: "local ____ = bit32.rshift(a, b)" },
     { input: "a>>>=b", lua: "a = bit32.rshift(a, b)" },
 ])("Bitop [5.2] (%p)", ({ input, lua }) => {
-    const options = { luaTarget: LuaTarget.Lua52, luaLibImport: LuaLibImportKind.None };
+    const options = { luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None };
     expect(util.transpileString(input, options)).toBe(lua);
 });
 
@@ -156,15 +156,15 @@ test.each([
     { input: "a>>>b", lua: "local ____ = a >> b" },
     { input: "a>>>=b", lua: "a = a >> b" },
 ])("Bitop [5.3] (%p)", ({ input, lua }) => {
-    const options = { luaTarget: LuaTarget.Lua53, luaLibImport: LuaLibImportKind.None };
+    const options = { luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None };
     expect(util.transpileString(input, options)).toBe(lua);
 });
 
 test.each(["a>>b", "a>>=b"])("Unsupported bitop 5.3 (%p)", input => {
     expect(() =>
         util.transpileString(input, {
-            luaTarget: LuaTarget.Lua53,
-            luaLibImport: LuaLibImportKind.None,
+            luaTarget: tstl.LuaTarget.Lua53,
+            luaLibImport: tstl.LuaLibImportKind.None,
         }),
     ).toThrowExactError(
         TSTLErrors.UnsupportedKind(
@@ -232,12 +232,20 @@ test.each([
     },
     { input: "true ? undefined : true", options: { strictNullChecks: true } },
     { input: "true ? null : true", options: { strictNullChecks: true } },
-    { input: "true ? false : true", expected: false, options: { luaTarget: LuaTarget.Lua51 } },
-    { input: "false ? false : true", expected: true, options: { luaTarget: LuaTarget.Lua51 } },
-    { input: "true ? undefined : true", options: { luaTarget: LuaTarget.Lua51 } },
-    { input: "true ? false : true", expected: false, options: { luaTarget: LuaTarget.LuaJIT } },
-    { input: "false ? false : true", expected: true, options: { luaTarget: LuaTarget.LuaJIT } },
-    { input: "true ? undefined : true", options: { luaTarget: LuaTarget.LuaJIT } },
+    { input: "true ? false : true", expected: false, options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    { input: "false ? false : true", expected: true, options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    {
+        input: "true ? false : true",
+        expected: false,
+        options: { luaTarget: tstl.LuaTarget.LuaJIT },
+    },
+    {
+        input: "false ? false : true",
+        expected: true,
+        options: { luaTarget: tstl.LuaTarget.LuaJIT },
+    },
+    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
 ])("Ternary operator (%p)", ({ input, expected, options }) => {
     const result = util.transpileAndExecute(
         `const literalValue = 'literal';
@@ -487,7 +495,7 @@ test("Incompatible fromCodePoint expression error", () => {
     expect(() => util.transpileString("const abc = String.fromCodePoint(123);")).toThrowExactError(
         TSTLErrors.UnsupportedForTarget(
             "string property fromCodePoint",
-            LuaTarget.Lua53,
+            tstl.LuaTarget.Lua53,
             util.nodeStub,
         ),
     );
@@ -495,7 +503,11 @@ test("Incompatible fromCodePoint expression error", () => {
 
 test("Unknown string expression error", () => {
     expect(() => util.transpileString("const abc = String.abcd();")).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("string property abcd", LuaTarget.Lua53, util.nodeStub),
+        TSTLErrors.UnsupportedForTarget(
+            "string property abcd",
+            tstl.LuaTarget.Lua53,
+            util.nodeStub,
+        ),
     );
 });
 

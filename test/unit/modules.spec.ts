@@ -1,4 +1,4 @@
-import { LuaLibImportKind, LuaTarget } from "../../src";
+import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -10,8 +10,8 @@ test("defaultImport", () => {
 
 test("lualibRequire", () => {
     const lua = util.transpileString(`let a = b instanceof c;`, {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.LuaJIT,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.LuaJIT,
     });
 
     expect(lua.startsWith(`require("lualib_bundle")`));
@@ -19,8 +19,8 @@ test("lualibRequire", () => {
 
 test("lualibRequireAlways", () => {
     const lua = util.transpileString(``, {
-        luaLibImport: LuaLibImportKind.Always,
-        luaTarget: LuaTarget.LuaJIT,
+        luaLibImport: tstl.LuaLibImportKind.Always,
+        luaTarget: tstl.LuaTarget.LuaJIT,
     });
 
     expect(lua).toBe(`require("lualib_bundle");`);
@@ -37,14 +37,15 @@ test("Non-exported module", () => {
     expect(result).toBe(3);
 });
 
-test.each([LuaLibImportKind.Inline, LuaLibImportKind.None, LuaLibImportKind.Require])(
-    "LuaLib no uses? No code (%p)",
-    impKind => {
-        const lua = util.transpileString(``, { luaLibImport: impKind });
+test.each([
+    tstl.LuaLibImportKind.Inline,
+    tstl.LuaLibImportKind.None,
+    tstl.LuaLibImportKind.Require,
+])("LuaLib no uses? No code (%p)", luaLibImport => {
+    const lua = util.transpileString(``, { luaLibImport });
 
-        expect(lua).toBe(``);
-    },
-);
+    expect(lua).toBe(``);
+});
 
 test("Nested module with dot in name", () => {
     const code = `module a.b {

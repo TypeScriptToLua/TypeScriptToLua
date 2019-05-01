@@ -1,4 +1,4 @@
-import { LuaTarget } from "../../src";
+import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -373,8 +373,8 @@ test("switch dead code after return", () => {
 
 test("switch not allowed in 5.1", () => {
     expect(() =>
-        util.transpileString(`switch ("abc") {}`, { luaTarget: LuaTarget.Lua51 }),
+        util.transpileString(`switch ("abc") {}`, { luaTarget: tstl.LuaTarget.Lua51 }),
     ).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("Switch statements", LuaTarget.Lua51, util.nodeStub),
+        TSTLErrors.UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub),
     );
 });

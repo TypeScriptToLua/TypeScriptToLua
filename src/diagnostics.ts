@@ -20,11 +20,7 @@ export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) =
     source: "typescript-to-lua",
     messageText:
         'TSTL options are moving to the "tstl" object. Adjust your tsconfig to look like\n' +
-        JSON.stringify({ tstl }, undefined, 4)
-            .split("\n")
-            .slice(1, -1)
-            .map(line => line.slice(4))
-            .join("\n"),
+        `"tstl": ${JSON.stringify(tstl, undefined, 4)}`,
 });
 
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({

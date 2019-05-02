@@ -79,12 +79,25 @@ test.each([
     { inp: "hello test", searchValue: "hello", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "world" },
+    { inp: "hello test", searchValue: "test", replaceValue: "%world" },
+    { inp: "hello %test", searchValue: "test", replaceValue: "world" },
+    { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
+    { inp: "hello test", searchValue: "test", replaceValue: (): string => "a" },
+    { inp: "hello test", searchValue: "test", replaceValue: (): string => "%a" },
+    { inp: "aaa", searchValue: "a", replaceValue: "b" },
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
+    const replaceValueString =
+        typeof replaceValue === "string" ? JSON.stringify(replaceValue) : replaceValue.toString();
     const result = util.transpileAndExecute(
-        `return "${inp}".replace("${searchValue}", "${replaceValue}");`,
+        `return "${inp}".replace("${searchValue}", ${replaceValueString});`,
     );
 
-    expect(result).toBe(inp.replace(searchValue, replaceValue));
+    // https://github.com/Microsoft/TypeScript/issues/22378
+    if (typeof replaceValue === "string") {
+        expect(result).toBe(inp.replace(searchValue, replaceValue));
+    } else {
+        expect(result).toBe(inp.replace(searchValue, replaceValue));
+    }
 });
 
 test.each([

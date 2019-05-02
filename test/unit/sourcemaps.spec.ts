@@ -1,6 +1,6 @@
+import { Position, SourceMapConsumer } from "source-map";
+import * as tstl from "../../src";
 import * as util from "../util";
-import { LuaLibImportKind, CompilerOptions } from "../../src/CompilerOptions";
-import { SourceMapConsumer, Position } from "source-map";
 
 test.each([
     {
@@ -47,13 +47,14 @@ test.each([
     },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
-    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource);
+    const { file } = util.transpileStringResult(typeScriptSource);
 
     // Assert
-    const consumer = await new SourceMapConsumer(sourceMap);
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
 
+    const consumer = await new SourceMapConsumer(file.sourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
-        const luaPosition = lineAndColumnOf(lua, luaPattern);
+        const luaPosition = lineAndColumnOf(file.lua, luaPattern);
         const mappedPosition = consumer.originalPositionFor(luaPosition);
 
         const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
@@ -71,7 +72,10 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
         }
         return JSONStringify(_G.__TS__sourcemap);`;
 
-    const options = { sourceMapTraceback: true, luaLibImport: LuaLibImportKind.Inline };
+    const options: tstl.CompilerOptions = {
+        sourceMapTraceback: true,
+        luaLibImport: tstl.LuaLibImportKind.Inline,
+    };
 
     // Act
     const transpiledLua = util.transpileString(typeScriptSource, options);
@@ -119,21 +123,20 @@ test("Inline sourcemaps", () => {
         }
         return abc();`;
 
-    const compilerOptions: CompilerOptions = {
-        inlineSourceMap: true,
-    };
+    const compilerOptions: tstl.CompilerOptions = { inlineSourceMap: true };
 
-    const { lua, sourceMap } = util.transpileStringResult(typeScriptSource, compilerOptions);
+    const { file } = util.transpileStringResult(typeScriptSource, compilerOptions);
+    if (!util.expectToBeDefined(file.lua)) return;
 
-    const inlineSourceMapMatch = lua.match(
+    const inlineSourceMapMatch = file.lua.match(
         /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
     );
 
     if (util.expectToBeDefined(inlineSourceMapMatch)) {
         const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
-        expect(sourceMap).toBe(inlineSourceMap);
+        expect(file.sourceMap).toBe(inlineSourceMap);
 
-        expect(util.executeLua(lua)).toBe("foo");
+        expect(util.executeLua(file.lua)).toBe("foo");
     }
 });
 

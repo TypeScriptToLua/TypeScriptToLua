@@ -6,7 +6,8 @@
         "declaration": true,
         "sourceMap": true,
         "target": "es2017",
-        "module": "commonjs"
+        "module": "commonjs",
+        "stripInternal": true
     },
     "include": ["src"],
     "exclude": ["src/lualib"]

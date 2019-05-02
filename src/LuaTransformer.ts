@@ -2658,14 +2658,18 @@ export class LuaTransformer {
                 );
 
             case ts.SyntaxKind.InstanceOfKeyword:
-                const decorators = tsHelper.getCustomDecorators(
-                    this.checker.getTypeAtLocation(expression.right),
-                    this.checker
-                );
+                const rhsType = this.checker.getTypeAtLocation(expression.right);
+                const decorators = tsHelper.getCustomDecorators(rhsType, this.checker);
+
                 if (decorators.has(DecoratorKind.Extension) || decorators.has(DecoratorKind.MetaExtension)) {
                     // Cannot use instanceof on extension classes
                     throw TSTLErrors.InvalidInstanceOfExtension(expression);
                 }
+
+                if (tsHelper.isStandardLibraryType(rhsType, "ObjectConstructor", this.program)) {
+                    return this.transformLuaLibFunction(LuaLibFeature.InstanceOfObject, expression, lhs);
+                }
+
                 return this.transformLuaLibFunction(LuaLibFeature.InstanceOf, expression, lhs, rhs);
 
             case ts.SyntaxKind.CommaToken:
@@ -4533,11 +4537,6 @@ export class LuaTransformer {
     }
 
     private importLuaLibFeature(feature: LuaLibFeature): void {
-        // Add additional lib requirements
-        if (feature === LuaLibFeature.Map || feature === LuaLibFeature.Set) {
-            this.luaLibFeatureSet.add(LuaLibFeature.InstanceOf);
-        }
-
         this.luaLibFeatureSet.add(feature);
     }
 

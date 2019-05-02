@@ -8,11 +8,15 @@ import { LuaLib } from "./src/LuaLib";
 const options: tstl.CompilerOptions = {
     skipLibCheck: true,
     types: [],
+    target: ts.ScriptTarget.ESNext,
+    lib: ["lib.esnext.d.ts"],
+
+    outDir: path.join(__dirname, "./dist/lualib"),
+    rootDir: path.join(__dirname, "./src/lualib"),
+
     luaLibImport: tstl.LuaLibImportKind.None,
     luaTarget: tstl.LuaTarget.Lua51,
     noHeader: true,
-    outDir: path.join(__dirname, "./dist/lualib"),
-    rootDir: path.join(__dirname, "./src/lualib"),
 };
 
 // TODO: Check diagnostics

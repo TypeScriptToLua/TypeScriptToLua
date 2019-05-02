@@ -1,4 +1,4 @@
-import { Position, SourceMapConsumer } from "source-map";
+import { MappingItem, Position, SourceMapConsumer } from "source-map";
 import * as tstl from "../../src";
 import * as util from "../util";
 
@@ -43,6 +43,80 @@ test.each([
         assertPatterns: [
             { luaPattern: "xyz", typeScriptPattern: "xyz" },
             { luaPattern: "2", typeScriptPattern: "abc.foo" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            const obj = {
+                a: "A",
+                b: "B",
+                c: "C",
+            };`,
+        assertPatterns: [
+            { luaPattern: `local obj =`, typeScriptPattern: `obj =` },
+            { luaPattern: `{`, typeScriptPattern: `{` },
+            { luaPattern: `a =`, typeScriptPattern: `a:` },
+            { luaPattern: `"A"`, typeScriptPattern: `"A"` },
+            { luaPattern: `b =`, typeScriptPattern: `b:` },
+            { luaPattern: `"B"`, typeScriptPattern: `"B"` },
+            { luaPattern: `c =`, typeScriptPattern: `c:` },
+            { luaPattern: `"C"`, typeScriptPattern: `"C"` },
+        ],
+    },
+    {
+        typeScriptSource: `
+            const arr = [
+                "A",
+                "B",
+                "C",
+            ];`,
+        assertPatterns: [
+            { luaPattern: `local arr =`, typeScriptPattern: `arr =` },
+            { luaPattern: `{`, typeScriptPattern: `[` },
+            { luaPattern: `"A"`, typeScriptPattern: `"A"` },
+            { luaPattern: `"B"`, typeScriptPattern: `"B"` },
+            { luaPattern: `"C"`, typeScriptPattern: `"C"` },
+        ],
+    },
+    {
+        typeScriptSource: `
+            function foo(a: string, b: number) {
+            }
+            foo("bar", 17);`,
+        assertPatterns: [
+            { luaPattern: `function`, typeScriptPattern: `function` },
+            { luaPattern: `foo(self`, typeScriptPattern: `foo(` },
+            { luaPattern: `a,`, typeScriptPattern: `a: string,` },
+            { luaPattern: `b)`, typeScriptPattern: `b: number)` },
+            { luaPattern: `end`, typeScriptPattern: `function` },
+            { luaPattern: `foo(_G, "bar"`, typeScriptPattern: `foo("bar"` },
+            { luaPattern: `"bar"`, typeScriptPattern: `"bar"` },
+            { luaPattern: `17`, typeScriptPattern: `17` },
+        ],
+    },
+    {
+        typeScriptSource: `
+            for (let i = 0; i < 10; ++i) {
+            }
+        `,
+        assertPatterns: [
+            { luaPattern: `do`, typeScriptPattern: `for` },
+            { luaPattern: `local i = 0`, typeScriptPattern: `i = 0` },
+            { luaPattern: `while`, typeScriptPattern: `i < 10` },
+            { luaPattern: `i < 10`, typeScriptPattern: `i < 10` },
+            { luaPattern: `+ 1`, typeScriptPattern: `++i` },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare const arr: string[];
+            for (const element of arr) {
+            }
+        `,
+        assertPatterns: [
+            { luaPattern: `for`, typeScriptPattern: `for` },
+            { luaPattern: `local element`, typeScriptPattern: `const element` },
+            { luaPattern: `end`, typeScriptPattern: `for` },
         ],
     },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
@@ -138,6 +212,22 @@ test("Inline sourcemaps", () => {
 
         expect(util.executeLua(file.lua)).toBe("foo");
     }
+});
+
+test.each([
+    { sourceRootOption: "./foo/bar", expectInMap: "./foo/bar" },
+    { sourceRootOption: undefined, expectInMap: "." },
+])("sourceRoot is included in sourcemap (%p)", ({ sourceRootOption, expectInMap }) => {
+    const options: tstl.CompilerOptions = {
+        sourceMap: true,
+        sourceRoot: sourceRootOption,
+        luaLibImport: tstl.LuaLibImportKind.Inline,
+    };
+
+    const { file } = util.transpileStringResult(`const foo = "bar";`, options);
+    if (!util.expectToBeDefined(file.sourceMap)) return;
+    const sourceMap = JSON.parse(file.sourceMap);
+    expect(sourceMap.sourceRoot).toBe(expectInMap);
 });
 
 // Helper functions

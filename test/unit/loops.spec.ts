@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -418,8 +418,8 @@ test("forof with iterator", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -444,8 +444,8 @@ test("forof with iterator and existing variable", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -469,8 +469,8 @@ test("forof destructuring with iterator", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -496,8 +496,8 @@ test("forof destructuring with iterator and existing variables", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -518,8 +518,8 @@ test("forof lua iterator", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -540,8 +540,8 @@ test("forof array lua iterator", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -563,8 +563,8 @@ test("forof lua iterator with existing variable", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -585,8 +585,8 @@ test("forof lua iterator destructuring", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -609,8 +609,8 @@ test("forof lua iterator destructuring with existing variables", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -634,8 +634,8 @@ test("forof lua iterator tuple-return", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -661,8 +661,8 @@ test("forof lua iterator tuple-return with existing variables", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -678,8 +678,8 @@ test("forof lua iterator tuple-return single variable", () => {
         for (let x of luaIter()) {}
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
@@ -697,8 +697,8 @@ test("forof lua iterator tuple-return single existing variable", () => {
         for (x of luaIter()) {}
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
@@ -725,8 +725,8 @@ test("forof forwarded lua iterator", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -754,8 +754,8 @@ test("forof forwarded lua iterator with tupleReturn", () => {
         return result;
     `;
     const compilerOptions = {
-        luaLibImport: LuaLibImportKind.Require,
-        luaTarget: LuaTarget.Lua53,
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
         target: ts.ScriptTarget.ES2015,
     };
     const result = util.transpileAndExecute(code, compilerOptions);
@@ -769,13 +769,17 @@ test.each([
     "for (let a in b) { continue; }",
     "for (let a of b) { continue; }",
 ])("loop continue in different lua versions (%p)", loop => {
-    const lua51 = { luaTarget: LuaTarget.Lua51 };
-    const lua52 = { luaTarget: LuaTarget.Lua52 };
-    const lua53 = { luaTarget: LuaTarget.Lua53 };
-    const luajit = { luaTarget: LuaTarget.LuaJIT };
+    const lua51 = { luaTarget: tstl.LuaTarget.Lua51 };
+    const lua52 = { luaTarget: tstl.LuaTarget.Lua52 };
+    const lua53 = { luaTarget: tstl.LuaTarget.Lua53 };
+    const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
 
     expect(() => util.transpileString(loop, lua51)).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("Continue statement", LuaTarget.Lua51, ts.createContinue()),
+        TSTLErrors.UnsupportedForTarget(
+            "Continue statement",
+            tstl.LuaTarget.Lua51,
+            ts.createContinue(),
+        ),
     );
     expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
     expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);

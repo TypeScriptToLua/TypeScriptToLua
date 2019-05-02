@@ -2,70 +2,70 @@ import * as util from "../util";
 
 test.each([
     {
-        filePath: "file.ts",
+        filePath: "main.ts",
         usedPath: "./folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: "." },
         throwsError: false,
     },
     {
-        filePath: "file.ts",
+        filePath: "main.ts",
         usedPath: "./folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: "./" },
         throwsError: false,
     },
     {
-        filePath: "src/file.ts",
+        filePath: "src/main.ts",
         usedPath: "./folder/Module",
         expectedPath: "src.folder.Module",
         options: { rootDir: "." },
         throwsError: false,
     },
     {
-        filePath: "file.ts",
+        filePath: "main.ts",
         usedPath: "folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: ".", baseUrl: "." },
         throwsError: false,
     },
     {
-        filePath: "file.ts",
+        filePath: "main.ts",
         usedPath: "folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: "./", baseUrl: "." },
         throwsError: false,
     },
     {
-        filePath: "src/file.ts",
+        filePath: "src/main.ts",
         usedPath: "./folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: "src" },
         throwsError: false,
     },
     {
-        filePath: "src/file.ts",
+        filePath: "src/main.ts",
         usedPath: "./folder/Module",
         expectedPath: "folder.Module",
         options: { rootDir: "./src" },
         throwsError: false,
     },
     {
-        filePath: "file.ts",
+        filePath: "main.ts",
         usedPath: "../Module",
         expectedPath: "",
         options: { rootDir: "./src" },
         throwsError: true,
     },
     {
-        filePath: "src/dir/file.ts",
+        filePath: "src/dir/main.ts",
         usedPath: "../Module",
         expectedPath: "Module",
         options: { rootDir: "./src" },
         throwsError: false,
     },
     {
-        filePath: "src/dir/dir/file.ts",
+        filePath: "src/dir/dir/main.ts",
         usedPath: "../../dir/Module",
         expectedPath: "dir.Module",
         options: { rootDir: "./src" },
@@ -74,17 +74,11 @@ test.each([
 ])(
     "require paths root from --baseUrl or --rootDir (%p)",
     ({ filePath, usedPath, expectedPath, options, throwsError }) => {
+        const input = { [filePath]: `import * from "${usedPath}";` };
         if (throwsError) {
-            expect(() =>
-                util.transpileString(`import * from "${usedPath}";`, options, true, filePath),
-            ).toThrow();
+            expect(() => util.transpileString(input, options)).toThrow();
         } else {
-            const lua = util.transpileString(
-                `import * from "${usedPath}";`,
-                options,
-                true,
-                filePath,
-            );
+            const lua = util.transpileString(input, options);
             const regex = /require\("(.*?)"\)/;
             const match = regex.exec(lua);
 
@@ -101,15 +95,10 @@ test.each([
 ])(
     "noResolution on ambient modules causes no path alterations (%p)",
     ({ comment, expectedPath }) => {
-        const lua = util.transpileString(
-            {
-                "src/file.ts": `import * as fake from "fake";`,
-                "module.d.ts": `${comment} declare module "fake" {}`,
-            },
-            undefined,
-            true,
-            "src/file.ts",
-        );
+        const lua = util.transpileString({
+            "src/main.ts": `import * as fake from "fake";`,
+            "module.d.ts": `${comment} declare module "fake" {}`,
+        });
         const regex = /require\("(.*?)"\)/;
         const match = regex.exec(lua);
 

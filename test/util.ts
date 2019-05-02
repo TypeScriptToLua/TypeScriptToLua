@@ -2,115 +2,54 @@ import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import {
-    createStringCompilerProgram,
-    transpileString as compilerTranspileString,
-} from "../src/Compiler";
-import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../src/CompilerOptions";
-import { LuaTransformer } from "../src/LuaTransformer";
-import { TranspileResult } from "../src/LuaTranspiler";
+import * as tstl from "../src";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
-declare global {
-    namespace jest {
-        interface Matchers<R> {
-            toThrowExactError(error: Error): void;
-        }
-    }
-}
-
-expect.extend({
-    toThrowExactError(
-        callback: () => void,
-        error: Error,
-    ): { pass: boolean; message: () => string } {
-        if (this.isNot) {
-            return { pass: true, message: () => "Inverted toThrowExactError is not implemented" };
-        }
-
-        let executionError: Error | undefined;
-        try {
-            callback();
-        } catch (err) {
-            executionError = err;
-        }
-
-        expect(() => {
-            if (executionError) throw executionError;
-        }).toThrowError(error.constructor as any);
-        expect(() => {
-            if (executionError) throw executionError;
-        }).toThrowError(error);
-
-        return { pass: true, message: () => "" };
-    },
-});
-
-function compilerTranspile(
-    str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
-    ignoreDiagnostics = true,
-    filePath = "file.ts",
-): TranspileResult {
-    return compilerTranspileString(
-        str,
-        {
-            luaLibImport: LuaLibImportKind.Inline,
-            luaTarget: LuaTarget.Lua53,
-            noHeader: true,
-            skipLibCheck: true,
-            target: ts.ScriptTarget.ESNext,
-            lib: [
-                "lib.es2015.d.ts",
-                "lib.es2016.d.ts",
-                "lib.es2017.d.ts",
-                "lib.es2018.d.ts",
-                "lib.esnext.d.ts",
-            ],
-            ...options,
-        },
-        ignoreDiagnostics,
-        filePath,
-    );
-}
-
 export function transpileString(
     str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
+    options: tstl.CompilerOptions = {},
     ignoreDiagnostics = true,
-    filePath = "file.ts",
 ): string {
-    const { lua } = transpileStringResult(str, options, ignoreDiagnostics, filePath);
-    return lua.trim();
+    const { diagnostics, file } = transpileStringResult(str, options);
+    if (!expectToBeDefined(file) || !expectToBeDefined(file.lua)) return "";
+
+    const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
+    expect(errors).not.toHaveDiagnostics();
+
+    return file.lua.trim();
 }
 
 export function transpileStringResult(
-    str: string | { [filename: string]: string },
-    options: CompilerOptions = {},
-    ignoreDiagnostics = true,
-    filePath = "file.ts",
-): TranspileResult {
-    return compilerTranspileString(
-        str,
-        {
-            luaLibImport: LuaLibImportKind.Inline,
-            luaTarget: LuaTarget.Lua53,
-            noHeader: true,
-            skipLibCheck: true,
-            target: ts.ScriptTarget.ESNext,
-            lib: [
-                "lib.es2015.d.ts",
-                "lib.es2016.d.ts",
-                "lib.es2017.d.ts",
-                "lib.es2018.d.ts",
-                "lib.esnext.d.ts",
-            ],
-            ...options,
-        },
-        ignoreDiagnostics,
-        filePath,
+    input: string | Record<string, string>,
+    options: tstl.CompilerOptions = {},
+): Required<tstl.TranspileStringResult> {
+    const optionsWithDefaults = {
+        luaTarget: tstl.LuaTarget.Lua53,
+        noHeader: true,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ESNext,
+        lib: [
+            "lib.es2015.d.ts",
+            "lib.es2016.d.ts",
+            "lib.es2017.d.ts",
+            "lib.es2018.d.ts",
+            "lib.esnext.d.ts",
+        ],
+        ...options,
+    };
+
+    const { diagnostics, transpiledFiles } = tstl.transpileVirtualProject(
+        typeof input === "string" ? { "main.ts": input } : input,
+        optionsWithDefaults,
     );
+
+    const mainFileName = [...transpiledFiles.keys()].find(x => /\bmain\.[a-z]+$/.test(x));
+    if (mainFileName === undefined) {
+        throw new Error('Program should have a file named "main"');
+    }
+
+    return { diagnostics, file: transpiledFiles.get(mainFileName)! };
 }
 
 const lualibContent = fs.readFileSync(
@@ -154,14 +93,13 @@ export function executeLua(luaStr: string, withLib = true): any {
 }
 
 // Get a mock transformer to use for testing
-export function makeTestTransformer(target: LuaTarget = LuaTarget.Lua53): LuaTransformer {
-    const options = { luaTarget: target };
-    return new LuaTransformer(ts.createProgram([], options), options);
+export function makeTestTransformer(luaTarget = tstl.LuaTarget.Lua53): tstl.LuaTransformer {
+    return new tstl.LuaTransformer(ts.createProgram([], { luaTarget }));
 }
 
 export function transpileAndExecute(
     tsStr: string,
-    compilerOptions?: CompilerOptions,
+    compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
 ): any {
@@ -179,7 +117,7 @@ export function transpileAndExecute(
 export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
-    compilerOptions?: CompilerOptions,
+    compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
 ): any {
     const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
@@ -195,13 +133,13 @@ export function transpileExecuteAndReturnExport(
 
 export function parseTypeScript(
     typescript: string,
-    target: LuaTarget = LuaTarget.Lua53,
+    target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
 ): [ts.SourceFile, ts.TypeChecker] {
-    const program = createStringCompilerProgram(typescript, { luaTarget: target });
-    const sourceFile = program.getSourceFile("file.ts");
+    const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
+    const sourceFile = program.getSourceFile("main.ts");
 
     if (sourceFile === undefined) {
-        throw new Error("Could not find source file file.ts in program.");
+        throw new Error("Could not find source file main.ts in program.");
     }
 
     return [sourceFile, program.getTypeChecker()];

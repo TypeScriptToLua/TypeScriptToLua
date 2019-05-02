@@ -271,6 +271,30 @@ test.each([
     expect(result).toBe(inp.charAt(index));
 });
 
+test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
+    { inp: "hello test", args: [""] },
+    { inp: "hello test", args: ["hello"] },
+    { inp: "hello test", args: ["test"] },
+    { inp: "hello test", args: ["test", 6] },
+])("string.startsWith (%p)", ({ inp, args }) => {
+    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".startsWith(${argsString})`);
+
+    expect(result).toBe(inp.startsWith(...args));
+});
+
+test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
+    { inp: "hello test", args: [""] },
+    { inp: "hello test", args: ["test"] },
+    { inp: "hello test", args: ["hello"] },
+    { inp: "hello test", args: ["hello", 5] },
+])("string.endsWith (%p)", ({ inp, args }) => {
+    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".endsWith(${argsString})`);
+
+    expect(result).toBe(inp.endsWith(...args));
+});
+
 test.each([
     { input: "abcd", index: 3 },
     { input: "abcde", index: 3 },

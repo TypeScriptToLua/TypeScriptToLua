@@ -9,4 +9,5 @@ declare namespace string {
     function gsub(source: string, searchValue: string, replaceValue: (...groups: string[]) => string): [string, number];
 
     function gmatch(haystack: string, pattern: string): GMatchResult;
+    function sub(s: string, i: number, j?: number): string;
 }

@@ -1,10 +1,58 @@
+import * as path from "path";
+import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
-import { transpileError } from "./diagnostics";
-import { Block } from './LuaAST';
+import * as diags from "./diagnostics";
+import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
+
+function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers {
+    const diagnostics: ts.Diagnostic[] = [];
+    const customTransformers: Required<ts.CustomTransformers> = {
+        before: [],
+        after: [],
+        afterDeclarations: [],
+    };
+
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (!options.tsTransformers) return customTransformers;
+
+    const configFileName = options.configFilePath as string | undefined;
+    const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
+
+    const extensions = [".ts", ".tsx", ".js"];
+    for (const transformer of options.tsTransformers) {
+        const { transform, when = "before", ...transformerOptions } = transformer;
+        const resolved = resolve.sync(transform, { extensions, basedir });
+
+        // tslint:disable-next-line: deprecation
+        const hasNoTsRequireHook = require.extensions[".ts"] === undefined;
+        if (hasNoTsRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
+            try {
+                const tsNodePath = resolve.sync("ts-node", { basedir });
+                const tsNode: typeof import("ts-node") = require(tsNodePath);
+                tsNode.register({ transpileOnly: true });
+            } catch (err) {
+                if (err.code === "MODULE_NOT_FOUND") {
+                    diagnostics.push(diags.toLoadTransformerItShouldBeTranspiled(transform));
+                }
+
+                continue;
+            }
+        }
+
+        const result = require(resolved).default;
+        if (result !== undefined) {
+            customTransformers[when].push(result(program, transformerOptions));
+        } else {
+            diagnostics.push(diags.transformerShouldHaveADefaultExport(transform));
+        }
+    }
+
+    return customTransformers;
+}
 
 function getCustomTransformers(
     program: ts.Program,
@@ -26,10 +74,17 @@ function getCustomTransformers(
             return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
         });
 
+    const transformersFromConfig = loadTransformersFromOptions(program);
     return {
-        afterDeclarations: customTransformers.afterDeclarations,
+        afterDeclarations: [
+            ...(transformersFromConfig.afterDeclarations || []),
+            ...(customTransformers.afterDeclarations || []),
+        ],
         before: [
             ...(customTransformers.before || []),
+            ...(transformersFromConfig.before || []),
+
+            ...(transformersFromConfig.after || []),
             ...(customTransformers.after || []),
             luaTransformer,
         ],
@@ -115,7 +170,7 @@ export function transpile({
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
 
-            diagnostics.push(transpileError(err));
+            diagnostics.push(diags.transpileError(err));
 
             updateTranspiledFile(sourceFile.fileName, {
                 lua: `error(${JSON.stringify(err.message)})\n`,

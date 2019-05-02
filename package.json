@@ -39,6 +39,7 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
+        "resolve": "^1.10.1",
         "source-map": "^0.7.3",
         "typescript": "^3.3.1"
     },
@@ -46,6 +47,7 @@
         "@types/glob": "^5.0.35",
         "@types/jest": "^24.0.11",
         "@types/node": "^11.13.0",
+        "@types/resolve": "0.0.8",
         "fengari": "^0.1.2",
         "glob": "^7.1.2",
         "jest": "^24.5.0",
@@ -54,6 +56,6 @@
         "rimraf": "^2.6.3",
         "ts-jest": "^24.0.0",
         "ts-node": "^7.0.0",
-        "tslint": "^5.10.0"
+        "tslint": "^5.16.0"
     }
 }

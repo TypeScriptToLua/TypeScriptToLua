@@ -10,7 +10,8 @@ export interface ParsedCommandLine extends ts.ParsedCommandLine {
 interface CommandLineOptionBase {
     name: string;
     aliases?: string[];
-    describe: string;
+    description: string;
+    isTSConfigOnly?: boolean;
 }
 
 interface CommandLineOptionOfEnum extends CommandLineOptionBase {
@@ -22,35 +23,51 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+interface CommandLineOptionOfListType extends CommandLineOptionBase {
+    isTSConfigOnly: true;
+    type: "list";
+}
+
+type CommandLineOption =
+    | CommandLineOptionOfEnum
+    | CommandLineOptionOfBoolean
+    | CommandLineOptionOfListType;
+
 const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaLibImport",
-        describe: "Specifies how js standard features missing in lua are imported.",
+        description: "Specifies how js standard features missing in lua are imported.",
         type: "enum",
         choices: Object.values(LuaLibImportKind),
     },
     {
         name: "luaTarget",
         aliases: ["lt"],
-        describe: "Specify Lua target version.",
+        description: "Specify Lua target version.",
         type: "enum",
         choices: Object.values(LuaTarget),
     },
     {
         name: "noHeader",
-        describe: "Specify if a header will be added to compiled files.",
+        description: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },
     {
         name: "noHoisting",
-        describe: "Disables hoisting.",
+        description: "Disables hoisting.",
         type: "boolean",
     },
     {
         name: "sourceMapTraceback",
-        describe: "Applies the source map to show source TS files and lines in error tracebacks.",
+        description:
+            "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
+    },
+    {
+        name: "tsTransformers",
+        description: "Custom TypeScript transformers.",
+        isTSConfigOnly: true,
+        type: "list",
     },
 ];
 
@@ -72,13 +89,15 @@ export function getHelpString(): string {
 
     result += "Options:\n";
     for (const option of optionDeclarations) {
+        if (option.isTSConfigOnly) continue;
+
         const aliasStrings = (option.aliases || []).map(a => "-" + a);
         const optionString = aliasStrings.concat(["--" + option.name]).join("|");
 
         const valuesHint = option.type === "enum" ? option.choices.join("|") : option.type;
         const spacing = " ".repeat(Math.max(1, 45 - optionString.length - valuesHint.length));
 
-        result += `\n ${optionString} <${valuesHint}>${spacing}${option.describe}\n`;
+        result += `\n ${optionString} <${valuesHint}>${spacing}${option.description}\n`;
     }
 
     return result;
@@ -165,6 +184,14 @@ interface CommandLineArgument extends ReadValueResult {
 }
 
 function readCommandLineArgument(option: CommandLineOption, value: any): CommandLineArgument {
+    if (option.isTSConfigOnly) {
+        return {
+            value: undefined,
+            error: diagnostics.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
+            increment: 0,
+        };
+    }
+
     if (option.type === "boolean") {
         if (value === "true" || value === "false") {
             value = value === "true";
@@ -172,7 +199,9 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
             // Set boolean arguments without supplied value to true
             return { value: true, increment: 0 };
         }
-    } else if (value === undefined) {
+    }
+
+    if (value === undefined) {
         return {
             error: diagnostics.compilerOptionExpectsAnArgument(option.name),
             value: undefined,
@@ -221,6 +250,17 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             }
 
             return { value: normalizedValue };
+        }
+
+        case "list": {
+            if (!Array.isArray(value)) {
+                return {
+                    value: undefined,
+                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "Array"),
+                };
+            }
+
+            return { value };
         }
     }
 }

@@ -79,12 +79,25 @@ test.each([
     { inp: "hello test", searchValue: "hello", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "world" },
+    { inp: "hello test", searchValue: "test", replaceValue: "%world" },
+    { inp: "hello %test", searchValue: "test", replaceValue: "world" },
+    { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
+    { inp: "hello test", searchValue: "test", replaceValue: (): string => "a" },
+    { inp: "hello test", searchValue: "test", replaceValue: (): string => "%a" },
+    { inp: "aaa", searchValue: "a", replaceValue: "b" },
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
+    const replaceValueString =
+        typeof replaceValue === "string" ? JSON.stringify(replaceValue) : replaceValue.toString();
     const result = util.transpileAndExecute(
-        `return "${inp}".replace("${searchValue}", "${replaceValue}");`,
+        `return "${inp}".replace("${searchValue}", ${replaceValueString});`,
     );
 
-    expect(result).toBe(inp.replace(searchValue, replaceValue));
+    // https://github.com/Microsoft/TypeScript/issues/22378
+    if (typeof replaceValue === "string") {
+        expect(result).toBe(inp.replace(searchValue, replaceValue));
+    } else {
+        expect(result).toBe(inp.replace(searchValue, replaceValue));
+    }
 });
 
 test.each([
@@ -269,6 +282,30 @@ test.each([
     );
 
     expect(result).toBe(inp.charAt(index));
+});
+
+test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
+    { inp: "hello test", args: [""] },
+    { inp: "hello test", args: ["hello"] },
+    { inp: "hello test", args: ["test"] },
+    { inp: "hello test", args: ["test", 6] },
+])("string.startsWith (%p)", ({ inp, args }) => {
+    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".startsWith(${argsString})`);
+
+    expect(result).toBe(inp.startsWith(...args));
+});
+
+test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
+    { inp: "hello test", args: [""] },
+    { inp: "hello test", args: ["test"] },
+    { inp: "hello test", args: ["hello"] },
+    { inp: "hello test", args: ["hello", 5] },
+])("string.endsWith (%p)", ({ inp, args }) => {
+    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".endsWith(${argsString})`);
+
+    expect(result).toBe(inp.endsWith(...args));
 });
 
 test.each([

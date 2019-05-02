@@ -1,34 +1,27 @@
 import * as fs from "fs";
 import * as glob from "glob";
-import { compile } from "./src/Compiler";
-import { LuaLib as luaLib, LuaLibFeature } from "./src/LuaLib";
+import * as path from "path";
+import * as ts from "typescript";
+import * as tstl from "./src";
+import { LuaLib } from "./src/LuaLib";
 
-const bundlePath = "./dist/lualib/lualib_bundle.lua";
+const options: tstl.CompilerOptions = {
+    skipLibCheck: true,
+    types: [],
+    luaLibImport: tstl.LuaLibImportKind.None,
+    luaTarget: tstl.LuaTarget.Lua51,
+    noHeader: true,
+    outDir: path.join(__dirname, "./dist/lualib"),
+    rootDir: path.join(__dirname, "./src/lualib"),
+};
 
-compile([
-    "--skipLibCheck",
-    "--types",
-    "node",
-    "--luaLibImport",
-    "none",
-    "--luaTarget",
-    "5.1",
-    "--noHeader",
-    "--outDir",
-    "./dist/lualib",
-    "--rootDir",
-    "./src/lualib",
-    "--noHeader",
-    "true",
-    ...glob.sync("./src/lualib/**/*.ts"),
-]);
+// TODO: Check diagnostics
+const { emitResult } = tstl.transpileFiles(glob.sync("./src/lualib/**/*.ts"), options);
+emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
+const bundlePath = path.join(__dirname, "./dist/lualib/lualib_bundle.lua");
 if (fs.existsSync(bundlePath)) {
     fs.unlinkSync(bundlePath);
 }
 
-const features = Object.keys(LuaLibFeature).map(
-    lib => LuaLibFeature[lib as keyof typeof LuaLibFeature],
-);
-const bundle = luaLib.loadFeatures(features);
-fs.writeFileSync(bundlePath, bundle);
+fs.writeFileSync(bundlePath, LuaLib.loadFeatures(Object.values(tstl.LuaLibFeature)));

@@ -9,5 +9,11 @@
         "noEmit": true,
         "module": "commonjs"
     },
-    "exclude": ["translation/transformation", "compiler/projects", "compiler/testfiles"]
+    "exclude": [
+        "translation/transformation",
+        "cli/errors",
+        "cli/watch",
+        "transpile/directories",
+        "transpile/outFile"
+    ]
 }

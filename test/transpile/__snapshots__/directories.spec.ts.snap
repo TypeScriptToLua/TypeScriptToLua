@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should be able to resolve ({"name": "baseurl", "options": [Object]}) 1`] = `
+Array [
+  "directories/baseurl/out/lualib_bundle.lua",
+  "directories/baseurl/out/src/lib/nested/file.lua",
+  "directories/baseurl/out/src/main.lua",
+]
+`;
+
+exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 1`] = `
+Array [
+  "directories/basic/lualib_bundle.lua",
+  "directories/basic/src/lib/file.lua",
+  "directories/basic/src/main.lua",
+]
+`;
+
+exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 2`] = `
+Array [
+  "directories/basic/out/lualib_bundle.lua",
+  "directories/basic/out/src/lib/file.lua",
+  "directories/basic/out/src/main.lua",
+]
+`;
+
+exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 3`] = `
+Array [
+  "directories/basic/src/lib/file.lua",
+  "directories/basic/src/lualib_bundle.lua",
+  "directories/basic/src/main.lua",
+]
+`;
+
+exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 4`] = `
+Array [
+  "directories/basic/out/lib/file.lua",
+  "directories/basic/out/lualib_bundle.lua",
+  "directories/basic/out/main.lua",
+]
+`;

@@ -10,10 +10,9 @@ import { TSHelper as tsHelper } from "./TSHelper";
 type SourceChunk = string | SourceNode;
 
 export class LuaPrinter {
-    /* tslint:disable:object-literal-sort-keys */
     private static operatorMap: {[key in tstl.Operator]: string} = {
         [tstl.SyntaxKind.AdditionOperator]: "+",
-        [tstl.SyntaxKind.SubractionOperator]: "-",
+        [tstl.SyntaxKind.SubtractionOperator]: "-",
         [tstl.SyntaxKind.MultiplicationOperator]: "*",
         [tstl.SyntaxKind.DivisionOperator]: "/",
         [tstl.SyntaxKind.FloorDivisionOperator]: "//",
@@ -38,7 +37,6 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };
-    /* tslint:enable:object-literal-sort-keys */
 
     private options: CompilerOptions;
     private currentIndent: string;
@@ -119,20 +117,20 @@ export class LuaPrinter {
 
         let header = "";
 
-        if (this.options.noHeader === undefined || this.options.noHeader === false) {
+        if (!this.options.noHeader) {
             header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
         }
 
         if (luaLibFeatures) {
+            const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
             // Require lualib bundle
-            if ((this.options.luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
-                || this.options.luaLibImport === LuaLibImportKind.Always)
+            if ((luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
+                || luaLibImport === LuaLibImportKind.Always)
             {
                 header += `require("lualib_bundle");\n`;
             }
             // Inline lualib features
-            else if (this.options.luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0)
-            {
+            else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
                 header += LuaLib.loadFeatures(luaLibFeatures);
             }
@@ -315,7 +313,7 @@ export class LuaPrinter {
 
         const prefix = isElseIf ? "elseif" : "if";
 
-        chunks.push(this.indent(), prefix + " ", this.printExpression(statement.condtion), " then\n");
+        chunks.push(this.indent(), prefix + " ", this.printExpression(statement.condition), " then\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.ifBlock));
@@ -343,7 +341,7 @@ export class LuaPrinter {
     private printWhileStatement(statement: tstl.WhileStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent(), "while ", this.printExpression(statement.condtion), " do\n");
+        chunks.push(this.indent(), "while ", this.printExpression(statement.condition), " do\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
@@ -363,7 +361,7 @@ export class LuaPrinter {
         chunks.push(this.printBlock(statement.body));
         this.popIndent();
 
-        chunks.push(this.indent(), "until ", this.printExpression(statement.condtion));
+        chunks.push(this.indent(), "until ", this.printExpression(statement.condition));
 
         return this.createSourceNode(statement, chunks);
     }
@@ -626,7 +624,7 @@ export class LuaPrinter {
     }
 
     private printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
-        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerEpxression), ")"]);
+        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerExpression), ")"]);
     }
 
     private printCallExpression(expression: tstl.CallExpression): SourceNode {

@@ -36,6 +36,7 @@ export function transpileStringResult(
             "lib.es2018.d.ts",
             "lib.esnext.d.ts",
         ],
+        experimentalDecorators: true,
         ...options,
     };
 

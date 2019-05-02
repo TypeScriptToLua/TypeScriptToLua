@@ -170,7 +170,7 @@ function performCompilation(
     const exitCode =
         diagnostics.length === 0
             ? ts.ExitStatus.Success
-            : transpiledFiles.size === 0
+            : transpiledFiles.length === 0
             ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped
             : ts.ExitStatus.DiagnosticsPresent_OutputsGenerated;
 

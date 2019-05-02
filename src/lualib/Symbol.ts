@@ -17,4 +17,5 @@ function __TS__Symbol(description?: string | number): symbol {
 
 Symbol = {
     iterator: __TS__Symbol('Symbol.iterator'),
+    hasInstance: __TS__Symbol('Symbol.hasInstance'),
 } as any;

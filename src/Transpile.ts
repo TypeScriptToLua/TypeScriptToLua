@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { transpileError } from "./diagnostics";
+import { Block } from './LuaAST';
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
@@ -36,6 +37,7 @@ function getCustomTransformers(
 }
 
 export interface TranspiledFile {
+    luaAst?: Block;
     lua?: string;
     sourceMap?: string;
     declaration?: string;
@@ -101,14 +103,14 @@ export function transpile({
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         try {
-            const [luaAST, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
+            const [luaAst, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
                 const [lua, sourceMap] = printer.print(
-                    luaAST,
+                    luaAst,
                     lualibFeatureSet,
                     sourceFile.fileName
                 );
-                updateTranspiledFile(sourceFile.fileName, { lua, sourceMap });
+                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
             }
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;

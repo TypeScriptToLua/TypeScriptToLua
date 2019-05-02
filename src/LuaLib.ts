@@ -39,9 +39,11 @@ export enum LuaLibFeature {
     WeakMap = "WeakMap",
     WeakSet = "WeakSet",
     SourceMapTraceBack = "SourceMapTraceBack",
+    StringConcat = "StringConcat",
+    StringEndsWith = "StringEndsWith",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
-    StringConcat = "StringConcat",
+    StringStartsWith = "StringStartsWith",
     Symbol = "Symbol",
     SymbolRegistry = "SymbolRegistry",
 }

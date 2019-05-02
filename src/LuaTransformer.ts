@@ -4001,6 +4001,10 @@ export class LuaTransformer {
                 const firstParamPlusOne = this.expressionPlusOne(params[0]);
                 return this.createStringCall("byte", node, caller, firstParamPlusOne);
             }
+            case "startsWith":
+                return this.transformLuaLibFunction(LuaLibFeature.StringStartsWith, node, caller, ...params);
+            case "endsWith":
+                return this.transformLuaLibFunction(LuaLibFeature.StringEndsWith, node, caller, ...params);
             case "byte":
             case "char":
             case "dump":

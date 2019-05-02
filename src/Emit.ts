@@ -14,7 +14,7 @@ export interface OutputFile {
 let lualibContent: string;
 export function emitTranspiledFiles(
     options: CompilerOptions,
-    transpiledFiles: Map<string, TranspiledFile>
+    transpiledFiles: TranspiledFile[]
 ): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 
@@ -26,7 +26,7 @@ export function emitTranspiledFiles(
     outDir = outDir ? path.resolve(baseDir, outDir) : rootDir;
 
     const files: OutputFile[] = [];
-    for (const [fileName, { lua, sourceMap, declaration, declarationMap }] of transpiledFiles) {
+    for (const { fileName, lua, sourceMap, declaration, declarationMap } of transpiledFiles) {
         let outPath = fileName;
         if (outDir !== rootDir) {
             outPath = path.resolve(outDir, path.relative(rootDir, fileName));

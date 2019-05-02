@@ -44,12 +44,12 @@ export function transpileStringResult(
         optionsWithDefaults,
     );
 
-    const mainFileName = [...transpiledFiles.keys()].find(x => /\bmain\.[a-z]+$/.test(x));
-    if (mainFileName === undefined) {
+    const file = transpiledFiles.find(({ fileName }) => /\bmain\.[a-z]+$/.test(fileName));
+    if (file === undefined) {
         throw new Error('Program should have a file named "main"');
     }
 
-    return { diagnostics, file: transpiledFiles.get(mainFileName)! };
+    return { diagnostics, file };
 }
 
 const lualibContent = fs.readFileSync(

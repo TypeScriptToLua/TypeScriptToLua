@@ -5145,11 +5145,9 @@ export class LuaTransformer {
         decoratorArguments.push(decoratorTable);
         decoratorArguments.push(className);
 
-        const LuaLibDecorateIdentifier = this.importAndCreateIdentifierForLuaLibFunction(LuaLibFeature.Decorate);
-
         return tstl.createAssignmentStatement(
             className,
-            tstl.createCallExpression(LuaLibDecorateIdentifier, decoratorArguments)
+            this.transformLuaLibFunction(LuaLibFeature.Decorate, undefined, ...decoratorArguments)
         );
     }
 

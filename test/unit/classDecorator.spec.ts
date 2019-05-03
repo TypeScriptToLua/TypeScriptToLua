@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("Class decorator with no parameters", () => {
@@ -20,13 +18,12 @@ test("Class decorator with no parameters", () => {
     `;
 
     const result = util.transpileAndExecute(source);
-
     expect(result).toBe(true);
 });
 
 test("Class decorator with parameters", () => {
     const source = `
-    function SetNum(numArg: number) {
+    function SetNum(this: void, numArg: number) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorNum = numArg;
@@ -44,6 +41,36 @@ test("Class decorator with parameters", () => {
     `;
 
     const result = util.transpileAndExecute(source);
+    expect(result).toBe(420);
+});
 
+test("Multiple class decorators", () => {
+    const source = `
+    function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
+        return class extends constructor {
+            decoratorTen = 10;
+        }
+    }
+
+    function SetNum(this: void, numArg: number) {
+        return <T extends new(...args: any[]) => {}>(constructor: T) => {
+            return class extends constructor {
+                decoratorNum = numArg;
+            };
+        };
+    }
+
+    @SetTen
+    @SetNum(410)
+    class TestClass {
+        public decoratorTen;
+        public decoratorNum;
+    }
+
+    const classInstance = new TestClass();
+    return classInstance.decoratorNum + classInstance.decoratorTen;
+    `;
+
+    const result = util.transpileAndExecute(source);
     expect(result).toBe(420);
 });

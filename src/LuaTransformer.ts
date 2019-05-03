@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
-import { DecoratorKind } from "./Decorator";
+import { DecoratorKind, Decorator } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
@@ -635,6 +635,11 @@ export class LuaTransformer {
             );
 
             result.push(fieldAssign);
+        }
+
+        const decorationStatement = this.generateConstructorDecorationStatement(statement);
+        if (decorationStatement) {
+            result.push(decorationStatement);
         }
 
         this.classStack.pop();
@@ -4512,8 +4517,7 @@ export class LuaTransformer {
         ...params: tstl.Expression[]
     ): tstl.CallExpression
     {
-        this.importLuaLibFeature(func);
-        const functionIdentifier = tstl.createIdentifier(`__TS__${func}`);
+        const functionIdentifier = this.importAndCreateIdentifierForLuaLibFunction(func);
         return tstl.createCallExpression(functionIdentifier, params, tsParent);
     }
 
@@ -5112,5 +5116,48 @@ export class LuaTransformer {
         } else {
             return visitResult;
         }
+    }
+
+    // call this from transformClassDeclaration?
+    public generateConstructorDecorationStatement(
+        declaration: ts.ClassLikeDeclaration
+    ): tstl.AssignmentStatement | undefined {
+        const className = declaration.name !== undefined
+            ? this.transformIdentifier(declaration.name)
+            : tstl.createAnonymousIdentifier();
+
+        const decorators = declaration.decorators;
+        if (!decorators) { return undefined; }
+
+        const decoratorExpressions: tstl.Expression[] = [];
+        for (const decorator of decorators) {
+            const expressionVisitResult = this.transformExpression(decorator.expression);
+            if (expressionVisitResult !== undefined) {
+                decoratorExpressions.push(expressionVisitResult);
+            }
+        }
+
+        const decoratorArguments: tstl.Expression[] = [];
+
+        const decoratorTable = tstl.createTableExpression(
+            decoratorExpressions.map(expression => tstl.createTableFieldExpression(expression))
+        );
+
+        decoratorArguments.push(decoratorTable);
+        decoratorArguments.push(className);
+
+        const LuaLibDecorateIdentifier = this.importAndCreateIdentifierForLuaLibFunction(LuaLibFeature.Decorate);
+
+        return tstl.createAssignmentStatement(
+            className,
+            tstl.createCallExpression(LuaLibDecorateIdentifier, decoratorArguments)
+        );
+    }
+
+    private importAndCreateIdentifierForLuaLibFunction(
+        func: LuaLibFeature
+    ): tstl.Identifier {
+        this.importLuaLibFeature(func);
+        return tstl.createIdentifier(`__TS__${func}`);
     }
 }

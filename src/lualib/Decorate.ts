@@ -1,13 +1,17 @@
-function __TS__Decorate(decorators: Function[], target: {}, key: string, desc: any): {} {
-    const c = arguments.length;
-    let r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+/**
+ * NOTE: will need to be changed to support Method and Property decoration
+ *
+ * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
+ */
+function __TS__Decorate(this: void, decorators: Function[], target: {}, key?: string, desc?: any): {} {
+    let r = target;
 
     for (let i = decorators.length; i >= 0; i--) {
-        d = decorators[i];
+        const d = decorators[i];
         if (d) {
-            r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+            r = (key === undefined ? d(r) : desc !== undefined ? d(target, key, r) : d(target, key)) || r;
         }
     }
 
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
+    return r;
 }

@@ -137,7 +137,7 @@ test("Class decorator with inheritance", () => {
 
 test("Class decorators are applied in reverse order", () => {
     const source = `
-    function AddToString(this: void, stringArg: string) {
+    function SetString(this: void, stringArg: string) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorString = stringArg;
@@ -145,9 +145,9 @@ test("Class decorators are applied in reverse order", () => {
         };
     }
 
-    @AddToString("the quick brown fox")
-    @AddToString("jumped")
-    @AddToString("over the lazy dog")
+    @SetString("the quick brown fox")
+    @SetString("jumped")
+    @SetString("over the lazy dog")
     class TestClass {
         public decoratorString = "";
     }

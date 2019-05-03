@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
-import { DecoratorKind, Decorator } from "./Decorator";
+import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";

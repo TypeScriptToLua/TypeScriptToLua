@@ -4517,7 +4517,8 @@ export class LuaTransformer {
         ...params: tstl.Expression[]
     ): tstl.CallExpression
     {
-        const functionIdentifier = this.importAndCreateIdentifierForLuaLibFunction(func);
+        this.importLuaLibFeature(func);
+        const functionIdentifier = tstl.createIdentifier(`__TS__${func}`);
         return tstl.createCallExpression(functionIdentifier, params, tsParent);
     }
 
@@ -5149,12 +5150,5 @@ export class LuaTransformer {
             className,
             this.transformLuaLibFunction(LuaLibFeature.Decorate, undefined, ...decoratorArguments)
         );
-    }
-
-    private importAndCreateIdentifierForLuaLibFunction(
-        func: LuaLibFeature
-    ): tstl.Identifier {
-        this.importLuaLibFeature(func);
-        return tstl.createIdentifier(`__TS__${func}`);
     }
 }

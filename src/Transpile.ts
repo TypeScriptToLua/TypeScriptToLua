@@ -2,7 +2,7 @@ import * as path from "path";
 import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
-import * as diags from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
@@ -36,7 +36,9 @@ function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers
                 tsNode.register({ transpileOnly: true });
             } catch (err) {
                 if (err.code === "MODULE_NOT_FOUND") {
-                    diagnostics.push(diags.toLoadTransformerItShouldBeTranspiled(transform));
+                    diagnostics.push(
+                        diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform)
+                    );
                 }
 
                 continue;
@@ -47,7 +49,7 @@ function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers
         if (result !== undefined) {
             customTransformers[when].push(result(program, transformerOptions));
         } else {
-            diagnostics.push(diags.transformerShouldHaveADefaultExport(transform));
+            diagnostics.push(diagnosticFactories.transformerShouldHaveADefaultExport(transform));
         }
     }
 
@@ -170,7 +172,7 @@ export function transpile({
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
 
-            diagnostics.push(diags.transpileError(err));
+            diagnostics.push(diagnosticFactories.transpileError(err));
 
             updateTranspiledFile(sourceFile.fileName, {
                 lua: `error(${JSON.stringify(err.message)})\n`,

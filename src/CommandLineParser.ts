@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
-import * as diagnostics from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -117,14 +117,14 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
     if (parsedConfigFile.raw.tstl) {
         if (hasRootLevelOptions) {
             parsedConfigFile.errors.push(
-                diagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
+                diagnosticFactories.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
             );
         }
 
         for (const key in parsedConfigFile.raw.tstl) {
             const option = optionDeclarations.find(option => option.name === key);
             if (!option) {
-                parsedConfigFile.errors.push(diagnostics.unknownCompilerOption(key));
+                parsedConfigFile.errors.push(diagnosticFactories.unknownCompilerOption(key));
                 continue;
             }
 
@@ -187,7 +187,7 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
     if (option.isTSConfigOnly) {
         return {
             value: undefined,
-            error: diagnostics.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
+            error: diagnosticFactories.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
             increment: 0,
         };
     }
@@ -203,7 +203,7 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
 
     if (value === undefined) {
         return {
-            error: diagnostics.compilerOptionExpectsAnArgument(option.name),
+            error: diagnosticFactories.compilerOptionExpectsAnArgument(option.name),
             value: undefined,
             increment: 0,
         };
@@ -225,7 +225,10 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "boolean") {
                 return {
                     value: undefined,
-                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "boolean"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
+                        option.name,
+                        "boolean"
+                    ),
                 };
             }
 
@@ -236,7 +239,10 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "string") {
                 return {
                     value: undefined,
-                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "string"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
+                        option.name,
+                        "string"
+                    ),
                 };
             }
 
@@ -245,7 +251,10 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
-                    error: diagnostics.argumentForOptionMustBe(`--${option.name}`, optionChoices),
+                    error: diagnosticFactories.argumentForOptionMustBe(
+                        `--${option.name}`,
+                        optionChoices
+                    ),
                 };
             }
 
@@ -256,7 +265,10 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (!Array.isArray(value)) {
                 return {
                     value: undefined,
-                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "Array"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
+                        option.name,
+                        "Array"
+                    ),
                 };
             }
 

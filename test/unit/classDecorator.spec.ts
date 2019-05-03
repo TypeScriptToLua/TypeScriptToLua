@@ -134,3 +134,28 @@ test("Class decorator with inheritance", () => {
     const result = util.transpileAndExecute(source);
     expect(result).toBe(420);
 });
+
+test("Class decorators are applied in reverse order", () => {
+    const source = `
+    function AddToString(this: void, stringArg: string) {
+        return <T extends new(...args: any[]) => {}>(constructor: T) => {
+            return class extends constructor {
+                decoratorString = stringArg;
+            };
+        };
+    }
+
+    @AddToString("the quick brown fox")
+    @AddToString("jumped")
+    @AddToString("over the lazy dog")
+    class TestClass {
+        public decoratorString = "";
+    }
+
+    const classInstance = new TestClass();
+    return classInstance.decoratorString;
+    `;
+
+    const result = util.transpileAndExecute(source);
+    expect(result).toBe("the quick brown fox");
+});

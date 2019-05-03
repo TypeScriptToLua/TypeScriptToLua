@@ -3286,7 +3286,7 @@ export class LuaTransformer {
                 const expression = this.expectExpression(this.transformExpression(element.initializer));
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
-                const identifier = this.transformIdentifier(element.name);
+                const identifier = this.transformIdentifierExpression(element.name);
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.expectExpression(this.transformFunctionExpression(element));
@@ -3478,6 +3478,14 @@ export class LuaTransformer {
             );
         }
 
+        const expressionType = this.checker.getTypeAtLocation(node.expression);
+        if (tsHelper.isStandardLibraryType(expressionType, undefined, this.program)) {
+            const result = this.transformGlobalFunctionCall(node);
+            if (result) {
+                return result;
+            }
+        }
+
         const callPath = this.expectExpression(this.transformExpression(node.expression));
         const signatureDeclaration = signature && signature.getDeclaration();
         if (signatureDeclaration
@@ -3489,13 +3497,34 @@ export class LuaTransformer {
             parameters = this.transformArguments(node.arguments, signature, context);
         }
 
-        const expressionType = this.checker.getTypeAtLocation(node.expression);
-        if (tsHelper.isStandardLibraryType(expressionType, "SymbolConstructor", this.program)) {
-            return this.transformLuaLibFunction(LuaLibFeature.Symbol, node, ...parameters);
-        }
-
         const callExpression = tstl.createCallExpression(callPath, parameters, node);
         return wrapResult ? this.wrapInTable(callExpression) : callExpression;
+    }
+
+    private transformGlobalFunctionCall(node: ts.CallExpression): ExpressionVisitResult {
+        const signature = this.checker.getResolvedSignature(node);
+        const parameters = this.transformArguments(node.arguments, signature);
+
+        const expressionType = this.checker.getTypeAtLocation(node.expression);
+        const name = expressionType.symbol.name;
+        switch (name) {
+            case "SymbolConstructor":
+                return this.transformLuaLibFunction(LuaLibFeature.Symbol, node, ...parameters);
+            case "NumberConstructor":
+                return this.transformLuaLibFunction(LuaLibFeature.Number, node, ...parameters);
+            case "isNaN":
+            case "isFinite":
+                const numberParameters = tsHelper.isNumberType(expressionType)
+                    ? parameters
+                    : [this.transformLuaLibFunction(LuaLibFeature.Number, undefined, ...parameters)];
+
+                return this.transformLuaLibFunction(
+                    name === "isNaN" ? LuaLibFeature.NumberIsNaN : LuaLibFeature.NumberIsFinite,
+                    node,
+                    ...numberParameters
+                );
+            // TODO: default: throw TSTLErrors.UnsupportedGlobalFunction(name, node);
+        }
     }
 
     public transformPropertyCall(node: ts.CallExpression): ExpressionVisitResult {
@@ -3533,6 +3562,10 @@ export class LuaTransformer {
 
         if (tsHelper.isStandardLibraryType(ownerType, "SymbolConstructor", this.program)) {
             return this.transformSymbolCallExpression(node);
+        }
+
+        if (tsHelper.isStandardLibraryType(ownerType, "NumberConstructor", this.program)) {
+            return this.transformNumberCallExpression(node);
         }
 
         switch (ownerType.flags) {
@@ -4219,6 +4252,26 @@ export class LuaTransformer {
         }
     }
 
+    // Transpile a Number._ property
+    private transformNumberCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+        const method = expression.expression as ts.PropertyAccessExpression;
+        const parameters = this.transformArguments(expression.arguments);
+        const methodName = method.name.escapedText;
+
+        switch (methodName) {
+            case "isNaN":
+                return this.transformLuaLibFunction(LuaLibFeature.NumberIsNaN, expression, ...parameters);
+            case "isFinite":
+                return this.transformLuaLibFunction(LuaLibFeature.NumberIsFinite, expression, ...parameters);
+            default:
+                throw TSTLErrors.UnsupportedForTarget(
+                    `number property ${methodName}`,
+                    this.luaTarget,
+                    expression
+                );
+        }
+    }
+
     private transformArrayCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(node);
@@ -4419,18 +4472,13 @@ export class LuaTransformer {
     }
 
     private getIdentifierText(identifier: ts.Identifier): string {
-        let escapedText = identifier.escapedText as string;
-        const underScoreCharCode = "_".charCodeAt(0);
-        if (escapedText.length >= 3 && escapedText.charCodeAt(0) === underScoreCharCode &&
-            escapedText.charCodeAt(1) === underScoreCharCode && escapedText.charCodeAt(2) === underScoreCharCode) {
-            escapedText = escapedText.substr(1);
-        }
+        const text = ts.idText(identifier);
 
-        if (this.luaKeywords.has(escapedText)) {
+        if (this.luaKeywords.has(text)) {
             throw TSTLErrors.KeywordIdentifier(identifier);
         }
 
-        return escapedText;
+        return text;
     }
 
     public transformIdentifier(expression: ts.Identifier): tstl.Identifier {
@@ -4441,16 +4489,34 @@ export class LuaTransformer {
                                                   // at some point.
         }
 
-        const escapedText = this.getIdentifierText(expression);
+        const text = this.getIdentifierText(expression);
         const symbolId = this.getIdentifierSymbolId(expression);
-        return tstl.createIdentifier(escapedText, expression, symbolId);
+        return tstl.createIdentifier(text, expression, symbolId);
     }
 
-    private transformIdentifierExpression(expression: ts.Identifier): tstl.IdentifierOrTableIndexExpression {
+    private transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
         const identifier = this.transformIdentifier(expression);
         if (this.isIdentifierExported(identifier)) {
             return this.createExportedIdentifier(identifier);
         }
+
+        switch (this.getIdentifierText(expression)) {
+            case "NaN":
+                return tstl.createParenthesizedExpression(
+                    tstl.createBinaryExpression(
+                        tstl.createNumericLiteral(0),
+                        tstl.createNumericLiteral(0),
+                        tstl.SyntaxKind.DivisionOperator,
+                        expression
+                    )
+                );
+
+            case "Infinity":
+                const math = tstl.createIdentifier("math");
+                const huge = tstl.createStringLiteral("huge");
+                return tstl.createTableIndexExpression(math, huge, expression);
+        }
+
         return identifier;
     }
 

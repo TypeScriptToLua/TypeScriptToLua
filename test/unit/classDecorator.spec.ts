@@ -44,6 +44,33 @@ test("Class decorator with parameters", () => {
     expect(result).toBe(420);
 });
 
+test("Class decorator with variable parameters", () => {
+    const source = `
+    function SetNumbers(this: void, ...numArgs: number[]) {
+        return <T extends new(...args: any[]) => {}>(constructor: T) => {
+            return class extends constructor {
+                decoratorNums = new Set<number>(numArgs);
+            };
+        };
+    }
+
+    @SetNumbers(120, 30, 54)
+    class TestClass {
+        public decoratorNums;
+    }
+
+    const classInstance = new TestClass();
+    let sum = 0;
+    for (const value of classInstance.decoratorNums) {
+        sum += value;
+    }
+    return sum;
+    `;
+
+    const result = util.transpileAndExecute(source);
+    expect(result).toBe(204);
+});
+
 test("Multiple class decorators", () => {
     const source = `
     function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {

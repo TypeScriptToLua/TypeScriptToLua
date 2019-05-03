@@ -101,3 +101,36 @@ test("Multiple class decorators", () => {
     const result = util.transpileAndExecute(source);
     expect(result).toBe(420);
 });
+
+test("Class decorator with inheritance", () => {
+    const source = `
+    function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
+        return class extends constructor {
+            decoratorTen = 10;
+        }
+    }
+
+    function SetNum(this: void, numArg: number) {
+        return <T extends new(...args: any[]) => {}>(constructor: T) => {
+            return class extends constructor {
+                decoratorNum = numArg;
+            };
+        };
+    }
+
+    class TestClass {
+        public decoratorTen = 0;
+        public decoratorNum = 0;
+    }
+
+    @SetTen
+    @SetNum(410)
+    class SubTestClass extends TestClass {}
+
+    const classInstance = new SubTestClass();
+    return classInstance.decoratorNum + classInstance.decoratorTen;
+    `;
+
+    const result = util.transpileAndExecute(source);
+    expect(result).toBe(420);
+});

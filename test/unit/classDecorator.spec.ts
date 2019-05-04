@@ -149,9 +149,9 @@ test("Class decorators are applied in reverse order", () => {
         };
     }
 
-    @SetString("the quick brown fox")
+    @SetString("fox")
     @SetString("jumped")
-    @SetString("over the lazy dog")
+    @SetString("over dog")
     class TestClass {
         public static decoratorString = "";
     }
@@ -161,5 +161,7 @@ test("Class decorators are applied in reverse order", () => {
     `;
 
     const result = util.transpileAndExecute(source);
-    expect(result).toBe("eval the quick brown fox eval jumped eval over the lazy dog execute over the lazy dog execute jumped execute the quick brown fox");
+    expect(result).toBe(
+        "eval fox eval jumped eval over dog execute over dog execute jumped execute fox"
+    );
 });

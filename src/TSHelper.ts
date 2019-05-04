@@ -141,6 +141,11 @@ export class TSHelper {
                (type.flags & ts.TypeFlags.StringLiteral) !== 0;
     }
 
+    public static isNumberType(type: ts.Type): boolean {
+        return (type.flags & ts.TypeFlags.Number) !== 0 || (type.flags & ts.TypeFlags.NumberLike) !== 0 ||
+               (type.flags & ts.TypeFlags.NumberLiteral) !== 0;
+    }
+
     public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
         if (type.isUnionOrIntersection()) {
             return type.types.some(t => TSHelper.isExplicitArrayType(t, checker, program));
@@ -731,9 +736,12 @@ export class TSHelper {
         return program.isSourceFileDefaultLibrary(source);
     }
 
-    public static isStandardLibraryType(type: ts.Type, name: string, program: ts.Program): boolean {
-        const symbol = type.symbol;
-        if (!symbol || symbol.escapedName !== name) { return false; }
+    public static isStandardLibraryType(type: ts.Type, name: string | undefined, program: ts.Program): boolean {
+        const symbol = type.getSymbol();
+        if (!symbol || (name ? symbol.escapedName !== name : symbol.escapedName === '__type')) {
+            return false;
+        }
+
         const declaration = symbol.valueDeclaration;
         if(!declaration) { return true; } // assume to be lib function if no valueDeclaration exists
         return this.isStandardLibraryDeclaration(declaration, program);

@@ -3912,7 +3912,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
+    private transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
         switch (node.name.escapedText) {
             case "length":
                 const propertyAccessExpression = this.expectExpression(this.transformExpression(node.expression));

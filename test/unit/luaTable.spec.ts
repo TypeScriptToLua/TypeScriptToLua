@@ -78,6 +78,7 @@ test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib
         [`tbl.set()`, "Two parameters are required for set()."],
         [`tbl.set("field")`, "Two parameters are required for set()."],
         [`tbl.set("field", 0, 1)`, "Two parameters are required for set()."],
+        [`tbl.set("field", ...[0, 1])`, "Arguments cannot be spread."],
     ])("Forbidden LuaTable use (%p)", (invalidCode, errorDescription) => {
         expect(() => util.transpileString(tableLib + invalidCode)).toThrowExactError(
             TSTLErrors.ForbiddenLuaTableUseException(errorDescription, util.nodeStub),

@@ -484,7 +484,7 @@ export class LuaTransformer {
         }
 
         // LuaTable classes must be ambient
-        if (decorators.has(DecoratorKind.LuaTable) && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Ambient) === 0) {
+        if (decorators.has(DecoratorKind.LuaTable) && !tsHelper.isAmbient(statement)) {
             throw TSTLErrors.ForbiddenLuaTableNonDeclaration(statement);
         }
 
@@ -4295,6 +4295,9 @@ export class LuaTransformer {
         isWithinExpressionStatement: boolean
     ): void {
         const methodName = expression.expression.name.escapedText;
+        if (expression.arguments.some(argument => ts.isSpreadElement(argument))) {
+            throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", expression);
+        }
 
         switch (methodName) {
             case "get":

@@ -310,7 +310,7 @@ export function createIfStatement(
     statement.condition = condition;
     setParent(ifBlock, statement);
     statement.ifBlock = ifBlock;
-    setParent(ifBlock, statement);
+    setParent(elseBlock, statement);
     statement.elseBlock = elseBlock;
     return statement;
 }

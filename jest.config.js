@@ -9,7 +9,7 @@ module.exports = {
         // https://github.com/facebook/jest/issues/5274
         "!<rootDir>/src/tstl.ts",
     ],
-    watchPathIgnorePatterns: ["cli/watch/[^/]+$"],
+    watchPathIgnorePatterns: ["cli/watch/[^/]+$", "src/lualib"],
 
     setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
     testEnvironment: "node",

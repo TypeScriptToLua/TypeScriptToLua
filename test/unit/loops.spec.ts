@@ -504,6 +504,20 @@ test("forof destructuring with iterator and existing variables", () => {
     expect(result).toBe("0a1b2c");
 });
 
+test("forof with array typed as iterable", () => {
+    const code = `
+        function foo(): Iterable<string> {
+            return ["A", "B", "C"];
+        }
+        let result = "";
+        for (const x of foo()) {
+            result += x;
+        }
+        return result;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("ABC");
+});
+
 test("forof lua iterator", () => {
     const code = `
         const arr = ["a", "b", "c"];

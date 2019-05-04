@@ -637,7 +637,7 @@ export class LuaTransformer {
             result.push(fieldAssign);
         }
 
-        const decorationStatement = this.generateConstructorDecorationStatement(statement);
+        const decorationStatement = this.createConstructorDecorationStatement(statement);
         if (decorationStatement) {
             result.push(decorationStatement);
         }
@@ -5119,7 +5119,7 @@ export class LuaTransformer {
         }
     }
 
-    public generateConstructorDecorationStatement(
+    public createConstructorDecorationStatement(
         declaration: ts.ClassLikeDeclaration
     ): tstl.AssignmentStatement | undefined {
         const className = declaration.name !== undefined

@@ -665,7 +665,7 @@ export class LuaPrinter {
     protected removeDeadAndEmptyStatements(statements: tstl.Statement[]): tstl.Statement[] {
         const aliveStatements = [];
         for (const statement of statements) {
-            if (!this.isEmptyStatement(statement)) {
+            if (!this.isStatementEmpty(statement)) {
                 aliveStatements.push(statement);
             }
             if (tstl.isReturnStatement(statement)) {
@@ -675,7 +675,7 @@ export class LuaPrinter {
         return aliveStatements;
     }
 
-    protected isEmptyStatement(statement: tstl.Statement): boolean {
+    protected isStatementEmpty(statement: tstl.Statement): boolean {
         return tstl.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
     }
 

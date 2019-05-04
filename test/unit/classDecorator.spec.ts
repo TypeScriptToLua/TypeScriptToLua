@@ -137,8 +137,12 @@ test("Class decorator with inheritance", () => {
 
 test("Class decorators are applied in reverse order", () => {
     const source = `
+    const order = [];
+
     function SetString(this: void, stringArg: string) {
-        return <T extends new(...args: any[]) => {}>(constructor: T) => {
+        order.push("eval " + stringArg);
+        return <T extends new (...args: any[]) => {}>(constructor: T) => {
+            order.push("execute " + stringArg);
             return class extends constructor {
                 decoratorString = stringArg;
             };
@@ -149,13 +153,13 @@ test("Class decorators are applied in reverse order", () => {
     @SetString("jumped")
     @SetString("over the lazy dog")
     class TestClass {
-        public decoratorString = "";
+        public static decoratorString = "";
     }
 
-    const classInstance = new TestClass();
-    return classInstance.decoratorString;
+    const inst = new TestClass();
+    return order.join(" ");
     `;
 
     const result = util.transpileAndExecute(source);
-    expect(result).toBe("the quick brown fox");
+    expect(result).toBe("eval the quick brown fox eval jumped eval over the lazy dog execute over the lazy dog execute jumped execute the quick brown fox");
 });

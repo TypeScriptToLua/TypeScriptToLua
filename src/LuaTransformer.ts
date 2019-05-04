@@ -483,8 +483,8 @@ export class LuaTransformer {
             }
         }
 
-        // LuaTable classes must be declared
-        if (decorators.has(DecoratorKind.LuaTable) && !tsHelper.isDeclared(statement)) {
+        // LuaTable classes must be ambient
+        if (decorators.has(DecoratorKind.LuaTable) && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Ambient) === 0) {
             throw TSTLErrors.ForbiddenLuaTableNonDeclaration(statement);
         }
 

@@ -3523,7 +3523,6 @@ export class LuaTransformer {
                     node,
                     ...numberParameters
                 );
-            // TODO: default: throw TSTLErrors.UnsupportedGlobalFunction(name, node);
         }
     }
 

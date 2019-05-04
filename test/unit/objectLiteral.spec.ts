@@ -24,17 +24,6 @@ describe("property shorthand", () => {
         expect(result).toBe(1);
     });
 
-    // TODO:
-    test.skip("should support exported identifier shorthand", () => {
-        const code = `
-            export const x = 1;
-            const o = { x };
-            export const result = o.x;
-        `;
-
-        expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(1);
-    });
-
     test.each([NaN, Infinity])("should support %p shorthand", identifier => {
         const result = util.transpileAndExecute(`return ({ ${identifier} }).${identifier}`);
 

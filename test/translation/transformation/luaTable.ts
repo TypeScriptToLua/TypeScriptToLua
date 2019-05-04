@@ -1,4 +1,4 @@
-/** @LuaTable */
+/** @luaTable */
 declare class Table<K extends {} = {}, V = any> {
     public readonly length: number;
     public set(key: K, value: V): void;
@@ -10,7 +10,7 @@ tbl.set("value", 5);
 const value = tbl.get("value");
 const tblLength = tbl.length;
 
-/** @LuaTable */
+/** @luaTable */
 declare interface InterfaceTable<K extends {} = {}, V = any> {
     readonly length: number;
     set(key: K, value: V): void;

@@ -19,7 +19,7 @@ export class TSTLErrors {
         new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
     public static ForbiddenLuaTableSetExpression = (node: ts.Node) => new TranspileError(
-        `A '@LuaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
+        `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
         node);
 
     public static ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>

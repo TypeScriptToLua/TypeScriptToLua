@@ -2,7 +2,7 @@ import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
 const tableLibClass = `
-/** @LuaTable */
+/** @luaTable */
 declare class Table<K extends {} = {}, V = any> {
     length: number;
     constructor(notAllowed?: boolean);
@@ -14,7 +14,7 @@ declare let tbl: Table;
 `;
 
 const tableLibInterface = `
-/** @LuaTable */
+/** @luaTable */
 declare interface Table<K extends {} = {}, V = any> {
     length: number;
     constructor(notAllowed?: boolean);

@@ -131,8 +131,11 @@ test.each([tableLibClass])("LuaTable functional tests", tableLib => {
             2,
         ],
     ])("LuaTable test (%p)", (code, expectedReturnValue) => {
-        expect(util.transpileAndExecute(code, {}, undefined, undefined, tableLib)).toBe(
-            expectedReturnValue,
-        );
+        expect(
+            util.transpileAndExecute({
+                "main.ts": code,
+                "lib.d.ts": tableLib,
+            }),
+        ).toBe(expectedReturnValue);
     });
 });

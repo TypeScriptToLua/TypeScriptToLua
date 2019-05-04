@@ -5129,13 +5129,9 @@ export class LuaTransformer {
         const decorators = declaration.decorators;
         if (!decorators) { return undefined; }
 
-        const decoratorExpressions: tstl.Expression[] = [];
-        for (const decorator of decorators) {
-            const expressionVisitResult = this.transformExpression(decorator.expression);
-            if (expressionVisitResult !== undefined) {
-                decoratorExpressions.push(expressionVisitResult);
-            }
-        }
+        const decoratorExpressions = this.filterUndefined(
+            decorators.map(decorator => this.transformExpression(decorator.expression))
+        );
 
         const decoratorArguments: tstl.Expression[] = [];
 

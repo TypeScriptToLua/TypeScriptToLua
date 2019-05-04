@@ -18,6 +18,22 @@ export class TSTLErrors {
     public static ForbiddenForIn = (node: ts.Node) =>
         new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
+    public static ForbiddenLuaTableSetExpression = (node: ts.Node) => new TranspileError(
+        `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
+        node);
+
+    public static ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
+        new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
+
+    public static InvalidExtendsLuaTable = (node: ts.Node) =>
+        new TranspileError(`Cannot extend classes with the decorator '@luaTable'.`, node);
+
+    public static InvalidInstanceOfLuaTable = (node: ts.Node) =>
+        new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
+
+    public static ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
+        new TranspileError(`Invalid @luaTable usage: ${description}`, node);
+
     public static HeterogeneousEnum = (node: ts.Node) => new TranspileError(
         `Invalid heterogeneous enum. Enums should either specify no member values, ` +
             `or specify values (of the same type) for all members.`,

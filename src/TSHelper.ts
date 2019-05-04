@@ -128,6 +128,10 @@ export class TSHelper {
         return false;
     }
 
+    public static isAmbient(node: ts.Declaration): boolean {
+        return !((ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Ambient) === 0);
+    }
+
     public static isStatic(node: ts.Node): boolean {
         return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
     }

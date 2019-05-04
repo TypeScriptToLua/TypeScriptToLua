@@ -162,6 +162,6 @@ test("Class decorators are applied in reverse order", () => {
 
     const result = util.transpileAndExecute(source);
     expect(result).toBe(
-        "eval fox eval jumped eval over dog execute over dog execute jumped execute fox"
+        "eval fox eval jumped eval over dog execute over dog execute jumped execute fox",
     );
 });

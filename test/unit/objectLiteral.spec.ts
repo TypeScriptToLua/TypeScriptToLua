@@ -29,6 +29,15 @@ describe("property shorthand", () => {
 
         expect(result).toBe(identifier);
     });
+
+    test("should support export property shorthand", () => {
+        const code = `
+            export const x = 1;
+            const o = { x };
+            export const y = o.x;
+        `;
+        expect(util.transpileExecuteAndReturnExport(code, "y")).toBe(1);
+    });
 });
 
 test("undefined as object key", () => {

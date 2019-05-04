@@ -4369,7 +4369,7 @@ export class LuaTransformer {
                 return tstl.createTableIndexExpression(luaTable, params[0], expression);
             default:
                 throw TSTLErrors.ForbiddenLuaTableUseException(
-                    "Unknown method.",
+                    "Unsupported method.",
                     expression
                 );
         }

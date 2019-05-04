@@ -51,6 +51,12 @@ test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other metho
     );
 });
 
+test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other methods", tableLib => {
+    expect(() => util.transpileString(tableLib + `let x = tbl.other()`)).toThrowExactError(
+        TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", util.nodeStub),
+    );
+});
+
 test.each([tableLibClass])("LuaTable new", tableLib => {
     const content = tableLib + `tbl = new Table();`;
     expect(util.transpileString(content)).toEqual("tbl = {}");

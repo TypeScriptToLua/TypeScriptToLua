@@ -4290,7 +4290,7 @@ export class LuaTransformer {
         }
     }
 
-    public validateLuaTableCall(
+    private validateLuaTableCall(
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression },
         isWithinExpressionStatement: boolean
     ): void {
@@ -4322,7 +4322,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformLuaTableExpressionStatement(
+    private transformLuaTableExpressionStatement(
         node: ts.ExpressionStatement
             & { expression: ts.CallExpression }
             & { expression: { expression: ts.PropertyAccessExpression }}
@@ -4354,7 +4354,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformLuaTableCallExpression(
+    private transformLuaTableCallExpression(
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression }
     ): tstl.Expression {
         const method = expression.expression;

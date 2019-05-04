@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as tstl from "../../src";
 import * as util from "../util";
-import { LuaLibImportKind } from "../../src/CompilerOptions";
 
 const fixturesPath = path.join(__dirname, "./transformation");
 const fixtures = fs
@@ -11,6 +11,6 @@ const fixtures = fs
     .map(f => [path.parse(f).name, fs.readFileSync(path.join(fixturesPath, f), "utf8")]);
 
 test.each(fixtures)("Transformation (%s)", (_name, content) => {
-    const result = util.transpileString(content, { luaLibImport: LuaLibImportKind.Require });
+    const result = util.transpileString(content, { luaLibImport: tstl.LuaLibImportKind.Require });
     expect(result).toMatchSnapshot();
 });

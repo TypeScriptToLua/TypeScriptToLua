@@ -12,7 +12,7 @@ test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" }
     "JSON (%p)",
     json => {
         const lua = util
-            .transpileString(json, jsonOptions, false, "file.json")
+            .transpileString({ "main.json": json }, jsonOptions, false)
             .replace(/^return ([\s\S]+)$/, "return JSONStringify($1)");
 
         const result = util.executeLua(lua);
@@ -21,7 +21,7 @@ test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" }
 );
 
 test("Empty JSON", () => {
-    expect(() => util.transpileString("", jsonOptions, false, "file.json")).toThrowExactError(
+    expect(() => util.transpileString({ "main.json": "" }, jsonOptions, false)).toThrowExactError(
         TSTLErrors.InvalidJsonFileContent(util.nodeStub),
     );
 });

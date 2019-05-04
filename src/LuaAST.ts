@@ -1,8 +1,8 @@
 // Simplified Lua AST based roughly on http://lua-users.org/wiki/MetaLuaAbstractSyntaxTree,
 // https://www.lua.org/manual/5.3/manual.html (9 – The Complete Syntax of Lua) and the TS AST implementation
 
-// We can ellide a lot of nodes especially tokens and keyowords
-// becasue we dont create the AST from text
+// We can elide a lot of nodes especially tokens and keywords
+// because we dont create the AST from text
 
 import * as ts from "typescript";
 
@@ -41,14 +41,14 @@ export enum SyntaxKind {
     TableIndexExpression,
     // Operators
     // Arithmetic
-    AdditionOperator,  // Maybe use abreviations for those add, sub, mul ...
-    SubractionOperator,
+    AdditionOperator,  // Maybe use abbreviations for those add, sub, mul ...
+    SubtractionOperator,
     MultiplicationOperator,
     DivisionOperator,
     FloorDivisionOperator,
     ModuloOperator,
     PowerOperator,
-    NegationOperator,  // Unaray minus
+    NegationOperator,  // Unary minus
     // Concat
     ConcatOperator,
     // Length
@@ -87,7 +87,7 @@ export type BinaryBitwiseOperator = SyntaxKind.BitwiseAndOperator | SyntaxKind.B
     | SyntaxKind.BitwiseLeftShiftOperator;
 
 export type BinaryOperator =
-    SyntaxKind.AdditionOperator | SyntaxKind.SubractionOperator | SyntaxKind.MultiplicationOperator
+    SyntaxKind.AdditionOperator | SyntaxKind.SubtractionOperator | SyntaxKind.MultiplicationOperator
     | SyntaxKind.DivisionOperator | SyntaxKind.FloorDivisionOperator | SyntaxKind.ModuloOperator
     | SyntaxKind.PowerOperator | SyntaxKind.ConcatOperator | SyntaxKind.EqualityOperator
     | SyntaxKind.InequalityOperator | SyntaxKind.LessThanOperator | SyntaxKind.LessEqualOperator
@@ -288,7 +288,7 @@ export function createAssignmentStatement(
 
 export interface IfStatement extends Statement {
     kind: SyntaxKind.IfStatement;
-    condtion: Expression;
+    condition: Expression;
     ifBlock: Block;
     elseBlock?: Block | IfStatement;
 }
@@ -298,7 +298,7 @@ export function isIfStatement(node: Node): node is IfStatement {
 }
 
 export function createIfStatement(
-    condtion: Expression,
+    condition: Expression,
     ifBlock: Block,
     elseBlock?: Block | IfStatement,
     tsOriginal?: ts.Node,
@@ -306,8 +306,8 @@ export function createIfStatement(
 ): IfStatement
 {
     const statement = createNode(SyntaxKind.IfStatement, tsOriginal, parent) as IfStatement;
-    setParent(condtion, statement);
-    statement.condtion = condtion;
+    setParent(condition, statement);
+    statement.condition = condition;
     setParent(ifBlock, statement);
     statement.ifBlock = ifBlock;
     setParent(ifBlock, statement);
@@ -326,7 +326,7 @@ export function isIterationStatement(node: Node): node is IterationStatement {
 
 export interface WhileStatement extends IterationStatement {
     kind: SyntaxKind.WhileStatement;
-    condtion: Expression;
+    condition: Expression;
 }
 
 export function isWhileStatement(node: Node): node is WhileStatement {
@@ -335,7 +335,7 @@ export function isWhileStatement(node: Node): node is WhileStatement {
 
 export function createWhileStatement(
     body: Block,
-    condtion: Expression,
+    condition: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
 ): WhileStatement
@@ -343,14 +343,14 @@ export function createWhileStatement(
     const statement = createNode(SyntaxKind.WhileStatement, tsOriginal, parent) as WhileStatement;
     setParent(body, statement);
     statement.body = body;
-    setParent(condtion, statement);
-    statement.condtion = condtion;
+    setParent(condition, statement);
+    statement.condition = condition;
     return statement;
 }
 
 export interface RepeatStatement extends IterationStatement {
     kind: SyntaxKind.RepeatStatement;
-    condtion: Expression;
+    condition: Expression;
 }
 
 export function isRepeatStatement(node: Node): node is RepeatStatement {
@@ -359,7 +359,7 @@ export function isRepeatStatement(node: Node): node is RepeatStatement {
 
 export function createRepeatStatement(
     body: Block,
-    condtion: Expression,
+    condition: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
 ): RepeatStatement
@@ -367,8 +367,8 @@ export function createRepeatStatement(
     const statement = createNode(SyntaxKind.RepeatStatement, tsOriginal, parent) as RepeatStatement;
     setParent(body, statement);
     statement.body = body;
-    setParent(condtion, statement);
-    statement.condtion = condtion;
+    setParent(condition, statement);
+    statement.condition = condition;
     return statement;
 }
 
@@ -745,7 +745,7 @@ export function createBinaryExpression(
 
 export interface ParenthesizedExpression extends Expression {
     kind: SyntaxKind.ParenthesizedExpression;
-    innerEpxression: Expression;
+    innerExpression: Expression;
 }
 
 export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
@@ -760,7 +760,7 @@ export function createParenthesizedExpression(
 {
     const expression = createNode(SyntaxKind.ParenthesizedExpression, tsOriginal, parent) as ParenthesizedExpression;
     setParent(innerExpression, expression);
-    expression.innerEpxression = innerExpression;
+    expression.innerExpression = innerExpression;
     return expression;
 }
 
@@ -845,7 +845,7 @@ export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): I
     return createIdentifier(identifier.text, tsOriginal, identifier.symbolId);
 }
 
-export function createAnnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
+export function createAnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
     expression.text = "____";
     return expression;

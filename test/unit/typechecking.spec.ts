@@ -50,7 +50,7 @@ test("instanceof", () => {
         "class myClass {} let inst = new myClass(); return inst instanceof myClass;",
     );
 
-    expect(result).toBeTruthy();
+    expect(result).toBe(true);
 });
 
 test("instanceof inheritance", () => {
@@ -60,7 +60,7 @@ test("instanceof inheritance", () => {
         let inst = new childClass(); return inst instanceof myClass;
     `);
 
-    expect(result).toBeTruthy();
+    expect(result).toBe(true);
 });
 
 test("instanceof inheritance false", () => {
@@ -73,15 +73,33 @@ test("instanceof inheritance false", () => {
     expect(result).toBe(false);
 });
 
+test("{} instanceof Object", () => {
+    const result = util.transpileAndExecute("return {} instanceof Object;");
+
+    expect(result).toBe(true);
+});
+
+test("function instanceof Object", () => {
+    const result = util.transpileAndExecute("return (() => {}) instanceof Object;");
+
+    expect(result).toBe(true);
+});
+
 test("null instanceof Object", () => {
-    const result = util.transpileAndExecute("return (<any>null) instanceof Object;");
+    const result = util.transpileAndExecute("return (null as any) instanceof Object;");
 
     expect(result).toBe(false);
 });
 
+test("instanceof undefined", () => {
+    expect(() => {
+        util.transpileAndExecute("return {} instanceof (undefined as any);");
+    }).toThrow("Right-hand side of 'instanceof' is not an object");
+});
+
 test("null instanceof Class", () => {
     const result = util.transpileAndExecute(
-        "class myClass {} return (<any>null) instanceof myClass;",
+        "class myClass {} return (null as any) instanceof myClass;",
     );
 
     expect(result).toBe(false);
@@ -108,5 +126,23 @@ test("instanceof export", () => {
         "result",
     );
 
-    expect(result).toBeTruthy();
+    expect(result).toBe(true);
+});
+
+test("instanceof Symbol.hasInstance", () => {
+    const result = util.transpileAndExecute(`
+        class myClass {
+            static [Symbol.hasInstance]() {
+                return false;
+            }
+        }
+
+        const inst = new myClass();
+        const isInstanceOld = inst instanceof myClass;
+        myClass[Symbol.hasInstance] = () => true;
+        const isInstanceNew = inst instanceof myClass;
+        return isInstanceOld !== isInstanceNew;
+    `);
+
+    expect(result).toBe(true);
 });

@@ -120,3 +120,19 @@ test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
         );
     });
 });
+
+test.each([tableLibClass])("LuaTable functional tests", tableLib => {
+    test.each<[string, any]>([
+        [`const t = new Table(); t.set("field", "value"); return t.get("field");`, "value"],
+        [`const t = new Table(); t.set("field", 0); return t.get("field");`, 0],
+        [`const t = new Table(); t.set(1, true); return t.length`, 1],
+        [
+            `const t = new Table(); t.set(t.length + 1, true); t.set(t.length + 1, true); return t.length`,
+            2,
+        ],
+    ])("LuaTable test (%p)", (code, expectedReturnValue) => {
+        expect(util.transpileAndExecute(code, {}, undefined, undefined, tableLib)).toBe(
+            expectedReturnValue,
+        );
+    });
+});

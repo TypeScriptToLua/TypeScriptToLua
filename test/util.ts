@@ -98,25 +98,17 @@ export function makeTestTransformer(luaTarget = tstl.LuaTarget.Lua53): tstl.LuaT
 }
 
 export function transpileAndExecute(
-    tsCode: string | { "main.ts": string; [filename: string]: string },
+    tsStr: string,
     compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
     tsHeader?: string,
 ): any {
-    const tsStr = typeof tsCode === "object" ? tsCode["main.ts"] : tsCode;
-
     const wrappedTsString = `${tsHeader ? tsHeader : ""}
         declare function JSONStringify(this: void, p: any): string;
         function __runTest(this: void): any {${tsStr}}`;
 
-    if (typeof tsCode === "object") {
-        tsCode["main.ts"] = wrappedTsString;
-    } else {
-        tsCode = wrappedTsString;
-    }
-
     const lua = `${luaHeader ? luaHeader : ""}
-        ${transpileString(tsCode, compilerOptions, false)}
+        ${transpileString(wrappedTsString, compilerOptions, false)}
         return __runTest();`;
 
     return executeLua(lua);

@@ -7,6 +7,8 @@ test.each([
     "NaN - NaN",
     "NaN * NaN",
     "NaN / NaN",
+    "NaN + 1",
+    "1 + NaN",
     "1 / NaN",
     "NaN * 0",
 ])("%s", code => expect(util.transpileAndExecute(`return ${code}`)).toBe(eval(code)));

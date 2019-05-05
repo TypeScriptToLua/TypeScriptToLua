@@ -1,5 +1,6 @@
 # Changelog
 
+- **BREAKING CHANGE:** All tstl-specific options should now be inside the "tstl" section in tsconfig.json (see README.md). **Root-level options are no longer supported**.
 - Added a compiler API to programmatically invoke TypeScriptToLua, and to modify or extend the default transpiler. More info on the [Compiler API wiki page](<https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/TypeScriptToLua-API>).
 - Added support for [class decorators](https://www.typescriptlang.org/docs/handbook/decorators.html#class-decorators).
 - Added support for the [@luaTable directive](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#luatable) which will force a class to be transpiled as vanilla lua table.

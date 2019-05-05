@@ -26,15 +26,14 @@ function loadTransformersFromOptions(
 
     const extensions = [".ts", ".tsx", ".js"];
     for (const transformer of options.tsTransformers) {
-        const { transform, when = "before", ...transformerOptions } = transformer;
+        const { name, when = "before", ...transformerOptions } = transformer;
+
         let resolved: string;
         try {
-            resolved = resolve.sync(transform, { extensions, basedir });
+            resolved = resolve.sync(name, { extensions, basedir });
         } catch (err) {
             if (err.code !== "MODULE_NOT_FOUND") throw err;
-            diagnostics.push(
-                diagnosticFactories.couldNotResolveTransformerFrom(transform, basedir)
-            );
+            diagnostics.push(diagnosticFactories.couldNotResolveTransformerFrom(name, basedir));
 
             continue;
         }
@@ -48,9 +47,7 @@ function loadTransformersFromOptions(
                 tsNode.register({ transpileOnly: true });
             } catch (err) {
                 if (err.code !== "MODULE_NOT_FOUND") throw err;
-                diagnostics.push(
-                    diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform)
-                );
+                diagnostics.push(diagnosticFactories.toLoadTransformerItShouldBeTranspiled(name));
 
                 continue;
             }
@@ -60,7 +57,7 @@ function loadTransformersFromOptions(
         if (result !== undefined) {
             customTransformers[when].push(result(program, transformerOptions));
         } else {
-            diagnostics.push(diagnosticFactories.transformerShouldHaveADefaultExport(transform));
+            diagnostics.push(diagnosticFactories.transformerShouldHaveADefaultExport(name));
         }
     }
 

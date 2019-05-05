@@ -8,8 +8,8 @@ type KnownKeys<T> = {
 
 type OmitIndexSignature<T extends Record<any, any>> = Pick<T, KnownKeys<T>>;
 
-export interface TransformerConfig {
-    transform: string;
+export interface TransformerImport {
+    name: string;
     when?: keyof ts.CustomTransformers;
     [option: string]: any;
 }
@@ -20,8 +20,8 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     luaLibImport?: LuaLibImportKind;
     noHoisting?: boolean;
     sourceMapTraceback?: boolean;
-    tsTransformers?: TransformerConfig[];
-    [option: string]: ts.CompilerOptions[string] | TransformerConfig[];
+    tsTransformers?: TransformerImport[];
+    [option: string]: ts.CompilerOptions[string] | TransformerImport[];
 };
 
 export enum LuaLibImportKind {

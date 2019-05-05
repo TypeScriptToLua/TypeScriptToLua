@@ -60,12 +60,6 @@ test.each([
     expect(result).toBe(values.slice(0, input.length).join("-"));
 });
 
-test("Ellipsis binding pattern", () => {
-    expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrowExactError(
-        TSTLErrors.ForbiddenEllipsisDestruction(util.nodeStub),
-    );
-});
-
 test("Tuple Assignment", () => {
     const code = `
         function abc(): [number, number] { return [1, 2]; };

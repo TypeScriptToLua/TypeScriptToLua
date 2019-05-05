@@ -4561,9 +4561,14 @@ export class LuaTransformer {
         const innerExpression = this.expectExpression(this.transformExpression(expression.expression));
         if (tsHelper.isTupleReturnCall(expression.expression, this.checker)) {
             return innerExpression;
-        } else {
+        }
+
+        const type = this.checker.getTypeAtLocation(expression.expression);
+        if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return this.createUnpackCall(innerExpression, expression);
         }
+
+        return this.transformLuaLibFunction(LuaLibFeature.Spread, expression, innerExpression);
     }
 
     public transformStringLiteral(literal: ts.StringLiteralLike): ExpressionVisitResult {

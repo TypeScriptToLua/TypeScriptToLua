@@ -47,3 +47,23 @@ test("Spread Element Lua JIT", () => {
     const lua = util.transpileString(`[...[0, 1, 2]]`, options);
     expect(lua).toBe("local ____ = {unpack({\n    0,\n    1,\n    2,\n})}");
 });
+
+test("Spread Element Iterable", () => {
+    const code = `
+        const it = {
+            i: 10,
+            [Symbol.iterator]() {
+                return this;
+            },
+            next() {
+                --this.i;
+                return {
+                    value: this.i,
+                    done: this.i < 0,
+                }
+            }
+        };
+        const arr = [...it];
+        return JSONStringify(arr)`;
+    expect(util.transpileAndExecute(code)).toBe(JSON.stringify([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]));
+});

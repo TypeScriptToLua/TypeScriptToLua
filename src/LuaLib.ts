@@ -43,6 +43,7 @@ export enum LuaLibFeature {
     WeakMap = "WeakMap",
     WeakSet = "WeakSet",
     SourceMapTraceBack = "SourceMapTraceBack",
+    Spread = "Spread",
     StringConcat = "StringConcat",
     StringEndsWith = "StringEndsWith",
     StringReplace = "StringReplace",
@@ -62,6 +63,7 @@ const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
+    Spread: [LuaLibFeature.Iterator],
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 

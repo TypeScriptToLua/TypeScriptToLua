@@ -34,3 +34,10 @@ test("should pass extra options to transformers", () => {
 
     expect(util.transpileAndExecute("return", options)).toBe(value);
 });
+
+test("should error if transformer could not be resolved", () => {
+    const transform = path.join(__dirname, "transformers/error.ts");
+    const options: tstl.CompilerOptions = { tsTransformers: [{ transform }] };
+    const { diagnostics } = util.transpileStringResult("", options);
+    expect(diagnostics).toHaveDiagnostics();
+});

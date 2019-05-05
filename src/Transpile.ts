@@ -8,8 +8,10 @@ import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 
-function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers {
-    const diagnostics: ts.Diagnostic[] = [];
+function loadTransformersFromOptions(
+    program: ts.Program,
+    diagnostics: ts.Diagnostic[]
+): ts.CustomTransformers {
     const customTransformers: Required<ts.CustomTransformers> = {
         before: [],
         after: [],
@@ -25,7 +27,17 @@ function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers
     const extensions = [".ts", ".tsx", ".js"];
     for (const transformer of options.tsTransformers) {
         const { transform, when = "before", ...transformerOptions } = transformer;
-        const resolved = resolve.sync(transform, { extensions, basedir });
+        let resolved: string;
+        try {
+            resolved = resolve.sync(transform, { extensions, basedir });
+        } catch (err) {
+            if (err.code !== "MODULE_NOT_FOUND") throw err;
+            diagnostics.push(
+                diagnosticFactories.couldNotResolveTransformerFrom(transform, basedir)
+            );
+
+            continue;
+        }
 
         // tslint:disable-next-line: deprecation
         const hasNoTsRequireHook = require.extensions[".ts"] === undefined;
@@ -35,11 +47,10 @@ function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers
                 const tsNode: typeof import("ts-node") = require(tsNodePath);
                 tsNode.register({ transpileOnly: true });
             } catch (err) {
-                if (err.code === "MODULE_NOT_FOUND") {
-                    diagnostics.push(
-                        diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform)
-                    );
-                }
+                if (err.code !== "MODULE_NOT_FOUND") throw err;
+                diagnostics.push(
+                    diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform)
+                );
 
                 continue;
             }
@@ -58,6 +69,7 @@ function loadTransformersFromOptions(program: ts.Program): ts.CustomTransformers
 
 function getCustomTransformers(
     program: ts.Program,
+    diagnostics: ts.Diagnostic[],
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
@@ -76,7 +88,7 @@ function getCustomTransformers(
             return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
         });
 
-    const transformersFromConfig = loadTransformersFromOptions(program);
+    const transformersFromConfig = loadTransformersFromOptions(program, diagnostics);
     return {
         afterDeclarations: [
             ...(transformersFromConfig.afterDeclarations || []),
@@ -181,7 +193,12 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(program, customTransformers, processSourceFile);
+    const transformers = getCustomTransformers(
+        program,
+        diagnostics,
+        customTransformers,
+        processSourceFile
+    );
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {

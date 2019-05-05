@@ -33,6 +33,16 @@ export const toLoadTransformerItShouldBeTranspiled = (transform: string): ts.Dia
     messageText: `To load "${transform}" transformer it should be transpiled or "ts-node" should be installed`,
 });
 
+export const couldNotResolveTransformerFrom = (transform: string, base: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `Could not resolve "${transform}" transformer from "${base}".`,
+});
+
 export const transformerShouldHaveADefaultExport = (transform: string): ts.Diagnostic => ({
     file: undefined,
     start: undefined,

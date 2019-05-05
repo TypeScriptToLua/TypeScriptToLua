@@ -111,7 +111,7 @@ test("Class decorator with inheritance", () => {
         }
     }
 
-    function SetNum(this: void, numArg: number) {
+    function SetNum(numArg: number) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorNum = numArg;

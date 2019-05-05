@@ -51,19 +51,19 @@ test("Spread Element Lua JIT", () => {
 test("Spread Element Iterable", () => {
     const code = `
         const it = {
-            i: 10,
+            i: -1,
             [Symbol.iterator]() {
                 return this;
             },
             next() {
-                --this.i;
+                ++this.i;
                 return {
-                    value: this.i,
-                    done: this.i < 0,
+                    value: 2 ** this.i,
+                    done: this.i == 9,
                 }
             }
         };
         const arr = [...it];
         return JSONStringify(arr)`;
-    expect(util.transpileAndExecute(code)).toBe(JSON.stringify([9, 8, 7, 6, 5, 4, 3, 2, 1, 0]));
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256]);
 });

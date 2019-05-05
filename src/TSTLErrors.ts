@@ -12,9 +12,6 @@ export class TSTLErrors {
     public static DefaultImportsNotSupported = (node: ts.Node) =>
         new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 
-    public static ForbiddenEllipsisDestruction = (node: ts.Node) =>
-        new TranspileError(`Ellipsis destruction is not allowed.`, node);
-
     public static ForbiddenForIn = (node: ts.Node) =>
         new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 

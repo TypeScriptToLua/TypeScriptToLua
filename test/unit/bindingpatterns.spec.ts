@@ -109,3 +109,23 @@ test.each([
         expect(result).toBe(false);
     },
 );
+
+describe("rest binding patterns", () => {
+    test("should support object rest element", () => {
+        const result = util.transpileAndExecute(`
+            const { foo, ...rest } = { foo: 1, bar: 2 };
+            return JSONStringify({ foo, rest })
+        `);
+
+        expect(JSON.parse(result)).toEqual({ foo: 1, rest: { bar: 2 } });
+    });
+
+    test("should support array rest element", () => {
+        const result = util.transpileAndExecute(`
+            const [foo, ...rest] = [1, 2, 3];
+            return JSONStringify({ foo, rest });
+        `);
+
+        expect(JSON.parse(result)).toEqual({ foo: 1, rest: [2, 3] });
+    });
+});

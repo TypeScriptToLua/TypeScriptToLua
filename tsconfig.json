@@ -6,6 +6,7 @@
         "declaration": true,
         "sourceMap": true,
         "target": "es2017",
+        "lib": ["es2017"],
         "module": "commonjs",
         "stripInternal": true
     },

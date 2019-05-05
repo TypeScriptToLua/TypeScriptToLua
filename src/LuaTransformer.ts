@@ -3912,7 +3912,7 @@ export class LuaTransformer {
             }
 
             default:
-                throw TSTLErrors.UnsupportedProperty("math", name, expression);
+                throw TSTLErrors.UnsupportedProperty("math", expressionName, expression);
         }
     }
 

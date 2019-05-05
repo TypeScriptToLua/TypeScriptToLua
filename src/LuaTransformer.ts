@@ -5362,7 +5362,7 @@ export class LuaTransformer {
         }
     }
 
-    public createConstructorDecorationStatement(
+    private createConstructorDecorationStatement(
         declaration: ts.ClassLikeDeclaration
     ): tstl.AssignmentStatement | undefined {
         const className = declaration.name !== undefined

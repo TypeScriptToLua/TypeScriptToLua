@@ -3331,7 +3331,13 @@ export class LuaTransformer {
                 const expression = this.expectExpression(this.transformExpression(element.initializer));
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
-                const identifier = this.transformIdentifierExpression(element.name);
+                let identifier = this.transformIdentifierExpression(element.name);
+                if (tstl.isIdentifier(identifier)) {
+                    const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
+                    if (valueSymbol !== undefined && this.isSymbolExported(valueSymbol)) {
+                        identifier = this.createExportedIdentifier(identifier);
+                    }
+                }
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.expectExpression(this.transformFunctionExpression(element));
@@ -4692,12 +4698,16 @@ export class LuaTransformer {
     }
 
     protected isIdentifierExported(identifier: tstl.Identifier): boolean {
-        if (!this.isModule && !this.currentNamespace) {
+        const symbolInfo = identifier.symbolId && this.symbolInfo.get(identifier.symbolId);
+        if (!symbolInfo) {
             return false;
         }
 
-        const symbolInfo = identifier.symbolId && this.symbolInfo.get(identifier.symbolId);
-        if (!symbolInfo) {
+        return this.isSymbolExported(symbolInfo.symbol);
+    }
+
+    protected isSymbolExported(symbol: ts.Symbol): boolean {
+        if (!this.isModule && !this.currentNamespace) {
             return false;
         }
 
@@ -4706,9 +4716,10 @@ export class LuaTransformer {
             throw TSTLErrors.UndefinedScope();
         }
 
-        const scopeSymbol = this.checker.getSymbolAtLocation(currentScope)
-            ? this.checker.getSymbolAtLocation(currentScope)
-            : this.checker.getTypeAtLocation(currentScope).getSymbol();
+        let scopeSymbol = this.checker.getSymbolAtLocation(currentScope);
+        if (scopeSymbol === undefined) {
+            scopeSymbol = this.checker.getTypeAtLocation(currentScope).getSymbol();
+        }
 
         if (scopeSymbol === undefined || scopeSymbol.exports === undefined) {
             return false;
@@ -4718,8 +4729,8 @@ export class LuaTransformer {
         const it: Iterable<ts.Symbol> = {
             [Symbol.iterator]: () => scopeSymbolExports.values(), // Why isn't ts.SymbolTable.values() iterable?
         };
-        for (const symbol of it) {
-            if (symbol === symbolInfo.symbol) {
+        for (const exportedSymbol of it) {
+            if (exportedSymbol === symbol) {
                 return true;
             }
         }

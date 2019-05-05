@@ -115,10 +115,7 @@ export class TSTLErrors {
         new TranspileError(`Unsupported import type.`, node);
 
     public static UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) =>
-        {
-            const kindName = tsHelper.enumName(kind, ts.SyntaxKind);
-            return new TranspileError(`Unsupported ${description} kind: ${kindName}`, node);
-        };
+        new TranspileError(`Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`, node);
 
     public static UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
         new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);

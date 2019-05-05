@@ -29,32 +29,7 @@ const defaultArrayCallMethodNames = new Set<string>([
     "flatMap",
 ]);
 
-const defaultArrayPropertyNames = new Set<string>([
-    "length",
-]);
-
 export class TSHelper {
-    // Reverse lookup of enum key by value
-    public static enumName<T>(needle: T, haystack: any): string {
-        for (const name in haystack) {
-            if (haystack[name] === needle) {
-                return name;
-            }
-        }
-        return "unknown";
-    }
-
-    // Breaks down a mask into all flag names.
-    public static enumNames<T>(mask: number, haystack: any): string[] {
-        const result = [];
-        for (const name in haystack) {
-            if ((mask & haystack[name]) !== 0 && mask >= haystack[name]) {
-                result.push(name);
-            }
-        }
-        return result;
-    }
-
     public static getExtendedTypeNode(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker):
     ts.ExpressionWithTypeArguments | undefined {
         if (node && node.heritageClauses) {
@@ -353,21 +328,6 @@ export class TSHelper {
         return [false, undefined];
     }
 
-    public static isExpressionStatement(node: ts.Expression): boolean {
-        return node.parent === undefined || ts.isExpressionStatement(node.parent) || ts.isForStatement(node.parent);
-    }
-
-    public static isInGlobalScope(node: ts.Node): boolean {
-        let parent = node.parent;
-        while (parent !== undefined) {
-            if (ts.isBlock(parent)) {
-                return false;
-            }
-            parent = parent.parent;
-        }
-        return true;
-    }
-
     // Returns true for expressions that may have effects when evaluated
     public static isExpressionWithEvaluationEffect(node: ts.Expression): boolean {
         return !(ts.isLiteralExpression(node) || ts.isIdentifier(node) || node.kind === ts.SyntaxKind.ThisKeyword);
@@ -642,10 +602,6 @@ export class TSHelper {
         const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker);
         return TSHelper.reduceContextTypes(
             signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
-    }
-
-    public static isDefaultArrayPropertyName(methodName: string): boolean {
-        return defaultArrayPropertyNames.has(methodName);
     }
 
     public static escapeString(text: string): string {

@@ -29,13 +29,7 @@ export function transpileStringResult(
         noHeader: true,
         skipLibCheck: true,
         target: ts.ScriptTarget.ESNext,
-        lib: [
-            "lib.es2015.d.ts",
-            "lib.es2016.d.ts",
-            "lib.es2017.d.ts",
-            "lib.es2018.d.ts",
-            "lib.esnext.d.ts",
-        ],
+        lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
         ...options,
     };

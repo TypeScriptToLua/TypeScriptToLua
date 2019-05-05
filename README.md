@@ -42,11 +42,11 @@ Changelog can be found in [CHANGELOG.md](https://github.com/TypeScriptToLua/Type
 {
     "compilerOptions": {
         "target": "esnext",
-        "lib": ["es2015", "es2016", "es2017", "es2018", "esnext"],
+        "lib": ["esnext"],
         "strict": true
     },
     "tstl": {
-      "luaTarget": "JIT"
+        "luaTarget": "JIT"
     }
 }
 ```

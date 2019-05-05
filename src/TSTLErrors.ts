@@ -42,6 +42,9 @@ export class TSTLErrors {
     public static InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
         new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
 
+    public static InvalidDecoratorContext = (node: ts.Node) =>
+        new TranspileError(`Decorator function cannot have void context.`, node);
+
     public static InvalidExtensionMetaExtension = (node: ts.Node) =>
         new TranspileError(`Cannot use both '@extension' and '@metaExtension' decorators on the same class.`, node);
 

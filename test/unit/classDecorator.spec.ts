@@ -1,4 +1,5 @@
 import * as util from "../util";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Class decorator with no parameters", () => {
     const source = `
@@ -23,7 +24,7 @@ test("Class decorator with no parameters", () => {
 
 test("Class decorator with parameters", () => {
     const source = `
-    function SetNum(this: void, numArg: number) {
+    function SetNum(numArg: number) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorNum = numArg;
@@ -46,7 +47,7 @@ test("Class decorator with parameters", () => {
 
 test("Class decorator with variable parameters", () => {
     const source = `
-    function SetNumbers(this: void, ...numArgs: number[]) {
+    function SetNumbers(...numArgs: number[]) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorNums = new Set<number>(numArgs);
@@ -79,7 +80,7 @@ test("Multiple class decorators", () => {
         }
     }
 
-    function SetNum(this: void, numArg: number) {
+    function SetNum(numArg: number) {
         return <T extends new(...args: any[]) => {}>(constructor: T) => {
             return class extends constructor {
                 decoratorNum = numArg;
@@ -139,7 +140,7 @@ test("Class decorators are applied in reverse order", () => {
     const source = `
     const order = [];
 
-    function SetString(this: void, stringArg: string) {
+    function SetString(stringArg: string) {
         order.push("eval " + stringArg);
         return <T extends new (...args: any[]) => {}>(constructor: T) => {
             order.push("execute " + stringArg);
@@ -163,5 +164,27 @@ test("Class decorators are applied in reverse order", () => {
     const result = util.transpileAndExecute(source);
     expect(result).toBe(
         "eval fox eval jumped eval over dog execute over dog execute jumped execute fox",
+    );
+});
+
+test("Throws error if decorator function has void context", () => {
+    const source = `
+    function SetBool<T extends { new(...args: any[]): {} }>(this: void, constructor: T) {
+        return class extends constructor {
+            decoratorBool = true;
+        }
+    }
+
+    @SetBool
+    class TestClass {
+        public decoratorBool = false;
+    }
+
+    const classInstance = new TestClass();
+    return classInstance.decoratorBool;
+    `;
+
+    expect(() => util.transpileAndExecute(source)).toThrowExactError(
+        TSTLErrors.InvalidDecoratorContext(util.nodeStub),
     );
 });

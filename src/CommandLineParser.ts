@@ -211,8 +211,8 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            const normalizedValue = value.toLowerCase();
-            if (option.choices && !option.choices.includes(normalizedValue)) {
+            const enumValue = option.choices.find(c => c.toLowerCase() === value.toLowerCase());
+            if (enumValue === undefined) {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
@@ -220,7 +220,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            return { value: normalizedValue };
+            return { value: enumValue };
         }
     }
 }

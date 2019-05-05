@@ -7,7 +7,7 @@ import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 
 function getCustomTransformers(
-    program: ts.Program,
+    _program: ts.Program,
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {

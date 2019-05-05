@@ -10,6 +10,8 @@ const options: tstl.CompilerOptions = {
     types: [],
     target: ts.ScriptTarget.ESNext,
     lib: ["lib.esnext.d.ts"],
+    noUnusedLocals: true,
+    noUnusedParameters: true,
 
     outDir: path.join(__dirname, "./dist/lualib"),
     rootDir: path.join(__dirname, "./src/lualib"),

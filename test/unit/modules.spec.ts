@@ -4,7 +4,7 @@ import * as util from "../util";
 
 test("defaultImport", () => {
     expect(() => {
-        const lua = util.transpileString(`import TestClass from "test"`);
+        util.transpileString(`import TestClass from "test"`);
     }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
 });
 

@@ -114,7 +114,7 @@ export class LuaTransformer {
                 tstl.createReturnStatement([this.transformExpression(statement.expression)])
             );
         } else {
-            this.pushScope(ScopeType.File, node);
+            this.pushScope(ScopeType.File);
 
             this.isModule = tsHelper.isFileModule(node);
             statements = this.performHoisting(this.transformStatements(node.statements));
@@ -217,14 +217,14 @@ export class LuaTransformer {
     }
 
     public transformBlock(block: ts.Block): tstl.Block {
-        this.pushScope(ScopeType.Block, block);
+        this.pushScope(ScopeType.Block);
         const statements = this.performHoisting(this.transformStatements(block.statements));
         this.popScope();
         return tstl.createBlock(statements, block);
     }
 
     public transformBlockAsDoStatement(block: ts.Block): StatementVisitResult {
-        this.pushScope(ScopeType.Block, block);
+        this.pushScope(ScopeType.Block);
         const statements = this.performHoisting(this.transformStatements(block.statements));
         this.popScope();
         return tstl.createDoStatement(statements, block);
@@ -1289,7 +1289,7 @@ export class LuaTransformer {
         spreadIdentifier?: tstl.Identifier
     ): [tstl.Statement[], Scope]
     {
-        this.pushScope(ScopeType.Function, body);
+        this.pushScope(ScopeType.Function);
 
         const headerStatements = [];
 
@@ -1497,7 +1497,7 @@ export class LuaTransformer {
 
         // Transform moduleblock to block and visit it
         if (tsHelper.moduleHasEmittedBody(statement)) {
-            this.pushScope(ScopeType.Block, statement);
+            this.pushScope(ScopeType.Block);
             let statements = ts.isModuleBlock(statement.body)
                 ? this.transformStatements(statement.body.statements)
                 : this.transformModuleDeclaration(statement.body);
@@ -1805,11 +1805,11 @@ export class LuaTransformer {
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
     }
 
-    public transformTypeAliasDeclaration(statement: ts.TypeAliasDeclaration): StatementVisitResult {
+    public transformTypeAliasDeclaration(_statement: ts.TypeAliasDeclaration): StatementVisitResult {
         return undefined;
     }
 
-    public transformInterfaceDeclaration(statement: ts.InterfaceDeclaration): StatementVisitResult {
+    public transformInterfaceDeclaration(_statement: ts.InterfaceDeclaration): StatementVisitResult {
         return undefined;
     }
 
@@ -2077,7 +2077,7 @@ export class LuaTransformer {
     }
 
     public transformIfStatement(statement: ts.IfStatement): StatementVisitResult {
-        this.pushScope(ScopeType.Conditional, statement.thenStatement);
+        this.pushScope(ScopeType.Conditional);
         const condition = this.transformExpression(statement.expression);
         const statements = this.performHoisting(this.transformBlockOrStatement(statement.thenStatement));
         this.popScope();
@@ -2087,7 +2087,7 @@ export class LuaTransformer {
                 const elseStatement = this.transformIfStatement(statement.elseStatement) as tstl.IfStatement;
                 return tstl.createIfStatement(condition, ifBlock, elseStatement);
             } else {
-                this.pushScope(ScopeType.Conditional, statement.elseStatement);
+                this.pushScope(ScopeType.Conditional);
                 const elseStatements = this.performHoisting(this.transformBlockOrStatement(statement.elseStatement));
                 this.popScope();
                 const elseBlock = tstl.createBlock(elseStatements);
@@ -2187,7 +2187,7 @@ export class LuaTransformer {
         loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
     ): tstl.Statement[]
     {
-        this.pushScope(ScopeType.Loop, loop.statement);
+        this.pushScope(ScopeType.Loop);
         const body = this.performHoisting(this.transformBlockOrStatement(loop.statement));
         const scope = this.popScope();
         const scopeId = scope.id;
@@ -2401,7 +2401,7 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedForTarget("Switch statements", this.luaTarget, statement);
         }
 
-        this.pushScope(ScopeType.Switch, statement);
+        this.pushScope(ScopeType.Switch);
 
         // Give the switch a unique name to prevent nested switches from acting up.
         const scope = this.peekScope();
@@ -2542,7 +2542,7 @@ export class LuaTransformer {
         );
     }
 
-    public transformEmptyStatement(statement: ts.EmptyStatement): StatementVisitResult {
+    public transformEmptyStatement(_statement: ts.EmptyStatement): StatementVisitResult {
         return undefined;
     }
 
@@ -5135,7 +5135,7 @@ export class LuaTransformer {
         return this.scopeStack[this.scopeStack.length - 1];
     }
 
-    protected pushScope(scopeType: ScopeType, node: ts.Node): void {
+    protected pushScope(scopeType: ScopeType): void {
         this.scopeStack.push({
             type: scopeType,
             id: this.genVarCounter,

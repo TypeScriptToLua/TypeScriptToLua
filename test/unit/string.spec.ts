@@ -74,6 +74,17 @@ test.each([
 });
 
 test.each([
+    { input: "abcd", index: 3 },
+    { input: "abcde", index: 3 },
+    { input: "abcde", index: 0 },
+    { input: "a", index: 0 },
+])("string index (%p)", ({ input, index }) => {
+    const result = util.transpileAndExecute(`return "${input}"[${index}];`);
+
+    expect(result).toBe(input[index]);
+});
+
+test.each([
     { inp: "hello test", searchValue: "", replaceValue: "" },
     { inp: "hello test", searchValue: " ", replaceValue: "" },
     { inp: "hello test", searchValue: "hello", replaceValue: "" },
@@ -309,12 +320,35 @@ test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
 });
 
 test.each([
-    { input: "abcd", index: 3 },
-    { input: "abcde", index: 3 },
-    { input: "abcde", index: 0 },
-    { input: "a", index: 0 },
-])("string index (%p)", ({ input, index }) => {
-    const result = util.transpileAndExecute(`return "${input}"[${index}];`);
+    { inp: "hello test", count: 0 },
+    { inp: "hello test", count: 1 },
+    { inp: "hello test", count: 2 },
+])("string.repeat (%p)", ({ inp, count }) => {
+    const result = util.transpileAndExecute(`return "${inp}".repeat(${count})`);
 
-    expect(result).toBe(input[index]);
+    expect(result).toBe(inp.repeat(count));
+});
+
+const padCases = [
+    { inp: "foo", maxLength: 0 },
+    { inp: "foo", maxLength: 3 },
+    { inp: "foo", maxLength: 4 },
+    { inp: "foo", maxLength: 10 },
+    { inp: "foo", maxLength: 4, fillString: "    " },
+    { inp: "foo", maxLength: 10, fillString: "    " },
+    { inp: "foo", maxLength: 5, fillString: "1234" },
+];
+
+test.each(padCases)("string.padStart (%p)", ({ inp, maxLength, fillString }) => {
+    const argsString = [maxLength, fillString].map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".padStart(${argsString})`);
+
+    expect(result).toBe(inp.padStart(maxLength, fillString));
+});
+
+test.each(padCases)("string.padEnd (%p)", ({ inp, maxLength, fillString }) => {
+    const argsString = [maxLength, fillString].map(arg => JSON.stringify(arg)).join(", ");
+    const result = util.transpileAndExecute(`return "${inp}".padEnd(${argsString})`);
+
+    expect(result).toBe(inp.padEnd(maxLength, fillString));
 });

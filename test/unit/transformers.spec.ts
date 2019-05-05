@@ -20,9 +20,6 @@ test("should load ts transformers", () => {
     testTransform(path.join(__dirname, "transformers/resolve.ts"));
 });
 
-test.todo("should error on ts transformers if ts-node is not installed");
-test.todo("should resolve modules from node_modules");
-
 test("should pass program to transformers", () => {
     const transform = path.join(__dirname, "transformers/program.ts");
     const options: tstl.CompilerOptions = { tsTransformers: [{ transform }] };

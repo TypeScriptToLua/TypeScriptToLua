@@ -22,9 +22,11 @@ describe("command line", () => {
     });
 
     test("should error on tsconfig-only options", () => {
-        const result = tstl.parseCommandLine(["--tsTransformers"]);
+        const result = tstl.parseCommandLine(["--tsTransformers", "transformer"]);
 
         expect(result.errors).toHaveDiagnostics();
+        expect(result.options.tsTransformers).toBeUndefined();
+        expect(result.fileNames).toEqual(["transformer"]);
     });
 
     test("should error on unknown options", () => {

@@ -123,6 +123,7 @@ function getCustomTransformers(
 }
 
 export interface TranspiledFile {
+    fileName: string;
     luaAst?: Block;
     lua?: string;
     sourceMap?: string;
@@ -132,7 +133,7 @@ export interface TranspiledFile {
 
 export interface TranspileResult {
     diagnostics: ts.Diagnostic[];
-    transpiledFiles: Map<string, TranspiledFile>;
+    transpiledFiles: TranspiledFile[];
 }
 
 export interface TranspileOptions {
@@ -153,12 +154,16 @@ export function transpile({
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const diagnostics: ts.Diagnostic[] = [];
-    const transpiledFiles = new Map<string, TranspiledFile>();
-    const updateTranspiledFile = (filePath: string, file: TranspiledFile) => {
-        if (transpiledFiles.has(filePath)) {
-            Object.assign(transpiledFiles.get(filePath), file);
+    let transpiledFiles: TranspiledFile[] = [];
+
+    // TODO: Included in TS3.5
+    type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
+        const file = transpiledFiles.find(f => f.fileName === fileName);
+        if (file) {
+            Object.assign(file, update);
         } else {
-            transpiledFiles.set(filePath, file);
+            transpiledFiles.push({ fileName, ...update });
         }
     };
 
@@ -263,7 +268,7 @@ export function transpile({
     options.noEmit = oldNoEmit;
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
-        transpiledFiles.clear();
+        transpiledFiles = [];
     }
 
     return { diagnostics, transpiledFiles };

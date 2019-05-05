@@ -13,13 +13,32 @@ test.each([
     expect(lua).toBe(`local myvar = ${out}`);
 });
 
-test.each([{ input: "3", expected: 3 }])(
-    "Shorthand Property Assignment (%p)",
-    ({ input, expected }) => {
-        const result = util.transpileAndExecute(`const x = ${input}; const o = {x}; return o.x;`);
-        expect(result).toBe(expected);
-    },
-);
+describe("property shorthand", () => {
+    test("should support property shorthand", () => {
+        const result = util.transpileAndExecute(`
+            const x = 1;
+            const o = { x };
+            return o.x;
+        `);
+
+        expect(result).toBe(1);
+    });
+
+    test.each([NaN, Infinity])("should support %p shorthand", identifier => {
+        const result = util.transpileAndExecute(`return ({ ${identifier} }).${identifier}`);
+
+        expect(result).toBe(identifier);
+    });
+
+    test("should support export property shorthand", () => {
+        const code = `
+            export const x = 1;
+            const o = { x };
+            export const y = o.x;
+        `;
+        expect(util.transpileExecuteAndReturnExport(code, "y")).toBe(1);
+    });
+});
 
 test("undefined as object key", () => {
     const code = `const foo = {undefined: "foo"};

@@ -132,6 +132,8 @@ export function setNodePosition<T extends Node>(node: T, position: TextRange): T
     return node;
 }
 
+export function setNodeOriginal<T extends Node>(node: T, tsOriginal: ts.Node): T;
+export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal: ts.Node): T | undefined;
 export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal: ts.Node): T | undefined {
     if (node === undefined) {
         return undefined;
@@ -310,7 +312,7 @@ export function createIfStatement(
     statement.condition = condition;
     setParent(ifBlock, statement);
     statement.ifBlock = ifBlock;
-    setParent(ifBlock, statement);
+    setParent(elseBlock, statement);
     statement.elseBlock = elseBlock;
     return statement;
 }

@@ -4,17 +4,18 @@ declare function setmetatable<T extends object>(this: void, obj: T, metatable: a
 const ____symbolMetatable = {
     __tostring(): string {
         if (this.description === undefined) {
-            return 'Symbol()';
+            return "Symbol()";
         } else {
-            return 'Symbol(' + this.description + ')';
+            return "Symbol(" + this.description + ")";
         }
     },
 };
 
-function __TS__Symbol(description?: string | number): symbol {
+function __TS__Symbol(this: void, description?: string | number): symbol {
     return setmetatable({ description }, ____symbolMetatable) as any;
 }
 
 Symbol = {
-    iterator: __TS__Symbol('Symbol.iterator'),
+    iterator: __TS__Symbol("Symbol.iterator"),
+    hasInstance: __TS__Symbol("Symbol.hasInstance"),
 } as any;

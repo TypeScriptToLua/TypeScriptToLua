@@ -121,5 +121,5 @@ export function transpileString(
     options: CompilerOptions = {}
 ): TranspileStringResult {
     const { diagnostics, transpiledFiles } = transpileVirtualProject({ "main.ts": main }, options);
-    return { diagnostics, file: transpiledFiles.get("main.ts") };
+    return { diagnostics, file: transpiledFiles.find(({ fileName }) => fileName === "main.ts") };
 }

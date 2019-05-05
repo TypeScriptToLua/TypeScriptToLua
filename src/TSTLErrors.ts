@@ -1,6 +1,9 @@
 import * as ts from "typescript";
 import { TranspileError } from "./TranspileError";
-import { TSHelper as tsHelper } from "./TSHelper";
+import { LuaTarget } from "./CompilerOptions";
+
+const getLuaTargetName = (version: LuaTarget) =>
+    version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`;
 
 export class TSTLErrors {
     public static CouldNotCast = (castName: string) =>
@@ -120,8 +123,8 @@ export class TSTLErrors {
     public static UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
         new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
 
-    public static UnsupportedForTarget = (functionality: string, version: string, node: ts.Node) =>
-        new TranspileError(`${functionality} is/are not supported for target Lua ${version}.`, node);
+    public static UnsupportedForTarget = (functionality: string, version: LuaTarget, node: ts.Node) =>
+        new TranspileError(`${functionality} is/are not supported for target ${getLuaTargetName(version)}.`, node);
 
     public static UnsupportedFunctionWithoutBody = (node: ts.FunctionLikeDeclaration) =>
         new TranspileError("Functions with undefined bodies are not supported.", node);

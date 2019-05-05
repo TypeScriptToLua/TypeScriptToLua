@@ -136,7 +136,7 @@ test("Class decorator with inheritance", () => {
     expect(result).toBe(420);
 });
 
-test("Class decorators are applied in reverse order", () => {
+test("Class decorators are applied in order and executed in reverse order", () => {
     const source = `
     const order = [];
 

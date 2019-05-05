@@ -41,3 +41,16 @@ test("should error if transformer could not be resolved", () => {
     const { diagnostics } = util.transpileStringResult("", options);
     expect(diagnostics).toHaveDiagnostics();
 });
+
+test.each([undefined, "string"])('should error if "name" has invalid %p value', (name: any) => {
+    const options: tstl.CompilerOptions = { tsTransformers: [{ name }] };
+    const { diagnostics } = util.transpileStringResult("", options);
+    expect(diagnostics).toHaveDiagnostics();
+});
+
+test('should error if "when" has invalid "unknown" value', () => {
+    const name = path.join(__dirname, "transformers/resolve.ts");
+    const options: tstl.CompilerOptions = { tsTransformers: [{ name, when: "unknown" as any }] };
+    const { diagnostics } = util.transpileStringResult("", options);
+    expect(diagnostics).toHaveDiagnostics();
+});

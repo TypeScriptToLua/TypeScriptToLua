@@ -25,8 +25,28 @@ function loadTransformersFromOptions(
     const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
 
     const extensions = [".ts", ".tsx", ".js"];
-    for (const transformer of options.tsTransformers) {
+    for (const [index, transformer] of options.tsTransformers.entries()) {
+        const transformerOptionPath = `tsTransformers[${index}]`;
         const { name, when = "before", ...transformerOptions } = transformer;
+
+        if (typeof name !== "string") {
+            const optionName = `${transformerOptionPath}.name`;
+            diagnostics.push(
+                diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "string")
+            );
+
+            continue;
+        }
+
+        const whenValues = ["before", "after", "afterDeclarations"];
+        if (!whenValues.includes(when)) {
+            const optionName = `--${transformerOptionPath}.when`;
+            diagnostics.push(
+                diagnosticFactories.argumentForOptionMustBe(optionName, whenValues.join(", "))
+            );
+
+            continue;
+        }
 
         let resolved: string;
         try {

@@ -159,5 +159,6 @@ export function findFirstChild(
 
 export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
     expect(subject).toBeDefined();
+    expect(subject).not.toBeNull();
     return true; // If this was false the expect would have thrown an error
 }

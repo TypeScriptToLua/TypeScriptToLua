@@ -429,7 +429,7 @@ export class LuaPrinter {
     }
 
     public printExpressionStatement(statement: tstl.ExpressionStatement): SourceNode {
-        return this.concatNodes(this.indent(), this.printExpression(statement.expression));
+        return this.createSourceNode(statement, [this.indent(), this.printExpression(statement.expression)]);
     }
 
     // Expressions
@@ -627,7 +627,7 @@ export class LuaPrinter {
 
         chunks.push(this.printExpression(expression.expression), "(", ...this.joinChunks(", ", parameterChunks), ")");
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(expression, chunks);
     }
 
     public printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
@@ -639,7 +639,10 @@ export class LuaPrinter {
 
         const name = this.printIdentifier(expression.name);
 
-        return this.concatNodes(prefix, ":", name, "(", ...this.joinChunks(", ", parameterChunks), ")");
+        return this.createSourceNode(
+            expression,
+            [prefix, ":", name, "(", ...this.joinChunks(", ", parameterChunks), ")"]
+        );
     }
 
     public printIdentifier(expression: tstl.Identifier): SourceNode {
@@ -735,6 +738,7 @@ export class LuaPrinter {
                     if (lines.length > 1) {
                         generatedLine += lines.length - 1;
                         generatedColumn = 0;
+                        currentMapping = undefined; // Mappings end at newlines
                     }
                     generatedColumn += lines[lines.length - 1].length;
 

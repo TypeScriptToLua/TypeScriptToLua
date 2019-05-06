@@ -38,10 +38,10 @@ export function transpileFiles(
 }
 
 export function transpileProject(
-    fileName: string,
+    configFileName: string,
     optionsToExtend?: CompilerOptions
 ): TranspileFilesResult {
-    const parseResult = parseConfigFileWithSystem(fileName, optionsToExtend);
+    const parseResult = parseConfigFileWithSystem(configFileName, optionsToExtend);
     if (parseResult.errors.length > 0) {
         return { diagnostics: parseResult.errors, emitResult: [] };
     }

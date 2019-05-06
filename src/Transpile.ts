@@ -59,11 +59,10 @@ function loadTransformersFromOptions(
         }
 
         // tslint:disable-next-line: deprecation
-        const hasNoTsRequireHook = require.extensions[".ts"] === undefined;
-        if (hasNoTsRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
+        const hasNoRequireHook = require.extensions[".ts"] === undefined;
+        if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
             try {
-                const tsNodePath = resolve.sync("ts-node", { basedir });
-                const tsNode: typeof import("ts-node") = require(tsNodePath);
+                const tsNode: typeof import("ts-node") = require("ts-node");
                 tsNode.register({ transpileOnly: true });
             } catch (err) {
                 if (err.code !== "MODULE_NOT_FOUND") throw err;

@@ -1,6 +1,3 @@
-/** @tupleReturn */
-declare function next<TKey, TValue>(this: void, t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
-
 class Map<TKey, TValue> {
     public size: number;
 

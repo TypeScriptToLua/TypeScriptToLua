@@ -1,5 +1,3 @@
-declare function setmetatable<T extends object>(this: void, obj: T, metatable: any): T;
-
 class WeakMap<TKey extends object, TValue> {
     private items: {[key: string]: TValue}; // Type of key is actually TKey
 

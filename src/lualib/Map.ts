@@ -1,18 +1,15 @@
-Map = class Map<TKey, TValue> {
+Map = class Map<K, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
-    public size: number;
+    // Type of key is actually K
+    private items: { [key: string]: V } = {};
+    public size = 0;
 
-    private items: { [key: string]: TValue }; // Type of key is actually TKey
+    constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
+        if (entries === undefined) return;
 
-    constructor(other?: Iterable<readonly [TKey, TValue]> | Array<readonly [TKey, TValue]>) {
-        this.items = {};
-        this.size = 0;
-
-        if (other === undefined) return;
-
-        const iterable = other as Iterable<[TKey, TValue]>;
+        const iterable = entries as Iterable<[K, V]>;
         if (iterable[Symbol.iterator]) {
             // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
             const iterator = iterable[Symbol.iterator]();
@@ -21,11 +18,11 @@ Map = class Map<TKey, TValue> {
                 if (result.done) {
                     break;
                 }
-                const value: [TKey, TValue] = result.value; // Ensures index is offset when tuple is accessed
+                const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
                 this.set(value[0], value[1]);
             }
         } else {
-            const array = other as Array<[TKey, TValue]>;
+            const array = entries as Array<[K, V]>;
             this.size = array.length;
             for (const kvp of array) {
                 this.items[kvp[0] as any] = kvp[1];
@@ -39,7 +36,7 @@ Map = class Map<TKey, TValue> {
         return;
     }
 
-    public delete(key: TKey): boolean {
+    public delete(key: K): boolean {
         const contains = this.has(key);
         if (contains) {
             this.size--;
@@ -48,55 +45,22 @@ Map = class Map<TKey, TValue> {
         return contains;
     }
 
-    public [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
-        return this.entries();
-    }
-
-    public entries(): IterableIterator<[TKey, TValue]> {
-        const items = this.items;
-        let key: TKey;
-        let value: TValue;
-        return {
-            [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
-                return this;
-            },
-            next(): IteratorResult<[TKey, TValue]> {
-                [key, value] = next(items, key);
-                return { done: !key, value: [key, value] };
-            },
-        };
-    }
-
-    public forEach(callback: (value: TValue, key: TKey, map: Map<TKey, TValue>) => any): void {
+    public forEach(callback: (value: V, key: K, map: Map<K, V>) => any): void {
         for (const key in this.items) {
             callback(this.items[key], key as any, this);
         }
         return;
     }
 
-    public get(key: TKey): TValue | undefined {
+    public get(key: K): V | undefined {
         return this.items[key as any];
     }
 
-    public has(key: TKey): boolean {
+    public has(key: K): boolean {
         return this.items[key as any] !== undefined;
     }
 
-    public keys(): IterableIterator<TKey> {
-        const items = this.items;
-        let key: TKey;
-        return {
-            [Symbol.iterator](): IterableIterator<TKey> {
-                return this;
-            },
-            next(): IteratorResult<TKey> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
-            },
-        };
-    }
-
-    public set(key: TKey, value: TValue): this {
+    public set(key: K, value: V): this {
         if (!this.has(key)) {
             this.size++;
         }
@@ -104,15 +68,48 @@ Map = class Map<TKey, TValue> {
         return this;
     }
 
-    public values(): IterableIterator<TValue> {
+    public [Symbol.iterator](): IterableIterator<[K, V]> {
+        return this.entries();
+    }
+
+    public entries(): IterableIterator<[K, V]> {
         const items = this.items;
-        let key: TKey;
-        let value: TValue;
+        let key: K;
+        let value: V;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> {
+            [Symbol.iterator](): IterableIterator<[K, V]> {
                 return this;
             },
-            next(): IteratorResult<TValue> {
+            next(): IteratorResult<[K, V]> {
+                [key, value] = next(items, key);
+                return { done: !key, value: [key, value] };
+            },
+        };
+    }
+
+    public keys(): IterableIterator<K> {
+        const items = this.items;
+        let key: K;
+        return {
+            [Symbol.iterator](): IterableIterator<K> {
+                return this;
+            },
+            next(): IteratorResult<K> {
+                [key] = next(items, key);
+                return { done: !key, value: key };
+            },
+        };
+    }
+
+    public values(): IterableIterator<V> {
+        const items = this.items;
+        let key: K;
+        let value: V;
+        return {
+            [Symbol.iterator](): IterableIterator<V> {
+                return this;
+            },
+            next(): IteratorResult<V> {
                 [key, value] = next(items, key);
                 return { done: !key, value };
             },

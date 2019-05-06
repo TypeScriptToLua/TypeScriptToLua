@@ -5086,10 +5086,17 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createIdentifier("tostring"), [expression]);
     }
 
-    protected expressionPlusOne(expression: tstl.Expression): tstl.BinaryExpression {
+    protected expressionPlusOne(expression: tstl.Expression): tstl.Expression {
+        if (tstl.isNumericLiteral(expression)) {
+            const newNode = tstl.cloneNode(expression);
+            newNode.value += 1;
+            return newNode;
+        }
+
         if (tstl.isBinaryExpression(expression)) {
             expression = tstl.createParenthesizedExpression(expression);
         }
+
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 

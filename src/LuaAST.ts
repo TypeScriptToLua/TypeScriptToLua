@@ -171,10 +171,6 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
 }
 
 export function getOriginalPos(node: Node): TextRange {
-    while (node.line === undefined && node.parent !== undefined) {
-        node = node.parent;
-    }
-
     return { line: node.line, column: node.column };
 }
 

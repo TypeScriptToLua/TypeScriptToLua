@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import {SourceNode, SourceMapGenerator} from "source-map";
+import { Mapping, SourceNode, SourceMapGenerator } from "source-map";
 
 import * as tstl from "./LuaAST";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
@@ -59,14 +59,15 @@ export class LuaPrinter {
 
         const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
 
-        const codeWithSourceMap = rootSourceNode
-            // TODO is the file: part really required? and should this be handled in the printer?
-            .toStringWithSourceMap({file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua"});
+        const sourceRoot = this.options.sourceRoot
+            || (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
 
-        let codeResult = codeWithSourceMap.code;
+        const sourceMap = this.buildSourceMap(sourceFile, sourceRoot, rootSourceNode);
+
+        let codeResult = rootSourceNode.toString();
 
         if (this.options.inlineSourceMap) {
-            codeResult += "\n" + this.printInlineSourceMap(codeWithSourceMap.map);
+            codeResult += "\n" + this.printInlineSourceMap(sourceMap);
         }
 
         if (this.options.sourceMapTraceback) {
@@ -74,7 +75,7 @@ export class LuaPrinter {
             codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
         }
 
-        return [codeResult, codeWithSourceMap.map.toString()];
+        return [codeResult, sourceMap.toString()];
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
@@ -140,7 +141,7 @@ export class LuaPrinter {
             header += "{#SourceMapTraceback}\n";
         }
 
-        const fileBlockNode =  this.createSourceNode(block, this.printBlock(block));
+        const fileBlockNode = this.printBlock(block);
 
         return this.concatNodes(header, fileBlockNode);
     }
@@ -172,7 +173,7 @@ export class LuaPrinter {
     }
 
     protected printBlock(block: tstl.Block): SourceNode {
-        return this.createSourceNode(block, this.printStatementArray(block.statements));
+        return this.concatNodes(...this.printStatementArray(block.statements));
     }
 
     private statementMayRequireSemiColon(statement: tstl.Statement): boolean {
@@ -688,5 +689,62 @@ export class LuaPrinter {
             }
         }
         return result;
+    }
+
+    // The key difference between this and SourceNode.toStringWithSourceMap() is that SourceNodes with null line/column
+    // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
+    private buildSourceMap(sourceFile: string, sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
+        const map = new SourceMapGenerator({
+            file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua",
+            sourceRoot,
+        });
+
+        let generatedLine = 1;
+        let generatedColumn = 0;
+        let currentMapping: Mapping | undefined;
+
+        const isNewMapping = (sourceNode: SourceNode) => {
+            if (sourceNode.line === null) {
+                return false;
+            }
+            if (currentMapping === undefined) {
+                return true;
+            }
+            if (currentMapping.generated.line === generatedLine
+                && currentMapping.generated.column === generatedColumn)
+            {
+                return false;
+            }
+            return (currentMapping.original.line !== sourceNode.line
+                || currentMapping.original.column !== sourceNode.column);
+        };
+
+        const build = (sourceNode: SourceNode) => {
+            if (isNewMapping(sourceNode)) {
+                currentMapping = {
+                    source: sourceFile,
+                    original: { line: sourceNode.line, column: sourceNode.column },
+                    generated: { line: generatedLine, column: generatedColumn },
+                };
+                map.addMapping(currentMapping);
+            }
+
+            for (const chunk of sourceNode.children) {
+                if (typeof chunk === "string") {
+                    const lines = (chunk as string).split("\n");
+                    if (lines.length > 1) {
+                        generatedLine += lines.length - 1;
+                        generatedColumn = 0;
+                    }
+                    generatedColumn += lines[lines.length - 1].length;
+
+                } else {
+                    build(chunk);
+                }
+            }
+        };
+        build(rootSourceNode);
+
+        return map;
     }
 }

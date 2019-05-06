@@ -24,7 +24,7 @@ function loadTransformersFromOptions(
     const configFileName = options.configFilePath as string | undefined;
     const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
 
-    const extensions = [".ts", ".tsx", ".js"];
+    const extensions = [".js", ".ts", ".tsx"];
     for (const [index, transformer] of options.tsTransformers.entries()) {
         const transformerOptionPath = `tsTransformers[${index}]`;
         const { name, when = "before", ...transformerOptions } = transformer;

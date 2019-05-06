@@ -4,8 +4,8 @@ import * as util from "./util";
 declare global {
     namespace jest {
         interface Matchers<R> {
-            toThrowExactError(error: Error): void;
-            toHaveDiagnostics(): void;
+            toThrowExactError(error: Error): R;
+            toHaveDiagnostics(): R;
         }
     }
 }

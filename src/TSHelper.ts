@@ -470,7 +470,7 @@ export class TSHelper {
         return checker.getContextualType(expression) || checker.getTypeAtLocation(expression);
     }
 
-    public static getAllCallSignatures(type: ts.Type): ReadonlyArray<ts.Signature> {
+    public static getAllCallSignatures(type: ts.Type): readonly ts.Signature[] {
         if (type.isUnion()) {
             return type.types.map(t => TSHelper.getAllCallSignatures(t)).reduce((a, b) => a.concat(b));
         }
@@ -478,7 +478,7 @@ export class TSHelper {
     }
 
     public static getSignatureDeclarations(
-        signatures: ReadonlyArray<ts.Signature>,
+        signatures: readonly ts.Signature[],
         checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {

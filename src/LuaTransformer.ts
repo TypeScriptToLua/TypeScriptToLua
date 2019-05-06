@@ -208,7 +208,7 @@ export class LuaTransformer {
     }
 
     /** Converts an array of ts.Statements into an array of tstl.Statements */
-    private transformStatements(statements: ts.Statement[] | ReadonlyArray<ts.Statement>): tstl.Statement[] {
+    private transformStatements(statements: readonly ts.Statement[]): tstl.Statement[] {
         const tstlStatements: tstl.Statement[] = [];
         (statements as ts.Statement[]).forEach(statement => {
             tstlStatements.push(...this.statementVisitResultToArray(this.transformStatement(statement)));

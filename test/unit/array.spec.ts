@@ -10,7 +10,7 @@ test("Array access", () => {
 
 test("Readonly Array access", () => {
     const result = util.transpileAndExecute(
-        `const arr: ReadonlyArray<number> = [3,5,1];
+        `const arr: readonly number[] = [3,5,1];
         return arr[1];`,
     );
     expect(result).toBe(5);

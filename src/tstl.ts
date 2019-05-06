@@ -134,9 +134,9 @@ function performBuild(_args: string[]): void {
 
 function performCompilation(
     rootNames: string[],
-    projectReferences: ReadonlyArray<ts.ProjectReference> | undefined,
+    projectReferences: readonly ts.ProjectReference[] | undefined,
     options: tstl.CompilerOptions,
-    configFileParsingDiagnostics?: ReadonlyArray<ts.Diagnostic>
+    configFileParsingDiagnostics?: readonly ts.Diagnostic[]
 ): void {
     const program = ts.createProgram({
         rootNames,

@@ -1,31 +1,34 @@
-class Map<TKey, TValue> {
+Map = class Map<TKey, TValue> {
+    public static [Symbol.species] = Map;
+    public [Symbol.toStringTag] = "Map";
+
     public size: number;
 
-    private items: {[key: string]: TValue}; // Type of key is actually TKey
+    private items: { [key: string]: TValue }; // Type of key is actually TKey
 
-    constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
+    constructor(other?: Iterable<readonly [TKey, TValue]> | Array<readonly [TKey, TValue]>) {
         this.items = {};
         this.size = 0;
 
-        if (other) {
-            const iterable = other as Iterable<[TKey, TValue]>;
-            if (iterable[Symbol.iterator]) {
-                // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
-                const iterator = iterable[Symbol.iterator]();
-                while (true) {
-                    const result = iterator.next();
-                    if (result.done) {
-                        break;
-                    }
-                    const value: [TKey, TValue] = result.value; // Ensures index is offset when tuple is accessed
-                    this.set(value[0], value[1]);
+        if (other === undefined) return;
+
+        const iterable = other as Iterable<[TKey, TValue]>;
+        if (iterable[Symbol.iterator]) {
+            // Iterate manually because Map is compiled with ES5 which doesn't support Iterables in for...of
+            const iterator = iterable[Symbol.iterator]();
+            while (true) {
+                const result = iterator.next();
+                if (result.done) {
+                    break;
                 }
-            } else {
-                const arr = other as Array<[TKey, TValue]>;
-                this.size = arr.length;
-                for (const kvp of arr) {
-                    this.items[kvp[0] as any] = kvp[1];
-                }
+                const value: [TKey, TValue] = result.value; // Ensures index is offset when tuple is accessed
+                this.set(value[0], value[1]);
+            }
+        } else {
+            const array = other as Array<[TKey, TValue]>;
+            this.size = array.length;
+            for (const kvp of array) {
+                this.items[kvp[0] as any] = kvp[1];
             }
         }
     }
@@ -54,10 +57,12 @@ class Map<TKey, TValue> {
         let key: TKey;
         let value: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<[TKey, TValue]> { return this; },
+            [Symbol.iterator](): IterableIterator<[TKey, TValue]> {
+                return this;
+            },
             next(): IteratorResult<[TKey, TValue]> {
                 [key, value] = next(items, key);
-                return {done: !key, value: [key, value]};
+                return { done: !key, value: [key, value] };
             },
         };
     }
@@ -69,7 +74,7 @@ class Map<TKey, TValue> {
         return;
     }
 
-    public get(key: TKey): TValue {
+    public get(key: TKey): TValue | undefined {
         return this.items[key as any];
     }
 
@@ -81,15 +86,17 @@ class Map<TKey, TValue> {
         const items = this.items;
         let key: TKey;
         return {
-            [Symbol.iterator](): IterableIterator<TKey> { return this; },
+            [Symbol.iterator](): IterableIterator<TKey> {
+                return this;
+            },
             next(): IteratorResult<TKey> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: key };
             },
         };
     }
 
-    public set(key: TKey, value: TValue): Map<TKey, TValue> {
+    public set(key: TKey, value: TValue): this {
         if (!this.has(key)) {
             this.size++;
         }
@@ -102,11 +109,13 @@ class Map<TKey, TValue> {
         let key: TKey;
         let value: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            [Symbol.iterator](): IterableIterator<TValue> {
+                return this;
+            },
             next(): IteratorResult<TValue> {
                 [key, value] = next(items, key);
-                return {done: !key, value};
+                return { done: !key, value };
             },
         };
     }
-}
+};

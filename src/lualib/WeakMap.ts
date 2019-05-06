@@ -1,9 +1,12 @@
-class WeakMap<TKey extends object, TValue> {
-    private items: {[key: string]: TValue}; // Type of key is actually TKey
+WeakMap = class WeakMap<TKey extends object, TValue> {
+    public static [Symbol.species] = WeakMap;
+    public [Symbol.toStringTag] = "WeakMap";
+
+    private items: { [key: string]: TValue }; // Type of key is actually TKey
 
     constructor(other: Iterable<[TKey, TValue]> | Array<[TKey, TValue]>) {
         this.items = {};
-        setmetatable(this.items, { __mode: 'k' });
+        setmetatable(this.items, { __mode: "k" });
 
         if (other) {
             const iterable = other as Iterable<[TKey, TValue]>;
@@ -32,7 +35,7 @@ class WeakMap<TKey extends object, TValue> {
         return contains;
     }
 
-    public get(key: TKey): TValue {
+    public get(key: TKey): TValue | undefined {
         return this.items[key as any];
     }
 
@@ -40,8 +43,8 @@ class WeakMap<TKey extends object, TValue> {
         return this.items[key as any] !== undefined;
     }
 
-    public set(key: TKey, value: TValue): WeakMap<TKey, TValue> {
+    public set(key: TKey, value: TValue): this {
         this.items[key as any] = value;
         return this;
     }
-}
+};

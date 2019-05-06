@@ -5,17 +5,6 @@ import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
 import * as cliDiagnostics from "./diagnostics";
 
-function createDiagnosticReporter(pretty: boolean): ts.DiagnosticReporter {
-    const reporter: ts.DiagnosticReporter = (ts as any).createDiagnosticReporter(ts.sys, pretty);
-    return diagnostic => {
-        if (diagnostic.source === "typescript-to-lua") {
-            diagnostic = { ...diagnostic, code: ("TL" + diagnostic.code) as any };
-        }
-
-        reporter(diagnostic);
-    };
-}
-
 function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
     return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
 }
@@ -26,9 +15,9 @@ function shouldBePretty(options?: ts.CompilerOptions): boolean {
         : Boolean(options.pretty);
 }
 
-let reportDiagnostic = createDiagnosticReporter(false);
+let reportDiagnostic = tstl.createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
-    reportDiagnostic = createDiagnosticReporter(shouldBePretty(options));
+    reportDiagnostic = tstl.createDiagnosticReporter(shouldBePretty(options));
 }
 
 function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefined {

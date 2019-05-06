@@ -1,7 +1,10 @@
-class Set<TValue> {
+Set = class Set<TValue> {
+    public static [Symbol.species] = Set;
+    public [Symbol.toStringTag] = "Set";
+
     public size: number;
 
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+    private items: { [key: string]: boolean }; // Key type is actually TValue
 
     constructor(other: Iterable<TValue> | TValue[]) {
         this.items = {};
@@ -60,10 +63,12 @@ class Set<TValue> {
         const items = this.items;
         let key: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<[TValue, TValue]> { return this; },
+            [Symbol.iterator](): IterableIterator<[TValue, TValue]> {
+                return this;
+            },
             next(): IteratorResult<[TValue, TValue]> {
                 [key] = next(items, key);
-                return {done: !key, value: [key, key]};
+                return { done: !key, value: [key, key] };
             },
         };
     }
@@ -72,7 +77,6 @@ class Set<TValue> {
         for (const key in this.items) {
             callback(key as any, key as any, this);
         }
-        return;
     }
 
     public has(value: TValue): boolean {
@@ -83,10 +87,12 @@ class Set<TValue> {
         const items = this.items;
         let key: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            [Symbol.iterator](): IterableIterator<TValue> {
+                return this;
+            },
             next(): IteratorResult<TValue> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: key };
             },
         };
     }
@@ -95,11 +101,13 @@ class Set<TValue> {
         const items = this.items;
         let key: TValue;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
+            [Symbol.iterator](): IterableIterator<TValue> {
+                return this;
+            },
             next(): IteratorResult<TValue> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: key };
             },
         };
     }
-}
+};

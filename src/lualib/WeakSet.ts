@@ -1,9 +1,12 @@
-class WeakSet<TValue extends object> {
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+WeakSet = class WeakSet<TValue extends object> {
+    public static [Symbol.species] = WeakSet;
+    public [Symbol.toStringTag] = "WeakSet";
+
+    private items: { [key: string]: boolean }; // Key type is actually TValue
 
     constructor(other: Iterable<TValue> | TValue[]) {
         this.items = {};
-        setmetatable(this.items, { __mode: 'k' });
+        setmetatable(this.items, { __mode: "k" });
 
         if (other) {
             const iterable = other as Iterable<TValue>;
@@ -25,7 +28,7 @@ class WeakSet<TValue extends object> {
         }
     }
 
-    public add(value: TValue): WeakSet<TValue> {
+    public add(value: TValue): this {
         this.items[value as any] = true;
         return this;
     }
@@ -39,4 +42,4 @@ class WeakSet<TValue extends object> {
     public has(value: TValue): boolean {
         return this.items[value as any] === true;
     }
-}
+};

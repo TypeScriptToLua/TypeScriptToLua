@@ -8,7 +8,7 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[lin
         _G.__TS__originalTraceback = debug.traceback;
         debug.traceback = (thread, message, level) => {
             const trace = _G["__TS__originalTraceback"](thread, message, level);
-            const [result, occurrences] = string.gsub(
+            const [result] = string.gsub(
                 trace,
                 "(%S+).lua:(%d+)",
                 (file, line) => {

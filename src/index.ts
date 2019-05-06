@@ -6,7 +6,12 @@ import { CompilerOptions } from "./CompilerOptions";
 import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
-export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./CommandLineParser";
+export {
+    parseCommandLine,
+    ParsedCommandLine,
+    updateParsedConfigFile,
+    createDiagnosticReporter,
+} from "./CommandLineParser";
 export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";

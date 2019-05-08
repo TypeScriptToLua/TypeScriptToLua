@@ -2229,7 +2229,7 @@ export class LuaTransformer {
             // local ____TS_array = ${iterable};
             // for ____TS_index = 1, #____TS_array do
             //     local ${initializer} = ____TS_array[____TS_index]
-            const arrayVariable = tstl.createIdentifier("____TS_array");
+            const arrayVariable = tstl.createIdentifier("____TS_array", statement.expression);
             const arrayAccess = tstl.createTableIndexExpression(arrayVariable, indexVariable);
             const initializer = this.transformForOfInitializer(statement.initializer, arrayAccess);
             block.statements.splice(0, 0, initializer);

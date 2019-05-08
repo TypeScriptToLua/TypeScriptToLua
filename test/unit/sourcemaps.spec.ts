@@ -45,6 +45,78 @@ test.each([
             { luaPattern: "2", typeScriptPattern: "abc.foo" },
         ],
     },
+    {
+        typeScriptSource: `
+            import {Foo} from "foo";
+        `,
+
+        assertPatterns: [
+            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            import * as Foo from "foo";
+        `,
+
+        assertPatterns: [
+            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            class Bar extends Foo {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "Bar = {}", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.__index =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype.__index =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype.constructor =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
+            { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
+            { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare const arr: string[];
+            for (const e of arr) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "arr", typeScriptPattern: "arr" },
+            { luaPattern: "e", typeScriptPattern: "e" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare function getArr(this: void): string[];
+            for (const e of getArr()) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "getArr", typeScriptPattern: "getArr" },
+            { luaPattern: "____TS_array", typeScriptPattern: "getArr" },
+            { luaPattern: "e", typeScriptPattern: "e" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare const arr: string[]
+            for (let i = 0; i < arr.length; ++i) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "i = 0", typeScriptPattern: "i = 0" },
+            { luaPattern: "i < #arr", typeScriptPattern: "i < arr.length" },
+            { luaPattern: "i + 1", typeScriptPattern: "++i" },
+        ],
+    },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
     const { file } = util.transpileStringResult(typeScriptSource);

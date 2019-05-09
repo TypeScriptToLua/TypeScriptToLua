@@ -85,24 +85,24 @@ test.each([
     {
         typeScriptSource: `
             declare const arr: string[];
-            for (const e of arr) {}
+            for (const element of arr) {}
         `,
 
         assertPatterns: [
-            { luaPattern: "arr", typeScriptPattern: "arr" },
-            { luaPattern: "e", typeScriptPattern: "e" },
+            { luaPattern: "arr", typeScriptPattern: "arr)" },
+            { luaPattern: "element", typeScriptPattern: "element" },
         ],
     },
     {
         typeScriptSource: `
             declare function getArr(this: void): string[];
-            for (const e of getArr()) {}
+            for (const element of getArr()) {}
         `,
 
         assertPatterns: [
-            { luaPattern: "getArr", typeScriptPattern: "getArr" },
-            { luaPattern: "____TS_array", typeScriptPattern: "getArr" },
-            { luaPattern: "e", typeScriptPattern: "e" },
+            { luaPattern: "getArr()", typeScriptPattern: "getArr()" },
+            { luaPattern: "____TS_array", typeScriptPattern: "getArr()" },
+            { luaPattern: "element", typeScriptPattern: "element" },
         ],
     },
     {

@@ -104,17 +104,17 @@ function getCustomTransformers(
             return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
         });
 
-    const transformersFromConfig = loadTransformersFromOptions(program, diagnostics);
+    const transformersFromOptions = loadTransformersFromOptions(program, diagnostics);
     return {
         afterDeclarations: [
-            ...(transformersFromConfig.afterDeclarations || []),
+            ...(transformersFromOptions.afterDeclarations || []),
             ...(customTransformers.afterDeclarations || []),
         ],
         before: [
             ...(customTransformers.before || []),
-            ...(transformersFromConfig.before || []),
+            ...(transformersFromOptions.before || []),
 
-            ...(transformersFromConfig.after || []),
+            ...(transformersFromOptions.after || []),
             ...(customTransformers.after || []),
             luaTransformer,
         ],

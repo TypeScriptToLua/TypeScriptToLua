@@ -136,6 +136,29 @@ test.each([
     }
 });
 
+test("Source map has correct sources", async () => {
+    const code = `const foo = "foo"`;
+
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const consumer = await new SourceMapConsumer(file.sourceMap);
+    expect(consumer.sources.length).toBe(1);
+    expect(consumer.sources[0]).toBe("main.ts");
+});
+
+test("Source map has correct source root", async () => {
+    const code = `const foo = "foo"`;
+
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const sourceMap = JSON.parse(file.sourceMap);
+    expect(sourceMap.sourceRoot).toBe(".");
+});
+
 test("sourceMapTraceback saves sourcemap in _G", () => {
     // Arrange
     const typeScriptSource = `

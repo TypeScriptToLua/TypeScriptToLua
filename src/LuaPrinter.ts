@@ -725,7 +725,7 @@ export class LuaPrinter {
         const build = (sourceNode: SourceNode) => {
             if (isNewMapping(sourceNode)) {
                 currentMapping = {
-                    source: sourceFile,
+                    source: sourceNode.source,
                     original: { line: sourceNode.line, column: sourceNode.column },
                     generated: { line: generatedLine, column: generatedColumn },
                 };

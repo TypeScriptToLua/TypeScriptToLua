@@ -167,3 +167,10 @@ export function expectToBeDefined<T>(subject: T | null | undefined): subject is 
     expect(subject).toBeDefined();
     return true; // If this was false the expect would have thrown an error
 }
+
+export const valueToString = (value: unknown) =>
+    value === Infinity || value === -Infinity || (typeof value === "number" && Number.isNaN(value))
+        ? String(value)
+        : JSON.stringify(value);
+
+export const valuesToString = (values: Array<unknown>) => values.map(valueToString).join(", ");

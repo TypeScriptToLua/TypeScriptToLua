@@ -301,7 +301,7 @@ test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
     { inp: "hello test", args: ["test"] },
     { inp: "hello test", args: ["test", 6] },
 ])("string.startsWith (%p)", ({ inp, args }) => {
-    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString(args);
     const result = util.transpileAndExecute(`return "${inp}".startsWith(${argsString})`);
 
     expect(result).toBe(inp.startsWith(...args));
@@ -313,7 +313,7 @@ test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
     { inp: "hello test", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
 ])("string.endsWith (%p)", ({ inp, args }) => {
-    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString(args);
     const result = util.transpileAndExecute(`return "${inp}".endsWith(${argsString})`);
 
     expect(result).toBe(inp.endsWith(...args));
@@ -335,22 +335,23 @@ test.each([
 const padCases = [
     { inp: "foo", maxLength: 0 },
     { inp: "foo", maxLength: 3 },
-    { inp: "foo", maxLength: 4 },
-    { inp: "foo", maxLength: 10 },
+    { inp: "foo", maxLength: 5 },
     { inp: "foo", maxLength: 4, fillString: "    " },
     { inp: "foo", maxLength: 10, fillString: "    " },
     { inp: "foo", maxLength: 5, fillString: "1234" },
+    { inp: "foo", maxLength: 5.9, fillString: "1234" },
+    { inp: "foo", maxLength: NaN },
 ];
 
 test.each(padCases)("string.padStart (%p)", ({ inp, maxLength, fillString }) => {
-    const argsString = [maxLength, fillString].map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString([maxLength, fillString]);
     const result = util.transpileAndExecute(`return "${inp}".padStart(${argsString})`);
 
     expect(result).toBe(inp.padStart(maxLength, fillString));
 });
 
 test.each(padCases)("string.padEnd (%p)", ({ inp, maxLength, fillString }) => {
-    const argsString = [maxLength, fillString].map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString([maxLength, fillString]);
     const result = util.transpileAndExecute(`return "${inp}".padEnd(${argsString})`);
 
     expect(result).toBe(inp.padEnd(maxLength, fillString));

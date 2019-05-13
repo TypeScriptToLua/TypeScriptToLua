@@ -14,5 +14,5 @@ function __TS__StringPadEnd(this: string, maxLength: number, fillString = " "): 
         fillString += fillString.repeat(maxLength / fillString.length);
     }
 
-    return this + fillString.slice(0, maxLength);
+    return this + fillString.slice(0, Math.floor(maxLength));
 }

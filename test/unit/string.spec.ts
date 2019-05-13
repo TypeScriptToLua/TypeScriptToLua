@@ -323,6 +323,9 @@ test.each([
     { inp: "hello test", count: 0 },
     { inp: "hello test", count: 1 },
     { inp: "hello test", count: 2 },
+    { inp: "hello test", count: 1.1 },
+    { inp: "hello test", count: 1.5 },
+    { inp: "hello test", count: 1.9 },
 ])("string.repeat (%p)", ({ inp, count }) => {
     const result = util.transpileAndExecute(`return "${inp}".repeat(${count})`);
 

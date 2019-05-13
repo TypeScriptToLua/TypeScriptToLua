@@ -5094,6 +5094,14 @@ export class LuaTransformer {
         }
 
         if (tstl.isBinaryExpression(expression)) {
+            if (
+                expression.operator === tstl.SyntaxKind.SubtractionOperator &&
+                tstl.isNumericLiteral(expression.right) &&
+                expression.right.value === 1
+            ) {
+                return expression.left;
+            }
+
             expression = tstl.createParenthesizedExpression(expression);
         }
 

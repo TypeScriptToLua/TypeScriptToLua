@@ -4116,6 +4116,15 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.StringStartsWith, node, caller, ...params);
             case "endsWith":
                 return this.transformLuaLibFunction(LuaLibFeature.StringEndsWith, node, caller, ...params);
+            case "repeat":
+                const math = tstl.createIdentifier("math");
+                const floor = tstl.createStringLiteral("floor");
+                const parameter = tstl.createCallExpression(tstl.createTableIndexExpression(math, floor), [params[0]]);
+                return this.createStringCall("rep", node, caller, parameter);
+            case "padStart":
+                return this.transformLuaLibFunction(LuaLibFeature.StringPadStart, node, caller, ...params);
+            case "padEnd":
+                return this.transformLuaLibFunction(LuaLibFeature.StringPadEnd, node, caller, ...params);
             case "byte":
             case "char":
             case "dump":

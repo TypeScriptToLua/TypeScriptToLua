@@ -4709,8 +4709,8 @@ export class LuaTransformer {
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)
-            ? this.createSafeName(ts.idText(identifier))
-            : ts.idText(identifier);
+            ? this.createSafeName(this.getIdentifierText(identifier))
+            : this.getIdentifierText(identifier);
 
         const symbolId = this.getIdentifierSymbolId(identifier);
         return tstl.createIdentifier(text, identifier, symbolId);

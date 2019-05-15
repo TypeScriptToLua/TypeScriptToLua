@@ -14,12 +14,13 @@ test.each([
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
     "Import module names with invalid lua identifier characters (%p)",
     name => {
-        const code = `import { foo } from "${name}";`;
+        const code = `
+            import { foo } from "${name}";`;
 
         const lua = `
-        setmetatable(package.loaded, {__index = function() return {foo = "bar"} end})
-        ${util.transpileString(code)}
-        return foo;`;
+            setmetatable(package.loaded, {__index = function() return {foo = "bar"} end})
+            ${util.transpileString(code)}
+            return foo;`;
 
         expect(util.executeLua(lua)).toBe("bar");
     },

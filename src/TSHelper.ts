@@ -208,9 +208,19 @@ export class TSHelper {
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
-            let functionType: ts.Type;
+            let functionType: ts.Type | undefined;
             if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
                 functionType = TSHelper.inferAssignedType(declaration, checker);
+            } else if (ts.isMethodDeclaration(declaration) && ts.isObjectLiteralExpression(declaration.parent)) {
+                // Manually lookup type for object literal properties declared with method syntax
+                const interfaceType = TSHelper.inferAssignedType(declaration.parent, checker);
+                const propertySymbol = interfaceType.getProperty(declaration.name.getText());
+                if (propertySymbol) {
+                    functionType = checker.getTypeOfSymbolAtLocation(propertySymbol, declaration);
+                }
+                if (functionType === undefined) {
+                    functionType = checker.getTypeAtLocation(declaration);
+                }
             } else {
                 functionType = checker.getTypeAtLocation(declaration);
             }
@@ -304,6 +314,16 @@ export class TSHelper {
     {
         const directivesMap = new Map<DecoratorKind, Decorator>();
         TSHelper.collectCustomDecorators(signature, checker, directivesMap);
+
+        // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
+        const declaration = signature.getDeclaration();
+        if (declaration && declaration.parent && ts.isPropertySignature(declaration.parent)) {
+            const symbol = checker.getSymbolAtLocation(declaration.parent.name);
+            if (symbol) {
+                TSHelper.collectCustomDecorators(symbol, checker, directivesMap);
+            }
+        }
+
         return directivesMap;
     }
 

@@ -119,6 +119,19 @@ test("Tuple Static Method Return Destruct", () => {
     expect(result).toBe(5);
 });
 
+test("Tuple Static Function Property Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `class Test {
+            /** @tupleReturn */
+            static tuple: () => [number, number, number] = () => [3,5,1];
+        }
+        const [a,b,c] = Test.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
 test("Tuple Non-Static Method Return Destruct", () => {
     const result = util.transpileAndExecute(
         `class Test {
@@ -126,6 +139,78 @@ test("Tuple Non-Static Method Return Destruct", () => {
             tuple(): [number, number, number] { return [3,5,1]; }
         }
         const t = new Test();
+        const [a,b,c] = t.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
+test("Tuple Non-Static Function Property Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `class Test {
+            /** @tupleReturn */
+            tuple: () => [number, number, number] = () => [3,5,1];
+        }
+        const t = new Test();
+        const [a,b,c] = t.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
+test("Tuple Interface Method Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `interface Test {
+            /** @tupleReturn */
+            tuple(): [number, number, number];
+        }
+        const t: Test = {
+            tuple() { return [3,5,1]; }
+        };
+        const [a,b,c] = t.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
+test("Tuple Interface Function Property Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `interface Test {
+            /** @tupleReturn */
+            tuple: () => [number, number, number];
+        }
+        const t: Test = {
+            tuple: () => [3,5,1]
+        };
+        const [a,b,c] = t.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
+test("Tuple Object Literal Method Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `const t = {
+            /** @tupleReturn */
+            tuple() { return [3,5,1]; }
+        };
+        const [a,b,c] = t.tuple();
+        return b;`,
+    );
+
+    expect(result).toBe(5);
+});
+
+test("Tuple Object Literal Function Property Return Destruct", () => {
+    const result = util.transpileAndExecute(
+        `const t = {
+            /** @tupleReturn */
+            tuple: () => [3,5,1]
+        };
         const [a,b,c] = t.tuple();
         return b;`,
     );

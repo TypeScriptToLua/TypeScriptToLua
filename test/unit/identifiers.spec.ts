@@ -1,6 +1,114 @@
 import * as util from "../util";
 
+test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier name (%p)", name => {
+    const code = `
+        const ${name} = "foobar";
+        return ${name};`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
+    test("variable (nil)", () => {
+        const code = `
+            const nil = "foobar";
+            return \`\${undefined}|\${nil}\``;
+
+        expect(util.transpileAndExecute(code)).toBe("nil|foobar");
+    });
+
+    test("variable (and)", () => {
+        const code = `
+            const and = "foobar";
+            return true && and;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (elseif)", () => {
+        const code = `
+            const elseif = "foobar";
+            if (false) {
+            } else if (elseif) {
+                return elseif;
+            }`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (end)", () => {
+        const code = `
+            const end = "foobar";
+            {
+                return end;
+            }`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (local)", () => {
+        const code = `
+            const local = "foobar";
+            return local;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (not)", () => {
+        const code = `
+            const not = "foobar";
+            return (!false) && not;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (or)", () => {
+        const code = `
+            const or = "foobar";
+            return false || or;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (repeat)", () => {
+        const code = `
+            const repeat = "foobar";
+            do {} while (false);
+            return repeat;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (then)", () => {
+        const code = `
+            const then = "foobar";
+            if (then) {
+                return then;
+            }`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (until)", () => {
+        const code = `
+            const until = "foobar";
+            do {} while (false);
+            return until;`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
+    test("variable (goto)", () => {
+        const code = `
+            const goto = "foobar";
+            switch (goto) {
+                case goto:
+                    return goto;
+            }`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    });
+
     test("variable (print)", () => {
         const luaHeader = `
             local result = ""
@@ -294,10 +402,10 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         { returnExport: "result", expectResult: "string|foobar" },
     ])("separately exported variable (%p)", ({ returnExport, expectResult }) => {
         const code = `
-                const type = "foobar";
-                export { type }
-                export { type as mytype }
-                export const result = typeof type + "|" + type;`;
+            const type = "foobar";
+            export { type }
+            export { type as mytype }
+            export const result = typeof type + "|" + type;`;
 
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });
@@ -348,12 +456,12 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         { returnExport: "type ~= nil", expectResult: true },
     ])("exported class (%p)", ({ returnExport, expectResult }) => {
         const code = `
-                export class type {
-                    method() { return typeof 0; }
-                    static staticMethod() { return typeof "foo"; }
-                }
-                const t = new type();
-                export const result = t.method() + "|" + type.staticMethod();`;
+            export class type {
+                method() { return typeof 0; }
+                static staticMethod() { return typeof "foo"; }
+            }
+            const t = new type();
+            export const result = t.method() + "|" + type.staticMethod();`;
 
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });
@@ -363,13 +471,13 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         { returnExport: "type ~= nil", expectResult: true },
     ])("subclass of exported class (%p)", ({ returnExport, expectResult }) => {
         const code = `
-                export class type {
-                    method() { return typeof 0; }
-                    static staticMethod() { return typeof "foo"; }
-                }
-                class Foo extends type {}
-                const foo = new Foo();
-                export const result = foo.method() + "|" + Foo.staticMethod();`;
+            export class type {
+                method() { return typeof 0; }
+                static staticMethod() { return typeof "foo"; }
+            }
+            class Foo extends type {}
+            const foo = new Foo();
+            export const result = foo.method() + "|" + Foo.staticMethod();`;
 
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });
@@ -393,10 +501,10 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         { returnExport: "type ~= nil", expectResult: true },
     ])("exported namespace (%p)", ({ returnExport, expectResult }) => {
         const code = `
-                export namespace type {
-                    export const foo = "foobar";
-                }
-                export const result = typeof type.foo + "|" + type.foo;`;
+            export namespace type {
+                export const foo = "foobar";
+            }
+            export const result = typeof type.foo + "|" + type.foo;`;
 
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });
@@ -430,21 +538,21 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         { returnExport: "type ~= nil", expectResult: true },
     ])("exported merged namespace (%p)", ({ returnExport, expectResult }) => {
         const code = `
-                export class type {
-                    method() { return typeof 0; }
-                    static staticMethod() { return typeof true; }
-                }
+            export class type {
+                method() { return typeof 0; }
+                static staticMethod() { return typeof true; }
+            }
 
-                export namespace type {
-                    export const foo = "foo";
-                }
+            export namespace type {
+                export const foo = "foo";
+            }
 
-                export namespace type {
-                    export const bar = "bar";
-                }
+            export namespace type {
+                export const bar = "bar";
+            }
 
-                const t = new type();
-                export const result = \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;`;
+            const t = new type();
+            export const result = \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;`;
 
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });

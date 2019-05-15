@@ -21,8 +21,6 @@ export enum ScopeType {
 interface SymbolInfo {
     symbol: ts.Symbol;
     firstSeenAtPos: number;
-    name: string; // Transformed name (modified if un-exported lua keyword)
-    localName?: string; // Name used for local version of exported class or module
 }
 
 interface FunctionDefinitionInfo {
@@ -43,7 +41,7 @@ interface Scope {
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set([
         "_G", "and", "assert", "break", "coroutine", "debug", "do", "else", "elseif", "end", "error", "false", "for",
-        "function", "if", "ipairs", "in", "local", "math", "new", "nil", "not", "or", "pairs", "pcall", "print",
+        "function", "goto", "if", "ipairs", "in", "local", "math", "new", "nil", "not", "or", "pairs", "pcall", "print",
         "rawget", "rawset", "repeat", "return", "require", "self", "string", "table", "then", "tostring", "type",
         "unpack", "until", "while",
     ]);
@@ -242,15 +240,17 @@ export class LuaTransformer {
 
             const result = [];
             for (const exportElement of statement.exportClause.elements) {
-                let exportedIdentifier: tstl.Expression;
+                let exportedIdentifier: tstl.Expression | undefined;
                 if (exportElement.propertyName !== undefined) {
                     exportedIdentifier = this.transformIdentifier(exportElement.propertyName);
 
                 } else {
                     const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(exportElement);
-                    const identifier = exportedSymbol
-                        && this.createIdentifierForSymbol(exportedSymbol, exportElement.name);
-                    exportedIdentifier = identifier || this.transformIdentifier(exportElement.name);
+                    if (exportedSymbol !== undefined) {
+                        exportedIdentifier = this.createIdentifierFromSymbol(exportedSymbol, exportElement.name);
+                    } else {
+                        exportedIdentifier = this.transformIdentifier(exportElement.name);
+                    }
                 }
 
                 result.push(
@@ -383,7 +383,7 @@ export class LuaTransformer {
                 return undefined;
             }
 
-            const tstlIdentifier = (name: string) => "__TSTL_" + name.replace(new RegExp("-|\\$| |#|'", "g"), "_");
+            const tstlIdentifier = (name: string) => "__TSTL_" + tsHelper.fixInvalidLuaIdentifier(name);
             const importUniqueName = tstl.createIdentifier(tstlIdentifier(path.basename((importPath))));
             const requireStatement = tstl.createVariableDeclarationStatement(
                 tstl.createIdentifier(tstlIdentifier(path.basename((importPath)))),
@@ -547,8 +547,12 @@ export class LuaTransformer {
         }
 
         let localClassName: tstl.Identifier;
-        if (className.symbolId) {
-            localClassName = this.createLocalIdentifierForSymbolId(className.symbolId) || className;
+        if (this.isUnsafeName(className.text)) {
+            localClassName = tstl.createIdentifier(
+                this.createSafeName(className.text),
+                undefined,
+                className.symbolId
+            );
             tstl.setNodePosition(localClassName, className);
         } else {
             localClassName = className;
@@ -1454,6 +1458,18 @@ export class LuaTransformer {
         return result;
     }
 
+    protected createModuleLocalNameIdentifier(declaration: ts.ModuleDeclaration): tstl.Identifier {
+        const moduleSymbol = this.checker.getSymbolAtLocation(declaration.name);
+        if (moduleSymbol !== undefined && this.isUnsafeName(moduleSymbol.name)) {
+            return tstl.createIdentifier(
+                this.createSafeName(declaration.name.text),
+                declaration.name,
+                moduleSymbol && this.symbolIds.get(moduleSymbol)
+            );
+        }
+        return this.transformIdentifier(declaration.name as ts.Identifier);
+    }
+
     public transformModuleDeclaration(statement: ts.ModuleDeclaration): StatementVisitResult {
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(statement), this.checker);
         // If phantom namespace elide the declaration and return the body
@@ -1476,24 +1492,13 @@ export class LuaTransformer {
 
         const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
 
-        const makeLocalNameIdentifier = (moduleDeclaration: ts.ModuleDeclaration) => {
-            const moduleSymbol = this.checker.getSymbolAtLocation(moduleDeclaration.name);
-            if (moduleSymbol !== undefined) {
-                const identifier = this.createLocalIdentifierForSymbol(moduleSymbol, moduleDeclaration.name);
-                if (identifier !== undefined) {
-                    return identifier;
-                }
-            }
-            return this.transformIdentifier(moduleDeclaration.name as ts.Identifier);
-        };
-
         if (isFirstDeclaration) {
             const isExported = (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0;
             if (isExported && this.currentNamespace) {
                 // outerNS.innerNS = {}
                 const namespaceDeclaration = tstl.createAssignmentStatement(
                     tstl.createTableIndexExpression(
-                        makeLocalNameIdentifier(this.currentNamespace),
+                        this.createModuleLocalNameIdentifier(this.currentNamespace),
                         tstl.createStringLiteral(nameIdentifier.text)
                     ),
                     tstl.createTableExpression()
@@ -1504,9 +1509,9 @@ export class LuaTransformer {
                 if (hasExports && tsHelper.moduleHasEmittedBody(statement)) {
                     // local innerNS = outerNS.innerNS
                     const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                        makeLocalNameIdentifier(statement),
+                        this.createModuleLocalNameIdentifier(statement),
                         tstl.createTableIndexExpression(
-                            makeLocalNameIdentifier(this.currentNamespace),
+                            this.createModuleLocalNameIdentifier(this.currentNamespace),
                             tstl.createStringLiteral(nameIdentifier.text)
                         )
                     );
@@ -1526,7 +1531,7 @@ export class LuaTransformer {
                 if (hasExports && tsHelper.moduleHasEmittedBody(statement)) {
                     // local NS = exports.NS
                     const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                        makeLocalNameIdentifier(statement),
+                        this.createModuleLocalNameIdentifier(statement),
                         this.createExportedIdentifier(tstl.cloneIdentifier(nameIdentifier, statement.name))
                     );
 
@@ -1536,7 +1541,7 @@ export class LuaTransformer {
             } else {
                 // local NS = {}
                 const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
-                    makeLocalNameIdentifier(statement),
+                    this.createModuleLocalNameIdentifier(statement),
                     tstl.createTableExpression()
                 );
 
@@ -3369,10 +3374,12 @@ export class LuaTransformer {
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
 
             } else if (ts.isShorthandPropertyAssignment(element)) {
+                let identifier: tstl.Expression | undefined;
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                let identifier: tstl.Expression | undefined = valueSymbol
-                    && this.createIdentifierForSymbol(valueSymbol, element.name);
-                if (identifier === undefined) {
+                if (valueSymbol !== undefined && this.symbolIds.has(valueSymbol)) {
+                    // Ignore unknown symbols so things like NaN still get transformed properly
+                    identifier = this.createIdentifierFromSymbol(valueSymbol, element.name);
+                } else {
                     identifier = this.transformIdentifierExpression(element.name);
                 }
                 if (tstl.isIdentifier(identifier) && valueSymbol !== undefined && this.isSymbolExported(valueSymbol)) {
@@ -4701,19 +4708,11 @@ export class LuaTransformer {
                                                   // at some point.
         }
 
-        let text: string;
+        const text = this.hasUnsafeIdentifierName(identifier)
+            ? this.createSafeName(ts.idText(identifier))
+            : ts.idText(identifier);
+
         const symbolId = this.getIdentifierSymbolId(identifier);
-        if (symbolId !== undefined) {
-            const symbolInfo = this.symbolInfo.get(symbolId);
-            if (!symbolInfo) {
-                throw TSTLErrors.MissingSymbolInfo(identifier, symbolId, ts.idText(identifier));
-            }
-            text = symbolInfo.name;
-
-        } else {
-            text = ts.idText(identifier);
-        }
-
         return tstl.createIdentifier(text, identifier, symbolId);
     }
 
@@ -4793,14 +4792,11 @@ export class LuaTransformer {
     protected createExportedIdentifier(identifier: tstl.Identifier): tstl.TableIndexExpression {
         let exportTable: tstl.Identifier;
         if (this.currentNamespace !== undefined) {
-            let localModule: tstl.Identifier | undefined;
-            const moduleSymbol = this.checker.getSymbolAtLocation(this.currentNamespace.name);
-            if (moduleSymbol !== undefined) {
-                localModule = this.createLocalIdentifierForSymbol(moduleSymbol, this.currentNamespace.name);
+            if (this.isUnsafeName(this.currentNamespace.name.text)) {
+                exportTable = this.createModuleLocalNameIdentifier(this.currentNamespace);
+            } else {
+                exportTable = this.transformIdentifier(this.currentNamespace.name as ts.Identifier);
             }
-            exportTable = localModule !== undefined
-                ? localModule
-                : this.transformIdentifier(this.currentNamespace.name as ts.Identifier);
 
         } else {
             exportTable = this.createExportsIdentifier();
@@ -5177,89 +5173,50 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
-    protected createIdentifierForSymbolId(
-        symbolId: tstl.SymbolId,
-        tsOriginal?: ts.Node,
-        name?: string
-    ): tstl.Identifier
-    {
-        const symbolInfo = this.symbolInfo.get(symbolId);
-        if (!symbolInfo) {
-            throw TSTLErrors.MissingSymbolInfo(tsOriginal || ts.createEmptyStatement(), symbolId, name);
-        }
-        return tstl.createIdentifier(symbolInfo.name, tsOriginal, symbolId);
+    protected createIdentifierFromSymbol(symbol: ts.Symbol, tsOriginal?: ts.Node): tstl.Identifier {
+        const name = this.hasUnsafeSymbolName(symbol)
+            ? this.createSafeName(symbol.name)
+            : symbol.name;
+        return tstl.createIdentifier(name, tsOriginal, this.symbolIds.get(symbol));
     }
 
-    protected createIdentifierForSymbol(symbol: ts.Symbol, tsOriginal?: ts.Node): tstl.Identifier | undefined {
-        if (symbol === undefined) {
-            return undefined;
-        }
-        const symbolId = this.symbolIds.get(symbol);
-        if (symbolId === undefined) {
-            return undefined;
-        }
-        return this.createIdentifierForSymbolId(symbolId, tsOriginal, symbol.name);
+    protected isUnsafeName(name: string): boolean {
+        return this.luaKeywords.has(name) || !tsHelper.isValidLuaIdentifier(name);
     }
 
-    protected createLocalIdentifierForSymbolId(
-        symbolId: tstl.SymbolId,
-        tsOriginal?: ts.Node,
-        name?: string
-    ): tstl.Identifier | undefined
-    {
-        const symbolInfo = this.symbolInfo.get(symbolId);
-        if (!symbolInfo) {
-            throw TSTLErrors.MissingSymbolInfo(tsOriginal || ts.createEmptyStatement(), symbolId, name);
+    protected hasUnsafeSymbolName(symbol: ts.Symbol): boolean {
+        if (this.luaKeywords.has(symbol.name)) {
+            // lua keywords are only unsafe when non-ambient and not exported
+            const isNonAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) !== undefined;
+            return isNonAmbient && !this.isSymbolExported(symbol);
         }
-        if (symbolInfo.localName !== undefined) {
-            return tstl.createIdentifier(symbolInfo.localName, tsOriginal, symbolId);
-        } else {
-            return undefined;
-        }
+        return this.isUnsafeName(symbol.name);
     }
 
-    protected createLocalIdentifierForSymbol(symbol: ts.Symbol, tsOriginal?: ts.Node): tstl.Identifier | undefined {
-        const symbolId = this.symbolIds.get(symbol);
-        if (symbolId === undefined) {
-            return undefined;
+    protected hasUnsafeIdentifierName(identifier: ts.Identifier): boolean {
+        const symbol = this.checker.getSymbolAtLocation(identifier);
+        if (symbol !== undefined) {
+            return this.hasUnsafeSymbolName(symbol);
         }
-        return this.createLocalIdentifierForSymbolId(symbolId, tsOriginal, symbol.name);
+        return false;
+    }
+
+    protected createSafeName(name: string): string {
+        return "____" + tsHelper.fixInvalidLuaIdentifier(name);
     }
 
     protected getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId | undefined {
         const symbol = this.checker.getSymbolAtLocation(identifier);
-        let symbolId: number | undefined;
+        let symbolId: tstl.SymbolId | undefined;
         if (symbol) {
             // Track first time symbols are seen
             if (!this.symbolIds.has(symbol)) {
                 symbolId = this.genSymbolIdCounter++;
 
-                let name = symbol.name;
-                let localName: string | undefined;
-
-                // Handle lua keywords
-                if (this.luaKeywords.has(symbol.name)) {
-                    const isDeclareOnly = symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined;
-                    if (!isDeclareOnly) {
-                        if (this.isSymbolExported(symbol)) {
-                            // Modify local name for exported classes and namespaces
-                            const isClassOrModule = symbol.declarations.find(
-                                d => ts.isClassLike(d) || ts.isModuleDeclaration(d)
-                            ) !== undefined;
-                            if (isClassOrModule) {
-                                localName = "____" + symbol.name;
-                            }
-
-                        } else {
-                            // Modify name for non-exported symbols
-                            name = "____" + symbol.name;
-                        }
-                    }
-                }
-
-                const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos, name, localName};
+                const symbolInfo: SymbolInfo = {symbol, firstSeenAtPos: identifier.pos};
                 this.symbolIds.set(symbol, symbolId);
                 this.symbolInfo.set(symbolId, symbolInfo);
+
             } else {
                 symbolId = this.symbolIds.get(symbol);
             }

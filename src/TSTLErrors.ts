@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import { TranspileError } from "./TranspileError";
 import { TSHelper as tsHelper } from "./TSHelper";
-import { SymbolId } from "./LuaAST";
 
 export class TSTLErrors {
     public static CouldNotCast = (castName: string) =>
@@ -190,13 +189,5 @@ export class TSTLErrors {
             "must be moved before the identifier's use, or hoisting must be enabled.",
             node
         );
-    }
-
-    public static MissingSymbolInfo = (node: ts.Node, symbolId: SymbolId, name?: string) => {
-        if (name) {
-            return new TranspileError(`Missing symbol information for symbol "${name}" with id ${symbolId}`, node);
-        } else {
-            return new TranspileError(`Missing symbol information for symbol with id ${symbolId}`, node);
-        }
     }
 }

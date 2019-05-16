@@ -41,7 +41,7 @@ interface Scope {
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set([
         "_G", "and", "assert", "break", "coroutine", "debug", "do", "else", "elseif", "end", "error", "false", "for",
-        "function", "goto", "if", "ipairs", "in", "local", "math", "new", "nil", "not", "or", "pairs", "pcall", "print",
+        "function", "goto", "if", "ipairs", "in", "local", "math", "nil", "not", "or", "pairs", "pcall", "print",
         "rawget", "rawset", "repeat", "return", "require", "self", "string", "table", "then", "tostring", "type",
         "unpack", "until", "while",
     ]);
@@ -441,6 +441,14 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath], moduleSpecifier);
     }
 
+    private validateClassElement(element: ts.ClassElement): void {
+        if (element.name && (ts.isStringLiteral(element.name) || ts.isIdentifier(element.name))) {
+            if (tsHelper.isStatic(element) && element.name.text === "new") {
+                throw TSTLErrors.ForbiddenStaticClassPropertyName(element, element.name.text);
+            }
+        }
+    }
+
     public transformClassDeclaration(
         statement: ts.ClassLikeDeclaration,
         nameOverride?: tstl.Identifier
@@ -665,6 +673,8 @@ export class LuaTransformer {
 
         // Add static declarations
         for (const field of staticFields) {
+            this.validateClassElement(field);
+
             const fieldName = this.transformPropertyName(field.name);
             const value = field.initializer ? this.transformExpression(field.initializer) : undefined;
 
@@ -1035,6 +1045,8 @@ export class LuaTransformer {
         const statements: tstl.Statement[] = [];
 
         for (const f of instanceFields) {
+            this.validateClassElement(f);
+
             // Get identifier
             const fieldName = this.transformPropertyName(f.name);
 
@@ -1178,6 +1190,8 @@ export class LuaTransformer {
             return undefined;
         }
 
+        this.validateClassElement(getAccessor);
+
         const name = this.transformIdentifier(getAccessor.name as ts.Identifier);
 
         const [body] = this.transformFunctionBody(getAccessor.parameters, getAccessor.body);
@@ -1213,6 +1227,8 @@ export class LuaTransformer {
         if (setAccessor.body === undefined) {
             return undefined;
         }
+
+        this.validateClassElement(setAccessor);
 
         const name = this.transformIdentifier(setAccessor.name as ts.Identifier);
 
@@ -1253,6 +1269,8 @@ export class LuaTransformer {
         if (!node.body) {
             return undefined;
         }
+
+        this.validateClassElement(node);
 
         let methodName = this.transformPropertyName(node.name);
         if (tstl.isStringLiteral(methodName) && methodName.value === "toString") {

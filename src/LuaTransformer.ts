@@ -40,7 +40,7 @@ interface Scope {
 
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set([
-        "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "new", "nil",
+        "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil",
         "not", "or", "repeat", "return", "self", "then", "until", "while",
     ]);
 

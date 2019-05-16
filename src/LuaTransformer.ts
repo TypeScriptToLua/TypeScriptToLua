@@ -1880,11 +1880,11 @@ export class LuaTransformer {
                 ? this.filterUndefinedAndCast(
                     statement.name.elements.map(e => this.transformArrayBindingElement(e)),
                     tstl.isIdentifier)
-                : tstl.createAnonymousIdentifier(statement.name);
+                : [tstl.createAnonymousIdentifier(statement.name)];
 
-            // Don't unpack TupleReturn decorated functions
             if (statement.initializer) {
                 if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
+                    // Don't unpack TupleReturn decorated functions
                     statements.push(
                         ...this.createLocalOrExportedOrGlobalDeclaration(
                             vars,
@@ -1892,6 +1892,18 @@ export class LuaTransformer {
                             statement
                         )
                     );
+                } else if (ts.isArrayLiteralExpression(statement.initializer)) {
+                    // Don't unpack array literals
+                    const count = Math.min(vars.length, statement.initializer.elements.length);
+                    for (let i = 0; i < count; ++i) {
+                        statements.push(
+                            ...this.createLocalOrExportedOrGlobalDeclaration(
+                                vars[i],
+                                this.transformExpression(statement.initializer.elements[i]),
+                                statement
+                            )
+                        );
+                    }
                 } else {
                     // local vars = this.transpileDestructingAssignmentValue(node.initializer);
                     const initializer = this.createUnpackCall(

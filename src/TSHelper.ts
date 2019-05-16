@@ -218,10 +218,8 @@ export class TSHelper {
                 if (propertySymbol) {
                     functionType = checker.getTypeOfSymbolAtLocation(propertySymbol, declaration);
                 }
-                if (functionType === undefined) {
-                    functionType = checker.getTypeAtLocation(declaration);
-                }
-            } else {
+            }
+            if (functionType === undefined) {
                 functionType = checker.getTypeAtLocation(declaration);
             }
 

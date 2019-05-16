@@ -1880,7 +1880,7 @@ export class LuaTransformer {
                 ? this.filterUndefinedAndCast(
                     statement.name.elements.map(e => this.transformArrayBindingElement(e)),
                     tstl.isIdentifier)
-                : [tstl.createAnonymousIdentifier(statement.name)];
+                : tstl.createAnonymousIdentifier(statement.name);
 
             if (statement.initializer) {
                 if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
@@ -1894,16 +1894,16 @@ export class LuaTransformer {
                     );
                 } else if (ts.isArrayLiteralExpression(statement.initializer)) {
                     // Don't unpack array literals
-                    const count = Math.min(vars.length, statement.initializer.elements.length);
-                    for (let i = 0; i < count; ++i) {
-                        statements.push(
-                            ...this.createLocalOrExportedOrGlobalDeclaration(
-                                vars[i],
-                                this.transformExpression(statement.initializer.elements[i]),
-                                statement
-                            )
-                        );
-                    }
+                    const values = statement.initializer.elements.length > 0
+                        ? statement.initializer.elements.map(e => this.transformExpression(e))
+                        : tstl.createNilLiteral();
+                    statements.push(
+                        ...this.createLocalOrExportedOrGlobalDeclaration(
+                            vars,
+                            values,
+                            statement
+                        )
+                    );
                 } else {
                     // local vars = this.transpileDestructingAssignmentValue(node.initializer);
                     const initializer = this.createUnpackCall(
@@ -4885,7 +4885,7 @@ export class LuaTransformer {
 
     protected createLocalOrExportedOrGlobalDeclaration(
         lhs: tstl.Identifier | tstl.Identifier[],
-        rhs?: tstl.Expression,
+        rhs?: tstl.Expression | tstl.Expression[],
         tsOriginal?: ts.Node,
         parent?: tstl.Node
     ): tstl.Statement[]

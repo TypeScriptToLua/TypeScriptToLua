@@ -75,6 +75,19 @@ test("Tuple Destruct Array Literal", () => {
     expect(result).toBe(5);
 });
 
+test("Tuple Destruct Array Literal Extra Values", () => {
+    const code = `
+        let result = "";
+        const set = () => { result = "bar"; };
+        const [a] = ["foo", set()];
+        return a + result;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe("foobar");
+});
+
 test("Tuple length", () => {
     const result = util.transpileAndExecute(
         `const tuple: [number, number, number] = [3,5,1];

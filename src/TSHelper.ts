@@ -92,6 +92,38 @@ export class TSHelper {
                 && ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0);
     }
 
+    public static isConstVariableDeclaration(node: ts.Node): node is ts.VariableDeclaration {
+        if (!ts.isVariableDeclaration(node) || node.parent === undefined) {
+            return false;
+        }
+
+        return (node.parent.flags & ts.NodeFlags.Const) !== 0;
+    }
+
+    public static isConstIdentifier(node: ts.Node, checker: ts.TypeChecker): node is ts.Identifier {
+        if (!ts.isIdentifier(node)) {
+            return false;
+        }
+
+        const symbol = checker.getSymbolAtLocation(node);
+        if (symbol === undefined) {
+            return false;
+        }
+
+        const declarations = symbol.getDeclarations();
+        if (declarations === undefined) {
+            return false;
+        }
+
+        return declarations.find(d => TSHelper.isConstVariableDeclaration(d)) !== undefined;
+    }
+
+    public static hasSameSymbol(a: ts.Node, b: ts.Node, checker: ts.TypeChecker): boolean {
+        const symbolA = checker.getSymbolAtLocation(a);
+        const symbolB = checker.getSymbolAtLocation(b);
+        return symbolA !== undefined && symbolA === symbolB;
+    };
+
     public static isDeclaration(node: ts.Node): node is ts.Declaration {
         return ts.isEnumDeclaration(node) || ts.isClassDeclaration(node) || ts.isExportDeclaration(node)
             || ts.isImportDeclaration(node) || ts.isMethodDeclaration(node) || ts.isModuleDeclaration(node)

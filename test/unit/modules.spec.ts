@@ -1,58 +1,76 @@
-import { Expect, Test, TestCase } from "alsatian";
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
+import * as tstl from "../../src";
+import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
-import * as ts from "typescript";
-import * as util from "../src/util";
+test("defaultImport", () => {
+    expect(() => {
+        const lua = util.transpileString(`import TestClass from "test"`);
+    }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
+});
 
-export class LuaModuleTests {
+test("lualibRequire", () => {
+    const lua = util.transpileString(`let a = b instanceof c;`, {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.LuaJIT,
+    });
 
-    @Test("defaultImport")
-    public defaultImport(): void {
-        Expect(() => {
-            const lua = util.transpileString(`import TestClass from "test"`);
-        }).toThrowError(Error, "Default Imports are not supported, please use named imports instead!");
-    }
+    expect(lua.startsWith(`require("lualib_bundle")`));
+});
 
-    @Test("lualibRequire")
-    public lualibRequire(): void {
-        // Transpile
-        const lua = util.transpileString(`let a = b instanceof c;`,
-                                         { luaLibImport: LuaLibImportKind.Require, luaTarget: LuaTarget.LuaJIT });
+test("lualibRequireAlways", () => {
+    const lua = util.transpileString(``, {
+        luaLibImport: tstl.LuaLibImportKind.Always,
+        luaTarget: tstl.LuaTarget.LuaJIT,
+    });
 
-        // Assert
-        Expect(lua.startsWith(`require("lualib_bundle")`));
-    }
+    expect(lua).toBe(`require("lualib_bundle");`);
+});
 
-    @Test("lualibRequireAlways")
-    public lualibRequireAlways(): void {
-        // Transpile
-        const lua = util.transpileString(``, { luaLibImport: LuaLibImportKind.Always, luaTarget: LuaTarget.LuaJIT });
+test("Non-exported module", () => {
+    const result = util.transpileAndExecute(
+        "return g.test();",
+        undefined,
+        undefined,
+        "module g { export function test() { return 3; } }",
+    );
 
-        // Assert
-        Expect(lua).toBe(`require("lualib_bundle");`);
-    }
+    expect(result).toBe(3);
+});
 
-    @Test("Non-exported module")
-    public nonExportedModule(): void {
-        const result = util.transpileAndExecute(
-            "return g.test();",
-            undefined,
-            undefined,
-            "module g { export function test() { return 3; } }" // Typescript header
-        );
+test.each([
+    tstl.LuaLibImportKind.Inline,
+    tstl.LuaLibImportKind.None,
+    tstl.LuaLibImportKind.Require,
+])("LuaLib no uses? No code (%p)", luaLibImport => {
+    const lua = util.transpileString(``, { luaLibImport });
 
-        Expect(result).toBe(3);
-    }
+    expect(lua).toBe(``);
+});
 
-    @TestCase(LuaLibImportKind.Inline)
-    @TestCase(LuaLibImportKind.None)
-    @TestCase(LuaLibImportKind.Require)
-    @Test("LuaLib no uses? No code")
-    public lualibNoUsesNoCode(impKind: LuaLibImportKind): void {
-        // Transpile
-        const lua = util.transpileString(``, { luaLibImport: impKind });
+test("Nested module with dot in name", () => {
+    const code = `module a.b {
+            export const foo = "foo";
+        }`;
+    expect(util.transpileAndExecute("return a.b.foo;", undefined, undefined, code)).toBe("foo");
+});
 
-        // Assert
-        Expect(lua).toBe(``);
-    }
-}
+test("Access this in module", () => {
+    const header = `
+        module M {
+            export const foo = "foo";
+            export function bar() { return this.foo + "bar"; }
+        }
+    `;
+    const code = `return M.bar();`;
+    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+});
+
+test("Module merged with interface", () => {
+    const header = `
+        interface Foo {}
+        module Foo {
+            export function bar() { return "foobar"; }
+        }`;
+    const code = `return Foo.bar();`;
+    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+});

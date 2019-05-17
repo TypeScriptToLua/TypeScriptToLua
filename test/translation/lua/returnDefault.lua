@@ -1,3 +1,0 @@
-myFunc = function()
-    return;
-end;

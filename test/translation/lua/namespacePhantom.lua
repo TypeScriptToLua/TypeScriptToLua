@@ -1,2 +1,0 @@
-nsMember = function()
-end;

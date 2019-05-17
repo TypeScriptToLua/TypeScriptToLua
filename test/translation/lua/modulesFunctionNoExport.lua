@@ -1,2 +1,0 @@
-publicFunc = function()
-end;

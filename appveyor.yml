@@ -2,6 +2,9 @@
 environment:
   nodejs_version: "8"
 
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
 # Cache dependencies
 cache:
   - node_modules
@@ -11,7 +14,7 @@ install:
   # Get the latest stable version of Node.js or io.js
   - ps: Install-Product node $env:nodejs_version
   # install modules
-  - npm install
+  - npm ci
 
 # Post-install test scripts.
 test_script:

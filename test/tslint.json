@@ -1,0 +1,59 @@
+{
+    "rules": {
+        "array-type": [true, "array-simple"],
+        "arrow-return-shorthand": true,
+        "ban": [
+            true,
+            { "name": "parseInt", "message": "tsstyle#type-coercion" },
+            { "name": "parseFloat", "message": "tsstyle#type-coercion" },
+            { "name": "Array", "message": "tsstyle#array-constructor" }
+        ],
+        "ban-types": [
+            true,
+            ["Object", "Use {} instead."],
+            ["String", "Use 'string' instead."],
+            ["Number", "Use 'number' instead."],
+            ["Boolean", "Use 'boolean' instead."]
+        ],
+        "class-name": true,
+        "curly": [true, "ignore-same-line"],
+        "deprecation": true,
+        "forin": false,
+        "interface-name": [true, "never-prefix"],
+        "jsdoc-format": true,
+        "label-position": true,
+        "max-classes-per-file": [true, 1],
+        "member-access": true,
+        "no-angle-bracket-type-assertion": true,
+        "no-any": false,
+        "no-arg": true,
+        "no-conditional-assignment": true,
+        "no-construct": true,
+        "no-debugger": true,
+        "no-default-export": true,
+        "no-duplicate-switch-case": true,
+        "no-duplicate-variable": true,
+        "no-inferrable-types": true,
+        "no-namespace": [true, "allow-declarations"],
+        "no-null-keyword": true,
+        "no-reference": true,
+        "no-string-throw": true,
+        "no-unused-expression": true,
+        "no-var-keyword": true,
+        "object-literal-shorthand": true,
+        "only-arrow-functions": [true, "allow-declarations", "allow-named-functions"],
+        "prefer-const": [true, { "destructuring": "all" }],
+        "radix": true,
+        "switch-default": false,
+        "triple-equals": [true, "allow-null-check"],
+        "typedef": [true, "call-signature", "property-declaration"],
+        "use-isnan": true,
+        "variable-name": [
+            true,
+            "check-format",
+            "ban-keywords",
+            "allow-leading-underscore",
+            "allow-pascal-case"
+        ]
+    }
+}

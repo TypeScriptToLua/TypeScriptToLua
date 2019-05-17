@@ -1,5 +1,5 @@
 // https://tc39.github.io/ecma262/#sec-object.assign
-function __TS__ObjectAssign<T extends object>(to: T, ...sources: object[]): T {
+function __TS__ObjectAssign<T extends object>(this: void, to: T, ...sources: object[]): T {
     if (to === undefined) {
         return to;
     }

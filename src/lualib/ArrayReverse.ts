@@ -1,4 +1,4 @@
-function __TS__ArrayReverse(arr: any[]): any[] {
+function __TS__ArrayReverse(this: void, arr: any[]): any[] {
     let i = 0;
     let j = arr.length - 1;
     while (i < j) {

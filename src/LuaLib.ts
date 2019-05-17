@@ -6,6 +6,7 @@ export enum LuaLibFeature {
     ArrayEvery = "ArrayEvery",
     ArrayFilter = "ArrayFilter",
     ArrayForEach = "ArrayForEach",
+    ArrayFindIndex = "ArrayFindIndex",
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
@@ -16,31 +17,57 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    ArrayFlat = "ArrayFlat",
+    ArrayFlatMap = "ArrayFlatMap",
+    ArraySetLength = "ArraySetLength",
+    ClassIndex = "ClassIndex",
+    ClassNewIndex = "ClassNewIndex",
+    Decorate = "Decorate",
     FunctionApply = "FunctionApply",
     FunctionBind = "FunctionBind",
     FunctionCall = "FunctionCall",
+    Index = "Index",
     InstanceOf = "InstanceOf",
+    InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
     Map = "Map",
+    NewIndex = "NewIndex",
+    Number = "Number",
+    NumberIsFinite = "NumberIsFinite",
+    NumberIsNaN = "NumberIsNaN",
     ObjectAssign = "ObjectAssign",
     ObjectEntries = "ObjectEntries",
+    ObjectFromEntries = "ObjectFromEntries",
     ObjectKeys = "ObjectKeys",
     ObjectValues = "ObjectValues",
     Set = "Set",
     WeakMap = "WeakMap",
     WeakSet = "WeakSet",
+    SourceMapTraceBack = "SourceMapTraceBack",
+    Spread = "Spread",
+    StringConcat = "StringConcat",
+    StringEndsWith = "StringEndsWith",
+    StringPadEnd = "StringPadEnd",
+    StringPadStart = "StringPadStart",
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
-    StringConcat = "StringConcat",
+    StringStartsWith = "StringStartsWith",
     Symbol = "Symbol",
+    SymbolRegistry = "SymbolRegistry",
 }
 
 const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
+    ArrayFlat: [LuaLibFeature.ArrayConcat],
+    ArrayFlatMap: [LuaLibFeature.ArrayConcat],
+    InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
+    ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Map: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
+    Spread: [LuaLibFeature.Iterator],
+    SymbolRegistry: [LuaLibFeature.Symbol],
 };
 
 export class LuaLib {
@@ -52,8 +79,9 @@ export class LuaLib {
         function load(feature: LuaLibFeature): void {
             if (!loadedFeatures.has(feature)) {
                 loadedFeatures.add(feature);
-                if (luaLibDependencies[feature]) {
-                    luaLibDependencies[feature].forEach(load);
+                const dependencies = luaLibDependencies[feature];
+                if (dependencies) {
+                    dependencies.forEach(load);
                 }
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
                 result += fs.readFileSync(featureFile).toString() + "\n";

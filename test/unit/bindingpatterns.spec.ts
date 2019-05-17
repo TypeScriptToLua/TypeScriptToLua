@@ -1,69 +1,85 @@
-import { Expect, Test, TestCase, FocusTest, TestCases } from "alsatian";
-
-import * as util from "../src/util";
+import * as util from "../util";
 
 const testCases = [
-    ["{x}", "{x: true}", "x"],
-    ["[x, y]", "[false, true]", "y"],
-    ["{x: [y, z]}", "{x: [false, true]}", "z"],
-    ["{x: [, z]}", "{x: [false, true]}", "z"],
-    ["{x: [{y}]}", "{x: [{y: true}]}", "y"],
-    ["[[y, z]]", "[[false, true]]", "z"],
-    ["{x, y}", "{x: false, y: true}", "y"],
-    ["{x: foo, y}", "{x: true, y: false}", "foo"],
-    ["{x: foo, y: bar}", "{x: false, y: true}", "bar"],
-    ["{x: {x, y}, z}", "{x: {x: true, y: false}, z: false}", "x"],
-    ["{x: {x, y}, z}", "{x: {x: false, y: true}, z: false}", "y"],
-    ["{x: {x, y}, z}", "{x: {x: false, y: false}, z: true}", "z"],
+    { bindingString: "{x}", objectString: "{x: true}", returnVariable: "x" },
+    { bindingString: "[x, y]", objectString: "[false, true]", returnVariable: "y" },
+    { bindingString: "{x: [y, z]}", objectString: "{x: [false, true]}", returnVariable: "z" },
+    { bindingString: "{x: [, z]}", objectString: "{x: [false, true]}", returnVariable: "z" },
+    { bindingString: "{x: [{y}]}", objectString: "{x: [{y: true}]}", returnVariable: "y" },
+    { bindingString: "[[y, z]]", objectString: "[[false, true]]", returnVariable: "z" },
+    { bindingString: "{x, y}", objectString: "{x: false, y: true}", returnVariable: "y" },
+    { bindingString: "{x: foo, y}", objectString: "{x: true, y: false}", returnVariable: "foo" },
+    {
+        bindingString: "{x: foo, y: bar}",
+        objectString: "{x: false, y: true}",
+        returnVariable: "bar",
+    },
+    {
+        bindingString: "{x: {x, y}, z}",
+        objectString: "{x: {x: true, y: false}, z: false}",
+        returnVariable: "x",
+    },
+    {
+        bindingString: "{x: {x, y}, z}",
+        objectString: "{x: {x: false, y: true}, z: false}",
+        returnVariable: "y",
+    },
+    {
+        bindingString: "{x: {x, y}, z}",
+        objectString: "{x: {x: false, y: false}, z: true}",
+        returnVariable: "z",
+    },
 ];
 
 const testCasesDefault = [
-    ["{x = true}", "{}", "x"],
-    ["{x, y = true}", "{x: false}", "y"],
+    { bindingString: "{x = true}", objectString: "{}", returnVariable: "x" },
+    { bindingString: "{x, y = true}", objectString: "{x: false}", returnVariable: "y" },
 ];
 
-export class BindingPatternTests {
+test.each([
+    { bindingString: "{x, y}, z", objectString: "{x: false, y: false}, true", returnVariable: "z" },
+    {
+        bindingString: "{x, y}, {z}",
+        objectString: "{x: false, y: false}, {z: true}",
+        returnVariable: "z",
+    },
+    ...testCases,
+    ...testCasesDefault,
+])("Object bindings in functions (%p)", ({ bindingString, objectString, returnVariable }) => {
+    const result = util.transpileAndExecute(`
+        function test(${bindingString}) {
+            return ${returnVariable};
+        }
+        return test(${objectString});
+    `);
+    expect(result).toBe(true);
+});
 
-    @TestCase("{x, y}, z", "{x: false, y: false}, true", "z")
-    @TestCase("{x, y}, {z}", "{x: false, y: false}, {z: true}", "z")
-    @TestCases(testCases)
-    @TestCases(testCasesDefault)
-    @Test("Object bindings in functions")
-    public tesBindingPatternParameters(
-        bindingString: string,
-        objectString: string,
-        returnVariable: string
-    ): void {
-        const result = util.transpileAndExecute(`
-            function test(${bindingString}) {
-                return ${returnVariable};
-            }
-            return test(${objectString});
-        `);
-        Expect(result).toBe(true);
-    }
-
-    @TestCases(testCases)
-    @TestCases(testCasesDefault)
-    public testBindingPatternDeclarations(
-        bindingString: string,
-        objectString: string,
-        returnVariable: string
-    ): void {
+test.each([...testCases, ...testCasesDefault])(
+    "testBindingPatternDeclarations (%p)",
+    ({ bindingString, objectString, returnVariable }) => {
         const result = util.transpileAndExecute(`
             let ${bindingString} = ${objectString};
             return ${returnVariable};
         `);
-        Expect(result).toBe(true);
-    }
+        expect(result).toBe(true);
+    },
+);
 
-    @TestCases(testCases)
-    @Test("Object bindings with call expressions")
-    public testBindingPatternCallExpressions(
-        bindingString: string,
-        objectString: string,
-        returnVariable: string
-    ): void {
+test.each([...testCases, ...testCasesDefault])(
+    "testBindingPatternExportDeclarations (%p)",
+    ({ bindingString, objectString, returnVariable }) => {
+        const result = util.transpileExecuteAndReturnExport(
+            `export const ${bindingString} = ${objectString};`,
+            returnVariable,
+        );
+        expect(result).toBe(true);
+    },
+);
+
+test.each(testCases)(
+    "Object bindings with call expressions (%p)",
+    ({ bindingString, objectString, returnVariable }) => {
         const result = util.transpileAndExecute(`
             function call() {
                 return ${objectString};
@@ -71,7 +87,25 @@ export class BindingPatternTests {
             let ${bindingString} = call();
             return ${returnVariable};
         `);
-        Expect(result).toBe(true);
-    }
+        expect(result).toBe(true);
+    },
+);
 
-}
+test.each([
+    { bindingString: "{x, y = true}", objectString: "{x: false, y: false}", returnVariable: "y" },
+    {
+        bindingString: "{x, y: [z = true]}",
+        objectString: "{x: false, y: [false]}",
+        returnVariable: "z",
+    },
+    { bindingString: "[x = true]", objectString: "[false]", returnVariable: "x" },
+])(
+    "Binding patterns handle false correctly (%p)",
+    ({ bindingString, objectString, returnVariable }) => {
+        const result = util.transpileExecuteAndReturnExport(
+            `export const ${bindingString} = ${objectString};`,
+            returnVariable,
+        );
+        expect(result).toBe(false);
+    },
+);

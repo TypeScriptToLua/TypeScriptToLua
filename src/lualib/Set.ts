@@ -1,5 +1,5 @@
 /** @tupleReturn */
-declare function next<TKey, TValue>(t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+declare function next<TKey, TValue>(this: void, t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
 
 class Set<TValue> {
     public size: number;

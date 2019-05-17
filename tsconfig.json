@@ -1,14 +1,14 @@
 {
     "compilerOptions": {
-        "noImplicitThis" : true,
-        "alwaysStrict" : true,
-        "outDir": "./dist/",
-        "rootDir": "./src/",
+        "strict": true,
+        "rootDir": "./src",
+        "outDir": "./dist",
         "declaration": true,
         "sourceMap": true,
-        "experimentalDecorators": true,
-        "target": "es6",
-        "module": "commonjs"
+        "target": "es2017",
+        "module": "commonjs",
+        "stripInternal": true
     },
-    "exclude": ["test/**/*", "build_lualib.ts", "src/lualib", "dist/**/*"]
+    "include": ["src"],
+    "exclude": ["src/lualib"]
 }

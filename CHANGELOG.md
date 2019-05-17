@@ -1,5 +1,103 @@
 # Changelog
 
+- **BREAKING CHANGE:** All tstl-specific options should now be inside the "tstl" section in tsconfig.json (see README.md). **Root-level options are no longer supported**.
+- Added a compiler API to programmatically invoke TypeScriptToLua, and to modify or extend the default transpiler. More info on the [Compiler API wiki page](<https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/TypeScriptToLua-API>).
+- Added support for [class decorators](https://www.typescriptlang.org/docs/handbook/decorators.html#class-decorators).
+- Added support for the [@luaTable directive](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#luatable) which will force a class to be transpiled as vanilla lua table.
+- Added support for NaN, Infinity and related number functions.
+- Added support for string.startsWith, string.endsWith and improved string.replace implementation.
+- Added support for Symbol.hasInstance.
+
+- Hoisting now also considers imports.
+- Various improvements to iterators and arrays, they also work with the spread operator now.
+- Fixed an issue with parameters that had `false` as default value.
+
+## 0.18.0
+* Added support for setting array length. Doing `array.length = x` will set the length of the array to `x` (or shorter, if the starting array was shorter!).
+* Added the `.name` property to all transpiled classes, so `class.name` will contain the classname as string.
+* Changed `class = class or {}` syntax to just be `class = {}`.
+* Cleaned up printer output so it produces more human-readable code.
+
+* Fixed bug with expression statements.
+* Fixed incorrect inline sourcemap format.
+* Fixed bug when merging an interface and module.
+* Fixed a bug with inherited constructor super call ordering.
+
+* Enabled strict tsconfig.
+
+## 0.17.0
+* We now support source maps in the [standard JS v3 format](https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit?hl=en_US&pli=1&pli=1). You can generate source maps with the `--sourceMap` CLI argument, or by adding `sourceMap: true` to your tsconfig. Inline source maps are also supported with `--inlineSourceMap` CLI/tsconfig parameter.
+* Also added [tstl option](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki#tstl-specific-options) `--sourceMapTraceback`, which will add an override to Lua's `debug.traceback()` to each file, so source maps will automatically be applied to Lua stacktraces (i.e. in errors).
+
+* Made watch mode incremental.
+
+* Added support for `Object.fromEntries`, `array.flat` and `array.flatMap`.
+
+* **BREAKING CHANGE:** Directive `@tupleReturn` should now be specified **per overload**.
+
+* Fixed a bug where rest parameters would not transpile correctly.
+* Fixed an issue with escaped backticks.
+* Various small fixes function inference and array detection.
+
+* Changed testing framework to [jest](https://github.com/facebook/jest).
+
+
+## 0.16.0
+* **BREAKING CHANGE:** All functions now take a `self` parameter. This means that without further action calls to declaration functions might be given an extra argument.
+    * To remove the self parameter from a single function add `this: void` to its declaration:
+        ```declare function foo(this: void, ...)```
+    * To remove the self parameter from all methods or functions in a class/interface/namespace add `/** @noSelf */`:
+        ```/** @noSelf */ interface Foo {```
+    * To remove the self parameter from all functions in a file, add `/** @noSelfInFile */` at the top.
+
+---
+
+* **BREAKING CHANGE:** Directive `/** @luaIterator */` should now be put on types instead of on the functions returning them.
+
+---
+
+* Fixed a bug breaking named class expressions.
+* Fixed inconsistency between the meaning of `>>` and `>>>` in JS vs. Lua.
+* Added `/** @noResolution */` directive to prevent path resolution on declared modules.
+* It is now possible to put `/** @luaIterator */` on types extending `Array<T>`.
+* Fixed issue with the moment static fields were initialized.
+* Fixed issue where `undefined` as property name was not transpiled correctly.
+* Various improvements to function/method self parameter inference.
+* Tstl options can now be defined in their own `tstl` block in tsconfig.json. For example:
+```
+{
+    "compilerOptions" : {}
+    "tstl": {
+        "luaTarget": "JIT"
+    }
+}
+```
+* Fixed issue when redeclaring TypeScript libraries/globals.
+* Fixed exception resolving function signatures.
+* Added support for automatically transpiling several `console` calls to their Lua equivalent:
+    * `console.log(...)` -> `print(...)`
+    * `console.assert(...)` -> `assert(...)`
+    * `console.trace(...)` -> `print(debug.traceback(...))`
+* Added support for `array.findIndex()`.
+* Fixed `array.sort()` not working with a compare function.
+* Added support for several common `Math.` functions and constants.
+* Added support for several common string instance functions such as `upper()`.
+
+## 0.15.2
+* Several improvements to module path resolution.
+* Removed header comment appearing in lualib.
+* Several package config improvements.
+* Static get/set accessors.
+
+## 0.15.1
+* Fixed array detection for unit and intersection types.
+* Support for import without `from`.
+* Added support for `WeakMap` and `WeakSet`.
+* Added support for `Object.keys` and `Object.assign`.
+* Added support for importing JSON files.
+* Fixed bug with where loop variables were not properly scoped.
+* Added support for ExportDeclarations
+
 ## 0.15.0
 * Now written for TypeScript 3.3.x!
 * Removed external CLI parser dependency and wrote our own `CommandLineParser.ts` to read CLI and tsconfig input.
@@ -26,14 +124,14 @@
 * Fixed several bugs with functions and context parameters.
 
 ## 0.13.0
-* Reworked how functions are transpiled, see https://github.com/Perryvw/TypescriptToLua/wiki/Differences-Between-Functions-and-Methods
+* Reworked how functions are transpiled, see https://github.com/TypeScriptToLua/TypescriptToLua/wiki/Differences-Between-Functions-and-Methods
 * Improved handling of types extending Array.
 * Fixed several bugs with classes.
 * Fixed issues with inherited accessors.
 
 ## 0.12.0
 * Added detection of types extending Array.
-* Added new JSDoc-style compiler directives, deprecated the old `!` decorators, see https://github.com/Perryvw/TypescriptToLua/wiki/Compiler-Directives
+* Added new JSDoc-style compiler directives, deprecated the old `!` decorators, see https://github.com/TypeScriptToLua/TypescriptToLua/wiki/Compiler-Directives
 * Fixed bug with constructor default values.
 * The Lualib is no longer included when not used.
 * Fixed bug with unpack in LuaJIT.

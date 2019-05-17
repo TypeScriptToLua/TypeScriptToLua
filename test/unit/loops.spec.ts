@@ -1,35 +1,25 @@
-import { Expect, Test, TestCase } from "alsatian";
 import * as ts from "typescript";
-import { TranspileError } from "../../src/TranspileError";
-import { LuaLibImportKind, LuaTarget } from "../../src/CompilerOptions";
-import * as util from "../src/util";
+import * as tstl from "../../src";
+import { TSTLErrors } from "../../src/TSTLErrors";
+import * as util from "../util";
 
-const deepEqual = require("deep-equal");
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
+        let i = 0;
+        while (i < arrTest.length) {
+            arrTest[i] = arrTest[i] + 1;
+            i++;
+        }
+        return JSONStringify(arrTest);`,
+    );
 
-export class LuaLoopTests
-{
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("while")
-    public while(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            while (i < arrTest.length) {
-                arrTest[i] = arrTest[i] + 1;
-                i++;
-            }
-            return JSONStringify(arrTest);`
-        );
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @TestCase([0, 1, 2, 3, 4], [0, 1, 2, 1, 4])
-    @Test("while with continue")
-    public whileWithContinue(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
+    "while with continue (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
@@ -50,17 +40,16 @@ export class LuaLoopTests
 
                 i++;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3, 4], [0, 1, 2, 1, 4])
-    @Test("dowhile with continue")
-    public dowhileWithContinue(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
+    "dowhile with continue (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
@@ -81,123 +70,42 @@ export class LuaLoopTests
 
                 i++;
             } while (i < arrTest.length)
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("for")
-    public for(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let i = 0; i < arrTest.length; ++i) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
+        for (let i = 0; i < arrTest.length; ++i) {
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return JSONStringify(arrTest);`,
+    );
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("for with less-equal")
-    public forLessEqual(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            const stop = arrTest.length - 1;
-            for (let i = 0; i <= stop; ++i) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("for reverse")
-    public forReverse(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let i = arrTest.length - 1; i > -1; --i) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("for reverse greater-equal")
-    public forReverseGreaterEqual(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let i = arrTest.length - 1; i >= 0; --i) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @TestCase([0, 1, 2, 3], [1, 1, 3, 3])
-    @Test("for modify incrementor")
-    public forModifyIncrementor(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let i = 0; i < arrTest.length; ++i) {
-                arrTest[i] = arrTest[i] + 1;
-                ++i;
-            }
-            return JSONStringify(arrTest);`
-        );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @Test("for scope")
-    public forScope(): void
-    {
-        const result = util.transpileAndExecute(
-            `let i = 37;
-            for (let i = 1; i < 8; i *= 2) {} // Prevent lua numerical for loop from being used
-            return i;`
-        );
-        // Assert
-        Expect(result).toBe(37);
-    }
-
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("for with expression")
-    public forWithExpression(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
+    "for with expression (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i: number;
             for (i = 0 * 1; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
-    @Test("for with continue")
-    public forWithContinue(inp: number[], expected: number[]): void
-    {
-        // Transpile
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
+    "for with continue (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; i < arrTest.length; i++) {
@@ -212,68 +120,60 @@ export class LuaLoopTests
                     arrTest[i] = j;
                 }
             }
-            return JSONStringify(arrTest);
-            `
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("forMirror")
-    public forMirror(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
+    "forMirror (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; arrTest.length > i; i++) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [0, 1, 2, 3])
-    @Test("forBreak")
-    public forBreak(inp: number[], expected: number[]): void
-    {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let i = 0; i < arrTest.length; ++i) {
-                break;
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
+test.each([{ inp: [0, 1, 2, 3], expected: [0, 1, 2, 3] }])("forBreak (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
+        for (let i = 0; i < arrTest.length; ++i) {
+            break;
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return JSONStringify(arrTest);`,
+    );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("forNoDeclarations")
-    public forNoDeclarations(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
+    "forNoDeclarations (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             for (; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("forNoCondition")
-    public forNoCondition(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
+    "forNoCondition (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
@@ -284,17 +184,16 @@ export class LuaLoopTests
 
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4])
-    @Test("forNoPostExpression")
-    public forNoPostExpression(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
+    "forNoPostExpression (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
@@ -307,70 +206,94 @@ export class LuaLoopTests
 
                 i++;
             }
-            return JSONStringify(arrTest);`
+            return JSONStringify(arrTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i < arrTest.length; i++")
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; i <= arrTest.length - 1; i++")
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length > i; i++")
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4], "let i = 0; arrTest.length - 1 >= i; i++")
-    @TestCase([0, 1, 2, 3], [1, 1, 3, 3], "let i = 0; i < arrTest.length; i += 2")
-    @TestCase([0, 1, 2, 3], [1, 2, 3, 4 ], "let i = arrTest.length - 1; i >= 0; i--")
-    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i >= 0; i -= 2")
-    @TestCase([0, 1, 2, 3], [0, 2, 2, 4], "let i = arrTest.length - 1; i > 0; i -= 2")
-    @Test("forheader")
-    public forheader(inp: number[], expected: number[], header: string): void
+test.each([
+    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i < arrTest.length; i++" },
     {
-        const result = util.transpileAndExecute(
+        inp: [0, 1, 2, 3],
+        expected: [1, 2, 3, 4],
+        header: "let i = 0; i <= arrTest.length - 1; i++",
+    },
+    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length > i; i++" },
+    {
+        inp: [0, 1, 2, 3],
+        expected: [1, 2, 3, 4],
+        header: "let i = 0; arrTest.length - 1 >= i; i++",
+    },
+    { inp: [0, 1, 2, 3], expected: [1, 1, 3, 3], header: "let i = 0; i < arrTest.length; i += 2" },
+    {
+        inp: [0, 1, 2, 3],
+        expected: [1, 2, 3, 4],
+        header: "let i = arrTest.length - 1; i >= 0; i--",
+    },
+    {
+        inp: [0, 1, 2, 3],
+        expected: [0, 2, 2, 4],
+        header: "let i = arrTest.length - 1; i >= 0; i -= 2",
+    },
+    {
+        inp: [0, 1, 2, 3],
+        expected: [0, 2, 2, 4],
+        header: "let i = arrTest.length - 1; i > 0; i -= 2",
+    },
+])("forheader (%p)", ({ inp, expected, header }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
+        for (${header}) {
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return JSONStringify(arrTest);`,
+    );
+
+    expect(result).toBe(JSON.stringify(expected));
+});
+
+test("for scope", () => {
+    const code = `
+        let i = 42;
+        for (let i = 0; i < 10; ++i) {}
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(42);
+});
+
+test.each([
+    {
+        inp: { ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 },
+        expected: { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 },
+    },
+])("forin[Object] (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let objTest = ${JSON.stringify(inp)};
+        for (let key in objTest) {
+            objTest[key] = objTest[key] + 1;
+        }
+        return JSONStringify(objTest);`,
+    );
+
+    expect(JSON.parse(result)).toEqual(expected);
+});
+
+test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
+    expect(() =>
+        util.transpileString(
             `let arrTest = ${JSON.stringify(inp)};
-            for (${header}) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-        );
+            for (let key in arrTest) {
+                arrTest[key]++;
+            }`,
+        ),
+    ).toThrowExactError(TSTLErrors.ForbiddenForIn(util.nodeStub));
+});
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
-
-    @TestCase({ ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 }, { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 })
-    @Test("forin[Object]")
-    public forinObject(inp: any, expected: any): void
-    {
-        const result = util.transpileAndExecute(
-            `let objTest = ${JSON.stringify(inp)};
-            for (let key in objTest) {
-                objTest[key] = objTest[key] + 1;
-            }
-            return JSONStringify(objTest);`
-        );
-
-        // Assert
-        Expect(deepEqual(JSON.parse(result), expected)).toBe(true);
-    }
-
-    @TestCase([1, 2, 3])
-    @Test("forin[Array]")
-    public forinArray(inp: number[]): void {
-        // Transpile & Assert
-        Expect(() =>
-            util.transpileString(
-                `let arrTest = ${JSON.stringify(inp)};
-                for (let key in arrTest) {
-                    arrTest[key]++;
-                }`
-            )
-        ).toThrowError(TranspileError, "Iterating over arrays with 'for ... in' is not allowed.");
-    }
-
-    @TestCase({a: 0, b: 1, c: 2, d: 3, e: 4}, {a: 0, b: 0, c: 2, d: 0, e: 4})
-    @Test("forin with continue")
-    public forinWithContinue(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
+    "forin with continue (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let obj = ${JSON.stringify(inp)};
             for (let i in obj) {
@@ -380,35 +303,29 @@ export class LuaLoopTests
 
                 obj[i] = 0;
             }
-            return JSONStringify(obj);
-            `
+            return JSONStringify(obj);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2], [1, 2, 3])
-    @Test("forof")
-    public forof(inp: any, expected: any): void
-    {
-        const result = util.transpileAndExecute(
-            `let objTest = ${JSON.stringify(inp)};
-            let arrResultTest = [];
-            for (let value of objTest) {
-                arrResultTest.push(value + 1)
-            }
-            return JSONStringify(arrResultTest);`
-        );
+test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let objTest = ${JSON.stringify(inp)};
+        let arrResultTest = [];
+        for (let value of objTest) {
+            arrResultTest.push(value + 1)
+        }
+        return JSONStringify(arrResultTest);`,
+    );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-    @TestCase([0, 1, 2], [1, 2, 3])
-    @Test("forof existing variable")
-    public forofExistingVar(inp: any, expected: any): void
-    {
+test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])(
+    "forof existing variable (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
@@ -416,34 +333,32 @@ export class LuaLoopTests
             for (value of objTest) {
                 arrResultTest.push(value + 1)
             }
-            return JSONStringify(arrResultTest);`
+            return JSONStringify(arrResultTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([[1, 2], [2, 3], [3, 4]], [3, 5, 7])
-    @Test("forof destructing")
-    public forofDestructing(inp: number[][], expected: any): void
-    {
+test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
+    "forof destructing (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
             for (let [a,b] of objTest) {
                 arrResultTest.push(a + b)
             }
-            return JSONStringify(arrResultTest);`
+            return JSONStringify(arrResultTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([[1, 2], [2, 3], [3, 4]], [3, 5, 7])
-    @Test("forof destructing with existing variables")
-    public forofDestructingExistingVars(inp: number[][], expected: any): void
-    {
+test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
+    "forof destructing with existing variables (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
@@ -452,17 +367,16 @@ export class LuaLoopTests
             for ([a,b] of objTest) {
                 arrResultTest.push(a + b)
             }
-            return JSONStringify(arrResultTest);`
+            return JSONStringify(arrResultTest);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @TestCase([0, 1, 2, 3, 4], [0, 0, 2, 0, 4])
-    @Test("forof with continue")
-    public forofWithContinue(inp: number[], expected: number[]): void
-    {
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
+    "forof with continue (%p)",
+    ({ inp, expected }) => {
         const result = util.transpileAndExecute(
             `let testArr = ${JSON.stringify(inp)};
             let a = 0;
@@ -480,384 +394,436 @@ export class LuaLoopTests
                 }
                 a++;
             }
-            return JSONStringify(testArr);`
+            return JSONStringify(testArr);`,
         );
 
-        // Assert
-        Expect(result).toBe(JSON.stringify(expected));
-    }
+        expect(result).toBe(JSON.stringify(expected));
+    },
+);
 
-    @Test("forof with iterator")
-    public forofWithIterator(): void {
-        const code = `const arr = ["a", "b", "c"];
-            function iter(): IterableIterator<string> {
-                let i = 0;
-                return {
-                    [Symbol.iterator]() { return this; },
-                    next() { return {value: arr[i], done: i++ >= arr.length} },
-                }
+test("forof with iterator", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        function iter(): IterableIterator<string> {
+            let i = 0;
+            return {
+                [Symbol.iterator]() { return this; },
+                next() { return {value: arr[i], done: i++ >= arr.length} },
             }
-            let result = "";
-            for (let e of iter()) {
-                result += e;
-            }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("abc");
-    }
+        }
+        let result = "";
+        for (let e of iter()) {
+            result += e;
+        }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
 
-    @Test("forof with iterator and existing variable")
-    public forofWithIteratorExistingVar(): void {
-        const code = `const arr = ["a", "b", "c"];
-            function iter(): IterableIterator<string> {
-                let i = 0;
-                return {
-                    [Symbol.iterator]() { return this; },
-                    next() { return {value: arr[i], done: i++ >= arr.length} },
-                }
+test("forof with iterator and existing variable", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        function iter(): IterableIterator<string> {
+            let i = 0;
+            return {
+                [Symbol.iterator]() { return this; },
+                next() { return {value: arr[i], done: i++ >= arr.length} },
             }
-            let result = "";
-            let e: string;
-            for (e of iter()) {
-                result += e;
-            }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("abc");
-    }
+        }
+        let result = "";
+        let e: string;
+        for (e of iter()) {
+            result += e;
+        }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
 
-    @Test("forof destructuring with iterator")
-    public forofDestructuringWithIterator(): void {
-        const code = `const arr = ["a", "b", "c"];
-            function iter(): IterableIterator<[string, string]> {
-                let i = 0;
-                return {
-                    [Symbol.iterator]() { return this; },
-                    next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
-                }
+test("forof destructuring with iterator", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        function iter(): IterableIterator<[string, string]> {
+            let i = 0;
+            return {
+                [Symbol.iterator]() { return this; },
+                next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
             }
-            let result = "";
-            for (let [a, b] of iter()) {
-                result += a + b;
-            }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+        }
+        let result = "";
+        for (let [a, b] of iter()) {
+            result += a + b;
+        }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
 
-    @Test("forof destructuring with iterator and existing variables")
-    public forofDestructuringWithIteratorExistingVars(): void {
-        const code = `const arr = ["a", "b", "c"];
-            function iter(): IterableIterator<[string, string]> {
-                let i = 0;
-                return {
-                    [Symbol.iterator]() { return this; },
-                    next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
-                }
+test("forof destructuring with iterator and existing variables", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        function iter(): IterableIterator<[string, string]> {
+            let i = 0;
+            return {
+                [Symbol.iterator]() { return this; },
+                next() { return {value: [i.toString(), arr[i]], done: i++ >= arr.length} },
             }
-            let result = "";
-            let a: string;
-            let b: string;
-            for ([a, b] of iter()) {
-                result += a + b;
-            }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+        }
+        let result = "";
+        let a: string;
+        let b: string;
+        for ([a, b] of iter()) {
+            result += a + b;
+        }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
 
-    @Test("forof lua iterator")
-    public forofLuaIterator(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            function luaIter(): Iterable<string> {
-                let i = 0;
-                return (() => arr[i++]) as any;
-            }
-            let result = "";
-            for (let e of luaIter()) { result += e; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("abc");
-    }
+test("forof with array typed as iterable", () => {
+    const code = `
+        function foo(): Iterable<string> {
+            return ["A", "B", "C"];
+        }
+        let result = "";
+        for (const x of foo()) {
+            result += x;
+        }
+        return result;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("ABC");
+});
 
-    @Test("forof lua iterator with existing variable")
-    public forofLuaIteratorExistingVar(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            function luaIter(): Iterable<string> {
-                let i = 0;
-                return (() => arr[i++]) as any;
-            }
-            let result = "";
-            let e: string;
-            for (e of luaIter()) { result += e; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("abc");
-    }
+test("forof lua iterator", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<string> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i++]) as any;
+        }
+        let result = "";
+        for (let e of luaIter()) { result += e; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
 
-    @Test("forof lua iterator destructuring")
-    public forofLuaIteratorDestructuring(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            function luaIter(): Iterable<[string, string]> {
-                let i = 0;
-                return (() => arr[i] && [i.toString(), arr[i++]]) as any;
-            }
-            let result = "";
-            for (let [a, b] of luaIter()) { result += a + b; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+test("forof array lua iterator", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Array<string> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i++]) as any;
+        }
+        let result = "";
+        for (let e of luaIter()) { result += e; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
 
-    @Test("forof lua iterator destructuring with existing variables")
-    public forofLuaIteratorDestructuringExistingVar(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            function luaIter(): Iterable<[string, string]> {
-                let i = 0;
-                return (() => arr[i] && [i.toString(), arr[i++]]) as any;
-            }
-            let result = "";
-            let a: string;
-            let b: string;
-            for ([a, b] of luaIter()) { result += a + b; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+test("forof lua iterator with existing variable", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<string> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i++]) as any;
+        }
+        let result = "";
+        let e: string;
+        for (e of luaIter()) { result += e; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
 
-    @Test("forof lua iterator tuple-return")
-    public forofLuaIteratorTupleReturn(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
+test("forof lua iterator destructuring", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i] && [i.toString(), arr[i++]]) as any;
+        }
+        let result = "";
+        for (let [a, b] of luaIter()) { result += a + b; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
+
+test("forof lua iterator destructuring with existing variables", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let i = 0;
+            return (() => arr[i] && [i.toString(), arr[i++]]) as any;
+        }
+        let result = "";
+        let a: string;
+        let b: string;
+        for ([a, b] of luaIter()) { result += a + b; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
+
+test("forof lua iterator tuple-return", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let i = 0;
             /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
-                let i = 0;
-                /** @tupleReturn */
-                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-                return iter as any;
-            }
-            let result = "";
-            for (let [a, b] of luaIter()) { result += a + b; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+            return iter as any;
+        }
+        let result = "";
+        for (let [a, b] of luaIter()) { result += a + b; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
 
-    @Test("forof lua iterator tuple-return with existing variables")
-    public forofLuaIteratorTupleReturnExistingVars(): void {
-        const code = `const arr = ["a", "b", "c"];
-            /** @luaIterator */
+test("forof lua iterator tuple-return with existing variables", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let i = 0;
             /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
-                let i = 0;
-                /** @tupleReturn */
-                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-                return iter as any;
-            }
-            let result = "";
-            let a: string;
-            let b: string;
-            for ([a, b] of luaIter()) { result += a + b; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+            return iter as any;
+        }
+        let result = "";
+        let a: string;
+        let b: string;
+        for ([a, b] of luaIter()) { result += a + b; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
 
-    @Test("forof lua iterator tuple-return single variable")
-    public forofLuaIteratorTupleReturnSingleVar(): void {
-        const code = `/** @luaIterator */
+test("forof lua iterator tuple-return single variable", () => {
+    const code = `
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        declare function luaIter(): Iter;
+        for (let x of luaIter()) {}
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
+    );
+});
+
+test("forof lua iterator tuple-return single existing variable", () => {
+    const code = `
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        declare function luaIter(): Iter;
+        let x: [string, string];
+        for (x of luaIter()) {}
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
+    );
+});
+
+test("forof forwarded lua iterator", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        interface Iter extends Iterable<string> {}
+        function luaIter(): Iter {
+            let i = 0;
+            function iter() { return arr[i++]; }
+            return iter as any;
+        }
+        function forward() {
+            const iter = luaIter();
+            return iter;
+        }
+        let result = "";
+        for (let a of forward()) { result += a; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("abc");
+});
+
+test("forof forwarded lua iterator with tupleReturn", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let i = 0;
             /** @tupleReturn */
-            declare function luaIter(): Iterable<[string, string]>;
-            for (let x of luaIter()) {}`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
-            TranspileError,
-            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
-            + "You must use a destructuring statement to catch results from a lua iterator with "
-            + "the TupleReturn decorator.");
-    }
+            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
+            return iter as any;
+        }
+        function forward() {
+            const iter = luaIter();
+            return iter;
+        }
+        let result = "";
+        for (let [a, b] of forward()) { result += a + b; }
+        return result;
+    `;
+    const compilerOptions = {
+        luaLibImport: tstl.LuaLibImportKind.Require,
+        luaTarget: tstl.LuaTarget.Lua53,
+        target: ts.ScriptTarget.ES2015,
+    };
+    const result = util.transpileAndExecute(code, compilerOptions);
+    expect(result).toBe("0a1b2c");
+});
 
-    @Test("forof lua iterator tuple-return single existing variable")
-    public forofLuaIteratorTupleReturnSingleExistingVar(): void {
-        const code = `/** @luaIterator */
-            /** @tupleReturn */
-            declare function luaIter(): Iterable<[string, string]>;
-            let x: [string, string];
-            for (x of luaIter()) {}`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        Expect(() => util.transpileString(code, compilerOptions)).toThrowError(
-            TranspileError,
-            "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. "
-            + "You must use a destructuring statement to catch results from a lua iterator with "
-            + "the TupleReturn decorator.");
-    }
+test.each([
+    "while (a < b) { i++; continue; }",
+    "do { i++; continue; } while (a < b)",
+    "for (let i = 0; i < 3; i++) { continue; }",
+    "for (let a in b) { continue; }",
+    "for (let a of b) { continue; }",
+])("loop continue in different lua versions (%p)", loop => {
+    const lua51 = { luaTarget: tstl.LuaTarget.Lua51 };
+    const lua52 = { luaTarget: tstl.LuaTarget.Lua52 };
+    const lua53 = { luaTarget: tstl.LuaTarget.Lua53 };
+    const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
 
-    @Test("forof forwarded lua iterator")
-    public forofForwardedLuaIterator(): void {
-        const code =
-            `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            function luaIter(): Iterable<string> {
-                let i = 0;
-                function iter() { return arr[i++]; }
-                return iter as any;
-            }
-            /** @luaIterator */
-            function forward(): Iterable<string> {
-                return luaIter();
-            }
-            let result = "";
-            for (let a of forward()) { result += a; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("abc");
-    }
+    expect(() => util.transpileString(loop, lua51)).toThrowExactError(
+        TSTLErrors.UnsupportedForTarget(
+            "Continue statement",
+            tstl.LuaTarget.Lua51,
+            ts.createContinue(),
+        ),
+    );
+    expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
+    expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);
+    expect(util.transpileString(loop, luajit).indexOf("::__continue1::") !== -1).toBe(true);
+});
 
-    @Test("forof forwarded lua iterator with tupleReturn")
-    public forofForwardedLuaIteratorWithTupleReturn(): void {
-        const code =
-            `const arr = ["a", "b", "c"];
-            /** @luaIterator */
-            /** @tupleReturn */
-            function luaIter(): Iterable<[string, string]> {
-                let i = 0;
-                /** @tupleReturn */
-                function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-                return iter as any;
-            }
-            /** @luaIterator */
-            /** @tupleReturn */
-            function forward(): Iterable<[string, string]> {
-                return luaIter();
-            }
-            let result = "";
-            for (let [a, b] of forward()) { result += a + b; }
-            return result;`;
-        const compilerOptions = {
-            luaLibImport: LuaLibImportKind.Require,
-            luaTarget: LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        };
-        const result = util.transpileAndExecute(code, compilerOptions);
-        Expect(result).toBe("0a1b2c");
-    }
+test("for dead code after return", () => {
+    const result = util.transpileAndExecute(
+        `for (let i = 0; i < 10; i++) { return 3; const b = 8; }`,
+    );
 
-    @TestCase("while (a < b) { i++; }")
-    @TestCase("do { i++; } while (a < b)")
-    @TestCase("for (let i = 0; i < 3; i++) {}")
-    @TestCase("for (let a in b) {}")
-    @TestCase("for (let a of b) {}")
-    @Test("loop versions")
-    public whileVersions(loop: string): void {
-        // Transpile
-        const lua51 = util.transpileString(loop, { luaTarget: LuaTarget.Lua51 });
-        const lua52 = util.transpileString(loop, { luaTarget: LuaTarget.Lua52 });
-        const lua53 = util.transpileString(loop, { luaTarget: LuaTarget.Lua53 });
-        const luajit = util.transpileString(loop, { luaTarget: LuaTarget.LuaJIT });
+    expect(result).toBe(3);
+});
 
-        // Assert
-        Expect(lua51.indexOf("::__continue1::") !== -1).toBe(false); // No labels in 5.1
-        Expect(lua52.indexOf("::__continue1::") !== -1).toBe(true); // Labels from 5.2 onwards
-        Expect(lua53.indexOf("::__continue1::") !== -1).toBe(true);
-        Expect(luajit.indexOf("::__continue1::") !== -1).toBe(true);
-    }
+test("for..in dead code after return", () => {
+    const result = util.transpileAndExecute(
+        `for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`,
+    );
 
-    @Test("for dead code after return")
-    public forDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `for (let i = 0; i < 10; i++) { return 3; const b = 8; }`);
+    expect(result).toBe(3);
+});
 
-        Expect(result).toBe(3);
-    }
+test("for..of dead code after return", () => {
+    const result = util.transpileAndExecute(`for (let a of [1,2,4]) { return 3; const b = 8; }`);
 
-    @Test("for..in dead code after return")
-    public forInDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`);
+    expect(result).toBe(3);
+});
 
-        Expect(result).toBe(3);
-    }
+test("while dead code after return", () => {
+    const result = util.transpileAndExecute(`while (true) { return 3; const b = 8; }`);
 
-    @Test("for..of dead code after return")
-    public forOfDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `for (let a of [1,2,4]) { return 3; const b = 8; }`);
-
-        Expect(result).toBe(3);
-    }
-
-    @Test("while dead code after return")
-    public whileDeadCodeAfterReturn(): void {
-        const result = util.transpileAndExecute(
-            `while (true) { return 3; const b = 8; }`);
-
-        Expect(result).toBe(3);
-    }
-}
+    expect(result).toBe(3);
+});

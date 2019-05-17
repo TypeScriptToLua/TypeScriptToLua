@@ -1995,7 +1995,7 @@ export class LuaTransformer {
 
         else if (ts.isDeleteExpression(expression)) {
             return tstl.createAssignmentStatement(
-                this.transformExpression(expression.expression) as tstl.LeftHandSideExpression,
+                this.transformExpression(expression.expression) as tstl.AssignmentLeftHandSideExpression,
                 tstl.createNilLiteral(),
                 expression
             );
@@ -2171,13 +2171,13 @@ export class LuaTransformer {
 
         } else {
             // Assignment to existing variable
-            let variables: tstl.LeftHandSideExpression | tstl.LeftHandSideExpression[];
+            let variables: tstl.AssignmentLeftHandSideExpression | tstl.AssignmentLeftHandSideExpression[];
             if (ts.isArrayLiteralExpression(initializer)) {
                 expression = this.createUnpackCall(expression, initializer);
                 variables = initializer.elements
-                    .map(e => this.transformExpression(e)) as tstl.LeftHandSideExpression[];
+                    .map(e => this.transformExpression(e)) as tstl.AssignmentLeftHandSideExpression[];
             } else {
-                variables = this.transformExpression(initializer) as tstl.LeftHandSideExpression;
+                variables = this.transformExpression(initializer) as tstl.AssignmentLeftHandSideExpression;
             }
             return tstl.createAssignmentStatement(variables, expression);
         }
@@ -2282,7 +2282,7 @@ export class LuaTransformer {
                         .map((_, i) => tstl.createIdentifier(`____TS_value${i}`));
                     const assign = tstl.createAssignmentStatement(
                         statement.initializer.elements.map(e =>
-                            this.transformExpression(e) as tstl.LeftHandSideExpression
+                            this.transformExpression(e) as tstl.AssignmentLeftHandSideExpression
                         ),
                         tmps
                     );
@@ -2728,7 +2728,7 @@ export class LuaTransformer {
 
     private transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
         return tstl.createAssignmentStatement(
-            this.transformExpression(lhs) as tstl.LeftHandSideExpression,
+            this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
             lhs.parent
         );
@@ -2772,7 +2772,7 @@ export class LuaTransformer {
                 right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
             return tstl.createAssignmentStatement(
-                left as tstl.LeftHandSideExpression[],
+                left as tstl.AssignmentLeftHandSideExpression[],
                 right,
                 expression
             );
@@ -2819,7 +2819,7 @@ export class LuaTransformer {
             const tmps = left.map((_, i) => tstl.createIdentifier(`____TS_tmp${i}`));
             const statements: tstl.Statement[] = [
                 tstl.createVariableDeclarationStatement(tmps, right),
-                tstl.createAssignmentStatement(left as tstl.LeftHandSideExpression[], tmps),
+                tstl.createAssignmentStatement(left as tstl.AssignmentLeftHandSideExpression[], tmps),
             ];
             return this.createImmediatelyInvokedFunctionExpression(
                 statements,
@@ -2881,7 +2881,7 @@ export class LuaTransformer {
         isPostfix: boolean
     ): tstl.CallExpression
     {
-        const left = this.transformExpression(lhs) as tstl.LeftHandSideExpression;
+        const left = this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression;
         let right = this.transformExpression(rhs);
 
         const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
@@ -3052,7 +3052,7 @@ export class LuaTransformer {
         replacementOperator: ts.BinaryOperator
     ): tstl.Statement
     {
-        const left = this.transformExpression(lhs) as tstl.LeftHandSideExpression;
+        const left = this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression;
         const right = this.transformExpression(rhs);
 
         const [hasEffects, objExpression, indexExpression] = tsHelper.isAccessExpressionWithEvaluationEffects(
@@ -3334,7 +3334,7 @@ export class LuaTransformer {
     }
 
     public transformDeleteExpression(expression: ts.DeleteExpression): ExpressionVisitResult {
-        const lhs = this.transformExpression(expression.expression) as tstl.LeftHandSideExpression;
+        const lhs = this.transformExpression(expression.expression) as tstl.AssignmentLeftHandSideExpression;
         const assignment = tstl.createAssignmentStatement(
             lhs,
             tstl.createNilLiteral(),
@@ -3465,7 +3465,7 @@ export class LuaTransformer {
         }
 
         const extendsExpression = typeNode.expression;
-        let baseClassName: tstl.LeftHandSideExpression;
+        let baseClassName: tstl.AssignmentLeftHandSideExpression;
         if (ts.isIdentifier(extendsExpression)) {
             // Use "baseClassName" if base is a simple identifier
             baseClassName = this.transformIdentifier(extendsExpression);
@@ -4710,7 +4710,7 @@ export class LuaTransformer {
         return false;
     }
 
-    protected addExportToIdentifier(identifier: tstl.Identifier): tstl.LeftHandSideExpression {
+    protected addExportToIdentifier(identifier: tstl.Identifier): tstl.AssignmentLeftHandSideExpression {
         if (this.isIdentifierExported(identifier)) {
             return this.createExportedIdentifier(identifier);
         }

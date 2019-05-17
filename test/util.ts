@@ -168,4 +168,4 @@ export const valueToString = (value: unknown) =>
         ? String(value)
         : JSON.stringify(value);
 
-export const valuesToString = (values: Array<unknown>) => values.map(valueToString).join(", ");
+export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");

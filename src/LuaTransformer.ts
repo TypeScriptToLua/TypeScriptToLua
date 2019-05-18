@@ -2134,7 +2134,7 @@ export class LuaTransformer {
     private transformNumericForLimit(
         statement: ts.ForStatement,
         isSubtraction: boolean,
-        limitIdentfier?: ts.Identifier
+        limitDeclaration?: ts.VariableDeclaration
     ) : tstl.Expression | undefined
     {
         // Condition must be "i < n" or "i <= n" for addition, or "i > n" or "i >= n" for subtraction
@@ -2155,13 +2155,20 @@ export class LuaTransformer {
             }
         }
 
-        const limit = statement.condition.right;
+        let limit = statement.condition.right;
 
-        // Must match identifier from initializer (if there was one)
-        if (limitIdentfier !== undefined) {
-            if (!tsHelper.hasSameSymbol(limit, limitIdentfier, this.checker)) {
+        // Limit declared in initializer
+        if (limitDeclaration !== undefined) {
+            // Must match identifier from initializer
+            if (!tsHelper.hasSameSymbol(limit, limitDeclaration.name, this.checker)) {
                 return undefined;
             }
+
+            if (limitDeclaration.initializer === undefined) {
+                return undefined;
+            }
+
+            limit = limitDeclaration.initializer;
 
         // Limit must be a number literal or const
         } else if (!ts.isNumericLiteral(limit) && !tsHelper.isConstIdentifier(limit, this.checker)) {
@@ -2285,8 +2292,6 @@ export class LuaTransformer {
         loopScope: Scope
     ): StatementVisitResult
     {
-        const statements: tstl.Statement[] = [];
-
         // Initializer must be "let i = x" or "let i = x, limit = y"
         if (!statement.initializer || !ts.isVariableDeclarationList(statement.initializer)) {
             return undefined;
@@ -2314,34 +2319,22 @@ export class LuaTransformer {
         }
 
         // Limit set in initializer
-        let limitIdentifier: ts.Identifier | undefined;
+        let limitDeclaration: ts.VariableDeclaration | undefined;
         if (statement.initializer.declarations.length === 2) {
-            const limitDeclaration = statement.initializer.declarations[1];
+            limitDeclaration = statement.initializer.declarations[1];
 
             if (limitDeclaration.initializer === undefined || !ts.isIdentifier(limitDeclaration.name)) {
                 return undefined;
             }
 
-            limitIdentifier = limitDeclaration.name;
-
-            // Only allow limit set in initializer if control has no evaluation side-effects.
-            // Otherwise, we would  mess up order of evaluation.
-            if (!ts.isLiteralExpression(controlInitializer) && !ts.isIdentifier(controlInitializer)) {
-                return undefined;
-            }
-
-            // Limit variable cannot be modfiied inside loop body
-            const transformedLimitIdentifier = this.transformIdentifier(limitIdentifier);
+            // Limit variable cannot be referenced inside loop body
+            const transformedLimitIdentifier = this.transformIdentifier(limitDeclaration.name);
             if (transformedLimitIdentifier.symbolId === undefined) {
                 return undefined;
             }
-            if (loopScope.assignedSymbols && loopScope.assignedSymbols.has(transformedLimitIdentifier.symbolId)) {
+            if (loopScope.referencedSymbols && loopScope.referencedSymbols.has(transformedLimitIdentifier.symbolId)) {
                 return undefined;
             }
-
-            statements.push(
-                ...this.statementVisitResultToArray(this.transformVariableDeclaration(limitDeclaration))
-            );
         }
 
         //Incrementor/step
@@ -2358,8 +2351,7 @@ export class LuaTransformer {
 
         // Transform step
         let stepExpression: tstl.Expression | undefined;
-        if (isSubtraction || !ts.isNumericLiteral(step) || step.text !== "1")
-        {
+        if (isSubtraction || !ts.isNumericLiteral(step) || step.text !== "1") {
             stepExpression = this.transformExpression(step);
             if (isSubtraction) {
                 stepExpression = tstl.createUnaryExpression(stepExpression, tstl.SyntaxKind.NegationOperator);
@@ -2367,22 +2359,19 @@ export class LuaTransformer {
         }
 
         // Limit extracted from condition
-        const limit = this.transformNumericForLimit(statement, isSubtraction, limitIdentifier);
+        const limit = this.transformNumericForLimit(statement, isSubtraction, limitDeclaration);
         if (limit === undefined) {
             return undefined;
         }
 
-        statements.push(
-            tstl.createForStatement(
-                tstl.createBlock(body),
-                control,
-                this.transformExpression(controlInitializer),
-                limit,
-                stepExpression,
-                statement
-            )
+        return tstl.createForStatement(
+            tstl.createBlock(body),
+            control,
+            this.transformExpression(controlInitializer),
+            limit,
+            stepExpression,
+            statement
         );
-        return statements;
     }
 
     public transformForStatement(statement: ts.ForStatement): StatementVisitResult {

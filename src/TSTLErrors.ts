@@ -190,4 +190,8 @@ export class TSTLErrors {
             node
         );
     }
+
+    public static UnsupportedObjectDestructuringInForOf = (node: ts.Node) => {
+        return new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
+    };
 }

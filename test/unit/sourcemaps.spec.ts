@@ -100,8 +100,8 @@ test.each([
         `,
 
         assertPatterns: [
+            { luaPattern: "for", typeScriptPattern: "for" },
             { luaPattern: "getArr()", typeScriptPattern: "getArr()" },
-            { luaPattern: "____TS_array", typeScriptPattern: "getArr()" },
             { luaPattern: "element", typeScriptPattern: "element" },
         ],
     },

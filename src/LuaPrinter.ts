@@ -389,12 +389,12 @@ export class LuaPrinter {
     }
 
     public printForInStatement(statement: tstl.ForInStatement): SourceNode {
-        const names = statement.names.map(i => this.printIdentifier(i)).join(", ");
-        const expressions = statement.expressions.map(e => this.printExpression(e)).join(", ");
+        const names = this.joinChunks(", ", statement.names.map(i => this.printIdentifier(i)));
+        const expressions = this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e)));
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent("for "), names, " in ", expressions, " do\n");
+        chunks.push(this.indent("for "), ...names, " in ", ...expressions, " do\n");
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));

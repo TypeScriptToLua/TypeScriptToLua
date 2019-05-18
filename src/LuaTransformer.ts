@@ -2420,6 +2420,9 @@ export class LuaTransformer {
             const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
             if (ts.isArrayBindingPattern(initializer.declarations[0].name)) {
                 expression = this.createUnpackCall(expression, initializer);
+
+            } else if (ts.isObjectBindingPattern(initializer.declarations[0].name)) {
+                throw TSTLErrors.UnsupportedObjectDestructuringInForOf(initializer);
             }
 
             const variableStatements = this.statementVisitResultToArray(variableDeclarations);
@@ -2438,6 +2441,10 @@ export class LuaTransformer {
                 expression = this.createUnpackCall(expression, initializer);
                 variables = initializer.elements
                     .map(e => this.transformExpression(e)) as tstl.IdentifierOrTableIndexExpression[];
+
+            } else if (ts.isObjectLiteralExpression(initializer)) {
+                throw TSTLErrors.UnsupportedObjectDestructuringInForOf(initializer);
+
             } else {
                 variables = this.transformExpression(initializer) as tstl.IdentifierOrTableIndexExpression;
             }
@@ -2472,43 +2479,35 @@ export class LuaTransformer {
     }
 
     private transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
-        const arrayExpression = this.transformExpression(statement.expression);
+        let valueVariable: tstl.Identifier;
+        if (ts.isVariableDeclarationList(statement.initializer)) {
+            // Declaration of new variable
+            const variables = statement.initializer.declarations[0].name;
+            if (ts.isArrayBindingPattern(variables) || ts.isObjectBindingPattern(variables)) {
+                valueVariable = tstl.createIdentifier("____TS_values");
+                block.statements.unshift(this.transformForOfInitializer(statement.initializer, valueVariable));
 
-        // Arrays use numeric for loop (performs better than ipairs)
-        const indexVariable = tstl.createIdentifier("____TS_index");
-        if (!ts.isIdentifier(statement.expression)) {
-            // Cache iterable expression if it's not a simple identifier
-            // local ____TS_array = ${iterable};
-            // for ____TS_index = 1, #____TS_array do
-            //     local ${initializer} = ____TS_array[____TS_index]
-            const arrayVariable = tstl.createIdentifier("____TS_array", statement.expression);
-            const arrayAccess = tstl.createTableIndexExpression(arrayVariable, indexVariable);
-            const initializer = this.transformForOfInitializer(statement.initializer, arrayAccess);
-            block.statements.splice(0, 0, initializer);
-            return [
-                tstl.createVariableDeclarationStatement(arrayVariable, arrayExpression),
-                tstl.createForStatement(
-                    block,
-                    indexVariable,
-                    tstl.createNumericLiteral(1),
-                    tstl.createUnaryExpression(arrayVariable, tstl.SyntaxKind.LengthOperator)
-                ),
-            ];
+            } else {
+                valueVariable = this.transformIdentifier(variables);
+            }
 
         } else {
-            // Simple identifier version
-            // for ____TS_index = 1, #${iterable} do
-            //     local ${initializer} = ${iterable}[____TS_index]
-            const iterableAccess = tstl.createTableIndexExpression(arrayExpression, indexVariable);
-            const initializer = this.transformForOfInitializer(statement.initializer, iterableAccess);
-            block.statements.splice(0, 0, initializer);
-            return tstl.createForStatement(
-                block,
-                indexVariable,
-                tstl.createNumericLiteral(1),
-                tstl.createUnaryExpression(arrayExpression, tstl.SyntaxKind.LengthOperator)
-            );
+            // Assignment to existing variable
+            valueVariable = tstl.createIdentifier("____TS_value");
+            block.statements.unshift(this.transformForOfInitializer(statement.initializer, valueVariable));
         }
+
+        const ipairsCall = tstl.createCallExpression(
+            tstl.createIdentifier("ipairs"),
+            [this.transformExpression(statement.expression)]
+        );
+
+        return tstl.createForInStatement(
+            block,
+            [tstl.createAnonymousIdentifier(), valueVariable],
+            [ipairsCall],
+            statement
+        );
     }
 
     private transformForOfLuaIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {

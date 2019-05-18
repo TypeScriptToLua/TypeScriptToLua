@@ -1,14 +1,11 @@
-declare function unpack<T>(this: void, list: T[], i?: number, j?: number): T[];
-
-declare namespace table {
-    export function unpack<T>(this: void, list: T[], i?: number, j?: number): T[];
-}
-
-type ApplyFn = (this: void, ...argArray: any[]) => any;
-
-function __TS__FunctionApply(this: void, fn: ApplyFn, thisArg: any, argsArray?: any[]): any {
-    if (argsArray) {
-        return fn(thisArg, (unpack || table.unpack)(argsArray));
+function __TS__FunctionApply(
+    this: void,
+    fn: (this: void, ...args: any[]) => any,
+    thisArg: any,
+    args?: any[]
+): any {
+    if (args) {
+        return fn(thisArg, (unpack || table.unpack)(args));
     } else {
         return fn(thisArg);
     }

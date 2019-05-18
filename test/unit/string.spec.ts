@@ -226,14 +226,11 @@ test.each([
     expect(result).toBe(inp.substr(start, end));
 });
 
-test.each([{ inp: "", expected: 0 }, { inp: "h", expected: 1 }, { inp: "hello", expected: 5 }])(
-    "string.length (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(`return "${inp}".length`);
+test.each(["", "h", "hello"])("string.length (%p)", input => {
+    const result = util.transpileAndExecute(`return "${input}".length`);
 
-        expect(result).toBe(inp.length);
-    },
-);
+    expect(result).toBe(input.length);
+});
 
 test.each(["hello TEST"])("string.toLowerCase (%p)", inp => {
     const result = util.transpileAndExecute(`return "${inp}".toLowerCase()`);

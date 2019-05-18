@@ -24,7 +24,7 @@
         "test": "jest",
         "lint": "npm run lint:tslint && npm run lint:prettier",
         "lint:prettier": "prettier --check **/*.{js,ts,yml,json} || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
-        "lint:tslint": "tslint -p . && tslint -p test && tslint src/lualib/*.ts",
+        "lint:tslint": "tslint -p . && tslint -p test && tslint -p src/lualib",
         "fix:prettier": "prettier --check --write **/*.{js,ts,yml,json}",
         "release-major": "npm version major",
         "release-minor": "npm version minor",
@@ -40,20 +40,18 @@
     },
     "dependencies": {
         "source-map": "^0.7.3",
-        "typescript": "^3.3.1"
+        "typescript": "^3.4.5"
     },
     "devDependencies": {
-        "@types/glob": "^5.0.35",
-        "@types/jest": "^24.0.11",
+        "@types/glob": "^7.1.1",
+        "@types/jest": "^24.0.12",
         "@types/node": "^11.13.0",
-        "fengari": "^0.1.2",
-        "glob": "^7.1.2",
-        "jest": "^24.5.0",
-        "jest-circus": "^24.5.0",
-        "prettier": "^1.16.4",
-        "rimraf": "^2.6.3",
-        "ts-jest": "^24.0.0",
+        "fengari": "^0.1.4",
+        "jest": "^24.8.0",
+        "jest-circus": "^24.8.0",
+        "prettier": "^1.17.0",
+        "ts-jest": "^24.0.2",
         "ts-node": "^7.0.0",
-        "tslint": "^5.10.0"
+        "tslint": "^5.16.0"
     }
 }

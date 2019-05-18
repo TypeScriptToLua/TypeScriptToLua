@@ -1,11 +1,4 @@
-interface LuaClass {
-    ____super?: LuaClass;
-    ____getters?: { [key: string]: (this: void, self: LuaClass) => any };
-}
-
-declare function rawget<T, K extends keyof T>(this: void, obj: T, key: K): T[K];
-
-function __TS__ClassIndex(this: void, classTable: LuaClass, key: keyof LuaClass): any {
+function __TS__ClassIndex(this: void, classTable: LuaClass, key: any): any {
     while (true) {
         const getters = rawget(classTable, "____getters");
         if (getters) {

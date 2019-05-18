@@ -3,36 +3,6 @@ import { DecoratorKind } from "../../src/Decorator";
 import { TSHelper as tsHelper } from "../../src/TSHelper";
 import * as util from "../util";
 
-enum TestEnum {
-    testA = 1,
-    testB = 2,
-    testC = 4,
-}
-
-test.each([
-    { inp: TestEnum.testA, expected: "testA" },
-    { inp: -1, expected: "unknown" },
-    { inp: TestEnum.testA | TestEnum.testB, expected: "unknown" },
-])("EnumName (%p)", ({ inp, expected }) => {
-    const result = tsHelper.enumName(inp, TestEnum);
-
-    expect(result).toEqual(expected);
-});
-
-test.each([
-    { inp: TestEnum.testA, expected: ["testA"] },
-    { inp: -1, expected: [] },
-    { inp: TestEnum.testA | TestEnum.testC, expected: ["testA", "testC"] },
-    {
-        inp: TestEnum.testA | TestEnum.testB | TestEnum.testC,
-        expected: ["testA", "testB", "testC"],
-    },
-])("EnumNames (%p)", ({ inp, expected }) => {
-    const result = tsHelper.enumNames(inp, TestEnum);
-
-    expect(result).toEqual(expected);
-});
-
 test("GetCustomDecorators single", () => {
     const source = `
         /** @compileMembersOnly */

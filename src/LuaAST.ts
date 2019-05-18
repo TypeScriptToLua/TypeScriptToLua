@@ -253,7 +253,7 @@ export function createVariableDeclarationStatement(
 // `test1, test2 = 12, 42`
 export interface AssignmentStatement extends Statement {
     kind: SyntaxKind.AssignmentStatement;
-    left: IdentifierOrTableIndexExpression[];
+    left: AssignmentLeftHandSideExpression[];
     right: Expression[];
 }
 
@@ -262,7 +262,7 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 }
 
 export function createAssignmentStatement(
-    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    left: AssignmentLeftHandSideExpression | AssignmentLeftHandSideExpression[],
     right?: Expression | Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
@@ -874,7 +874,7 @@ export function createTableIndexExpression(
     return expression;
 }
 
-export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
+export type AssignmentLeftHandSideExpression = Identifier | TableIndexExpression;
 
 export type FunctionDefinition = (VariableDeclarationStatement | AssignmentStatement) & {
     right: [FunctionExpression];

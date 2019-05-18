@@ -64,6 +64,30 @@ test("Tuple Destruct", () => {
     expect(result).toBe(5);
 });
 
+test("Tuple Destruct Array Literal", () => {
+    const code = `
+        const [a,b,c] = [3,5,1];
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Destruct Array Literal Extra Values", () => {
+    const code = `
+        let result = "";
+        const set = () => { result = "bar"; };
+        const [a] = ["foo", set()];
+        return a + result;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe("foobar");
+});
+
 test("Tuple length", () => {
     const result = util.transpileAndExecute(
         `const tuple: [number, number, number] = [3,5,1];
@@ -74,62 +98,169 @@ test("Tuple length", () => {
 });
 
 test("Tuple Return Access", () => {
-    const result = util.transpileAndExecute(
-        `/** @tupleReturn */
+    const code = `
+        /** @tupleReturn */
         function tuple(): [number, number, number] { return [3,5,1]; }
-        return tuple()[2];`,
-    );
+        return tuple()[2];`;
 
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
     expect(result).toBe(1);
 });
 
 test("Tuple Return Destruct Declaration", () => {
-    const result = util.transpileAndExecute(
-        `/** @tupleReturn */
+    const code = `
+        /** @tupleReturn */
         function tuple(): [number, number, number] { return [3,5,1]; }
         const [a,b,c] = tuple();
-        return b;`,
-    );
+        return b;`;
 
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
     expect(result).toBe(5);
 });
 
 test("Tuple Return Destruct Assignment", () => {
-    const result = util.transpileAndExecute(
-        `/** @tupleReturn */
+    const code = `
+        /** @tupleReturn */
         function tuple(): [number, number] { return [3,6]; }
         let [a,b] = [1,2];
         [b,a] = tuple();
-        return a - b;`,
-    );
+        return a - b;`;
 
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
     expect(result).toBe(3);
 });
 
 test("Tuple Static Method Return Destruct", () => {
-    const result = util.transpileAndExecute(
-        `class Test {
+    const code = `
+        class Test {
             /** @tupleReturn */
             static tuple(): [number, number, number] { return [3,5,1]; }
         }
         const [a,b,c] = Test.tuple();
-        return b;`,
-    );
+        return b;`;
 
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Static Function Property Return Destruct", () => {
+    const code = `
+        class Test {
+            /** @tupleReturn */
+            static tuple: () => [number, number, number] = () => [3,5,1];
+        }
+        const [a,b,c] = Test.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
     expect(result).toBe(5);
 });
 
 test("Tuple Non-Static Method Return Destruct", () => {
-    const result = util.transpileAndExecute(
-        `class Test {
+    const code = `
+        class Test {
             /** @tupleReturn */
             tuple(): [number, number, number] { return [3,5,1]; }
         }
         const t = new Test();
         const [a,b,c] = t.tuple();
-        return b;`,
-    );
+        return b;`;
 
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Non-Static Function Property Return Destruct", () => {
+    const code = `
+        class Test {
+            /** @tupleReturn */
+            tuple: () => [number, number, number] = () => [3,5,1];
+        }
+        const t = new Test();
+        const [a,b,c] = t.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Interface Method Return Destruct", () => {
+    const code = `
+        interface Test {
+            /** @tupleReturn */
+            tuple(): [number, number, number];
+        }
+        const t: Test = {
+            tuple() { return [3,5,1]; }
+        };
+        const [a,b,c] = t.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Interface Function Property Return Destruct", () => {
+    const code = `
+        interface Test {
+            /** @tupleReturn */
+            tuple: () => [number, number, number];
+        }
+        const t: Test = {
+            tuple: () => [3,5,1]
+        };
+        const [a,b,c] = t.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Object Literal Method Return Destruct", () => {
+    const code = `
+        const t = {
+            /** @tupleReturn */
+            tuple() { return [3,5,1]; }
+        };
+        const [a,b,c] = t.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
+    expect(result).toBe(5);
+});
+
+test("Tuple Object Literal Function Property Return Destruct", () => {
+    const code = `
+        const t = {
+            /** @tupleReturn */
+            tuple: () => [3,5,1]
+        };
+        const [a,b,c] = t.tuple();
+        return b;`;
+
+    const lua = util.transpileString(code);
+    expect(lua).not.toContain("unpack");
+    const result = util.executeLua(lua);
     expect(result).toBe(5);
 });
 

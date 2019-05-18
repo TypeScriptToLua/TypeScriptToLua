@@ -1,44 +1,44 @@
-declare function setmetatable<T extends object>(this: void, obj: T, metatable: any): T;
+WeakSet = class WeakSet<T extends object> {
+    public static [Symbol.species] = WeakSet;
+    public [Symbol.toStringTag] = "WeakSet";
 
-class WeakSet<TValue extends object> {
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+    // Key type is actually T
+    private items: { [key: string]: boolean } = {};
 
-    constructor(other: Iterable<TValue> | TValue[]) {
-        this.items = {};
-        setmetatable(this.items, { __mode: 'k' });
+    constructor(values?: Iterable<T> | T[]) {
+        setmetatable(this.items, { __mode: "k" });
+        if (values === undefined) return;
 
-        if (other) {
-            const iterable = other as Iterable<TValue>;
-            if (iterable[Symbol.iterator]) {
-                // Iterate manually because WeakSet is compiled with ES5 which doesn't support Iterables in for...of
-                const iterator = iterable[Symbol.iterator]();
-                while (true) {
-                    const result = iterator.next();
-                    if (result.done) {
-                        break;
-                    }
-                    this.add(result.value);
+        const iterable = values as Iterable<T>;
+        if (iterable[Symbol.iterator]) {
+            // Iterate manually because WeakSet is compiled with ES5 which doesn't support Iterables in for...of
+            const iterator = iterable[Symbol.iterator]();
+            while (true) {
+                const result = iterator.next();
+                if (result.done) {
+                    break;
                 }
-            } else {
-                for (const value of other as TValue[]) {
-                    this.items[value as any] = true;
-                }
+                this.add(result.value);
+            }
+        } else {
+            for (const value of values as T[]) {
+                this.items[value as any] = true;
             }
         }
     }
 
-    public add(value: TValue): WeakSet<TValue> {
+    public add(value: T): this {
         this.items[value as any] = true;
         return this;
     }
 
-    public delete(value: TValue): boolean {
+    public delete(value: T): boolean {
         const contains = this.has(value);
         this.items[value as any] = undefined;
         return contains;
     }
 
-    public has(value: TValue): boolean {
+    public has(value: T): boolean {
         return this.items[value as any] === true;
     }
-}
+};

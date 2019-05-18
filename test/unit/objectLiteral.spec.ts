@@ -1,5 +1,4 @@
 import * as util from "../util";
-const fs = require("fs");
 
 test.each([
     { inp: `{a:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },

@@ -1882,13 +1882,25 @@ export class LuaTransformer {
                     tstl.isIdentifier)
                 : tstl.createAnonymousIdentifier(statement.name);
 
-            // Don't unpack TupleReturn decorated functions
             if (statement.initializer) {
                 if (tsHelper.isTupleReturnCall(statement.initializer, this.checker)) {
+                    // Don't unpack TupleReturn decorated functions
                     statements.push(
                         ...this.createLocalOrExportedOrGlobalDeclaration(
                             vars,
                             this.transformExpression(statement.initializer),
+                            statement
+                        )
+                    );
+                } else if (ts.isArrayLiteralExpression(statement.initializer)) {
+                    // Don't unpack array literals
+                    const values = statement.initializer.elements.length > 0
+                        ? statement.initializer.elements.map(e => this.transformExpression(e))
+                        : tstl.createNilLiteral();
+                    statements.push(
+                        ...this.createLocalOrExportedOrGlobalDeclaration(
+                            vars,
+                            values,
                             statement
                         )
                     );
@@ -4873,7 +4885,7 @@ export class LuaTransformer {
 
     protected createLocalOrExportedOrGlobalDeclaration(
         lhs: tstl.Identifier | tstl.Identifier[],
-        rhs?: tstl.Expression,
+        rhs?: tstl.Expression | tstl.Expression[],
         tsOriginal?: ts.Node,
         parent?: tstl.Node
     ): tstl.Statement[]

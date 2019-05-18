@@ -58,92 +58,68 @@ end"
 `;
 
 exports[`Transformation (continue) 1`] = `
-"do
-    local i = 0
-    while i < 10 do
-        do
-            if i < 5 then
-                goto __continue1
-            end
+"for i = 0, 9 do
+    do
+        if i < 5 then
+            goto __continue1
         end
-        ::__continue1::
-        i = i + 1
     end
+    ::__continue1::
 end"
 `;
 
 exports[`Transformation (continueConcurrent) 1`] = `
-"do
-    local i = 0
-    while i < 10 do
-        do
-            if i < 5 then
-                goto __continue1
-            end
-            if i == 7 then
-                goto __continue1
-            end
+"for i = 0, 9 do
+    do
+        if i < 5 then
+            goto __continue1
         end
-        ::__continue1::
-        i = i + 1
+        if i == 7 then
+            goto __continue1
+        end
     end
+    ::__continue1::
 end"
 `;
 
 exports[`Transformation (continueNested) 1`] = `
-"do
-    local i = 0
-    while i < 5 do
-        do
-            if i % 2 == 0 then
-                goto __continue1
-            end
+"for i = 0, 4 do
+    do
+        if i % 2 == 0 then
+            goto __continue1
+        end
+        for j = 0, 1 do
             do
-                local j = 0
-                while j < 2 do
-                    do
-                        if j == 1 then
-                            goto __continue3
-                        end
-                    end
-                    ::__continue3::
-                    j = j + 1
+                if j == 1 then
+                    goto __continue3
                 end
             end
+            ::__continue3::
         end
-        ::__continue1::
-        i = i + 1
     end
+    ::__continue1::
 end"
 `;
 
 exports[`Transformation (continueNestedConcurrent) 1`] = `
-"do
-    local i = 0
-    while i < 5 do
-        do
-            if i % 2 == 0 then
-                goto __continue1
-            end
+"for i = 0, 4 do
+    do
+        if i % 2 == 0 then
+            goto __continue1
+        end
+        for j = 0, 1 do
             do
-                local j = 0
-                while j < 2 do
-                    do
-                        if j == 1 then
-                            goto __continue3
-                        end
-                    end
-                    ::__continue3::
-                    j = j + 1
+                if j == 1 then
+                    goto __continue3
                 end
             end
-            if i == 4 then
-                goto __continue1
-            end
+            ::__continue3::
         end
-        ::__continue1::
-        i = i + 1
+        if i == 4 then
+            goto __continue1
+        end
     end
+    ::__continue1::
 end"
 `;
 
@@ -219,11 +195,7 @@ return ____exports"
 `;
 
 exports[`Transformation (for) 1`] = `
-"do
-    local i = 1
-    while i <= 100 do
-        i = i + 1
-    end
+"for i = 1, 100 do
 end"
 `;
 

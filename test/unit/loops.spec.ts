@@ -827,3 +827,142 @@ test("while dead code after return", () => {
 
     expect(result).toBe(3);
 });
+
+test.each([
+    { forStatement: "for (let i = 0; i < 10; ++i) {", expectResult: "abcdefghij" },
+    {
+        forStatement: `
+            const limit = arr.length;
+            for (let i = 0; i < limit; ++i) {`,
+        expectResult: "abcdefghij",
+    },
+    {
+        forStatement: `
+            const x = 12;
+            for (let i = 0; i < -(2 + (-x)); ++i) {`,
+        expectResult: "abcdefghij",
+    },
+    { forStatement: "for (let i = 0; i < 10; i += 1) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 0; i < 10; i = i + 1) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 0; i <= 9; ++i) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 0; i <= 9; i += 1) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 0; i <= 9; i = i + 1) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 9; i > -1; --i) {", expectResult: "jihgfedcba" },
+    {
+        forStatement: `
+            const limit = -1;
+            for (let i = arr.length - 1; i > limit; --i) {`,
+        expectResult: "jihgfedcba",
+    },
+    { forStatement: "for (let i = 9; i > -1; i -= 1) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 9; i > -1; i = i - 1) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 9; i >= 0; --i) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 9; i >= 0; i -= 1) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 9; i >= 0; i = i - 1) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 0; i < 10; i += 2) {", expectResult: "acegi" },
+    { forStatement: "for (let i = 0; i < 10; i = i + 2) {", expectResult: "acegi" },
+    {
+        forStatement: `
+            const x = -6;
+            for (let i = 0; i < 10; i += -(4 - (-x))) {`,
+        expectResult: "acegi",
+    },
+    {
+        forStatement: `
+            const x = -6;
+            for (let i = 0; i < 10; i = i + -(4 - (-x))) {`,
+        expectResult: "acegi",
+    },
+    {
+        forStatement: `
+            const j = 2;
+            for (let i = 0; i < 10; i += j) {`,
+        expectResult: "acegi",
+    },
+    {
+        forStatement: `
+            const j = 2;
+            for (let i = 0; i < 10; i = i + j) {`,
+        expectResult: "acegi",
+    },
+    {
+        forStatement: "for (let i = 0, limit = arr.length; i < limit; ++i) {",
+        expectResult: "abcdefghij",
+    },
+    {
+        forStatement: "for (let i = 0, limit = arr.length - 1; i <= limit; ++i) {",
+        expectResult: "abcdefghij",
+    },
+    { forStatement: "for (let i = 9, limit = -1; i > limit; --i) {", expectResult: "jihgfedcba" },
+    { forStatement: "for (let i = 9, limit = 0; i >= limit; --i) {", expectResult: "jihgfedcba" },
+])("optimized numeric for loop (%p)", ({ forStatement, expectResult }) => {
+    const code = `const arr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+        let result = "";
+        ${forStatement}
+            result += arr[i];
+        }`;
+
+    const lua = util.transpileString(code, undefined, false);
+
+    expect(lua.indexOf("for ")).toBeGreaterThanOrEqual(0);
+    expect(lua.indexOf("while ")).toBe(-1);
+
+    expect(util.executeLua(`${lua} return result`)).toBe(expectResult);
+});
+
+test.each([
+    { forStatement: "for (var i = 0; i < 10; ++i) {", expectResult: "abcdefghij" },
+    {
+        forStatement: `
+            let limit = 10;
+            for (let i = 0; i < limit; ++i) {`,
+        expectResult: "abcdefghij",
+    },
+    {
+        forStatement: `
+            let x = 12;
+            for (let i = 0; i < -(2 + (-x)); ++i) {`,
+        expectResult: "abcdefghij",
+    },
+    {
+        forStatement: `
+            function foo() { return 10; }
+            for (let i = 0; i < foo(); ++i) {`,
+        expectResult: "abcdefghij",
+    },
+    { forStatement: "for (let i = 0; i !== 10; ++i) {", expectResult: "abcdefghij" },
+    { forStatement: "for (let i = 0; i < 2; i = 2) {", expectResult: "a" },
+    { forStatement: "for (let i = 1; i < 10; i *= 2) {", expectResult: "bcei" },
+    { forStatement: "for (let i = 1; i < 10; i = i * 2) {", expectResult: "bcei" },
+    {
+        forStatement: `
+            const j = 1;
+            for (let i = 0; i < 2; i = j + 1) {`,
+        expectResult: "a",
+    },
+    {
+        forStatement: `
+            for (let i = 0; i < 10; ++i) {
+                ++i;`,
+        expectResult: "bdfhj",
+    },
+    {
+        forStatement: `
+            for (let i = 0, limit = arr.length; i < limit; ++i) {
+                const foo = limit;`,
+        expectResult: "abcdefghij",
+    },
+])("un-optimized numeric for loop (%p)", ({ forStatement, expectResult }) => {
+    const code = `const arr = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+        let result = "";
+        ${forStatement}
+            result += arr[i];
+        }`;
+
+    const lua = util.transpileString(code, undefined, false);
+
+    expect(lua.indexOf("for ")).toBe(-1);
+    expect(lua.indexOf("while ")).toBeGreaterThanOrEqual(0);
+
+    expect(util.executeLua(`${lua} return result`)).toBe(expectResult);
+});

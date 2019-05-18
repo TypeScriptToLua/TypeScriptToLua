@@ -118,11 +118,40 @@ export class TSHelper {
         return declarations.find(d => TSHelper.isConstVariableDeclaration(d)) !== undefined;
     }
 
+    public static isConstantNumericalExpression(expression: ts.Expression, checker: ts.TypeChecker): boolean {
+        if (ts.isParenthesizedExpression(expression)) {
+            return TSHelper.isConstantNumericalExpression(expression.expression, checker);
+
+        } else if (ts.isPrefixUnaryExpression(expression)
+            && (expression.operator === ts.SyntaxKind.MinusToken || expression.operator === ts.SyntaxKind.PlusToken))
+        {
+            return TSHelper.isConstantNumericalExpression(expression.operand, checker);
+
+        } else if (ts.isBinaryExpression(expression)
+            && (expression.operatorToken.kind === ts.SyntaxKind.PlusToken
+                || expression.operatorToken.kind === ts.SyntaxKind.MinusToken
+                || expression.operatorToken.kind === ts.SyntaxKind.AsteriskToken
+                || expression.operatorToken.kind === ts.SyntaxKind.SlashToken
+                || expression.operatorToken.kind === ts.SyntaxKind.AsteriskAsteriskToken
+                || expression.operatorToken.kind === ts.SyntaxKind.PercentToken
+                || expression.operatorToken.kind === ts.SyntaxKind.AmpersandToken
+                || expression.operatorToken.kind === ts.SyntaxKind.BarToken
+                || expression.operatorToken.kind === ts.SyntaxKind.CaretToken
+                || expression.operatorToken.kind === ts.SyntaxKind.LessThanLessThanToken
+                || expression.operatorToken.kind === ts.SyntaxKind.GreaterThanGreaterThanToken))
+        {
+            return TSHelper.isConstantNumericalExpression(expression.left, checker)
+                && TSHelper.isConstantNumericalExpression(expression.right, checker);
+        }
+
+        return ts.isNumericLiteral(expression) || TSHelper.isConstIdentifier(expression, checker);
+    }
+
     public static hasSameSymbol(a: ts.Node, b: ts.Node, checker: ts.TypeChecker): boolean {
         const symbolA = checker.getSymbolAtLocation(a);
         const symbolB = checker.getSymbolAtLocation(b);
         return symbolA !== undefined && symbolA === symbolB;
-    };
+    }
 
     public static isDeclaration(node: ts.Node): node is ts.Declaration {
         return ts.isEnumDeclaration(node) || ts.isClassDeclaration(node) || ts.isExportDeclaration(node)

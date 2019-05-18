@@ -2171,7 +2171,7 @@ export class LuaTransformer {
             limit = limitDeclaration.initializer;
 
         // Limit must be a number literal or const
-        } else if (!ts.isNumericLiteral(limit) && !tsHelper.isConstIdentifier(limit, this.checker)) {
+        } else if (!tsHelper.isConstantNumericalExpression(limit, this.checker)) {
             return undefined;
         }
 
@@ -2209,7 +2209,7 @@ export class LuaTransformer {
 
     // Returns: [incrementorControlIdentifier, stepExpression, isSubtraction]
     private getNumericForIncrementorInfo(statement: ts.ForStatement)
-        : [ts.Identifier, ts.NumericLiteral | ts.Identifier, boolean] | undefined
+        : [ts.Identifier, ts.Expression, boolean] | undefined
     {
         // Supported incrementors (n must be const or literal):
         // i = i + n
@@ -2234,7 +2234,7 @@ export class LuaTransformer {
                 const op = statement.incrementor.right;
                 if (!ts.isBinaryExpression(op)
                     || !tsHelper.hasSameSymbol(op.left, statement.incrementor.left, this.checker)
-                    || (!ts.isNumericLiteral(op.right) && !tsHelper.isConstIdentifier(op.right, this.checker)))
+                    || !tsHelper.isConstantNumericalExpression(op.right, this.checker))
                 {
                     return undefined;
                 }
@@ -2253,7 +2253,7 @@ export class LuaTransformer {
             } else if ((opKind === ts.SyntaxKind.PlusEqualsToken || opKind === ts.SyntaxKind.MinusEqualsToken)) {
                 // i += n
                 const step = statement.incrementor.right;
-                if (!ts.isNumericLiteral(step) && !tsHelper.isConstIdentifier(step, this.checker)) {
+                if (!tsHelper.isConstantNumericalExpression(step, this.checker)) {
                     return undefined;
                 }
 

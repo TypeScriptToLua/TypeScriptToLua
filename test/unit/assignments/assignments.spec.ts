@@ -1,4 +1,3 @@
-import * as ts from "typescript";
 import { TSTLErrors } from "../../../src/TSTLErrors";
 import * as util from "../../util";
 

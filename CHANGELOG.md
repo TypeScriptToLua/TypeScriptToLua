@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.20.0
+- Added support for `string.repeat`, `string.padStart` and `string.padEnd`.
+- Added automatic variable renaming for invalid Lua identifiers.
+- Fixed `/** @tupleReturn */` not working for function types (i.e `myFunc: () => [number, number]`)
+- Various improvements to source map output format.
+- Various small code tweaks and improvements.
+
+## 0.19.0
 - **BREAKING CHANGE:** All tstl-specific options should now be inside the "tstl" section in tsconfig.json (see README.md). **Root-level options are no longer supported**.
 - Added a compiler API to programmatically invoke TypeScriptToLua, and to modify or extend the default transpiler. More info on the [Compiler API wiki page](<https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/TypeScriptToLua-API>).
 - Added support for [class decorators](https://www.typescriptlang.org/docs/handbook/decorators.html#class-decorators).

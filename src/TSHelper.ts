@@ -549,7 +549,7 @@ export class TSHelper {
         return checker.getContextualType(expression) || checker.getTypeAtLocation(expression);
     }
 
-    public static getAllCallSignatures(type: ts.Type): readonly ts.Signature[] {
+    public static getAllCallSignatures(type: ts.Type): ReadonlyArray<ts.Signature> {
         if (type.isUnion()) {
             return type.types.map(t => TSHelper.getAllCallSignatures(t)).reduce((a, b) => a.concat(b));
         }
@@ -709,6 +709,10 @@ export class TSHelper {
     public static isValidLuaIdentifier(str: string): boolean {
         const match = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
         return match !== undefined && match !== null && match[0] === str;
+    }
+
+    public static fixInvalidLuaIdentifier(name: string): string {
+        return name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
     }
 
     // Checks that a name is valid for use in lua function declaration syntax:

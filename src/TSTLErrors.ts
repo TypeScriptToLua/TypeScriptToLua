@@ -78,8 +78,8 @@ export class TSTLErrors {
     public static InvalidThrowExpression = (node: ts.Node) =>
         new TranspileError(`Invalid throw expression, only strings can be thrown.`, node);
 
-    public static KeywordIdentifier = (node: ts.Identifier) =>
-        new TranspileError(`Cannot use Lua keyword ${node.escapedText} as identifier.`, node);
+    public static ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
+        new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
 
     public static MissingClassName = (node: ts.Node) =>
         new TranspileError(`Class declarations must have a name.`, node);

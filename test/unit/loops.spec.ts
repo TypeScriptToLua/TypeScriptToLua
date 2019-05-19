@@ -873,6 +873,11 @@ test.each([
             for (let i = 0; i < -(2 + (-x)); ++i) {`,
         expectResult: "abcdefghij",
     },
+    {
+        forStatement: `
+            for (let i = 0; i < 2 << 1; ++i) {`,
+        expectResult: "abcd",
+    },
     { forStatement: "for (let i = 0; i < 10; i += 1) {", expectResult: "abcdefghij" },
     { forStatement: "for (let i = 0; i < 10; i = i + 1) {", expectResult: "abcdefghij" },
     { forStatement: "for (let i = 0; i <= 9; ++i) {", expectResult: "abcdefghij" },

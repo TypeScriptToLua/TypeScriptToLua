@@ -2192,28 +2192,10 @@ export class LuaTransformer {
         // Offset limit when using < or >
         const opKind = statement.condition.operatorToken.kind;
         if (opKind === ts.SyntaxKind.LessThanToken) {
-            if (tstl.isNumericLiteral(limitExpression)) {
-                --limitExpression.value;
-
-            } else {
-                limitExpression = tstl.createBinaryExpression(
-                    limitExpression,
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.SubtractionOperator
-                );
-            }
+            limitExpression = this.expressionPlusNumber(limitExpression, -1);
 
         } else if (opKind === ts.SyntaxKind.GreaterThanToken) {
-            if (tstl.isNumericLiteral(limitExpression)) {
-                ++limitExpression.value;
-
-            } else {
-                limitExpression = tstl.createBinaryExpression(
-                    limitExpression,
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.AdditionOperator
-                );
-            }
+            limitExpression = this.expressionPlusNumber(limitExpression, 1);
         }
 
         return limitExpression;
@@ -3146,7 +3128,7 @@ export class LuaTransformer {
                 const argType = this.checker.getTypeAtLocation(expression.left.expression);
                 if (tsHelper.isArrayType(argType, this.checker, this.program)) {
                     // Array access needs a +1
-                    indexExpression = this.expressionPlusOne(indexExpression);
+                    indexExpression = this.expressionPlusNumber(indexExpression, 1);
                 }
             }
 
@@ -4253,11 +4235,11 @@ export class LuaTransformer {
         }
 
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
-            return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), expression);
+            return tstl.createTableIndexExpression(table, this.expressionPlusNumber(index, 1), expression);
         } else if (tsHelper.isStringType(type)) {
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),
-                [table, this.expressionPlusOne(index), this.expressionPlusOne(index)],
+                [table, this.expressionPlusNumber(index, 1), this.expressionPlusNumber(index, 1)],
                 expression
             );
         } else {
@@ -4326,7 +4308,7 @@ export class LuaTransformer {
                         ? this.createStringCall("find", node, caller, params[0])
                         : this.createStringCall(
                             "find", node, caller, params[0],
-                            this.expressionPlusOne(params[1]),
+                            this.expressionPlusNumber(params[1], 1),
                             tstl.createBooleanLiteral(true)
                         );
 
@@ -4347,7 +4329,7 @@ export class LuaTransformer {
             case "substr":
                 if (node.arguments.length === 1) {
                     const argument = this.transformExpression(node.arguments[0]);
-                    const arg1 = this.expressionPlusOne(argument);
+                    const arg1 = this.expressionPlusNumber(argument, 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
                     const arg1 = params[0];
@@ -4357,14 +4339,14 @@ export class LuaTransformer {
                         tstl.createParenthesizedExpression(arg2),
                         tstl.SyntaxKind.AdditionOperator
                     );
-                    return this.createStringCall("sub", node, caller, this.expressionPlusOne(arg1), sumArg);
+                    return this.createStringCall("sub", node, caller, this.expressionPlusNumber(arg1, 1), sumArg);
                 }
             case "substring":
                 if (node.arguments.length === 1) {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
@@ -4373,10 +4355,10 @@ export class LuaTransformer {
                     return caller;
                 }
                 else if (node.arguments.length === 1) {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
@@ -4387,11 +4369,11 @@ export class LuaTransformer {
             case "split":
                 return this.transformLuaLibFunction(LuaLibFeature.StringSplit, node, caller, ...params);
             case "charAt":
-                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                const firstParamPlusOne = this.expressionPlusNumber(params[0], 1);
                 return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             case "charCodeAt":
             {
-                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                const firstParamPlusOne = this.expressionPlusNumber(params[0], 1);
                 return this.createStringCall("byte", node, caller, firstParamPlusOne);
             }
             case "startsWith":
@@ -5387,26 +5369,32 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createIdentifier("tostring"), [expression]);
     }
 
-    protected expressionPlusOne(expression: tstl.Expression): tstl.Expression {
+    protected expressionPlusNumber(expression: tstl.Expression, value: number): tstl.Expression {
         if (tstl.isNumericLiteral(expression)) {
             const newNode = tstl.cloneNode(expression);
-            newNode.value += 1;
+            newNode.value += value;
             return newNode;
         }
 
         if (tstl.isBinaryExpression(expression)) {
-            if (
-                expression.operator === tstl.SyntaxKind.SubtractionOperator &&
-                tstl.isNumericLiteral(expression.right) &&
-                expression.right.value === 1
-            ) {
-                return expression.left;
+            if (tstl.isNumericLiteral(expression.right)) {
+                if (expression.operator === tstl.SyntaxKind.SubtractionOperator
+                    && expression.right.value - value === 0)
+                {
+                    return expression.left;
+                }
+                if (expression.operator === tstl.SyntaxKind.AdditionOperator
+                    && expression.right.value + value === 0)
+                {
+                    return expression.left;
+                }
             }
 
             expression = tstl.createParenthesizedExpression(expression);
         }
 
-        return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
+        const operator = value >= 0 ? tstl.SyntaxKind.AdditionOperator : tstl.SyntaxKind.SubtractionOperator;
+        return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(Math.abs(value)), operator);
     }
 
     protected getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId | undefined {

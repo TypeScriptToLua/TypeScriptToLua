@@ -726,6 +726,10 @@ export class TSHelper {
         return match !== undefined && match !== null && match[0] === str;
     }
 
+    public static fixInvalidLuaIdentifier(name: string): string {
+        return name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
+    }
+
     // Checks that a name is valid for use in lua function declaration syntax:
     // 'foo.bar' => passes ('function foo.bar()' is valid)
     // 'getFoo().bar' => fails ('function getFoo().bar()' would be illegal)

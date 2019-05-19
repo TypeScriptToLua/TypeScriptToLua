@@ -39,6 +39,33 @@ test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat"
     },
 );
 
+test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
+    "lua keyword or invalid identifier as method call (%p)",
+    name => {
+        const code = `
+        const foo = {
+            ${name}(arg: string) { return "foo" + arg; }
+        };
+        return foo.${name}("bar");`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
+    "lua keyword or invalid identifier as complex method call (%p)",
+    name => {
+        const code = `
+        const foo = {
+            ${name}(arg: string) { return "foo" + arg; }
+        };
+        function getFoo() { return foo; }
+        return getFoo().${name}("bar");`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         const code = `

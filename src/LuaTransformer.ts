@@ -3769,13 +3769,40 @@ export class LuaTransformer {
                 if (!signatureDeclaration
                     || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
                 {
-                    // table:name()
-                    return tstl.createMethodCallExpression(
-                        table,
-                        this.transformIdentifier(node.expression.name),
-                        parameters,
-                        node
-                    );
+                    if (this.isUnsafeName(node.expression.name.text)) {
+                        const statements: tstl.Statement[] = [];
+                        let tableTemp: tstl.Identifier;
+                        if (tstl.isIdentifier(table)) {
+                            // table["methodName"](table, ...)
+                            tableTemp = table;
+                        } else {
+                            // local ____TS_table = table
+                            // ____TS_table[methodName](____TS_table, ...)
+                            tableTemp = tstl.createIdentifier("____TSTL_table");
+                            statements.push(tstl.createVariableDeclarationStatement(tableTemp, table));
+                        }
+                        const callExpression = tstl.createCallExpression(
+                            tstl.createTableIndexExpression(
+                                tableTemp,
+                                tstl.createStringLiteral(node.expression.name.text, node.expression.name)
+                            ),
+                            [tableTemp, ...parameters]
+                        );
+                        return this.createImmediatelyInvokedFunctionExpression(
+                            statements,
+                            callExpression,
+                            node
+                        );
+
+                    } else {
+                        // table:name()
+                        return tstl.createMethodCallExpression(
+                            table,
+                            this.transformIdentifier(node.expression.name),
+                            parameters,
+                            node
+                        );
+                    }
                 } else {
                     // table.name()
                     const callPath = tstl.createTableIndexExpression(

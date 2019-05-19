@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "outDir": "../../dist/lualib",
+        "target": "esnext",
+        "lib": ["esnext"],
+        "types": [],
+        "skipLibCheck": true,
+
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
+    },
+    "tstl": {
+        "luaLibImport": "none",
+        "luaTarget": "5.1"
+    }
+}

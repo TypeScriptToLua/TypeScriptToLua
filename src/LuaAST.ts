@@ -173,10 +173,6 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
 }
 
 export function getOriginalPos(node: Node): TextRange {
-    while (node.line === undefined && node.parent !== undefined) {
-        node = node.parent;
-    }
-
     return { line: node.line, column: node.column };
 }
 
@@ -257,7 +253,7 @@ export function createVariableDeclarationStatement(
 // `test1, test2 = 12, 42`
 export interface AssignmentStatement extends Statement {
     kind: SyntaxKind.AssignmentStatement;
-    left: IdentifierOrTableIndexExpression[];
+    left: AssignmentLeftHandSideExpression[];
     right: Expression[];
 }
 
@@ -266,7 +262,7 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 }
 
 export function createAssignmentStatement(
-    left: IdentifierOrTableIndexExpression | IdentifierOrTableIndexExpression[],
+    left: AssignmentLeftHandSideExpression | AssignmentLeftHandSideExpression[],
     right?: Expression | Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
@@ -878,7 +874,7 @@ export function createTableIndexExpression(
     return expression;
 }
 
-export type IdentifierOrTableIndexExpression = Identifier | TableIndexExpression;
+export type AssignmentLeftHandSideExpression = Identifier | TableIndexExpression;
 
 export type FunctionDefinition = (VariableDeclarationStatement | AssignmentStatement) & {
     right: [FunctionExpression];

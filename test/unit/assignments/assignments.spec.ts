@@ -1,4 +1,3 @@
-import * as ts from "typescript";
 import { TSTLErrors } from "../../../src/TSTLErrors";
 import * as util from "../../util";
 
@@ -175,15 +174,6 @@ test("TupleReturn in expression", () => {
 
     expect(result).toBe("a3");
 });
-
-test.each(["and", "local", "nil", "not", "or", "repeat", "then", "until"])(
-    "Keyword identifier error (%p)",
-    identifier => {
-        expect(() => util.transpileString(`const ${identifier} = 3;`)).toThrowExactError(
-            TSTLErrors.KeywordIdentifier(ts.createIdentifier(identifier)),
-        );
-    },
-);
 
 test("String table access", () => {
     const code = `

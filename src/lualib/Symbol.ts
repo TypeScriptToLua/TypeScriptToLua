@@ -1,5 +1,3 @@
-declare function setmetatable<T extends object>(this: void, obj: T, metatable: any): T;
-
 // tslint:disable-next-line: variable-name
 const ____symbolMetatable = {
     __tostring(): string {
@@ -18,4 +16,8 @@ function __TS__Symbol(this: void, description?: string | number): symbol {
 Symbol = {
     iterator: __TS__Symbol("Symbol.iterator"),
     hasInstance: __TS__Symbol("Symbol.hasInstance"),
+
+    // Not implemented
+    species: __TS__Symbol("Symbol.species"),
+    toStringTag: __TS__Symbol("Symbol.toStringTag"),
 } as any;

@@ -1,6 +1,6 @@
 # Test against the latest version of this Node.js version
 environment:
-  nodejs_version: "8"
+  nodejs_version: "8.5.0"
 
 # Do not build feature branch with open Pull Requests
 skip_branch_with_pr: true
@@ -13,7 +13,9 @@ cache:
 install:
   # Get the latest stable version of Node.js or io.js
   - ps: Install-Product node $env:nodejs_version
-  # install modules
+  # Upgrade npm
+  - npm install --global npm@6
+  # Install modules
   - npm ci
 
 # Post-install test scripts.
@@ -21,7 +23,7 @@ test_script:
   # Output useful info for debugging.
   - node --version
   - npm --version
-  # run tests
+  # Run tests
   - npm run build
   - npm test
 

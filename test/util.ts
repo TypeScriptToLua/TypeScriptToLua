@@ -29,13 +29,7 @@ export function transpileStringResult(
         noHeader: true,
         skipLibCheck: true,
         target: ts.ScriptTarget.ESNext,
-        lib: [
-            "lib.es2015.d.ts",
-            "lib.es2016.d.ts",
-            "lib.es2017.d.ts",
-            "lib.es2018.d.ts",
-            "lib.esnext.d.ts",
-        ],
+        lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
         ...options,
     };
@@ -165,5 +159,13 @@ export function findFirstChild(
 
 export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
     expect(subject).toBeDefined();
+    expect(subject).not.toBeNull();
     return true; // If this was false the expect would have thrown an error
 }
+
+export const valueToString = (value: unknown) =>
+    value === Infinity || value === -Infinity || (typeof value === "number" && Number.isNaN(value))
+        ? String(value)
+        : JSON.stringify(value);
+
+export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");

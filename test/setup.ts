@@ -4,8 +4,8 @@ import * as util from "./util";
 declare global {
     namespace jest {
         interface Matchers<R> {
-            toThrowExactError(error: Error): void;
-            toHaveDiagnostics(): void;
+            toThrowExactError(error: Error): R;
+            toHaveDiagnostics(): R;
         }
     }
 }
@@ -31,10 +31,9 @@ expect.extend({
         return { pass: true, message: () => "" };
     },
     toHaveDiagnostics(diagnostics: ts.Diagnostic[]): jest.CustomMatcherResult {
-        expect(Array.isArray(diagnostics)).toBe(true);
-        const options = { isNot: this.isNot };
+        expect(diagnostics).toBeInstanceOf(Array);
         // @ts-ignore
-        const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", options);
+        const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
 
         const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(diagnostics, {
             getCurrentDirectory: () => "",

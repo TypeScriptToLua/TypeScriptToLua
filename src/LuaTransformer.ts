@@ -24,15 +24,14 @@ interface SymbolInfo {
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Set<tstl.SymbolId>;
+    referencedSymbols: Map<tstl.SymbolId, ts.Identifier[]>;
     definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
-    assignedSymbols?: Set<tstl.SymbolId>;
-    referencedSymbols?: Set<tstl.SymbolId>;
+    referencedSymbols?: Map<tstl.SymbolId, ts.Identifier[]>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
     importStatements?: tstl.Statement[];
@@ -1877,7 +1876,7 @@ export class LuaTransformer {
                 throw TSTLErrors.UndefinedScope();
             }
             if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
-            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
+            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Map()};
             scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -2259,28 +2258,10 @@ export class LuaTransformer {
         // Offset limit when using < or >
         const opKind = statement.condition.operatorToken.kind;
         if (opKind === ts.SyntaxKind.LessThanToken) {
-            if (tstl.isNumericLiteral(limitExpression)) {
-                --limitExpression.value;
-
-            } else {
-                limitExpression = tstl.createBinaryExpression(
-                    limitExpression,
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.SubtractionOperator
-                );
-            }
+            limitExpression = this.expressionPlusNumber(limitExpression, -1);
 
         } else if (opKind === ts.SyntaxKind.GreaterThanToken) {
-            if (tstl.isNumericLiteral(limitExpression)) {
-                ++limitExpression.value;
-
-            } else {
-                limitExpression = tstl.createBinaryExpression(
-                    limitExpression,
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.AdditionOperator
-                );
-            }
+            limitExpression = this.expressionPlusNumber(limitExpression, 1);
         }
 
         return limitExpression;
@@ -2365,6 +2346,24 @@ export class LuaTransformer {
         return undefined;
     }
 
+    private symbolWasAssignedInScope(symbolId: tstl.SymbolId, scope: Scope): boolean {
+        if (scope.referencedSymbols === undefined) {
+            return false;
+        }
+
+        const identifiers = scope.referencedSymbols.get(symbolId);
+        if (identifiers === undefined) {
+            return false;
+        }
+
+        for (const identifier of identifiers) {
+            if (identifier.parent !== undefined && tsHelper.isAssignment(identifier.parent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected transformNumericForStatement(
         statement: ts.ForStatement,
         body: tstl.Statement[],
@@ -2393,7 +2392,7 @@ export class LuaTransformer {
         if (control.symbolId === undefined) {
             return undefined;
         }
-        if (loopScope.assignedSymbols && loopScope.assignedSymbols.has(control.symbolId)) {
+        if (this.symbolWasAssignedInScope(control.symbolId, loopScope)) {
             return undefined;
         }
 
@@ -3068,26 +3067,12 @@ export class LuaTransformer {
         }
     }
 
-    // Tracks symbols assigned in scope - used in detection of viable numerical for loops
-    public trackAssignment(statement: tstl.AssignmentStatement): void {
-        for (const identifier of statement.left) {
-            if (tstl.isIdentifier(identifier) && identifier.symbolId !== undefined) {
-                for (let i = this.scopeStack.length - 1; i >= 0; --i) {
-                    const scope = this.scopeStack[i];
-                    if (!scope.assignedSymbols) { scope.assignedSymbols = new Set(); }
-                    scope.assignedSymbols.add(identifier.symbolId);
-                }
-            }
-        }
-    }
-
     private transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
         const statement = tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
             lhs.parent
         );
-        this.trackAssignment(statement);
         return statement;
     }
 
@@ -3133,7 +3118,6 @@ export class LuaTransformer {
                 right,
                 expression
             );
-            this.trackAssignment(statement);
             return statement;
         } else {
             // Simple assignment
@@ -3213,7 +3197,7 @@ export class LuaTransformer {
                 const argType = this.checker.getTypeAtLocation(expression.left.expression);
                 if (tsHelper.isArrayType(argType, this.checker, this.program)) {
                     // Array access needs a +1
-                    indexExpression = this.expressionPlusOne(indexExpression);
+                    indexExpression = this.expressionPlusNumber(indexExpression, 1);
                 }
             }
 
@@ -4327,11 +4311,11 @@ export class LuaTransformer {
         }
 
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
-            return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), expression);
+            return tstl.createTableIndexExpression(table, this.expressionPlusNumber(index, 1), expression);
         } else if (tsHelper.isStringType(type)) {
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),
-                [table, this.expressionPlusOne(index), this.expressionPlusOne(index)],
+                [table, this.expressionPlusNumber(index, 1), this.expressionPlusNumber(index, 1)],
                 expression
             );
         } else {
@@ -4400,7 +4384,7 @@ export class LuaTransformer {
                         ? this.createStringCall("find", node, caller, params[0])
                         : this.createStringCall(
                             "find", node, caller, params[0],
-                            this.expressionPlusOne(params[1]),
+                            this.expressionPlusNumber(params[1], 1),
                             tstl.createBooleanLiteral(true)
                         );
 
@@ -4421,7 +4405,7 @@ export class LuaTransformer {
             case "substr":
                 if (node.arguments.length === 1) {
                     const argument = this.transformExpression(node.arguments[0]);
-                    const arg1 = this.expressionPlusOne(argument);
+                    const arg1 = this.expressionPlusNumber(argument, 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
                     const arg1 = params[0];
@@ -4431,14 +4415,14 @@ export class LuaTransformer {
                         tstl.createParenthesizedExpression(arg2),
                         tstl.SyntaxKind.AdditionOperator
                     );
-                    return this.createStringCall("sub", node, caller, this.expressionPlusOne(arg1), sumArg);
+                    return this.createStringCall("sub", node, caller, this.expressionPlusNumber(arg1, 1), sumArg);
                 }
             case "substring":
                 if (node.arguments.length === 1) {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
@@ -4447,10 +4431,10 @@ export class LuaTransformer {
                     return caller;
                 }
                 else if (node.arguments.length === 1) {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     return this.createStringCall("sub", node, caller, arg1);
                 } else {
-                    const arg1 = this.expressionPlusOne(params[0]);
+                    const arg1 = this.expressionPlusNumber(params[0], 1);
                     const arg2 = params[1];
                     return this.createStringCall("sub", node, caller, arg1, arg2);
                 }
@@ -4461,11 +4445,11 @@ export class LuaTransformer {
             case "split":
                 return this.transformLuaLibFunction(LuaLibFeature.StringSplit, node, caller, ...params);
             case "charAt":
-                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                const firstParamPlusOne = this.expressionPlusNumber(params[0], 1);
                 return this.createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             case "charCodeAt":
             {
-                const firstParamPlusOne = this.expressionPlusOne(params[0]);
+                const firstParamPlusOne = this.expressionPlusNumber(params[0], 1);
                 return this.createStringCall("byte", node, caller, firstParamPlusOne);
             }
             case "startsWith":
@@ -5466,26 +5450,32 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createIdentifier("tostring"), [expression]);
     }
 
-    protected expressionPlusOne(expression: tstl.Expression): tstl.Expression {
+    protected expressionPlusNumber(expression: tstl.Expression, value: number): tstl.Expression {
         if (tstl.isNumericLiteral(expression)) {
             const newNode = tstl.cloneNode(expression);
-            newNode.value += 1;
+            newNode.value += value;
             return newNode;
         }
 
         if (tstl.isBinaryExpression(expression)) {
-            if (
-                expression.operator === tstl.SyntaxKind.SubtractionOperator &&
-                tstl.isNumericLiteral(expression.right) &&
-                expression.right.value === 1
-            ) {
-                return expression.left;
+            if (tstl.isNumericLiteral(expression.right)) {
+                if (expression.operator === tstl.SyntaxKind.SubtractionOperator
+                    && expression.right.value - value === 0)
+                {
+                    return expression.left;
+                }
+                if (expression.operator === tstl.SyntaxKind.AdditionOperator
+                    && expression.right.value + value === 0)
+                {
+                    return expression.left;
+                }
             }
 
             expression = tstl.createParenthesizedExpression(expression);
         }
 
-        return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
+        const operator = value >= 0 ? tstl.SyntaxKind.AdditionOperator : tstl.SyntaxKind.SubtractionOperator;
+        return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(Math.abs(value)), operator);
     }
 
     protected createIdentifierFromSymbol(symbol: ts.Symbol, tsOriginal?: ts.Node): tstl.Identifier {
@@ -5547,9 +5537,14 @@ export class LuaTransformer {
                 //Mark symbol as seen in all current scopes
                 for (const scope of this.scopeStack) {
                     if (!scope.referencedSymbols) {
-                        scope.referencedSymbols = new Set();
+                        scope.referencedSymbols = new Map();
                     }
-                    scope.referencedSymbols.add(symbolId);
+                    let symbolIdentifiers = scope.referencedSymbols.get(symbolId);
+                    if (symbolIdentifiers === undefined) {
+                        symbolIdentifiers = [];
+                        scope.referencedSymbols.set(symbolId, symbolIdentifiers);
+                    }
+                    symbolIdentifiers.push(identifier);
                 }
             }
         }

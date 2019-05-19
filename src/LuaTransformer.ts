@@ -24,15 +24,14 @@ interface SymbolInfo {
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Set<tstl.SymbolId>;
+    referencedSymbols: Map<tstl.SymbolId, ts.Identifier[]>;
     definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
-    assignedSymbols?: Set<tstl.SymbolId>;
-    referencedSymbols?: Set<tstl.SymbolId>;
+    referencedSymbols?: Map<tstl.SymbolId, ts.Identifier[]>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
     importStatements?: tstl.Statement[];
@@ -1810,7 +1809,7 @@ export class LuaTransformer {
                 throw TSTLErrors.UndefinedScope();
             }
             if (!scope.functionDefinitions) { scope.functionDefinitions = new Map(); }
-            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Set()};
+            const functionInfo = {referencedSymbols: functionScope.referencedSymbols || new Map()};
             scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -2280,6 +2279,24 @@ export class LuaTransformer {
         return undefined;
     }
 
+    private symbolWasAssignedInScope(symbolId: tstl.SymbolId, scope: Scope): boolean {
+        if (scope.referencedSymbols === undefined) {
+            return false;
+        }
+
+        const identifiers = scope.referencedSymbols.get(symbolId);
+        if (identifiers === undefined) {
+            return false;
+        }
+
+        for (const identifier of identifiers) {
+            if (identifier.parent !== undefined && tsHelper.isAssignment(identifier.parent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected transformNumericForStatement(
         statement: ts.ForStatement,
         body: tstl.Statement[],
@@ -2308,7 +2325,7 @@ export class LuaTransformer {
         if (control.symbolId === undefined) {
             return undefined;
         }
-        if (loopScope.assignedSymbols && loopScope.assignedSymbols.has(control.symbolId)) {
+        if (this.symbolWasAssignedInScope(control.symbolId, loopScope)) {
             return undefined;
         }
 
@@ -2983,26 +3000,12 @@ export class LuaTransformer {
         }
     }
 
-    // Tracks symbols assigned in scope - used in detection of viable numerical for loops
-    public trackAssignment(statement: tstl.AssignmentStatement): void {
-        for (const identifier of statement.left) {
-            if (tstl.isIdentifier(identifier) && identifier.symbolId !== undefined) {
-                for (let i = this.scopeStack.length - 1; i >= 0; --i) {
-                    const scope = this.scopeStack[i];
-                    if (!scope.assignedSymbols) { scope.assignedSymbols = new Set(); }
-                    scope.assignedSymbols.add(identifier.symbolId);
-                }
-            }
-        }
-    }
-
     private transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
         const statement = tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
             lhs.parent
         );
-        this.trackAssignment(statement);
         return statement;
     }
 
@@ -3048,7 +3051,6 @@ export class LuaTransformer {
                 right,
                 expression
             );
-            this.trackAssignment(statement);
             return statement;
         } else {
             // Simple assignment
@@ -5422,9 +5424,14 @@ export class LuaTransformer {
                 //Mark symbol as seen in all current scopes
                 for (const scope of this.scopeStack) {
                     if (!scope.referencedSymbols) {
-                        scope.referencedSymbols = new Set();
+                        scope.referencedSymbols = new Map();
                     }
-                    scope.referencedSymbols.add(symbolId);
+                    let symbolIdentifiers = scope.referencedSymbols.get(symbolId);
+                    if (symbolIdentifiers === undefined) {
+                        symbolIdentifiers = [];
+                        scope.referencedSymbols.set(symbolId, symbolIdentifiers);
+                    }
+                    symbolIdentifiers.push(identifier);
                 }
             }
         }

@@ -407,6 +407,21 @@ export class TSHelper {
         return [false, undefined];
     }
 
+    public static isAssignment(node: ts.Node)
+        : node is ts.BinaryExpression | ts.PrefixUnaryExpression | ts.PostfixUnaryExpression
+    {
+        if (ts.isBinaryExpression(node)) {
+            const [isCompoundAssignment] = TSHelper.isBinaryAssignmentToken(node.operatorToken.kind);
+            return isCompoundAssignment || node.operatorToken.kind === ts.SyntaxKind.EqualsToken;
+
+        } else if (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) {
+            return node.operator === ts.SyntaxKind.PlusPlusToken
+                || node.operator === ts.SyntaxKind.MinusMinusToken;
+        }
+
+        return false;
+    }
+
     // Returns true for expressions that may have effects when evaluated
     public static isExpressionWithEvaluationEffect(node: ts.Expression): boolean {
         return !(ts.isLiteralExpression(node) || ts.isIdentifier(node) || node.kind === ts.SyntaxKind.ThisKeyword);

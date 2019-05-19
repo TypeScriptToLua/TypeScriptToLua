@@ -3770,29 +3770,7 @@ export class LuaTransformer {
                     || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
                 {
                     if (this.isUnsafeName(node.expression.name.text)) {
-                        const statements: tstl.Statement[] = [];
-                        let tableTemp: tstl.Identifier;
-                        if (tstl.isIdentifier(table)) {
-                            // table["methodName"](table, ...)
-                            tableTemp = table;
-                        } else {
-                            // local ____TS_table = table
-                            // ____TS_table[methodName](____TS_table, ...)
-                            tableTemp = tstl.createIdentifier("____TSTL_table");
-                            statements.push(tstl.createVariableDeclarationStatement(tableTemp, table));
-                        }
-                        const callExpression = tstl.createCallExpression(
-                            tstl.createTableIndexExpression(
-                                tableTemp,
-                                tstl.createStringLiteral(node.expression.name.text, node.expression.name)
-                            ),
-                            [tableTemp, ...parameters]
-                        );
-                        return this.createImmediatelyInvokedFunctionExpression(
-                            statements,
-                            callExpression,
-                            node
-                        );
+                        return this.transformElementCall(node);
 
                     } else {
                         // table:name()
@@ -3817,7 +3795,7 @@ export class LuaTransformer {
     }
 
     public transformElementCall(node: ts.CallExpression): ExpressionVisitResult {
-        if (!ts.isElementAccessExpression(node.expression)) {
+        if (!ts.isElementAccessExpression(node.expression) && !ts.isPropertyAccessExpression(node.expression)) {
             throw TSTLErrors.InvalidElementCall(node);
         }
 
@@ -3840,7 +3818,10 @@ export class LuaTransformer {
 
                 // Cache left-side if it has effects
                 //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
-                const argument = this.transformExpression(node.expression.argumentExpression);
+                const argumentExpression = ts.isElementAccessExpression(node.expression)
+                    ? node.expression.argumentExpression
+                    : ts.createStringLiteral(node.expression.name.text);
+                const argument = this.transformExpression(argumentExpression);
                 const selfIdentifier = tstl.createIdentifier("____TS_self");
                 const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
                 const index = tstl.createTableIndexExpression(selfIdentifier, argument);

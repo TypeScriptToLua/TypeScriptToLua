@@ -6,6 +6,7 @@ import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
+import { luaKeywords, luaBuiltins } from "./LuaKeywords";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression;
@@ -39,13 +40,6 @@ interface Scope {
 }
 
 export class LuaTransformer {
-    public luaKeywords: Set<string> = new Set([
-        "_G", "and", "assert", "break", "coroutine", "debug", "do", "else", "elseif", "end", "error", "false", "for",
-        "function", "goto", "if", "ipairs", "in", "local", "math", "nil", "not", "or", "pairs", "pcall", "print",
-        "rawget", "rawset", "repeat", "return", "require", "self", "string", "table", "then", "tostring", "type",
-        "unpack", "until", "while",
-    ]);
-
     private isStrict: boolean;
     private luaTarget: LuaTarget;
 
@@ -5226,11 +5220,11 @@ export class LuaTransformer {
     }
 
     protected isUnsafeName(name: string): boolean {
-        return this.luaKeywords.has(name) || !tsHelper.isValidLuaIdentifier(name);
+        return luaKeywords.has(name) || luaBuiltins.has(name) || !tsHelper.isValidLuaIdentifier(name);
     }
 
     protected hasUnsafeSymbolName(symbol: ts.Symbol): boolean {
-        if (this.luaKeywords.has(symbol.name)) {
+        if (luaKeywords.has(symbol.name) || luaBuiltins.has(symbol.name)) {
             // lua keywords are only unsafe when non-ambient and not exported
             const isNonAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) !== undefined;
             return isNonAmbient && !this.isSymbolExported(symbol);

@@ -1,4 +1,5 @@
 import * as util from "../util";
+import { luaKeywords } from "../../src/LuaKeywords";
 
 test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier name (%p)", name => {
     const code = `
@@ -7,6 +8,36 @@ test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier nam
 
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
+
+test.each([...luaKeywords.values()])("lua keyword as property name (%p)", keyword => {
+    const code = `
+        const x = { ${keyword}: "foobar" };
+        return x.${keyword};`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
+    "destructuring lua keyword (%p)",
+    keyword => {
+        const code = `
+            const { foo: ${keyword} } = { foo: "foobar" };
+            return ${keyword};`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
+    "destructuring shorthand lua keyword (%p)",
+    keyword => {
+        const code = `
+            const { ${keyword} } = { ${keyword}: "foobar" };
+            return ${keyword};`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {

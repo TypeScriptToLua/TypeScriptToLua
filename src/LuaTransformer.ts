@@ -3068,12 +3068,11 @@ export class LuaTransformer {
     }
 
     private transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
-        const statement = tstl.createAssignmentStatement(
+        return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
             lhs.parent
         );
-        return statement;
     }
 
     private transformAssignmentStatement(expression: ts.BinaryExpression): StatementVisitResult {
@@ -3113,12 +3112,11 @@ export class LuaTransformer {
             } else {
                 right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
             }
-            const statement = tstl.createAssignmentStatement(
+            return tstl.createAssignmentStatement(
                 left as tstl.AssignmentLeftHandSideExpression[],
                 right,
                 expression
             );
-            return statement;
         } else {
             // Simple assignment
             return this.transformAssignment(expression.left, this.transformExpression(expression.right));

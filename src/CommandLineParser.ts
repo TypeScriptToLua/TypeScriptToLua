@@ -211,8 +211,8 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            const normalizedValue = value.toLowerCase();
-            if (option.choices && !option.choices.includes(normalizedValue)) {
+            const enumValue = option.choices.find(c => c.toLowerCase() === value.toLowerCase());
+            if (enumValue === undefined) {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
@@ -220,7 +220,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            return { value: normalizedValue };
+            return { value: enumValue };
         }
     }
 }
@@ -239,4 +239,15 @@ export function parseConfigFileWithSystem(
     );
 
     return updateParsedConfigFile(parsedConfigFile);
+}
+
+export function createDiagnosticReporter(pretty: boolean, system = ts.sys): ts.DiagnosticReporter {
+    const reporter: ts.DiagnosticReporter = (ts as any).createDiagnosticReporter(system, pretty);
+    return diagnostic => {
+        if (diagnostic.source === "typescript-to-lua") {
+            diagnostic = { ...diagnostic, code: ("TL" + diagnostic.code) as any };
+        }
+
+        reporter(diagnostic);
+    };
 }

@@ -335,9 +335,9 @@ test.each([
     const code = `
         class C {
             result: string;
-            constructor(fn: (s: string) => string) { this.result = fn("foo"); }
+            constructor(fn: ${funcType}) { this.result = fn("foo"); }
         }
-        const c = new C(s => s);
+        const c = new C(${funcExp});
         return c.result;
     `;
     expect(util.transpileAndExecute(code)).toBe("foo");

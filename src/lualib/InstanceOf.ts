@@ -1,11 +1,3 @@
-interface LuaClass {
-    ____super?: LuaClass;
-}
-
-interface LuaObject {
-    constructor: LuaClass;
-}
-
 function __TS__InstanceOf(this: void, obj: LuaObject, classTbl: LuaClass): boolean {
     if (typeof classTbl !== "object") {
         // tslint:disable-next-line: no-string-throw

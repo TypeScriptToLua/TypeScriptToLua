@@ -8,7 +8,7 @@ test("throwString", () => {
 
 test("throwError", () => {
     expect(() => {
-        const lua = util.transpileString(`throw Error("Some Error")`);
+        util.transpileString(`throw Error("Some Error")`);
     }).toThrowExactError(TSTLErrors.InvalidThrowExpression(util.nodeStub));
 });
 

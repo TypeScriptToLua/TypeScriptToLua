@@ -29,32 +29,7 @@ const defaultArrayCallMethodNames = new Set<string>([
     "flatMap",
 ]);
 
-const defaultArrayPropertyNames = new Set<string>([
-    "length",
-]);
-
 export class TSHelper {
-    // Reverse lookup of enum key by value
-    public static enumName<T>(needle: T, haystack: any): string {
-        for (const name in haystack) {
-            if (haystack[name] === needle) {
-                return name;
-            }
-        }
-        return "unknown";
-    }
-
-    // Breaks down a mask into all flag names.
-    public static enumNames<T>(mask: number, haystack: any): string[] {
-        const result = [];
-        for (const name in haystack) {
-            if ((mask & haystack[name]) !== 0 && mask >= haystack[name]) {
-                result.push(name);
-            }
-        }
-        return result;
-    }
-
     public static getExtendedTypeNode(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker):
     ts.ExpressionWithTypeArguments | undefined {
         if (node && node.heritageClauses) {
@@ -208,10 +183,18 @@ export class TSHelper {
     public static isInTupleReturnFunction(node: ts.Node, checker: ts.TypeChecker): boolean {
         const declaration = TSHelper.findFirstNodeAbove(node, ts.isFunctionLike);
         if (declaration) {
-            let functionType: ts.Type;
+            let functionType: ts.Type | undefined;
             if (ts.isFunctionExpression(declaration) || ts.isArrowFunction(declaration)) {
                 functionType = TSHelper.inferAssignedType(declaration, checker);
-            } else {
+            } else if (ts.isMethodDeclaration(declaration) && ts.isObjectLiteralExpression(declaration.parent)) {
+                // Manually lookup type for object literal properties declared with method syntax
+                const interfaceType = TSHelper.inferAssignedType(declaration.parent, checker);
+                const propertySymbol = interfaceType.getProperty(declaration.name.getText());
+                if (propertySymbol) {
+                    functionType = checker.getTypeOfSymbolAtLocation(propertySymbol, declaration);
+                }
+            }
+            if (functionType === undefined) {
                 functionType = checker.getTypeAtLocation(declaration);
             }
 
@@ -304,6 +287,16 @@ export class TSHelper {
     {
         const directivesMap = new Map<DecoratorKind, Decorator>();
         TSHelper.collectCustomDecorators(signature, checker, directivesMap);
+
+        // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
+        const declaration = signature.getDeclaration();
+        if (declaration && declaration.parent && ts.isPropertySignature(declaration.parent)) {
+            const symbol = checker.getSymbolAtLocation(declaration.parent.name);
+            if (symbol) {
+                TSHelper.collectCustomDecorators(symbol, checker, directivesMap);
+            }
+        }
+
         return directivesMap;
     }
 
@@ -351,21 +344,6 @@ export class TSHelper {
         }
 
         return [false, undefined];
-    }
-
-    public static isExpressionStatement(node: ts.Expression): boolean {
-        return node.parent === undefined || ts.isExpressionStatement(node.parent) || ts.isForStatement(node.parent);
-    }
-
-    public static isInGlobalScope(node: ts.Node): boolean {
-        let parent = node.parent;
-        while (parent !== undefined) {
-            if (ts.isBlock(parent)) {
-                return false;
-            }
-            parent = parent.parent;
-        }
-        return true;
     }
 
     // Returns true for expressions that may have effects when evaluated
@@ -518,7 +496,7 @@ export class TSHelper {
     }
 
     public static getSignatureDeclarations(
-        signatures: ReadonlyArray<ts.Signature>,
+        signatures: readonly ts.Signature[],
         checker: ts.TypeChecker
     ): ts.SignatureDeclaration[]
     {
@@ -644,10 +622,6 @@ export class TSHelper {
             signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
     }
 
-    public static isDefaultArrayPropertyName(methodName: string): boolean {
-        return defaultArrayPropertyNames.has(methodName);
-    }
-
     public static escapeString(text: string): string {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
         const escapeSequences: Array<[RegExp, string]> = [
@@ -674,6 +648,10 @@ export class TSHelper {
     public static isValidLuaIdentifier(str: string): boolean {
         const match = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
         return match !== undefined && match !== null && match[0] === str;
+    }
+
+    public static fixInvalidLuaIdentifier(name: string): string {
+        return name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
     }
 
     // Checks that a name is valid for use in lua function declaration syntax:

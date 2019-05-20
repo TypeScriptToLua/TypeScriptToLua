@@ -2,15 +2,31 @@ import * as util from "../util";
 
 test("Array access", () => {
     const result = util.transpileAndExecute(
+        `const arr: Array<number> = [3,5,1];
+        return arr[1];`,
+    );
+    expect(result).toBe(5);
+});
+
+test("ReadonlyArray access", () => {
+    const result = util.transpileAndExecute(
+        `const arr: ReadonlyArray<number> = [3,5,1];
+        return arr[1];`,
+    );
+    expect(result).toBe(5);
+});
+
+test("Array literal access", () => {
+    const result = util.transpileAndExecute(
         `const arr: number[] = [3,5,1];
         return arr[1];`,
     );
     expect(result).toBe(5);
 });
 
-test("Readonly Array access", () => {
+test("Readonly array literal access", () => {
     const result = util.transpileAndExecute(
-        `const arr: ReadonlyArray<number> = [3,5,1];
+        `const arr: readonly number[] = [3,5,1];
         return arr[1];`,
     );
     expect(result).toBe(5);

@@ -69,7 +69,9 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
     "Import module names with invalid lua identifier characters (%p)",
     name => {
         const code = `
-            import { foo } from "${name}";`;
+            import { foo } from "${name}";
+            foo;
+        `;
 
         const lua = `
             setmetatable(package.loaded, {__index = function() return {foo = "bar"} end})

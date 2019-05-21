@@ -1390,8 +1390,10 @@ export class LuaTransformer {
                     const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;
                     const usedProperties = elements.map(e =>
                         tstl.createTableFieldExpression(
+                            tstl.createBooleanLiteral(true),
                             tstl.createStringLiteral(
-                                this.getIdentifierText((e.propertyName || e.name) as ts.Identifier)
+                                this.getIdentifierText((e.propertyName || e.name) as ts.Identifier),
+                                e.propertyName || e.name
                             )
                         )
                     );

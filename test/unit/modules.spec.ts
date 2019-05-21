@@ -43,7 +43,6 @@ describe("module import/export elision", () => {
 
     test("should elide type exports", () => {
         const code = `
-            // TODO: Add some Lua Types to transpileStringResult
             declare const _G: any;
 
             _G.foo = true;

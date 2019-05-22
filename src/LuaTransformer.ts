@@ -2212,6 +2212,7 @@ export class LuaTransformer {
     private transformNumericForLimit(
         statement: ts.ForStatement,
         isSubtraction: boolean,
+        stepExpression: tstl.Expression | undefined,
         limitDeclaration?: ts.VariableDeclaration
     ) : tstl.Expression | undefined
     {
@@ -2257,11 +2258,16 @@ export class LuaTransformer {
 
         // Offset limit when using < or >
         const opKind = statement.condition.operatorToken.kind;
-        if (opKind === ts.SyntaxKind.LessThanToken) {
-            limitExpression = this.expressionPlusNumber(limitExpression, -1);
-
-        } else if (opKind === ts.SyntaxKind.GreaterThanToken) {
-            limitExpression = this.expressionPlusNumber(limitExpression, 1);
+        if (opKind === ts.SyntaxKind.LessThanToken || opKind === ts.SyntaxKind.GreaterThanToken) {
+            if (stepExpression !== undefined) {
+                const stepValue = tsHelper.getNumericLiteralValue(stepExpression);
+                if (stepValue === undefined || Math.floor(stepValue) !== stepValue) {
+                    // Step expression must be numeric literal and a whole number when using < or >
+                    return undefined;
+                }
+            }
+            const offset = opKind === ts.SyntaxKind.LessThanToken ? -1 : 1;
+            limitExpression = this.expressionPlusNumber(limitExpression, offset);
         }
 
         return limitExpression;
@@ -2437,7 +2443,7 @@ export class LuaTransformer {
         }
 
         // Limit extracted from condition
-        const limit = this.transformNumericForLimit(statement, isSubtraction, limitDeclaration);
+        const limit = this.transformNumericForLimit(statement, isSubtraction, stepExpression, limitDeclaration);
         if (limit === undefined) {
             return undefined;
         }
@@ -5449,9 +5455,10 @@ export class LuaTransformer {
     }
 
     protected expressionPlusNumber(expression: tstl.Expression, value: number): tstl.Expression {
-        if (tstl.isNumericLiteral(expression)) {
-            const newNode = tstl.cloneNode(expression);
-            newNode.value += value;
+        const expressionValue = tsHelper.getNumericLiteralValue(expression);
+        if (expressionValue !== undefined) {
+            const newNode = tstl.createNumericLiteral(expressionValue + value);
+            tstl.setNodePosition(newNode, expression);
             return newNode;
         }
 

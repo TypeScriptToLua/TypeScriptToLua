@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
+import * as tstl from "./LuaAST";
 
 export enum ContextType {
     None,
@@ -120,6 +121,20 @@ export class TSHelper {
         }
 
         return ts.isNumericLiteral(expression) || TSHelper.isConstIdentifier(expression, checker);
+    }
+
+    public static getNumericLiteralValue(expression: tstl.Expression): number | undefined {
+        if (tstl.isParenthesizedExpression(expression)) {
+            return TSHelper.getNumericLiteralValue(expression.innerExpression);
+
+        } else if (tstl.isUnaryExpression(expression)) {
+            const value = TSHelper.getNumericLiteralValue(expression.operand);
+            return value && -value;
+
+        } else if (tstl.isNumericLiteral(expression)) {
+            return expression.value;
+        }
+        return undefined;
     }
 
     public static hasSameSymbol(a: ts.Node, b: ts.Node, checker: ts.TypeChecker): boolean {

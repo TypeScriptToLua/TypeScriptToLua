@@ -254,6 +254,21 @@ test.each([
     expect(result).toBe(JSON.stringify(expected));
 });
 
+test.each([
+    { value: 0.3, expectResult: [0.0, 0.3, 0.6, 0.9] },
+    { value: 0.4, expectResult: [0.0, 0.4, 0.8] },
+    { value: 0.99, expectResult: [0, 0.99] },
+])("for with fractional step", ({ value, expectResult }) => {
+    const code = `
+        const result: number[] = [];
+        for (let i = 0; i < 1; i += ${value}) {
+            result.push(i);
+        }
+        return JSONStringify(result);`;
+
+    expect(util.transpileAndExecute(code)).toBe(JSON.stringify(expectResult));
+});
+
 test("for scope", () => {
     const code = `
         let i = 42;
@@ -900,25 +915,25 @@ test.each([
     {
         forStatement: `
             const x = -6;
-            for (let i = 0; i < 10; i += -(4 - (-x))) {`,
+            for (let i = 0; i <= 9; i += -(4 - (-x))) {`,
         expectResult: "acegi",
     },
     {
         forStatement: `
             const x = -6;
-            for (let i = 0; i < 10; i = i + -(4 - (-x))) {`,
+            for (let i = 0; i <= 9; i = i + -(4 - (-x))) {`,
         expectResult: "acegi",
     },
     {
         forStatement: `
             const j = 2;
-            for (let i = 0; i < 10; i += j) {`,
+            for (let i = 0; i <= 9; i += j) {`,
         expectResult: "acegi",
     },
     {
         forStatement: `
             const j = 2;
-            for (let i = 0; i < 10; i = i + j) {`,
+            for (let i = 0; i <= 9; i = i + j) {`,
         expectResult: "acegi",
     },
     {
@@ -973,6 +988,12 @@ test.each([
     {
         forStatement: `
             const j = 1;
+            for (let i = 0; i < 2; i += j) {`,
+        expectResult: "ab",
+    },
+    {
+        forStatement: `
+            const j = 1;
             for (let i = 0; i < 2; i = j + 1) {`,
         expectResult: "a",
     },
@@ -1001,4 +1022,21 @@ test.each([
     expect(lua.indexOf("while ")).toBeGreaterThanOrEqual(0);
 
     expect(util.executeLua(`${lua} return result`)).toBe(expectResult);
+});
+
+test("un-optimized numeric for loop (fractional)", () => {
+    const code = `
+        const traversed: number[] = [];
+        let j = 0;
+        for (let i = 0; i < 1; i += 0.3) {
+            traversed[j++] = i;
+        }
+        const result = traversed.join(",");`;
+
+    const lua = util.transpileString(code, undefined, false);
+
+    expect(lua.indexOf("for ")).toBe(-1);
+    expect(lua.indexOf("while ")).toBeGreaterThanOrEqual(0);
+
+    expect(util.executeLua(`${lua} return result`)).toBe("0,0.3,0.6,0.9");
 });

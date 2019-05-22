@@ -1353,14 +1353,34 @@ export class LuaTransformer {
 
         const headerStatements = [];
 
-        // Add default parameters
-        const defaultValueDeclarations = parameters
-            .filter(declaration => declaration.initializer !== undefined && ts.isIdentifier(declaration.name))
-            .map(declaration => this.transformParameterDefaultValueDeclaration(
-                this.transformIdentifier(declaration.name as ts.Identifier),
-                declaration.initializer
-            )
-        );
+        // Add default parameters and object binding patterns
+        const bindingPatternDeclarations: tstl.Statement[] = [];
+        let bindPatternIndex = 0;
+        for (const declaration of parameters) {
+            if (ts.isObjectBindingPattern(declaration.name) || ts.isArrayBindingPattern(declaration.name)) {
+                const identifier = tstl.createIdentifier(`____TS_bindingPattern${bindPatternIndex++}`);
+                if (declaration.initializer !== undefined) {
+                    // Default binding parameter
+                    headerStatements.push(
+                        this.transformParameterDefaultValueDeclaration(identifier, declaration.initializer)
+                    );
+                }
+
+                // Binding pattern
+                bindingPatternDeclarations.push(...this.statementVisitResultToArray(
+                    this.transformBindingPattern(declaration.name, identifier)
+                ));
+
+            } else if (declaration.initializer !== undefined) {
+                // Default parameter
+                headerStatements.push(
+                    this.transformParameterDefaultValueDeclaration(
+                        this.transformIdentifier(declaration.name),
+                        declaration.initializer
+                    )
+                );
+            }
+        }
 
         // Push spread operator here
         if (spreadIdentifier) {
@@ -1368,23 +1388,7 @@ export class LuaTransformer {
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
 
-        // Add object binding patterns
-        let identifierIndex = 0;
-        const bindingPatternDeclarations: tstl.Statement[] = [];
-        parameters.forEach((binding, i) => {
-            if (ts.isObjectBindingPattern(binding.name) || ts.isArrayBindingPattern(binding.name)) {
-                const identifier = tstl.createIdentifier(`____TS_bindingPattern${identifierIndex++}`);
-                bindingPatternDeclarations.push(...this.statementVisitResultToArray(
-                    this.transformBindingPattern(binding.name, identifier)
-                ));
-                if (binding.initializer !== undefined) {
-                    const declaration = this.transformParameterDefaultValueDeclaration(identifier, binding.initializer);
-                    defaultValueDeclarations.splice(i, 0, declaration);
-                }
-            }
-        });
-
-        headerStatements.push(...defaultValueDeclarations);
+        // Binding pattern statements need to be after spread table is declared
         headerStatements.push(...bindingPatternDeclarations);
 
         const bodyStatements = this.performHoisting(this.transformStatements(body.statements));

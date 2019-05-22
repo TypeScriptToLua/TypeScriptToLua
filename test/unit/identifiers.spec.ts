@@ -388,12 +388,14 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
                 package.loaded.someModule = {type = "foobar"}`;
 
         const code = `
-                import {${importName}} from "someModule";
-                return typeof 7 + "|" + type;`;
+            import {${importName}} from "someModule";
+            export const result = typeof 7 + "|" + type;
+        `;
 
         const lua = util.transpileString(code);
+        const result = util.executeLua(`${luaHeader} return (function() ${lua} end)().result`);
 
-        expect(util.executeLua(`${luaHeader} ${lua}`)).toBe("number|foobar");
+        expect(result).toBe("number|foobar");
     });
 
     test.each([

@@ -38,6 +38,16 @@ interface Scope {
     loopContinued?: boolean;
 }
 
+export interface EmitResolver {
+    isValueAliasDeclaration(node: ts.Node): boolean;
+    isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
+    moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
+}
+
+export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
+    getEmitResolver(sourceFile?: ts.SourceFile, cancellationToken?: ts.CancellationToken): EmitResolver;
+}
+
 export class LuaTransformer {
     public luaKeywords: Set<string> = new Set([
         "_G", "and", "assert", "break", "coroutine", "debug", "do", "else", "elseif", "end", "error", "false", "for",
@@ -49,11 +59,13 @@ export class LuaTransformer {
     private isStrict: boolean;
     private luaTarget: LuaTarget;
 
-    private checker: ts.TypeChecker;
+    private checker: DiagnosticsProducingTypeChecker;
     protected options: CompilerOptions;
 
-    private isModule = false;
+    // Resolver is lazy-initialized in transformSourceFile to avoid type-checking all files
+    private resolver!: EmitResolver;
 
+    private isModule = false;
     private currentSourceFile?: ts.SourceFile;
 
     private currentNamespace: ts.ModuleDeclaration | undefined;
@@ -72,7 +84,7 @@ export class LuaTransformer {
     private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
     public constructor(protected program: ts.Program) {
-        this.checker = program.getTypeChecker();
+        this.checker = (program as any).getDiagnosticsProducingTypeChecker();
         this.options = program.getCompilerOptions();
         this.isStrict = this.options.alwaysStrict !== undefined
                         || (this.options.strict !== undefined && this.options.alwaysStrict !== false)
@@ -102,6 +114,7 @@ export class LuaTransformer {
         this.setupState();
 
         this.currentSourceFile = node;
+        this.resolver = this.checker.getEmitResolver(node);
 
         let statements: tstl.Statement[] = [];
         if (node.flags & ts.NodeFlags.JsonFile) {
@@ -233,36 +246,6 @@ export class LuaTransformer {
     }
 
     public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
-        if (statement.moduleSpecifier === undefined) {
-            if (statement.exportClause === undefined) {
-                throw TSTLErrors.InvalidExportDeclaration(statement);
-            }
-
-            const result = [];
-            for (const exportElement of statement.exportClause.elements) {
-                let exportedIdentifier: tstl.Expression | undefined;
-                if (exportElement.propertyName !== undefined) {
-                    exportedIdentifier = this.transformIdentifier(exportElement.propertyName);
-
-                } else {
-                    const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(exportElement);
-                    if (exportedSymbol !== undefined) {
-                        exportedIdentifier = this.createIdentifierFromSymbol(exportedSymbol, exportElement.name);
-                    } else {
-                        exportedIdentifier = this.transformIdentifier(exportElement.name);
-                    }
-                }
-
-                result.push(
-                    tstl.createAssignmentStatement(
-                        this.createExportedIdentifier(this.transformIdentifier(exportElement.name)),
-                        exportedIdentifier
-                    )
-                );
-            }
-            return result;
-        }
-
         if (statement.exportClause) {
             if (statement.exportClause.elements.some(e =>
                 (e.name !== undefined && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
@@ -272,11 +255,40 @@ export class LuaTransformer {
                 throw TSTLErrors.UnsupportedDefaultExport(statement);
             }
 
+            if (!this.resolver.isValueAliasDeclaration(statement)) {
+                return undefined;
+            }
+
+            const exportSpecifiers = statement.exportClause.elements.filter(e =>
+                this.resolver.isValueAliasDeclaration(e)
+            );
+
+            if (statement.moduleSpecifier === undefined) {
+                return exportSpecifiers.map(specifier => {
+                    let exportedIdentifier: tstl.Expression | undefined;
+                    if (specifier.propertyName !== undefined) {
+                        exportedIdentifier = this.transformIdentifier(specifier.propertyName);
+                     } else {
+                        const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
+                        if (exportedSymbol !== undefined) {
+                            exportedIdentifier = this.createIdentifierFromSymbol(exportedSymbol, specifier.name);
+                        } else {
+                            exportedIdentifier = this.transformIdentifier(specifier.name);
+                        }
+                    }
+
+                    return tstl.createAssignmentStatement(
+                        this.createExportedIdentifier(this.transformIdentifier(specifier.name)),
+                        exportedIdentifier
+                    );
+                });
+            }
+
             // First transpile as import clause
             const importClause = ts.createImportClause(
                 undefined,
-                ts.createNamedImports(statement.exportClause.elements
-                    .map(e => ts.createImportSpecifier(e.propertyName, e.name))
+                ts.createNamedImports(
+                    exportSpecifiers.map(s => ts.createImportSpecifier(s.propertyName, s.name))
                 )
             );
 
@@ -292,11 +304,11 @@ export class LuaTransformer {
             const result = this.transformBlock(block).statements;
 
             // Now the module is imported, add the imports to the export table
-            for (const exportVariable of statement.exportClause.elements) {
+            for (const specifier of exportSpecifiers) {
                 result.push(
                     tstl.createAssignmentStatement(
-                        this.createExportedIdentifier(this.transformIdentifier(exportVariable.name)),
-                        this.transformIdentifier(exportVariable.name)
+                        this.createExportedIdentifier(this.transformIdentifier(specifier.name)),
+                        this.transformIdentifier(specifier.name)
                     )
                 );
             }
@@ -304,6 +316,14 @@ export class LuaTransformer {
             // Wrap this in a DoStatement to prevent polluting the scope.
             return tstl.createDoStatement(this.filterUndefined(result), statement);
         } else {
+            if (statement.moduleSpecifier === undefined) {
+                throw TSTLErrors.InvalidExportDeclaration(statement);
+            }
+
+            if (!this.resolver.moduleExportsSomeValue(statement.moduleSpecifier)) {
+                return undefined;
+            }
+
             const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             const tempModuleIdentifier = tstl.createIdentifier("__TSTL_export");
 
@@ -375,7 +395,11 @@ export class LuaTransformer {
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
                 const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
-                return !decorators.has(DecoratorKind.Extension) && !decorators.has(DecoratorKind.MetaExtension);
+                return (
+                    this.resolver.isReferencedAliasDeclaration(e)
+                    && !decorators.has(DecoratorKind.Extension)
+                    && !decorators.has(DecoratorKind.MetaExtension)
+                );
             });
 
             // Elide import if all imported types are extension classes
@@ -418,6 +442,10 @@ export class LuaTransformer {
             }
 
         } else if (ts.isNamespaceImport(imports)) {
+            if (!this.resolver.isReferencedAliasDeclaration(imports)) {
+                return undefined;
+            }
+
             const requireStatement = tstl.createVariableDeclarationStatement(
                 this.transformIdentifier(imports.name),
                 requireCall,

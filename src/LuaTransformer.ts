@@ -141,7 +141,7 @@ export class LuaTransformer {
     public transformStatement(node: ts.Statement): StatementVisitResult {
         // Ignore declarations
         if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
-            return undefined;
+            return this.transformDeclareStatement(node);
         }
 
         switch (node.kind) {
@@ -201,6 +201,34 @@ export class LuaTransformer {
             default:
                 throw TSTLErrors.UnsupportedKind("Statement", node.kind, node);
         }
+    }
+
+    public transformDeclareStatement(node: ts.Statement): StatementVisitResult {
+        let names: Array<ts.Node | undefined> | undefined;
+        switch (node.kind) {
+            case ts.SyntaxKind.ClassDeclaration:
+                names = [(node as ts.ClassDeclaration).name];
+                break;
+            case ts.SyntaxKind.ModuleDeclaration:
+                names = [(node as ts.ModuleDeclaration).name];
+                break;
+            case ts.SyntaxKind.EnumDeclaration:
+                names = [(node as ts.EnumDeclaration).name];
+                break;
+            case ts.SyntaxKind.FunctionDeclaration:
+                names = [(node as ts.FunctionDeclaration).name];
+                break;
+            case ts.SyntaxKind.VariableStatement:
+                names = (node as ts.VariableStatement).declarationList.declarations.map(d => d.name);
+        }
+        if (names !== undefined) {
+            for (const name of names) {
+                if (name !== undefined && ts.isIdentifier(name) && luaKeywords.has(name.text)) {
+                    throw TSTLErrors.InvalidDeclareStatementIdentifier(name);
+                }
+            }
+        }
+        return undefined;
     }
 
     /** Converts an array of ts.Statements into an array of tstl.Statements */
@@ -3400,8 +3428,9 @@ export class LuaTransformer {
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 let identifier: tstl.Expression | undefined;
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                if (valueSymbol !== undefined && this.symbolIds.has(valueSymbol)) {
-                    // Ignore unknown symbols so things like NaN still get transformed properly
+                if (valueSymbol !== undefined
+                    // Ignore declarations for things like NaN
+                    && !tsHelper.isStandardLibraryDeclaration(valueSymbol.valueDeclaration, this.program)) {
                     identifier = this.createIdentifierFromSymbol(valueSymbol, element.name);
                 } else {
                     identifier = this.transformIdentifierExpression(element.name);
@@ -3769,7 +3798,9 @@ export class LuaTransformer {
                 if (!signatureDeclaration
                     || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
                 {
-                    if (this.isUnsafeName(node.expression.name.text)) {
+                    if (luaKeywords.has(node.expression.name.text)
+                        || !tsHelper.isValidLuaIdentifier(node.expression.name.text))
+                    {
                         return this.transformElementCall(node);
 
                     } else {

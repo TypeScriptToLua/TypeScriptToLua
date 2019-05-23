@@ -189,5 +189,13 @@ export class TSTLErrors {
             "must be moved before the identifier's use, or hoisting must be enabled.",
             node
         );
-    }
+    };
+
+    public static InvalidDeclareStatementIdentifier = (node: ts.Identifier) => {
+        return new TranspileError(
+            `Invalid name "${node.text}" in declare statement. ` +
+            `Cannot declare lua keywords as identifiers.`,
+            node
+        );
+    };
 }

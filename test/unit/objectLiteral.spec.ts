@@ -29,6 +29,17 @@ describe("property shorthand", () => {
         expect(result).toBe(identifier);
     });
 
+    test("should support _G shorthand", () => {
+        const result = util.transpileAndExecute(
+            `return ({ _G })._G.foobar;`,
+            undefined,
+            `foobar = "foobar"`,
+            "declare const _G: any;",
+        );
+
+        expect(result).toBe("foobar");
+    });
+
     test("should support export property shorthand", () => {
         const code = `
             export const x = 1;

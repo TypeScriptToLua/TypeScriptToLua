@@ -1,5 +1,7 @@
+import * as ts from "typescript";
 import * as util from "../util";
 import { luaKeywords } from "../../src/LuaKeywords";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier name (%p)", name => {
     const code = `
@@ -65,6 +67,22 @@ test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
         expect(util.transpileAndExecute(code)).toBe("foobar");
     },
 );
+
+test.each([
+    "var local: any;",
+    "let local: any;",
+    "const local: any;",
+    "const foo: any, bar: any, local: any;",
+    "class local {}",
+    "namespace local {}",
+    "module local {}",
+    "enum local {}",
+    "function local() {}",
+])("declare statement identifier cannot be a lua keyword (%p)", statement => {
+    expect(() => util.transpileString(`declare ${statement}`)).toThrow(
+        TSTLErrors.InvalidDeclareStatementIdentifier(ts.createIdentifier("local")).message,
+    );
+});
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {

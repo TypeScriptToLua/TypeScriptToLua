@@ -224,7 +224,7 @@ export class LuaTransformer {
         if (names !== undefined) {
             for (const name of names) {
                 if (name !== undefined && ts.isIdentifier(name) && luaKeywords.has(name.text)) {
-                    throw TSTLErrors.InvalidDeclareStatementIdentifier(name);
+                    throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(name);
                 }
             }
         }
@@ -5274,6 +5274,10 @@ export class LuaTransformer {
     protected hasUnsafeIdentifierName(identifier: ts.Identifier): boolean {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         if (symbol !== undefined) {
+            if (luaKeywords.has(symbol.name) && symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined) {
+                // Catch ambient declarations of identifiers with lua keyword names
+                throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(identifier);
+            }
             return this.hasUnsafeSymbolName(symbol);
         }
         return false;

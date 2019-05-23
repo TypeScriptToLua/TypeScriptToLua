@@ -191,10 +191,9 @@ export class TSTLErrors {
         );
     };
 
-    public static InvalidDeclareStatementIdentifier = (node: ts.Identifier) => {
+    public static InvalidAmbientLuaKeywordIdentifier = (node: ts.Identifier) => {
         return new TranspileError(
-            `Invalid name "${node.text}" in declare statement. ` +
-            `Cannot declare lua keywords as identifiers.`,
+            `Invalid use of lua keyword "${node.text}" as ambient identifier name.`,
             node
         );
     };

@@ -80,7 +80,7 @@ test.each([
     "function local() {}",
 ])("declare statement identifier cannot be a lua keyword (%p)", statement => {
     expect(() => util.transpileString(`declare ${statement}`)).toThrow(
-        TSTLErrors.InvalidDeclareStatementIdentifier(ts.createIdentifier("local")).message,
+        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
     );
 });
 

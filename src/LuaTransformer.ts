@@ -139,7 +139,7 @@ export class LuaTransformer {
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {
-        // Ignore declarations
+        // Ambient ('declare') statements
         if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return this.transformDeclareStatement(node);
         }

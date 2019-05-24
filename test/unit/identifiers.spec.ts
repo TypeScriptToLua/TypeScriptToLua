@@ -1,4 +1,7 @@
+import * as ts from "typescript";
 import * as util from "../util";
+import { luaKeywords } from "../../src/LuaKeywords";
+import { TSTLErrors } from "../../src/TSTLErrors";
 
 test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier name (%p)", name => {
     const code = `
@@ -6,6 +9,83 @@ test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier nam
         return ${name};`;
 
     expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test.each([...luaKeywords.values()])("lua keyword as property name (%p)", keyword => {
+    const code = `
+        const x = { ${keyword}: "foobar" };
+        return x.${keyword};`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
+    "destructuring lua keyword (%p)",
+    keyword => {
+        const code = `
+            const { foo: ${keyword} } = { foo: "foobar" };
+            return ${keyword};`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
+    "destructuring shorthand lua keyword (%p)",
+    keyword => {
+        const code = `
+            const { ${keyword} } = { ${keyword}: "foobar" };
+            return ${keyword};`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
+    "lua keyword or invalid identifier as method call (%p)",
+    name => {
+        const code = `
+        const foo = {
+            ${name}(arg: string) { return "foo" + arg; }
+        };
+        return foo.${name}("bar");`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
+    "lua keyword or invalid identifier as complex method call (%p)",
+    name => {
+        const code = `
+        const foo = {
+            ${name}(arg: string) { return "foo" + arg; }
+        };
+        function getFoo() { return foo; }
+        return getFoo().${name}("bar");`;
+
+        expect(util.transpileAndExecute(code)).toBe("foobar");
+    },
+);
+
+test.each([
+    "var local: any;",
+    "let local: any;",
+    "const local: any;",
+    "const foo: any, bar: any, local: any;",
+    "class local {}",
+    "namespace local { export const bar: any; }",
+    "module local { export const bar: any; }",
+    "enum local {}",
+    "function local() {}",
+])("ambient identifier cannot be a lua keyword (%p)", statement => {
+    const code = `
+        declare ${statement}
+        const foo = local;`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
+    );
 });
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {

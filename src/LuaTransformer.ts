@@ -6,6 +6,7 @@ import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
+import { luaKeywords, luaBuiltins } from "./LuaKeywords";
 
 export type StatementVisitResult = tstl.Statement | tstl.Statement[] | undefined;
 export type ExpressionVisitResult = tstl.Expression;
@@ -49,13 +50,6 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 }
 
 export class LuaTransformer {
-    public luaKeywords: Set<string> = new Set([
-        "_G", "and", "assert", "break", "coroutine", "debug", "do", "else", "elseif", "end", "error", "false", "for",
-        "function", "goto", "if", "ipairs", "in", "local", "math", "nil", "not", "or", "pairs", "pcall", "print",
-        "rawget", "rawset", "repeat", "return", "require", "self", "string", "table", "then", "tostring", "type",
-        "unpack", "until", "while",
-    ]);
-
     private isStrict: boolean;
     private luaTarget: LuaTarget;
 
@@ -3449,8 +3443,9 @@ export class LuaTransformer {
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 let identifier: tstl.Expression | undefined;
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                if (valueSymbol !== undefined && this.symbolIds.has(valueSymbol)) {
-                    // Ignore unknown symbols so things like NaN still get transformed properly
+                if (valueSymbol !== undefined
+                    // Ignore declarations for things like NaN
+                    && !tsHelper.isStandardLibraryDeclaration(valueSymbol.valueDeclaration, this.program)) {
                     identifier = this.createIdentifierFromSymbol(valueSymbol, element.name);
                 } else {
                     identifier = this.transformIdentifierExpression(element.name);
@@ -3818,13 +3813,20 @@ export class LuaTransformer {
                 if (!signatureDeclaration
                     || tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void)
                 {
-                    // table:name()
-                    return tstl.createMethodCallExpression(
-                        table,
-                        this.transformIdentifier(node.expression.name),
-                        parameters,
-                        node
-                    );
+                    if (luaKeywords.has(node.expression.name.text)
+                        || !tsHelper.isValidLuaIdentifier(node.expression.name.text))
+                    {
+                        return this.transformElementCall(node);
+
+                    } else {
+                        // table:name()
+                        return tstl.createMethodCallExpression(
+                            table,
+                            this.transformIdentifier(node.expression.name),
+                            parameters,
+                            node
+                        );
+                    }
                 } else {
                     // table.name()
                     const callPath = tstl.createTableIndexExpression(
@@ -3839,7 +3841,7 @@ export class LuaTransformer {
     }
 
     public transformElementCall(node: ts.CallExpression): ExpressionVisitResult {
-        if (!ts.isElementAccessExpression(node.expression)) {
+        if (!ts.isElementAccessExpression(node.expression) && !ts.isPropertyAccessExpression(node.expression)) {
             throw TSTLErrors.InvalidElementCall(node);
         }
 
@@ -3862,7 +3864,10 @@ export class LuaTransformer {
 
                 // Cache left-side if it has effects
                 //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
-                const argument = this.transformExpression(node.expression.argumentExpression);
+                const argumentExpression = ts.isElementAccessExpression(node.expression)
+                    ? node.expression.argumentExpression
+                    : ts.createStringLiteral(node.expression.name.text);
+                const argument = this.transformExpression(argumentExpression);
                 const selfIdentifier = tstl.createIdentifier("____TS_self");
                 const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
                 const index = tstl.createTableIndexExpression(selfIdentifier, argument);
@@ -5269,11 +5274,11 @@ export class LuaTransformer {
     }
 
     protected isUnsafeName(name: string): boolean {
-        return this.luaKeywords.has(name) || !tsHelper.isValidLuaIdentifier(name);
+        return luaKeywords.has(name) || luaBuiltins.has(name) || !tsHelper.isValidLuaIdentifier(name);
     }
 
     protected hasUnsafeSymbolName(symbol: ts.Symbol): boolean {
-        if (this.luaKeywords.has(symbol.name)) {
+        if (luaKeywords.has(symbol.name) || luaBuiltins.has(symbol.name)) {
             // lua keywords are only unsafe when non-ambient and not exported
             const isNonAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) !== undefined;
             return isNonAmbient && !this.isSymbolExported(symbol);
@@ -5284,6 +5289,10 @@ export class LuaTransformer {
     protected hasUnsafeIdentifierName(identifier: ts.Identifier): boolean {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         if (symbol !== undefined) {
+            if (luaKeywords.has(symbol.name) && symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined) {
+                // Catch ambient declarations of identifiers with lua keyword names
+                throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(identifier);
+            }
             return this.hasUnsafeSymbolName(symbol);
         }
         return false;

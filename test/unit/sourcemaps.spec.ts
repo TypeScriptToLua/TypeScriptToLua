@@ -48,6 +48,7 @@ test.each([
     {
         typeScriptSource: `
             import {Foo} from "foo";
+            Foo;
         `,
 
         assertPatterns: [
@@ -58,6 +59,7 @@ test.each([
     {
         typeScriptSource: `
             import * as Foo from "foo";
+            Foo;
         `,
 
         assertPatterns: [

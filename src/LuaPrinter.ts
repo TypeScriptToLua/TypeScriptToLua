@@ -6,6 +6,7 @@ import * as tstl from "./LuaAST";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { LuaLib, LuaLibFeature } from "./LuaLib";
 import { TSHelper as tsHelper } from "./TSHelper";
+import { luaKeywords } from "./LuaKeywords";
 
 type SourceChunk = string | SourceNode;
 
@@ -559,7 +560,10 @@ export class LuaPrinter {
         const value = this.printExpression(expression.value);
 
         if (expression.key) {
-            if (tstl.isStringLiteral(expression.key) && tsHelper.isValidLuaIdentifier(expression.key.value)) {
+            if (tstl.isStringLiteral(expression.key)
+                && tsHelper.isValidLuaIdentifier(expression.key.value)
+                && !luaKeywords.has(expression.key.value))
+            {
                 chunks.push(expression.key.value, " = ", value);
             } else {
                 chunks.push("[", this.printExpression(expression.key), "] = ", value);
@@ -653,7 +657,10 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printExpression(expression.table));
-        if (tstl.isStringLiteral(expression.index) && tsHelper.isValidLuaIdentifier(expression.index.value)) {
+        if (tstl.isStringLiteral(expression.index)
+            && tsHelper.isValidLuaIdentifier(expression.index.value)
+            && !luaKeywords.has(expression.index.value))
+        {
             chunks.push(".", this.createSourceNode(expression.index, expression.index.value));
         } else {
             chunks.push("[", this.printExpression(expression.index), "]");

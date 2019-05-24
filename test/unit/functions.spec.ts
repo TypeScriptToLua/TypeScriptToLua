@@ -94,6 +94,41 @@ test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])(
     },
 );
 
+test("Function default array binding parameter", () => {
+    const code = `
+        function foo([bar]: [string] = ["foobar"]) {
+            return bar;
+        }
+        return foo();`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test("Function default object binding parameter", () => {
+    const code = `
+        function foo({ bar }: { bar: string } = { bar: "foobar" }) {
+            return bar;
+        }
+        return foo();`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test("Function default binding parameter maintains order", () => {
+    const code = `
+        const resultsA = [{x: "foo"}, {x: "baz"}];
+        const resultsB = ["blah", "bar"];
+        let i = 0;
+        function a() { return resultsA[i++]; }
+        function b() { return resultsB[i++]; }
+        function foo({ x }: { x: string } = a(), y = b()) {
+            return x + y;
+        }
+        return foo();`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
 test("Class method call", () => {
     const returnValue = 4;
     const source = `class TestClass {

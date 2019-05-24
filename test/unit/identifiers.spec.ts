@@ -74,12 +74,16 @@ test.each([
     "const local: any;",
     "const foo: any, bar: any, local: any;",
     "class local {}",
-    "namespace local {}",
-    "module local {}",
+    "namespace local { export const bar: any; }",
+    "module local { export const bar: any; }",
     "enum local {}",
     "function local() {}",
-])("declare statement identifier cannot be a lua keyword (%p)", statement => {
-    expect(() => util.transpileString(`declare ${statement}`)).toThrow(
+])("ambient identifier cannot be a lua keyword (%p)", statement => {
+    const code = `
+        declare ${statement}
+        const foo = local;`;
+
+    expect(() => util.transpileString(code)).toThrow(
         TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
     );
 });

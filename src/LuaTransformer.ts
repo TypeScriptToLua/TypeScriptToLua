@@ -108,7 +108,12 @@ export class LuaTransformer {
         this.setupState();
 
         this.currentSourceFile = node;
-        this.resolver = this.checker.getEmitResolver(node);
+
+        // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
+        // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
+        // and would try to re-analyze the file, which would fail because of replaced nodes.
+        const originalSourceFile = ts.getParseTreeNode(node, ts.isSourceFile) || node;
+        this.resolver = this.checker.getEmitResolver(originalSourceFile);
 
         let statements: tstl.Statement[] = [];
         if (node.flags & ts.NodeFlags.JsonFile) {

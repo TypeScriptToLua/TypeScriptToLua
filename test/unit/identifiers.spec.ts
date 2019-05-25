@@ -84,23 +84,46 @@ test.each([
         const foo = local;`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")).message,
     );
 });
 
-test("ambient identifier cannot be a lua keyword (object literal shorthand)", () => {
+test.each([
+    "var $$$: any;",
+    "let $$$: any;",
+    "const $$$: any;",
+    "const foo: any, bar: any, $$$: any;",
+    "class $$$ {}",
+    "namespace $$$ { export const bar: any; }",
+    "module $$$ { export const bar: any; }",
+    "enum $$$ {}",
+    "function $$$() {}",
+])("ambient identifier must be a valid lua identifier (%p)", statement => {
     const code = `
-        declare var local: any;
-        const foo = { local };`;
+        declare ${statement}
+        const foo = $$$;`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")).message,
     );
 });
 
-test("undeclared identifier cannot be a lua keyword", () => {
-    expect(() => util.transpileString("const foo = local;")).toThrow(
-        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
+test.each(["local", "$$$"])(
+    "ambient identifier must be a valid lua identifier (object literal shorthand) (%p)",
+    name => {
+        const code = `
+        declare var ${name}: any;
+        const foo = { ${name} };`;
+
+        expect(() => util.transpileString(code)).toThrow(
+            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
+        );
+    },
+);
+
+test.each(["local", "$$$"])("undeclared identifier must be a valid lua identifier (%p)", name => {
+    expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
     );
 });
 

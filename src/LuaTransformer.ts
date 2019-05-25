@@ -5278,13 +5278,16 @@ export class LuaTransformer {
     }
 
     protected hasUnsafeSymbolName(symbol: ts.Symbol, tsOriginal?: ts.Identifier): boolean {
-        if (luaKeywords.has(symbol.name) || luaBuiltins.has(symbol.name)) {
-            // lua keywords are only unsafe when non-ambient and not exported
-            const isAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined;
-            if (luaKeywords.has(symbol.name) && isAmbient) {
-                // Catch ambient declarations of identifiers with lua keyword names
-                throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(tsOriginal || ts.createIdentifier(symbol.name));
-            }
+        const isLuaKeyword = luaKeywords.has(symbol.name);
+        const isInvalidIdentifier = !tsHelper.isValidLuaIdentifier(symbol.name);
+        const isAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined;
+        if ((isLuaKeyword || isInvalidIdentifier) && isAmbient) {
+            // Catch ambient declarations of identifiers with bad names
+            throw TSTLErrors.InvalidAmbientIdentifierName(tsOriginal || ts.createIdentifier(symbol.name));
+        }
+        const isLuaBuiltin = luaBuiltins.has(symbol.name);
+        if (isLuaKeyword || isLuaBuiltin) {
+            // lua keywords/builtins are only unsafe when non-ambient and not exported
             return !isAmbient && !this.isSymbolExported(symbol);
         }
         return this.isUnsafeName(symbol.name);
@@ -5294,8 +5297,8 @@ export class LuaTransformer {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         if (symbol !== undefined) {
             return this.hasUnsafeSymbolName(symbol, identifier);
-        } else if (luaKeywords.has(identifier.text)) {
-            throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(identifier);
+        } else if (luaKeywords.has(identifier.text) || !tsHelper.isValidLuaIdentifier(identifier.text)) {
+            throw TSTLErrors.InvalidAmbientIdentifierName(identifier);
         }
         return false;
     }

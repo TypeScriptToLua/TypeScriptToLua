@@ -191,6 +191,10 @@ export class TSTLErrors {
         );
     };
 
+    public static UnsupportedObjectDestructuringInForOf = (node: ts.Node) => {
+        return new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
+    };
+
     public static InvalidAmbientLuaKeywordIdentifier = (node: ts.Identifier) => {
         return new TranspileError(
             `Invalid use of lua keyword "${node.text}" as ambient identifier name.`,

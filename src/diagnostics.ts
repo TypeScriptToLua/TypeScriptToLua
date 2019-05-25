@@ -43,14 +43,25 @@ export const couldNotResolveTransformerFrom = (transform: string, base: string):
     messageText: `Could not resolve "${transform}" transformer from "${base}".`,
 });
 
-export const transformerShouldHaveADefaultExport = (transform: string): ts.Diagnostic => ({
+export const transformerShouldHaveAExport = (transform: string, importName: string): ts.Diagnostic => ({
     file: undefined,
     start: undefined,
     length: undefined,
     category: ts.DiagnosticCategory.Error,
     code: 0,
     source: "typescript-to-lua",
-    messageText: `"${transform}" transformer should have a default export`,
+    messageText: `"${transform}" transformer should have a "${importName}" export`,
+});
+
+export const transformerShouldBeATsTransformerFactory = (transform: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText:
+        `"${transform}" transformer should be a ts.TransformerFactory or an object with ts.TransformerFactory values`,
 });
 
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({

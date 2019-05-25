@@ -11,7 +11,6 @@ interface CommandLineOptionBase {
     name: string;
     aliases?: string[];
     description: string;
-    isTSConfigOnly?: boolean;
 }
 
 interface CommandLineOptionOfEnum extends CommandLineOptionBase {
@@ -23,15 +22,7 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-interface CommandLineOptionOfListType extends CommandLineOptionBase {
-    isTSConfigOnly: true;
-    type: "list";
-}
-
-type CommandLineOption =
-    | CommandLineOptionOfEnum
-    | CommandLineOptionOfBoolean
-    | CommandLineOptionOfListType;
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
 
 const optionDeclarations: CommandLineOption[] = [
     {
@@ -63,12 +54,6 @@ const optionDeclarations: CommandLineOption[] = [
             "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
     },
-    {
-        name: "tsTransformers",
-        description: "Custom TypeScript transformers.",
-        isTSConfigOnly: true,
-        type: "list",
-    },
 ];
 
 export const version = `Version ${require("../package.json").version}`;
@@ -89,8 +74,6 @@ export function getHelpString(): string {
 
     result += "Options:\n";
     for (const option of optionDeclarations) {
-        if (option.isTSConfigOnly) continue;
-
         const aliasStrings = (option.aliases || []).map(a => "-" + a);
         const optionString = aliasStrings.concat(["--" + option.name]).join("|");
 
@@ -184,14 +167,6 @@ interface CommandLineArgument extends ReadValueResult {
 }
 
 function readCommandLineArgument(option: CommandLineOption, value: any): CommandLineArgument {
-    if (option.isTSConfigOnly) {
-        return {
-            value: undefined,
-            error: diagnosticFactories.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
-            increment: 0,
-        };
-    }
-
     if (option.type === "boolean") {
         if (value === "true" || value === "false") {
             value = value === "true";
@@ -259,20 +234,6 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             }
 
             return { value: enumValue };
-        }
-
-        case "list": {
-            if (!Array.isArray(value)) {
-                return {
-                    value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
-                        option.name,
-                        "Array"
-                    ),
-                };
-            }
-
-            return { value };
         }
     }
 }

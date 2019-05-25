@@ -1,16 +1,138 @@
 import * as path from "path";
 import * as resolve from "resolve";
 import * as ts from "typescript";
-import { CompilerOptions } from "./CompilerOptions";
+import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 
+type ProgramTransformerFactory = (program: ts.Program, options: Record<string, any>) => Transformer;
+type ConfigTransformerFactory = (options: Record<string, any>) => Transformer;
+type CompilerOptionsTransformerFactory =
+    (compilerOptions: CompilerOptions, options: Record<string, any>) => Transformer;
+type TypeCheckerTransformerFactory = (typeChecker: ts.TypeChecker, options: Record<string, any>) => Transformer;
+type RawTransformerFactory = Transformer;
+type TransformerFactory =
+    | ProgramTransformerFactory
+    | ConfigTransformerFactory
+    | CompilerOptionsTransformerFactory
+    | TypeCheckerTransformerFactory
+    | RawTransformerFactory;
+
+type Transformer = GroupTransformer | ts.TransformerFactory<ts.SourceFile>;
+interface GroupTransformer {
+    before?: ts.TransformerFactory<ts.SourceFile>;
+    after?: ts.TransformerFactory<ts.SourceFile>;
+    afterDeclarations?: ts.TransformerFactory<ts.SourceFile | ts.Bundle>;
+}
+
+function resolveTransformerFactory(
+    basedir: string,
+    transformerOptionPath: string,
+    { transform, import: importName = 'default' }: TransformerImport
+): { error?: ts.Diagnostic; factory?: TransformerFactory } {
+    if (typeof transform !== "string") {
+        const optionName = `${transformerOptionPath}.transform`;
+        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "string") };
+    }
+
+    let resolved: string;
+    try {
+        resolved = resolve.sync(transform, { basedir, extensions: [".js", ".ts", ".tsx"] });
+    } catch (err) {
+        if (err.code !== "MODULE_NOT_FOUND") throw err;
+        return { error: diagnosticFactories.couldNotResolveTransformerFrom(transform, basedir) };
+    }
+
+    // tslint:disable-next-line: deprecation
+    const hasNoRequireHook = require.extensions[".ts"] === undefined;
+    if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
+        try {
+            const tsNode: typeof import("ts-node") = require("ts-node");
+            tsNode.register({ transpileOnly: true });
+        } catch (err) {
+            if (err.code !== "MODULE_NOT_FOUND") throw err;
+            return { error: diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform) };
+        }
+    }
+
+    const factory: TransformerFactory = require(resolved)[importName];
+    if (factory === undefined) {
+        return { error: diagnosticFactories.transformerShouldHaveAExport(transform, importName) };
+    }
+
+    return { factory };
+}
+
+function loadTransformer(
+    transformerOptionPath: string,
+    program: ts.Program,
+    factory: TransformerFactory,
+    { transform, after = false, afterDeclarations = false, type = "program", ...extraOptions }: TransformerImport
+): { error?: ts.Diagnostic; transformer?: GroupTransformer } {
+    let transformer: Transformer;
+    switch (type) {
+        case 'program':
+            transformer = (factory as ProgramTransformerFactory)(program, extraOptions);
+            break;
+        case 'config':
+            transformer = (factory as ConfigTransformerFactory)(extraOptions);
+            break;
+        case 'checker':
+            transformer = (factory as TypeCheckerTransformerFactory)(program.getTypeChecker(), extraOptions);
+            break;
+        case 'raw':
+            transformer = factory as RawTransformerFactory;
+            break;
+        case 'compilerOptions':
+            transformer = (factory as CompilerOptionsTransformerFactory)(program.getCompilerOptions(), extraOptions);
+            break;
+        default: {
+            const optionName = `--${transformerOptionPath}.type`;
+            return { error: diagnosticFactories.argumentForOptionMustBe(optionName, 'program') };
+        }
+    }
+
+    if (typeof after !== "boolean") {
+        const optionName = `${transformerOptionPath}.after`;
+        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "boolean") };
+    }
+
+    if (typeof afterDeclarations !== "boolean") {
+        const optionName = `${transformerOptionPath}.afterDeclarations`;
+        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "boolean") };
+    }
+
+    if (typeof transformer === "function") {
+        let wrappedTransformer: GroupTransformer;
+
+        if (after) {
+            wrappedTransformer = { after: transformer };
+        } else if (afterDeclarations) {
+            wrappedTransformer = { afterDeclarations: transformer as ts.TransformerFactory<ts.SourceFile | ts.Bundle> };
+        } else {
+            wrappedTransformer = { before: transformer };
+        }
+
+        return { transformer: wrappedTransformer };
+    } else {
+        const isValidGroupTransformer =
+            typeof transformer === "object" &&
+            (transformer.before || transformer.after || transformer.afterDeclarations);
+
+        if (!isValidGroupTransformer) {
+            return { error: diagnosticFactories.transformerShouldBeATsTransformerFactory(transform) };
+        }
+    }
+
+    return { transformer };
+}
+
 function loadTransformersFromOptions(
     program: ts.Program,
-    diagnostics: ts.Diagnostic[]
+    allDiagnostics: ts.Diagnostic[]
 ): ts.CustomTransformers {
     const customTransformers: Required<ts.CustomTransformers> = {
         before: [],
@@ -19,64 +141,33 @@ function loadTransformersFromOptions(
     };
 
     const options = program.getCompilerOptions() as CompilerOptions;
-    if (!options.tsTransformers) return customTransformers;
+    if (!options.plugins) return customTransformers;
 
     const configFileName = options.configFilePath as string | undefined;
     const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
 
-    const extensions = [".js", ".ts", ".tsx"];
-    for (const [index, transformer] of options.tsTransformers.entries()) {
-        const transformerOptionPath = `tsTransformers[${index}]`;
-        const { name, when = "before", ...transformerOptions } = transformer;
+    for (const [index, transformerImport] of options.plugins.entries()) {
+        if ('name' in transformerImport) continue;
+        const optionName = `compilerOptions.plugins[${index}]`;
 
-        if (typeof name !== "string") {
-            const optionName = `${transformerOptionPath}.name`;
-            diagnostics.push(
-                diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "string")
-            );
+        const { error: resolveError, factory } = resolveTransformerFactory(basedir, optionName, transformerImport);
+        if (resolveError) allDiagnostics.push(resolveError);
+        if (factory === undefined) continue;
 
-            continue;
+        const { error, transformer } = loadTransformer(optionName, program, factory, transformerImport);
+        if (error) allDiagnostics.push(error);
+        if (transformer === undefined) continue;
+
+        if (transformer.before) {
+            customTransformers.before.push(transformer.before);
         }
 
-        const whenValues = ["before", "after", "afterDeclarations"];
-        if (!whenValues.includes(when)) {
-            const optionName = `--${transformerOptionPath}.when`;
-            diagnostics.push(
-                diagnosticFactories.argumentForOptionMustBe(optionName, whenValues.join(", "))
-            );
-
-            continue;
+        if (transformer.after) {
+            customTransformers.after.push(transformer.after);
         }
 
-        let resolved: string;
-        try {
-            resolved = resolve.sync(name, { extensions, basedir });
-        } catch (err) {
-            if (err.code !== "MODULE_NOT_FOUND") throw err;
-            diagnostics.push(diagnosticFactories.couldNotResolveTransformerFrom(name, basedir));
-
-            continue;
-        }
-
-        // tslint:disable-next-line: deprecation
-        const hasNoRequireHook = require.extensions[".ts"] === undefined;
-        if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
-            try {
-                const tsNode: typeof import("ts-node") = require("ts-node");
-                tsNode.register({ transpileOnly: true });
-            } catch (err) {
-                if (err.code !== "MODULE_NOT_FOUND") throw err;
-                diagnostics.push(diagnosticFactories.toLoadTransformerItShouldBeTranspiled(name));
-
-                continue;
-            }
-        }
-
-        const result = require(resolved).default;
-        if (result !== undefined) {
-            customTransformers[when].push(result(program, transformerOptions));
-        } else {
-            diagnostics.push(diagnosticFactories.transformerShouldHaveADefaultExport(name));
+        if (transformer.afterDeclarations) {
+            customTransformers.afterDeclarations.push(transformer.afterDeclarations);
         }
     }
 

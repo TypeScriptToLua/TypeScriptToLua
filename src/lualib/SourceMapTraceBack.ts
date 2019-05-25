@@ -1,11 +1,3 @@
-declare const debug: {
-    traceback: (this: void, ...args: any[]) => string;
-};
-
-type TraceBackFunction = (this: void, thread?: any, message?: string, level?: number) => string;
-
-declare const _G: {[key: string]: any} & {__TS__originalTraceback: TraceBackFunction};
-
 // TODO: In the future, change this to __TS__RegisterFileInfo and provide tstl interface to
 // get some metadata about transpilation.
 function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[line: number]: number}): void {
@@ -16,7 +8,7 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: {[lin
         _G.__TS__originalTraceback = debug.traceback;
         debug.traceback = (thread, message, level) => {
             const trace = _G["__TS__originalTraceback"](thread, message, level);
-            const [result, occurrences] = string.gsub(
+            const [result] = string.gsub(
                 trace,
                 "(%S+).lua:(%d+)",
                 (file, line) => {

@@ -1,16 +1,4 @@
-interface LuaClass {
-    prototype: LuaObject;
-    ____super?: LuaClass;
-}
-
-declare interface LuaObject {
-    constructor: LuaClass;
-    ____getters?: { [key: string]: (this: void, self: LuaObject) => any };
-}
-
-declare function rawget<T, K extends keyof T>(obj: T, key: K): T[K];
-
-function __TS__Index(this: void, classProto: LuaObject): (this: void, tbl: LuaObject, key: keyof LuaObject) => any {
+function __TS__Index(this: void, classProto: LuaObject): (this: void, tbl: LuaObject, key: any) => any {
     return (tbl, key) => {
         let proto = classProto;
         while (true) {

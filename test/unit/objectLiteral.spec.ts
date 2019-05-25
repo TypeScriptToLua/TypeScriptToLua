@@ -1,5 +1,4 @@
 import * as util from "../util";
-const fs = require("fs");
 
 test.each([
     { inp: `{a:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
@@ -28,6 +27,26 @@ describe("property shorthand", () => {
         const result = util.transpileAndExecute(`return ({ ${identifier} }).${identifier}`);
 
         expect(result).toBe(identifier);
+    });
+
+    test("should support _G shorthand", () => {
+        const result = util.transpileAndExecute(
+            `return ({ _G })._G.foobar;`,
+            undefined,
+            `foobar = "foobar"`,
+            "declare const _G: any;",
+        );
+
+        expect(result).toBe("foobar");
+    });
+
+    test("should support export property shorthand", () => {
+        const code = `
+            export const x = 1;
+            const o = { x };
+            export const y = o.x;
+        `;
+        expect(util.transpileExecuteAndReturnExport(code, "y")).toBe(1);
     });
 });
 

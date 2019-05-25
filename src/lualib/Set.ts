@@ -1,38 +1,35 @@
-/** @tupleReturn */
-declare function next<TKey, TValue>(this: void, t: { [k: string]: TValue }, index?: TKey): [TKey, TValue];
+Set = class Set<T> {
+    public static [Symbol.species] = Set;
+    public [Symbol.toStringTag] = "Set";
 
-class Set<TValue> {
-    public size: number;
+    // Key type is actually T
+    private items: { [key: string]: boolean } = {};
+    public size = 0;
 
-    private items: {[key: string]: boolean}; // Key type is actually TValue
+    constructor(values?: Iterable<T> | T[]) {
+        if (values === undefined) return;
 
-    constructor(other: Iterable<TValue> | TValue[]) {
-        this.items = {};
-        this.size = 0;
-
-        if (other) {
-            const iterable = other as Iterable<TValue>;
-            if (iterable[Symbol.iterator]) {
-                // Iterate manually because Set is compiled with ES5 which doesn't support Iterables in for...of
-                const iterator = iterable[Symbol.iterator]();
-                while (true) {
-                    const result = iterator.next();
-                    if (result.done) {
-                        break;
-                    }
-                    this.add(result.value);
+        const iterable = values as Iterable<T>;
+        if (iterable[Symbol.iterator]) {
+            // Iterate manually because Set is compiled with ES5 which doesn't support Iterables in for...of
+            const iterator = iterable[Symbol.iterator]();
+            while (true) {
+                const result = iterator.next();
+                if (result.done) {
+                    break;
                 }
-            } else {
-                const arr = other as TValue[];
-                this.size = arr.length;
-                for (const value of arr) {
-                    this.items[value as any] = true;
-                }
+                this.add(result.value);
+            }
+        } else {
+            const array = values as T[];
+            this.size = array.length;
+            for (const value of array) {
+                this.items[value as any] = true;
             }
         }
     }
 
-    public add(value: TValue): Set<TValue> {
+    public add(value: T): Set<T> {
         if (!this.has(value)) {
             this.size++;
         }
@@ -46,7 +43,7 @@ class Set<TValue> {
         return;
     }
 
-    public delete(value: TValue): boolean {
+    public delete(value: T): boolean {
         const contains = this.has(value);
         if (contains) {
             this.size--;
@@ -55,54 +52,59 @@ class Set<TValue> {
         return contains;
     }
 
-    public [Symbol.iterator](): IterableIterator<TValue> {
-        return this.values();
-    }
-
-    public entries(): IterableIterator<[TValue, TValue]> {
-        const items = this.items;
-        let key: TValue;
-        return {
-            [Symbol.iterator](): IterableIterator<[TValue, TValue]> { return this; },
-            next(): IteratorResult<[TValue, TValue]> {
-                [key] = next(items, key);
-                return {done: !key, value: [key, key]};
-            },
-        };
-    }
-
-    public forEach(callback: (value: TValue, key: TValue, set: Set<TValue>) => any): void {
+    public forEach(callback: (value: T, key: T, set: Set<T>) => any): void {
         for (const key in this.items) {
             callback(key as any, key as any, this);
         }
-        return;
     }
 
-    public has(value: TValue): boolean {
+    public has(value: T): boolean {
         return this.items[value as any] === true;
     }
 
-    public keys(): IterableIterator<TValue> {
+    public [Symbol.iterator](): IterableIterator<T> {
+        return this.values();
+    }
+
+    public entries(): IterableIterator<[T, T]> {
         const items = this.items;
-        let key: TValue;
+        let key: T;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
-            next(): IteratorResult<TValue> {
+            [Symbol.iterator](): IterableIterator<[T, T]> {
+                return this;
+            },
+            next(): IteratorResult<[T, T]> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: [key, key] };
             },
         };
     }
 
-    public values(): IterableIterator<TValue> {
+    public keys(): IterableIterator<T> {
         const items = this.items;
-        let key: TValue;
+        let key: T;
         return {
-            [Symbol.iterator](): IterableIterator<TValue> { return this; },
-            next(): IteratorResult<TValue> {
+            [Symbol.iterator](): IterableIterator<T> {
+                return this;
+            },
+            next(): IteratorResult<T> {
                 [key] = next(items, key);
-                return {done: !key, value: key};
+                return { done: !key, value: key };
             },
         };
     }
-}
+
+    public values(): IterableIterator<T> {
+        const items = this.items;
+        let key: T;
+        return {
+            [Symbol.iterator](): IterableIterator<T> {
+                return this;
+            },
+            next(): IteratorResult<T> {
+                [key] = next(items, key);
+                return { done: !key, value: key };
+            },
+        };
+    }
+};

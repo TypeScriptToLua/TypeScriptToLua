@@ -74,7 +74,7 @@ test.each([
 ])(
     "require paths root from --baseUrl or --rootDir (%p)",
     ({ filePath, usedPath, expectedPath, options, throwsError }) => {
-        const input = { [filePath]: `import * from "${usedPath}";` };
+        const input = { [filePath]: `import * as module from "${usedPath}"; module;` };
         if (throwsError) {
             expect(() => util.transpileString(input, options)).toThrow();
         } else {
@@ -96,7 +96,7 @@ test.each([
     "noResolution on ambient modules causes no path alterations (%p)",
     ({ comment, expectedPath }) => {
         const lua = util.transpileString({
-            "src/main.ts": `import * as fake from "fake";`,
+            "src/main.ts": `import * as fake from "fake"; fake;`,
             "module.d.ts": `${comment} declare module "fake" {}`,
         });
         const regex = /require\("(.*?)"\)/;

@@ -383,42 +383,57 @@ exports[`Transformation (modulesFunctionNoExport) 1`] = `
 end"
 `;
 
-exports[`Transformation (modulesImportAll) 1`] = `"local Test = require(\\"test\\")"`;
+exports[`Transformation (modulesImportAll) 1`] = `
+"local Test = require(\\"test\\")
+local ____ = Test"
+`;
 
 exports[`Transformation (modulesImportNamed) 1`] = `
 "local __TSTL_test = require(\\"test\\")
-local TestClass = __TSTL_test.TestClass"
+local TestClass = __TSTL_test.TestClass
+local ____ = TestClass"
 `;
 
 exports[`Transformation (modulesImportNamedSpecialChars) 1`] = `
-"local __TSTL_kebab_module = require(\\"kebab-module\\")
-local TestClass = __TSTL_kebab_module.TestClass
-local __TSTL_dollar_module = require(\\"dollar$module\\")
-local TestClass = __TSTL_dollar_module.TestClass
-local __TSTL_singlequote_module = require(\\"singlequote'module\\")
-local TestClass = __TSTL_singlequote_module.TestClass
-local __TSTL_hash_module = require(\\"hash#module\\")
-local TestClass = __TSTL_hash_module.TestClass
-local __TSTL_space_module = require(\\"space module\\")
-local TestClass = __TSTL_space_module.TestClass"
+"local __TSTL_kebab_2Dmodule = require(\\"kebab-module\\")
+local TestClass1 = __TSTL_kebab_2Dmodule.TestClass1
+local __TSTL_dollar_24module = require(\\"dollar$module\\")
+local TestClass2 = __TSTL_dollar_24module.TestClass2
+local __TSTL_singlequote_27module = require(\\"singlequote'module\\")
+local TestClass3 = __TSTL_singlequote_27module.TestClass3
+local __TSTL_hash_23module = require(\\"hash#module\\")
+local TestClass4 = __TSTL_hash_23module.TestClass4
+local __TSTL_space_20module = require(\\"space module\\")
+local TestClass5 = __TSTL_space_20module.TestClass5
+local ____ = TestClass1
+local ____ = TestClass2
+local ____ = TestClass3
+local ____ = TestClass4
+local ____ = TestClass5"
 `;
 
 exports[`Transformation (modulesImportRenamed) 1`] = `
 "local __TSTL_test = require(\\"test\\")
-local RenamedClass = __TSTL_test.TestClass"
+local RenamedClass = __TSTL_test.TestClass
+local ____ = RenamedClass"
 `;
 
 exports[`Transformation (modulesImportRenamedSpecialChars) 1`] = `
-"local __TSTL_kebab_module = require(\\"kebab-module\\")
-local RenamedClass = __TSTL_kebab_module.TestClass
-local __TSTL_dollar_module = require(\\"dollar$module\\")
-local RenamedClass = __TSTL_dollar_module.TestClass
-local __TSTL_singlequote_module = require(\\"singlequote'module\\")
-local RenamedClass = __TSTL_singlequote_module.TestClass
-local __TSTL_hash_module = require(\\"hash#module\\")
-local RenamedClass = __TSTL_hash_module.TestClass
-local __TSTL_space_module = require(\\"space module\\")
-local RenamedClass = __TSTL_space_module.TestClass"
+"local __TSTL_kebab_2Dmodule = require(\\"kebab-module\\")
+local RenamedClass1 = __TSTL_kebab_2Dmodule.TestClass
+local __TSTL_dollar_24module = require(\\"dollar$module\\")
+local RenamedClass2 = __TSTL_dollar_24module.TestClass
+local __TSTL_singlequote_27module = require(\\"singlequote'module\\")
+local RenamedClass3 = __TSTL_singlequote_27module.TestClass
+local __TSTL_hash_23module = require(\\"hash#module\\")
+local RenamedClass4 = __TSTL_hash_23module.TestClass
+local __TSTL_space_20module = require(\\"space module\\")
+local RenamedClass5 = __TSTL_space_20module.TestClass
+local ____ = RenamedClass1
+local ____ = RenamedClass2
+local ____ = RenamedClass3
+local ____ = RenamedClass4
+local ____ = RenamedClass5"
 `;
 
 exports[`Transformation (modulesImportWithoutFromClause) 1`] = `"require(\\"test\\")"`;

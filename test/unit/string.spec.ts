@@ -74,6 +74,17 @@ test.each([
 });
 
 test.each([
+    { input: "abcd", index: 3 },
+    { input: "abcde", index: 3 },
+    { input: "abcde", index: 0 },
+    { input: "a", index: 0 },
+])("string index (%p)", ({ input, index }) => {
+    const result = util.transpileAndExecute(`return "${input}"[${index}];`);
+
+    expect(result).toBe(input[index]);
+});
+
+test.each([
     { inp: "hello test", searchValue: "", replaceValue: "" },
     { inp: "hello test", searchValue: " ", replaceValue: "" },
     { inp: "hello test", searchValue: "hello", replaceValue: "" },
@@ -215,14 +226,11 @@ test.each([
     expect(result).toBe(inp.substr(start, end));
 });
 
-test.each([{ inp: "", expected: 0 }, { inp: "h", expected: 1 }, { inp: "hello", expected: 5 }])(
-    "string.length (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(`return "${inp}".length`);
+test.each(["", "h", "hello"])("string.length (%p)", input => {
+    const result = util.transpileAndExecute(`return "${input}".length`);
 
-        expect(result).toBe(inp.length);
-    },
-);
+    expect(result).toBe(input.length);
+});
 
 test.each(["hello TEST"])("string.toLowerCase (%p)", inp => {
     const result = util.transpileAndExecute(`return "${inp}".toLowerCase()`);
@@ -290,7 +298,7 @@ test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
     { inp: "hello test", args: ["test"] },
     { inp: "hello test", args: ["test", 6] },
 ])("string.startsWith (%p)", ({ inp, args }) => {
-    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString(args);
     const result = util.transpileAndExecute(`return "${inp}".startsWith(${argsString})`);
 
     expect(result).toBe(inp.startsWith(...args));
@@ -302,19 +310,46 @@ test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
     { inp: "hello test", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
 ])("string.endsWith (%p)", ({ inp, args }) => {
-    const argsString = args.map(arg => JSON.stringify(arg)).join(", ");
+    const argsString = util.valuesToString(args);
     const result = util.transpileAndExecute(`return "${inp}".endsWith(${argsString})`);
 
     expect(result).toBe(inp.endsWith(...args));
 });
 
 test.each([
-    { input: "abcd", index: 3 },
-    { input: "abcde", index: 3 },
-    { input: "abcde", index: 0 },
-    { input: "a", index: 0 },
-])("string index (%p)", ({ input, index }) => {
-    const result = util.transpileAndExecute(`return "${input}"[${index}];`);
+    { inp: "hello test", count: 0 },
+    { inp: "hello test", count: 1 },
+    { inp: "hello test", count: 2 },
+    { inp: "hello test", count: 1.1 },
+    { inp: "hello test", count: 1.5 },
+    { inp: "hello test", count: 1.9 },
+])("string.repeat (%p)", ({ inp, count }) => {
+    const result = util.transpileAndExecute(`return "${inp}".repeat(${count})`);
 
-    expect(result).toBe(input[index]);
+    expect(result).toBe(inp.repeat(count));
+});
+
+const padCases = [
+    { inp: "foo", maxLength: 0 },
+    { inp: "foo", maxLength: 3 },
+    { inp: "foo", maxLength: 5 },
+    { inp: "foo", maxLength: 4, fillString: "    " },
+    { inp: "foo", maxLength: 10, fillString: "    " },
+    { inp: "foo", maxLength: 5, fillString: "1234" },
+    { inp: "foo", maxLength: 5.9, fillString: "1234" },
+    { inp: "foo", maxLength: NaN },
+];
+
+test.each(padCases)("string.padStart (%p)", ({ inp, maxLength, fillString }) => {
+    const argsString = util.valuesToString([maxLength, fillString]);
+    const result = util.transpileAndExecute(`return "${inp}".padStart(${argsString})`);
+
+    expect(result).toBe(inp.padStart(maxLength, fillString));
+});
+
+test.each(padCases)("string.padEnd (%p)", ({ inp, maxLength, fillString }) => {
+    const argsString = util.valuesToString([maxLength, fillString]);
+    const result = util.transpileAndExecute(`return "${inp}".padEnd(${argsString})`);
+
+    expect(result).toBe(inp.padEnd(maxLength, fillString));
 });

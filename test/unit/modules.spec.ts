@@ -2,9 +2,88 @@ import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
+describe("module import/export elision", () => {
+    const moduleDeclaration = `
+        declare module "module" {
+            export type Type = string;
+            export declare const value: string;
+        }
+    `;
+
+    const expectToElideImport = (code: string) => {
+        const lua = util.transpileString(
+            { "module.d.ts": moduleDeclaration, "main.ts": code },
+            undefined,
+            false,
+        );
+
+        expect(() => util.executeLua(lua)).not.toThrow();
+    };
+
+    test("should elide named type imports", () => {
+        expectToElideImport(`
+            import { Type } from "module";
+            const foo: Type = "bar";
+        `);
+    });
+
+    test("should elide named value imports used only as a type", () => {
+        expectToElideImport(`
+            import { value } from "module";
+            const foo: typeof value = "bar";
+        `);
+    });
+
+    test("should elide namespace imports with unused values", () => {
+        expectToElideImport(`
+            import * as module from "module";
+            const foo: module.Type = "bar";
+        `);
+    });
+
+    test("should elide type exports", () => {
+        const code = `
+            declare const _G: any;
+
+            _G.foo = true;
+            type foo = boolean;
+            export { foo };
+        `;
+
+        expect(util.transpileExecuteAndReturnExport(code, "foo")).toBeUndefined();
+    });
+});
+
+test.each([
+    "export { default } from '...'",
+    "export { x as default } from '...';",
+    "export { default as x } from '...';",
+])("Export default keyword disallowed (%p)", exportStatement => {
+    expect(() => util.transpileString(exportStatement)).toThrowExactError(
+        TSTLErrors.UnsupportedDefaultExport(util.nodeStub),
+    );
+});
+
+test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
+    "Import module names with invalid lua identifier characters (%p)",
+    name => {
+        const code = `
+            import { foo } from "${name}";
+            foo;
+        `;
+
+        const lua = `
+            setmetatable(package.loaded, {__index = function() return {foo = "bar"} end})
+            ${util.transpileString(code)}
+            return foo;`;
+
+        expect(util.executeLua(lua)).toBe("bar");
+    },
+);
+
 test("defaultImport", () => {
     expect(() => {
-        const lua = util.transpileString(`import TestClass from "test"`);
+        util.transpileString(`import TestClass from "test"`);
     }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
 });
 

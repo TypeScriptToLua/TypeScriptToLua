@@ -45,6 +45,80 @@ test.each([
             { luaPattern: "2", typeScriptPattern: "abc.foo" },
         ],
     },
+    {
+        typeScriptSource: `
+            import {Foo} from "foo";
+            Foo;
+        `,
+
+        assertPatterns: [
+            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            import * as Foo from "foo";
+            Foo;
+        `,
+
+        assertPatterns: [
+            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            class Bar extends Foo {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "Bar = {}", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.__index =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype.__index =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.prototype.constructor =", typeScriptPattern: "class Bar" },
+            { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
+            { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
+            { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare const arr: string[];
+            for (const element of arr) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "arr", typeScriptPattern: "arr)" },
+            { luaPattern: "element", typeScriptPattern: "element" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare function getArr(this: void): string[];
+            for (const element of getArr()) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "getArr()", typeScriptPattern: "getArr()" },
+            { luaPattern: "____TS_array", typeScriptPattern: "getArr()" },
+            { luaPattern: "element", typeScriptPattern: "element" },
+        ],
+    },
+    {
+        typeScriptSource: `
+            declare const arr: string[]
+            for (let i = 0; i < arr.length; ++i) {}
+        `,
+
+        assertPatterns: [
+            { luaPattern: "i = 0", typeScriptPattern: "i = 0" },
+            { luaPattern: "i < #arr", typeScriptPattern: "i < arr.length" },
+            { luaPattern: "i + 1", typeScriptPattern: "++i" },
+        ],
+    },
 ])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
     // Act
     const { file } = util.transpileStringResult(typeScriptSource);
@@ -62,6 +136,29 @@ test.each([
         const mappedLineColumn = { line: mappedPosition.line, column: mappedPosition.column };
         expect(mappedLineColumn).toEqual(typescriptPosition);
     }
+});
+
+test("Source map has correct sources", async () => {
+    const code = `const foo = "foo"`;
+
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const consumer = await new SourceMapConsumer(file.sourceMap);
+    expect(consumer.sources.length).toBe(1);
+    expect(consumer.sources[0]).toBe("main.ts");
+});
+
+test("Source map has correct source root", async () => {
+    const code = `const foo = "foo"`;
+
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const sourceMap = JSON.parse(file.sourceMap);
+    expect(sourceMap.sourceRoot).toBe(".");
 });
 
 test("sourceMapTraceback saves sourcemap in _G", () => {

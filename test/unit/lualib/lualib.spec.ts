@@ -190,26 +190,26 @@ test.each([
 });
 
 test.each([
-    { inp: [], expected: "" },
-    { inp: ["test1"], expected: "test1" },
-    { inp: ["test1", "test2"], expected: "test1,test2" },
-    { inp: ["test1", "test2"], expected: "test1;test2", seperator: ";" },
-    { inp: ["test1", "test2"], expected: "test1test2", seperator: "" },
-])("array.join (%p)", ({ inp, expected, seperator }) => {
-    let seperatorLua;
-    if (seperator === "") {
-        seperatorLua = '""';
-    } else if (seperator) {
-        seperatorLua = '"' + seperator + '"';
+    { inp: [] },
+    { inp: ["test1"] },
+    { inp: ["test1", "test2"] },
+    { inp: ["test1", "test2"], separator: ";" },
+    { inp: ["test1", "test2"], separator: "" },
+])("array.join (%p)", ({ inp, separator }) => {
+    let separatorLua;
+    if (separator === "") {
+        separatorLua = '""';
+    } else if (separator) {
+        separatorLua = '"' + separator + '"';
     } else {
-        seperatorLua = "";
+        separatorLua = "";
     }
     const result = util.transpileAndExecute(
         `let joinTestTable = ${JSON.stringify(inp)};
-        return joinTestTable.join(${seperatorLua});`,
+        return joinTestTable.join(${separatorLua});`,
     );
 
-    const joinedInp = inp.join(seperator);
+    const joinedInp = inp.join(separator);
     expect(result).toBe(joinedInp);
 });
 

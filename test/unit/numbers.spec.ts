@@ -39,21 +39,15 @@ const stringCases = ["-1", "0", "1", "1.5", "Infinity", "-Infinity"];
 const restCases: any[] = [true, false, "", " ", "\t", "\n", "foo", {}];
 const cases: any[] = [...numberCases, ...stringCases, ...restCases];
 
-// TODO: Add more general utils to serialize values
-const valueToString = (value: unknown) =>
-    value === Infinity || value === -Infinity || (typeof value === "number" && Number.isNaN(value))
-        ? String(value)
-        : JSON.stringify(value);
-
 describe("Number", () => {
     test.each(cases)("constructor(%p)", value => {
-        const result = util.transpileAndExecute(`return Number(${valueToString(value)})`);
+        const result = util.transpileAndExecute(`return Number(${util.valueToString(value)})`);
         expect(result).toBe(Number(value));
     });
 
     test.each(cases)("isNaN(%p)", value => {
         const result = util.transpileAndExecute(`
-            return Number.isNaN(${valueToString(value)} as any)
+            return Number.isNaN(${util.valueToString(value)} as any)
         `);
 
         expect(result).toBe(Number.isNaN(value));
@@ -61,7 +55,7 @@ describe("Number", () => {
 
     test.each(cases)("isFinite(%p)", value => {
         const result = util.transpileAndExecute(`
-            return Number.isFinite(${valueToString(value)} as any)
+            return Number.isFinite(${util.valueToString(value)} as any)
         `);
 
         expect(result).toBe(Number.isFinite(value));
@@ -69,11 +63,11 @@ describe("Number", () => {
 });
 
 test.each(cases)("isNaN(%p)", value => {
-    const result = util.transpileAndExecute(`return isNaN(${valueToString(value)} as any)`);
+    const result = util.transpileAndExecute(`return isNaN(${util.valueToString(value)} as any)`);
     expect(result).toBe(isNaN(value));
 });
 
 test.each(cases)("isFinite(%p)", value => {
-    const result = util.transpileAndExecute(`return isFinite(${valueToString(value)} as any)`);
+    const result = util.transpileAndExecute(`return isFinite(${util.valueToString(value)} as any)`);
     expect(result).toBe(isFinite(value));
 });

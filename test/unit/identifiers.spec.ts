@@ -88,6 +88,16 @@ test.each([
     );
 });
 
+test("ambient identifier cannot be a lua keyword (object literal shorthand)", () => {
+    const code = `
+        declare var local: any;
+        const foo = { local };`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidAmbientLuaKeywordIdentifier(ts.createIdentifier("local")).message,
+    );
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         const code = `

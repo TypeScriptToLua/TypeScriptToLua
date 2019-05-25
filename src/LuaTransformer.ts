@@ -5266,8 +5266,8 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
-    protected createIdentifierFromSymbol(symbol: ts.Symbol, tsOriginal?: ts.Node): tstl.Identifier {
-        const name = this.hasUnsafeSymbolName(symbol)
+    protected createIdentifierFromSymbol(symbol: ts.Symbol, tsOriginal?: ts.Identifier): tstl.Identifier {
+        const name = this.hasUnsafeSymbolName(symbol, tsOriginal)
             ? this.createSafeName(symbol.name)
             : symbol.name;
         return tstl.createIdentifier(name, tsOriginal, this.symbolIds.get(symbol));
@@ -5277,11 +5277,15 @@ export class LuaTransformer {
         return luaKeywords.has(name) || luaBuiltins.has(name) || !tsHelper.isValidLuaIdentifier(name);
     }
 
-    protected hasUnsafeSymbolName(symbol: ts.Symbol): boolean {
+    protected hasUnsafeSymbolName(symbol: ts.Symbol, tsOriginal?: ts.Identifier): boolean {
         if (luaKeywords.has(symbol.name) || luaBuiltins.has(symbol.name)) {
             // lua keywords are only unsafe when non-ambient and not exported
-            const isNonAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) !== undefined;
-            return isNonAmbient && !this.isSymbolExported(symbol);
+            const isAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined;
+            if (luaKeywords.has(symbol.name) && isAmbient) {
+                // Catch ambient declarations of identifiers with lua keyword names
+                throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(tsOriginal || ts.createIdentifier(symbol.name));
+            }
+            return !isAmbient && !this.isSymbolExported(symbol);
         }
         return this.isUnsafeName(symbol.name);
     }
@@ -5289,11 +5293,7 @@ export class LuaTransformer {
     protected hasUnsafeIdentifierName(identifier: ts.Identifier): boolean {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         if (symbol !== undefined) {
-            if (luaKeywords.has(symbol.name) && symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined) {
-                // Catch ambient declarations of identifiers with lua keyword names
-                throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(identifier);
-            }
-            return this.hasUnsafeSymbolName(symbol);
+            return this.hasUnsafeSymbolName(symbol, identifier);
         }
         return false;
     }

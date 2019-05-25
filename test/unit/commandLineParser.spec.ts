@@ -21,14 +21,6 @@ describe("command line", () => {
         });
     });
 
-    test("should error on tsconfig-only options", () => {
-        const result = tstl.parseCommandLine(["--tsTransformers", "transformer"]);
-
-        expect(result.errors).toHaveDiagnostics();
-        expect(result.options.tsTransformers).toBeUndefined();
-        expect(result.fileNames).toEqual(["transformer"]);
-    });
-
     test("should error on unknown options", () => {
         const result = tstl.parseCommandLine(["--unknownOption"]);
 
@@ -170,13 +162,6 @@ describe("tsconfig", () => {
         expect(result.errors).toHaveDiagnostics();
         expect(result.options.NoHeader).toBeUndefined();
         expect(result.options.noHeader).toBeUndefined();
-    });
-
-    test("should parse lists", () => {
-        const result = parseConfigFileContent({ tstl: { tsTransformers: [{ foo: "bar" }] } });
-
-        expect(result.errors).not.toHaveDiagnostics();
-        expect(result.options.tsTransformers).toEqual([{ foo: "bar" }]);
     });
 
     describe("enum options", () => {

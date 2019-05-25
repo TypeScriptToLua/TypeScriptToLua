@@ -166,6 +166,8 @@ export class LuaTransformer {
                 return this.transformExportDeclaration(node as ts.ExportDeclaration);
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
+            case ts.SyntaxKind.ImportEqualsDeclaration:
+                return this.transformImportEqualsDeclaration(node as ts.ImportEqualsDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transformClassDeclaration(node as ts.ClassDeclaration);
             case ts.SyntaxKind.ModuleDeclaration:
@@ -469,6 +471,39 @@ export class LuaTransformer {
                 throw TSTLErrors.ForbiddenStaticClassPropertyName(element, element.name.text);
             }
         }
+    }
+
+    public transformImportEqualsDeclaration(declaration: ts.ImportEqualsDeclaration): StatementVisitResult {
+        const name = this.transformIdentifier(declaration.name);
+        const expression = this.transformModuleReference(declaration.moduleReference);
+
+        return tstl.createVariableDeclarationStatement(name, expression, declaration);
+    }
+
+    public transformModuleReference(moduleReference: ts.ModuleReference): ExpressionVisitResult {
+        return ts.isExternalModuleReference(moduleReference)
+            ? this.transformExternalModuleReference(moduleReference)
+            : this.transformEntityName(moduleReference);
+    }
+
+    public transformExternalModuleReference(
+        externalModuleReference: ts.ExternalModuleReference
+    ): ExpressionVisitResult {
+        return this.transformExpression(externalModuleReference.expression);
+    }
+
+    public transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
+        return ts.isQualifiedName(entityName)
+            ? this.transformQualifiedName(entityName)
+            : this.transformIdentifier(entityName);
+    }
+
+    public transformQualifiedName(qualifiedName: ts.QualifiedName): ExpressionVisitResult {
+        const right = this.transformIdentifier(qualifiedName.right);
+        const rightLiteral = tstl.createStringLiteral(right.text, qualifiedName.right);
+        const left = this.transformEntityName(qualifiedName.left);
+
+        return tstl.createTableIndexExpression(left, rightLiteral, qualifiedName);
     }
 
     public transformClassDeclaration(

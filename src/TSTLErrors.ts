@@ -189,5 +189,12 @@ export class TSTLErrors {
             "must be moved before the identifier's use, or hoisting must be enabled.",
             node
         );
-    }
+    };
+
+    public static InvalidAmbientLuaKeywordIdentifier = (node: ts.Identifier) => {
+        return new TranspileError(
+            `Invalid use of lua keyword "${node.text}" as ambient identifier name.`,
+            node
+        );
+    };
 }

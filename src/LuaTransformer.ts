@@ -5294,6 +5294,8 @@ export class LuaTransformer {
         const symbol = this.checker.getSymbolAtLocation(identifier);
         if (symbol !== undefined) {
             return this.hasUnsafeSymbolName(symbol, identifier);
+        } else if (luaKeywords.has(identifier.text)) {
+            throw TSTLErrors.InvalidAmbientLuaKeywordIdentifier(identifier);
         }
         return false;
     }

@@ -199,5 +199,5 @@ test("Exported class decorator", () => {
         @decorator
         export class Foo {}`;
 
-    expect(util.transpileExecuteAndReturnExport(code, "Foo.bar"));
+    expect(util.transpileExecuteAndReturnExport(code, "Foo.bar")).toBe("foobar");
 });

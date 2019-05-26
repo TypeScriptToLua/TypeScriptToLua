@@ -495,7 +495,7 @@ export class LuaTransformer {
     private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
         return ts.isQualifiedName(entityName)
             ? this.transformQualifiedName(entityName)
-            : this.transformIdentifier(entityName);
+            : this.transformIdentifierExpression(entityName);
     }
 
     public transformQualifiedName(qualifiedName: ts.QualifiedName): ExpressionVisitResult {

@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
-import { LuaLibFeature } from "./LuaLib";
+import { LuaLibFeature, LuaLib } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
 import { luaKeywords, luaBuiltins } from "./LuaKeywords";
@@ -4607,6 +4607,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, node, caller, ...params);
             case "filter":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
+            case "reduce":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReduce, node, caller, ...params);
             case "some":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":

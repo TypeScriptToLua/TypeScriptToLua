@@ -195,9 +195,9 @@ export class TSTLErrors {
         return new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
     };
 
-    public static InvalidAmbientLuaKeywordIdentifier = (node: ts.Identifier) => {
+    public static InvalidAmbientIdentifierName = (node: ts.Identifier) => {
         return new TranspileError(
-            `Invalid use of lua keyword "${node.text}" as ambient identifier name.`,
+            `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,
             node
         );
     };

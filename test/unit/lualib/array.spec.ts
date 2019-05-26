@@ -454,5 +454,5 @@ test("array reduce index & array arguments (%p)", () => {
 test("array reduce index & array arguments (%p)", () => {
     expect(() => {
         util.transpileAndExecute("return [].reduce((a, b) => a + b);");
-    }).toThrow("Cannot reduce empty list without initial value");
+    }).toThrow("Reduce of empty array with no initial value");
 });

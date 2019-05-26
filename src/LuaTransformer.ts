@@ -264,11 +264,7 @@ export class LuaTransformer {
                         exportedIdentifier = this.transformIdentifier(specifier.propertyName);
                      } else {
                         const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
-                        if (exportedSymbol !== undefined) {
-                            exportedIdentifier = this.createIdentifierFromSymbol(exportedSymbol, specifier.name);
-                        } else {
-                            exportedIdentifier = this.transformIdentifier(specifier.name);
-                        }
+                        exportedIdentifier = this.createShorthandIdentifier(exportedSymbol, specifier.name);
                     }
 
                     return tstl.createAssignmentStatement(
@@ -3443,13 +3439,7 @@ export class LuaTransformer {
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 let identifier: tstl.Expression | undefined;
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                if (valueSymbol !== undefined
-                    // Ignore declarations for things like NaN
-                    && !tsHelper.isStandardLibraryDeclaration(valueSymbol.valueDeclaration, this.program)) {
-                    identifier = this.createIdentifierFromSymbol(valueSymbol, element.name);
-                } else {
-                    identifier = this.transformIdentifierExpression(element.name);
-                }
+                identifier = this.createShorthandIdentifier(valueSymbol, element.name);
                 if (tstl.isIdentifier(identifier) && valueSymbol !== undefined && this.isSymbolExported(valueSymbol)) {
                     identifier = this.createExportedIdentifier(identifier);
                 }
@@ -5266,11 +5256,34 @@ export class LuaTransformer {
         return tstl.createBinaryExpression(expression, tstl.createNumericLiteral(1), tstl.SyntaxKind.AdditionOperator);
     }
 
-    protected createIdentifierFromSymbol(symbol: ts.Symbol, tsOriginal?: ts.Identifier): tstl.Identifier {
-        const name = this.hasUnsafeSymbolName(symbol, tsOriginal)
-            ? this.createSafeName(symbol.name)
-            : symbol.name;
-        return tstl.createIdentifier(name, tsOriginal, this.symbolIds.get(symbol));
+    protected createShorthandIdentifier(
+        valueSymbol: ts.Symbol | undefined,
+        propertyIdentifier: ts.Identifier
+    ): tstl.Expression
+    {
+        let name: string;
+        if (valueSymbol !== undefined) {
+            name = this.hasUnsafeSymbolName(valueSymbol, propertyIdentifier)
+                ? this.createSafeName(valueSymbol.name)
+                : valueSymbol.name;
+
+        } else {
+            const propertyName = ts.idText(propertyIdentifier);
+            if (luaKeywords.has(propertyName) || !tsHelper.isValidLuaIdentifier(propertyName)) {
+                // Catch ambient declarations of identifiers with bad names
+                throw TSTLErrors.InvalidAmbientIdentifierName(propertyIdentifier);
+            }
+            name = this.hasUnsafeIdentifierName(propertyIdentifier)
+                ? this.createSafeName(propertyName)
+                : propertyName;
+        }
+
+        const identifier = this.transformIdentifierExpression(ts.createIdentifier(name));
+        tstl.setNodeOriginal(identifier, propertyIdentifier);
+        if (valueSymbol !== undefined && tstl.isIdentifier(identifier)) {
+            identifier.symbolId = this.symbolIds.get(valueSymbol);
+        }
+        return identifier;
     }
 
     protected isUnsafeName(name: string): boolean {
@@ -5280,7 +5293,7 @@ export class LuaTransformer {
     protected hasUnsafeSymbolName(symbol: ts.Symbol, tsOriginal?: ts.Identifier): boolean {
         const isLuaKeyword = luaKeywords.has(symbol.name);
         const isInvalidIdentifier = !tsHelper.isValidLuaIdentifier(symbol.name);
-        const isAmbient = symbol.declarations.find(d => !tsHelper.isAmbient(d)) === undefined;
+        const isAmbient = symbol.declarations.some(d => tsHelper.isAmbient(d));
         if ((isLuaKeyword || isInvalidIdentifier) && isAmbient) {
             // Catch ambient declarations of identifiers with bad names
             throw TSTLErrors.InvalidAmbientIdentifierName(tsOriginal || ts.createIdentifier(symbol.name));

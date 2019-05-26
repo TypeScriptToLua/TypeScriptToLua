@@ -127,6 +127,15 @@ test.each(["local", "$$$"])("undeclared identifier must be a valid lua identifie
     );
 });
 
+test.each(["local", "$$$"])(
+    "undeclared identifier must be a valid lua identifier (object literal shorthand) (%p)",
+    name => {
+        expect(() => util.transpileString(`const foo = { ${name} };`)).toThrow(
+            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
+        );
+    },
+);
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         const code = `

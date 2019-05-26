@@ -3441,9 +3441,8 @@ export class LuaTransformer {
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
 
             } else if (ts.isShorthandPropertyAssignment(element)) {
-                let identifier: tstl.Expression | undefined;
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                identifier = this.createShorthandIdentifier(valueSymbol, element.name);
+                let identifier = this.createShorthandIdentifier(valueSymbol, element.name);
                 if (tstl.isIdentifier(identifier) && valueSymbol !== undefined && this.isSymbolExported(valueSymbol)) {
                     identifier = this.createExportedIdentifier(identifier);
                 }

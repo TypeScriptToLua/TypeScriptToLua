@@ -477,7 +477,11 @@ export class LuaTransformer {
         const name = this.transformIdentifier(declaration.name);
         const expression = this.transformModuleReference(declaration.moduleReference);
 
-        return tstl.createVariableDeclarationStatement(name, expression, declaration);
+        return this.createHoistableVariableDeclarationStatement(
+            name,
+            expression,
+            declaration
+        );
     }
 
     public transformModuleReference(moduleReference: ts.ModuleReference): ExpressionVisitResult {

@@ -188,3 +188,16 @@ test("Throws error if decorator function has void context", () => {
         TSTLErrors.InvalidDecoratorContext(util.nodeStub),
     );
 });
+
+test("Exported class decorator", () => {
+    const code = `
+        function decorator<T extends any>(c: T): T {
+            c.bar = "foobar";
+            return c;
+        }
+
+        @decorator
+        export class Foo {}`;
+
+    expect(util.transpileExecuteAndReturnExport(code, "Foo.bar"));
+});

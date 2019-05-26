@@ -5578,7 +5578,7 @@ export class LuaTransformer {
         declaration: ts.ClassLikeDeclaration
     ): tstl.AssignmentStatement | undefined {
         const className = declaration.name !== undefined
-            ? this.transformIdentifier(declaration.name)
+            ? this.addExportToIdentifier(this.transformIdentifier(declaration.name))
             : tstl.createAnonymousIdentifier();
 
         const decorators = declaration.decorators;
@@ -5607,3 +5607,4 @@ export class LuaTransformer {
         );
     }
 }
+

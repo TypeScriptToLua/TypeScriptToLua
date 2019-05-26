@@ -165,6 +165,34 @@ test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name 
     expect(util.transpileAndExecute(code)).toBe(name);
 });
 
+test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name => {
+    const code = `
+        function decorator<T extends any>(c: T): T {
+            c.bar = "foobar";
+            return c;
+        }
+
+        @decorator
+        class ${name} {}
+        return (${name} as any).bar;`;
+
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
+
+test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua name", name => {
+    const code = `
+        function decorator<T extends any>(c: T): T {
+            c.bar = "foobar";
+            return c;
+        }
+
+        @decorator
+        export class ${name} {}`;
+
+    const lua = util.transpileString(code);
+    expect(util.executeLua(`return (function() ${lua} end)()["${name}"].bar`)).toBe("foobar");
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         const code = `

@@ -157,6 +157,14 @@ test.each(validTsInvalidLuaNames)(
     },
 );
 
+test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
+    const code = `
+        class ${name} {}
+        return ${name}.name;`;
+
+    expect(util.transpileAndExecute(code)).toBe(name);
+});
+
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
         const code = `

@@ -479,10 +479,13 @@ export class LuaTransformer {
         }
 
         let className: tstl.Identifier;
+        let classNameText: string;
         if (nameOverride !== undefined) {
             className = nameOverride;
+            classNameText = nameOverride.text;
         } else if (statement.name !== undefined) {
             className = this.transformIdentifier(statement.name);
+            classNameText = statement.name.text;
         } else {
             throw TSTLErrors.MissingClassName(statement);
         }
@@ -589,6 +592,7 @@ export class LuaTransformer {
                 statement,
                 className,
                 localClassName,
+                classNameText,
                 extendsType
             );
             result.push(...classCreationMethods);
@@ -723,6 +727,7 @@ export class LuaTransformer {
         statement: ts.ClassLikeDeclarationBase,
         className: tstl.Identifier,
         localClassName: tstl.Identifier,
+        classNameText: string,
         extendsType?: ts.Type
     ): tstl.Statement[]
     {
@@ -748,7 +753,7 @@ export class LuaTransformer {
         result.push(
             tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(tstl.cloneIdentifier(localClassName), tstl.createStringLiteral("name")),
-                tstl.createStringLiteral(localClassName.text),
+                tstl.createStringLiteral(classNameText),
                 statement
             )
         );

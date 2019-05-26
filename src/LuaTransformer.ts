@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
-import { LuaLibFeature, LuaLib } from "./LuaLib";
+import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
 import { TSTLErrors } from "./TSTLErrors";
 import { luaKeywords, luaBuiltins } from "./LuaKeywords";

@@ -9,7 +9,7 @@ function __TS__ArrayReduce<T>(
 
     if (len === 0 && initial === undefined) {
         // tslint:disable-next-line: no-string-throw
-        throw "Cannot reduce empty list without initial value.";
+        throw "Reduce of empty array with no initial value";
     }
 
     let k = 0;

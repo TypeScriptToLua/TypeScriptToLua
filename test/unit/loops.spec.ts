@@ -504,6 +504,37 @@ test("forof destructuring with iterator and existing variables", () => {
     expect(result).toBe("0a1b2c");
 });
 
+test("forof array which modifies length", () => {
+    const code = `
+        const arr = ["a", "b", "c"];
+        let result = "";
+        for (const v of arr) {
+            if (v === "a") {
+                arr.push("d");
+            }
+            result += v;
+        }
+        return result;`;
+
+    expect(util.transpileAndExecute(code)).toBe("abcd");
+});
+
+test.each([
+    { initializer: "const {a, b}", vars: "" },
+    { initializer: "const {a: x, b: y}", vars: "" },
+    { initializer: "{a, b}", vars: "let a: string, b: string;" },
+    { initializer: "{a: c, b: d}", vars: "let c: string, d: string;" },
+])("forof object destructuring (%p)", ({ initializer, vars }) => {
+    const code = `
+        declare const arr: {a: string, b: string}[];
+        ${vars}
+        for (${initializer} of arr) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message,
+    );
+});
+
 test("forof with array typed as iterable", () => {
     const code = `
         function foo(): Iterable<string> {

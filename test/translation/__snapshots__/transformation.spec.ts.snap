@@ -238,7 +238,7 @@ end"
 `;
 
 exports[`Transformation (forOf) 1`] = `
-"local ____TS_array = {
+"for ____, i in ipairs({
     1,
     2,
     3,
@@ -249,9 +249,7 @@ exports[`Transformation (forOf) 1`] = `
     8,
     9,
     10,
-}
-for ____TS_index = 1, #____TS_array do
-    local i = ____TS_array[____TS_index]
+}) do
 end"
 `;
 

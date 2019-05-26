@@ -3,7 +3,24 @@ import * as util from "../util";
 import { luaKeywords } from "../../src/LuaKeywords";
 import { TSTLErrors } from "../../src/TSTLErrors";
 
-test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])("invalid lua identifier name (%p)", name => {
+const invalidLuaCharNames = ["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"];
+const validTsInvalidLuaKeywordNames = [
+    "and",
+    "elseif",
+    "end",
+    "goto",
+    "local",
+    "nil",
+    "not",
+    "or",
+    "repeat",
+    "then",
+    "until",
+];
+const invalidLuaNames = [...invalidLuaCharNames, ...luaKeywords.values()];
+const validTsInvalidLuaNames = [...invalidLuaCharNames, ...validTsInvalidLuaKeywordNames];
+
+test.each(validTsInvalidLuaNames)("invalid lua identifier name (%p)", name => {
     const code = `
         const ${name} = "foobar";
         return ${name};`;
@@ -19,42 +36,33 @@ test.each([...luaKeywords.values()])("lua keyword as property name (%p)", keywor
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
 
-test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
-    "destructuring lua keyword (%p)",
-    keyword => {
-        const code = `
+test.each(validTsInvalidLuaKeywordNames)("destructuring lua keyword (%p)", keyword => {
+    const code = `
             const { foo: ${keyword} } = { foo: "foobar" };
             return ${keyword};`;
 
-        expect(util.transpileAndExecute(code)).toBe("foobar");
-    },
-);
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
 
-test.each(["and", "elseif", "end", "goto", "local", "nil", "not", "or", "repeat", "then", "until"])(
-    "destructuring shorthand lua keyword (%p)",
-    keyword => {
-        const code = `
+test.each(validTsInvalidLuaKeywordNames)("destructuring shorthand lua keyword (%p)", keyword => {
+    const code = `
             const { ${keyword} } = { ${keyword}: "foobar" };
             return ${keyword};`;
 
-        expect(util.transpileAndExecute(code)).toBe("foobar");
-    },
-);
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
 
-test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
-    "lua keyword or invalid identifier as method call (%p)",
-    name => {
-        const code = `
+test.each(invalidLuaNames)("lua keyword or invalid identifier as method call (%p)", name => {
+    const code = `
         const foo = {
             ${name}(arg: string) { return "foo" + arg; }
         };
         return foo.${name}("bar");`;
 
-        expect(util.transpileAndExecute(code)).toBe("foobar");
-    },
-);
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
 
-test.each(["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿", ...luaKeywords.values()])(
+test.each(invalidLuaNames)(
     "lua keyword or invalid identifier as complex method call (%p)",
     name => {
         const code = `
@@ -108,7 +116,7 @@ test.each([
     );
 });
 
-test.each(["local", "$$$"])(
+test.each(validTsInvalidLuaNames)(
     "ambient identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {
         const code = `
@@ -121,18 +129,31 @@ test.each(["local", "$$$"])(
     },
 );
 
-test.each(["local", "$$$"])("undeclared identifier must be a valid lua identifier (%p)", name => {
-    expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
-    );
-});
+test.each(validTsInvalidLuaNames)(
+    "undeclared identifier must be a valid lua identifier (%p)",
+    name => {
+        expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
+            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
+        );
+    },
+);
 
-test.each(["local", "$$$"])(
+test.each(validTsInvalidLuaNames)(
     "undeclared identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {
         expect(() => util.transpileString(`const foo = { ${name} };`)).toThrow(
             TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
         );
+    },
+);
+
+test.each(validTsInvalidLuaNames)(
+    "exported values with invalid lua identifier names (%p)",
+    name => {
+        const code = `export const ${name} = "foobar";`;
+        const lua = util.transpileString(code);
+        expect(lua.indexOf(`"${name}"`)).toBeGreaterThanOrEqual(0);
+        expect(util.executeLua(`return (function() ${lua} end)()["${name}"]`)).toBe("foobar");
     },
 );
 

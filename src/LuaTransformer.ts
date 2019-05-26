@@ -5268,7 +5268,7 @@ export class LuaTransformer {
                 : valueSymbol.name;
 
         } else {
-            const propertyName = ts.idText(propertyIdentifier);
+            const propertyName = this.getIdentifierText(propertyIdentifier);
             if (luaKeywords.has(propertyName) || !tsHelper.isValidLuaIdentifier(propertyName)) {
                 // Catch ambient declarations of identifiers with bad names
                 throw TSTLErrors.InvalidAmbientIdentifierName(propertyIdentifier);
@@ -5298,12 +5298,12 @@ export class LuaTransformer {
             // Catch ambient declarations of identifiers with bad names
             throw TSTLErrors.InvalidAmbientIdentifierName(tsOriginal || ts.createIdentifier(symbol.name));
         }
-        const isLuaBuiltin = luaBuiltins.has(symbol.name);
-        if (isLuaKeyword || isLuaBuiltin) {
-            // lua keywords/builtins are only unsafe when non-ambient and not exported
+
+        if (this.isUnsafeName(symbol.name)) {
+            // only unsafe when non-ambient and not exported
             return !isAmbient && !this.isSymbolExported(symbol);
         }
-        return this.isUnsafeName(symbol.name);
+        return false;
     }
 
     protected hasUnsafeIdentifierName(identifier: ts.Identifier): boolean {

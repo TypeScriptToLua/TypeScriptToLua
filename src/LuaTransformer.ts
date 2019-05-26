@@ -475,7 +475,9 @@ export class LuaTransformer {
 
     public transformImportEqualsDeclaration(declaration: ts.ImportEqualsDeclaration): StatementVisitResult {
         const name = this.transformIdentifier(declaration.name);
-        const expression = this.transformModuleReference(declaration.moduleReference);
+        const expression = ts.isExternalModuleReference(declaration.moduleReference)
+            ? this.transformExternalModuleReference(declaration.moduleReference)
+            : this.transformEntityName(declaration.moduleReference);
 
         return this.createHoistableVariableDeclarationStatement(
             name,
@@ -484,30 +486,23 @@ export class LuaTransformer {
         );
     }
 
-    public transformModuleReference(moduleReference: ts.ModuleReference): ExpressionVisitResult {
-        return ts.isExternalModuleReference(moduleReference)
-            ? this.transformExternalModuleReference(moduleReference)
-            : this.transformEntityName(moduleReference);
-    }
-
     public transformExternalModuleReference(
         externalModuleReference: ts.ExternalModuleReference
     ): ExpressionVisitResult {
         return this.transformExpression(externalModuleReference.expression);
     }
 
-    public transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
+    private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
         return ts.isQualifiedName(entityName)
             ? this.transformQualifiedName(entityName)
             : this.transformIdentifier(entityName);
     }
 
     public transformQualifiedName(qualifiedName: ts.QualifiedName): ExpressionVisitResult {
-        const right = this.transformIdentifier(qualifiedName.right);
-        const rightLiteral = tstl.createStringLiteral(right.text, qualifiedName.right);
+        const right = tstl.createStringLiteral(this.getIdentifierText(qualifiedName.right), qualifiedName.right);
         const left = this.transformEntityName(qualifiedName.left);
 
-        return tstl.createTableIndexExpression(left, rightLiteral, qualifiedName);
+        return tstl.createTableIndexExpression(left, right, qualifiedName);
     }
 
     public transformClassDeclaration(
@@ -3953,7 +3948,7 @@ export class LuaTransformer {
     }
 
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
-        const property = expression.name.text;
+        const property = this.getIdentifierText(expression.name);
 
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(expression.expression);

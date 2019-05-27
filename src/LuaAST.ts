@@ -8,6 +8,7 @@ import * as ts from "typescript";
 
 export enum SyntaxKind {
     Block,
+
     // Statements
     DoStatement,
     VariableDeclarationStatement,
@@ -22,6 +23,7 @@ export enum SyntaxKind {
     ReturnStatement,
     BreakStatement,
     ExpressionStatement,
+
     // Expression
     StringLiteral,
     NumericLiteral,
@@ -39,7 +41,9 @@ export enum SyntaxKind {
     MethodCallExpression,
     Identifier,
     TableIndexExpression,
+
     // Operators
+
     // Arithmetic
     AdditionOperator, // Maybe use abbreviations for those add, sub, mul ...
     SubtractionOperator,
@@ -49,22 +53,28 @@ export enum SyntaxKind {
     ModuloOperator,
     PowerOperator,
     NegationOperator, // Unary minus
+
     // Concat
     ConcatOperator,
+
     // Length
     LengthOperator, // Unary
+
     // Relational Ops
     EqualityOperator,
     InequalityOperator,
     LessThanOperator,
     LessEqualOperator,
-    GreaterThanOperator, // Syntax Sugar `x > y` <=> `not (y <= x)`
+    // Syntax Sugar `x > y` <=> `not (y <= x)`
     // but we should probably use them to make the output code more readable
+    GreaterThanOperator,
     GreaterEqualOperator, // Syntax Sugar `x >= y` <=> `not (y < x)`
+
     // Logical
     AndOperator,
     OrOperator,
     NotOperator, // Unary
+
     // Bitwise
     BitwiseAndOperator,
     BitwiseOrOperator,

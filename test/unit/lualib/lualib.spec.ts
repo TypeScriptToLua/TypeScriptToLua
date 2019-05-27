@@ -343,7 +343,11 @@ test.each([
 });
 
 test.each([
-    { array: [1, 2, 3, 4, 5], compareStr: "a - b", compareFn: (a: any, b: any) => a - b },
+    {
+        array: [1, 2, 3, 4, 5],
+        compareStr: "a - b",
+        compareFn: (a: any, b: any) => a - b,
+    },
     {
         array: ["4", "5", "3", "2", "1"],
         compareStr: "tonumber(a) - tonumber(b)",

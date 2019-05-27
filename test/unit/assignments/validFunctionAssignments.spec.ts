@@ -169,16 +169,8 @@ test("Valid interface method assignment", () => {
 test.each([
     { assignType: "(this: any, s: string) => string", args: ["foo"], expectResult: "foobar" },
     { assignType: "{(this: any, s: string): string}", args: ["foo"], expectResult: "foobar" },
-    {
-        assignType: "(this: any, s1: string, s2: string) => string",
-        args: ["foo", "baz"],
-        expectResult: "foobaz",
-    },
-    {
-        assignType: "{(this: any, s1: string, s2: string): string}",
-        args: ["foo", "baz"],
-        expectResult: "foobaz",
-    },
+    { assignType: "(this: any, s1: string, s2: string) => string", args: ["foo", "baz"], expectResult: "foobaz" },
+    { assignType: "{(this: any, s1: string, s2: string): string}", args: ["foo", "baz"], expectResult: "foobaz" },
 ])("Valid function overload assignment (%p)", ({ assignType, args, expectResult }) => {
     const code = `interface O {
                       (s1: string, s2: string): string;

@@ -162,8 +162,7 @@ export class LuaPrinter {
 
         return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
             ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks)
-            : // tslint:disable-next-line:no-null-keyword
-              new SourceNode(null, null, this.sourceFile, chunks);
+            : new SourceNode(null, null, this.sourceFile, chunks); // tslint:disable-line:no-null-keyword
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {

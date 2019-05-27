@@ -9,26 +9,10 @@ const testCases = [
     { bindingString: "[[y, z]]", objectString: "[[false, true]]", returnVariable: "z" },
     { bindingString: "{x, y}", objectString: "{x: false, y: true}", returnVariable: "y" },
     { bindingString: "{x: foo, y}", objectString: "{x: true, y: false}", returnVariable: "foo" },
-    {
-        bindingString: "{x: foo, y: bar}",
-        objectString: "{x: false, y: true}",
-        returnVariable: "bar",
-    },
-    {
-        bindingString: "{x: {x, y}, z}",
-        objectString: "{x: {x: true, y: false}, z: false}",
-        returnVariable: "x",
-    },
-    {
-        bindingString: "{x: {x, y}, z}",
-        objectString: "{x: {x: false, y: true}, z: false}",
-        returnVariable: "y",
-    },
-    {
-        bindingString: "{x: {x, y}, z}",
-        objectString: "{x: {x: false, y: false}, z: true}",
-        returnVariable: "z",
-    },
+    { bindingString: "{x: foo, y: bar}", objectString: "{x: false, y: true}", returnVariable: "bar" },
+    { bindingString: "{x: {x, y}, z}", objectString: "{x: {x: true, y: false}, z: false}", returnVariable: "x" },
+    { bindingString: "{x: {x, y}, z}", objectString: "{x: {x: false, y: true}, z: false}", returnVariable: "y" },
+    { bindingString: "{x: {x, y}, z}", objectString: "{x: {x: false, y: false}, z: true}", returnVariable: "z" },
 ];
 
 const testCasesDefault = [
@@ -38,11 +22,7 @@ const testCasesDefault = [
 
 test.each([
     { bindingString: "{x, y}, z", objectString: "{x: false, y: false}, true", returnVariable: "z" },
-    {
-        bindingString: "{x, y}, {z}",
-        objectString: "{x: false, y: false}, {z: true}",
-        returnVariable: "z",
-    },
+    { bindingString: "{x, y}, {z}", objectString: "{x: false, y: false}, {z: true}", returnVariable: "z" },
     ...testCases,
     ...testCasesDefault,
 ])("Object bindings in functions (%p)", ({ bindingString, objectString, returnVariable }) => {
@@ -93,11 +73,7 @@ test.each(testCases)(
 
 test.each([
     { bindingString: "{x, y = true}", objectString: "{x: false, y: false}", returnVariable: "y" },
-    {
-        bindingString: "{x, y: [z = true]}",
-        objectString: "{x: false, y: [false]}",
-        returnVariable: "z",
-    },
+    { bindingString: "{x, y: [z = true]}", objectString: "{x: false, y: [false]}", returnVariable: "z" },
     { bindingString: "[x = true]", objectString: "[false]", returnVariable: "x" },
 ])("Binding patterns handle false correctly (%p)", ({ bindingString, objectString, returnVariable }) => {
     const result = util.transpileExecuteAndReturnExport(

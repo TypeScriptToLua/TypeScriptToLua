@@ -11,15 +11,9 @@ test.each([
     { input: "!a", lua: "local ____ = not a" },
     { input: "-a", lua: "local ____ = -a" },
     { input: "+a", lua: "local ____ = a" },
-    {
-        input: "let a = delete tbl['test']",
-        lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()",
-    },
+    { input: "let a = delete tbl['test']", lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()" },
     { input: "delete tbl['test']", lua: "tbl.test = nil" },
-    {
-        input: "let a = delete tbl.test",
-        lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()",
-    },
+    { input: "let a = delete tbl.test", lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()" },
     { input: "delete tbl.test", lua: "tbl.test = nil" },
 ])("Unary expressions basic (%p)", ({ input, lua }) => {
     expect(util.transpileString(input)).toBe(lua);
@@ -222,26 +216,14 @@ test.each([
     { input: "true ? maybeUndefinedValue : true" },
     { input: "true ? maybeBooleanValue : true", expected: false },
     { input: "true ? maybeUndefinedValue : true", options: { strictNullChecks: true } },
-    {
-        input: "true ? maybeBooleanValue : true",
-        expected: false,
-        options: { strictNullChecks: true },
-    },
+    { input: "true ? maybeBooleanValue : true", expected: false, options: { strictNullChecks: true } },
     { input: "true ? undefined : true", options: { strictNullChecks: true } },
     { input: "true ? null : true", options: { strictNullChecks: true } },
     { input: "true ? false : true", expected: false, options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "false ? false : true", expected: true, options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    {
-        input: "true ? false : true",
-        expected: false,
-        options: { luaTarget: tstl.LuaTarget.LuaJIT },
-    },
-    {
-        input: "false ? false : true",
-        expected: true,
-        options: { luaTarget: tstl.LuaTarget.LuaJIT },
-    },
+    { input: "true ? false : true", expected: false, options: { luaTarget: tstl.LuaTarget.LuaJIT } },
+    { input: "false ? false : true", expected: true, options: { luaTarget: tstl.LuaTarget.LuaJIT } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
 ])("Ternary operator (%p)", ({ input, expected, options }) => {
     const result = util.transpileAndExecute(

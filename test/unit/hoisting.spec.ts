@@ -228,10 +228,7 @@ test.each([
     { code: `const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
     { code: `export const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
     { code: `const foo = bar(); export function bar() { return "bar"; }`, identifier: "bar" },
-    {
-        code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`,
-        identifier: "NS",
-    },
+    { code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, identifier: "NS" },
     {
         code: `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
         identifier: "I",

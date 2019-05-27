@@ -191,33 +191,13 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoPostExpression 
 
 test.each([
     { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i < arrTest.length; i++" },
-    {
-        inp: [0, 1, 2, 3],
-        expected: [1, 2, 3, 4],
-        header: "let i = 0; i <= arrTest.length - 1; i++",
-    },
+    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i <= arrTest.length - 1; i++" },
     { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length > i; i++" },
-    {
-        inp: [0, 1, 2, 3],
-        expected: [1, 2, 3, 4],
-        header: "let i = 0; arrTest.length - 1 >= i; i++",
-    },
+    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length - 1 >= i; i++" },
     { inp: [0, 1, 2, 3], expected: [1, 1, 3, 3], header: "let i = 0; i < arrTest.length; i += 2" },
-    {
-        inp: [0, 1, 2, 3],
-        expected: [1, 2, 3, 4],
-        header: "let i = arrTest.length - 1; i >= 0; i--",
-    },
-    {
-        inp: [0, 1, 2, 3],
-        expected: [0, 2, 2, 4],
-        header: "let i = arrTest.length - 1; i >= 0; i -= 2",
-    },
-    {
-        inp: [0, 1, 2, 3],
-        expected: [0, 2, 2, 4],
-        header: "let i = arrTest.length - 1; i > 0; i -= 2",
-    },
+    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = arrTest.length - 1; i >= 0; i--" },
+    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
+    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
 ])("forheader (%p)", ({ inp, expected, header }) => {
     const result = util.transpileAndExecute(
         `let arrTest = ${JSON.stringify(inp)};

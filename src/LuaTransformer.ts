@@ -4569,10 +4569,11 @@ export class LuaTransformer {
 
     public transformIdentifier(identifier: ts.Identifier): tstl.Identifier {
         if (identifier.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
-            return tstl.createIdentifier("nil"); // TODO this is a hack that allows use to keep Identifier
+            // TODO this is a hack that allows use to keep Identifier
             // as return time as changing that would break a lot of stuff.
             // But this should be changed to return tstl.createNilLiteral()
             // at some point.
+            return tstl.createIdentifier("nil");
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)

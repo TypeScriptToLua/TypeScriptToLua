@@ -214,23 +214,11 @@ test.each([
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "s => s" },
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "(s => s)" },
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "function(s) { return s; }" },
-    {
-        assignTo: "const meths: Method[]",
-        method: "meths[0]",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "(function(s) { return s; })" },
     { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "s => s" },
     { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "(s => s)" },
-    {
-        assignTo: "let meths: Method[]; meths",
-        method: "meths[0]",
-        funcExp: "function(s) { return s; }",
-    },
-    {
-        assignTo: "let meths: Method[]; meths",
-        method: "meths[0]",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "function(s) { return s; }" },
+    { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "(function(s) { return s; })" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "s => s" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "(s => s)" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "function(s) { return s; }" },
@@ -238,11 +226,7 @@ test.each([
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "s => s" },
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "(s => s)" },
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "function(s) { return s; }" },
-    {
-        assignTo: "let meth: Method; [meth]",
-        method: "meth",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in array (%p)", ({ assignTo, method, funcExp }) => {
     const code = `
         interface Foo {

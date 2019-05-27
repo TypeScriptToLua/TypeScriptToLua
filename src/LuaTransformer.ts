@@ -466,11 +466,7 @@ export class LuaTransformer {
             ? this.transformExternalModuleReference(declaration.moduleReference)
             : this.transformEntityName(declaration.moduleReference);
 
-        return this.createHoistableVariableDeclarationStatement(
-            name,
-            expression,
-            declaration
-        );
+        return this.createHoistableVariableDeclarationStatement(name, expression, declaration);
     }
 
     public transformExternalModuleReference(

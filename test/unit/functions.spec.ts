@@ -14,9 +14,7 @@ test.each([
     { lambda: "++i", expected: 15 },
     { lambda: "--i", expected: 5 },
 ])("Arrow function unary expression (%p)", ({ lambda, expected }) => {
-    const result = util.transpileAndExecute(
-        `let i = 10; [1,2,3,4,5].forEach(() => ${lambda}); return i;`,
-    );
+    const result = util.transpileAndExecute(`let i = 10; [1,2,3,4,5].forEach(() => ${lambda}); return i;`);
 
     expect(result).toBe(expected);
 });
@@ -46,16 +44,14 @@ test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Arrow Default Values (%
 
     const result = util.transpileAndExecute(
         `let add = (a: number = 3, b: number = 4) => a+b;
-        return add(${callArgs});`,
+        return add(${callArgs});`
     );
 
     expect(result).toBe(v1 + v2);
 });
 
 test("Function Expression", () => {
-    const result = util.transpileAndExecute(
-        `let add = function(a, b) {return a+b}; return add(1,2);`,
-    );
+    const result = util.transpileAndExecute(`let add = function(a, b) {return a+b}; return add(1,2);`);
 
     expect(result).toBe(3);
 });
@@ -75,24 +71,21 @@ test("Function default parameter", () => {
     expect(result).toBe("abcdef");
 });
 
-test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])(
-    "Function Default Values (%p)",
-    ({ inp }) => {
-        // Default value is 3 for v1
-        const v1 = inp.length > 0 ? inp[0] : 3;
-        // Default value is 4 for v2
-        const v2 = inp.length > 1 ? inp[1] : 4;
+test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Function Default Values (%p)", ({ inp }) => {
+    // Default value is 3 for v1
+    const v1 = inp.length > 0 ? inp[0] : 3;
+    // Default value is 4 for v2
+    const v2 = inp.length > 1 ? inp[1] : 4;
 
-        const callArgs = inp.join(",");
+    const callArgs = inp.join(",");
 
-        const result = util.transpileAndExecute(
-            `let add = function(a: number = 3, b: number = 4) { return a+b; };
-        return add(${callArgs});`,
-        );
+    const result = util.transpileAndExecute(
+        `let add = function(a: number = 3, b: number = 4) { return a+b; };
+        return add(${callArgs});`
+    );
 
-        expect(result).toBe(v1 + v2);
-    },
-);
+    expect(result).toBe(v1 + v2);
+});
 
 test("Function default array binding parameter", () => {
     const code = `
@@ -231,22 +224,20 @@ test("Invalid property access call transpilation", () => {
         expression: ts.createLiteral("abc"),
     };
 
-    expect(() =>
-        transformer.transformPropertyCall(mockObject as ts.CallExpression),
-    ).toThrowExactError(TSTLErrors.InvalidPropertyCall(util.nodeStub));
+    expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression)).toThrowExactError(
+        TSTLErrors.InvalidPropertyCall(util.nodeStub)
+    );
 });
 
 test("Function dead code after return", () => {
-    const result = util.transpileAndExecute(
-        `function abc() { return 3; const a = 5; } return abc();`,
-    );
+    const result = util.transpileAndExecute(`function abc() { return 3; const a = 5; } return abc();`);
 
     expect(result).toBe(3);
 });
 
 test("Method dead code after return", () => {
     const result = util.transpileAndExecute(
-        `class def { public static abc() { return 3; const a = 5; } } return def.abc();`,
+        `class def { public static abc() { return 3; const a = 5; } } return def.abc();`
     );
 
     expect(result).toBe(3);
@@ -267,7 +258,7 @@ test("Recursive function expression", () => {
 test("Wrapped recursive function expression", () => {
     const result = util.transpileAndExecute(
         `function wrap<T>(fn: T) { return fn; }
-        let f = wrap(function() { return typeof f; }); return f();`,
+        let f = wrap(function() { return typeof f; }); return f();`
     );
 
     expect(result).toBe("function");
@@ -282,7 +273,7 @@ test("Recursive arrow function", () => {
 test("Wrapped recursive arrow function", () => {
     const result = util.transpileAndExecute(
         `function wrap<T>(fn: T) { return fn; }
-        let f = wrap(() => typeof f); return f();`,
+        let f = wrap(() => typeof f); return f();`
     );
 
     expect(result).toBe("function");
@@ -290,16 +281,15 @@ test("Wrapped recursive arrow function", () => {
 
 test("Object method declaration", () => {
     const result = util.transpileAndExecute(
-        `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`,
+        `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`
     );
     expect(result).toBe(12);
 });
 
-test.each([
-    { args: ["bar"], expectResult: "foobar" },
-    { args: ["baz", "bar"], expectResult: "bazbar" },
-])("Function overload (%p)", ({ args, expectResult }) => {
-    const code = `
+test.each([{ args: ["bar"], expectResult: "foobar" }, { args: ["baz", "bar"], expectResult: "bazbar" }])(
+    "Function overload (%p)",
+    ({ args, expectResult }) => {
+        const code = `
         class O {
             prop = "foo";
             method(s: string): string;
@@ -314,9 +304,10 @@ test.each([
         const o = new O();
         return o.method(${args.map(a => '"' + a + '"').join(", ")});
     `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(expectResult);
-});
+        const result = util.transpileAndExecute(code);
+        expect(result).toBe(expectResult);
+    }
+);
 
 test("Nested Function", () => {
     const code = `
@@ -338,10 +329,8 @@ test("Nested Function", () => {
     expect(result).toBe("foobar");
 });
 
-test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])(
-    "Dot vs Colon method call (%p)",
-    ({ s1, s2 }) => {
-        const result = util.transpileAndExecute(`
+test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])("Dot vs Colon method call (%p)", ({ s1, s2 }) => {
+    const result = util.transpileAndExecute(`
             class MyClass {
                 dotMethod(this: void, s: string) {
                     return s;
@@ -353,9 +342,8 @@ test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])(
             const inst = new MyClass();
             return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");
         `);
-        expect(result).toBe(s1 === s2);
-    },
-);
+    expect(result).toBe(s1 === s2);
+});
 
 test("Element access call", () => {
     const code = `
@@ -442,7 +430,7 @@ test.each([{ iterations: 1, expectedResult: 1 }, { iterations: 2, expectedResult
         `;
         const result = util.transpileAndExecute(code);
         expect(result).toBe(expectedResult);
-    },
+    }
 );
 
 test.each([{ iterations: 1, expectedResult: false }, { iterations: 2, expectedResult: true }])(
@@ -463,7 +451,7 @@ test.each([{ iterations: 1, expectedResult: false }, { iterations: 2, expectedRe
         `;
         const result = util.transpileAndExecute(code);
         expect(result).toBe(expectedResult);
-    },
+    }
 );
 
 test("Generator for..of", () => {

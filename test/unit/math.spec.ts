@@ -18,15 +18,12 @@ test.each([
     expect(lua).toBe(expected);
 });
 
-test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])(
-    "Math constant (%p)",
-    constant => {
-        const epsilon = 0.000001;
-        const jsValue: number = (Math as Math & { [key: string]: any })[constant];
-        const code = `return Math.abs(Math.${constant} - ${jsValue}) <= ${epsilon}`;
-        expect(util.transpileAndExecute(code)).toBe(true);
-    },
-);
+test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math constant (%p)", constant => {
+    const epsilon = 0.000001;
+    const jsValue: number = (Math as Math & { [key: string]: any })[constant];
+    const code = `return Math.abs(Math.${constant} - ${jsValue}) <= ${epsilon}`;
+    expect(util.transpileAndExecute(code)).toBe(true);
+});
 
 test.each([
     { statement: "++x", expected: "x=4;y=6" },
@@ -49,7 +46,7 @@ test.each([
         `let x = 3;
         let y = 6;
         ${statement};
-        return \`x=\${x};y=\${y}\``,
+        return \`x=\${x};y=\${y}\``
     );
     expect(result).toBe(expected);
 });
@@ -75,7 +72,7 @@ test.each([
         `let o = {p: 3};
         let a = [6];
         ${statement};
-        return \`o=\${o.p};a=\${a[0]}\``,
+        return \`o=\${o.p};a=\${a[0]}\``
     );
     expect(result).toBe(expected);
 });
@@ -101,7 +98,7 @@ test.each([
         `let o = {p: {d: 3}};
         let a = [[6,11], [7,13]];
         ${statement};
-        return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}]\``,
+        return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}]\``
     );
     expect(result).toBe(expected);
 });
@@ -130,7 +127,7 @@ test.each([
         function af() { return a; }
         function i() { return 0; }
         ${statement};
-        return \`o=\${o.p};a=\${a[0]}\``,
+        return \`o=\${o.p};a=\${a[0]}\``
     );
     expect(result).toBe(expected);
 });
@@ -160,7 +157,7 @@ test.each([
         let _i = 0;
         function i() { return _i++; }
         ${statement};
-        return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}];i=\${_i}\``,
+        return \`o=\${o.p.d};a=[\${a[0][0]},\${a[0][1]}],[\${a[1][0]},\${a[1][1]}];i=\${_i}\``
     );
     expect(result).toBe(expected);
 });
@@ -189,7 +186,7 @@ test.each([
         `let x = 3;
         let y = 6;
         const r = ${expression};
-        return \`\${r};x=\${x};y=\${y}\``,
+        return \`\${r};x=\${x};y=\${y}\``
     );
     expect(result).toBe(expected);
 });
@@ -218,7 +215,7 @@ test.each([
         `let o = {p: 3};
         let a = [6];
         const r = ${expression};
-        return \`\${r};o=\${o.p};a=\${a[0]}\``,
+        return \`\${r};o=\${o.p};a=\${a[0]}\``
     );
     expect(result).toBe(expected);
 });
@@ -250,7 +247,7 @@ test.each([
         function af() { return a; }
         function i() { return 0; }
         const r = ${expression};
-        return \`\${r};o=\${o.p};a=\${a[0]}\``,
+        return \`\${r};o=\${o.p};a=\${a[0]}\``
     );
     expect(result).toBe(expected);
 });

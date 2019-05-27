@@ -9,7 +9,7 @@ test("set constructor", () => {
 test("set iterable constructor", () => {
     const result = util.transpileAndExecute(
         `let myset = new Set(["a", "b"]);
-         return myset.has("a") || myset.has("b");`,
+         return myset.has("a") || myset.has("b");`
     );
 
     expect(result).toBe(true);
@@ -18,16 +18,14 @@ test("set iterable constructor", () => {
 test("set iterable constructor set", () => {
     const result = util.transpileAndExecute(
         `let myset = new Set(new Set(["a", "b"]));
-        return myset.has("a") || myset.has("b");`,
+        return myset.has("a") || myset.has("b");`
     );
 
     expect(result).toBe(true);
 });
 
 test("set add", () => {
-    const has = util.transpileAndExecute(
-        `let myset = new Set(); myset.add("a"); return myset.has("a");`,
-    );
+    const has = util.transpileAndExecute(`let myset = new Set(); myset.add("a"); return myset.has("a");`);
     expect(has).toBe(true);
 });
 
@@ -51,7 +49,7 @@ test("set entries", () => {
         `let myset = new Set([5, 6, 7]);
         let count = 0;
         for (var [key, value] of myset.entries()) { count += key + value; }
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(36);
@@ -62,7 +60,7 @@ test("set foreach", () => {
         `let myset = new Set([2, 3, 4]);
         let count = 0;
         myset.forEach(i => { count += i; });
-        return count;`,
+        return count;`
     );
     expect(result).toBe(9);
 });
@@ -72,16 +70,14 @@ test("set foreach keys", () => {
         `let myset = new Set([2, 3, 4]);
         let count = 0;
         myset.forEach((value, key) => { count += key; });
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(9);
 });
 
 test("set has", () => {
-    const contains = util.transpileAndExecute(
-        `let myset = new Set(["a", "c"]); return myset.has("a");`,
-    );
+    const contains = util.transpileAndExecute(`let myset = new Set(["a", "c"]); return myset.has("a");`);
     expect(contains).toBe(true);
 });
 
@@ -91,9 +87,7 @@ test("set has false", () => {
 });
 
 test("set has null", () => {
-    const contains = util.transpileAndExecute(
-        `let myset = new Set(["a", "c"]); return myset.has(null);`,
-    );
+    const contains = util.transpileAndExecute(`let myset = new Set(["a", "c"]); return myset.has(null);`);
     expect(contains).toBe(false);
 });
 
@@ -102,7 +96,7 @@ test("set keys", () => {
         `let myset = new Set([5, 6, 7]);
         let count = 0;
         for (var key of myset.keys()) { count += key; }
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(18);
@@ -113,7 +107,7 @@ test("set values", () => {
         `let myset = new Set([5, 6, 7]);
         let count = 0;
         for (var value of myset.values()) { count += value; }
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(18);

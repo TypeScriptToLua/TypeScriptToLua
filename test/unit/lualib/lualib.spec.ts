@@ -20,7 +20,7 @@ test.each([
         `let a = 3;
          let delay = () => ${condition} ? a + 3 : a + 5;
          a = 8;
-         return delay();`,
+         return delay();`
     );
 
     expect(result).toBe(expected);
@@ -124,7 +124,7 @@ test.each([
         return JSONStringify(obj);`,
         undefined,
         undefined,
-        objectFromEntriesDeclaration,
+        objectFromEntriesDeclaration
     );
 
     expect(JSON.parse(result)).toEqual(expected);
@@ -137,7 +137,7 @@ test("Object.fromEntries (Map)", () => {
         return JSONStringify(obj);`,
         undefined,
         undefined,
-        objectFromEntriesDeclaration,
+        objectFromEntriesDeclaration
     );
 
     expect(JSON.parse(result)).toEqual({ foo: "bar" });

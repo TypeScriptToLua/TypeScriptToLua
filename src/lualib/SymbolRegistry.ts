@@ -2,7 +2,7 @@
 const ____symbolRegistry: Record<string, symbol> = {};
 
 function __TS__SymbolRegistryFor(this: void, key: string): symbol {
-    if (!____symbolRegistry[key])  {
+    if (!____symbolRegistry[key]) {
         ____symbolRegistry[key] = __TS__Symbol(key);
     }
 

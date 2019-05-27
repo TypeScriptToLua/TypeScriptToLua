@@ -19,14 +19,10 @@ test("NaN reassignment", () => {
     expect(result).toBe(NaN);
 });
 
-test.each([
-    "Infinity",
-    "Infinity - Infinity",
-    "Infinity / -1",
-    "Infinity * -1",
-    "Infinity + 1",
-    "Infinity - 1",
-])("%s", code => expect(util.transpileAndExecute(`return ${code}`)).toBe(eval(code)));
+test.each(["Infinity", "Infinity - Infinity", "Infinity / -1", "Infinity * -1", "Infinity + 1", "Infinity - 1"])(
+    "%s",
+    code => expect(util.transpileAndExecute(`return ${code}`)).toBe(eval(code))
+);
 
 test("Infinity reassignment", () => {
     const result = util.transpileAndExecute(`const Infinity = 1; return Infinity`);

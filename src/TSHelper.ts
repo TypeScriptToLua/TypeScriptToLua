@@ -30,8 +30,10 @@ const defaultArrayCallMethodNames = new Set<string>([
 ]);
 
 export class TSHelper {
-    public static getExtendedTypeNode(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker):
-    ts.ExpressionWithTypeArguments | undefined {
+    public static getExtendedTypeNode(
+        node: ts.ClassLikeDeclarationBase,
+        checker: ts.TypeChecker
+    ): ts.ExpressionWithTypeArguments | undefined {
         if (node && node.heritageClauses) {
             for (const clause of node.heritageClauses) {
                 if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
@@ -61,22 +63,37 @@ export class TSHelper {
         }
         if (ts.isVariableStatement(statement)) {
             return statement.declarationList.declarations.some(
-                declaration => (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0);
+                declaration => (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0
+            );
         }
-        return TSHelper.isDeclaration(statement)
-                && ((ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0);
+        return (
+            TSHelper.isDeclaration(statement) &&
+            (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0
+        );
     }
 
     public static isDeclaration(node: ts.Node): node is ts.Declaration {
-        return ts.isEnumDeclaration(node) || ts.isClassDeclaration(node) || ts.isExportDeclaration(node)
-            || ts.isImportDeclaration(node) || ts.isMethodDeclaration(node) || ts.isModuleDeclaration(node)
-            || ts.isFunctionDeclaration(node) || ts.isVariableDeclaration(node) || ts.isInterfaceDeclaration(node)
-            || ts.isTypeAliasDeclaration(node) || ts.isNamespaceExportDeclaration(node);
+        return (
+            ts.isEnumDeclaration(node) ||
+            ts.isClassDeclaration(node) ||
+            ts.isExportDeclaration(node) ||
+            ts.isImportDeclaration(node) ||
+            ts.isMethodDeclaration(node) ||
+            ts.isModuleDeclaration(node) ||
+            ts.isFunctionDeclaration(node) ||
+            ts.isVariableDeclaration(node) ||
+            ts.isInterfaceDeclaration(node) ||
+            ts.isTypeAliasDeclaration(node) ||
+            ts.isNamespaceExportDeclaration(node)
+        );
     }
 
     public static isInDestructingAssignment(node: ts.Node): boolean {
-        return node.parent && ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name)) ||
-                               (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)));
+        return (
+            node.parent &&
+            ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name)) ||
+                (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)))
+        );
     }
 
     // iterate over a type and its bases until the callback returns true.
@@ -84,8 +101,7 @@ export class TSHelper {
         type: ts.Type,
         checker: ts.TypeChecker,
         predicate: (type: ts.Type) => boolean
-    ): boolean
-    {
+    ): boolean {
         if (predicate(type)) {
             return true;
         }
@@ -112,13 +128,19 @@ export class TSHelper {
     }
 
     public static isStringType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.String) !== 0 || (type.flags & ts.TypeFlags.StringLike) !== 0 ||
-               (type.flags & ts.TypeFlags.StringLiteral) !== 0;
+        return (
+            (type.flags & ts.TypeFlags.String) !== 0 ||
+            (type.flags & ts.TypeFlags.StringLike) !== 0 ||
+            (type.flags & ts.TypeFlags.StringLiteral) !== 0
+        );
     }
 
     public static isNumberType(type: ts.Type): boolean {
-        return (type.flags & ts.TypeFlags.Number) !== 0 || (type.flags & ts.TypeFlags.NumberLike) !== 0 ||
-               (type.flags & ts.TypeFlags.NumberLiteral) !== 0;
+        return (
+            (type.flags & ts.TypeFlags.Number) !== 0 ||
+            (type.flags & ts.TypeFlags.NumberLike) !== 0 ||
+            (type.flags & ts.TypeFlags.NumberLiteral) !== 0
+        );
     }
 
     public static isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
@@ -164,9 +186,11 @@ export class TSHelper {
 
                 // Only check function type for directive if it is declared as an interface or type alias
                 const declaration = signature.getDeclaration();
-                const isInterfaceOrAlias = declaration && declaration.parent
-                    && ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration))
-                        || ts.isTypeAliasDeclaration(declaration.parent));
+                const isInterfaceOrAlias =
+                    declaration &&
+                    declaration.parent &&
+                    ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration)) ||
+                        ts.isTypeAliasDeclaration(declaration.parent));
                 if (!isInterfaceOrAlias) {
                     return false;
                 }
@@ -174,7 +198,6 @@ export class TSHelper {
 
             const type = checker.getTypeAtLocation(node.expression);
             return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.TupleReturn);
-
         } else {
             return false;
         }
@@ -200,15 +223,15 @@ export class TSHelper {
 
             // Check all overloads for directive
             const signatures = functionType.getCallSignatures();
-            if (signatures && signatures.some(
-                s => TSHelper.getCustomSignatureDirectives(s, checker).has(DecoratorKind.TupleReturn)))
-            {
+            if (
+                signatures &&
+                signatures.some(s => TSHelper.getCustomSignatureDirectives(s, checker).has(DecoratorKind.TupleReturn))
+            ) {
                 return true;
             }
 
             const decorators = TSHelper.getCustomDecorators(functionType, checker);
             return decorators.has(DecoratorKind.TupleReturn);
-
         } else {
             return false;
         }
@@ -227,14 +250,14 @@ export class TSHelper {
         source: ts.Symbol | ts.Signature,
         checker: ts.TypeChecker,
         decMap: Map<DecoratorKind, Decorator>
-    ): void
-    {
+    ): void {
         const comments = source.getDocumentationComment(checker);
-        const decorators = comments.filter(comment => comment.kind === "text")
-                               .map(comment => comment.text.split("\n"))
-                               .reduce((a, b) => a.concat(b), [])
-                               .map(line => line.trim())
-                               .filter(comment => comment[0] === "!");
+        const decorators = comments
+            .filter(comment => comment.kind === "text")
+            .map(comment => comment.text.split("\n"))
+            .reduce((a, b) => a.concat(b), [])
+            .map(line => line.trim())
+            .filter(comment => comment[0] === "!");
 
         decorators.forEach(decStr => {
             const [decoratorName, ...decoratorArguments] = decStr.split(" ");
@@ -242,8 +265,8 @@ export class TSHelper {
                 const dec = new Decorator(decoratorName.substr(1), decoratorArguments);
                 decMap.set(dec.kind, dec);
                 console.warn(
-                    `[Deprecated] Decorators with ! are being deprecated, ` +
-                    `use @${decStr.substr(1)} instead`);
+                    `[Deprecated] Decorators with ! are being deprecated, ` + `use @${decStr.substr(1)} instead`
+                );
             } else {
                 console.warn(`Encountered unknown decorator ${decStr}.`);
             }
@@ -282,9 +305,10 @@ export class TSHelper {
         return decMap;
     }
 
-    public static getCustomSignatureDirectives(signature: ts.Signature, checker: ts.TypeChecker)
-        : Map<DecoratorKind, Decorator>
-    {
+    public static getCustomSignatureDirectives(
+        signature: ts.Signature,
+        checker: ts.TypeChecker
+    ): Map<DecoratorKind, Decorator> {
         const directivesMap = new Map<DecoratorKind, Decorator>();
         TSHelper.collectCustomDecorators(signature, checker, directivesMap);
 
@@ -302,7 +326,8 @@ export class TSHelper {
 
     // Search up until finding a node satisfying the callback
     public static findFirstNodeAbove<T extends ts.Node>(
-        node: ts.Node, callback: (n: ts.Node) => n is T
+        node: ts.Node,
+        callback: (n: ts.Node) => n is T
     ): T | undefined {
         let current = node;
         while (current.parent) {
@@ -357,11 +382,12 @@ export class TSHelper {
         node: ts.Expression,
         checker: ts.TypeChecker,
         program: ts.Program
-    ): [true, ts.Expression, ts.Expression] | [false, undefined, undefined]
-    {
-        if (ts.isElementAccessExpression(node) &&
-            (TSHelper.isExpressionWithEvaluationEffect(node.expression)
-            || TSHelper.isExpressionWithEvaluationEffect(node.argumentExpression))) {
+    ): [true, ts.Expression, ts.Expression] | [false, undefined, undefined] {
+        if (
+            ts.isElementAccessExpression(node) &&
+            (TSHelper.isExpressionWithEvaluationEffect(node.expression) ||
+                TSHelper.isExpressionWithEvaluationEffect(node.argumentExpression))
+        ) {
             const type = checker.getTypeAtLocation(node.expression);
             if (TSHelper.isArrayType(type, checker, program)) {
                 // Offset arrays by one
@@ -386,15 +412,15 @@ export class TSHelper {
         signatureDeclaration: ts.SignatureDeclaration
     ): ts.ParameterDeclaration | undefined {
         return signatureDeclaration.parameters.find(
-            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword);
+            param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword
+        );
     }
 
     public static findInClassOrAncestor(
         classDeclaration: ts.ClassLikeDeclarationBase,
         callback: (classDeclaration: ts.ClassLikeDeclarationBase) => boolean,
         checker: ts.TypeChecker
-    ): ts.ClassLikeDeclarationBase | undefined
-    {
+    ): ts.ClassLikeDeclarationBase | undefined {
         if (callback(classDeclaration)) {
             return classDeclaration;
         }
@@ -426,26 +452,28 @@ export class TSHelper {
         classDeclaration: ts.ClassLikeDeclarationBase,
         isStatic: boolean,
         checker: ts.TypeChecker
-    ): boolean
-    {
-        return TSHelper.findInClassOrAncestor(
-            classDeclaration,
-            c => c.members.some(m => ts.isSetAccessor(m) && TSHelper.isStatic(m) === isStatic),
-            checker
-        ) !== undefined;
+    ): boolean {
+        return (
+            TSHelper.findInClassOrAncestor(
+                classDeclaration,
+                c => c.members.some(m => ts.isSetAccessor(m) && TSHelper.isStatic(m) === isStatic),
+                checker
+            ) !== undefined
+        );
     }
 
     public static hasGetAccessorInClassOrAncestor(
         classDeclaration: ts.ClassLikeDeclarationBase,
         isStatic: boolean,
         checker: ts.TypeChecker
-    ): boolean
-    {
-        return TSHelper.findInClassOrAncestor(
-            classDeclaration,
-            c => c.members.some(m => ts.isGetAccessor(m) && TSHelper.isStatic(m) === isStatic),
-            checker
-        ) !== undefined;
+    ): boolean {
+        return (
+            TSHelper.findInClassOrAncestor(
+                classDeclaration,
+                c => c.members.some(m => ts.isGetAccessor(m) && TSHelper.isStatic(m) === isStatic),
+                checker
+            ) !== undefined
+        );
     }
 
     public static getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
@@ -466,22 +494,20 @@ export class TSHelper {
         element: ts.ClassElement,
         classDeclaration: ts.ClassLikeDeclarationBase,
         checker: ts.TypeChecker
-    ): element is ts.GetAccessorDeclaration
-    {
+    ): element is ts.GetAccessorDeclaration {
         if (!ts.isGetAccessor(element) || TSHelper.isStatic(element)) {
             return false;
         }
 
         const hasInitializedField = (e: ts.ClassElement) =>
-            ts.isPropertyDeclaration(e)
-            && e.initializer !== undefined
-            && TSHelper.isSamePropertyName(e.name, element.name);
+            ts.isPropertyDeclaration(e) &&
+            e.initializer !== undefined &&
+            TSHelper.isSamePropertyName(e.name, element.name);
 
-        return TSHelper.findInClassOrAncestor(
-            classDeclaration,
-            c => c.members.some(hasInitializedField),
-            checker
-        ) !== undefined;
+        return (
+            TSHelper.findInClassOrAncestor(classDeclaration, c => c.members.some(hasInitializedField), checker) !==
+            undefined
+        );
     }
 
     public static inferAssignedType(expression: ts.Expression, checker: ts.TypeChecker): ts.Type {
@@ -498,14 +524,14 @@ export class TSHelper {
     public static getSignatureDeclarations(
         signatures: readonly ts.Signature[],
         checker: ts.TypeChecker
-    ): ts.SignatureDeclaration[]
-    {
+    ): ts.SignatureDeclaration[] {
         const signatureDeclarations: ts.SignatureDeclaration[] = [];
         for (const signature of signatures) {
             const signatureDeclaration = signature.getDeclaration();
-            if ((ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration))
-                && !TSHelper.getExplicitThisParameter(signatureDeclaration))
-            {
+            if (
+                (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
+                !TSHelper.getExplicitThisParameter(signatureDeclaration)
+            ) {
                 // Infer type of function expressions/arrow functions
                 const inferredType = TSHelper.inferAssignedType(signatureDeclaration, checker);
                 if (inferredType) {
@@ -542,8 +568,7 @@ export class TSHelper {
     public static getDeclarationContextType(
         signatureDeclaration: ts.SignatureDeclaration,
         checker: ts.TypeChecker
-    ): ContextType
-    {
+    ): ContextType {
         const thisParameter = TSHelper.getExplicitThisParameter(signatureDeclaration);
         if (thisParameter) {
             // Explicit 'this'
@@ -552,20 +577,19 @@ export class TSHelper {
                 : ContextType.NonVoid;
         }
 
-        if (ts.isMethodSignature(signatureDeclaration)
-            || ts.isMethodDeclaration(signatureDeclaration)
-            || ts.isConstructSignatureDeclaration(signatureDeclaration)
-            || ts.isConstructorDeclaration(signatureDeclaration)
-            || (signatureDeclaration.parent && ts.isPropertyDeclaration(signatureDeclaration.parent))
-            || (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent)))
-        {
+        if (
+            ts.isMethodSignature(signatureDeclaration) ||
+            ts.isMethodDeclaration(signatureDeclaration) ||
+            ts.isConstructSignatureDeclaration(signatureDeclaration) ||
+            ts.isConstructorDeclaration(signatureDeclaration) ||
+            (signatureDeclaration.parent && ts.isPropertyDeclaration(signatureDeclaration.parent)) ||
+            (signatureDeclaration.parent && ts.isPropertySignature(signatureDeclaration.parent))
+        ) {
             // Class/interface methods only respect @noSelf on their parent
             const scopeDeclaration = TSHelper.findFirstNodeAbove(
                 signatureDeclaration,
                 (n): n is ts.ClassLikeDeclaration | ts.InterfaceDeclaration =>
-                    ts.isClassDeclaration(n)
-                    || ts.isClassExpression(n)
-                    || ts.isInterfaceDeclaration(n)
+                    ts.isClassDeclaration(n) || ts.isClassExpression(n) || ts.isInterfaceDeclaration(n)
             );
 
             if (scopeDeclaration === undefined) {
@@ -608,9 +632,7 @@ export class TSHelper {
         }
 
         if (type.isUnion()) {
-            return TSHelper.reduceContextTypes(
-                type.types.map(t => TSHelper.getFunctionContextType(t, checker))
-            );
+            return TSHelper.reduceContextTypes(type.types.map(t => TSHelper.getFunctionContextType(t, checker)));
         }
 
         const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
@@ -619,15 +641,16 @@ export class TSHelper {
         }
         const signatureDeclarations = TSHelper.getSignatureDeclarations(signatures, checker);
         return TSHelper.reduceContextTypes(
-            signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker)));
+            signatureDeclarations.map(s => TSHelper.getDeclarationContextType(s, checker))
+        );
     }
 
     public static escapeString(text: string): string {
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
         const escapeSequences: Array<[RegExp, string]> = [
             [/[\\]/g, "\\\\"],
-            [/[\']/g, "\\\'"],
-            [/[\"]/g, "\\\""],
+            [/[\']/g, "\\'"],
+            [/[\"]/g, '\\"'],
             [/[\n]/g, "\\n"],
             [/[\r]/g, "\\r"],
             [/[\v]/g, "\\v"],
@@ -651,7 +674,14 @@ export class TSHelper {
     }
 
     public static fixInvalidLuaIdentifier(name: string): string {
-        return name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
+        return name.replace(
+            /[^a-zA-Z0-9_]/g,
+            c =>
+                `_${c
+                    .charCodeAt(0)
+                    .toString(16)
+                    .toUpperCase()}`
+        );
     }
 
     // Checks that a name is valid for use in lua function declaration syntax:
@@ -663,13 +693,14 @@ export class TSHelper {
     }
 
     public static isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
-        const falsibleFlags = ts.TypeFlags.Boolean
-            | ts.TypeFlags.BooleanLiteral
-            | ts.TypeFlags.Undefined
-            | ts.TypeFlags.Null
-            | ts.TypeFlags.Never
-            | ts.TypeFlags.Void
-            | ts.TypeFlags.Any;
+        const falsibleFlags =
+            ts.TypeFlags.Boolean |
+            ts.TypeFlags.BooleanLiteral |
+            ts.TypeFlags.Undefined |
+            ts.TypeFlags.Null |
+            ts.TypeFlags.Never |
+            ts.TypeFlags.Void |
+            ts.TypeFlags.Any;
 
         if (type.flags & falsibleFlags) {
             return true;
@@ -694,9 +725,7 @@ export class TSHelper {
         if (sourceFile) {
             declarations = declarations.filter(d => this.findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
         }
-        return declarations.length > 0
-            ? declarations.reduce((p, c) => p.pos < c.pos ? p : c)
-            : undefined;
+        return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
     }
 
     public static isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
@@ -710,18 +739,22 @@ export class TSHelper {
 
     public static isStandardLibraryDeclaration(declaration: ts.Declaration, program: ts.Program): boolean {
         const source = declaration.getSourceFile();
-        if (!source) { return false; }
+        if (!source) {
+            return false;
+        }
         return program.isSourceFileDefaultLibrary(source);
     }
 
     public static isStandardLibraryType(type: ts.Type, name: string | undefined, program: ts.Program): boolean {
         const symbol = type.getSymbol();
-        if (!symbol || (name ? symbol.escapedName !== name : symbol.escapedName === '__type')) {
+        if (!symbol || (name ? symbol.escapedName !== name : symbol.escapedName === "__type")) {
             return false;
         }
 
         const declaration = symbol.valueDeclaration;
-        if(!declaration) { return true; } // assume to be lib function if no valueDeclaration exists
+        if (!declaration) {
+            return true;
+        } // assume to be lib function if no valueDeclaration exists
         return this.isStandardLibraryDeclaration(declaration, program);
     }
 
@@ -745,15 +778,17 @@ export class TSHelper {
         }
     }
 
-    public static moduleHasEmittedBody(statement: ts.ModuleDeclaration)
-        : statement is ts.ModuleDeclaration & {body: ts.ModuleBlock | ts.ModuleDeclaration}
-    {
+    public static moduleHasEmittedBody(
+        statement: ts.ModuleDeclaration
+    ): statement is ts.ModuleDeclaration & { body: ts.ModuleBlock | ts.ModuleDeclaration } {
         if (statement.body) {
             if (ts.isModuleBlock(statement.body)) {
                 // Ignore if body has no emitted statements
-                return statement.body.statements.findIndex(
-                    s => !ts.isInterfaceDeclaration(s) && !ts.isTypeAliasDeclaration(s)
-                ) !== -1;
+                return (
+                    statement.body.statements.findIndex(
+                        s => !ts.isInterfaceDeclaration(s) && !ts.isTypeAliasDeclaration(s)
+                    ) !== -1
+                );
             } else if (ts.isModuleDeclaration(statement.body)) {
                 return true;
             }
@@ -765,8 +800,7 @@ export class TSHelper {
         expression: ts.BinaryExpression,
         checker: ts.TypeChecker,
         program: ts.Program
-    ): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression; }
-    {
+    ): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression } {
         if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
             return false;
         }
@@ -781,7 +815,7 @@ export class TSHelper {
         }
 
         const name = ts.isPropertyAccessExpression(expression.left)
-            ? expression.left.name.escapedText as string
+            ? (expression.left.name.escapedText as string)
             : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
 
         return name === "length";

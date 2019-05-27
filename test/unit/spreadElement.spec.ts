@@ -1,15 +1,12 @@
 import * as tstl from "../../src";
 import * as util from "../util";
 
-test.each([{ inp: [] }, { inp: [1, 2, 3] }, { inp: [1, "test", 3] }])(
-    "Spread Element Push (%p)",
-    ({ inp }) => {
-        const result = util.transpileAndExecute(
-            `return JSONStringify(([] as Array<string | number>).push(...${JSON.stringify(inp)}));`,
-        );
-        expect(result).toBe(([] as Array<string | number>).push(...inp));
-    },
-);
+test.each([{ inp: [] }, { inp: [1, 2, 3] }, { inp: [1, "test", 3] }])("Spread Element Push (%p)", ({ inp }) => {
+    const result = util.transpileAndExecute(
+        `return JSONStringify(([] as Array<string | number>).push(...${JSON.stringify(inp)}));`
+    );
+    expect(result).toBe(([] as Array<string | number>).push(...inp));
+});
 
 test("Spread Element Lua 5.1", () => {
     // Cant test functional because our VM doesn't run on 5.1

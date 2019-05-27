@@ -5,7 +5,7 @@ test("Tuple loop", () => {
         `const tuple: [number, number, number] = [3,5,1];
         let count = 0;
         for (const value of tuple) { count += value; }
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(9);
@@ -16,7 +16,7 @@ test("Tuple foreach", () => {
         `const tuple: [number, number, number] = [3,5,1];
         let count = 0;
         tuple.forEach(v => count += v);
-        return count;`,
+        return count;`
     );
 
     expect(result).toBe(9);
@@ -25,7 +25,7 @@ test("Tuple foreach", () => {
 test("Tuple access", () => {
     const result = util.transpileAndExecute(
         `const tuple: [number, number, number] = [3,5,1];
-        return tuple[1];`,
+        return tuple[1];`
     );
 
     expect(result).toBe(5);
@@ -35,7 +35,7 @@ test("Tuple union access", () => {
     const result = util.transpileAndExecute(
         `function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }
         const tuple = makeTuple();
-        return tuple[1];`,
+        return tuple[1];`
     );
     expect(result).toBe(5);
 });
@@ -49,7 +49,7 @@ test("Tuple intersection access", () => {
             return (t as I);
         }
         const tuple = makeTuple();
-        return tuple[1];`,
+        return tuple[1];`
     );
     expect(result).toBe(5);
 });
@@ -58,7 +58,7 @@ test("Tuple Destruct", () => {
     const result = util.transpileAndExecute(
         `function tuple(): [number, number, number] { return [3,5,1]; }
         const [a,b,c] = tuple();
-        return b;`,
+        return b;`
     );
 
     expect(result).toBe(5);
@@ -91,7 +91,7 @@ test("Tuple Destruct Array Literal Extra Values", () => {
 test("Tuple length", () => {
     const result = util.transpileAndExecute(
         `const tuple: [number, number, number] = [3,5,1];
-        return tuple.length;`,
+        return tuple.length;`
     );
 
     expect(result).toBe(3);

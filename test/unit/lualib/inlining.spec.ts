@@ -16,7 +16,7 @@ test("map foreach keys", () => {
         let count = 0;
         mymap.forEach((value, key) => { count += key; });
         return count;`,
-        { luaLibImport: LuaLibImportKind.Inline },
+        { luaLibImport: LuaLibImportKind.Inline }
     );
 
     expect(result).toBe(18);
@@ -25,7 +25,7 @@ test("map foreach keys", () => {
 test("set constructor", () => {
     const result = util.transpileAndExecute(
         `class abc {} let def = new abc(); let myset = new Set(); return myset.size;`,
-        { luaLibImport: LuaLibImportKind.Inline },
+        { luaLibImport: LuaLibImportKind.Inline }
     );
 
     expect(result).toBe(0);
@@ -37,7 +37,7 @@ test("set foreach keys", () => {
         let count = 0;
         myset.forEach((value, key) => { count += key; });
         return count;`,
-        { luaLibImport: LuaLibImportKind.Inline },
+        { luaLibImport: LuaLibImportKind.Inline }
     );
 
     expect(result).toBe(9);

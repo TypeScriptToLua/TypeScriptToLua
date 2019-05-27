@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 
-type KnownKeys<T> = {
-    [K in keyof T]: string extends K ? never : number extends K ? never : K
-} extends { [_ in keyof T]: infer U }
+type KnownKeys<T> = { [K in keyof T]: string extends K ? never : number extends K ? never : K } extends {
+    [_ in keyof T]: infer U
+}
     ? U
     : never;
 
@@ -13,7 +13,7 @@ export interface TransformerImport {
     import?: string;
     after?: boolean;
     afterDeclarations?: boolean;
-    type?: 'program' | 'config' | 'checker' | 'raw' | 'compilerOptions';
+    type?: "program" | "config" | "checker" | "raw" | "compilerOptions";
     [option: string]: any;
 }
 

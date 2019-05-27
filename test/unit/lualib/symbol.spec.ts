@@ -1,26 +1,20 @@
 import * as util from "../../util";
 
-test.each([{}, { description: 1 }, { description: "name" }])(
-    "symbol.toString() (%p)",
-    ({ description }) => {
-        const result = util.transpileAndExecute(`
+test.each([{}, { description: 1 }, { description: "name" }])("symbol.toString() (%p)", ({ description }) => {
+    const result = util.transpileAndExecute(`
             return Symbol(${JSON.stringify(description)}).toString();
         `);
 
-        expect(result).toBe(`Symbol(${description || ""})`);
-    },
-);
+    expect(result).toBe(`Symbol(${description || ""})`);
+});
 
-test.each([{}, { description: 1 }, { description: "name" }])(
-    "symbol.description (%p)",
-    ({ description }) => {
-        const result = util.transpileAndExecute(`
+test.each([{}, { description: 1 }, { description: "name" }])("symbol.description (%p)", ({ description }) => {
+    const result = util.transpileAndExecute(`
             return Symbol(${JSON.stringify(description)}).description;
         `);
 
-        expect(result).toBe(description);
-    },
-);
+    expect(result).toBe(description);
+});
 
 test("symbol uniqueness", () => {
     const result = util.transpileAndExecute(`

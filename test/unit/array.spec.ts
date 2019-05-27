@@ -3,7 +3,7 @@ import * as util from "../util";
 test("Array access", () => {
     const result = util.transpileAndExecute(
         `const arr: Array<number> = [3,5,1];
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -11,7 +11,7 @@ test("Array access", () => {
 test("ReadonlyArray access", () => {
     const result = util.transpileAndExecute(
         `const arr: ReadonlyArray<number> = [3,5,1];
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -19,7 +19,7 @@ test("ReadonlyArray access", () => {
 test("Array literal access", () => {
     const result = util.transpileAndExecute(
         `const arr: number[] = [3,5,1];
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -27,7 +27,7 @@ test("Array literal access", () => {
 test("Readonly array literal access", () => {
     const result = util.transpileAndExecute(
         `const arr: readonly number[] = [3,5,1];
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -36,7 +36,7 @@ test("Array union access", () => {
     const result = util.transpileAndExecute(
         `function makeArray(): number[] | string[] { return [3,5,1]; }
         const arr = makeArray();
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -45,7 +45,7 @@ test("Array union access with empty tuple", () => {
     const result = util.transpileAndExecute(
         `function makeArray(): number[] | [] { return [3,5,1]; }
         const arr = makeArray();
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -54,7 +54,7 @@ test("Array union length", () => {
     const result = util.transpileAndExecute(
         `function makeArray(): number[] | string[] { return [3,5,1]; }
         const arr = makeArray();
-        return arr.length;`,
+        return arr.length;`
     );
     expect(result).toBe(3);
 });
@@ -68,7 +68,7 @@ test("Array intersection access", () => {
             return (t as I);
         }
         const arr = makeArray();
-        return arr[1];`,
+        return arr[1];`
     );
     expect(result).toBe(5);
 });
@@ -82,7 +82,7 @@ test("Array intersection length", () => {
             return (t as I);
         }
         const arr = makeArray();
-        return arr.length;`,
+        return arr.length;`
     );
     expect(result).toBe(3);
 });
@@ -107,7 +107,7 @@ test.each([
         return arr.${member};`,
         undefined,
         luaHeader,
-        typeScriptHeader,
+        typeScriptHeader
     );
 
     expect(result).toBe(expected);
@@ -117,7 +117,7 @@ test("Array delete", () => {
     const result = util.transpileAndExecute(
         `const myarray = [1,2,3,4];
         delete myarray[2];
-        return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
+        return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
     );
 
     expect(result).toBe("1,2,nil,4");
@@ -127,7 +127,7 @@ test("Array delete return true", () => {
     const result = util.transpileAndExecute(
         `const myarray = [1,2,3,4];
         const exists = delete myarray[2];
-        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
+        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
     );
 
     expect(result).toBe("true:1,2,nil,4");
@@ -137,7 +137,7 @@ test("Array delete return false", () => {
     const result = util.transpileAndExecute(
         `const myarray = [1,2,3,4];
         const exists = delete myarray[4];
-        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`,
+        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
     );
 
     expect(result).toBe("true:1,2,3,4");
@@ -162,21 +162,20 @@ test.each([{ length: 0, result: 0 }, { length: 1, result: 1 }, { length: 7, resu
         return arr.length;
     `;
         expect(util.transpileAndExecute(code)).toBe(result);
-    },
+    }
 );
 
-test.each([
-    { length: 0, result: "0/0" },
-    { length: 1, result: "1/1" },
-    { length: 7, result: "7/3" },
-])("Array length set as expression", ({ length, result }) => {
-    const code = `
+test.each([{ length: 0, result: "0/0" }, { length: 1, result: "1/1" }, { length: 7, result: "7/3" }])(
+    "Array length set as expression",
+    ({ length, result }) => {
+        const code = `
         const arr = [1, 2, 3];
         const l = arr.length = ${length};
         return \`\${l}/\${arr.length}\`;
     `;
-    expect(util.transpileAndExecute(code)).toBe(result);
-});
+        expect(util.transpileAndExecute(code)).toBe(result);
+    }
+);
 
 test.each([
     { length: -1, result: -1 },

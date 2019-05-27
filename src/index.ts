@@ -26,10 +26,7 @@ export interface TranspileFilesResult {
     emitResult: OutputFile[];
 }
 
-export function transpileFiles(
-    rootNames: string[],
-    options: CompilerOptions = {}
-): TranspileFilesResult {
+export function transpileFiles(rootNames: string[], options: CompilerOptions = {}): TranspileFilesResult {
     const program = ts.createProgram(rootNames, options);
     const { transpiledFiles, diagnostics: transpileDiagnostics } = transpile({ program });
     const emitResult = emitTranspiledFiles(program.getCompilerOptions(), transpiledFiles);
@@ -42,10 +39,7 @@ export function transpileFiles(
     return { diagnostics: [...diagnostics], emitResult };
 }
 
-export function transpileProject(
-    configFileName: string,
-    optionsToExtend?: CompilerOptions
-): TranspileFilesResult {
+export function transpileProject(configFileName: string, optionsToExtend?: CompilerOptions): TranspileFilesResult {
     const parseResult = parseConfigFileWithSystem(configFileName, optionsToExtend);
     if (parseResult.errors.length > 0) {
         return { diagnostics: parseResult.errors, emitResult: [] };
@@ -57,10 +51,7 @@ export function transpileProject(
 const libCache: { [key: string]: ts.SourceFile } = {};
 
 /** @internal */
-export function createVirtualProgram(
-    input: Record<string, string>,
-    options: CompilerOptions = {}
-): ts.Program {
+export function createVirtualProgram(input: Record<string, string>, options: CompilerOptions = {}): ts.Program {
     const compilerHost: ts.CompilerHost = {
         fileExists: () => true,
         getCanonicalFileName: fileName => fileName,
@@ -73,12 +64,7 @@ export function createVirtualProgram(
 
         getSourceFile: filename => {
             if (filename in input) {
-                return ts.createSourceFile(
-                    filename,
-                    input[filename],
-                    ts.ScriptTarget.Latest,
-                    false
-                );
+                return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
             }
 
             if (filename.startsWith("lib.")) {
@@ -87,12 +73,7 @@ export function createVirtualProgram(
                 const filePath = path.join(typeScriptDir, filename);
                 const content = fs.readFileSync(filePath, "utf8");
 
-                libCache[filename] = ts.createSourceFile(
-                    filename,
-                    content,
-                    ts.ScriptTarget.Latest,
-                    false
-                );
+                libCache[filename] = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, false);
 
                 return libCache[filename];
             }
@@ -102,16 +83,10 @@ export function createVirtualProgram(
     return ts.createProgram(Object.keys(input), options, compilerHost);
 }
 
-export function transpileVirtualProject(
-    files: Record<string, string>,
-    options: CompilerOptions = {}
-): TranspileResult {
+export function transpileVirtualProject(files: Record<string, string>, options: CompilerOptions = {}): TranspileResult {
     const program = createVirtualProgram(files, options);
     const result = transpile({ program });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([
-        ...ts.getPreEmitDiagnostics(program),
-        ...result.diagnostics,
-    ]);
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([...ts.getPreEmitDiagnostics(program), ...result.diagnostics]);
 
     return { ...result, diagnostics: [...diagnostics] };
 }
@@ -121,10 +96,7 @@ export interface TranspileStringResult {
     file?: TranspiledFile;
 }
 
-export function transpileString(
-    main: string,
-    options: CompilerOptions = {}
-): TranspileStringResult {
+export function transpileString(main: string, options: CompilerOptions = {}): TranspileStringResult {
     const { diagnostics, transpiledFiles } = transpileVirtualProject({ "main.ts": main }, options);
     return { diagnostics, file: transpiledFiles.find(({ fileName }) => fileName === "main.ts") };
 }

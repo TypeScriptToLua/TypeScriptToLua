@@ -2,7 +2,7 @@ WeakMap = class WeakMap<K extends object, V> {
     public static [Symbol.species] = WeakMap;
     public [Symbol.toStringTag] = "WeakMap";
 
-     // Type of key is actually K
+    // Type of key is actually K
     private items: { [key: string]: V } = {};
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {

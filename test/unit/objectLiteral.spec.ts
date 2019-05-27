@@ -34,7 +34,7 @@ describe("property shorthand", () => {
             `return ({ _G })._G.foobar;`,
             undefined,
             `foobar = "foobar"`,
-            "declare const _G: any;",
+            "declare const _G: any;"
         );
 
         expect(result).toBe("foobar");

@@ -60,8 +60,7 @@ export const transformerShouldBeATsTransformerFactory = (transform: string): ts.
     category: ts.DiagnosticCategory.Error,
     code: 0,
     source: "typescript-to-lua",
-    messageText:
-        `"${transform}" transformer should be a ts.TransformerFactory or an object with ts.TransformerFactory values`,
+    messageText: `"${transform}" transformer should be a ts.TransformerFactory or an object with ts.TransformerFactory values`,
 });
 
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
@@ -76,10 +75,9 @@ export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
             : `Found ${errorCount} errors. Watching for file changes.`,
 });
 
-const createCommandLineError = <Args extends any[]>(
-    code: number,
-    getMessage: (...args: Args) => string
-) => (...args: Args): ts.Diagnostic => ({
+const createCommandLineError = <Args extends any[]>(code: number, getMessage: (...args: Args) => string) => (
+    ...args: Args
+): ts.Diagnostic => ({
     file: undefined,
     start: undefined,
     length: undefined,

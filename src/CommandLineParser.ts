@@ -50,8 +50,7 @@ const optionDeclarations: CommandLineOption[] = [
     },
     {
         name: "sourceMapTraceback",
-        description:
-            "Applies the source map to show source TS files and lines in error tracebacks.",
+        description: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
     },
 ];
@@ -124,10 +123,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     return updateParsedCommandLine(ts.parseCommandLine(args), args);
 }
 
-function updateParsedCommandLine(
-    parsedCommandLine: ts.ParsedCommandLine,
-    args: string[]
-): ParsedCommandLine {
+function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: string[]): ParsedCommandLine {
     for (let i = 0; i < args.length; i++) {
         if (!args[i].startsWith("-")) continue;
 
@@ -145,10 +141,10 @@ function updateParsedCommandLine(
         if (option) {
             // Ignore errors caused by tstl specific compiler options
             const tsInvalidCompilerOptionErrorCode = 5023;
-            parsedCommandLine.errors = parsedCommandLine.errors.filter(err => {
+            parsedCommandLine.errors = parsedCommandLine.errors.filter(error => {
                 return !(
-                    err.code === tsInvalidCompilerOptionErrorCode &&
-                    String(err.messageText).endsWith(`'${args[i]}'.`)
+                    error.code === tsInvalidCompilerOptionErrorCode &&
+                    String(error.messageText).endsWith(`'${args[i]}'.`)
                 );
             });
 
@@ -200,10 +196,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "boolean") {
                 return {
                     value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
-                        option.name,
-                        "boolean"
-                    ),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "boolean"),
                 };
             }
 
@@ -214,10 +207,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "string") {
                 return {
                     value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(
-                        option.name,
-                        "string"
-                    ),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
                 };
             }
 
@@ -226,10 +216,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
-                    error: diagnosticFactories.argumentForOptionMustBe(
-                        `--${option.name}`,
-                        optionChoices
-                    ),
+                    error: diagnosticFactories.argumentForOptionMustBe(`--${option.name}`, optionChoices),
                 };
             }
 

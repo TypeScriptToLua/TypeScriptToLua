@@ -10,8 +10,10 @@ import { TranspileError } from "./TranspileError";
 
 type ProgramTransformerFactory = (program: ts.Program, options: Record<string, any>) => Transformer;
 type ConfigTransformerFactory = (options: Record<string, any>) => Transformer;
-type CompilerOptionsTransformerFactory =
-    (compilerOptions: CompilerOptions, options: Record<string, any>) => Transformer;
+type CompilerOptionsTransformerFactory = (
+    compilerOptions: CompilerOptions,
+    options: Record<string, any>
+) => Transformer;
 type TypeCheckerTransformerFactory = (typeChecker: ts.TypeChecker, options: Record<string, any>) => Transformer;
 type RawTransformerFactory = Transformer;
 type TransformerFactory =
@@ -31,7 +33,7 @@ interface GroupTransformer {
 function resolveTransformerFactory(
     basedir: string,
     transformerOptionPath: string,
-    { transform, import: importName = 'default' }: TransformerImport
+    { transform, import: importName = "default" }: TransformerImport
 ): { error?: ts.Diagnostic; factory?: TransformerFactory } {
     if (typeof transform !== "string") {
         const optionName = `${transformerOptionPath}.transform`;
@@ -74,24 +76,24 @@ function loadTransformer(
 ): { error?: ts.Diagnostic; transformer?: GroupTransformer } {
     let transformer: Transformer;
     switch (type) {
-        case 'program':
+        case "program":
             transformer = (factory as ProgramTransformerFactory)(program, extraOptions);
             break;
-        case 'config':
+        case "config":
             transformer = (factory as ConfigTransformerFactory)(extraOptions);
             break;
-        case 'checker':
+        case "checker":
             transformer = (factory as TypeCheckerTransformerFactory)(program.getTypeChecker(), extraOptions);
             break;
-        case 'raw':
+        case "raw":
             transformer = factory as RawTransformerFactory;
             break;
-        case 'compilerOptions':
+        case "compilerOptions":
             transformer = (factory as CompilerOptionsTransformerFactory)(program.getCompilerOptions(), extraOptions);
             break;
         default: {
             const optionName = `--${transformerOptionPath}.type`;
-            return { error: diagnosticFactories.argumentForOptionMustBe(optionName, 'program') };
+            return { error: diagnosticFactories.argumentForOptionMustBe(optionName, "program") };
         }
     }
 
@@ -130,10 +132,7 @@ function loadTransformer(
     return { transformer };
 }
 
-function loadTransformersFromOptions(
-    program: ts.Program,
-    allDiagnostics: ts.Diagnostic[]
-): ts.CustomTransformers {
+function loadTransformersFromOptions(program: ts.Program, allDiagnostics: ts.Diagnostic[]): ts.CustomTransformers {
     const customTransformers: Required<ts.CustomTransformers> = {
         before: [],
         after: [],
@@ -147,7 +146,7 @@ function loadTransformersFromOptions(
     const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
 
     for (const [index, transformerImport] of options.plugins.entries()) {
-        if ('name' in transformerImport) continue;
+        if ("name" in transformerImport) continue;
         const optionName = `compilerOptions.plugins[${index}]`;
 
         const { error: resolveError, factory } = resolveTransformerFactory(basedir, optionName, transformerImport);
@@ -181,10 +180,7 @@ function getCustomTransformers(
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
     // TODO: https://github.com/Microsoft/TypeScript/issues/28310
-    const forEachSourceFile = (
-        node: ts.SourceFile,
-        callback: (sourceFile: ts.SourceFile) => ts.SourceFile
-    ) =>
+    const forEachSourceFile = (node: ts.SourceFile, callback: (sourceFile: ts.SourceFile) => ts.SourceFile) =>
         ts.isBundle(node)
             ? ((ts.updateBundle(node, node.sourceFiles.map(callback)) as unknown) as ts.SourceFile)
             : callback(node);
@@ -258,10 +254,7 @@ export function transpile({
     };
 
     if (options.noEmitOnError) {
-        const preEmitDiagnostics = [
-            ...program.getOptionsDiagnostics(),
-            ...program.getGlobalDiagnostics(),
-        ];
+        const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
 
         if (targetSourceFiles) {
             for (const sourceFile of targetSourceFiles) {
@@ -286,11 +279,7 @@ export function transpile({
         try {
             const [luaAst, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(
-                    luaAst,
-                    lualibFeatureSet,
-                    sourceFile.fileName
-                );
+                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
                 updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
             }
         } catch (err) {
@@ -305,12 +294,7 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(
-        program,
-        diagnostics,
-        customTransformers,
-        processSourceFile
-    );
+    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processSourceFile);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {
@@ -338,15 +322,11 @@ export function transpile({
             if (isEmittableJsonFile(file)) {
                 processSourceFile(file);
             } else {
-                diagnostics.push(
-                    ...program.emit(file, writeFile, undefined, false, transformers).diagnostics
-                );
+                diagnostics.push(...program.emit(file, writeFile, undefined, false, transformers).diagnostics);
             }
         }
     } else {
-        diagnostics.push(
-            ...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics
-        );
+        diagnostics.push(...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics);
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
         program

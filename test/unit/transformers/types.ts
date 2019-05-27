@@ -2,16 +2,10 @@ import * as ts from "typescript";
 import * as tstl from "../../../src";
 import { visitAndReplace } from "./utils";
 
-export const program = (
-    program: ts.Program,
-    options: { value: any },
-): ts.TransformerFactory<ts.SourceFile> => checker(program.getTypeChecker(), options);
+export const program = (program: ts.Program, options: { value: any }): ts.TransformerFactory<ts.SourceFile> =>
+    checker(program.getTypeChecker(), options);
 
-export const config = ({
-    value,
-}: {
-    value: any;
-}): ts.TransformerFactory<ts.SourceFile> => context => file =>
+export const config = ({ value }: { value: any }): ts.TransformerFactory<ts.SourceFile> => context => file =>
     visitAndReplace(context, file, node => {
         if (!ts.isReturnStatement(node) || node.expression) return;
         return ts.updateReturn(node, ts.createLiteral(value));
@@ -19,7 +13,7 @@ export const config = ({
 
 export const checker = (
     checker: ts.TypeChecker,
-    { value }: { value: any },
+    { value }: { value: any }
 ): ts.TransformerFactory<ts.SourceFile> => context => file =>
     visitAndReplace(context, file, node => {
         if (!ts.isReturnStatement(node) || !node.expression) return;

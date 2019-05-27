@@ -136,6 +136,7 @@ test.each([
     { inp: [], start: 1, deleteCount: 1 },
     { inp: [0, 1, 2, 3], start: 1, deleteCount: 1 },
     { inp: [0, 1, 2, 3], start: 10, deleteCount: 1 },
+    { inp: [0, 1, 2, 3], start: 1, deleteCount: undefined },
     { inp: [0, 1, 2, 3], start: 4 },
     { inp: [0, 1, 2, 3, 4, 5], start: 3 },
     { inp: [0, 1, 2, 3, 4, 5], start: -3 },

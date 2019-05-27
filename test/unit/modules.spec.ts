@@ -11,11 +11,7 @@ describe("module import/export elision", () => {
     `;
 
     const expectToElideImport = (code: string) => {
-        const lua = util.transpileString(
-            { "module.d.ts": moduleDeclaration, "main.ts": code },
-            undefined,
-            false,
-        );
+        const lua = util.transpileString({ "module.d.ts": moduleDeclaration, "main.ts": code }, undefined, false);
 
         expect(() => util.executeLua(lua)).not.toThrow();
     };
@@ -60,7 +56,7 @@ test.each([
     "export { default as x } from '...';",
 ])("Export default keyword disallowed (%p)", exportStatement => {
     expect(() => util.transpileString(exportStatement)).toThrowExactError(
-        TSTLErrors.UnsupportedDefaultExport(util.nodeStub),
+        TSTLErrors.UnsupportedDefaultExport(util.nodeStub)
     );
 });
 
@@ -78,7 +74,7 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             return foo;`;
 
         expect(util.executeLua(lua)).toBe("bar");
-    },
+    }
 );
 
 test("defaultImport", () => {
@@ -110,21 +106,20 @@ test("Non-exported module", () => {
         "return g.test();",
         undefined,
         undefined,
-        "module g { export function test() { return 3; } }",
+        "module g { export function test() { return 3; } }"
     );
 
     expect(result).toBe(3);
 });
 
-test.each([
-    tstl.LuaLibImportKind.Inline,
-    tstl.LuaLibImportKind.None,
-    tstl.LuaLibImportKind.Require,
-])("LuaLib no uses? No code (%p)", luaLibImport => {
-    const lua = util.transpileString(``, { luaLibImport });
+test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(
+    "LuaLib no uses? No code (%p)",
+    luaLibImport => {
+        const lua = util.transpileString(``, { luaLibImport });
 
-    expect(lua).toBe(``);
-});
+        expect(lua).toBe(``);
+    }
+);
 
 test("Nested module with dot in name", () => {
     const code = `module a.b {

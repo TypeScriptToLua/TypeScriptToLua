@@ -8,17 +8,12 @@ interface BuildVirtualProjectResult {
     emittedFiles: string[];
 }
 
-export function buildVirtualProject(
-    rootNames: string[],
-    options: tstl.CompilerOptions,
-): BuildVirtualProjectResult {
+export function buildVirtualProject(rootNames: string[], options: tstl.CompilerOptions): BuildVirtualProjectResult {
     options.skipLibCheck = true;
     options.types = [];
 
     const { diagnostics, emitResult } = tstl.transpileFiles(rootNames, options);
-    const emittedFiles = emitResult
-        .map(result => path.relative(__dirname, result.name).replace(/\\/g, "/"))
-        .sort();
+    const emittedFiles = emitResult.map(result => path.relative(__dirname, result.name).replace(/\\/g, "/")).sort();
 
     return { diagnostics, emitResult, emittedFiles };
 }

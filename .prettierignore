@@ -1,6 +1,3 @@
 /dist
 /coverage
 /test/translation/transformation/characterEscapeSequence.ts
-
-/src
-*.md

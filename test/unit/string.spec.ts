@@ -4,19 +4,12 @@ import * as util from "../util";
 test("Unsuported string function", () => {
     expect(() => {
         util.transpileString(`return "test".testThisIsNoMember()`);
-    }).toThrowExactError(
-        TSTLErrors.UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub),
-    );
+    }).toThrowExactError(TSTLErrors.UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub));
 });
 
 test("Suported lua string function", () => {
     expect(
-        util.transpileAndExecute(
-            `return "test".upper()`,
-            undefined,
-            undefined,
-            `interface String { upper(): string; }`,
-        ),
+        util.transpileAndExecute(`return "test".upper()`, undefined, undefined, `interface String { upper(): string; }`)
     ).toBe("TEST");
 });
 
@@ -26,7 +19,7 @@ test.each([{ inp: [] }, { inp: [65] }, { inp: [65, 66] }, { inp: [65, 66, 67] }]
         const result = util.transpileAndExecute(`return String.fromCharCode(${inp.toString()})`);
 
         expect(result).toBe(String.fromCharCode(...inp));
-    },
+    }
 );
 
 test.each([
@@ -99,9 +92,7 @@ test.each([
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
     const replaceValueString =
         typeof replaceValue === "string" ? JSON.stringify(replaceValue) : replaceValue.toString();
-    const result = util.transpileAndExecute(
-        `return "${inp}".replace("${searchValue}", ${replaceValueString});`,
-    );
+    const result = util.transpileAndExecute(`return "${inp}".replace("${searchValue}", ${replaceValueString});`);
 
     // https://github.com/Microsoft/TypeScript/issues/22378
     if (typeof replaceValue === "string") {
@@ -158,16 +149,14 @@ test.each([
     expect(result).toBe(inp.indexOf(searchValue, offset));
 });
 
-test.each([
-    { inp: "hello test", searchValue: "t", x: 4, y: 3 },
-    { inp: "hello test", searchValue: "h", x: 3, y: 4 },
-])("string.indexOf with offset expression (%p)", ({ inp, searchValue, x, y }) => {
-    const result = util.transpileAndExecute(
-        `return "${inp}".indexOf("${searchValue}", 2 > 1 && ${x} || ${y})`,
-    );
+test.each([{ inp: "hello test", searchValue: "t", x: 4, y: 3 }, { inp: "hello test", searchValue: "h", x: 3, y: 4 }])(
+    "string.indexOf with offset expression (%p)",
+    ({ inp, searchValue, x, y }) => {
+        const result = util.transpileAndExecute(`return "${inp}".indexOf("${searchValue}", 2 > 1 && ${x} || ${y})`);
 
-    expect(result).toBe(inp.indexOf(searchValue, x));
-});
+        expect(result).toBe(inp.indexOf(searchValue, x));
+    }
+);
 
 test.each([
     { inp: "hello test" },
@@ -194,15 +183,15 @@ test.each([
     expect(result).toBe(inp.substring(start, end));
 });
 
-test.each([
-    { inp: "hello test", start: 1, ignored: 0 },
-    { inp: "hello test", start: 3, ignored: 0, end: 5 },
-])("string.substring with expression (%p)", ({ inp, start, ignored, end }) => {
-    const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
-    const result = util.transpileAndExecute(`return "${inp}".substring(${paramStr})`);
+test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 5 }])(
+    "string.substring with expression (%p)",
+    ({ inp, start, ignored, end }) => {
+        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
+        const result = util.transpileAndExecute(`return "${inp}".substring(${paramStr})`);
 
-    expect(result).toBe(inp.substring(start, end));
-});
+        expect(result).toBe(inp.substring(start, end));
+    }
+);
 
 test.each([
     { inp: "hello test", start: 0 },
@@ -216,15 +205,15 @@ test.each([
     expect(result).toBe(inp.substr(start, end));
 });
 
-test.each([
-    { inp: "hello test", start: 1, ignored: 0 },
-    { inp: "hello test", start: 3, ignored: 0, end: 2 },
-])("string.substr with expression (%p)", ({ inp, start, ignored, end }) => {
-    const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
-    const result = util.transpileAndExecute(`return "${inp}".substr(${paramStr})`);
+test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 2 }])(
+    "string.substr with expression (%p)",
+    ({ inp, start, ignored, end }) => {
+        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
+        const result = util.transpileAndExecute(`return "${inp}".substr(${paramStr})`);
 
-    expect(result).toBe(inp.substr(start, end));
-});
+        expect(result).toBe(inp.substr(start, end));
+    }
+);
 
 test.each(["", "h", "hello"])("string.length (%p)", input => {
     const result = util.transpileAndExecute(`return "${input}".length`);
@@ -269,15 +258,14 @@ test.each([
     expect(result).toBe(inp.charAt(index));
 });
 
-test.each([
-    { inp: "hello test", index: 1 },
-    { inp: "hello test", index: 2 },
-    { inp: "hello test", index: 3 },
-])("string.charCodeAt (%p)", ({ inp, index }) => {
-    const result = util.transpileAndExecute(`return "${inp}".charCodeAt(${index})`);
+test.each([{ inp: "hello test", index: 1 }, { inp: "hello test", index: 2 }, { inp: "hello test", index: 3 }])(
+    "string.charCodeAt (%p)",
+    ({ inp, index }) => {
+        const result = util.transpileAndExecute(`return "${inp}".charCodeAt(${index})`);
 
-    expect(result).toBe(inp.charCodeAt(index));
-});
+        expect(result).toBe(inp.charCodeAt(index));
+    }
+);
 
 test.each([
     { inp: "hello test", index: 1, ignored: 0 },
@@ -285,9 +273,7 @@ test.each([
     { inp: "hello test", index: 3, ignored: 2 },
     { inp: "hello test", index: 3, ignored: 99 },
 ])("string.charAt with expression (%p)", ({ inp, index, ignored }) => {
-    const result = util.transpileAndExecute(
-        `return "${inp}".charAt(2 > 1 && ${index} || ${ignored})`,
-    );
+    const result = util.transpileAndExecute(`return "${inp}".charAt(2 > 1 && ${index} || ${ignored})`);
 
     expect(result).toBe(inp.charAt(index));
 });

@@ -181,7 +181,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
         typeScriptSource,
         options,
         undefined,
-        "declare const _G: {__TS__sourcemap: any};",
+        "declare const _G: {__TS__sourcemap: any};"
     );
 
     // Assert
@@ -225,9 +225,7 @@ test("Inline sourcemaps", () => {
     const { file } = util.transpileStringResult(typeScriptSource, compilerOptions);
     if (!util.expectToBeDefined(file.lua)) return;
 
-    const inlineSourceMapMatch = file.lua.match(
-        /--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/,
-    );
+    const inlineSourceMapMatch = file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/);
 
     if (util.expectToBeDefined(inlineSourceMapMatch)) {
         const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();

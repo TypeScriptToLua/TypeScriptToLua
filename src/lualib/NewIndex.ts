@@ -1,6 +1,4 @@
-function __TS__NewIndex(this: void, classProto: LuaObject)
-    : (this: void, tbl: LuaObject, key: any, val: any) => void
-{
+function __TS__NewIndex(this: void, classProto: LuaObject): (this: void, tbl: LuaObject, key: any, val: any) => void {
     return (tbl, key, val) => {
         let proto = classProto;
         while (true) {

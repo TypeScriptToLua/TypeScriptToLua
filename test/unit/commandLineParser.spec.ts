@@ -136,9 +136,7 @@ describe("tsconfig", () => {
         const rootLevel = parseConfigFileContent({ noHeader: true });
         const namespaced = parseConfigFileContent({ tstl: { noHeader: true } });
 
-        expect(rootLevel.errors).toEqual([
-            expect.objectContaining({ category: ts.DiagnosticCategory.Warning }),
-        ]);
+        expect(rootLevel.errors).toEqual([expect.objectContaining({ category: ts.DiagnosticCategory.Warning })]);
         expect(rootLevel.options).toEqual(namespaced.options);
     });
 

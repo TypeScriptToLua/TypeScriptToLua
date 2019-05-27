@@ -56,7 +56,7 @@ export enum LuaLibFeature {
     SymbolRegistry = "SymbolRegistry",
 }
 
-const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
+const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     InstanceOf: [LuaLibFeature.Symbol],

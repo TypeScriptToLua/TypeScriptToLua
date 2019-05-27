@@ -116,11 +116,10 @@ test.each([
     expect(result).toBe(expectResult);
 });
 
-test.each([
-    { initializer: "", expectResult: "foofoo" },
-    { initializer: ' = "bar"', expectResult: "barbar" },
-])("Var hoisting from child scope (%p)", ({ initializer, expectResult }) => {
-    const code = `
+test.each([{ initializer: "", expectResult: "foofoo" }, { initializer: ' = "bar"', expectResult: "barbar" }])(
+    "Var hoisting from child scope (%p)",
+    ({ initializer, expectResult }) => {
+        const code = `
         foo = "foo";
         let result: string;
         if (true) {
@@ -129,9 +128,10 @@ test.each([
         }
         return foo + result;
     `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(expectResult);
-});
+        const result = util.transpileAndExecute(code);
+        expect(result).toBe(expectResult);
+    }
+);
 
 test("Hoisting due to reference from hoisted function", () => {
     const code = `
@@ -228,10 +228,7 @@ test.each([
     { code: `const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
     { code: `export const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
     { code: `const foo = bar(); export function bar() { return "bar"; }`, identifier: "bar" },
-    {
-        code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`,
-        identifier: "NS",
-    },
+    { code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, identifier: "NS" },
     {
         code: `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
         identifier: "I",
@@ -240,7 +237,7 @@ test.each([
     { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
 ])("No Hoisting (%p)", ({ code, identifier }) => {
     expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
-        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier)),
+        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
     );
 });
 

@@ -4404,6 +4404,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, node, caller, ...params);
             case "filter":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
+            case "reduce":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReduce, node, caller, ...params);
             case "some":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":

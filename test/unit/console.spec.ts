@@ -71,7 +71,7 @@ test("console.differentiation", () => {
             export const result = test();
         `,
         "result",
-        compilerOptions,
+        compilerOptions
     );
     expect(result).toBe(42);
 });

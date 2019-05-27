@@ -63,7 +63,7 @@ test.each([...testCases, ...testCasesDefault])(
             return ${returnVariable};
         `);
         expect(result).toBe(true);
-    },
+    }
 );
 
 test.each([...testCases, ...testCasesDefault])(
@@ -71,10 +71,10 @@ test.each([...testCases, ...testCasesDefault])(
     ({ bindingString, objectString, returnVariable }) => {
         const result = util.transpileExecuteAndReturnExport(
             `export const ${bindingString} = ${objectString};`,
-            returnVariable,
+            returnVariable
         );
         expect(result).toBe(true);
-    },
+    }
 );
 
 test.each(testCases)(
@@ -88,7 +88,7 @@ test.each(testCases)(
             return ${returnVariable};
         `);
         expect(result).toBe(true);
-    },
+    }
 );
 
 test.each([
@@ -99,13 +99,10 @@ test.each([
         returnVariable: "z",
     },
     { bindingString: "[x = true]", objectString: "[false]", returnVariable: "x" },
-])(
-    "Binding patterns handle false correctly (%p)",
-    ({ bindingString, objectString, returnVariable }) => {
-        const result = util.transpileExecuteAndReturnExport(
-            `export const ${bindingString} = ${objectString};`,
-            returnVariable,
-        );
-        expect(result).toBe(false);
-    },
-);
+])("Binding patterns handle false correctly (%p)", ({ bindingString, objectString, returnVariable }) => {
+    const result = util.transpileExecuteAndReturnExport(
+        `export const ${bindingString} = ${objectString};`,
+        returnVariable
+    );
+    expect(result).toBe(false);
+});

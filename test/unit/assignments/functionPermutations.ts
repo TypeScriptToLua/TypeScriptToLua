@@ -328,46 +328,18 @@ export const validTestFunctionCasts: TestFunctionCast[] = [
     [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${selfTestFunctionType})`],
     [noSelfTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfTestFunctions[0].value})`],
     [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
-    [
-        noSelfInFileTestFunctions[0],
-        `<${anonTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`,
-    ],
-    [
-        noSelfInFileTestFunctions[0],
-        `(${noSelfInFileTestFunctions[0].value}) as (${anonTestFunctionType})`,
-    ],
-    [
-        noSelfInFileTestFunctions[0],
-        `<${noSelfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`,
-    ],
-    [
-        noSelfInFileTestFunctions[0],
-        `(${noSelfInFileTestFunctions[0].value}) as (${noSelfTestFunctionType})`,
-    ],
+    [noSelfInFileTestFunctions[0], `<${anonTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${anonTestFunctionType})`],
+    [noSelfInFileTestFunctions[0], `<${noSelfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${noSelfTestFunctionType})`],
 ];
 export const invalidTestFunctionCasts: TestFunctionCast[] = [
     [noSelfTestFunctions[0], `<${anonTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
-    [
-        noSelfTestFunctions[0],
-        `(${noSelfTestFunctions[0].value}) as (${anonTestFunctionType})`,
-        false,
-    ],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${anonTestFunctionType})`, false],
     [noSelfTestFunctions[0], `<${selfTestFunctionType}>(${noSelfTestFunctions[0].value})`, false],
-    [
-        noSelfTestFunctions[0],
-        `(${noSelfTestFunctions[0].value}) as (${selfTestFunctionType})`,
-        false,
-    ],
-    [
-        noSelfInFileTestFunctions[0],
-        `<${selfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`,
-        false,
-    ],
-    [
-        noSelfInFileTestFunctions[0],
-        `(${noSelfInFileTestFunctions[0].value}) as (${selfTestFunctionType})`,
-        false,
-    ],
+    [noSelfTestFunctions[0], `(${noSelfTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
+    [noSelfInFileTestFunctions[0], `<${selfTestFunctionType}>(${noSelfInFileTestFunctions[0].value})`, false],
+    [noSelfInFileTestFunctions[0], `(${noSelfInFileTestFunctions[0].value}) as (${selfTestFunctionType})`, false],
     [selfTestFunctions[0], `<${noSelfTestFunctionType}>(${selfTestFunctions[0].value})`, true],
     [selfTestFunctions[0], `(${selfTestFunctions[0].value}) as (${noSelfTestFunctionType})`, true],
 ];
@@ -388,24 +360,14 @@ export const validTestFunctionAssignments: TestFunctionAssignment[] = [
     ...anonTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
     ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType]),
     ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType]),
-    ...noSelfTestFunctionExpressions.map(
-        (f): TestFunctionAssignment => [f, noSelfTestFunctionType],
-    ),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType]),
 ];
 export const invalidTestFunctionAssignments: TestFunctionAssignment[] = [
     ...selfTestFunctions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType, false]),
     ...noSelfTestFunctions.map((f): TestFunctionAssignment => [f, anonTestFunctionType, true]),
     ...noSelfTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
-    ...noSelfInFileTestFunctions.map(
-        (f): TestFunctionAssignment => [f, selfTestFunctionType, true],
-    ),
-    ...selfTestFunctionExpressions.map(
-        (f): TestFunctionAssignment => [f, noSelfTestFunctionType, false],
-    ),
-    ...noSelfTestFunctionExpressions.map(
-        (f): TestFunctionAssignment => [f, anonTestFunctionType, true],
-    ),
-    ...noSelfTestFunctionExpressions.map(
-        (f): TestFunctionAssignment => [f, selfTestFunctionType, true],
-    ),
+    ...noSelfInFileTestFunctions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
+    ...selfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, noSelfTestFunctionType, false]),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, anonTestFunctionType, true]),
+    ...noSelfTestFunctionExpressions.map((f): TestFunctionAssignment => [f, selfTestFunctionType, true]),
 ];

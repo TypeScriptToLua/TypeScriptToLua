@@ -97,9 +97,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
 
     if (parsedConfigFile.raw.tstl) {
         if (hasRootLevelOptions) {
-            parsedConfigFile.errors.push(
-                diagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
-            );
+            parsedConfigFile.errors.push(diagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl));
         }
 
         for (const key in parsedConfigFile.raw.tstl) {
@@ -122,10 +120,7 @@ export function parseCommandLine(args: string[]): ParsedCommandLine {
     return updateParsedCommandLine(ts.parseCommandLine(args), args);
 }
 
-function updateParsedCommandLine(
-    parsedCommandLine: ts.ParsedCommandLine,
-    args: string[]
-): ParsedCommandLine {
+function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: string[]): ParsedCommandLine {
     for (let i = 0; i < args.length; i++) {
         if (!args[i].startsWith("-")) continue;
 
@@ -145,8 +140,7 @@ function updateParsedCommandLine(
             const tsInvalidCompilerOptionErrorCode = 5023;
             parsedCommandLine.errors = parsedCommandLine.errors.filter(err => {
                 return !(
-                    err.code === tsInvalidCompilerOptionErrorCode &&
-                    String(err.messageText).endsWith(`'${args[i]}'.`)
+                    err.code === tsInvalidCompilerOptionErrorCode && String(err.messageText).endsWith(`'${args[i]}'.`)
                 );
             });
 

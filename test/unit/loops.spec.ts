@@ -11,17 +11,15 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp,
             arrTest[i] = arrTest[i] + 1;
             i++;
         }
-        return JSONStringify(arrTest);`,
+        return JSONStringify(arrTest);`
     );
 
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
-    "while with continue (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])("while with continue (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             while (i < arrTest.length) {
                 if (i % 2 == 0) {
@@ -40,18 +38,15 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
 
                 i++;
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
-    "dowhile with continue (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])("dowhile with continue (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             do {
                 if (i % 2 == 0) {
@@ -70,12 +65,11 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])(
 
                 i++;
             } while (i < arrTest.length)
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
@@ -83,31 +77,26 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for (%p)", ({ inp, e
         for (let i = 0; i < arrTest.length; ++i) {
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`,
+        return JSONStringify(arrTest);`
     );
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
-    "for with expression (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for with expression (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i: number;
             for (i = 0 * 1; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`,
-        );
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+            return JSONStringify(arrTest);`
+    );
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
-    "for with continue (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])("for with continue (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; i < arrTest.length; i++) {
                 if (i % 2 == 0) {
                     continue;
@@ -120,27 +109,23 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
                     arrTest[i] = j;
                 }
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
-    "forMirror (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forMirror (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             for (let i = 0; arrTest.length > i; i++) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test.each([{ inp: [0, 1, 2, 3], expected: [0, 1, 2, 3] }])("forBreak (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
@@ -149,33 +134,28 @@ test.each([{ inp: [0, 1, 2, 3], expected: [0, 1, 2, 3] }])("forBreak (%p)", ({ i
             break;
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`,
+        return JSONStringify(arrTest);`
     );
 
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
-    "forNoDeclarations (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoDeclarations (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             for (; i < arrTest.length; ++i) {
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
-    "forNoCondition (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoCondition (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             for (;; ++i) {
                 if (i >= arrTest.length) {
@@ -184,18 +164,15 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
 
                 arrTest[i] = arrTest[i] + 1;
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
-    "forNoPostExpression (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let arrTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoPostExpression (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let arrTest = ${JSON.stringify(inp)};
             let i = 0;
             for (;;) {
                 if (i >= arrTest.length) {
@@ -206,12 +183,11 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])(
 
                 i++;
             }
-            return JSONStringify(arrTest);`,
-        );
+            return JSONStringify(arrTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test.each([
     { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i < arrTest.length; i++" },
@@ -248,7 +224,7 @@ test.each([
         for (${header}) {
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`,
+        return JSONStringify(arrTest);`
     );
 
     expect(result).toBe(JSON.stringify(expected));
@@ -274,7 +250,7 @@ test.each([
         for (let key in objTest) {
             objTest[key] = objTest[key] + 1;
         }
-        return JSONStringify(objTest);`,
+        return JSONStringify(objTest);`
     );
 
     expect(JSON.parse(result)).toEqual(expected);
@@ -286,8 +262,8 @@ test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
             `let arrTest = ${JSON.stringify(inp)};
             for (let key in arrTest) {
                 arrTest[key]++;
-            }`,
-        ),
+            }`
+        )
     ).toThrowExactError(TSTLErrors.ForbiddenForIn(util.nodeStub));
 });
 
@@ -303,11 +279,11 @@ test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2
 
                 obj[i] = 0;
             }
-            return JSONStringify(obj);`,
+            return JSONStringify(obj);`
         );
 
         expect(result).toBe(JSON.stringify(expected));
-    },
+    }
 );
 
 test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expected }) => {
@@ -317,44 +293,38 @@ test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expec
         for (let value of objTest) {
             arrResultTest.push(value + 1)
         }
-        return JSONStringify(arrResultTest);`,
+        return JSONStringify(arrResultTest);`
     );
 
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])(
-    "forof existing variable (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let objTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof existing variable (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
             let value: number;
             for (value of objTest) {
                 arrResultTest.push(value + 1)
             }
-            return JSONStringify(arrResultTest);`,
-        );
+            return JSONStringify(arrResultTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
-test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
-    "forof destructing (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let objTest = ${JSON.stringify(inp)};
+test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])("forof destructing (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
             for (let [a,b] of objTest) {
                 arrResultTest.push(a + b)
             }
-            return JSONStringify(arrResultTest);`,
-        );
+            return JSONStringify(arrResultTest);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
     "forof destructing with existing variables (%p)",
@@ -367,18 +337,16 @@ test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
             for ([a,b] of objTest) {
                 arrResultTest.push(a + b)
             }
-            return JSONStringify(arrResultTest);`,
+            return JSONStringify(arrResultTest);`
         );
 
         expect(result).toBe(JSON.stringify(expected));
-    },
+    }
 );
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
-    "forof with continue (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let testArr = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])("forof with continue (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(
+        `let testArr = ${JSON.stringify(inp)};
             let a = 0;
             for (let i of testArr) {
                 if (i % 2 == 0) {
@@ -394,12 +362,11 @@ test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])(
                 }
                 a++;
             }
-            return JSONStringify(testArr);`,
-        );
+            return JSONStringify(testArr);`
+    );
 
-        expect(result).toBe(JSON.stringify(expected));
-    },
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test("forof with iterator", () => {
     const code = `
@@ -531,7 +498,7 @@ test.each([
         for (${initializer} of arr) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message,
+        TSTLErrors.UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message
     );
 });
 
@@ -728,7 +695,7 @@ test("forof lua iterator tuple-return single variable", () => {
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
     );
 });
 
@@ -747,7 +714,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub),
+        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
     );
 });
 
@@ -820,11 +787,7 @@ test.each([
     const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
 
     expect(() => util.transpileString(loop, lua51)).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget(
-            "Continue statement",
-            tstl.LuaTarget.Lua51,
-            ts.createContinue(),
-        ),
+        TSTLErrors.UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
     );
     expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
     expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);
@@ -832,17 +795,13 @@ test.each([
 });
 
 test("for dead code after return", () => {
-    const result = util.transpileAndExecute(
-        `for (let i = 0; i < 10; i++) { return 3; const b = 8; }`,
-    );
+    const result = util.transpileAndExecute(`for (let i = 0; i < 10; i++) { return 3; const b = 8; }`);
 
     expect(result).toBe(3);
 });
 
 test("for..in dead code after return", () => {
-    const result = util.transpileAndExecute(
-        `for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`,
-    );
+    const result = util.transpileAndExecute(`for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`);
 
     expect(result).toBe(3);
 });

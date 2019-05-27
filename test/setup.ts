@@ -47,9 +47,7 @@ expect.extend({
                 return (
                     matcherHint +
                     "\n\n" +
-                    (this.isNot
-                        ? diagnosticMessages
-                        : `Received: ${this.utils.printReceived(diagnostics)}\n`)
+                    (this.isNot ? diagnosticMessages : `Received: ${this.utils.printReceived(diagnostics)}\n`)
                 );
             },
         };

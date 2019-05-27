@@ -41,58 +41,73 @@ export enum SyntaxKind {
     TableIndexExpression,
     // Operators
     // Arithmetic
-    AdditionOperator,  // Maybe use abbreviations for those add, sub, mul ...
+    AdditionOperator, // Maybe use abbreviations for those add, sub, mul ...
     SubtractionOperator,
     MultiplicationOperator,
     DivisionOperator,
     FloorDivisionOperator,
     ModuloOperator,
     PowerOperator,
-    NegationOperator,  // Unary minus
+    NegationOperator, // Unary minus
     // Concat
     ConcatOperator,
     // Length
-    LengthOperator,  // Unary
+    LengthOperator, // Unary
     // Relational Ops
     EqualityOperator,
     InequalityOperator,
     LessThanOperator,
     LessEqualOperator,
-    GreaterThanOperator,   // Syntax Sugar `x > y` <=> `not (y <= x)`
-                           // but we should probably use them to make the output code more readable
-    GreaterEqualOperator,  // Syntax Sugar `x >= y` <=> `not (y < x)`
+    GreaterThanOperator, // Syntax Sugar `x > y` <=> `not (y <= x)`
+    // but we should probably use them to make the output code more readable
+    GreaterEqualOperator, // Syntax Sugar `x >= y` <=> `not (y < x)`
     // Logical
     AndOperator,
     OrOperator,
-    NotOperator,  // Unary
+    NotOperator, // Unary
     // Bitwise
     BitwiseAndOperator,
     BitwiseOrOperator,
     BitwiseExclusiveOrOperator,
     BitwiseRightShiftOperator,
     BitwiseLeftShiftOperator,
-    BitwiseNotOperator,  // Unary
+    BitwiseNotOperator, // Unary
 }
 
 // TODO maybe name this PrefixUnary? not sure it makes sense to do so, because all unary ops in Lua are prefix
 export type UnaryBitwiseOperator = SyntaxKind.BitwiseNotOperator;
 
-export type UnaryOperator = SyntaxKind.NegationOperator
+export type UnaryOperator =
+    | SyntaxKind.NegationOperator
     | SyntaxKind.LengthOperator
     | SyntaxKind.NotOperator
     | UnaryBitwiseOperator;
 
-export type BinaryBitwiseOperator = SyntaxKind.BitwiseAndOperator | SyntaxKind.BitwiseOrOperator
-    | SyntaxKind.BitwiseExclusiveOrOperator | SyntaxKind.BitwiseRightShiftOperator
+export type BinaryBitwiseOperator =
+    | SyntaxKind.BitwiseAndOperator
+    | SyntaxKind.BitwiseOrOperator
+    | SyntaxKind.BitwiseExclusiveOrOperator
+    | SyntaxKind.BitwiseRightShiftOperator
     | SyntaxKind.BitwiseLeftShiftOperator;
 
 export type BinaryOperator =
-    SyntaxKind.AdditionOperator | SyntaxKind.SubtractionOperator | SyntaxKind.MultiplicationOperator
-    | SyntaxKind.DivisionOperator | SyntaxKind.FloorDivisionOperator | SyntaxKind.ModuloOperator
-    | SyntaxKind.PowerOperator | SyntaxKind.ConcatOperator | SyntaxKind.EqualityOperator
-    | SyntaxKind.InequalityOperator | SyntaxKind.LessThanOperator | SyntaxKind.LessEqualOperator
-    | SyntaxKind.GreaterThanOperator | SyntaxKind.GreaterEqualOperator | SyntaxKind.AndOperator
-    | SyntaxKind.OrOperator | BinaryBitwiseOperator;
+    | SyntaxKind.AdditionOperator
+    | SyntaxKind.SubtractionOperator
+    | SyntaxKind.MultiplicationOperator
+    | SyntaxKind.DivisionOperator
+    | SyntaxKind.FloorDivisionOperator
+    | SyntaxKind.ModuloOperator
+    | SyntaxKind.PowerOperator
+    | SyntaxKind.ConcatOperator
+    | SyntaxKind.EqualityOperator
+    | SyntaxKind.InequalityOperator
+    | SyntaxKind.LessThanOperator
+    | SyntaxKind.LessEqualOperator
+    | SyntaxKind.GreaterThanOperator
+    | SyntaxKind.GreaterEqualOperator
+    | SyntaxKind.AndOperator
+    | SyntaxKind.OrOperator
+    | BinaryBitwiseOperator;
 
 export type Operator = UnaryOperator | BinaryOperator;
 
@@ -110,14 +125,14 @@ export interface Node extends TextRange {
 
 export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
     if (tsOriginal === undefined) {
-        return {kind, parent};
+        return { kind, parent };
     }
 
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        return {kind, parent, line: sourcePosition.line, column: sourcePosition.column};
+        return { kind, parent, line: sourcePosition.line, column: sourcePosition.column };
     } else {
-        return {kind, parent};
+        return { kind, parent };
     }
 }
 
@@ -147,7 +162,7 @@ export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal:
     return node;
 }
 
-export function setParent(node: Node | Node[] | undefined, parent: Node): void {
+export function setParent(node: Node | Node[] | undefined, parent: Node): void {
     if (!node) {
         return;
     }
@@ -162,7 +177,6 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void 
 
 function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
     if (sourceNode !== undefined && sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
-
         const { line, character } = ts.getLineAndCharacterOfPosition(
             sourceNode.getSourceFile(),
             sourceNode.pos + sourceNode.getLeadingTriviaWidth()
@@ -228,8 +242,7 @@ export function createVariableDeclarationStatement(
     right?: Expression | Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): VariableDeclarationStatement
-{
+): VariableDeclarationStatement {
     const statement = createNode(
         SyntaxKind.VariableDeclarationStatement,
         tsOriginal,
@@ -263,11 +276,10 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 
 export function createAssignmentStatement(
     left: AssignmentLeftHandSideExpression | AssignmentLeftHandSideExpression[],
-    right?: Expression | Expression[],
+    right?: Expression | Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): AssignmentStatement
-{
+): AssignmentStatement {
     const statement = createNode(SyntaxKind.AssignmentStatement, tsOriginal, parent) as AssignmentStatement;
     setParent(left, statement);
     if (Array.isArray(left)) {
@@ -301,8 +313,7 @@ export function createIfStatement(
     elseBlock?: Block | IfStatement,
     tsOriginal?: ts.Node,
     parent?: Node
-): IfStatement
-{
+): IfStatement {
     const statement = createNode(SyntaxKind.IfStatement, tsOriginal, parent) as IfStatement;
     setParent(condition, statement);
     statement.condition = condition;
@@ -318,8 +329,12 @@ export interface IterationStatement extends Statement {
 }
 
 export function isIterationStatement(node: Node): node is IterationStatement {
-    return node.kind === SyntaxKind.WhileStatement || node.kind === SyntaxKind.RepeatStatement
-        || node.kind === SyntaxKind.ForStatement || node.kind === SyntaxKind.ForInStatement;
+    return (
+        node.kind === SyntaxKind.WhileStatement ||
+        node.kind === SyntaxKind.RepeatStatement ||
+        node.kind === SyntaxKind.ForStatement ||
+        node.kind === SyntaxKind.ForInStatement
+    );
 }
 
 export interface WhileStatement extends IterationStatement {
@@ -336,8 +351,7 @@ export function createWhileStatement(
     condition: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): WhileStatement
-{
+): WhileStatement {
     const statement = createNode(SyntaxKind.WhileStatement, tsOriginal, parent) as WhileStatement;
     setParent(body, statement);
     statement.body = body;
@@ -360,8 +374,7 @@ export function createRepeatStatement(
     condition: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): RepeatStatement
-{
+): RepeatStatement {
     const statement = createNode(SyntaxKind.RepeatStatement, tsOriginal, parent) as RepeatStatement;
     setParent(body, statement);
     statement.body = body;
@@ -391,8 +404,7 @@ export function createForStatement(
     stepExpression?: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): ForStatement
-{
+): ForStatement {
     const statement = createNode(SyntaxKind.ForStatement, tsOriginal, parent) as ForStatement;
     setParent(body, statement);
     statement.body = body;
@@ -423,8 +435,7 @@ export function createForInStatement(
     expressions: Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): ForInStatement
-{
+): ForInStatement {
     const statement = createNode(SyntaxKind.ForInStatement, tsOriginal, parent) as ForInStatement;
     setParent(body, statement);
     statement.body = body;
@@ -437,7 +448,7 @@ export function createForInStatement(
 
 export interface GotoStatement extends Statement {
     kind: SyntaxKind.GotoStatement;
-    label: string;  // or identifier ?
+    label: string; // or identifier ?
 }
 
 export function isGotoStatement(node: Node): node is GotoStatement {
@@ -452,7 +463,7 @@ export function createGotoStatement(label: string, tsOriginal?: ts.Node, parent?
 
 export interface LabelStatement extends Statement {
     kind: SyntaxKind.LabelStatement;
-    name: string;  // or identifier ?
+    name: string; // or identifier ?
 }
 
 export function isLabelStatement(node: Node): node is LabelStatement {
@@ -478,8 +489,7 @@ export function createReturnStatement(
     expressions?: Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): ReturnStatement
-{
+): ReturnStatement {
     const statement = createNode(SyntaxKind.ReturnStatement, tsOriginal, parent) as ReturnStatement;
     setParent(expressions, statement);
     statement.expressions = expressions;
@@ -511,8 +521,7 @@ export function createExpressionStatement(
     expressions: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): ExpressionStatement
-{
+): ExpressionStatement {
     const statement = createNode(SyntaxKind.ExpressionStatement, tsOriginal, parent) as ExpressionStatement;
     setParent(expressions, statement);
     statement.expression = expressions;
@@ -628,8 +637,7 @@ export function createFunctionExpression(
     flags = FunctionExpressionFlags.None,
     tsOriginal?: ts.Node,
     parent?: Node
-): FunctionExpression
-{
+): FunctionExpression {
     const expression = createNode(SyntaxKind.FunctionExpression, tsOriginal, parent) as FunctionExpression;
     setParent(body, expression);
     expression.body = body;
@@ -658,8 +666,7 @@ export function createTableFieldExpression(
     key?: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): TableFieldExpression
-{
+): TableFieldExpression {
     const expression = createNode(SyntaxKind.TableExpression, tsOriginal, parent) as TableFieldExpression;
     setParent(value, expression);
     expression.value = value;
@@ -681,8 +688,7 @@ export function createTableExpression(
     fields?: TableFieldExpression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): TableExpression
-{
+): TableExpression {
     const expression = createNode(SyntaxKind.TableExpression, tsOriginal, parent) as TableExpression;
     setParent(fields, expression);
     expression.fields = fields;
@@ -704,8 +710,7 @@ export function createUnaryExpression(
     operator: UnaryOperator,
     tsOriginal?: ts.Node,
     parent?: Node
-): UnaryExpression
-{
+): UnaryExpression {
     const expression = createNode(SyntaxKind.UnaryExpression, tsOriginal, parent) as UnaryExpression;
     setParent(operand, expression);
     expression.operand = operand;
@@ -730,8 +735,7 @@ export function createBinaryExpression(
     operator: BinaryOperator,
     tsOriginal?: ts.Node,
     parent?: Node
-): BinaryExpression
-{
+): BinaryExpression {
     const expression = createNode(SyntaxKind.BinaryExpression, tsOriginal, parent) as BinaryExpression;
     setParent(left, expression);
     expression.left = left;
@@ -754,8 +758,7 @@ export function createParenthesizedExpression(
     innerExpression: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): ParenthesizedExpression
-{
+): ParenthesizedExpression {
     const expression = createNode(SyntaxKind.ParenthesizedExpression, tsOriginal, parent) as ParenthesizedExpression;
     setParent(innerExpression, expression);
     expression.innerExpression = innerExpression;
@@ -777,8 +780,7 @@ export function createCallExpression(
     params?: Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): CallExpression
-{
+): CallExpression {
     const callExpression = createNode(SyntaxKind.CallExpression, tsOriginal, parent) as CallExpression;
     setParent(expression, callExpression);
     callExpression.expression = expression;
@@ -804,8 +806,7 @@ export function createMethodCallExpression(
     params?: Expression[],
     tsOriginal?: ts.Node,
     parent?: Node
-): MethodCallExpression
-{
+): MethodCallExpression {
     const callExpression = createNode(SyntaxKind.MethodCallExpression, tsOriginal, parent) as MethodCallExpression;
     setParent(prefixExpression, callExpression);
     callExpression.prefixExpression = prefixExpression;
@@ -831,8 +832,7 @@ export function createIdentifier(
     tsOriginal?: ts.Node,
     symbolId?: SymbolId,
     parent?: Node
-): Identifier
-{
+): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
     expression.text = text as string;
     expression.symbolId = symbolId;
@@ -864,8 +864,7 @@ export function createTableIndexExpression(
     index: Expression,
     tsOriginal?: ts.Node,
     parent?: Node
-): TableIndexExpression
-{
+): TableIndexExpression {
     const expression = createNode(SyntaxKind.TableIndexExpression, tsOriginal, parent) as TableIndexExpression;
     setParent(table, expression);
     expression.table = table;
@@ -880,23 +879,27 @@ export type FunctionDefinition = (VariableDeclarationStatement | AssignmentState
     right: [FunctionExpression];
 };
 
-export function isFunctionDefinition(statement: VariableDeclarationStatement | AssignmentStatement)
-    : statement is FunctionDefinition
-{
-    return statement.left.length === 1
-        && statement.right !== undefined
-        && statement.right.length === 1
-        && isFunctionExpression(statement.right[0]);
+export function isFunctionDefinition(
+    statement: VariableDeclarationStatement | AssignmentStatement
+): statement is FunctionDefinition {
+    return (
+        statement.left.length === 1 &&
+        statement.right !== undefined &&
+        statement.right.length === 1 &&
+        isFunctionExpression(statement.right[0])
+    );
 }
 
 export type InlineFunctionExpression = FunctionExpression & {
-    body: { statements: [ReturnStatement & { expressions: Expression[] }]; };
+    body: { statements: [ReturnStatement & { expressions: Expression[] }] };
 };
 
-export function isInlineFunctionExpression(expression: FunctionExpression) : expression is InlineFunctionExpression {
-    return expression.body.statements !== undefined
-        && expression.body.statements.length === 1
-        && isReturnStatement(expression.body.statements[0])
-        && (expression.body.statements[0] as ReturnStatement).expressions !== undefined
-        && (expression.flags & FunctionExpressionFlags.Inline) !== 0;
+export function isInlineFunctionExpression(expression: FunctionExpression): expression is InlineFunctionExpression {
+    return (
+        expression.body.statements !== undefined &&
+        expression.body.statements.length === 1 &&
+        isReturnStatement(expression.body.statements[0]) &&
+        (expression.body.statements[0] as ReturnStatement).expressions !== undefined &&
+        (expression.flags & FunctionExpressionFlags.Inline) !== 0
+    );
 }

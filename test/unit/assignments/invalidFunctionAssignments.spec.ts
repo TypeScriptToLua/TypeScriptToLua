@@ -13,7 +13,7 @@ test.each(invalidTestFunctionAssignments)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -28,7 +28,7 @@ test.each(invalidTestFunctionAssignments)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionCasts)(
@@ -43,7 +43,7 @@ test.each(invalidTestFunctionCasts)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -58,7 +58,7 @@ test.each(invalidTestFunctionAssignments)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test("Invalid lua lib function argument", () => {
@@ -83,7 +83,7 @@ test.each(invalidTestFunctionCasts)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -98,7 +98,7 @@ test.each(invalidTestFunctionAssignments)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionAssignments)(
@@ -114,7 +114,7 @@ test.each(invalidTestFunctionAssignments)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test.each(invalidTestFunctionCasts)(
@@ -130,7 +130,7 @@ test.each(invalidTestFunctionCasts)(
             ? TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
             : TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub);
         expect(() => util.transpileString(code, undefined, false)).toThrowExactError(err);
-    },
+    }
 );
 
 test("Interface method assignment", () => {
@@ -158,7 +158,7 @@ test("Invalid function tuple assignment", () => {
         let [i, f]: [number, Func] = getTuple();
     `;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub),
+        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub)
     );
 });
 
@@ -170,7 +170,7 @@ test("Invalid method tuple assignment", () => {
         let [i, f]: [number, Meth] = getTuple();
     `;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub),
+        TSTLErrors.UnsupportedSelfFunctionConversion(util.nodeStub)
     );
 });
 
@@ -182,7 +182,7 @@ test("Invalid interface method assignment", () => {
         const b: B = a;
     `;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn"),
+        TSTLErrors.UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn")
     );
 });
 
@@ -200,7 +200,5 @@ test.each([
         declare const o: O;
         let f: ${assignType} = o;
     `;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.UnsupportedOverloadAssignment(util.nodeStub),
-    );
+    expect(() => util.transpileString(code)).toThrowExactError(TSTLErrors.UnsupportedOverloadAssignment(util.nodeStub));
 });

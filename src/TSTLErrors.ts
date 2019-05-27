@@ -2,8 +2,7 @@ import * as ts from "typescript";
 import { TranspileError } from "./TranspileError";
 import { LuaTarget } from "./CompilerOptions";
 
-const getLuaTargetName = (version: LuaTarget) =>
-    version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`;
+const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 
 export class TSTLErrors {
     public static CouldNotCast = (castName: string) =>
@@ -21,9 +20,11 @@ export class TSTLErrors {
     public static ForbiddenForIn = (node: ts.Node) =>
         new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
-    public static ForbiddenLuaTableSetExpression = (node: ts.Node) => new TranspileError(
-        `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
-        node);
+    public static ForbiddenLuaTableSetExpression = (node: ts.Node) =>
+        new TranspileError(
+            `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
+            node
+        );
 
     public static ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
         new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
@@ -37,10 +38,12 @@ export class TSTLErrors {
     public static ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
         new TranspileError(`Invalid @luaTable usage: ${description}`, node);
 
-    public static HeterogeneousEnum = (node: ts.Node) => new TranspileError(
-        `Invalid heterogeneous enum. Enums should either specify no member values, ` +
-            `or specify values (of the same type) for all members.`,
-        node);
+    public static HeterogeneousEnum = (node: ts.Node) =>
+        new TranspileError(
+            `Invalid heterogeneous enum. Enums should either specify no member values, ` +
+                `or specify values (of the same type) for all members.`,
+            node
+        );
 
     public static InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
         new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
@@ -66,8 +69,7 @@ export class TSTLErrors {
     public static InvalidInstanceOfExtension = (node: ts.Node) =>
         new TranspileError(`Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.`, node);
 
-    public static InvalidJsonFileContent = (node: ts.Node) =>
-        new TranspileError("Invalid JSON file content", node);
+    public static InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 
     public static InvalidPropertyCall = (node: ts.Node) =>
         new TranspileError(`Tried to transpile a non-property call as property call.`, node);
@@ -93,14 +95,12 @@ export class TSTLErrors {
     public static MissingMetaExtension = (node: ts.Node) =>
         new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
 
-    public static MissingSourceFile = () =>
-        new Error("Expected transformer.sourceFile to be set, but it isn't.");
+    public static MissingSourceFile = () => new Error("Expected transformer.sourceFile to be set, but it isn't.");
 
     public static UndefinedFunctionDefinition = (functionSymbolId: number) =>
         new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 
-    public static UndefinedScope = () =>
-        new Error("Expected to pop a scope, but found undefined.");
+    public static UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
     public static UndefinedTypeNode = (node: ts.Node) =>
         new TranspileError("Failed to resolve required type node.", node);
@@ -111,8 +111,7 @@ export class TSTLErrors {
     public static UnsupportedDefaultExport = (node: ts.Node) =>
         new TranspileError(`Default exports are not supported.`, node);
 
-    public static UnsupportedImportType = (node: ts.Node) =>
-        new TranspileError(`Unsupported import type.`, node);
+    public static UnsupportedImportType = (node: ts.Node) => new TranspileError(`Unsupported import type.`, node);
 
     public static UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) =>
         new TranspileError(`Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`, node);
@@ -130,13 +129,15 @@ export class TSTLErrors {
         if (name) {
             return new TranspileError(
                 `Unable to convert function with a 'this' parameter to function "${name}" with no 'this'. ` +
-                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
-                node);
+                    `To fix, wrap in an arrow function, or declare with 'this: void'.`,
+                node
+            );
         } else {
             return new TranspileError(
                 `Unable to convert function with a 'this' parameter to function with no 'this'. ` +
-                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
-                node);
+                    `To fix, wrap in an arrow function, or declare with 'this: void'.`,
+                node
+            );
         }
     };
 
@@ -144,13 +145,15 @@ export class TSTLErrors {
         if (name) {
             return new TranspileError(
                 `Unable to convert function with no 'this' parameter to function "${name}" with 'this'. ` +
-                `To fix, wrap in an arrow function or declare with 'this: any'.`,
-                node);
+                    `To fix, wrap in an arrow function or declare with 'this: any'.`,
+                node
+            );
         } else {
             return new TranspileError(
                 `Unable to convert function with no 'this' parameter to function with 'this'. ` +
-                `To fix, wrap in an arrow function or declare with 'this: any'.`,
-                node);
+                    `To fix, wrap in an arrow function or declare with 'this: any'.`,
+                node
+            );
         }
     };
 
@@ -158,13 +161,15 @@ export class TSTLErrors {
         if (name) {
             return new TranspileError(
                 `Unsupported assignment of function with different overloaded types for 'this' to "${name}". ` +
-                `Overloads should all have the same type for 'this'.`,
-                node);
+                    `Overloads should all have the same type for 'this'.`,
+                node
+            );
         } else {
             return new TranspileError(
                 `Unsupported assignment of function with different overloaded types for 'this'. ` +
-                `Overloads should all have the same type for 'this'.`,
-                node);
+                    `Overloads should all have the same type for 'this'.`,
+                node
+            );
         }
     };
 
@@ -173,20 +178,18 @@ export class TSTLErrors {
             "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
                 "You must use a destructuring statement to catch results from a lua iterator with " +
                 "the TupleReturn decorator.",
-            node);
+            node
+        );
     };
 
     public static UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) => {
-        return new TranspileError(
-            `${reason}. ` +
-            `TypeScript path: ${path}.`,
-            node);
+        return new TranspileError(`${reason}. ` + `TypeScript path: ${path}.`, node);
     };
 
     public static ReferencedBeforeDeclaration = (node: ts.Identifier) => {
         return new TranspileError(
             `Identifier "${node.text}" was referenced before it was declared. The declaration ` +
-            "must be moved before the identifier's use, or hoisting must be enabled.",
+                "must be moved before the identifier's use, or hoisting must be enabled.",
             node
         );
     };

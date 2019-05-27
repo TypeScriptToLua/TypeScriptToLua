@@ -86,13 +86,10 @@ test.each([
                 expect(match[1]).toBe(expectedPath);
             }
         }
-    },
+    }
 );
 
-test.each([
-    { comment: "", expectedPath: "src.fake" },
-    { comment: "/** @noResolution */", expectedPath: "fake" },
-])(
+test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolution */", expectedPath: "fake" }])(
     "noResolution on ambient modules causes no path alterations (%p)",
     ({ comment, expectedPath }) => {
         const lua = util.transpileString({
@@ -105,5 +102,5 @@ test.each([
         if (util.expectToBeDefined(match)) {
             expect(match[1]).toBe(expectedPath);
         }
-    },
+    }
 );

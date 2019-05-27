@@ -118,5 +118,5 @@ test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
     "weakMap has no map features (%p)",
     call => {
         expect(() => util.transpileAndExecute(`(new WeakMap() as any).${call}`)).toThrow();
-    },
+    }
 );

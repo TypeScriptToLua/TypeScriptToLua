@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { transpileError } from "./diagnostics";
-import { Block } from './LuaAST';
+import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
@@ -12,10 +12,7 @@ function getCustomTransformers(
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
     // TODO: https://github.com/Microsoft/TypeScript/issues/28310
-    const forEachSourceFile = (
-        node: ts.SourceFile,
-        callback: (sourceFile: ts.SourceFile) => ts.SourceFile
-    ) =>
+    const forEachSourceFile = (node: ts.SourceFile, callback: (sourceFile: ts.SourceFile) => ts.SourceFile) =>
         ts.isBundle(node)
             ? ((ts.updateBundle(node, node.sourceFiles.map(callback)) as unknown) as ts.SourceFile)
             : callback(node);
@@ -28,11 +25,7 @@ function getCustomTransformers(
 
     return {
         afterDeclarations: customTransformers.afterDeclarations,
-        before: [
-            ...(customTransformers.before || []),
-            ...(customTransformers.after || []),
-            luaTransformer,
-        ],
+        before: [...(customTransformers.before || []), ...(customTransformers.after || []), luaTransformer],
     };
 }
 
@@ -82,10 +75,7 @@ export function transpile({
     };
 
     if (options.noEmitOnError) {
-        const preEmitDiagnostics = [
-            ...program.getOptionsDiagnostics(),
-            ...program.getGlobalDiagnostics(),
-        ];
+        const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
 
         if (targetSourceFiles) {
             for (const sourceFile of targetSourceFiles) {
@@ -110,11 +100,7 @@ export function transpile({
         try {
             const [luaAst, lualibFeatureSet] = transformer.transformSourceFile(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(
-                    luaAst,
-                    lualibFeatureSet,
-                    sourceFile.fileName
-                );
+                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
                 updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
             }
         } catch (err) {
@@ -157,15 +143,11 @@ export function transpile({
             if (isEmittableJsonFile(file)) {
                 processSourceFile(file);
             } else {
-                diagnostics.push(
-                    ...program.emit(file, writeFile, undefined, false, transformers).diagnostics
-                );
+                diagnostics.push(...program.emit(file, writeFile, undefined, false, transformers).diagnostics);
             }
         }
     } else {
-        diagnostics.push(
-            ...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics
-        );
+        diagnostics.push(...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics);
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
         program

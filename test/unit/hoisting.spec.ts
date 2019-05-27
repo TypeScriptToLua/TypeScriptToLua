@@ -116,11 +116,10 @@ test.each([
     expect(result).toBe(expectResult);
 });
 
-test.each([
-    { initializer: "", expectResult: "foofoo" },
-    { initializer: ' = "bar"', expectResult: "barbar" },
-])("Var hoisting from child scope (%p)", ({ initializer, expectResult }) => {
-    const code = `
+test.each([{ initializer: "", expectResult: "foofoo" }, { initializer: ' = "bar"', expectResult: "barbar" }])(
+    "Var hoisting from child scope (%p)",
+    ({ initializer, expectResult }) => {
+        const code = `
         foo = "foo";
         let result: string;
         if (true) {
@@ -129,9 +128,10 @@ test.each([
         }
         return foo + result;
     `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(expectResult);
-});
+        const result = util.transpileAndExecute(code);
+        expect(result).toBe(expectResult);
+    }
+);
 
 test("Hoisting due to reference from hoisted function", () => {
     const code = `
@@ -240,7 +240,7 @@ test.each([
     { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
 ])("No Hoisting (%p)", ({ code, identifier }) => {
     expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
-        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier)),
+        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
     );
 });
 

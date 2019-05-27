@@ -62,19 +62,16 @@ test.each(invalidLuaNames)("lua keyword or invalid identifier as method call (%p
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
 
-test.each(invalidLuaNames)(
-    "lua keyword or invalid identifier as complex method call (%p)",
-    name => {
-        const code = `
+test.each(invalidLuaNames)("lua keyword or invalid identifier as complex method call (%p)", name => {
+    const code = `
         const foo = {
             ${name}(arg: string) { return "foo" + arg; }
         };
         function getFoo() { return foo; }
         return getFoo().${name}("bar");`;
 
-        expect(util.transpileAndExecute(code)).toBe("foobar");
-    },
-);
+    expect(util.transpileAndExecute(code)).toBe("foobar");
+});
 
 test.each([
     "var local: any;",
@@ -92,7 +89,7 @@ test.each([
         const foo = local;`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")).message,
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")).message
     );
 });
 
@@ -112,7 +109,7 @@ test.each([
         const foo = $$$;`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")).message,
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")).message
     );
 });
 
@@ -124,38 +121,32 @@ test.each(validTsInvalidLuaNames)(
         const foo = { ${name} };`;
 
         expect(() => util.transpileString(code)).toThrow(
-            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
+            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
         );
-    },
+    }
 );
 
-test.each(validTsInvalidLuaNames)(
-    "undeclared identifier must be a valid lua identifier (%p)",
-    name => {
-        expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
-            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
-        );
-    },
-);
+test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua identifier (%p)", name => {
+    expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
+        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
+    );
+});
 
 test.each(validTsInvalidLuaNames)(
     "undeclared identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {
         expect(() => util.transpileString(`const foo = { ${name} };`)).toThrow(
-            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message,
+            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
         );
-    },
+    }
 );
 
-test.each(validTsInvalidLuaNames)(
-    "exported values with invalid lua identifier names (%p)",
-    name => {
-        const code = `export const ${name} = "foobar";`;
-        const lua = util.transpileString(code);
-        expect(lua.indexOf(`"${name}"`)).toBeGreaterThanOrEqual(0);
-        expect(util.executeLua(`return (function() ${lua} end)()["${name}"]`)).toBe("foobar");
-    },
-);
+test.each(validTsInvalidLuaNames)("exported values with invalid lua identifier names (%p)", name => {
+    const code = `export const ${name} = "foobar";`;
+    const lua = util.transpileString(code);
+    expect(lua.indexOf(`"${name}"`)).toBeGreaterThanOrEqual(0);
+    expect(util.executeLua(`return (function() ${lua} end)()["${name}"]`)).toBe("foobar");
+});
 
 test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
     const code = `
@@ -339,9 +330,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
 
         const compilerOptions = { lib: ["lib.es2015.d.ts", "lib.dom.d.ts"] };
 
-        expect(() => util.transpileAndExecute(code, compilerOptions)).toThrow(
-            /^LUA ERROR: .+ foobar$/,
-        );
+        expect(() => util.transpileAndExecute(code, compilerOptions)).toThrow(/^LUA ERROR: .+ foobar$/);
     });
 
     test("variable (debug)", () => {
@@ -362,7 +351,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         const compilerOptions = { lib: ["lib.es2015.d.ts", "lib.dom.d.ts"] };
 
         expect(util.transpileAndExecute(code, compilerOptions, luaHeader, tsHeader)).toMatch(
-            /^foobar\nstack traceback.+/,
+            /^foobar\nstack traceback.+/
         );
     });
 
@@ -597,21 +586,18 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
     });
 
-    test.each(["type", "type as type"])(
-        "re-exported variable with lua keyword as name (%p)",
-        importName => {
-            const code = `
+    test.each(["type", "type as type"])("re-exported variable with lua keyword as name (%p)", importName => {
+        const code = `
                 export { ${importName} } from "someModule"`;
 
-            const lua = `
+        const lua = `
                 package.loaded.someModule = {type = "foobar"}
                 return (function()
                     ${util.transpileString(code)}
                 end)().type`;
 
-            expect(util.executeLua(lua)).toBe("foobar");
-        },
-    );
+        expect(util.executeLua(lua)).toBe("foobar");
+    });
 
     test("class", () => {
         const code = `
@@ -678,9 +664,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         const code = `
             return typeof type.foo + "|" + type.foo`;
 
-        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe(
-            "string|foobar",
-        );
+        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("string|foobar");
     });
 
     test.each([
@@ -715,9 +699,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             const t = new type();
             return \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;`;
 
-        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe(
-            "number|boolean|string|foo|bar",
-        );
+        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("number|boolean|string|foo|bar");
     });
 
     test.each([

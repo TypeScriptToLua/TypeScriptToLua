@@ -162,9 +162,7 @@ test("Class decorators are applied in order and executed in reverse order", () =
     `;
 
     const result = util.transpileAndExecute(source);
-    expect(result).toBe(
-        "eval fox eval jumped eval over dog execute over dog execute jumped execute fox",
-    );
+    expect(result).toBe("eval fox eval jumped eval over dog execute over dog execute jumped execute fox");
 });
 
 test("Throws error if decorator function has void context", () => {
@@ -184,9 +182,7 @@ test("Throws error if decorator function has void context", () => {
     return classInstance.decoratorBool;
     `;
 
-    expect(() => util.transpileAndExecute(source)).toThrowExactError(
-        TSTLErrors.InvalidDecoratorContext(util.nodeStub),
-    );
+    expect(() => util.transpileAndExecute(source)).toThrowExactError(TSTLErrors.InvalidDecoratorContext(util.nodeStub));
 });
 
 test("Exported class decorator", () => {

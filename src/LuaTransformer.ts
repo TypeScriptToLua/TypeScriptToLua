@@ -489,7 +489,11 @@ export class LuaTransformer {
     public transformExternalModuleReference(
         externalModuleReference: ts.ExternalModuleReference
     ): ExpressionVisitResult {
-        return this.transformExpression(externalModuleReference.expression);
+        return tstl.createCallExpression(
+            tstl.createIdentifier("require"),
+            [this.transformExpression(externalModuleReference.expression)],
+            externalModuleReference
+        );
     }
 
     private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {

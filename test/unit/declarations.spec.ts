@@ -107,7 +107,7 @@ test("ImportEquals declaration", () => {
     const execution = `return importedFunc();`;
 
     const result = util.transpileAndExecute(execution, undefined, undefined, header);
-    expect(result).toBe("foo");
+    expect(result).toEqual("foo");
 });
 
 test("ImportEquals declaration ambient", () => {
@@ -131,5 +131,12 @@ test("ImportEquals declaration ambient", () => {
     const execution = `return importedFunc();`;
 
     const result = util.transpileAndExecute(execution, undefined, luaHeader, header);
-    expect(result).toBe("foo");
+    expect(result).toEqual("foo");
+});
+
+test("ImportEquals declaration require", () => {
+    const source = `import foo = require("bar");`;
+
+    const result = util.transpileString(source);
+    expect(result.includes(`local foo = require("bar")`)).toBeTruthy();
 });

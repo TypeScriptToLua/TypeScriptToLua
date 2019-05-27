@@ -42,7 +42,7 @@ test.each([{ i: 0, expected: "A" }, { i: 1, expected: "B" }, { i: 2, expected: "
         `;
         const result = util.transpileAndExecute(source);
         expect(result).toBe(expected);
-    },
+    }
 );
 
 test("re-throw (no catch var)", () => {

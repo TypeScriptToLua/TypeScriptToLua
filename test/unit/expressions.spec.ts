@@ -11,15 +11,9 @@ test.each([
     { input: "!a", lua: "local ____ = not a" },
     { input: "-a", lua: "local ____ = -a" },
     { input: "+a", lua: "local ____ = a" },
-    {
-        input: "let a = delete tbl['test']",
-        lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()",
-    },
+    { input: "let a = delete tbl['test']", lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()" },
     { input: "delete tbl['test']", lua: "tbl.test = nil" },
-    {
-        input: "let a = delete tbl.test",
-        lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()",
-    },
+    { input: "let a = delete tbl.test", lua: "local a = (function()\n    tbl.test = nil\n    return true\nend)()" },
     { input: "delete tbl.test", lua: "tbl.test = nil" },
 ])("Unary expressions basic (%p)", ({ input, lua }) => {
     expect(util.transpileString(input)).toBe(lua);
@@ -56,17 +50,14 @@ test.each([
     expect(result).toBe(expected);
 });
 
-test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])(
-    "Binary expression in (%p)",
-    input => {
-        const tsHeader = "declare var obj: any;";
-        const tsSource = `return ${input}`;
-        const luaHeader = "obj = { existingKey = 1 }";
-        const result = util.transpileAndExecute(tsSource, undefined, luaHeader, tsHeader);
+test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", input => {
+    const tsHeader = "declare var obj: any;";
+    const tsSource = `return ${input}`;
+    const luaHeader = "obj = { existingKey = 1 }";
+    const result = util.transpileAndExecute(tsSource, undefined, luaHeader, tsHeader);
 
-        expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
-    },
-);
+    expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
+});
 
 test.each([
     { input: "a+=b", expected: 5 + 3 },
@@ -101,7 +92,7 @@ test.each([
         util.transpileString(input, {
             luaTarget: tstl.LuaTarget.Lua51,
             luaLibImport: tstl.LuaLibImportKind.None,
-        }),
+        })
     ).toThrow();
 });
 
@@ -165,13 +156,13 @@ test.each(["a>>b", "a>>=b"])("Unsupported bitop 5.3 (%p)", input => {
         util.transpileString(input, {
             luaTarget: tstl.LuaTarget.Lua53,
             luaLibImport: tstl.LuaLibImportKind.None,
-        }),
+        })
     ).toThrowExactError(
         TSTLErrors.UnsupportedKind(
             "right shift operator (use >>> instead)",
             ts.SyntaxKind.GreaterThanGreaterThanToken,
-            util.nodeStub,
-        ),
+            util.nodeStub
+        )
     );
 });
 
@@ -225,26 +216,14 @@ test.each([
     { input: "true ? maybeUndefinedValue : true" },
     { input: "true ? maybeBooleanValue : true", expected: false },
     { input: "true ? maybeUndefinedValue : true", options: { strictNullChecks: true } },
-    {
-        input: "true ? maybeBooleanValue : true",
-        expected: false,
-        options: { strictNullChecks: true },
-    },
+    { input: "true ? maybeBooleanValue : true", expected: false, options: { strictNullChecks: true } },
     { input: "true ? undefined : true", options: { strictNullChecks: true } },
     { input: "true ? null : true", options: { strictNullChecks: true } },
     { input: "true ? false : true", expected: false, options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "false ? false : true", expected: true, options: { luaTarget: tstl.LuaTarget.Lua51 } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    {
-        input: "true ? false : true",
-        expected: false,
-        options: { luaTarget: tstl.LuaTarget.LuaJIT },
-    },
-    {
-        input: "false ? false : true",
-        expected: true,
-        options: { luaTarget: tstl.LuaTarget.LuaJIT },
-    },
+    { input: "true ? false : true", expected: false, options: { luaTarget: tstl.LuaTarget.LuaJIT } },
+    { input: "false ? false : true", expected: true, options: { luaTarget: tstl.LuaTarget.LuaJIT } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
 ])("Ternary operator (%p)", ({ input, expected, options }) => {
     const result = util.transpileAndExecute(
@@ -253,7 +232,7 @@ test.each([
         let maybeBooleanValue:string|boolean = false;
         let maybeUndefinedValue:string|undefined;
         return ${input};`,
-        options,
+        options
     );
 
     expect(result).toBe(expected);
@@ -352,7 +331,7 @@ test.each([
         `class A{ get value(){ return this.v || 1; } set value(v){ this.v = v; } v: number; }
         class B{ get value(){ return this.v || 2; } set value(v){ this.v = v; } v: number; }
         let x: A|B = new A();
-        ${expression}`,
+        ${expression}`
     );
 
     expect(result).toBe(expected);
@@ -385,7 +364,7 @@ test.each([{ expression: "x = y", expected: "y" }, { expression: "x += y", expec
     ({ expression, expected }) => {
         const result = util.transpileAndExecute(`let x = "x"; let y = "y"; return ${expression};`);
         expect(result).toBe(expected);
-    },
+    }
 );
 
 test.each([
@@ -399,7 +378,7 @@ test.each([
         let y = "y";
         let o = {p: "o"};
         let a = ["a"];
-        return ${expression};`,
+        return ${expression};`
     );
     expect(result).toBe(expected);
 });
@@ -414,7 +393,7 @@ test.each([
         `let x = "x";
         let o = {p: "o"};
         let a = ["a"];
-        return ${expression};`,
+        return ${expression};`
     );
     expect(result).toBe(expected);
 });
@@ -434,7 +413,7 @@ test.each([
         /** @tupleReturn */
         function tr(): [string, string] { return ["tr0", "tr1"] };
         const r = ${expression};
-        return \`\${r[0]},\${r[1]}\``,
+        return \`\${r[0]},\${r[1]}\``
     );
     expect(result).toBe(expected);
 });
@@ -462,13 +441,9 @@ test("Unknown unary postfix error", () => {
     };
 
     expect(() =>
-        transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression),
+        transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression)
     ).toThrowExactError(
-        TSTLErrors.UnsupportedKind(
-            "unary postfix operator",
-            ts.SyntaxKind.AsteriskToken,
-            util.nodeStub,
-        ),
+        TSTLErrors.UnsupportedKind("unary postfix operator", ts.SyntaxKind.AsteriskToken, util.nodeStub)
     );
 });
 
@@ -481,45 +456,33 @@ test("Unknown unary postfix error", () => {
     };
 
     expect(() =>
-        transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression),
+        transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression)
     ).toThrowExactError(
-        TSTLErrors.UnsupportedKind(
-            "unary prefix operator",
-            ts.SyntaxKind.AsteriskToken,
-            util.nodeStub,
-        ),
+        TSTLErrors.UnsupportedKind("unary prefix operator", ts.SyntaxKind.AsteriskToken, util.nodeStub)
     );
 });
 
 test("Incompatible fromCodePoint expression error", () => {
     expect(() => util.transpileString("const abc = String.fromCodePoint(123);")).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget(
-            "string property fromCodePoint",
-            tstl.LuaTarget.Lua53,
-            util.nodeStub,
-        ),
+        TSTLErrors.UnsupportedForTarget("string property fromCodePoint", tstl.LuaTarget.Lua53, util.nodeStub)
     );
 });
 
 test("Unknown string expression error", () => {
     expect(() => util.transpileString("const abc = String.abcd();")).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget(
-            "string property abcd",
-            tstl.LuaTarget.Lua53,
-            util.nodeStub,
-        ),
+        TSTLErrors.UnsupportedForTarget("string property abcd", tstl.LuaTarget.Lua53, util.nodeStub)
     );
 });
 
 test("Unsupported array function error", () => {
     expect(() => util.transpileString("const abc = [].unknownFunction();")).toThrowExactError(
-        TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub),
+        TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub)
     );
 });
 
 test("Unsupported math property error", () => {
     expect(() => util.transpileString("const abc = Math.unknownProperty;")).toThrowExactError(
-        TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub),
+        TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub)
     );
 });
 
@@ -535,14 +498,8 @@ test("Unsupported object literal element error", () => {
         ],
     };
 
-    expect(() =>
-        transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression),
-    ).toThrowExactError(
-        TSTLErrors.UnsupportedKind(
-            "object literal element",
-            ts.SyntaxKind.FalseKeyword,
-            util.nodeStub,
-        ),
+    expect(() => transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression)).toThrowExactError(
+        TSTLErrors.UnsupportedKind("object literal element", ts.SyntaxKind.FalseKeyword, util.nodeStub)
     );
 });
 

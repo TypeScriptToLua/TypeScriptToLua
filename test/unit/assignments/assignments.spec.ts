@@ -1,4 +1,3 @@
-import { TSTLErrors } from "../../../src/TSTLErrors";
 import * as util from "../../util";
 
 test.each([
@@ -42,7 +41,7 @@ test.each(["var myvar;", "let myvar;", "const myvar = null;", "const myvar = und
     declaration => {
         const result = util.transpileAndExecute(declaration + " return myvar;");
         expect(result).toBe(undefined);
-    },
+    }
 );
 
 test.each([

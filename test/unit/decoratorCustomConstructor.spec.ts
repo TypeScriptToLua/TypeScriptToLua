@@ -19,12 +19,7 @@ test("CustomCreate", () => {
         }
     `;
 
-    const result = util.transpileAndExecute(
-        `return new Point2D(1, 2).x;`,
-        undefined,
-        luaHeader,
-        tsHeader,
-    );
+    const result = util.transpileAndExecute(`return new Point2D(1, 2).x;`, undefined, luaHeader, tsHeader);
 
     expect(result).toBe(1);
 });
@@ -41,7 +36,5 @@ test("IncorrectUsage", () => {
             }
             return new Point2D(1, 2).x;
         `);
-    }).toThrowExactError(
-        TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub),
-    );
+    }).toThrowExactError(TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
 });

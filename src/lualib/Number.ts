@@ -8,7 +8,7 @@ function __TS__Number(this: void, value: unknown): number {
 
         if (value === "Infinity") return Infinity;
         if (value === "-Infinity") return -Infinity;
-        const [stringWithoutSpaces] = string.gsub(value as string, '%s', '');
+        const [stringWithoutSpaces] = string.gsub(value as string, "%s", "");
         if (stringWithoutSpaces === "") return 0;
 
         return NaN;

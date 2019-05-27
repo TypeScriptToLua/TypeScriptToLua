@@ -12,10 +12,7 @@ export interface OutputFile {
 }
 
 let lualibContent: string;
-export function emitTranspiledFiles(
-    options: CompilerOptions,
-    transpiledFiles: TranspiledFile[]
-): OutputFile[] {
+export function emitTranspiledFiles(options: CompilerOptions, transpiledFiles: TranspiledFile[]): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 
     const configFileName = options.configFilePath as string | undefined;
@@ -60,10 +57,7 @@ export function emitTranspiledFiles(
 
     if (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always) {
         if (lualibContent === undefined) {
-            lualibContent = fs.readFileSync(
-                path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-                "utf8"
-            );
+            lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
         }
 
         let outPath = path.resolve(rootDir, "lualib_bundle.lua");

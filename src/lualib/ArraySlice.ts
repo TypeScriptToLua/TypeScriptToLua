@@ -1,12 +1,14 @@
-// https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf 22.1.3.23
+// https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.slice
 function __TS__ArraySlice<T>(this: void, list: T[], first: number, last: number): T[] {
     const len = list.length;
 
+    const relativeStart = first || 0;
+
     let k: number;
-    if (first < 0) {
-        k = Math.max(len + first, 0);
+    if (relativeStart < 0) {
+        k = Math.max(len + relativeStart, 0);
     } else {
-        k = Math.min(first, len);
+        k = Math.min(relativeStart, len);
     }
 
     let relativeEnd = last;

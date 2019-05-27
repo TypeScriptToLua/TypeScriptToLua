@@ -85,7 +85,7 @@ test("Enum identifier value internal", () => {
             ghi = def,
             jkl,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`,
+        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
     );
 
     expect(result).toBe("0,1,1,2");
@@ -99,7 +99,7 @@ test("Enum identifier value internal recursive", () => {
             ghi = def,
             jkl = ghi,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`,
+        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
     );
 
     expect(result).toBe("0,1,1,1");
@@ -113,7 +113,7 @@ test("Enum identifier value external", () => {
             def,
             ghi = ext,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`,
+        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`
     );
 
     expect(result).toBe("0,1,6");
@@ -126,7 +126,7 @@ test("Enum reverse mapping", () => {
             def,
             ghi
         }
-        return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`,
+        return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`
     );
 
     expect(result).toBe("abcghi");
@@ -139,7 +139,7 @@ test("Const enum index", () => {
             def,
             ghi
         }
-        return testEnum["def"];`,
+        return testEnum["def"];`
     );
 
     expect(result).toBe(1);
@@ -153,7 +153,7 @@ test("Const enum index identifier value", () => {
             ghi,
             jkl = ghi
         }
-        return testEnum["jkl"];`,
+        return testEnum["jkl"];`
     );
 
     expect(result).toBe(5);
@@ -167,7 +167,7 @@ test("Const enum index identifier chain", () => {
             ghi = def,
             jkl = ghi,
         }
-        return testEnum["ghi"];`,
+        return testEnum["ghi"];`
     );
 
     expect(result).toBe(4);

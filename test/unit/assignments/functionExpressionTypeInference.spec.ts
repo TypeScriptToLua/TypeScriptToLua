@@ -16,19 +16,18 @@ test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", no
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
 });
 
-test.each([
-    "(this: void, s: string) => string",
-    "(this: any, s: string) => string",
-    "(s: string) => string",
-])("Function expression type inference in binary operator (%p)", funcType => {
-    const header = `declare const undefinedFunc: ${funcType};`;
-    const code = `
+test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(
+    "Function expression type inference in binary operator (%p)",
+    funcType => {
+        const header = `declare const undefinedFunc: ${funcType};`;
+        const code = `
         let func: ${funcType} = s => s;
         func = undefinedFunc || (s => s);
         return func("foo");
     `;
-    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
-});
+        expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
+    }
+);
 
 test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { return s; })"])(
     "Function expression type inference in class (%p)",
@@ -44,7 +43,7 @@ test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { re
             return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");
         `;
         expect(util.transpileAndExecute(code)).toBe("abcd");
-    },
+    }
 );
 
 test.each([
@@ -85,19 +84,16 @@ test.each([
     { assignTo: "let foo: Foo; foo", funcExp: "(s => s)" },
     { assignTo: "let foo: Foo; foo", funcExp: "function(s) { return s; }" },
     { assignTo: "let foo: Foo; foo", funcExp: "(function(s) { return s; })" },
-])(
-    "Function expression type inference in object literal (generic key) (%p)",
-    ({ assignTo, funcExp }) => {
-        const code = `
+])("Function expression type inference in object literal (generic key) (%p)", ({ assignTo, funcExp }) => {
+    const code = `
             interface Foo {
                 [f: string]: (this: void, s: string) => string;
             }
             ${assignTo} = {func: ${funcExp}};
             return foo.func("foo");
         `;
-        expect(util.transpileAndExecute(code)).toBe("foo");
-    },
-);
+    expect(util.transpileAndExecute(code)).toBe("foo");
+});
 
 test.each([
     {
@@ -218,23 +214,11 @@ test.each([
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "s => s" },
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "(s => s)" },
     { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "function(s) { return s; }" },
-    {
-        assignTo: "const meths: Method[]",
-        method: "meths[0]",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "const meths: Method[]", method: "meths[0]", funcExp: "(function(s) { return s; })" },
     { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "s => s" },
     { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "(s => s)" },
-    {
-        assignTo: "let meths: Method[]; meths",
-        method: "meths[0]",
-        funcExp: "function(s) { return s; }",
-    },
-    {
-        assignTo: "let meths: Method[]; meths",
-        method: "meths[0]",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "function(s) { return s; }" },
+    { assignTo: "let meths: Method[]; meths", method: "meths[0]", funcExp: "(function(s) { return s; })" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "s => s" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "(s => s)" },
     { assignTo: "const [meth]: Method[]", method: "meth", funcExp: "function(s) { return s; }" },
@@ -242,11 +226,7 @@ test.each([
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "s => s" },
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "(s => s)" },
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "function(s) { return s; }" },
-    {
-        assignTo: "let meth: Method; [meth]",
-        method: "meth",
-        funcExp: "(function(s) { return s; })",
-    },
+    { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in array (%p)", ({ assignTo, method, funcExp }) => {
     const code = `
         interface Foo {

@@ -11,8 +11,7 @@ function __TS__ClassNewIndex(this: void, classTable: LuaClass, key: any, val: an
         }
 
         tbl = rawget(tbl, "____super");
-    }
-    while (tbl);
+    } while (tbl);
 
     rawset(classTable, key, val);
 }

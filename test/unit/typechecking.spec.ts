@@ -26,9 +26,7 @@ test.each(["{}", "[]"])("typeof object literal (%p)", inp => {
 });
 
 test("typeof class instance", () => {
-    const result = util.transpileAndExecute(
-        `class myClass {} let inst = new myClass(); return typeof inst;`,
-    );
+    const result = util.transpileAndExecute(`class myClass {} let inst = new myClass(); return typeof inst;`);
 
     expect(result).toBe("object");
 });
@@ -47,7 +45,7 @@ test.each(["null", "undefined"])("typeof undefined (%p)", inp => {
 
 test("instanceof", () => {
     const result = util.transpileAndExecute(
-        "class myClass {} let inst = new myClass(); return inst instanceof myClass;",
+        "class myClass {} let inst = new myClass(); return inst instanceof myClass;"
     );
 
     expect(result).toBe(true);
@@ -98,9 +96,7 @@ test("instanceof undefined", () => {
 });
 
 test("null instanceof Class", () => {
-    const result = util.transpileAndExecute(
-        "class myClass {} return (null as any) instanceof myClass;",
-    );
+    const result = util.transpileAndExecute("class myClass {} return (null as any) instanceof myClass;");
 
     expect(result).toBe(false);
 });
@@ -113,9 +109,7 @@ test.each(["extension", "metaExtension"])("instanceof extension (%p)", extension
         declare const foo: any;
         const result = foo instanceof B;
     `;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.InvalidInstanceOfExtension(util.nodeStub),
-    );
+    expect(() => util.transpileString(code)).toThrowExactError(TSTLErrors.InvalidInstanceOfExtension(util.nodeStub));
 });
 
 test("instanceof export", () => {
@@ -123,7 +117,7 @@ test("instanceof export", () => {
         `export class myClass {}
         let inst = new myClass();
         export const result = inst instanceof myClass;`,
-        "result",
+        "result"
     );
 
     expect(result).toBe(true);

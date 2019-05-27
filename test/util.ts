@@ -9,7 +9,7 @@ export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 export function transpileString(
     str: string | { [filename: string]: string },
     options: tstl.CompilerOptions = {},
-    ignoreDiagnostics = true,
+    ignoreDiagnostics = true
 ): string {
     const { diagnostics, file } = transpileStringResult(str, options);
     if (!expectToBeDefined(file) || !expectToBeDefined(file.lua)) return "";
@@ -22,7 +22,7 @@ export function transpileString(
 
 export function transpileStringResult(
     input: string | Record<string, string>,
-    options: tstl.CompilerOptions = {},
+    options: tstl.CompilerOptions = {}
 ): Required<tstl.TranspileStringResult> {
     const optionsWithDefaults = {
         luaTarget: tstl.LuaTarget.Lua53,
@@ -36,7 +36,7 @@ export function transpileStringResult(
 
     const { diagnostics, transpiledFiles } = tstl.transpileVirtualProject(
         typeof input === "string" ? { "main.ts": input } : input,
-        optionsWithDefaults,
+        optionsWithDefaults
     );
 
     const file = transpiledFiles.find(({ fileName }) => /\bmain\.[a-z]+$/.test(fileName));
@@ -47,10 +47,7 @@ export function transpileStringResult(
     return { diagnostics, file };
 }
 
-const lualibContent = fs.readFileSync(
-    path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"),
-    "utf8",
-);
+const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
 const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8") + "\n";
 export function executeLua(luaStr: string, withLib = true): any {
     luaStr = luaStr.replace(/require\("lualib_bundle"\)/g, lualibContent);
@@ -73,10 +70,7 @@ export function executeLua(luaStr: string, withLib = true): any {
         } else if (lua.lua_isstring(L, -1)) {
             return lua.lua_tojsstring(L, -1);
         } else {
-            throw new Error(
-                "Unsupported lua return type: " +
-                    to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))),
-            );
+            throw new Error("Unsupported lua return type: " + to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1))));
         }
     } else {
         // If the lua VM did not terminate with status code LUA_OK an error occurred.
@@ -96,7 +90,7 @@ export function transpileAndExecute(
     tsStr: string,
     compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
-    tsHeader?: string,
+    tsHeader?: string
 ): any {
     const wrappedTsString = `${tsHeader ? tsHeader : ""}
         declare function JSONStringify(this: void, p: any): string;
@@ -113,7 +107,7 @@ export function transpileExecuteAndReturnExport(
     tsStr: string,
     returnExport: string,
     compilerOptions?: tstl.CompilerOptions,
-    luaHeader?: string,
+    luaHeader?: string
 ): any {
     const wrappedTsString = `declare function JSONStringify(this: void, p: any): string;
         ${tsStr}`;
@@ -128,7 +122,7 @@ export function transpileExecuteAndReturnExport(
 
 export function parseTypeScript(
     typescript: string,
-    target: tstl.LuaTarget = tstl.LuaTarget.Lua53,
+    target: tstl.LuaTarget = tstl.LuaTarget.Lua53
 ): [ts.SourceFile, ts.TypeChecker] {
     const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
     const sourceFile = program.getSourceFile("main.ts");
@@ -140,10 +134,7 @@ export function parseTypeScript(
     return [sourceFile, program.getTypeChecker()];
 }
 
-export function findFirstChild(
-    node: ts.Node,
-    predicate: (node: ts.Node) => boolean,
-): ts.Node | undefined {
+export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined {
     for (const child of node.getChildren()) {
         if (predicate(child)) {
             return child;

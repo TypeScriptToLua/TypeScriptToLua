@@ -46,9 +46,7 @@ function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefin
         if (ts.sys.fileExists(configFileName)) {
             return configFileName;
         } else {
-            reportDiagnostic(
-                cliDiagnostics.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project)
-            );
+            reportDiagnostic(cliDiagnostics.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project));
             ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
         }
     } else {
@@ -97,10 +95,7 @@ function executeCommandLine(args: string[]): void {
     const configFileName = locateConfigFile(commandLine);
     const commandLineOptions = commandLine.options;
     if (configFileName) {
-        const configParseResult = CommandLineParser.parseConfigFileWithSystem(
-            configFileName,
-            commandLineOptions
-        );
+        const configParseResult = CommandLineParser.parseConfigFileWithSystem(configFileName, commandLineOptions);
 
         updateReportDiagnostic(configParseResult.options);
         if (configParseResult.options.watch) {
@@ -118,11 +113,7 @@ function executeCommandLine(args: string[]): void {
         if (commandLineOptions.watch) {
             createWatchOfFilesAndCompilerOptions(commandLine.fileNames, commandLineOptions);
         } else {
-            performCompilation(
-                commandLine.fileNames,
-                commandLine.projectReferences,
-                commandLineOptions
-            );
+            performCompilation(commandLine.fileNames, commandLine.projectReferences, commandLineOptions);
         }
     }
 }
@@ -166,10 +157,7 @@ function performCompilation(
     return ts.sys.exit(exitCode);
 }
 
-function createWatchOfConfigFile(
-    configFileName: string,
-    optionsToExtend: tstl.CompilerOptions
-): void {
+function createWatchOfConfigFile(configFileName: string, optionsToExtend: tstl.CompilerOptions): void {
     const watchCompilerHost = ts.createWatchCompilerHost(
         configFileName,
         optionsToExtend,
@@ -183,10 +171,7 @@ function createWatchOfConfigFile(
     ts.createWatchProgram(watchCompilerHost);
 }
 
-function createWatchOfFilesAndCompilerOptions(
-    rootFiles: string[],
-    options: tstl.CompilerOptions
-): void {
+function createWatchOfFilesAndCompilerOptions(rootFiles: string[], options: tstl.CompilerOptions): void {
     const watchCompilerHost = ts.createWatchCompilerHost(
         rootFiles,
         options,
@@ -249,10 +234,7 @@ function updateWatchCompilationHost(
             }
         }
 
-        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.transpile({
-            program,
-            sourceFiles,
-        });
+        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.transpile({ program, sourceFiles });
 
         const emitResult = tstl.emitTranspiledFiles(options, transpiledFiles);
         emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
@@ -272,11 +254,7 @@ function updateWatchCompilationHost(
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 
-        host.onWatchStatusChange!(
-            cliDiagnostics.watchErrorSummary(errors.length),
-            host.getNewLine(),
-            options
-        );
+        host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
     };
 }
 

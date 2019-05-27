@@ -19,7 +19,7 @@ test("MetaExtension", () => {
         `return debug.getregistry()["_LOADED"].test();`,
         undefined,
         undefined,
-        tsHeader,
+        tsHeader
     );
 
     expect(result).toBe(5);

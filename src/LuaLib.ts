@@ -10,6 +10,7 @@ export enum LuaLibFeature {
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
+    ArrayReduce = "ArrayReduce",
     ArrayReverse = "ArrayReverse",
     ArrayShift = "ArrayShift",
     ArrayUnshift = "ArrayUnshift",
@@ -56,7 +57,7 @@ export enum LuaLibFeature {
     SymbolRegistry = "SymbolRegistry",
 }
 
-const luaLibDependencies: {[lib in LuaLibFeature]?: LuaLibFeature[]} = {
+const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     InstanceOf: [LuaLibFeature.Symbol],

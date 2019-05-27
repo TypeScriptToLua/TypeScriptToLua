@@ -11,7 +11,7 @@ test("overload function1", () => {
                 return def;
             }
         }
-        return abc(3);`,
+        return abc(3);`
     );
 
     expect(result).toBe("jkl9");
@@ -28,7 +28,7 @@ test("overload function2", () => {
                 return def;
             }
         }
-        return abc("ghj");`,
+        return abc("ghj");`
     );
 
     expect(result).toBe("ghj");
@@ -47,7 +47,7 @@ test("overload method1", () => {
                 }
             }
         }
-        return myclass.abc(3);`,
+        return myclass.abc(3);`
     );
 
     expect(result).toBe("jkl9");
@@ -66,7 +66,7 @@ test("overload method2", () => {
                 }
             }
         }
-        return myclass.abc("ghj");`,
+        return myclass.abc("ghj");`
     );
 
     expect(result).toBe("ghj");
@@ -89,7 +89,7 @@ test("constructor1", () => {
             }
         }
         const inst = new myclass(3);
-        return inst.num`,
+        return inst.num`
     );
 
     expect(result).toBe(3);
@@ -112,7 +112,7 @@ test("constructor2", () => {
             }
         }
         const inst = new myclass("ghj");
-        return inst.str`,
+        return inst.str`
     );
 
     expect(result).toBe("ghj");

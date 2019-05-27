@@ -7,7 +7,7 @@ test("ClassFieldInitializer", () => {
         `class a {
             field: number = 4;
         }
-        return new a().field;`,
+        return new a().field;`
     );
 
     expect(result).toBe(4);
@@ -18,7 +18,7 @@ test("ClassNumericLiteralFieldInitializer", () => {
         `class a {
             1: number = 4;
         }
-        return new a()[1];`,
+        return new a()[1];`
     );
 
     expect(result).toBe(4);
@@ -29,7 +29,7 @@ test("ClassStringLiteralFieldInitializer", () => {
         `class a {
             "field": number = 4;
         }
-        return new a()["field"];`,
+        return new a()["field"];`
     );
 
     expect(result).toBe(4);
@@ -41,7 +41,7 @@ test("ClassComputedFieldInitializer", () => {
         class a {
             [field]: number = 4;
         }
-        return new a()[field];`,
+        return new a()[field];`
     );
 
     expect(result).toBe(4);
@@ -55,7 +55,7 @@ test("ClassConstructor", () => {
                 this.field = n * 2;
             }
         }
-        return new a(4).field;`,
+        return new a(4).field;`
     );
 
     expect(result).toBe(8);
@@ -64,7 +64,7 @@ test("ClassConstructor", () => {
 test("ClassConstructorAssignment", () => {
     const result = util.transpileAndExecute(
         `class a { constructor(public field: number) {} }
-        return new a(4).field;`,
+        return new a(4).field;`
     );
 
     expect(result).toBe(4);
@@ -73,7 +73,7 @@ test("ClassConstructorAssignment", () => {
 test("ClassConstructorDefaultParameter", () => {
     const result = util.transpileAndExecute(
         `class a { public field: number; constructor(f: number = 3) { this.field = f; } }
-        return new a().field;`,
+        return new a().field;`
     );
 
     expect(result).toBe(3);
@@ -82,7 +82,7 @@ test("ClassConstructorDefaultParameter", () => {
 test("ClassConstructorAssignmentDefault", () => {
     const result = util.transpileAndExecute(
         `class a { constructor(public field: number = 3) { } }
-        return new a().field;`,
+        return new a().field;`
     );
 
     expect(result).toBe(3);
@@ -95,7 +95,7 @@ test("ClassNewNoBrackets", () => {
             constructor() {}
         }
         let inst = new a;
-        return inst.field;`,
+        return inst.field;`
     );
 
     expect(result).toBe(4);
@@ -104,7 +104,7 @@ test("ClassNewNoBrackets", () => {
 test("ClassStaticFields", () => {
     const result = util.transpileAndExecute(
         `class a { static field: number = 4; }
-        return a.field;`,
+        return a.field;`
     );
 
     expect(result).toBe(4);
@@ -113,7 +113,7 @@ test("ClassStaticFields", () => {
 test("ClassStaticNumericLiteralFields", () => {
     const result = util.transpileAndExecute(
         `class a { static 1: number = 4; }
-        return a[1];`,
+        return a[1];`
     );
 
     expect(result).toBe(4);
@@ -122,7 +122,7 @@ test("ClassStaticNumericLiteralFields", () => {
 test("ClassStaticStringLiteralFields", () => {
     const result = util.transpileAndExecute(
         `class a { static "field": number = 4; }
-        return a["field"];`,
+        return a["field"];`
     );
 
     expect(result).toBe(4);
@@ -132,7 +132,7 @@ test("ClassStaticComputedFields", () => {
     const result = util.transpileAndExecute(
         `const field: "field" = "field";
         class a { static [field]: number = 4; }
-        return a[field];`,
+        return a[field];`
     );
 
     expect(result).toBe(4);
@@ -142,7 +142,7 @@ test("classExtends", () => {
     const result = util.transpileAndExecute(
         `class a { field: number = 4; }
         class b extends a {}
-        return new b().field;`,
+        return new b().field;`
     );
 
     expect(result).toBe(4);
@@ -157,7 +157,7 @@ test("SubclassDefaultConstructor", () => {
             }
         }
         class b extends a {}
-        return new b(10).field;`,
+        return new b(10).field;`
     );
 
     expect(result).toBe(10);
@@ -173,7 +173,7 @@ test("SubsubclassDefaultConstructor", () => {
         }
         class b extends a {}
         class c extends b {}
-        return new c(10).field;`,
+        return new c(10).field;`
     );
 
     expect(result).toBe(10);
@@ -192,7 +192,7 @@ test("SubclassConstructor", () => {
                 super(field + 1);
             }
         }
-        return new b(10).field;`,
+        return new b(10).field;`
     );
 
     expect(result).toBe(11);
@@ -211,7 +211,7 @@ test("classSuper", () => {
                 super(5);
             }
         }
-        return new b().field;`,
+        return new b().field;`
     );
 
     expect(result).toBe(5);
@@ -235,7 +235,7 @@ test("classSuperSuper", () => {
                 super(5);
             }
         }
-        return new c().field;`,
+        return new c().field;`
     );
 
     expect(result).toBe(10);
@@ -256,7 +256,7 @@ test("classSuperSkip", () => {
                 super(5);
             }
         }
-        return new c().field;`,
+        return new c().field;`
     );
 
     expect(result).toBe(5);
@@ -278,7 +278,7 @@ test("renamedClassExtends", () => {
         const A = Classes.Base;
         class B extends A {
             constructor(){ super(); }
-        };`,
+        };`
     );
 
     expect(result).toBe(3);
@@ -292,7 +292,7 @@ test("ClassMethodCall", () => {
             }
         }
         let inst = new a();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -306,7 +306,7 @@ test("ClassNumericLiteralMethodCall", () => {
             }
         }
         let inst = new a();
-        return inst[1]();`,
+        return inst[1]();`
     );
 
     expect(result).toBe(4);
@@ -320,7 +320,7 @@ test("ClassStringLiteralMethodCall", () => {
             }
         }
         let inst = new a();
-        return inst["method"]();`,
+        return inst["method"]();`
     );
 
     expect(result).toBe(4);
@@ -335,7 +335,7 @@ test("ClassComputedMethodCall", () => {
             }
         }
         let inst = new a();
-        return inst[method]();`,
+        return inst[method]();`
     );
 
     expect(result).toBe(4);
@@ -349,7 +349,7 @@ test("ClassToString", () => {
             }
         }
         let inst = new a();
-        return inst.toString();`,
+        return inst.toString();`
     );
 
     expect(result).toBe("instance of a");
@@ -363,7 +363,7 @@ test("HasOwnProperty true", () => {
         }
         let inst = new a();
         inst["prop"] = 17;
-        return inst.hasOwnProperty("prop");`,
+        return inst.hasOwnProperty("prop");`
     );
 
     expect(result).toBe(true);
@@ -377,7 +377,7 @@ test("HasOwnProperty false", () => {
         }
         let inst = new a();
         inst["prop"] = 17;
-        return inst.hasOwnProperty("test");`,
+        return inst.hasOwnProperty("test");`
     );
 
     expect(result).toBe(false);
@@ -398,7 +398,7 @@ test("CastClassMethodCall", () => {
         let result = {val : 0};
         (inst as a).method(result);
         (inst as a).method(result);
-        return result.val;`,
+        return result.val;`
     );
 
     expect(result).toBe(4);
@@ -411,7 +411,7 @@ test("ClassPropertyFunctionThis", () => {
             public method: () => number = () => this.n;
         }
         let inst = new a(4);
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -426,7 +426,7 @@ test("ClassInheritedMethodCall", () => {
         }
         class b extends a {}
         let inst = new b();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -442,7 +442,7 @@ test("ClassDoubleInheritedMethodCall", () => {
         class b extends a {}
         class c extends b {}
         let inst = new c();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -458,7 +458,7 @@ test("ClassInheritedMethodCall2", () => {
         }
         class c extends b {}
         let inst = new c();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -477,7 +477,7 @@ test("ClassMethodOverride", () => {
             }
         }
         let inst = new b();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(4);
@@ -491,7 +491,7 @@ test("methodDefaultParameters", () => {
             }
         }
         let inst = new a();
-        return inst.method(4);`,
+        return inst.method(4);`
     );
 
     expect(result).toBe(9);
@@ -500,9 +500,9 @@ test("methodDefaultParameters", () => {
 test("Class without name error", () => {
     const transformer = util.makeTestTransformer();
 
-    expect(() =>
-        transformer.transformClassDeclaration({} as ts.ClassDeclaration),
-    ).toThrowExactError(TSTLErrors.MissingClassName(util.nodeStub));
+    expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration)).toThrowExactError(
+        TSTLErrors.MissingClassName(util.nodeStub)
+    );
 });
 
 test("CallSuperMethodNoArgs", () => {
@@ -525,7 +525,7 @@ test("CallSuperMethodNoArgs", () => {
             }
         }
         let inst = new b(6);
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(6);
@@ -551,7 +551,7 @@ test("CallSuperMethodArgs", () => {
             }
         }
         let inst = new b(6);
-        return inst.method(4);`,
+        return inst.method(4);`
     );
 
     expect(result).toBe(10);
@@ -575,7 +575,7 @@ test("CallSuperExpressionMethod", () => {
         inst.method();
         inst.method();
         inst.method();
-        return i;`,
+        return i;`
     );
 
     expect(result).toBe(1);
@@ -609,7 +609,7 @@ test("CallSuperSuperMethod", () => {
             }
         }
         let inst = new c(6);
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(6);
@@ -628,7 +628,7 @@ test("classExpression", () => {
             }
         }
         let inst = new b();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe("instance of b");
@@ -642,7 +642,7 @@ test("Named Class Expression", () => {
             }
         }
         let inst = new a();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe("foo");
@@ -658,7 +658,7 @@ test("classExpressionBaseClassMethod", () => {
         const b = class extends a {
         }
         let inst = new b();
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(42);
@@ -676,7 +676,7 @@ test("Class Method Runtime Override", () => {
         inst.method = () => {
             return 8;
         }
-        return inst.method();`,
+        return inst.method();`
     );
 
     expect(result).toBe(8);
@@ -709,7 +709,7 @@ test.each([{ input: "(new Foo())", expectResult: "foo" }, { input: "Foo", expect
             return ${input}.method();
         `;
         expect(util.transpileAndExecute(code)).toBe(expectResult);
-    },
+    }
 );
 
 test.each(["extension", "metaExtension"])("Class extends extension (%p)", extensionType => {
@@ -719,9 +719,7 @@ test.each(["extension", "metaExtension"])("Class extends extension (%p)", extens
         class B extends A {}
         class C extends B {}
     `;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.InvalidExtendsExtension(util.nodeStub),
-    );
+    expect(() => util.transpileString(code)).toThrowExactError(TSTLErrors.InvalidExtendsExtension(util.nodeStub));
 });
 
 test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
@@ -732,7 +730,7 @@ test.each(["extension", "metaExtension"])("Class construct extension (%p)", exte
         const b = new B();
     `;
     expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub),
+        TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub)
     );
 });
 
@@ -830,7 +828,7 @@ test("Class cannot have static new method", () => {
             static new() {}
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message,
+        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -840,7 +838,7 @@ test("Class cannot have static new property", () => {
             static new = "foobar";
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message,
+        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -850,7 +848,7 @@ test("Class cannot have static new get accessor", () => {
             static get new() { return "foobar" }
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message,
+        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -860,6 +858,6 @@ test("Class cannot have static new set accessor", () => {
             static set new(value: string) {}
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message,
+        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });

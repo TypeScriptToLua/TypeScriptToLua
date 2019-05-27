@@ -42,7 +42,7 @@ test.each(["var myvar;", "let myvar;", "const myvar = null;", "const myvar = und
     declaration => {
         const result = util.transpileAndExecute(declaration + " return myvar;");
         expect(result).toBe(undefined);
-    },
+    }
 );
 
 test.each([
@@ -61,7 +61,7 @@ test.each([
 
 test("Ellipsis binding pattern", () => {
     expect(() => util.transpileString("let [a,b,...c] = [1,2,3];")).toThrowExactError(
-        TSTLErrors.ForbiddenEllipsisDestruction(util.nodeStub),
+        TSTLErrors.ForbiddenEllipsisDestruction(util.nodeStub)
     );
 });
 

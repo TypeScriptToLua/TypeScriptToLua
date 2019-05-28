@@ -171,7 +171,7 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoCondition (%p)"
 });
 
 test("forNoPostExpression (%p)", () => {
-    util.fn`
+    util.testFunction`
         let arrTest = [0, 1, 2, 3];
         let i = 0;
         for (;;) {
@@ -197,7 +197,7 @@ test.each([
     { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
     { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
 ])("forheader (%p)", ({ inp, header }) => {
-    util.fn`
+    util.testFunction`
         let arrTest = ${JSON.stringify(inp)};
         for (${header}) {
             arrTest[i] = arrTest[i] + 1;
@@ -207,7 +207,7 @@ test.each([
 });
 
 test("for scope", () => {
-    util.fn`
+    util.testFunction`
         let i = 42;
         for (let i = 0; i < 10; ++i) {}
         return i;

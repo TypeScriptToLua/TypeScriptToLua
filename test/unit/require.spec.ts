@@ -74,7 +74,7 @@ test.each([
 ])(
     "require paths root from --baseUrl or --rootDir (%p)",
     ({ filePath, usedPath, expectedPath, options, throwsError }) => {
-        const builder = util.mod`
+        const builder = util.testModule`
             import * as module from "${usedPath}";
             module;
         `;
@@ -97,7 +97,7 @@ test.each([
 test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolution */", expectedPath: "fake" }])(
     "noResolution on ambient modules causes no path alterations (%p)",
     ({ comment, expectedPath }) => {
-        const builder = util.mod`
+        const builder = util.testModule`
             import * as fake from "fake";
             fake;
         `;

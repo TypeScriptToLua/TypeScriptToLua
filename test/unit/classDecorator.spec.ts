@@ -2,7 +2,7 @@ import * as util from "../util";
 import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Class decorator with no parameters", () => {
-    util.fn`
+    util.testFunction`
         function SetBool<T extends { new(...args: any[]): {} }>(constructor: T) {
             return class extends constructor {
                 decoratorBool = true;
@@ -20,7 +20,7 @@ test("Class decorator with no parameters", () => {
 });
 
 test("Class decorator with parameters", () => {
-    util.fn`
+    util.testFunction`
         function SetNum(numArg: number) {
             return <T extends new(...args: any[]) => {}>(constructor: T) => {
                 return class extends constructor {
@@ -40,7 +40,7 @@ test("Class decorator with parameters", () => {
 });
 
 test("Class decorator with variable parameters", () => {
-    util.fn`
+    util.testFunction`
         function SetNumbers(...numArgs: number[]) {
             return <T extends new(...args: any[]) => {}>(constructor: T) => {
                 return class extends constructor {
@@ -64,7 +64,7 @@ test("Class decorator with variable parameters", () => {
 });
 
 test("Multiple class decorators", () => {
-    util.fn`
+    util.testFunction`
         function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
             return class extends constructor {
                 decoratorTen = 10;
@@ -92,7 +92,7 @@ test("Multiple class decorators", () => {
 });
 
 test("Class decorator with inheritance", () => {
-    util.fn`
+    util.testFunction`
         function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
             return class extends constructor {
                 decoratorTen = 10;
@@ -122,7 +122,7 @@ test("Class decorator with inheritance", () => {
 });
 
 test("Class decorators are applied in order and executed in reverse order", () => {
-    util.fn`
+    util.testFunction`
         const order = [];
 
         function SetString(stringArg: string) {
@@ -168,7 +168,7 @@ test("Throws error if decorator function has void context", () => {
 });
 
 test("Exported class decorator", () => {
-    util.mod`
+    util.testModule`
         function decorator<T extends any>(c: T): T {
             c.bar = "foobar";
             return c;

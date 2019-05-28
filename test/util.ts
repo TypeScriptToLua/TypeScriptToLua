@@ -455,14 +455,14 @@ const templateFromValue = (valueOrTemplate: any): TemplateStringsArray =>
         ? Object.assign([valueOrTemplate], { raw: [valueOrTemplate] })
         : valueOrTemplate;
 
-export function fn(value: string): FunctionTestBuilder;
-export function fn(template: TemplateStringsArray, ...substitutions: any[]): FunctionTestBuilder;
-export function fn(valueOrTemplate: any, ...substitutions: any[]): FunctionTestBuilder {
+export function testFunction(value: string): FunctionTestBuilder;
+export function testFunction(template: TemplateStringsArray, ...substitutions: any[]): FunctionTestBuilder;
+export function testFunction(valueOrTemplate: any, ...substitutions: any[]): FunctionTestBuilder {
     return new FunctionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
 }
 
-export function mod(value: string): ModuleTestBuilder;
-export function mod(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
-export function mod(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
+export function testModule(value: string): ModuleTestBuilder;
+export function testModule(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
+export function testModule(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
     return new ModuleTestBuilder(templateFromValue(valueOrTemplate), substitutions);
 }

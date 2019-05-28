@@ -42,6 +42,7 @@ interface Scope {
 export interface EmitResolver {
     isValueAliasDeclaration(node: ts.Node): boolean;
     isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
+    isTopLevelValueImportEqualsWithEntityName(node: ts.ImportEqualsDeclaration): boolean;
     moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
 }
 
@@ -462,9 +463,29 @@ export class LuaTransformer {
 
     public transformImportEqualsDeclaration(declaration: ts.ImportEqualsDeclaration): StatementVisitResult {
         const name = this.transformIdentifier(declaration.name);
-        const expression = ts.isExternalModuleReference(declaration.moduleReference)
-            ? this.transformExternalModuleReference(declaration.moduleReference)
-            : this.transformEntityName(declaration.moduleReference);
+        let expression: tstl.Expression;
+        if (ts.isExternalModuleReference(declaration.moduleReference)) {
+            if (!this.resolver.isReferencedAliasDeclaration(declaration)) {
+                return undefined;
+            }
+
+            expression = this.transformExternalModuleReference(declaration.moduleReference);
+        } else {
+            if (this.currentSourceFile === undefined) {
+                throw TSTLErrors.MissingSourceFile();
+            }
+
+            const shouldEmit =
+                this.resolver.isReferencedAliasDeclaration(declaration) ||
+                (!ts.isExternalModule(this.currentSourceFile) &&
+                    this.resolver.isTopLevelValueImportEqualsWithEntityName(declaration));
+
+            if (!shouldEmit) {
+                return undefined;
+            }
+
+            expression = this.transformEntityName(declaration.moduleReference);
+        }
 
         return this.createHoistableVariableDeclarationStatement(name, expression, declaration);
     }
@@ -472,11 +493,8 @@ export class LuaTransformer {
     public transformExternalModuleReference(
         externalModuleReference: ts.ExternalModuleReference
     ): ExpressionVisitResult {
-        return tstl.createCallExpression(
-            tstl.createIdentifier("require"),
-            [this.transformExpression(externalModuleReference.expression)],
-            externalModuleReference
-        );
+        // TODO: Should `externalModuleReference` be original node?
+        return this.createModuleRequire(externalModuleReference.expression as ts.StringLiteral);
     }
 
     private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {

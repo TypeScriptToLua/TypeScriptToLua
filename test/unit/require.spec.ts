@@ -1,4 +1,7 @@
+import * as ts from "typescript";
 import * as util from "../util";
+
+const requireRegex = /require\("(.*?)"\)/;
 
 test.each([
     {
@@ -79,8 +82,7 @@ test.each([
             expect(() => util.transpileString(input, options)).toThrow();
         } else {
             const lua = util.transpileString(input, options);
-            const regex = /require\("(.*?)"\)/;
-            const match = regex.exec(lua);
+            const match = requireRegex.exec(lua);
 
             if (util.expectToBeDefined(match)) {
                 expect(match[1]).toBe(expectedPath);
@@ -96,11 +98,20 @@ test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolut
             "src/main.ts": `import * as fake from "fake"; fake;`,
             "module.d.ts": `${comment} declare module "fake" {}`,
         });
-        const regex = /require\("(.*?)"\)/;
-        const match = regex.exec(lua);
+        const match = requireRegex.exec(lua);
 
         if (util.expectToBeDefined(match)) {
             expect(match[1]).toBe(expectedPath);
         }
     }
 );
+
+test("ImportEquals declaration require", () => {
+    const input = `import foo = require("./foo/bar"); foo;`;
+
+    const lua = util.transpileString(input, { module: ts.ModuleKind.CommonJS });
+    const match = requireRegex.exec(lua);
+    if (util.expectToBeDefined(match)) {
+        expect(match[1]).toBe("foo.bar");
+    }
+});

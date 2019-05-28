@@ -170,53 +170,48 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoCondition (%p)"
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoPostExpression (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            for (;;) {
-                if (i >= arrTest.length) {
-                    break;
-                }
-
-                arrTest[i] = arrTest[i] + 1;
-
-                i++;
+test("forNoPostExpression (%p)", () => {
+    util.fn`
+        let arrTest = [0, 1, 2, 3];
+        let i = 0;
+        for (;;) {
+            if (i >= arrTest.length) {
+                break;
             }
-            return JSONStringify(arrTest);`
-    );
 
-    expect(result).toBe(JSON.stringify(expected));
+            arrTest[i] = arrTest[i] + 1;
+
+            i++;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
 test.each([
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i < arrTest.length; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i <= arrTest.length - 1; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length > i; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length - 1 >= i; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 1, 3, 3], header: "let i = 0; i < arrTest.length; i += 2" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = arrTest.length - 1; i >= 0; i--" },
-    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
-    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
-])("forheader (%p)", ({ inp, expected, header }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
+    { inp: [0, 1, 2, 3], header: "let i = 0; i < arrTest.length; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; i <= arrTest.length - 1; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; arrTest.length > i; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; arrTest.length - 1 >= i; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; i < arrTest.length; i += 2" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i >= 0; i--" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
+])("forheader (%p)", ({ inp, header }) => {
+    util.fn`
+        let arrTest = ${JSON.stringify(inp)};
         for (${header}) {
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
 test("for scope", () => {
-    const code = `
+    util.fn`
         let i = 42;
         for (let i = 0; i < 10; ++i) {}
         return i;
-    `;
-    expect(util.transpileAndExecute(code)).toBe(42);
+    `.expectToMatchJsResult();
 });
 
 test.each([

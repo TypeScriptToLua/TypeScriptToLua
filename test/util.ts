@@ -2,6 +2,8 @@ import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
+import * as vm from "vm";
+import * as prettyFormat from "pretty-format";
 import * as tstl from "../src";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
@@ -160,3 +162,307 @@ export const valueToString = (value: unknown) =>
         : JSON.stringify(value);
 
 export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");
+
+interface TranspiledJsFile {
+    fileName: string;
+    js?: string;
+    sourceMap?: string;
+}
+
+interface TranspileJsResult {
+    diagnostics: ts.Diagnostic[];
+    transpiledFiles: TranspiledJsFile[];
+}
+
+function transpileJs(program: ts.Program): TranspileJsResult {
+    const transpiledFiles: TranspiledJsFile[] = [];
+    // TODO: Included in TS3.5
+    type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledJsFile, "fileName">) => {
+        const file = transpiledFiles.find(f => f.fileName === fileName);
+        if (file) {
+            Object.assign(file, update);
+        } else {
+            transpiledFiles.push({ fileName, ...update });
+        }
+    };
+
+    const { diagnostics } = program.emit(undefined, (fileName, data, _bom, _onError, sourceFiles = []) => {
+        for (const sourceFile of sourceFiles) {
+            const isJs = fileName.endsWith(".js");
+            const isSourceMap = fileName.endsWith(".js.map");
+            if (isJs || isSourceMap) {
+                updateTranspiledFile(sourceFile.fileName, { js: data });
+            } else if (isSourceMap) {
+                updateTranspiledFile(sourceFile.fileName, { sourceMap: data });
+            }
+        }
+    });
+
+    return { transpiledFiles, diagnostics: [...diagnostics] };
+}
+
+const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
+    const originalFunction = descriptor.value as any;
+    const memoized = new WeakMap<object, any>();
+    descriptor.value = function(this: any, ...args: any[]): any {
+        if (!memoized.has(this)) {
+            memoized.set(this, originalFunction.apply(this, args));
+        }
+
+        return memoized.get(this);
+    } as any;
+    return descriptor;
+};
+
+class ExecutionError extends Error {
+    public name = "ExecutionError";
+    constructor(message: string) {
+        super(message);
+    }
+}
+
+class TestBuilder {
+    protected _accessor = "";
+    constructor(private template: TemplateStringsArray, private substitutions: any[]) {}
+
+    // Options
+
+    private _serialize = false;
+    public serialize(serialize = true): this {
+        expect(this._hasTsCode).toBe(false);
+        this._serialize = serialize;
+        return this;
+    }
+
+    private _luaHeader = "";
+    public luaHeader(luaHeader: string): this {
+        expect(this._hasTsCode).toBe(false);
+        this._luaHeader += luaHeader;
+        return this;
+    }
+
+    private _semanticCheck = true;
+    public disableSemanticCheck(): this {
+        this._semanticCheck = false;
+        return this;
+    }
+
+    private _options: tstl.CompilerOptions = {
+        luaTarget: tstl.LuaTarget.Lua53,
+        noHeader: true,
+        skipLibCheck: true,
+        target: ts.ScriptTarget.ESNext,
+        lib: ["lib.esnext.d.ts"],
+        experimentalDecorators: true,
+    };
+    public options(options: tstl.CompilerOptions): this {
+        expect(this._hasTsCode).toBe(false);
+        Object.assign(this._options, options);
+        return this;
+    }
+
+    protected _mainFileName = "main.ts";
+    public setMainFileName(mainFileName: string): this {
+        this._mainFileName = mainFileName;
+        return this;
+    }
+
+    private _extraFiles: Record<string, string> = {};
+    public addExtraFile(fileName: string, code: string): this {
+        expect(this._hasProgram).toBe(false);
+        this._extraFiles[fileName] = code;
+        return this;
+    }
+
+    // Transpilation and execution
+
+    private _hasTsCode = false;
+    @memoize
+    public getTsCode(): string {
+        this._hasTsCode = true;
+        const substitutions = this._serialize ? this.substitutions.map(valueToString) : this.substitutions;
+
+        const templateString = this.template
+            .map((chunk, index) => (substitutions[index - 1] !== undefined ? substitutions[index - 1] : "") + chunk)
+            .join("");
+
+        return templateString;
+    }
+
+    private _hasProgram = false;
+    @memoize
+    public getProgram(): ts.Program {
+        this._hasProgram = true;
+        return tstl.createVirtualProgram(
+            { ...this._extraFiles, [this._mainFileName]: this.getTsCode() },
+            this._options
+        );
+    }
+
+    @memoize
+    public getLuaResult(): tstl.TranspileResult {
+        const program = this.getProgram();
+        const result = tstl.transpile({ program });
+        const diagnostics = ts.sortAndDeduplicateDiagnostics([
+            ...ts.getPreEmitDiagnostics(program),
+            ...result.diagnostics,
+        ]);
+
+        return { ...result, diagnostics: [...diagnostics] };
+    }
+
+    @memoize
+    public getMainLuaCodeChunk(): string {
+        const { transpiledFiles } = this.getLuaResult();
+        const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
+        expect(mainFile).toBeDefined();
+
+        return `return JSONStringify((function()
+    ${this._luaHeader}
+    ${mainFile!.lua!}
+end)()${this._accessor})`;
+    }
+
+    @memoize
+    private getLuaCodeWithWrapper(): string {
+        let code = this.getMainLuaCodeChunk();
+        if (code.includes('require("lualib_bundle")')) {
+            code = `package.preload.lualib_bundle = function()
+    ${lualibContent}
+end
+${code}`;
+        }
+
+        return minimalTestLib + code;
+    }
+
+    @memoize
+    public getLuaExecutionResult(): any {
+        const code = this.getLuaCodeWithWrapper();
+        const L = lauxlib.luaL_newstate();
+        lualib.luaL_openlibs(L);
+        const status = lauxlib.luaL_dostring(L, to_luastring(code));
+
+        if (status === lua.LUA_OK) {
+            if (lua.lua_isstring(L, -1)) {
+                return JSON.parse(lua.lua_tojsstring(L, -1));
+            } else {
+                const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
+                throw new Error(`Unsupported Lua return type: ${returnType}`);
+            }
+        } else {
+            return new ExecutionError(to_jsstring(lua.lua_tostring(L, -1)));
+        }
+    }
+
+    @memoize
+    public getJsResult(): TranspileJsResult {
+        const program = this.getProgram();
+        program.getCompilerOptions().module = ts.ModuleKind.CommonJS;
+        return transpileJs(program);
+    }
+
+    @memoize
+    protected getJsCode(): string {
+        const { transpiledFiles } = this.getJsResult();
+        const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
+        expect(mainFile).toBeDefined();
+        return mainFile!.js! + `;exports = exports${this._accessor}`;
+    }
+
+    @memoize
+    public getJsExecutionResult(): any {
+        const context = vm.createContext({ exports: {} });
+        try {
+            return vm.runInContext(this.getJsCode(), context);
+        } catch (error) {
+            return new ExecutionError(error.message);
+        }
+    }
+
+    // Utilities
+
+    private getAllDiagnostics(): ts.Diagnostic[] {
+        const { diagnostics: luaDiagnostics } = this.getLuaResult();
+        const { diagnostics: jsDiagnostics } = this.getJsResult();
+        const allDiagnostics = [...ts.sortAndDeduplicateDiagnostics([...luaDiagnostics, ...jsDiagnostics])];
+        return allDiagnostics.filter(diag => this._semanticCheck || diag.source === "typescript-to-lua");
+    }
+
+    // Actions
+
+    public debug(): this {
+        const luaCode = this.getMainLuaCodeChunk().replace(/(^|\n)/g, "\n    ");
+        const value = prettyFormat(this.getLuaExecutionResult());
+        console.log(`Lua Code:${luaCode}\nValue: ${value}`);
+        return this;
+    }
+
+    public expectToHaveDiagnostics(): this {
+        expect(this.getAllDiagnostics()).toHaveDiagnostics();
+        return this;
+    }
+
+    public expectToMatchJsResult(allowErrors = false): this {
+        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        const luaResult = this.getLuaExecutionResult();
+        const jsResult = this.getJsExecutionResult();
+        expect(luaResult).toEqual(jsResult);
+        if (!allowErrors && luaResult instanceof ExecutionError) {
+            throw luaResult;
+        }
+
+        return this;
+    }
+
+    public expectToEqual(expected: any): this {
+        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        const luaResult = this.getLuaExecutionResult();
+        expect(luaResult).toEqual(expected);
+        return this;
+    }
+
+    public expectLuaToMatchSnapshot(): this {
+        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        expect(this.getMainLuaCodeChunk()).toMatchSnapshot();
+        return this;
+    }
+
+    public expectResultToMatchSnapshot(): this {
+        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        expect(this.getLuaExecutionResult()).toMatchSnapshot();
+        return this;
+    }
+}
+
+class FunctionTestBuilder extends TestBuilder {
+    protected _accessor = ".main()";
+    public getTsCode(): string {
+        return `export function main() {${super.getTsCode()}}`;
+    }
+}
+
+class ModuleTestBuilder extends TestBuilder {
+    public export(name: string): this {
+        this._accessor = `.${name}`;
+        return this;
+    }
+}
+
+const templateFromValue = (valueOrTemplate: any): TemplateStringsArray =>
+    typeof valueOrTemplate === "string"
+        ? Object.assign([valueOrTemplate], { raw: [valueOrTemplate] })
+        : valueOrTemplate;
+
+export function fn(value: string): FunctionTestBuilder;
+export function fn(template: TemplateStringsArray, ...substitutions: any[]): FunctionTestBuilder;
+export function fn(valueOrTemplate: any, ...substitutions: any[]): FunctionTestBuilder {
+    return new FunctionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
+}
+
+export function mod(value: string): ModuleTestBuilder;
+export function mod(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
+export function mod(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
+    return new ModuleTestBuilder(templateFromValue(valueOrTemplate), substitutions);
+}

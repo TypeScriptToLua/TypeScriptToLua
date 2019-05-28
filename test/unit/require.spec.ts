@@ -74,13 +74,18 @@ test.each([
 ])(
     "require paths root from --baseUrl or --rootDir (%p)",
     ({ filePath, usedPath, expectedPath, options, throwsError }) => {
-        const input = { [filePath]: `import * as module from "${usedPath}"; module;` };
+        const builder = util.mod`
+            import * as module from "${usedPath}";
+            module;
+        `;
+
+        builder.options(options).setMainFileName(filePath);
+
         if (throwsError) {
-            expect(() => util.transpileString(input, options)).toThrow();
+            builder.expectToHaveDiagnostics();
         } else {
-            const lua = util.transpileString(input, options);
             const regex = /require\("(.*?)"\)/;
-            const match = regex.exec(lua);
+            const match = regex.exec(builder.getMainLuaCodeChunk());
 
             if (util.expectToBeDefined(match)) {
                 expect(match[1]).toBe(expectedPath);
@@ -92,12 +97,14 @@ test.each([
 test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolution */", expectedPath: "fake" }])(
     "noResolution on ambient modules causes no path alterations (%p)",
     ({ comment, expectedPath }) => {
-        const lua = util.transpileString({
-            "src/main.ts": `import * as fake from "fake"; fake;`,
-            "module.d.ts": `${comment} declare module "fake" {}`,
-        });
+        const builder = util.mod`
+            import * as fake from "fake";
+            fake;
+        `;
+
+        builder.setMainFileName("src/main.ts").addExtraFile("module.d.ts", `${comment} declare module "fake" {}`);
         const regex = /require\("(.*?)"\)/;
-        const match = regex.exec(lua);
+        const match = regex.exec(builder.getMainLuaCodeChunk());
 
         if (util.expectToBeDefined(match)) {
             expect(match[1]).toBe(expectedPath);

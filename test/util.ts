@@ -222,7 +222,8 @@ class ExecutionError extends Error {
     }
 }
 
-class TestBuilder {
+export type TapCallback = (builder: TestBuilder) => void;
+export class TestBuilder {
     protected _accessor = "";
     constructor(private template: TemplateStringsArray, private substitutions: any[]) {}
 
@@ -352,7 +353,8 @@ ${code}`;
                 throw new Error(`Unsupported Lua return type: ${returnType}`);
             }
         } else {
-            return new ExecutionError(to_jsstring(lua.lua_tostring(L, -1)));
+            const message = to_jsstring(lua.lua_tostring(L, -1)).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+            return new ExecutionError(message);
         }
     }
 
@@ -383,11 +385,9 @@ ${code}`;
 
     // Utilities
 
-    private getAllDiagnostics(): ts.Diagnostic[] {
-        const { diagnostics: luaDiagnostics } = this.getLuaResult();
-        const { diagnostics: jsDiagnostics } = this.getJsResult();
-        const allDiagnostics = [...ts.sortAndDeduplicateDiagnostics([...luaDiagnostics, ...jsDiagnostics])];
-        return allDiagnostics.filter(diag => this._semanticCheck || diag.source === "typescript-to-lua");
+    private getLuaDiagnostics(): ts.Diagnostic[] {
+        const { diagnostics } = this.getLuaResult();
+        return diagnostics.filter(d => this._semanticCheck || d.source === "typescript-to-lua");
     }
 
     // Actions
@@ -400,12 +400,25 @@ ${code}`;
     }
 
     public expectToHaveDiagnostics(): this {
-        expect(this.getAllDiagnostics()).toHaveDiagnostics();
+        expect(this.getLuaDiagnostics()).toHaveDiagnostics();
+        return this;
+    }
+
+    public expectToHaveDiagnosticOfError(error: tstl.TranspileError): this {
+        this.expectToHaveDiagnostics();
+        expect(this.getLuaDiagnostics()).toHaveLength(1);
+        const firstDiagnostic = this.getLuaDiagnostics()[0];
+        expect(firstDiagnostic).toMatchObject({ messageText: error.message });
+        return this;
+    }
+
+    public expectToHaveNoDiagnostics(): this {
+        expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
         return this;
     }
 
     public expectToMatchJsResult(allowErrors = false): this {
-        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        this.expectToHaveNoDiagnostics();
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
         expect(luaResult).toEqual(jsResult);
@@ -417,21 +430,33 @@ ${code}`;
     }
 
     public expectToEqual(expected: any): this {
-        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        this.expectToHaveNoDiagnostics();
         const luaResult = this.getLuaExecutionResult();
         expect(luaResult).toEqual(expected);
         return this;
     }
 
     public expectLuaToMatchSnapshot(): this {
-        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        this.expectToHaveNoDiagnostics();
         expect(this.getMainLuaCodeChunk()).toMatchSnapshot();
         return this;
     }
 
     public expectResultToMatchSnapshot(): this {
-        expect(this.getAllDiagnostics()).not.toHaveDiagnostics();
+        this.expectToHaveNoDiagnostics();
         expect(this.getLuaExecutionResult()).toMatchSnapshot();
+        return this;
+    }
+
+    public tap(callback: TapCallback): this {
+        callback(this);
+        return this;
+    }
+}
+
+class ModuleTestBuilder extends TestBuilder {
+    public export(name: string): this {
+        this._accessor = `.${name}`;
         return this;
     }
 }
@@ -443,10 +468,10 @@ class FunctionTestBuilder extends TestBuilder {
     }
 }
 
-class ModuleTestBuilder extends TestBuilder {
-    public export(name: string): this {
-        this._accessor = `.${name}`;
-        return this;
+class ExpressionTestBuilder extends TestBuilder {
+    protected _accessor = ".main()";
+    public getTsCode(): string {
+        return `export function main() {return ${super.getTsCode()};}`;
     }
 }
 
@@ -455,14 +480,20 @@ const templateFromValue = (valueOrTemplate: any): TemplateStringsArray =>
         ? Object.assign([valueOrTemplate], { raw: [valueOrTemplate] })
         : valueOrTemplate;
 
+export function testModule(value: string): ModuleTestBuilder;
+export function testModule(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
+export function testModule(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
+    return new ModuleTestBuilder(templateFromValue(valueOrTemplate), substitutions);
+}
+
 export function testFunction(value: string): FunctionTestBuilder;
 export function testFunction(template: TemplateStringsArray, ...substitutions: any[]): FunctionTestBuilder;
 export function testFunction(valueOrTemplate: any, ...substitutions: any[]): FunctionTestBuilder {
     return new FunctionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
 }
 
-export function testModule(value: string): ModuleTestBuilder;
-export function testModule(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
-export function testModule(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
-    return new ModuleTestBuilder(templateFromValue(valueOrTemplate), substitutions);
+export function testExpression(value: string): ExpressionTestBuilder;
+export function testExpression(template: TemplateStringsArray, ...substitutions: any[]): ExpressionTestBuilder;
+export function testExpression(valueOrTemplate: any, ...substitutions: any[]): ExpressionTestBuilder {
+    return new ExpressionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
 }

@@ -55,9 +55,9 @@ test.each([
     "export { x as default } from '...';",
     "export { default as x } from '...';",
 ])("Export default keyword disallowed (%p)", exportStatement => {
-    expect(() => util.transpileString(exportStatement)).toThrowExactError(
-        TSTLErrors.UnsupportedDefaultExport(util.nodeStub)
-    );
+    util.testFunction(exportStatement)
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedDefaultExport(util.nodeStub));
 });
 
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(

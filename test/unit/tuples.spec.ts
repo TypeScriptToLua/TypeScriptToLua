@@ -1,205 +1,177 @@
 import * as util from "../util";
 
 test("Tuple loop", () => {
-    const result = util.transpileAndExecute(
-        `const tuple: [number, number, number] = [3,5,1];
+    util.testFunction`
+        const tuple: [number, number, number] = [3,5,1];
         let count = 0;
         for (const value of tuple) { count += value; }
-        return count;`
-    );
-
-    expect(result).toBe(9);
+        return count;
+    `.expectToMatchJsResult();
 });
 
 test("Tuple foreach", () => {
-    const result = util.transpileAndExecute(
-        `const tuple: [number, number, number] = [3,5,1];
+    util.testFunction`
+        const tuple: [number, number, number] = [3,5,1];
         let count = 0;
         tuple.forEach(v => count += v);
-        return count;`
-    );
-
-    expect(result).toBe(9);
+        return count;
+    `.expectToMatchJsResult();
 });
 
 test("Tuple access", () => {
-    const result = util.transpileAndExecute(
-        `const tuple: [number, number, number] = [3,5,1];
-        return tuple[1];`
-    );
-
-    expect(result).toBe(5);
+    util.testFunction`
+        const tuple: [number, number, number] = [3,5,1];
+        return tuple[1];
+    `.expectToMatchJsResult();
 });
 
 test("Tuple union access", () => {
-    const result = util.transpileAndExecute(
-        `function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }
+    util.testFunction`
+        function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }
         const tuple = makeTuple();
-        return tuple[1];`
-    );
-    expect(result).toBe(5);
+        return tuple[1];
+    `.expectToMatchJsResult();
 });
 
 test("Tuple intersection access", () => {
-    const result = util.transpileAndExecute(
-        `type I = [number, number, number] & {foo: string};
+    util.testFunction`
+        type I = [number, number, number] & {foo: string};
         function makeTuple(): I {
             let t = [3,5,1];
             (t as I).foo = "bar";
             return (t as I);
         }
         const tuple = makeTuple();
-        return tuple[1];`
-    );
-    expect(result).toBe(5);
+        return tuple[1];
+    `.expectToMatchJsResult();
 });
 
 test("Tuple Destruct", () => {
-    const result = util.transpileAndExecute(
-        `function tuple(): [number, number, number] { return [3,5,1]; }
+    util.testFunction`
+        function tuple(): [number, number, number] { return [3,5,1]; }
         const [a,b,c] = tuple();
-        return b;`
-    );
-
-    expect(result).toBe(5);
+        return b;
+    `.expectToMatchJsResult();
 });
 
-test("Tuple Destruct Array Literal", () => {
-    const code = `
-        const [a,b,c] = [3,5,1];
-        return b;`;
+const expectNoUnpack: util.TapCallback = b => expect(b.getMainLuaCodeChunk()).not.toContain("unpack");
 
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+test("Tuple Destruct Array Literal", () => {
+    util.testFunction`
+        const [a, b, c] = [3, 5, 1];
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Destruct Array Literal Extra Values", () => {
-    const code = `
+    util.testFunction`
         let result = "";
         const set = () => { result = "bar"; };
         const [a] = ["foo", set()];
-        return a + result;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+        return a + result;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple length", () => {
-    const result = util.transpileAndExecute(
-        `const tuple: [number, number, number] = [3,5,1];
-        return tuple.length;`
-    );
-
-    expect(result).toBe(3);
+    util.testFunction`
+        const tuple: [number, number, number] = [3, 5, 1];
+        return tuple.length;
+    `.expectToMatchJsResult();
 });
 
 test("Tuple Return Access", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
-        function tuple(): [number, number, number] { return [3,5,1]; }
-        return tuple()[2];`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(1);
+        function tuple(): [number, number, number] { return [3, 5, 1]; }
+        return tuple()[2];
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Destruct Declaration", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
         function tuple(): [number, number, number] { return [3,5,1]; }
         const [a,b,c] = tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Destruct Assignment", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
         function tuple(): [number, number] { return [3,6]; }
         let [a,b] = [1,2];
         [b,a] = tuple();
-        return a - b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(3);
+        return a - b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Static Method Return Destruct", () => {
-    const code = `
+    util.testFunction`
         class Test {
             /** @tupleReturn */
             static tuple(): [number, number, number] { return [3,5,1]; }
         }
         const [a,b,c] = Test.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Static Function Property Return Destruct", () => {
-    const code = `
+    util.testFunction`
         class Test {
             /** @tupleReturn */
             static tuple: () => [number, number, number] = () => [3,5,1];
         }
         const [a,b,c] = Test.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Non-Static Method Return Destruct", () => {
-    const code = `
+    util.testFunction`
         class Test {
             /** @tupleReturn */
             tuple(): [number, number, number] { return [3,5,1]; }
         }
         const t = new Test();
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Non-Static Function Property Return Destruct", () => {
-    const code = `
+    util.testFunction`
         class Test {
             /** @tupleReturn */
             tuple: () => [number, number, number] = () => [3,5,1];
         }
         const t = new Test();
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Interface Method Return Destruct", () => {
-    const code = `
+    util.testFunction`
         interface Test {
             /** @tupleReturn */
             tuple(): [number, number, number];
@@ -208,16 +180,14 @@ test("Tuple Interface Method Return Destruct", () => {
             tuple() { return [3,5,1]; }
         };
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Interface Function Property Return Destruct", () => {
-    const code = `
+    util.testFunction`
         interface Test {
             /** @tupleReturn */
             tuple: () => [number, number, number];
@@ -226,116 +196,100 @@ test("Tuple Interface Function Property Return Destruct", () => {
             tuple: () => [3,5,1]
         };
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Object Literal Method Return Destruct", () => {
-    const code = `
+    util.testFunction`
         const t = {
             /** @tupleReturn */
             tuple() { return [3,5,1]; }
         };
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Object Literal Function Property Return Destruct", () => {
-    const code = `
+    util.testFunction`
         const t = {
             /** @tupleReturn */
             tuple: () => [3,5,1]
         };
         const [a,b,c] = t.tuple();
-        return b;`;
-
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(5);
+        return b;
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Arrow Function", () => {
-    const code = `
+    util.testFunction`
         const fn = /** @tupleReturn */ (s: string) => [s, "bar"];
         const [a, b] = fn("foo");
         return a + b;
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Inference", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         const fn: Fn = s => [s, "bar"];
         const [a, b] = fn("foo");
         return a + b;
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Inference as Argument", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ interface Fn { (s: string): [string, string] }
         function foo(fn: Fn) {
             const [a, b] = fn("foo");
             return a + b;
         }
         return foo(s => [s, "bar"]);
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Inference as Elipsis Argument", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ interface Fn { (s: string): [string, string] }
-        function foo(a: number, ...fn: Fn[]) {
+        function foo(_: number, ...fn: Fn[]) {
             const [a, b] = fn[0]("foo");
             return a + b;
         }
-        return foo(7, s => [s, "bar"]);
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+        return foo(0, s => [s, "bar"]);
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return Inference as Elipsis Tuple Argument", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ interface Fn { (s: string): [string, string] }
-        function foo(a: number, ...fn: [number, Fn]) {
+        function foo(_: number, ...fn: [number, Fn]) {
             const [a, b] = fn[1]("foo");
             return a + b;
         }
-        return foo(7, 17, s => [s, "bar"]);
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+        return foo(0, 0, s => [s, "bar"]);
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return in Spread", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ function foo(): [string, string] {
             return ["foo", "bar"];
         }
@@ -343,56 +297,48 @@ test("Tuple Return in Spread", () => {
             return a + b;
         }
         return bar(...foo());
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Type Alias", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ type Fn = () => [number, number];
         const fn: Fn = () => [1, 2];
         const [a, b] = fn();
         return a + b;
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(3);
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Interface", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */ interface Fn { (): [number, number]; }
         const fn: Fn = () => [1, 2];
         const [a, b] = fn();
         return a + b;
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(3);
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Interface Signature", () => {
-    const code = `
+    util.testFunction`
         interface Fn {
             /** @tupleReturn */ (): [number, number];
         }
         const fn: Fn = () => [1, 2];
         const [a, b] = fn();
         return a + b;
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe(3);
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Overload", () => {
-    const code = `
+    util.testFunction`
         function fn(a: number): number;
         /** @tupleReturn */ function fn(a: string, b: string): [string, string];
         function fn(a: number | string, b?: string): number | [string, string] {
@@ -405,15 +351,13 @@ test("Tuple Return on Overload", () => {
         const a = fn(3);
         const [b, c] = fn("foo", "bar");
         return a + b + c
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("3foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Interface Overload", () => {
-    const code = `
+    util.testFunction`
         interface Fn {
             (a: number): number;
             /** @tupleReturn */ (a: string, b: string): [string, string];
@@ -428,15 +372,13 @@ test("Tuple Return on Interface Overload", () => {
         const a = fn(3);
         const [b, c] = fn("foo", "bar");
         return a + b + c
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("3foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return on Interface Method Overload", () => {
-    const code = `
+    util.testFunction`
         interface Foo {
             foo(a: number): number;
             /** @tupleReturn */ foo(a: string, b: string): [string, string];
@@ -453,11 +395,9 @@ test("Tuple Return on Interface Method Overload", () => {
         const a = bar.foo(3);
         const [b, c] = bar.foo("foo", "bar");
         return a + b + c
-    `;
-    const lua = util.transpileString(code);
-    expect(lua).not.toContain("unpack");
-    const result = util.executeLua(lua);
-    expect(result).toBe("3foobar");
+    `
+        .tap(expectNoUnpack)
+        .expectToMatchJsResult();
 });
 
 test("Tuple Return vs Non-Tuple Return Overload", () => {
@@ -470,15 +410,16 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
             end
         end
     `;
-    const tsHeader = `
+
+    util.testModule`
         declare function fn(this: void, a: number): [number, number];
         /** @tupleReturn */ declare function fn(this: void, a: string, b: string): [string, string];
-    `;
-    const code = `
+
         const [a, b] = fn(3);
         const [c, d] = fn("foo", "bar");
-        return (a + b) + c + d;
-    `;
-    const result = util.transpileAndExecute(code, undefined, luaHeader, tsHeader);
-    expect(result).toBe("7foobar");
+        export const result = (a + b) + c + d;
+    `
+        .luaHeader(luaHeader)
+        .export("result")
+        .expectToEqual("7foobar");
 });

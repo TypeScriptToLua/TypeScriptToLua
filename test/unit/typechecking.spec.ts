@@ -2,129 +2,108 @@ import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {
-    const result = util.transpileAndExecute(`return typeof ${inp};`);
-
-    expect(result).toBe("number");
+    util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
 test.each(['"abc"', "`abc`"])("typeof string (%p)", inp => {
-    const result = util.transpileAndExecute(`return typeof ${inp};`);
-
-    expect(result).toBe("string");
+    util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
 test.each(["false", "true"])("typeof boolean (%p)", inp => {
-    const result = util.transpileAndExecute(`return typeof ${inp};`);
-
-    expect(result).toBe("boolean");
+    util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
 test.each(["{}", "[]"])("typeof object literal (%p)", inp => {
-    const result = util.transpileAndExecute(`return typeof ${inp};`);
-
-    expect(result).toBe("object");
+    util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
 test("typeof class instance", () => {
-    const result = util.transpileAndExecute(`class myClass {} let inst = new myClass(); return typeof inst;`);
-
-    expect(result).toBe("object");
+    util.testFunction`
+        class myClass {}
+        let inst = new myClass();
+        return typeof inst;
+    `.expectToMatchJsResult();
 });
 
 test("typeof function", () => {
-    const result = util.transpileAndExecute(`return typeof (() => 3);`);
-
-    expect(result).toBe("function");
+    util.testExpression`typeof (() => 3)`.expectToMatchJsResult();
 });
 
 test.each(["null", "undefined"])("typeof undefined (%p)", inp => {
-    const result = util.transpileAndExecute(`return typeof ${inp};`);
-
-    expect(result).toBe("nil");
+    util.testExpression`typeof ${inp}`.expectToEqual("nil");
 });
 
 test("instanceof", () => {
-    const result = util.transpileAndExecute(
-        "class myClass {} let inst = new myClass(); return inst instanceof myClass;"
-    );
-
-    expect(result).toBe(true);
+    util.testFunction`
+        class myClass {}
+        let inst = new myClass();
+        return inst instanceof myClass;
+    `.expectToMatchJsResult();
 });
 
 test("instanceof inheritance", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         class myClass {}
-        class childClass extends myClass{}
-        let inst = new childClass(); return inst instanceof myClass;
-    `);
-
-    expect(result).toBe(true);
+        class childClass extends myClass {}
+        let inst = new childClass();
+        return inst instanceof myClass;
+    `.expectToMatchJsResult();
 });
 
 test("instanceof inheritance false", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         class myClass {}
-        class childClass extends myClass{}
-        let inst = new myClass(); return inst instanceof childClass;
-    `);
-
-    expect(result).toBe(false);
+        class childClass extends myClass {}
+        let inst = new myClass();
+        return inst instanceof childClass;
+    `.expectToMatchJsResult();
 });
 
 test("{} instanceof Object", () => {
-    const result = util.transpileAndExecute("return {} instanceof Object;");
-
-    expect(result).toBe(true);
+    util.testExpression`{} instanceof Object`.expectToMatchJsResult();
 });
 
 test("function instanceof Object", () => {
-    const result = util.transpileAndExecute("return (() => {}) instanceof Object;");
-
-    expect(result).toBe(true);
+    util.testExpression`(() => {}) instanceof Object`.expectToMatchJsResult();
 });
 
 test("null instanceof Object", () => {
-    const result = util.transpileAndExecute("return (null as any) instanceof Object;");
-
-    expect(result).toBe(false);
+    util.testExpression`(null as any) instanceof Object`.expectToMatchJsResult();
 });
 
 test("instanceof undefined", () => {
-    expect(() => {
-        util.transpileAndExecute("return {} instanceof (undefined as any);");
-    }).toThrow("Right-hand side of 'instanceof' is not an object");
+    util.testExpression`{} instanceof (undefined as any)`.expectToMatchJsResult(true);
 });
 
 test("null instanceof Class", () => {
-    const result = util.transpileAndExecute("class myClass {} return (null as any) instanceof myClass;");
-
-    expect(result).toBe(false);
+    util.testFunction`
+        class myClass {}
+        return (null as any) instanceof myClass;
+    `.expectToMatchJsResult();
 });
 
 test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
-    const code = `
+    util.testModule`
         declare class A {}
         /** @${extensionType} **/
         class B extends A {}
         declare const foo: any;
         const result = foo instanceof B;
-    `;
-    expect(() => util.transpileString(code)).toThrowExactError(TSTLErrors.InvalidInstanceOfExtension(util.nodeStub));
+    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidInstanceOfExtension(util.nodeStub));
 });
 
 test("instanceof export", () => {
-    const result = util.transpileExecuteAndReturnExport(
-        `export class myClass {}
+    util.testModule`
+        export class myClass {}
         let inst = new myClass();
-        export const result = inst instanceof myClass;`,
-        "result"
-    );
-
-    expect(result).toBe(true);
+        export const result = inst instanceof myClass;
+    `
+        .export("result")
+        .expectToMatchJsResult();
 });
 
 test("instanceof Symbol.hasInstance", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         class myClass {
             static [Symbol.hasInstance]() {
                 return false;
@@ -136,7 +115,5 @@ test("instanceof Symbol.hasInstance", () => {
         myClass[Symbol.hasInstance] = () => true;
         const isInstanceNew = inst instanceof myClass;
         return isInstanceOld !== isInstanceNew;
-    `);
-
-    expect(result).toBe(true);
+    `.expectToMatchJsResult();
 });

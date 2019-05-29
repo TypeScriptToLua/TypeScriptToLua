@@ -100,7 +100,7 @@ test("ImportEquals declaration", () => {
                 export function func() { return "foo" }
             }
         };
-        
+
         import importedFunc = outerNamespace.innerNamespace.func;
     `;
 
@@ -117,12 +117,12 @@ test("ImportEquals declaration ambient", () => {
                 function func(): string;
             }
         };
-        
+
         import importedFunc = outerNamespace.innerNamespace.func;
     `;
 
-    const luaHeader = `outerNamespace = { 
-        innerNamespace = { 
+    const luaHeader = `outerNamespace = {
+        innerNamespace = {
             func = function() return "foo" end
         }
     }
@@ -132,11 +132,4 @@ test("ImportEquals declaration ambient", () => {
 
     const result = util.transpileAndExecute(execution, undefined, luaHeader, header);
     expect(result).toEqual("foo");
-});
-
-test("ImportEquals declaration require", () => {
-    const source = `import foo = require("bar");`;
-
-    const result = util.transpileString(source);
-    expect(result.includes(`local foo = require("bar")`)).toBeTruthy();
 });

@@ -1,19 +1,18 @@
 import * as util from "../util";
 
 test("get accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
         }
         const f = new Foo();
         return f.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test("get accessor in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -21,12 +20,11 @@ test("get accessor in base class", () => {
         class Bar extends Foo {}
         const b = new Bar();
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
-test("get accessor override", () => {
-    const code = `
+test.skip("get accessor override", () => {
+    util.testFunction`
         class Foo {
             _foo = "foo";
             foo = "foo";
@@ -36,12 +34,11 @@ test("get accessor override", () => {
         }
         const b = new Bar();
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
-test("get accessor overridden", () => {
-    const code = `
+test.skip("get accessor overridden", () => {
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -51,12 +48,11 @@ test("get accessor overridden", () => {
         }
         const b = new Bar();
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("get accessor override accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -67,12 +63,11 @@ test("get accessor override accessor", () => {
         }
         const b = new Bar();
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("get accessor from interface", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -82,12 +77,11 @@ test("get accessor from interface", () => {
         }
         const b: Bar = new Foo();
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             set foo(val: string) { this._foo = val; }
@@ -95,12 +89,11 @@ test("set accessor", () => {
         const f = new Foo();
         f.foo = "bar"
         return f._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             set foo(val: string) { this._foo = val; }
@@ -109,12 +102,11 @@ test("set accessor in base class", () => {
         const b = new Bar();
         b.foo = "bar"
         return b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor override", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             foo = "foo";
@@ -125,12 +117,11 @@ test("set accessor override", () => {
         const b = new Bar();
         b.foo = "bar"
         return b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor overridden", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "baz";
             set foo(val: string) { this._foo = val; }
@@ -142,12 +133,11 @@ test("set accessor overridden", () => {
         const fooOriginal = b._foo;
         b.foo = "bar"
         return fooOriginal + b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor override accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             set foo(val: string) { this._foo = "foo"; }
@@ -158,12 +148,11 @@ test("set accessor override accessor", () => {
         const b = new Bar();
         b.foo = "bar"
         return b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("set accessor from interface", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             set foo(val: string) { this._foo = val; }
@@ -175,12 +164,11 @@ test("set accessor from interface", () => {
         const b: Bar = new Foo();
         b.foo = "bar"
         return b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("get/set accessors", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -190,12 +178,11 @@ test("get/set accessors", () => {
         const fooOriginal = f.foo;
         f.foo = "bar";
         return fooOriginal + f.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("get/set accessors in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             _foo = "foo";
             get foo() { return this._foo; }
@@ -206,35 +193,32 @@ test("get/set accessors in base class", () => {
         const fooOriginal = b.foo;
         b.foo = "bar"
         return fooOriginal + b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("static get accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
         }
         return Foo.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test("static get accessor in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
         }
         class Bar extends Foo {}
         return Bar.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test("static get accessor override", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static foo = "foo";
@@ -243,12 +227,11 @@ test("static get accessor override", () => {
             static get foo() { return this._foo + "bar"; }
         }
         return Bar.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
-test("static get accessor overridden", () => {
-    const code = `
+test.skip("static get accessor overridden", () => {
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
@@ -257,12 +240,11 @@ test("static get accessor overridden", () => {
             static foo = "bar";
         }
         return Bar.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static get accessor override accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
@@ -272,12 +254,11 @@ test("static get accessor override accessor", () => {
             static get foo() { return this._bar; }
         }
         return Bar.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static get accessor from interface", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
@@ -287,24 +268,22 @@ test("static get accessor from interface", () => {
         }
         const b: Bar = Foo;
         return b.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static set foo(val: string) { this._foo = val; }
         }
         Foo.foo = "bar"
         return Foo._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static set foo(val: string) { this._foo = val; }
@@ -312,12 +291,11 @@ test("static set accessor in base class", () => {
         class Bar extends Foo {}
         Bar.foo = "bar"
         return Bar._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor override", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static foo = "foo";
@@ -327,12 +305,11 @@ test("static set accessor override", () => {
         }
         Bar.foo = "bar"
         return Bar._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor overridden", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "baz";
             static set foo(val: string) { this._foo = val; }
@@ -343,12 +320,11 @@ test("static set accessor overridden", () => {
         const fooOriginal = Bar._foo;
         Bar.foo = "bar"
         return fooOriginal + Bar._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor override accessor", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static set foo(val: string) { this._foo = "foo"; }
@@ -358,12 +334,11 @@ test("static set accessor override accessor", () => {
         }
         Bar.foo = "bar"
         return Bar._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static set accessor from interface", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static set foo(val: string) { this._foo = val; }
@@ -375,12 +350,11 @@ test("static set accessor from interface", () => {
         const b: Bar = Foo;
         b.foo = "bar"
         return b._foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("static get/set accessors", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
@@ -389,12 +363,11 @@ test("static get/set accessors", () => {
         const fooOriginal = Foo.foo;
         Foo.foo = "bar";
         return fooOriginal + Foo.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("static get/set accessors in base class", () => {
-    const code = `
+    util.testFunction`
         class Foo {
             static _foo = "foo";
             static get foo() { return this._foo; }
@@ -404,6 +377,5 @@ test("static get/set accessors in base class", () => {
         const fooOriginal = Bar.foo;
         Bar.foo = "bar"
         return fooOriginal + Bar.foo;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });

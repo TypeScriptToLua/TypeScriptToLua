@@ -215,7 +215,7 @@ const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
     return descriptor;
 };
 
-class ExecutionError extends Error {
+export class ExecutionError extends Error {
     public name = "ExecutionError";
     constructor(message: string) {
         super(message);

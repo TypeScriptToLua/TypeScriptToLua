@@ -1,60 +1,38 @@
 import * as util from "../../util";
 
-test.each([{}, { description: 1 }, { description: "name" }])("symbol.toString() (%p)", ({ description }) => {
-    const result = util.transpileAndExecute(`
-            return Symbol(${JSON.stringify(description)}).toString();
-        `);
-
-    expect(result).toBe(`Symbol(${description || ""})`);
+test.each([undefined, 1, "name"])("symbol.toString() (%p)", description => {
+    util.testExpression`Symbol(${util.valueToString(description)}).toString()`.expectToMatchJsResult();
 });
 
-test.each([{}, { description: 1 }, { description: "name" }])("symbol.description (%p)", ({ description }) => {
-    const result = util.transpileAndExecute(`
-            return Symbol(${JSON.stringify(description)}).description;
-        `);
-
-    expect(result).toBe(description);
+test.each([undefined, 1, "name"])("symbol.description (%p)", description => {
+    // TODO: Supported since node 11
+    util.testExpression`Symbol(${util.valueToString(description)}).description`.expectToEqual(description);
 });
 
 test("symbol uniqueness", () => {
-    const result = util.transpileAndExecute(`
-        return Symbol("a") === Symbol("a");
-    `);
-
-    expect(result).toBe(false);
+    util.testExpression`Symbol("a") === Symbol("a")`.expectToMatchJsResult();
 });
 
 test("Symbol.for", () => {
-    const result = util.transpileAndExecute(`
-        return Symbol.for("name").description;
-    `);
-
-    expect(result).toBe("name");
+    // TODO: Supported since node 11
+    util.testExpression(`Symbol.for("name").description`).expectToEqual("name");
 });
 
 test("Symbol.for non-uniqueness", () => {
-    const result = util.transpileAndExecute(`
-        return Symbol.for("a") === Symbol.for("a");
-    `);
-
-    expect(result).toBe(true);
+    util.testExpression`Symbol.for("a") === Symbol.for("a")`.expectToMatchJsResult();
 });
 
 test("Symbol.keyFor", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         const sym = Symbol.for("a");
         Symbol.for("b");
         return Symbol.keyFor(sym);
-    `);
-
-    expect(result).toBe("a");
+    `.expectToMatchJsResult();
 });
 
 test("Symbol.keyFor empty", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         Symbol.for("a");
         return Symbol.keyFor(Symbol());
-    `);
-
-    expect(result).toBe(undefined);
+    `.expectToMatchJsResult();
 });

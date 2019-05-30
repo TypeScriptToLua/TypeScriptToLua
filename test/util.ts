@@ -157,7 +157,7 @@ export function expectToBeDefined<T>(subject: T | null | undefined): subject is 
 }
 
 export const valueToString = (value: unknown) =>
-    value === Infinity || value === -Infinity || (typeof value === "number" && Number.isNaN(value))
+    (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) || typeof value === "function"
         ? String(value)
         : JSON.stringify(value);
 
@@ -479,7 +479,13 @@ class FunctionTestBuilder extends TestBuilder {
 class ExpressionTestBuilder extends TestBuilder {
     protected _accessor = ".__result";
     public getTsCode(): string {
-        return `export const __result = ${super.getTsCode()};`;
+        return `${this._tsHeader} export const __result = ${super.getTsCode()};`;
+    }
+
+    private _tsHeader = "";
+    public tsHeader(tsHeader: string): this {
+        this._tsHeader = tsHeader;
+        return this;
     }
 }
 

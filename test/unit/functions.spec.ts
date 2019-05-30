@@ -435,11 +435,7 @@ test("Function using global as this", () => {
         }
     `;
 
-    util.testFunction`
-        return foo;
-    `
-        .tsHeader(tsHeader)
-        .expectToMatchJsResult();
+    util.testExpression`foo`.tsHeader(tsHeader).expectToMatchJsResult();
 });
 
 test("Function rest binding pattern", () => {

@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
@@ -11,7 +12,11 @@ describe("module import/export elision", () => {
     `;
 
     const expectToElideImport = (code: string) => {
-        const lua = util.transpileString({ "module.d.ts": moduleDeclaration, "main.ts": code }, undefined, false);
+        const lua = util.transpileString(
+            { "module.d.ts": moduleDeclaration, "main.ts": code },
+            { module: ts.ModuleKind.CommonJS },
+            false
+        );
 
         expect(() => util.executeLua(lua)).not.toThrow();
     };
@@ -33,6 +38,13 @@ describe("module import/export elision", () => {
     test("should elide namespace imports with unused values", () => {
         expectToElideImport(`
             import * as module from "module";
+            const foo: module.Type = "bar";
+        `);
+    });
+
+    test("should elide `import =` declarations", () => {
+        expectToElideImport(`
+            import module = require("module");
             const foo: module.Type = "bar";
         `);
     });

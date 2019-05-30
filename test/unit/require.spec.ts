@@ -1,4 +1,7 @@
+import * as ts from "typescript";
 import * as util from "../util";
+
+const requireRegex = /require\("(.*?)"\)/;
 
 test.each([
     {
@@ -84,8 +87,7 @@ test.each([
         if (throwsError) {
             builder.expectToHaveDiagnostics();
         } else {
-            const regex = /require\("(.*?)"\)/;
-            const match = regex.exec(builder.getMainLuaCodeChunk());
+            const match = requireRegex.exec(builder.getMainLuaCodeChunk());
 
             if (util.expectToBeDefined(match)) {
                 expect(match[1]).toBe(expectedPath);
@@ -103,11 +105,20 @@ test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolut
         `;
 
         builder.setMainFileName("src/main.ts").addExtraFile("module.d.ts", `${comment} declare module "fake" {}`);
-        const regex = /require\("(.*?)"\)/;
-        const match = regex.exec(builder.getMainLuaCodeChunk());
+        const match = requireRegex.exec(builder.getMainLuaCodeChunk());
 
         if (util.expectToBeDefined(match)) {
             expect(match[1]).toBe(expectedPath);
         }
     }
 );
+
+test("ImportEquals declaration require", () => {
+    const input = `import foo = require("./foo/bar"); foo;`;
+
+    const lua = util.transpileString(input, { module: ts.ModuleKind.CommonJS });
+    const match = requireRegex.exec(lua);
+    if (util.expectToBeDefined(match)) {
+        expect(match[1]).toBe("foo.bar");
+    }
+});

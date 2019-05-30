@@ -1560,37 +1560,23 @@ export class LuaTransformer {
         const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
 
         if (isFirstDeclaration) {
+            // local NS = {} or exportTable.NS = {}
+            const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
+                nameIdentifier,
+                tstl.createTableExpression()
+            );
+
+            result.push(...localDeclaration);
+
             const exportScope = this.getIdentifierExportScope(nameIdentifier);
-            if (exportScope) {
-                const exportTable = ts.isModuleDeclaration(exportScope)
-                    ? this.createModuleLocalNameIdentifier(exportScope)
-                    : this.createExportsIdentifier();
-
-                // exportTable.NS = {}
-                const namespaceDeclaration = tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(nameIdentifier.text)),
-                    tstl.createTableExpression()
-                );
-
-                result.push(namespaceDeclaration);
-
-                if (hasExports && tsHelper.moduleHasEmittedBody(statement)) {
-                    // local NS = exportTable.NS
-                    const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                        this.createModuleLocalNameIdentifier(statement),
-                        tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(nameIdentifier.text))
-                    );
-
-                    result.push(localDeclaration);
-                }
-            } else {
-                // local NS = {}
-                const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
+            if (exportScope && hasExports && tsHelper.moduleHasEmittedBody(statement)) {
+                // local NS = exportTable.NS
+                const localDeclaration = this.createHoistableVariableDeclarationStatement(
                     this.createModuleLocalNameIdentifier(statement),
-                    tstl.createTableExpression()
+                    this.createExportedIdentifier(nameIdentifier, exportScope)
                 );
 
-                result.push(...localDeclaration);
+                result.push(localDeclaration);
             }
         }
 
@@ -4698,11 +4684,10 @@ export class LuaTransformer {
 
     protected addExportToIdentifier(identifier: tstl.Identifier): tstl.AssignmentLeftHandSideExpression {
         const exportScope = this.getIdentifierExportScope(identifier);
-        if (!exportScope) {
-            return identifier;
+        if (exportScope) {
+            return this.createExportedIdentifier(identifier, exportScope);
         }
-
-        return this.createExportedIdentifier(identifier, exportScope);
+        return identifier;
     }
 
     protected createExportedIdentifier(

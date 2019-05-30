@@ -54,7 +54,7 @@ test("Tuple Destruct", () => {
     `.expectToMatchJsResult();
 });
 
-const expectNoUnpack: util.TapCallback = b => expect(b.getMainLuaCodeChunk()).not.toContain("unpack");
+const expectNoUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack");
 
 test("Tuple Destruct Array Literal", () => {
     util.testFunction`

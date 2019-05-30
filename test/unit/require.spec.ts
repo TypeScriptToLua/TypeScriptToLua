@@ -2,123 +2,117 @@ import * as ts from "typescript";
 import * as util from "../util";
 
 const requireRegex = /require\("(.*?)"\)/;
+const expectToRequire = (expected: string): util.TapCallback => builder => {
+    const match = requireRegex.exec(builder.getMainLuaCodeChunk());
+    if (util.expectToBeDefined(match)) {
+        expect(match[1]).toBe(expected);
+    }
+};
 
 test.each([
     {
         filePath: "main.ts",
         usedPath: "./folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: "." },
         throwsError: false,
     },
     {
         filePath: "main.ts",
         usedPath: "./folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: "./" },
         throwsError: false,
     },
     {
         filePath: "src/main.ts",
         usedPath: "./folder/Module",
-        expectedPath: "src.folder.Module",
+        expected: "src.folder.Module",
         options: { rootDir: "." },
         throwsError: false,
     },
     {
         filePath: "main.ts",
         usedPath: "folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: ".", baseUrl: "." },
         throwsError: false,
     },
     {
         filePath: "main.ts",
         usedPath: "folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: "./", baseUrl: "." },
         throwsError: false,
     },
     {
         filePath: "src/main.ts",
         usedPath: "./folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: "src" },
         throwsError: false,
     },
     {
         filePath: "src/main.ts",
         usedPath: "./folder/Module",
-        expectedPath: "folder.Module",
+        expected: "folder.Module",
         options: { rootDir: "./src" },
         throwsError: false,
     },
     {
         filePath: "main.ts",
         usedPath: "../Module",
-        expectedPath: "",
+        expected: "",
         options: { rootDir: "./src" },
         throwsError: true,
     },
     {
         filePath: "src/dir/main.ts",
         usedPath: "../Module",
-        expectedPath: "Module",
+        expected: "Module",
         options: { rootDir: "./src" },
         throwsError: false,
     },
     {
         filePath: "src/dir/dir/main.ts",
         usedPath: "../../dir/Module",
-        expectedPath: "dir.Module",
+        expected: "dir.Module",
         options: { rootDir: "./src" },
         throwsError: false,
     },
-])(
-    "require paths root from --baseUrl or --rootDir (%p)",
-    ({ filePath, usedPath, expectedPath, options, throwsError }) => {
-        const builder = util.testModule`
-            import * as module from "${usedPath}";
-            module;
-        `;
+])("require paths root from --baseUrl or --rootDir (%p)", ({ filePath, usedPath, expected, options, throwsError }) => {
+    const builder = util.testModule`
+        import * as module from "${usedPath}";
+        module;
+    `;
 
-        builder.options(options).setMainFileName(filePath);
+    builder.options(options).setMainFileName(filePath);
 
-        if (throwsError) {
-            builder.expectToHaveDiagnostics();
-        } else {
-            const match = requireRegex.exec(builder.getMainLuaCodeChunk());
-
-            if (util.expectToBeDefined(match)) {
-                expect(match[1]).toBe(expectedPath);
-            }
-        }
+    if (throwsError) {
+        builder.expectToHaveDiagnostics();
+    } else {
+        builder.tap(expectToRequire(expected));
     }
-);
+});
 
-test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolution */", expectedPath: "fake" }])(
+test.each([{ comment: "", expected: "src.fake" }, { comment: "/** @noResolution */", expected: "fake" }])(
     "noResolution on ambient modules causes no path alterations (%p)",
-    ({ comment, expectedPath }) => {
-        const builder = util.testModule`
+    ({ comment, expected }) => {
+        util.testModule`
             import * as fake from "fake";
             fake;
-        `;
-
-        builder.setMainFileName("src/main.ts").addExtraFile("module.d.ts", `${comment} declare module "fake" {}`);
-        const match = requireRegex.exec(builder.getMainLuaCodeChunk());
-
-        if (util.expectToBeDefined(match)) {
-            expect(match[1]).toBe(expectedPath);
-        }
+        `
+            .setMainFileName("src/main.ts")
+            .addExtraFile("module.d.ts", `${comment} declare module "fake" {}`)
+            .tap(expectToRequire(expected));
     }
 );
 
 test("ImportEquals declaration require", () => {
-    const input = `import foo = require("./foo/bar"); foo;`;
-
-    const lua = util.transpileString(input, { module: ts.ModuleKind.CommonJS });
-    const match = requireRegex.exec(lua);
-    if (util.expectToBeDefined(match)) {
-        expect(match[1]).toBe("foo.bar");
-    }
+    util.testModule`
+        import foo = require("./foo/bar");
+        foo;
+    `
+        .options({ module: ts.ModuleKind.CommonJS })
+        .tap(expectToRequire("foo.bar"));
 });

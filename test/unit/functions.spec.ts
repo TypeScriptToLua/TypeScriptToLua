@@ -3,36 +3,31 @@ import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("Arrow Function Expression", () => {
-    const result = util.transpileAndExecute(`let add = (a, b) => a+b; return add(1,2);`);
-
-    expect(result).toBe(3);
+    util.testFunction`
+        const add = (a, b) => a + b;
+        return add(1, 2);
+    `.expectToMatchJsResult();
 });
 
-test.each([
-    { lambda: "i++", expected: 15 },
-    { lambda: "i--", expected: 5 },
-    { lambda: "++i", expected: 15 },
-    { lambda: "--i", expected: 5 },
-])("Arrow function unary expression (%p)", ({ lambda, expected }) => {
-    const result = util.transpileAndExecute(`let i = 10; [1,2,3,4,5].forEach(() => ${lambda}); return i;`);
-
-    expect(result).toBe(expected);
+test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", lambda => {
+    util.testFunction`
+        let i = 10;
+        [1,2,3,4,5].forEach(() => ${lambda});
+        return i;
+    `.expectToMatchJsResult();
 });
 
-test.each([
-    { lambda: "b => a = b", expected: 5 },
-    { lambda: "b => a += b", expected: 15 },
-    { lambda: "b => a -= b", expected: 5 },
-    { lambda: "b => a *= b", expected: 50 },
-    { lambda: "b => a /= b", expected: 2 },
-    { lambda: "b => a **= b", expected: 100000 },
-    { lambda: "b => a %= b", expected: 0 },
-])("Arrow function assignment (%p)", ({ lambda, expected }) => {
-    const result = util.transpileAndExecute(`let a = 10; let lambda = ${lambda};
-                                      lambda(5); return a;`);
-
-    expect(result).toBe(expected);
-});
+test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /= b", "b => a **= b", "b => a %= b"])(
+    "Arrow function assignment (%p)",
+    lambda => {
+        util.testFunction`
+            let a = 10;
+            let lambda = ${lambda};
+            lambda(5);
+            return a;
+        `.expectToMatchJsResult();
+    }
+);
 
 test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Arrow Default Values (%p)", ({ inp }) => {
     // Default value is 3 for v1
@@ -51,24 +46,25 @@ test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Arrow Default Values (%
 });
 
 test("Function Expression", () => {
-    const result = util.transpileAndExecute(`let add = function(a, b) {return a+b}; return add(1,2);`);
-
-    expect(result).toBe(3);
+    util.testFunction`
+        let add = function(a, b) {return a+b};
+        return add(1,2);
+    `.expectToMatchJsResult();
 });
 
 test("Function definition scope", () => {
-    const result = util.transpileAndExecute(`function abc() { function xyz() { return 5; } }\n
-        function def() { function xyz() { return 3; } abc(); return xyz(); }\n
-        return def();`);
-
-    expect(result).toBe(3);
+    util.testFunction`
+        function abc() { function xyz() { return 5; } }
+        function def() { function xyz() { return 3; } abc(); return xyz(); }
+        return def();
+    `.expectToMatchJsResult();
 });
 
 test("Function default parameter", () => {
-    const result = util.transpileAndExecute(`function abc(defaultParam: string = "abc") { return defaultParam; }\n
-        return abc() + abc("def");`);
-
-    expect(result).toBe("abcdef");
+    util.testFunction`
+        function abc(defaultParam: string = "abc") { return defaultParam; }
+        return abc() + abc("def");
+    `.expectToMatchJsResult();
 });
 
 test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Function Default Values (%p)", ({ inp }) => {
@@ -88,27 +84,25 @@ test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Function Default Values
 });
 
 test("Function default array binding parameter", () => {
-    const code = `
+    util.testFunction`
         function foo([bar]: [string] = ["foobar"]) {
             return bar;
         }
-        return foo();`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return foo();
+    `.expectToMatchJsResult();
 });
 
 test("Function default object binding parameter", () => {
-    const code = `
+    util.testFunction`
         function foo({ bar }: { bar: string } = { bar: "foobar" }) {
             return bar;
         }
-        return foo();`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return foo();
+    `.expectToMatchJsResult();
 });
 
 test("Function default binding parameter maintains order", () => {
-    const code = `
+    util.testFunction`
         const resultsA = [{x: "foo"}, {x: "baz"}];
         const resultsB = ["blah", "bar"];
         let i = 0;
@@ -117,104 +111,82 @@ test("Function default binding parameter maintains order", () => {
         function foo({ x }: { x: string } = a(), y = b()) {
             return x + y;
         }
-        return foo();`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return foo();
+    `.expectToMatchJsResult();
 });
 
 test("Class method call", () => {
-    const returnValue = 4;
-    const source = `class TestClass {
-                        public classMethod(): number { return ${returnValue}; }
-                    }
+    util.testFunction`
+        class TestClass {
+            public classMethod(): number { return 4; }
+        }
 
-                    const classInstance = new TestClass();
-                    return classInstance.classMethod();`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe(returnValue);
+        const classInstance = new TestClass();
+        return classInstance.classMethod();
+    `.expectToMatchJsResult();
 });
 
 test("Class dot method call void", () => {
-    const returnValue = 4;
-    const source = `class TestClass {
-                        public dotMethod: () => number = () => ${returnValue};
-                    }
+    util.testFunction`
+        class TestClass {
+            public dotMethod: () => number = () => 4;
+        }
 
-                    const classInstance = new TestClass();
-                    return classInstance.dotMethod();`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe(returnValue);
+        const classInstance = new TestClass();
+        return classInstance.dotMethod();
+    `.expectToMatchJsResult();
 });
 
 test("Class dot method call with parameter", () => {
-    const returnValue = 4;
-    const source = `class TestClass {
-                        public dotMethod: (x: number) => number = x => 3 * x;
-                    }
+    util.testFunction`
+        class TestClass {
+            public dotMethod: (x: number) => number = x => 3 * x;
+        }
 
-                    const classInstance = new TestClass();
-                    return classInstance.dotMethod(${returnValue});`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe(3 * returnValue);
+        const classInstance = new TestClass();
+        return classInstance.dotMethod(4);
+    `.expectToMatchJsResult();
 });
 
 test("Class static dot method", () => {
-    const returnValue = 4;
-    const source = `class TestClass {
-                        public static dotMethod: () => number = () => ${returnValue};
-                    }
+    util.testFunction`
+        class TestClass {
+            public static dotMethod: () => number = () => 4;
+        }
 
-                    return TestClass.dotMethod();`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe(returnValue);
+        return TestClass.dotMethod();
+    `.expectToMatchJsResult();
 });
 
 test("Class static dot method with parameter", () => {
-    const returnValue = 4;
-    const source = `class TestClass {
-                        public static dotMethod: (x: number) => number = x => 3 * x;
-                    }
+    util.testFunction`
+        class TestClass {
+            public static dotMethod: (x: number) => number = x => 3 * x;
+        }
 
-                    return TestClass.dotMethod(${returnValue});`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe(3 * returnValue);
+        return TestClass.dotMethod(4);
+    `.expectToMatchJsResult();
 });
 
 test("Function bind", () => {
-    const source = `const abc = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
-                    return abc.bind({ a: 4 }, "b")("c");`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe("4bc");
+    util.testFunction`
+        const abc = function (this: { a: number }, a: string, b: string) { return this.a + a + b; }
+        return abc.bind({ a: 4 }, "b")("c");
+    `.expectToMatchJsResult();
 });
 
 test("Function apply", () => {
-    const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
-                    return abc.apply({ a: 4 }, ["b"]);`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe("4b");
+    util.testFunction`
+        const abc = function (this: { a: number }, a: string) { return this.a + a; }
+        return abc.apply({ a: 4 }, ["b"]);
+    `.expectToMatchJsResult();
 });
 
 test("Function call", () => {
-    const source = `const abc = function (this: { a: number }, a: string) { return this.a + a; }
-                    return abc.call({ a: 4 }, "b");`;
-
-    const result = util.transpileAndExecute(source);
-
-    expect(result).toBe("4b");
+    util.testFunction`
+        const abc = function (this: { a: number }, a: string) { return this.a + a; }
+        return abc.call({ a: 4 }, "b");
+    `.expectToMatchJsResult();
 });
 
 test("Invalid property access call transpilation", () => {
@@ -230,87 +202,85 @@ test("Invalid property access call transpilation", () => {
 });
 
 test("Function dead code after return", () => {
-    const result = util.transpileAndExecute(`function abc() { return 3; const a = 5; } return abc();`);
-
-    expect(result).toBe(3);
+    util.testFunction`
+        function abc() { return 3; const a = 5; }
+        return abc();
+    `.expectToMatchJsResult();
 });
 
 test("Method dead code after return", () => {
-    const result = util.transpileAndExecute(
-        `class def { public static abc() { return 3; const a = 5; } } return def.abc();`
-    );
-
-    expect(result).toBe(3);
+    util.testFunction`
+        class def { public static abc() { return 3; const a = 5; } }
+        return def.abc();
+    `.expectToMatchJsResult();
 });
 
 test("Recursive function definition", () => {
-    const result = util.transpileAndExecute(`function f() { return typeof f; }; return f();`);
-
-    expect(result).toBe("function");
+    util.testFunction`
+        function f() { return typeof f; };
+        return f();
+    `.expectToMatchJsResult();
 });
 
 test("Recursive function expression", () => {
-    const result = util.transpileAndExecute(`let f = function() { return typeof f; }; return f();`);
-
-    expect(result).toBe("function");
+    util.testFunction`
+        let f = function() { return typeof f; };
+        return f();
+    `.expectToMatchJsResult();
 });
 
 test("Wrapped recursive function expression", () => {
-    const result = util.transpileAndExecute(
-        `function wrap<T>(fn: T) { return fn; }
-        let f = wrap(function() { return typeof f; }); return f();`
-    );
-
-    expect(result).toBe("function");
+    util.testFunction`
+        function wrap<T>(fn: T) { return fn; }
+        let f = wrap(function() { return typeof f; }); return f();
+    `.expectToMatchJsResult();
 });
 
 test("Recursive arrow function", () => {
-    const result = util.transpileAndExecute(`let f = () => typeof f; return f();`);
-
-    expect(result).toBe("function");
+    util.testFunction`
+        let f = () => typeof f;
+        return f();
+    `.expectToMatchJsResult();
 });
 
 test("Wrapped recursive arrow function", () => {
-    const result = util.transpileAndExecute(
-        `function wrap<T>(fn: T) { return fn; }
-        let f = wrap(() => typeof f); return f();`
-    );
-
-    expect(result).toBe("function");
+    util.testFunction`
+        function wrap<T>(fn: T) { return fn; }
+        let f = wrap(() => typeof f);
+        return f();
+    `.expectToMatchJsResult();
 });
 
 test("Object method declaration", () => {
-    const result = util.transpileAndExecute(
-        `let o = { v: 4, m(i: number): number { return this.v * i; } }; return o.m(3);`
-    );
-    expect(result).toBe(12);
+    util.testFunction`
+        let o = { v: 4, m(i: number): number { return this.v * i; } };
+        return o.m(3);
+    `.expectToMatchJsResult();
 });
 
-test.each([{ args: ["bar"], expectResult: "foobar" }, { args: ["baz", "bar"], expectResult: "bazbar" }])(
+test.each([{ args: ["bar"], expected: "foobar" }, { args: ["baz", "bar"], expected: "bazbar" }])(
     "Function overload (%p)",
-    ({ args, expectResult }) => {
-        const code = `
-        class O {
-            prop = "foo";
-            method(s: string): string;
-            method(this: void, s1: string, s2: string): string;
-            method(s1: string) {
-                if (typeof this === "string") {
-                    return this + s1;
+    ({ args, expected }) => {
+        util.testFunction`
+            class O {
+                prop = "foo";
+                method(s: string): string;
+                method(this: void, s1: string, s2: string): string;
+                method(s1: string) {
+                    if (typeof this === "string") {
+                        return this + s1;
+                    }
+                    return this.prop + s1;
                 }
-                return this.prop + s1;
-            }
-        };
-        const o = new O();
-        return o.method(${args.map(a => '"' + a + '"').join(", ")});
-    `;
-        const result = util.transpileAndExecute(code);
-        expect(result).toBe(expectResult);
+            };
+            const o = new O();
+            return o.method(${util.valuesToString(args)});
+        `.expectToEqual(expected);
     }
 );
 
 test("Nested Function", () => {
-    const code = `
+    util.testFunction`
         class C {
             private prop = "bar";
             public outer() {
@@ -324,81 +294,70 @@ test("Nested Function", () => {
         }
         let c = new C();
         return c.outer();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])("Dot vs Colon method call (%p)", ({ s1, s2 }) => {
-    const result = util.transpileAndExecute(`
-            class MyClass {
-                dotMethod(this: void, s: string) {
-                    return s;
-                }
-                colonMethod(s: string) {
-                    return s;
-                }
+    util.testFunction`
+        class MyClass {
+            dotMethod(this: void, s: string) {
+                return s;
             }
-            const inst = new MyClass();
-            return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");
-        `);
-    expect(result).toBe(s1 === s2);
+            colonMethod(s: string) {
+                return s;
+            }
+        }
+        const inst = new MyClass();
+        return inst.dotMethod("${s1}") == inst.colonMethod("${s2}");
+    `.expectToMatchJsResult();
 });
 
 test("Element access call", () => {
-    const code = `
+    util.testFunction`
         class C {
             prop = "bar";
             method(s: string) { return s + this.prop; }
         }
         const c = new C();
         return c['method']("foo");
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("Element access call no args", () => {
-    const code = `
-    class C {
+    util.testFunction`
+        class C {
             prop = "bar";
             method() { return this.prop; }
         }
         const c = new C();
         return c['method']();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("Complex element access call", () => {
-    const code = `
+    util.testFunction`
         class C {
             prop = "bar";
             method(s: string) { return s + this.prop; }
         }
         function getC() { return new C(); }
         return getC()['method']("foo");
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("Complex element access call no args", () => {
-    const code = `
+    util.testFunction`
         class C {
             prop = "bar";
             method() { return this.prop; }
         }
         function getC() { return new C(); }
         return getC()['method']();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("bar");
+    `.expectToMatchJsResult();
 });
 
 test("Complex element access call statement", () => {
-    const code = `
+    util.testFunction`
         let foo: string;
         class C {
             prop = "bar";
@@ -407,55 +366,41 @@ test("Complex element access call statement", () => {
         function getC() { return new C(); }
         getC()['method']("foo");
         return foo;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
-test.each([{ iterations: 1, expectedResult: 1 }, { iterations: 2, expectedResult: 42 }])(
-    "Generator functions value (%p)",
-    ({ iterations, expectedResult }) => {
-        const code = `
-            function* seq(value: number) {
-                let a = yield value + 1;
-                return 42;
-            }
-            const gen = seq(0);
-            let ret: number;
-            for(let i = 0; i < ${iterations}; ++i)
-            {
-                ret = gen.next(i).value;
-            }
-            return ret;
-        `;
-        const result = util.transpileAndExecute(code);
-        expect(result).toBe(expectedResult);
-    }
-);
+test.each([1, 2])("Generator functions value (%p)", iterations => {
+    util.testFunction`
+        function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
+        }
+        const gen = seq(0);
+        let ret: number;
+        for(let i = 0; i < ${iterations}; ++i) {
+            ret = gen.next(i).value;
+        }
+        return ret;
+    `.expectToMatchJsResult();
+});
 
-test.each([{ iterations: 1, expectedResult: false }, { iterations: 2, expectedResult: true }])(
-    "Generator functions done (%p)",
-    ({ iterations, expectedResult }) => {
-        const code = `
-            function* seq(value: number) {
-                let a = yield value + 1;
-                return 42;
-            }
-            const gen = seq(0);
-            let ret: boolean;
-            for(let i = 0; i < ${iterations}; ++i)
-            {
-                ret = gen.next(i).done;
-            }
-            return ret;
-        `;
-        const result = util.transpileAndExecute(code);
-        expect(result).toBe(expectedResult);
-    }
-);
+test.each([1, 2])("Generator functions done (%p)", iterations => {
+    util.testFunction`
+        function* seq(value: number) {
+            let a = yield value + 1;
+            return 42;
+        }
+        const gen = seq(0);
+        let ret: boolean;
+        for(let i = 0; i < ${iterations}; ++i) {
+            ret = gen.next(i).done;
+        }
+        return ret;
+    `.expectToMatchJsResult();
+});
 
 test("Generator for..of", () => {
-    const code = `
+    util.testFunction`
         function* seq() {
             yield(1);
             yield(2);
@@ -463,44 +408,45 @@ test("Generator for..of", () => {
             return 4;
         }
         let result = 0;
-        for(let i of seq())
-        {
+        for(let i of seq()) {
             result = result * 10 + i;
         }
         return result
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(123);
+    `.expectToMatchJsResult();
 });
 
 test("Function local overriding export", () => {
-    const code = `
+    util.testModule`
         export const foo = 5;
         function bar(foo: number) {
             return foo;
         }
         export const result = bar(7);
-    `;
-    expect(util.transpileExecuteAndReturnExport(code, "result")).toBe(7);
+    `
+        .export("result")
+        .expectToMatchJsResult();
 });
 
 test("Function using global as this", () => {
-    const code = `
+    const tsHeader = `
         var foo = "foo";
         function bar(this: any) {
             return this.foo;
         }
     `;
-    expect(util.transpileAndExecute("return foo;", undefined, undefined, code)).toBe("foo");
+
+    util.testFunction`
+        return foo;
+    `
+        .tsHeader(tsHeader)
+        .expectToMatchJsResult();
 });
 
 test("Function rest binding pattern", () => {
-    const result = util.transpileAndExecute(`
+    util.testFunction`
         function bar(foo: string, ...[bar, baz]: [string, string]) {
             return bar + baz + foo;
         }
         return bar("abc", "def", "xyz");
-    `);
-
-    expect(result).toBe("defxyzabc");
+    `.expectToMatchJsResult();
 });

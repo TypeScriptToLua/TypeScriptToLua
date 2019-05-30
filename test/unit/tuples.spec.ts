@@ -411,15 +411,17 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
         end
     `;
 
-    util.testModule`
+    const tsHeader = `
         declare function fn(this: void, a: number): [number, number];
         /** @tupleReturn */ declare function fn(this: void, a: string, b: string): [string, string];
+    `;
 
+    util.testFunction`
         const [a, b] = fn(3);
         const [c, d] = fn("foo", "bar");
-        export const result = (a + b) + c + d;
+        return (a + b) + c + d;
     `
+        .tsHeader(tsHeader)
         .luaHeader(luaHeader)
-        .export("result")
         .expectToEqual("7foobar");
 });

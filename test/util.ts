@@ -257,7 +257,7 @@ export class TestBuilder {
         lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
     };
-    public options(options: tstl.CompilerOptions): this {
+    public options(options: tstl.CompilerOptions = {}): this {
         expect(this._hasTsCode).toBe(false);
         Object.assign(this._options, options);
         return this;
@@ -319,23 +319,18 @@ export class TestBuilder {
         const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
         expect(mainFile).toBeDefined();
 
-        return `return JSONStringify((function()
-    ${this._luaHeader}
-    ${mainFile!.lua!}
-end)()${this._accessor})`;
+        const header = this._luaHeader ? `${this._luaHeader.trimRight()}\n` : "";
+        return header + mainFile!.lua!.trimRight();
     }
 
     @memoize
     private getLuaCodeWithWrapper(): string {
         let code = this.getMainLuaCodeChunk();
         if (code.includes('require("lualib_bundle")')) {
-            code = `package.preload.lualib_bundle = function()
-    ${lualibContent}
-end
-${code}`;
+            code = `package.preload.lualib_bundle = function()\n${lualibContent}\nend\n${code}`;
         }
 
-        return minimalTestLib + code;
+        return `${minimalTestLib}\nreturn JSONStringify((function()\n${code}\nend)()${this._accessor})`;
     }
 
     @memoize
@@ -347,7 +342,8 @@ ${code}`;
 
         if (status === lua.LUA_OK) {
             if (lua.lua_isstring(L, -1)) {
-                return JSON.parse(lua.lua_tojsstring(L, -1));
+                const result = JSON.parse(lua.lua_tojsstring(L, -1));
+                return result === null ? undefined : result;
             } else {
                 const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
                 throw new Error(`Unsupported Lua return type: ${returnType}`);
@@ -421,7 +417,11 @@ ${code}`;
         this.expectToHaveNoDiagnostics();
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
-        expect(luaResult).toEqual(jsResult);
+        // tslint:disable-next-line: no-null-keyword
+        if (luaResult !== undefined || jsResult != null) {
+            expect(luaResult).toEqual(jsResult);
+        }
+
         if (!allowErrors && luaResult instanceof ExecutionError) {
             throw luaResult;
         }
@@ -462,16 +462,23 @@ class ModuleTestBuilder extends TestBuilder {
 }
 
 class FunctionTestBuilder extends TestBuilder {
-    protected _accessor = ".main()";
+    protected _accessor = ".__main()";
     public getTsCode(): string {
-        return `export function main() {${super.getTsCode()}}`;
+        return `${this._tsHeader} export function __main() {${super.getTsCode()}}`;
+    }
+
+    // TODO: Use testModule in these cases?
+    private _tsHeader = "";
+    public tsHeader(tsHeader: string): this {
+        this._tsHeader = tsHeader;
+        return this;
     }
 }
 
 class ExpressionTestBuilder extends TestBuilder {
-    protected _accessor = ".main()";
+    protected _accessor = ".__result";
     public getTsCode(): string {
-        return `export function main() {return ${super.getTsCode()};}`;
+        return `export const __result = ${super.getTsCode()};`;
     }
 }
 

@@ -253,7 +253,7 @@ export class TestBuilder {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
         skipLibCheck: true,
-        target: ts.ScriptTarget.ESNext,
+        target: ts.ScriptTarget.ES2017,
         lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
     };
@@ -366,12 +366,13 @@ export class TestBuilder {
         const { transpiledFiles } = this.getJsResult();
         const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
         expect(mainFile).toBeDefined();
-        return mainFile!.js! + `;exports = exports${this._accessor}`;
+        return mainFile!.js! + `;module.exports = exports${this._accessor}`;
     }
 
     @memoize
     public getJsExecutionResult(): any {
-        const context = vm.createContext({ exports: {} });
+        const exports = {};
+        const context = vm.createContext({ exports, module: { exports } });
         try {
             return vm.runInContext(this.getJsCode(), context);
         } catch (error) {

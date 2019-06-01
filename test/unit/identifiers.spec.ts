@@ -148,6 +148,53 @@ test.each(validTsInvalidLuaNames)("exported values with invalid lua identifier n
     expect(util.executeLua(`return (function() ${lua} end)()["${name}"]`)).toBe("foobar");
 });
 
+test("exported identifiers referenced in namespace (%p)", () => {
+    const code = `
+        export const foo = "foobar";
+        namespace NS {
+            export const bar = foo;
+        }
+        export const baz = NS.bar;`;
+    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+});
+
+test("exported namespace identifiers referenced in different namespace (%p)", () => {
+    const tsHeader = `
+        namespace A {
+            export const foo = "foobar";
+            namespace B {
+                export const bar = foo;
+            }
+            export const baz = B.bar;
+        }`;
+    expect(util.transpileAndExecute("return A.baz", undefined, undefined, tsHeader)).toBe("foobar");
+});
+
+test("exported identifiers referenced in nested scope (%p)", () => {
+    const code = `
+        export const foo = "foobar";
+        namespace A {
+            export namespace B {
+                export const bar = foo;
+            }
+        }
+        export const baz = A.B.bar;`;
+    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+});
+
+test.each(validTsInvalidLuaNames)(
+    "exported values with invalid lua identifier names referenced in different scope (%p)",
+    name => {
+        const code = `
+        export const ${name} = "foobar";
+        namespace NS {
+            export const foo = ${name};
+        }
+        export const bar = NS.foo;`;
+        expect(util.transpileExecuteAndReturnExport(code, "bar")).toBe("foobar");
+    }
+);
+
 test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
     const code = `
         class ${name} {}

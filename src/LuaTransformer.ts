@@ -3432,11 +3432,6 @@ export class LuaTransformer {
     }
 
     public transformParenthesizedExpression(expression: ts.ParenthesizedExpression): ExpressionVisitResult {
-        if (ts.isAssertionExpression(expression.expression)) {
-            // Strip parenthesis from casts
-            return this.transformExpression(expression.expression);
-        }
-
         return tstl.createParenthesizedExpression(this.transformExpression(expression.expression), expression);
     }
 

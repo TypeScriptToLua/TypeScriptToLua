@@ -610,8 +610,25 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
+    private canStripParenthesis(expression: tstl.Expression): boolean {
+        return (
+            tstl.isParenthesizedExpression(expression) ||
+            tstl.isTableIndexExpression(expression) ||
+            tstl.isCallExpression(expression) ||
+            tstl.isMethodCallExpression(expression) ||
+            tstl.isIdentifier(expression) ||
+            tstl.isNilLiteral(expression) ||
+            tstl.isNumericLiteral(expression) ||
+            tstl.isBooleanLiteral(expression)
+        );
+    }
+
     public printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
-        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerExpression), ")"]);
+        const innerExpression = this.printExpression(expression.innerExpression);
+        if (this.canStripParenthesis(expression.innerExpression)) {
+            return this.createSourceNode(expression, innerExpression);
+        }
+        return this.createSourceNode(expression, ["(", innerExpression, ")"]);
     }
 
     public printCallExpression(expression: tstl.CallExpression): SourceNode {

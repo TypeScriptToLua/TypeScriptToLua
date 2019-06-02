@@ -581,3 +581,12 @@ test.each([
     const lua = util.transpileString(code, undefined, false);
     expect(lua).toMatch(/\(.+\)/);
 });
+
+test("not operator precedence (%p)", () => {
+    const code = `
+        const a = true;
+        const b = false;
+        return !a && b;`;
+
+    expect(util.transpileAndExecute(code)).toBe(false);
+});

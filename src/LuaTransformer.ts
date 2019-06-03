@@ -3764,6 +3764,11 @@ export class LuaTransformer {
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
         const property = this.getIdentifierText(expression.name);
 
+        const constEnumValue = this.getConstEnumValue(expression);
+        if (constEnumValue) {
+            return constEnumValue;
+        }
+
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isStringType(type)) {
@@ -3773,8 +3778,6 @@ export class LuaTransformer {
             if (arrayPropertyAccess) {
                 return arrayPropertyAccess;
             }
-        } else if (type.symbol && type.symbol.flags & ts.SymbolFlags.ConstEnum) {
-            return this.transformConstEnumValue(type, property, expression);
         }
 
         this.checkForLuaLibType(type);
@@ -3937,16 +3940,12 @@ export class LuaTransformer {
         const table = this.transformExpression(expression.expression);
         const index = this.transformExpression(expression.argumentExpression);
 
-        const type = this.checker.getTypeAtLocation(expression.expression);
-
-        if (
-            type.symbol &&
-            type.symbol.flags & ts.SymbolFlags.ConstEnum &&
-            ts.isStringLiteral(expression.argumentExpression)
-        ) {
-            return this.transformConstEnumValue(type, expression.argumentExpression.text, expression);
+        const constEnumValue = this.getConstEnumValue(expression);
+        if (constEnumValue) {
+            return constEnumValue;
         }
 
+        const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), expression);
         } else if (tsHelper.isStringType(type)) {
@@ -3960,46 +3959,15 @@ export class LuaTransformer {
         }
     }
 
-    private transformConstEnumValue(
-        enumType: ts.EnumType,
-        memberName: string,
-        tsOriginal: ts.Node
-    ): ExpressionVisitResult {
-        // Assumption: the enum only has one declaration
-        const enumDeclaration = enumType.symbol.declarations.find(d => ts.isEnumDeclaration(d)) as ts.EnumDeclaration;
-        const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === memberName);
-
-        if (enumMember) {
-            if (enumMember.initializer) {
-                if (ts.isIdentifier(enumMember.initializer)) {
-                    const [isEnumMember, valueName] = tsHelper.isEnumMember(enumDeclaration, enumMember.initializer);
-                    if (isEnumMember && valueName) {
-                        if (ts.isIdentifier(valueName)) {
-                            return this.transformConstEnumValue(enumType, valueName.text, tsOriginal);
-                        }
-                    } else {
-                        return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
-                    }
-                } else {
-                    return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
-                }
-            } else {
-                let enumValue = 0;
-                for (const member of enumDeclaration.members) {
-                    if (member === enumMember) {
-                        return tstl.createNumericLiteral(enumValue, tsOriginal);
-                    }
-                    if (member.initializer === undefined) {
-                        enumValue++;
-                    } else if (ts.isNumericLiteral(member.initializer)) {
-                        enumValue = Number(member.initializer.text) + 1;
-                    }
-                }
-
-                throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
-            }
+    private getConstEnumValue(
+        node: ts.PropertyAccessExpression | ts.ElementAccessExpression
+    ): tstl.Expression | undefined {
+        const value = this.checker.getConstantValue(node);
+        if (typeof value === "string") {
+            return tstl.createStringLiteral(value, node);
+        } else if (typeof value === "number") {
+            return tstl.createNumericLiteral(value, node);
         }
-        throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
     private transformStringCallExpression(node: ts.CallExpression): tstl.Expression {

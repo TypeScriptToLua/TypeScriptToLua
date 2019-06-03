@@ -53,7 +53,7 @@ function loadTransformersFromOptions(program: ts.Program, allDiagnostics: ts.Dia
     const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
 
     for (const [index, transformerImport] of options.plugins.entries()) {
-        if ("name" in transformerImport) continue;
+        if (!("transform" in transformerImport)) continue;
         const optionName = `compilerOptions.plugins[${index}]`;
 
         const { error: resolveError, factory } = resolveTransformerFactory(basedir, optionName, transformerImport);

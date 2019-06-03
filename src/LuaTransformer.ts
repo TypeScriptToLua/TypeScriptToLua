@@ -42,6 +42,7 @@ interface Scope {
 export interface EmitResolver {
     isValueAliasDeclaration(node: ts.Node): boolean;
     isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
+    isTopLevelValueImportEqualsWithEntityName(node: ts.ImportEqualsDeclaration): boolean;
     moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
 }
 
@@ -164,6 +165,8 @@ export class LuaTransformer {
                 return this.transformExportDeclaration(node as ts.ExportDeclaration);
             case ts.SyntaxKind.ImportDeclaration:
                 return this.transformImportDeclaration(node as ts.ImportDeclaration);
+            case ts.SyntaxKind.ImportEqualsDeclaration:
+                return this.transformImportEqualsDeclaration(node as ts.ImportEqualsDeclaration);
             case ts.SyntaxKind.ClassDeclaration:
                 return this.transformClassDeclaration(node as ts.ClassDeclaration);
             case ts.SyntaxKind.ModuleDeclaration:
@@ -463,6 +466,55 @@ export class LuaTransformer {
         }
     }
 
+    public transformImportEqualsDeclaration(declaration: ts.ImportEqualsDeclaration): StatementVisitResult {
+        const name = this.transformIdentifier(declaration.name);
+        let expression: tstl.Expression;
+        if (ts.isExternalModuleReference(declaration.moduleReference)) {
+            if (!this.resolver.isReferencedAliasDeclaration(declaration)) {
+                return undefined;
+            }
+
+            expression = this.transformExternalModuleReference(declaration.moduleReference);
+        } else {
+            if (this.currentSourceFile === undefined) {
+                throw TSTLErrors.MissingSourceFile();
+            }
+
+            const shouldEmit =
+                this.resolver.isReferencedAliasDeclaration(declaration) ||
+                (!ts.isExternalModule(this.currentSourceFile) &&
+                    this.resolver.isTopLevelValueImportEqualsWithEntityName(declaration));
+
+            if (!shouldEmit) {
+                return undefined;
+            }
+
+            expression = this.transformEntityName(declaration.moduleReference);
+        }
+
+        return this.createHoistableVariableDeclarationStatement(name, expression, declaration);
+    }
+
+    public transformExternalModuleReference(
+        externalModuleReference: ts.ExternalModuleReference
+    ): ExpressionVisitResult {
+        // TODO: Should `externalModuleReference` be original node?
+        return this.createModuleRequire(externalModuleReference.expression as ts.StringLiteral);
+    }
+
+    private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
+        return ts.isQualifiedName(entityName)
+            ? this.transformQualifiedName(entityName)
+            : this.transformIdentifierExpression(entityName);
+    }
+
+    public transformQualifiedName(qualifiedName: ts.QualifiedName): ExpressionVisitResult {
+        const right = tstl.createStringLiteral(this.getIdentifierText(qualifiedName.right), qualifiedName.right);
+        const left = this.transformEntityName(qualifiedName.left);
+
+        return tstl.createTableIndexExpression(left, right, qualifiedName);
+    }
+
     public transformClassDeclaration(
         statement: ts.ClassLikeDeclaration,
         nameOverride?: tstl.Identifier
@@ -497,7 +549,7 @@ export class LuaTransformer {
             throw TSTLErrors.InvalidExtensionMetaExtension(statement);
         }
 
-        if ((isExtension || isMetaExtension) && this.isIdentifierExported(className)) {
+        if ((isExtension || isMetaExtension) && this.getIdentifierExportScope(className) !== undefined) {
             // Cannot export extension classes
             throw TSTLErrors.InvalidExportsExtension(statement);
         }
@@ -725,12 +777,13 @@ export class LuaTransformer {
         const classVar = this.createLocalOrExportedOrGlobalDeclaration(className, classTable, statement);
         result.push(...classVar);
 
-        if (this.isIdentifierExported(className)) {
+        const exportScope = this.getIdentifierExportScope(className);
+        if (exportScope) {
             // local localClassName = ____exports.className
             result.push(
                 tstl.createVariableDeclarationStatement(
                     localClassName,
-                    this.addExportToIdentifier(tstl.cloneIdentifier(className))
+                    this.createExportedIdentifier(tstl.cloneIdentifier(className), exportScope)
                 )
             );
         }
@@ -1453,9 +1506,7 @@ export class LuaTransformer {
                         : tstl.createTableIndexExpression(tableExpression, tstl.createNumericLiteral(index + 1));
                     result.push(...this.createLocalOrExportedOrGlobalDeclaration(variableName, expression));
                     if (element.initializer) {
-                        const identifier = this.shouldExportIdentifier(variableName)
-                            ? this.createExportedIdentifier(variableName)
-                            : variableName;
+                        const identifier = this.addExportToIdentifier(variableName);
                         result.push(
                             tstl.createIfStatement(
                                 tstl.createBinaryExpression(
@@ -1514,57 +1565,23 @@ export class LuaTransformer {
         const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
 
         if (isFirstDeclaration) {
-            const isExported = (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0;
-            if (isExported && this.currentNamespace) {
-                // outerNS.innerNS = {}
-                const namespaceDeclaration = tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(
-                        this.createModuleLocalNameIdentifier(this.currentNamespace),
-                        tstl.createStringLiteral(nameIdentifier.text)
-                    ),
-                    tstl.createTableExpression()
-                );
+            // local NS = {} or exportTable.NS = {}
+            const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
+                nameIdentifier,
+                tstl.createTableExpression()
+            );
 
-                result.push(namespaceDeclaration);
+            result.push(...localDeclaration);
 
-                if (hasExports && tsHelper.moduleHasEmittedBody(statement)) {
-                    // local innerNS = outerNS.innerNS
-                    const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                        this.createModuleLocalNameIdentifier(statement),
-                        tstl.createTableIndexExpression(
-                            this.createModuleLocalNameIdentifier(this.currentNamespace),
-                            tstl.createStringLiteral(nameIdentifier.text)
-                        )
-                    );
-
-                    result.push(localDeclaration);
-                }
-            } else if (isExported && !this.currentNamespace && this.isModule) {
-                // exports.NS = {}
-                const namespaceDeclaration = tstl.createAssignmentStatement(
-                    this.createExportedIdentifier(nameIdentifier),
-                    tstl.createTableExpression()
-                );
-
-                result.push(namespaceDeclaration);
-
-                if (hasExports && tsHelper.moduleHasEmittedBody(statement)) {
-                    // local NS = exports.NS
-                    const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                        this.createModuleLocalNameIdentifier(statement),
-                        this.createExportedIdentifier(tstl.cloneIdentifier(nameIdentifier, statement.name))
-                    );
-
-                    result.push(localDeclaration);
-                }
-            } else {
-                // local NS = {}
-                const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
+            const exportScope = this.getIdentifierExportScope(nameIdentifier);
+            if (exportScope && hasExports && tsHelper.moduleHasEmittedBody(statement)) {
+                // local NS = exportTable.NS
+                const localDeclaration = this.createHoistableVariableDeclarationStatement(
                     this.createModuleLocalNameIdentifier(statement),
-                    tstl.createTableExpression()
+                    this.createExportedIdentifier(nameIdentifier, exportScope)
                 );
 
-                result.push(...localDeclaration);
+                result.push(localDeclaration);
             }
         }
 
@@ -1938,9 +1955,7 @@ export class LuaTransformer {
             statement.name.elements.forEach(element => {
                 if (!ts.isOmittedExpression(element) && element.initializer) {
                     const variableName = this.transformIdentifier(element.name as ts.Identifier);
-                    const identifier = this.shouldExportIdentifier(variableName)
-                        ? this.createExportedIdentifier(variableName)
-                        : variableName;
+                    const identifier = this.addExportToIdentifier(variableName);
                     statements.push(
                         tstl.createIfStatement(
                             tstl.createBinaryExpression(
@@ -3300,10 +3315,7 @@ export class LuaTransformer {
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
-                let identifier = this.createShorthandIdentifier(valueSymbol, element.name);
-                if (tstl.isIdentifier(identifier) && valueSymbol !== undefined && this.isSymbolExported(valueSymbol)) {
-                    identifier = this.createExportedIdentifier(identifier);
-                }
+                const identifier = this.createShorthandIdentifier(valueSymbol, element.name);
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.transformFunctionExpression(element);
@@ -3425,11 +3437,6 @@ export class LuaTransformer {
     }
 
     public transformParenthesizedExpression(expression: ts.ParenthesizedExpression): ExpressionVisitResult {
-        if (ts.isAssertionExpression(expression.expression)) {
-            // Strip parenthesis from casts
-            return this.transformExpression(expression.expression);
-        }
-
         return tstl.createParenthesizedExpression(this.transformExpression(expression.expression), expression);
     }
 
@@ -3760,7 +3767,7 @@ export class LuaTransformer {
     }
 
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
-        const property = expression.name.text;
+        const property = this.getIdentifierText(expression.name);
 
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(expression.expression);
@@ -4409,6 +4416,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayMap, node, caller, ...params);
             case "filter":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
+            case "reduce":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReduce, node, caller, ...params);
             case "some":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":
@@ -4591,8 +4600,10 @@ export class LuaTransformer {
 
     private transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
         const identifier = this.transformIdentifier(expression);
-        if (this.isIdentifierExported(identifier)) {
-            return this.createExportedIdentifier(identifier);
+
+        const exportScope = this.getIdentifierExportScope(identifier);
+        if (exportScope) {
+            return this.createExportedIdentifier(identifier, exportScope);
         }
 
         switch (this.getIdentifierText(expression)) {
@@ -4615,28 +4626,44 @@ export class LuaTransformer {
         return identifier;
     }
 
-    protected isIdentifierExported(identifier: tstl.Identifier): boolean {
-        const symbolInfo = identifier.symbolId && this.symbolInfo.get(identifier.symbolId);
-        if (!symbolInfo) {
-            return false;
+    protected getSymbolFromIdentifier(identifier: tstl.Identifier): ts.Symbol | undefined {
+        if (identifier.symbolId !== undefined) {
+            const symbolInfo = this.symbolInfo.get(identifier.symbolId);
+            if (symbolInfo !== undefined) {
+                return symbolInfo.symbol;
+            }
+        }
+        return undefined;
+    }
+
+    protected getIdentifierExportScope(identifier: tstl.Identifier): ts.SourceFile | ts.ModuleDeclaration | undefined {
+        const symbol = this.getSymbolFromIdentifier(identifier);
+        if (!symbol) {
+            return undefined;
         }
 
-        return this.isSymbolExported(symbolInfo.symbol);
+        return this.getSymbolExportScope(symbol);
     }
 
     protected isSymbolExported(symbol: ts.Symbol): boolean {
-        if (!this.isModule && !this.currentNamespace) {
+        if (tsHelper.getExportedSymbolDeclaration(symbol) !== undefined) {
+            return true;
+        } else if (this.currentSourceFile) {
+            // Symbol may have been exported separately (e.g. 'const foo = "bar"; export { foo }')
+            return this.isSymbolExportedFromScope(symbol, this.currentSourceFile);
+        } else {
+            return false;
+        }
+    }
+
+    protected isSymbolExportedFromScope(symbol: ts.Symbol, scope: ts.SourceFile | ts.ModuleDeclaration): boolean {
+        if (ts.isSourceFile(scope) && !tsHelper.isFileModule(scope)) {
             return false;
         }
 
-        const currentScope = this.currentNamespace ? this.currentNamespace : this.currentSourceFile;
-        if (currentScope === undefined) {
-            throw TSTLErrors.UndefinedScope();
-        }
-
-        let scopeSymbol = this.checker.getSymbolAtLocation(currentScope);
+        let scopeSymbol = this.checker.getSymbolAtLocation(scope);
         if (scopeSymbol === undefined) {
-            scopeSymbol = this.checker.getTypeAtLocation(currentScope).getSymbol();
+            scopeSymbol = this.checker.getTypeAtLocation(scope).getSymbol();
         }
 
         if (scopeSymbol === undefined || scopeSymbol.exports === undefined) {
@@ -4656,25 +4683,43 @@ export class LuaTransformer {
     }
 
     protected addExportToIdentifier(identifier: tstl.Identifier): tstl.AssignmentLeftHandSideExpression {
-        if (this.isIdentifierExported(identifier)) {
-            return this.createExportedIdentifier(identifier);
+        const exportScope = this.getIdentifierExportScope(identifier);
+        if (exportScope) {
+            return this.createExportedIdentifier(identifier, exportScope);
         }
         return identifier;
     }
 
-    protected createExportedIdentifier(identifier: tstl.Identifier): tstl.TableIndexExpression {
-        let exportTable: tstl.Identifier;
-        if (this.currentNamespace !== undefined) {
-            if (this.isUnsafeName(this.currentNamespace.name.text)) {
-                exportTable = this.createModuleLocalNameIdentifier(this.currentNamespace);
-            } else {
-                exportTable = this.transformIdentifier(this.currentNamespace.name as ts.Identifier);
-            }
-        } else {
-            exportTable = this.createExportsIdentifier();
+    protected createExportedIdentifier(
+        identifier: tstl.Identifier,
+        exportScope?: ts.SourceFile | ts.ModuleDeclaration
+    ): tstl.AssignmentLeftHandSideExpression {
+        const exportTable =
+            exportScope && ts.isModuleDeclaration(exportScope)
+                ? this.createModuleLocalNameIdentifier(exportScope)
+                : this.createExportsIdentifier();
+        return tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(identifier.text));
+    }
+
+    protected getSymbolExportScope(symbol: ts.Symbol): ts.SourceFile | ts.ModuleDeclaration | undefined {
+        const exportedDeclaration = tsHelper.getExportedSymbolDeclaration(symbol);
+        if (!exportedDeclaration) {
+            return undefined;
         }
 
-        return tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(identifier.text));
+        const scope = tsHelper.findFirstNodeAbove(
+            exportedDeclaration,
+            (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n)
+        );
+        if (!scope) {
+            return undefined;
+        }
+
+        if (!this.isSymbolExportedFromScope(symbol, scope)) {
+            return undefined;
+        }
+
+        return scope;
     }
 
     protected transformLuaLibFunction(
@@ -4778,17 +4823,6 @@ export class LuaTransformer {
         return filePath.replace(/\.\//g, "").replace(/\//g, ".");
     }
 
-    protected shouldExportIdentifier(identifier: tstl.Identifier | tstl.Identifier[]): boolean {
-        if (!this.isModule && !this.currentNamespace) {
-            return false;
-        }
-        if (Array.isArray(identifier)) {
-            return identifier.some(i => this.isIdentifierExported(i));
-        } else {
-            return this.isIdentifierExported(identifier);
-        }
-    }
-
     protected createSelfIdentifier(tsOriginal?: ts.Node): tstl.Identifier {
         return tstl.createIdentifier("self", tsOriginal);
     }
@@ -4808,20 +4842,19 @@ export class LuaTransformer {
 
         const functionDeclaration = tsOriginal && ts.isFunctionDeclaration(tsOriginal) ? tsOriginal : undefined;
 
-        if (this.shouldExportIdentifier(lhs)) {
+        const identifiers = Array.isArray(lhs) ? lhs : [lhs];
+        if (identifiers.length === 0) {
+            return [];
+        }
+
+        const exportScope = this.getIdentifierExportScope(identifiers[0]);
+        if (exportScope) {
             // exported
             if (!rhs) {
                 return [];
-            } else if (Array.isArray(lhs)) {
-                assignment = tstl.createAssignmentStatement(
-                    lhs.map(i => this.createExportedIdentifier(i)),
-                    rhs,
-                    tsOriginal,
-                    parent
-                );
             } else {
                 assignment = tstl.createAssignmentStatement(
-                    this.createExportedIdentifier(lhs),
+                    identifiers.map(i => this.createExportedIdentifier(i, exportScope)),
                     rhs,
                     tsOriginal,
                     parent
@@ -5071,10 +5104,15 @@ export class LuaTransformer {
             name = this.hasUnsafeIdentifierName(propertyIdentifier) ? this.createSafeName(propertyName) : propertyName;
         }
 
-        const identifier = this.transformIdentifierExpression(ts.createIdentifier(name));
+        let identifier = this.transformIdentifierExpression(ts.createIdentifier(name));
         tstl.setNodeOriginal(identifier, propertyIdentifier);
         if (valueSymbol !== undefined && tstl.isIdentifier(identifier)) {
             identifier.symbolId = this.symbolIds.get(valueSymbol);
+
+            const exportScope = this.getSymbolExportScope(valueSymbol);
+            if (exportScope) {
+                identifier = this.createExportedIdentifier(identifier, exportScope);
+            }
         }
         return identifier;
     }

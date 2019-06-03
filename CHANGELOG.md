@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.21.0
+
+- Imports/exports that are ambient (declarations, types, interfaces, etc) or are not used in value positions no longer generate `require` statements.
+- For ... of loops are now translated using `ipairs`.
+- Added support for `array.reduce`.
+- Added support for `import foo = bar.baz;` statements.
+
+- Fixed some issues with binding pattern parameter default values.
+- Fixed some issues with variable naming.
+- Enabled prettier on the entire codebase.
+
 ## 0.20.0
 
 - Added support for `string.repeat`, `string.padStart` and `string.padEnd`.

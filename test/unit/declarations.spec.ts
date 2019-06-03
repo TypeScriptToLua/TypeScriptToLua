@@ -92,3 +92,44 @@ test("Declaration instance function callback", () => {
     const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
     expect(result).toBe(20);
 });
+
+test("ImportEquals declaration", () => {
+    const header = `
+        namespace outerNamespace {
+            export namespace innerNamespace {
+                export function func() { return "foo" }
+            }
+        };
+
+        import importedFunc = outerNamespace.innerNamespace.func;
+    `;
+
+    const execution = `return importedFunc();`;
+
+    const result = util.transpileAndExecute(execution, undefined, undefined, header);
+    expect(result).toEqual("foo");
+});
+
+test("ImportEquals declaration ambient", () => {
+    const header = `
+        declare namespace outerNamespace {
+            namespace innerNamespace {
+                function func(): string;
+            }
+        };
+
+        import importedFunc = outerNamespace.innerNamespace.func;
+    `;
+
+    const luaHeader = `outerNamespace = {
+        innerNamespace = {
+            func = function() return "foo" end
+        }
+    }
+    `;
+
+    const execution = `return importedFunc();`;
+
+    const result = util.transpileAndExecute(execution, undefined, luaHeader, header);
+    expect(result).toEqual("foo");
+});

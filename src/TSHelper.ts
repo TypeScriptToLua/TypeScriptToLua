@@ -72,6 +72,14 @@ export class TSHelper {
         );
     }
 
+    public static getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            return declarations.find(d => (ts.getCombinedModifierFlags(d) & ts.ModifierFlags.Export) !== 0);
+        }
+        return undefined;
+    }
+
     public static isDeclaration(node: ts.Node): node is ts.Declaration {
         return (
             ts.isEnumDeclaration(node) ||

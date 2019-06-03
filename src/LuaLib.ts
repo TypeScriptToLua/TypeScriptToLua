@@ -10,6 +10,7 @@ export enum LuaLibFeature {
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
+    ArrayReduce = "ArrayReduce",
     ArrayReverse = "ArrayReverse",
     ArrayShift = "ArrayShift",
     ArrayUnshift = "ArrayUnshift",

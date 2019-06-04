@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { TranspileError } from "./TranspileError";
 
-export const transpileError = (error: TranspileError) => ({
+export const transpileError = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),
     start: error.node.getStart(),
     length: error.node.getWidth(),
@@ -11,7 +11,7 @@ export const transpileError = (error: TranspileError) => ({
     messageText: error.message,
 });
 
-export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) => ({
+export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>): ts.Diagnostic => ({
     file: undefined,
     start: undefined,
     length: undefined,
@@ -21,6 +21,46 @@ export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>) =
     messageText:
         'TSTL options are moving to the "tstl" object. Adjust your tsconfig to look like\n' +
         `"tstl": ${JSON.stringify(tstl, undefined, 4)}`,
+});
+
+export const toLoadTransformerItShouldBeTranspiled = (transform: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `To load "${transform}" transformer it should be transpiled or "ts-node" should be installed`,
+});
+
+export const couldNotResolveTransformerFrom = (transform: string, base: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `Could not resolve "${transform}" transformer from "${base}".`,
+});
+
+export const transformerShouldHaveAExport = (transform: string, importName: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `"${transform}" transformer should have a "${importName}" export`,
+});
+
+export const transformerShouldBeATsTransformerFactory = (transform: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `"${transform}" transformer should be a ts.TransformerFactory or an object with ts.TransformerFactory values`,
 });
 
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
@@ -79,6 +119,11 @@ export const compilerOptionExpectsAnArgument = createCommandLineError(
 export const argumentForOptionMustBe = createCommandLineError(
     6046,
     (name: string, values: string) => `Argument for '${name}' option must be: ${values}.`
+);
+
+export const optionCanOnlyBeSpecifiedInTsconfigJsonFile = createCommandLineError(
+    6064,
+    (name: string) => `Option '${name}' can only be specified in 'tsconfig.json' file.`
 );
 
 export const optionBuildMustBeFirstCommandLineArgument = createCommandLineError(

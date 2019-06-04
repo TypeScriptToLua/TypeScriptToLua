@@ -3,7 +3,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
-import * as cliDiagnostics from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 
 function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
     return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
@@ -31,7 +31,7 @@ function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefin
     }
 
     if (commandLine.fileNames.length !== 0) {
-        reportDiagnostic(cliDiagnostics.optionProjectCannotBeMixedWithSourceFilesOnACommandLine());
+        reportDiagnostic(diagnosticFactories.optionProjectCannotBeMixedWithSourceFilesOnACommandLine());
         ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
         return;
     }
@@ -46,14 +46,15 @@ function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefin
         if (ts.sys.fileExists(configFileName)) {
             return configFileName;
         } else {
-            reportDiagnostic(cliDiagnostics.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project));
+            reportDiagnostic(diagnosticFactories.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project));
+
             ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
         }
     } else {
         if (ts.sys.fileExists(fileOrDirectory)) {
             return fileOrDirectory;
         } else {
-            reportDiagnostic(cliDiagnostics.theSpecifiedPathDoesNotExist(project));
+            reportDiagnostic(diagnosticFactories.theSpecifiedPathDoesNotExist(project));
             ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
         }
     }
@@ -70,7 +71,7 @@ function executeCommandLine(args: string[]): void {
     const commandLine = CommandLineParser.parseCommandLine(args);
 
     if (commandLine.options.build) {
-        reportDiagnostic(cliDiagnostics.optionBuildMustBeFirstCommandLineArgument());
+        reportDiagnostic(diagnosticFactories.optionBuildMustBeFirstCommandLineArgument());
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }
 
@@ -254,7 +255,7 @@ function updateWatchCompilationHost(
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 
-        host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
+        host.onWatchStatusChange!(diagnosticFactories.watchErrorSummary(errors.length), host.getNewLine(), options);
     };
 }
 

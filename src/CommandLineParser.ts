@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
-import * as diagnostics from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -10,7 +10,7 @@ export interface ParsedCommandLine extends ts.ParsedCommandLine {
 interface CommandLineOptionBase {
     name: string;
     aliases?: string[];
-    describe: string;
+    description: string;
 }
 
 interface CommandLineOptionOfEnum extends CommandLineOptionBase {
@@ -23,33 +23,34 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
 }
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+
 const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaLibImport",
-        describe: "Specifies how js standard features missing in lua are imported.",
+        description: "Specifies how js standard features missing in lua are imported.",
         type: "enum",
         choices: Object.values(LuaLibImportKind),
     },
     {
         name: "luaTarget",
         aliases: ["lt"],
-        describe: "Specify Lua target version.",
+        description: "Specify Lua target version.",
         type: "enum",
         choices: Object.values(LuaTarget),
     },
     {
         name: "noHeader",
-        describe: "Specify if a header will be added to compiled files.",
+        description: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },
     {
         name: "noHoisting",
-        describe: "Disables hoisting.",
+        description: "Disables hoisting.",
         type: "boolean",
     },
     {
         name: "sourceMapTraceback",
-        describe: "Applies the source map to show source TS files and lines in error tracebacks.",
+        description: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
     },
 ];
@@ -78,7 +79,7 @@ export function getHelpString(): string {
         const valuesHint = option.type === "enum" ? option.choices.join("|") : option.type;
         const spacing = " ".repeat(Math.max(1, 45 - optionString.length - valuesHint.length));
 
-        result += `\n ${optionString} <${valuesHint}>${spacing}${option.describe}\n`;
+        result += `\n ${optionString} <${valuesHint}>${spacing}${option.description}\n`;
     }
 
     return result;
@@ -97,13 +98,15 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
 
     if (parsedConfigFile.raw.tstl) {
         if (hasRootLevelOptions) {
-            parsedConfigFile.errors.push(diagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl));
+            parsedConfigFile.errors.push(
+                diagnosticFactories.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
+            );
         }
 
         for (const key in parsedConfigFile.raw.tstl) {
             const option = optionDeclarations.find(option => option.name === key);
             if (!option) {
-                parsedConfigFile.errors.push(diagnostics.unknownCompilerOption(key));
+                parsedConfigFile.errors.push(diagnosticFactories.unknownCompilerOption(key));
                 continue;
             }
 
@@ -167,9 +170,11 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
             // Set boolean arguments without supplied value to true
             return { value: true, increment: 0 };
         }
-    } else if (value === undefined) {
+    }
+
+    if (value === undefined) {
         return {
-            error: diagnostics.compilerOptionExpectsAnArgument(option.name),
+            error: diagnosticFactories.compilerOptionExpectsAnArgument(option.name),
             value: undefined,
             increment: 0,
         };
@@ -191,7 +196,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "boolean") {
                 return {
                     value: undefined,
-                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "boolean"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "boolean"),
                 };
             }
 
@@ -202,7 +207,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "string") {
                 return {
                     value: undefined,
-                    error: diagnostics.compilerOptionRequiresAValueOfType(option.name, "string"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
                 };
             }
 
@@ -211,7 +216,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
-                    error: diagnostics.argumentForOptionMustBe(`--${option.name}`, optionChoices),
+                    error: diagnosticFactories.argumentForOptionMustBe(`--${option.name}`, optionChoices),
                 };
             }
 

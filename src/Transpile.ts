@@ -1,33 +1,11 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
-import { transpileError } from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
-
-function getCustomTransformers(
-    _program: ts.Program,
-    customTransformers: ts.CustomTransformers,
-    onSourceFile: (sourceFile: ts.SourceFile) => void
-): ts.CustomTransformers {
-    // TODO: https://github.com/Microsoft/TypeScript/issues/28310
-    const forEachSourceFile = (node: ts.SourceFile, callback: (sourceFile: ts.SourceFile) => ts.SourceFile) =>
-        ts.isBundle(node)
-            ? ((ts.updateBundle(node, node.sourceFiles.map(callback)) as unknown) as ts.SourceFile)
-            : callback(node);
-
-    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => node =>
-        forEachSourceFile(node, sourceFile => {
-            onSourceFile(sourceFile);
-            return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
-        });
-
-    return {
-        afterDeclarations: customTransformers.afterDeclarations,
-        before: [...(customTransformers.before || []), ...(customTransformers.after || []), luaTransformer],
-    };
-}
+import { getCustomTransformers } from "./TSTransformers";
 
 export interface TranspiledFile {
     fileName: string;
@@ -106,7 +84,7 @@ export function transpile({
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
 
-            diagnostics.push(transpileError(err));
+            diagnostics.push(diagnosticFactories.transpileError(err));
 
             updateTranspiledFile(sourceFile.fileName, {
                 lua: `error(${JSON.stringify(err.message)})\n`,
@@ -115,7 +93,7 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(program, customTransformers, processSourceFile);
+    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processSourceFile);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {

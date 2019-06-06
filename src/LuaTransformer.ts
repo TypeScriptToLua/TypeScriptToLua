@@ -2655,6 +2655,22 @@ export class LuaTransformer {
         }
     }
 
+    protected transformTypeOfLiteralComparison(
+        typeOfExpression: ts.TypeOfExpression,
+        comparedExpression: tstl.StringLiteral,
+        operator: ts.BinaryOperator,
+        tsOriginal: ts.Node
+    ): ExpressionVisitResult {
+        if (comparedExpression.value === "object") {
+            comparedExpression.value = "table";
+        } else if (comparedExpression.value === "undefined") {
+            comparedExpression.value = "nil";
+        }
+        const innerExpression = this.transformExpression(typeOfExpression.expression);
+        const typeCall = tstl.createCallExpression(tstl.createIdentifier("type"), [innerExpression], typeOfExpression);
+        return this.transformBinaryOperation(typeCall, comparedExpression, operator, tsOriginal);
+    }
+
     public transformBinaryExpression(expression: ts.BinaryExpression): ExpressionVisitResult {
         // Check if this is an assignment token, then handle accordingly
 
@@ -2673,14 +2689,15 @@ export class LuaTransformer {
         const rhs = this.transformExpression(expression.right);
 
         // Transpile operators
-        switch (expression.operatorToken.kind) {
+        const operator = expression.operatorToken.kind;
+        switch (operator) {
             case ts.SyntaxKind.AmpersandToken:
             case ts.SyntaxKind.BarToken:
             case ts.SyntaxKind.CaretToken:
             case ts.SyntaxKind.LessThanLessThanToken:
             case ts.SyntaxKind.GreaterThanGreaterThanToken:
             case ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken:
-                return this.transformBinaryBitOperation(expression, lhs, rhs, expression.operatorToken.kind);
+                return this.transformBinaryBitOperation(expression, lhs, rhs, operator);
             case ts.SyntaxKind.PlusToken:
             case ts.SyntaxKind.AmpersandAmpersandToken:
             case ts.SyntaxKind.BarBarToken:
@@ -2689,6 +2706,7 @@ export class LuaTransformer {
             case ts.SyntaxKind.AsteriskAsteriskToken:
             case ts.SyntaxKind.SlashToken:
             case ts.SyntaxKind.PercentToken:
+                return this.transformBinaryOperation(lhs, rhs, operator, expression);
             case ts.SyntaxKind.GreaterThanToken:
             case ts.SyntaxKind.GreaterThanEqualsToken:
             case ts.SyntaxKind.LessThanToken:
@@ -2697,7 +2715,13 @@ export class LuaTransformer {
             case ts.SyntaxKind.EqualsEqualsEqualsToken:
             case ts.SyntaxKind.ExclamationEqualsToken:
             case ts.SyntaxKind.ExclamationEqualsEqualsToken:
-                return this.transformBinaryOperation(lhs, rhs, expression.operatorToken.kind, expression);
+                // Custom handling for 'typeof(foo) === "type"'
+                if (ts.isTypeOfExpression(expression.left) && tstl.isStringLiteral(rhs)) {
+                    return this.transformTypeOfLiteralComparison(expression.left, rhs, operator, expression);
+                } else if (ts.isTypeOfExpression(expression.right) && tstl.isStringLiteral(lhs)) {
+                    return this.transformTypeOfLiteralComparison(expression.right, lhs, operator, expression);
+                }
+                return this.transformBinaryOperation(lhs, rhs, operator, expression);
             case ts.SyntaxKind.EqualsToken:
                 return this.transformAssignmentExpression(expression);
             case ts.SyntaxKind.InKeyword:
@@ -2736,7 +2760,7 @@ export class LuaTransformer {
                 );
 
             default:
-                throw TSTLErrors.UnsupportedKind("binary operator", expression.operatorToken.kind, expression);
+                throw TSTLErrors.UnsupportedKind("binary operator", operator, expression);
         }
     }
 
@@ -4489,16 +4513,7 @@ export class LuaTransformer {
 
     public transformTypeOfExpression(expression: ts.TypeOfExpression): ExpressionVisitResult {
         const innerExpression = this.transformExpression(expression.expression);
-        const typeFunctionIdentifier = tstl.createIdentifier("type");
-        const typeCall = tstl.createCallExpression(typeFunctionIdentifier, [innerExpression]);
-        const tableString = tstl.createStringLiteral("table");
-        const objectString = tstl.createStringLiteral("object");
-        const condition = tstl.createBinaryExpression(typeCall, tableString, tstl.SyntaxKind.EqualityOperator);
-        const andClause = tstl.createBinaryExpression(condition, objectString, tstl.SyntaxKind.AndOperator);
-
-        return tstl.createParenthesizedExpression(
-            tstl.createBinaryExpression(andClause, tstl.cloneNode(typeCall), tstl.SyntaxKind.OrOperator, expression)
-        );
+        return this.transformLuaLibFunction(LuaLibFeature.TypeOf, expression, innerExpression);
     }
 
     public transformSpreadElement(expression: ts.SpreadElement): ExpressionVisitResult {

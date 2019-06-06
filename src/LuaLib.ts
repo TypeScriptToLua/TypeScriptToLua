@@ -55,6 +55,7 @@ export enum LuaLibFeature {
     StringStartsWith = "StringStartsWith",
     Symbol = "Symbol",
     SymbolRegistry = "SymbolRegistry",
+    TypeOf = "TypeOf",
 }
 
 const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {

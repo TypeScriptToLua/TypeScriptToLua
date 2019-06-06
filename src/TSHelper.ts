@@ -184,6 +184,15 @@ export class TSHelper {
         return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
     }
 
+    public static isForRangeCall(node: ts.Node, checker: ts.TypeChecker): boolean {
+        if (!ts.isCallExpression(node)) {
+            return false;
+        }
+
+        const type = checker.getTypeAtLocation(node.expression);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ForRange);
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const signature = checker.getResolvedSignature(node);

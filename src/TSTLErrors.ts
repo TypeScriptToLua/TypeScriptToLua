@@ -204,4 +204,8 @@ export class TSTLErrors {
             node
         );
     };
+
+    public static InvalidForRangeCall = (node: ts.Node, message: string) => {
+        return new TranspileError(`Invalid @forRange call: ${message}`, node);
+    };
 }

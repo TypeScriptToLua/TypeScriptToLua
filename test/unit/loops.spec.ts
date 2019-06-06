@@ -797,3 +797,105 @@ test("while dead code after return", () => {
 
     expect(result).toBe(3);
 });
+
+test.each([
+    { args: [1, 10], expectResult: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+    { args: [1, 10, 2], expectResult: [1, 3, 5, 7, 9] },
+    { args: [10, 1, -1], expectResult: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] },
+    { args: [10, 1, -2], expectResult: [10, 8, 6, 4, 2] },
+])("@forRange loop", ({ args, expectResult }) => {
+    const tsHeader = "/** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];";
+    const code = `
+        const results: number[] = [];
+        for (const i of luaRange(${args})) {
+            results.push(i);
+        }
+        return JSONStringify(results);`;
+
+    const result = util.transpileAndExecute(code, undefined, undefined, tsHeader);
+    expect(JSON.parse(result)).toEqual(expectResult);
+});
+
+test("invalid non-ambient @forRange function", () => {
+    const code = `
+        /** @forRange **/ function luaRange(i: number, j: number, k?: number): number[] { return []; }
+        for (const i of luaRange(1, 10, 2)) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(
+            ts.createEmptyStatement(),
+            "@forRange function cannot have an implementation. Did you forget a 'declare'?"
+        ).message
+    );
+});
+
+test.each([[1], [1, 2, 3, 4]])("invalid @forRange argument count", args => {
+    const code = `
+        /** @forRange **/ declare function luaRange(...args: number[]): number[] { return []; }
+        for (const i of luaRange(${args})) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.")
+            .message
+    );
+});
+
+test("invalid @forRange control variable", () => {
+    const code = `
+        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];
+        let i: number;
+        for (i of luaRange(1, 10, 2)) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(
+            ts.createEmptyStatement(),
+            "@forRange loop must declare its own control variable."
+        ).message
+    );
+});
+
+test("invalid @forRange argument type", () => {
+    const code = `
+        /** @forRange **/ declare function luaRange(i: string, j: number): number[] { return []; }
+        for (const i of luaRange("foo", 2)) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange arguments must be number types.").message
+    );
+});
+
+test("invalid @forRange destructuring", () => {
+    const code = `
+        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[][];
+        for (const [i] of luaRange(1, 10, 2)) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop cannot use destructuring.").message
+    );
+});
+
+test("invalid @forRange return type", () => {
+    const code = `
+        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): string[];
+        for (const i of luaRange(1, 10)) {}`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(
+            ts.createEmptyStatement(),
+            "@forRange function must return Iterable<number> or Array<number>."
+        ).message
+    );
+});
+
+test("invalid @forRange call", () => {
+    const code = `
+        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];
+        const range = luaRange(1, 10);`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidForRangeCall(
+            ts.createEmptyStatement(),
+            "Cannot call a @forRange function outside of a for...of loop."
+        ).message
+    );
+});

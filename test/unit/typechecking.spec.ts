@@ -158,6 +158,7 @@ test.each([
         let val = ${expression};
         return typeof val ${operator} "${compareTo}";`;
 
+    expect(util.transpileString(code)).not.toMatch("__TS__TypeOf");
     expect(util.transpileAndExecute(code)).toBe(expectResult);
 });
 
@@ -179,5 +180,6 @@ test.each([
         let compareTo = "${compareTo}";
         return typeof val ${operator} compareTo;`;
 
+    expect(util.transpileString(code)).toMatch("__TS__TypeOf");
     expect(util.transpileAndExecute(code)).toBe(expectResult);
 });

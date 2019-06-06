@@ -51,32 +51,32 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 }
 
 export class LuaTransformer {
-    private isStrict: boolean;
-    private luaTarget: LuaTarget;
+    protected isStrict: boolean;
+    protected luaTarget: LuaTarget;
 
-    private checker: DiagnosticsProducingTypeChecker;
+    protected checker: DiagnosticsProducingTypeChecker;
     protected options: CompilerOptions;
 
     // Resolver is lazy-initialized in transformSourceFile to avoid type-checking all files
-    private resolver!: EmitResolver;
+    protected resolver!: EmitResolver;
 
-    private isModule = false;
-    private currentSourceFile?: ts.SourceFile;
+    protected isModule = false;
+    protected currentSourceFile?: ts.SourceFile;
 
-    private currentNamespace: ts.ModuleDeclaration | undefined;
-    private classStack: ts.ClassLikeDeclaration[] = [];
+    protected currentNamespace: ts.ModuleDeclaration | undefined;
+    protected classStack: ts.ClassLikeDeclaration[] = [];
 
-    private scopeStack: Scope[] = [];
-    private genVarCounter = 0;
+    protected scopeStack: Scope[] = [];
+    protected genVarCounter = 0;
 
-    private luaLibFeatureSet = new Set<LuaLibFeature>();
+    protected luaLibFeatureSet = new Set<LuaLibFeature>();
 
-    private symbolInfo = new Map<tstl.SymbolId, SymbolInfo>();
-    private symbolIds = new Map<ts.Symbol, tstl.SymbolId>();
+    protected symbolInfo = new Map<tstl.SymbolId, SymbolInfo>();
+    protected symbolIds = new Map<ts.Symbol, tstl.SymbolId>();
 
-    private genSymbolIdCounter = 0;
+    protected genSymbolIdCounter = 0;
 
-    private readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
+    protected readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
 
     public constructor(protected program: ts.Program) {
         this.checker = (program as any).getDiagnosticsProducingTypeChecker();
@@ -91,7 +91,7 @@ export class LuaTransformer {
         this.setupState();
     }
 
-    private setupState(): void {
+    protected setupState(): void {
         this.genVarCounter = 0;
         this.currentSourceFile = undefined;
         this.isModule = false;
@@ -103,7 +103,6 @@ export class LuaTransformer {
         this.genSymbolIdCounter = 1;
     }
 
-    // TODO make all other methods private???
     public transformSourceFile(node: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
 
@@ -218,7 +217,7 @@ export class LuaTransformer {
     }
 
     /** Converts an array of ts.Statements into an array of tstl.Statements */
-    private transformStatements(statements: readonly ts.Statement[]): tstl.Statement[] {
+    protected transformStatements(statements: readonly ts.Statement[]): tstl.Statement[] {
         const tstlStatements: tstl.Statement[] = [];
         (statements as ts.Statement[]).forEach(statement => {
             tstlStatements.push(...this.statementVisitResultToArray(this.transformStatement(statement)));
@@ -450,7 +449,7 @@ export class LuaTransformer {
         }
     }
 
-    private createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
+    protected createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
         const modulePathString = resolveModule
             ? this.getImportPath(moduleSpecifier.text.replace(new RegExp('"', "g"), ""), moduleSpecifier)
             : moduleSpecifier.text;
@@ -458,7 +457,7 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath], moduleSpecifier);
     }
 
-    private validateClassElement(element: ts.ClassElement): void {
+    protected validateClassElement(element: ts.ClassElement): void {
         if (element.name && (ts.isStringLiteral(element.name) || ts.isIdentifier(element.name))) {
             if (tsHelper.isStatic(element) && element.name.text === "new") {
                 throw TSTLErrors.ForbiddenStaticClassPropertyName(element, element.name.text);
@@ -502,7 +501,7 @@ export class LuaTransformer {
         return this.createModuleRequire(externalModuleReference.expression as ts.StringLiteral);
     }
 
-    private transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
+    protected transformEntityName(entityName: ts.EntityName): ExpressionVisitResult {
         return ts.isQualifiedName(entityName)
             ? this.transformQualifiedName(entityName)
             : this.transformIdentifierExpression(entityName);
@@ -762,7 +761,7 @@ export class LuaTransformer {
         return result;
     }
 
-    private createClassCreationMethods(
+    protected createClassCreationMethods(
         statement: ts.ClassLikeDeclarationBase,
         className: tstl.Identifier,
         localClassName: tstl.Identifier,
@@ -1094,7 +1093,7 @@ export class LuaTransformer {
         return result;
     }
 
-    private transformClassInstanceFields(
+    protected transformClassInstanceFields(
         classDeclaration: ts.ClassLikeDeclaration,
         instanceFields: ts.PropertyDeclaration[]
     ): tstl.Statement[] {
@@ -1137,14 +1136,14 @@ export class LuaTransformer {
         return statements;
     }
 
-    private createConstructorName(className: tstl.Identifier): tstl.TableIndexExpression {
+    protected createConstructorName(className: tstl.Identifier): tstl.TableIndexExpression {
         return tstl.createTableIndexExpression(
             tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("prototype")),
             tstl.createStringLiteral("____constructor")
         );
     }
 
-    private transformConstructorDeclaration(
+    protected transformConstructorDeclaration(
         statement: ts.ConstructorDeclaration,
         className: tstl.Identifier,
         instanceFields: ts.PropertyDeclaration[],
@@ -1349,7 +1348,7 @@ export class LuaTransformer {
         );
     }
 
-    private transformParameters(
+    protected transformParameters(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         context?: tstl.Identifier
     ): [tstl.Identifier[], tstl.DotsLiteral | undefined, tstl.Identifier | undefined] {
@@ -1389,7 +1388,7 @@ export class LuaTransformer {
         return [paramNames, dotsLiteral, restParamName];
     }
 
-    private transformFunctionBody(
+    protected transformFunctionBody(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
@@ -1442,7 +1441,7 @@ export class LuaTransformer {
         return [headerStatements.concat(bodyStatements), scope];
     }
 
-    private transformParameterDefaultValueDeclaration(
+    protected transformParameterDefaultValueDeclaration(
         parameterName: tstl.Identifier,
         value?: ts.Expression,
         tsOriginal?: ts.Node
@@ -1706,7 +1705,7 @@ export class LuaTransformer {
         });
     }
 
-    private transformGeneratorFunction(
+    protected transformGeneratorFunction(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
@@ -2189,7 +2188,7 @@ export class LuaTransformer {
         return tstl.createDoStatement(result, statement);
     }
 
-    private transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {
+    protected transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {
         if (ts.isVariableDeclarationList(initializer)) {
             // Declaration of new variable
             const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
@@ -2245,13 +2244,13 @@ export class LuaTransformer {
         return baseResult;
     }
 
-    private transformBlockOrStatement(statement: ts.Statement): tstl.Statement[] {
+    protected transformBlockOrStatement(statement: ts.Statement): tstl.Statement[] {
         return ts.isBlock(statement)
             ? this.transformStatements(statement.statements)
             : this.statementVisitResultToArray(this.transformStatement(statement));
     }
 
-    private transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+    protected transformForOfArrayStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
         let valueVariable: tstl.Identifier;
         if (ts.isVariableDeclarationList(statement.initializer)) {
             // Declaration of new variable
@@ -2280,7 +2279,10 @@ export class LuaTransformer {
         );
     }
 
-    private transformForOfLuaIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+    protected transformForOfLuaIteratorStatement(
+        statement: ts.ForOfStatement,
+        block: tstl.Block
+    ): StatementVisitResult {
         const luaIterator = this.transformExpression(statement.expression);
         const type = this.checker.getTypeAtLocation(statement.expression);
         const tupleReturn = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.TupleReturn);
@@ -2349,7 +2351,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformForOfIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
+    protected transformForOfIteratorStatement(statement: ts.ForOfStatement, block: tstl.Block): StatementVisitResult {
         const iterable = this.transformExpression(statement.expression);
         if (
             ts.isVariableDeclarationList(statement.initializer) &&
@@ -2740,7 +2742,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
+    protected transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
         return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
@@ -2748,7 +2750,7 @@ export class LuaTransformer {
         );
     }
 
-    private transformAssignmentStatement(expression: ts.BinaryExpression): StatementVisitResult {
+    protected transformAssignmentStatement(expression: ts.BinaryExpression): StatementVisitResult {
         // Validate assignment
         const rightType = this.checker.getTypeAtLocation(expression.right);
         const leftType = this.checker.getTypeAtLocation(expression.left);
@@ -2793,7 +2795,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformAssignmentExpression(
+    protected transformAssignmentExpression(
         expression: ts.BinaryExpression
     ): tstl.CallExpression | tstl.MethodCallExpression {
         // Validate assignment
@@ -2887,7 +2889,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformCompoundAssignmentExpression(
+    protected transformCompoundAssignmentExpression(
         expression: ts.Expression,
         lhs: ts.Expression,
         rhs: ts.Expression,
@@ -3056,7 +3058,7 @@ export class LuaTransformer {
         );
     }
 
-    private transformCompoundAssignmentStatement(
+    protected transformCompoundAssignmentStatement(
         node: ts.Node,
         lhs: ts.Expression,
         rhs: ts.Expression,
@@ -3097,7 +3099,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformUnaryBitLibOperation(
+    protected transformUnaryBitLibOperation(
         node: ts.Node,
         expression: tstl.Expression,
         operator: tstl.UnaryBitwiseOperator,
@@ -3118,7 +3120,7 @@ export class LuaTransformer {
         );
     }
 
-    private transformUnaryBitOperation(
+    protected transformUnaryBitOperation(
         node: ts.Node,
         expression: tstl.Expression,
         operator: tstl.UnaryBitwiseOperator
@@ -3138,7 +3140,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformBinaryBitLibOperation(
+    protected transformBinaryBitLibOperation(
         node: ts.Node,
         left: tstl.Expression,
         right: tstl.Expression,
@@ -3175,7 +3177,7 @@ export class LuaTransformer {
         );
     }
 
-    private transformBinaryBitOperation(
+    protected transformBinaryBitOperation(
         node: ts.Node,
         left: tstl.Expression,
         right: tstl.Expression,
@@ -3197,7 +3199,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformProtectedConditionalExpression(expression: ts.ConditionalExpression): tstl.CallExpression {
+    protected transformProtectedConditionalExpression(expression: ts.ConditionalExpression): tstl.CallExpression {
         const condition = this.transformExpression(expression.condition);
         const val1 = this.transformExpression(expression.whenTrue);
         const val2 = this.transformExpression(expression.whenFalse);
@@ -3531,7 +3533,7 @@ export class LuaTransformer {
         return wrapResult ? this.wrapInTable(callExpression) : callExpression;
     }
 
-    private transformGlobalFunctionCall(node: ts.CallExpression): tstl.Expression | undefined {
+    protected transformGlobalFunctionCall(node: ts.CallExpression): tstl.Expression | undefined {
         const signature = this.checker.getResolvedSignature(node);
         const parameters = this.transformArguments(node.arguments, signature);
 
@@ -3738,7 +3740,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformArguments<T extends ts.Expression>(
+    protected transformArguments<T extends ts.Expression>(
         params: ts.NodeArray<ts.Expression> | ts.Expression[],
         sig?: ts.Signature,
         context?: T
@@ -3811,7 +3813,7 @@ export class LuaTransformer {
     }
 
     // Transpile a Math._ property
-    private transformMathExpression(identifier: ts.Identifier): tstl.Expression {
+    protected transformMathExpression(identifier: ts.Identifier): tstl.Expression {
         const name = identifier.escapedText as string;
         switch (name) {
             case "PI":
@@ -3834,7 +3836,7 @@ export class LuaTransformer {
     }
 
     // Transpile a Math._ property
-    private transformMathCallExpression(node: ts.CallExpression): tstl.Expression {
+    protected transformMathCallExpression(node: ts.CallExpression): tstl.Expression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
@@ -3907,7 +3909,7 @@ export class LuaTransformer {
     }
 
     // Transpile access of string properties, only supported properties are allowed
-    private transformStringProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
+    protected transformStringProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
         switch (node.name.escapedText) {
             case "length":
                 const expression = this.transformExpression(node.expression);
@@ -3918,7 +3920,7 @@ export class LuaTransformer {
     }
 
     // Transpile access of array properties, only supported properties are allowed
-    private transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
+    protected transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
         switch (node.name.escapedText) {
             case "length":
                 const expression = this.transformExpression(node.expression);
@@ -3928,7 +3930,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
+    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
         switch (node.name.escapedText) {
             case "length":
                 const propertyAccessExpression = this.transformExpression(node.expression);
@@ -3965,7 +3967,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformConstEnumValue(
+    protected transformConstEnumValue(
         enumType: ts.EnumType,
         memberName: string,
         tsOriginal: ts.Node
@@ -4007,7 +4009,7 @@ export class LuaTransformer {
         throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
-    private transformStringCallExpression(node: ts.CallExpression): tstl.Expression {
+    protected transformStringCallExpression(node: ts.CallExpression): tstl.Expression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
@@ -4141,7 +4143,7 @@ export class LuaTransformer {
         }
     }
 
-    private createStringCall(
+    protected createStringCall(
         methodName: string,
         tsOriginal: ts.Node,
         ...params: tstl.Expression[]
@@ -4155,7 +4157,7 @@ export class LuaTransformer {
     }
 
     // Transpile a String._ property
-    private transformStringExpression(identifier: ts.Identifier): ExpressionVisitResult {
+    protected transformStringExpression(identifier: ts.Identifier): ExpressionVisitResult {
         const identifierString = identifier.escapedText as string;
 
         switch (identifierString) {
@@ -4174,7 +4176,7 @@ export class LuaTransformer {
     }
 
     // Transpile an Object._ property
-    private transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+    protected transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
         const parameters = this.transformArguments(expression.arguments);
         const methodName = method.name.escapedText;
@@ -4195,7 +4197,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
+    protected transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
         const methodName = method.name.escapedText;
         const signature = this.checker.getResolvedSignature(expression);
@@ -4266,12 +4268,12 @@ export class LuaTransformer {
         }
     }
 
-    private isStringFormatTemplate(expression: ts.Expression): boolean {
+    protected isStringFormatTemplate(expression: ts.Expression): boolean {
         return ts.isStringLiteral(expression) && expression.text.match(/\%/g) !== null;
     }
 
     // Transpile a Symbol._ property
-    private transformSymbolCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+    protected transformSymbolCallExpression(expression: ts.CallExpression): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(expression);
         const parameters = this.transformArguments(expression.arguments, signature);
@@ -4290,7 +4292,7 @@ export class LuaTransformer {
     }
 
     // Transpile a Number._ property
-    private transformNumberCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+    protected transformNumberCallExpression(expression: ts.CallExpression): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
         const parameters = this.transformArguments(expression.arguments);
         const methodName = method.name.escapedText;
@@ -4305,7 +4307,7 @@ export class LuaTransformer {
         }
     }
 
-    private validateLuaTableCall(
+    protected validateLuaTableCall(
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression },
         isWithinExpressionStatement: boolean
     ): void {
@@ -4334,7 +4336,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformLuaTableExpressionStatement(
+    protected transformLuaTableExpressionStatement(
         node: ts.ExpressionStatement & { expression: ts.CallExpression } & {
             expression: { expression: ts.PropertyAccessExpression };
         }
@@ -4363,7 +4365,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformLuaTableCallExpression(
+    protected transformLuaTableCallExpression(
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression }
     ): tstl.Expression {
         const method = expression.expression;
@@ -4381,7 +4383,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformArrayCallExpression(node: ts.CallExpression): tstl.CallExpression {
+    protected transformArrayCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
@@ -4444,7 +4446,7 @@ export class LuaTransformer {
         }
     }
 
-    private transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
+    protected transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.getFunctionContextType(callerType, this.checker) === ContextType.Void) {
@@ -4598,7 +4600,7 @@ export class LuaTransformer {
         return tstl.createIdentifier(text, identifier, symbolId);
     }
 
-    private transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
+    protected transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
         const identifier = this.transformIdentifier(expression);
 
         const exportScope = this.getIdentifierExportScope(identifier);
@@ -5204,7 +5206,7 @@ export class LuaTransformer {
         this.genVarCounter++;
     }
 
-    private shouldHoist(symbolId: tstl.SymbolId, scope: Scope): boolean {
+    protected shouldHoist(symbolId: tstl.SymbolId, scope: Scope): boolean {
         const symbolInfo = this.symbolInfo.get(symbolId);
         if (!symbolInfo) {
             return false;
@@ -5406,7 +5408,7 @@ export class LuaTransformer {
         }
     }
 
-    private createConstructorDecorationStatement(
+    protected createConstructorDecorationStatement(
         declaration: ts.ClassLikeDeclaration
     ): tstl.AssignmentStatement | undefined {
         const className =

@@ -824,7 +824,7 @@ test("invalid non-ambient @forRange function", () => {
     expect(() => util.transpileString(code)).toThrow(
         TSTLErrors.InvalidForRangeCall(
             ts.createEmptyStatement(),
-            "@forRange function cannot have an implementation. Did you forget a 'declare'?"
+            "@forRange function can only be used as an iterable in a for...of loop."
         ).message
     );
 });
@@ -887,15 +887,22 @@ test("invalid @forRange return type", () => {
     );
 });
 
-test("invalid @forRange call", () => {
+test.each([
+    "const range = luaRange(1, 10);",
+    "console.log(luaRange);",
+    "luaRange.call(null, 0, 0, 0);",
+    "let array = [0, luaRange, 1];",
+    "const call: any; call(luaRange);",
+    "for (const i of [...luaRange(1, 10)]) {}",
+])("invalid @forRange reference (%p)", statement => {
     const code = `
         /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];
-        const range = luaRange(1, 10);`;
+        ${statement}`;
 
     expect(() => util.transpileString(code)).toThrow(
         TSTLErrors.InvalidForRangeCall(
             ts.createEmptyStatement(),
-            "Cannot call a @forRange function outside of a for...of loop."
+            "@forRange function can only be used as an iterable in a for...of loop."
         ).message
     );
 });

@@ -2384,19 +2384,6 @@ export class LuaTransformer {
             throw TSTLErrors.InvalidForRangeCall(statement.expression, "Expression must be a call expression.");
         }
 
-        const symbol = this.checker.getSymbolAtLocation(statement.expression.expression);
-        if (!symbol) {
-            throw TSTLErrors.InvalidForRangeCall(statement.expression, "Cannot find symbol of expression.");
-        }
-
-        const declarations = symbol.getDeclarations();
-        if (!declarations || declarations.some(d => !tsHelper.isAmbient(d))) {
-            throw TSTLErrors.InvalidForRangeCall(
-                statement.expression,
-                "@forRange function cannot have an implementation. Did you forget a 'declare'?"
-            );
-        }
-
         if (statement.expression.arguments.length < 2 || statement.expression.arguments.length > 3) {
             throw TSTLErrors.InvalidForRangeCall(
                 statement.expression,
@@ -2438,8 +2425,11 @@ export class LuaTransformer {
         // Transpile body
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        if (tsHelper.isForRangeCall(statement.expression, this.checker)) {
-            //ForRange
+        if (
+            ts.isCallExpression(statement.expression) &&
+            tsHelper.isForRangeType(statement.expression.expression, this.checker)
+        ) {
+            // ForRange
             return this.transformForRangeStatement(statement, body);
         } else if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
             // LuaIterators
@@ -3571,13 +3561,6 @@ export class LuaTransformer {
     }
 
     public transformCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
-        if (tsHelper.isForRangeCall(expression, this.checker)) {
-            throw TSTLErrors.InvalidForRangeCall(
-                expression,
-                "Cannot call a @forRange function outside of a for...of loop."
-            );
-        }
-
         // Check for calls on primitives to override
         let parameters: tstl.Expression[] = [];
 
@@ -4689,6 +4672,16 @@ export class LuaTransformer {
             // But this should be changed to return tstl.createNilLiteral()
             // at some point.
             return tstl.createIdentifier("nil");
+        }
+
+        if (tsHelper.isForRangeType(identifier, this.checker)) {
+            const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
+            if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
+                throw TSTLErrors.InvalidForRangeCall(
+                    identifier,
+                    "@forRange function can only be used as an iterable in a for...of loop."
+                );
+            }
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)

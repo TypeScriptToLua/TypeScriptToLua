@@ -184,12 +184,8 @@ export class TSHelper {
         return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
     }
 
-    public static isForRangeCall(node: ts.Node, checker: ts.TypeChecker): boolean {
-        if (!ts.isCallExpression(node)) {
-            return false;
-        }
-
-        const type = checker.getTypeAtLocation(node.expression);
+    public static isForRangeType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
         return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ForRange);
     }
 

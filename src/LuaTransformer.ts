@@ -25,14 +25,14 @@ interface SymbolInfo {
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Set<tstl.SymbolId>;
+    referencedSymbols: Map<tstl.SymbolId, ts.Node[]>;
     definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
-    referencedSymbols?: Set<tstl.SymbolId>;
+    referencedSymbols?: Map<tstl.SymbolId, ts.Node[]>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
     importStatements?: tstl.Statement[];
@@ -1388,12 +1388,29 @@ export class LuaTransformer {
         return [paramNames, dotsLiteral, restParamName];
     }
 
+    protected isRestParameterReferenced(identifier: tstl.Identifier, scope: Scope): boolean {
+        if (!identifier.symbolId) {
+            return true;
+        }
+        if (scope.referencedSymbols === undefined) {
+            return false;
+        }
+        const references = scope.referencedSymbols.get(identifier.symbolId);
+        return (
+            references !== undefined &&
+            // Ignore references that have spread element applied
+            references.some(r => r.parent === undefined || !ts.isSpreadElement(r.parent))
+        );
+    }
+
     protected transformFunctionBody(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
     ): [tstl.Statement[], Scope] {
         this.pushScope(ScopeType.Function);
+        const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
+        const scope = this.popScope();
 
         const headerStatements = [];
 
@@ -1426,17 +1443,13 @@ export class LuaTransformer {
         }
 
         // Push spread operator here
-        if (spreadIdentifier) {
+        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope)) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
 
         // Binding pattern statements need to be after spread table is declared
         headerStatements.push(...bindingPatternDeclarations);
-
-        const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
-
-        const scope = this.popScope();
 
         return [headerStatements.concat(bodyStatements), scope];
     }
@@ -1844,7 +1857,7 @@ export class LuaTransformer {
             if (!scope.functionDefinitions) {
                 scope.functionDefinitions = new Map();
             }
-            const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Set() };
+            const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Map() };
             scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -4543,6 +4556,10 @@ export class LuaTransformer {
             return innerExpression;
         }
 
+        if (tsHelper.isRestParameter(expression.expression, this.checker)) {
+            return tstl.createDotsLiteral(expression);
+        }
+
         const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return this.createUnpackCall(innerExpression, expression);
@@ -5212,9 +5229,14 @@ export class LuaTransformer {
                 //Mark symbol as seen in all current scopes
                 for (const scope of this.scopeStack) {
                     if (!scope.referencedSymbols) {
-                        scope.referencedSymbols = new Set();
+                        scope.referencedSymbols = new Map();
                     }
-                    scope.referencedSymbols.add(symbolId);
+                    let references = scope.referencedSymbols.get(symbolId);
+                    if (!references) {
+                        references = [];
+                        scope.referencedSymbols.set(symbolId, references);
+                    }
+                    references.push(identifier);
                 }
             }
         }

@@ -504,3 +504,30 @@ test("Function rest binding pattern", () => {
 
     expect(result).toBe("defxyzabc");
 });
+
+test("Function rest parameter", () => {
+    const code = `
+        function foo(a: unknown, ...b: string[]) {
+            return b.join("");
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileAndExecute(code)).toBe("BCD");
+});
+
+test("Function rest forward", () => {
+    const code = `
+        function foo(a: unknown, ...b: string[]) {
+            const c = [...b];
+            return c.join("");
+        }
+        function bar(a: unknown, ...b: string[]) {
+            return foo(a, ...b);
+        }
+        return bar("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileString(code)).not.toMatch("b = ({...})");
+    expect(util.transpileAndExecute(code)).toBe("BCD");
+});

@@ -530,23 +530,7 @@ test("Function nested rest parameter", () => {
     expect(util.transpileAndExecute(code)).toBe("BCD");
 });
 
-test("Function rest forward", () => {
-    const code = `
-        function foo(a: unknown, ...b: string[]) {
-            const c = [...b];
-            return c.join("");
-        }
-        function bar(a: unknown, ...b: string[]) {
-            return foo(a, ...b);
-        }
-        return bar("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileString(code)).not.toMatch("b = ({...})");
-    expect(util.transpileAndExecute(code)).toBe("BCD");
-});
-
-test("Function nested rest forward", () => {
+test("Function nested rest spread", () => {
     const code = `
         function foo(a: unknown, ...b: string[]) {
             function bar() {
@@ -559,4 +543,91 @@ test("Function nested rest forward", () => {
     `;
 
     expect(util.transpileAndExecute(code)).toBe("BCD");
+});
+
+test("@elipsisForward", () => {
+    const tsHeader = `
+        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
+    `;
+    const code = `
+        function foo(a: unknown, ...b: unknown[]) {
+            const c = [...elipsisForward(b)];
+            return c.join("");
+        }
+        function bar(a: unknown, ...b: unknown[]) {
+            return foo(a, ...elipsisForward(b));
+        }
+        return bar("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileString(tsHeader + code)).not.toMatch("b = ({...})");
+    expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("BCD");
+});
+
+test("invalid non-ambient @elipsisForward", () => {
+    const code = `
+        /** @elipsisForward */ function elipsisForward(args: unknown): unknown[] { return []; }
+    `;
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidElipsisForward(
+            ts.createEmptyStatement(),
+            "@elipsesForward can only be used on a function, and called in a spread expression."
+        ).message
+    );
+});
+
+test.each([
+    "const a = elipsisForward(args);",
+    "const a = [...[elipsisForward()]]",
+    "for (const v of elipsisForward(args)) {}",
+    "console.log(elipsisForward);",
+    "elipsisForward.call(null, 0, 0, 0);",
+    "let array = [0, elipsisForward, 1];",
+    "const call: any; call(elipsisForward);",
+])("invalid @elipsisForward use (%p)", statement => {
+    const code = `
+        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
+        function foo(...args: unknown[]) {
+            ${statement}
+        }`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidElipsisForward(
+            ts.createEmptyStatement(),
+            "@elipsesForward can only be used on a function, and called in a spread expression."
+        ).message
+    );
+});
+
+test.each(["unknown", "unknown[]", "Array<[]>", "Iterable<unknown>"])(
+    "invalid @elipsisForward argument type (%p)",
+    type => {
+        const code = `
+        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
+        function foo(a: ${type}) {
+            const x = [...elipsisForward(a)];
+        }`;
+
+        expect(() => util.transpileString(code)).toThrow(
+            TSTLErrors.InvalidElipsisForward(
+                ts.createEmptyStatement(),
+                "@elipsesForward function can only be passed a single rest parameter."
+            ).message
+        );
+    }
+);
+
+test.each(["", "a, 0", "a, 0, 1"])("invalid @elipsisForward argument count (%p)", args => {
+    const code = `
+        /** @elipsisForward */ declare function elipsisForward(...args: unknown[]): unknown[];
+        function foo(...a: unknown[]) {
+            const x = [...elipsisForward(${args})];
+        }`;
+
+    expect(() => util.transpileString(code)).toThrow(
+        TSTLErrors.InvalidElipsisForward(
+            ts.createEmptyStatement(),
+            "@elipsesForward function can only be passed a single rest parameter."
+        ).message
+    );
 });

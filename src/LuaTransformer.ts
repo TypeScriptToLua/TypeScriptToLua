@@ -1398,14 +1398,13 @@ export class LuaTransformer {
         const references = scope.referencedSymbols.get(identifier.symbolId);
         return (
             references !== undefined &&
-            // Ignore references that have spread element applied (unless the reference is in a nested function)
-            references.some(r => {
-                if (r.parent === undefined || !ts.isSpreadElement(r.parent)) {
-                    return true;
-                }
-                const scopeFunction = tsHelper.findFirstNodeAbove(r, ts.isFunctionLike);
-                return scopeFunction === undefined || !tsHelper.hasParameter(scopeFunction.parameters, r, this.checker);
-            })
+            // Ignore references using @elipsisForward
+            references.some(
+                r =>
+                    r.parent === undefined ||
+                    !ts.isCallExpression(r.parent) ||
+                    !tsHelper.isElipsisForwardType(r.parent.expression, this.checker)
+            )
         );
     }
 
@@ -4562,11 +4561,11 @@ export class LuaTransformer {
             return innerExpression;
         }
 
-        if (tsHelper.isRestParameter(expression.expression, this.checker)) {
-            const scopeFunction = tsHelper.findFirstNodeAbove(expression, ts.isFunctionLike);
-            if (scopeFunction && tsHelper.hasParameter(scopeFunction.parameters, expression.expression, this.checker)) {
-                return tstl.createDotsLiteral(expression);
-            }
+        if (
+            ts.isCallExpression(expression.expression) &&
+            tsHelper.isElipsisForwardType(expression.expression.expression, this.checker)
+        ) {
+            return tstl.createDotsLiteral(expression);
         }
 
         const type = this.checker.getTypeAtLocation(expression.expression);
@@ -4650,6 +4649,25 @@ export class LuaTransformer {
             // But this should be changed to return tstl.createNilLiteral()
             // at some point.
             return tstl.createIdentifier("nil");
+        }
+
+        // Validate @elipsisForward
+        if (tsHelper.isElipsisForwardType(identifier, this.checker)) {
+            const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
+            if (!callExpression || !callExpression.parent || !ts.isSpreadElement(callExpression.parent)) {
+                throw TSTLErrors.InvalidElipsisForward(
+                    identifier,
+                    "@elipsesForward can only be used on a function, and called in a spread expression."
+                );
+            } else if (
+                callExpression.arguments.length !== 1 ||
+                !tsHelper.isRestParameter(callExpression.arguments[0], this.checker)
+            ) {
+                throw TSTLErrors.InvalidElipsisForward(
+                    callExpression,
+                    "@elipsesForward function can only be passed a single rest parameter."
+                );
+            }
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)

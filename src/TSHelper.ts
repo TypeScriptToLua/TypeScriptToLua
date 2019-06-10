@@ -196,13 +196,9 @@ export class TSHelper {
         return declarations.some(d => ts.isParameter(d) && d.dotDotDotToken !== undefined);
     }
 
-    public static hasParameter(
-        parameters: ts.NodeArray<ts.ParameterDeclaration>,
-        parameter: ts.Node,
-        checker: ts.TypeChecker
-    ): boolean {
-        const symbol = checker.getSymbolAtLocation(parameter);
-        return symbol !== undefined && parameters.some(p => symbol === checker.getSymbolAtLocation(p.name));
+    public static isElipsisForwardType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ElipsisForward);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {

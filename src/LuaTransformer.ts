@@ -3764,7 +3764,7 @@ export class LuaTransformer {
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
         const property = this.getIdentifierText(expression.name);
 
-        const constEnumValue = this.getConstEnumValue(expression);
+        const constEnumValue = this.tryGetConstEnumValue(expression);
         if (constEnumValue) {
             return constEnumValue;
         }
@@ -3940,7 +3940,7 @@ export class LuaTransformer {
         const table = this.transformExpression(expression.expression);
         const index = this.transformExpression(expression.argumentExpression);
 
-        const constEnumValue = this.getConstEnumValue(expression);
+        const constEnumValue = this.tryGetConstEnumValue(expression);
         if (constEnumValue) {
             return constEnumValue;
         }
@@ -3959,7 +3959,7 @@ export class LuaTransformer {
         }
     }
 
-    private getConstEnumValue(
+    private tryGetConstEnumValue(
         node: ts.PropertyAccessExpression | ts.ElementAccessExpression
     ): tstl.Expression | undefined {
         const value = this.checker.getConstantValue(node);

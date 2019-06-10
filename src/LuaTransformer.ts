@@ -1388,11 +1388,7 @@ export class LuaTransformer {
         return [paramNames, dotsLiteral, restParamName];
     }
 
-    protected isRestParameterReferenced(
-        identifier: tstl.Identifier,
-        scope: Scope,
-        parameters: ts.NodeArray<ts.ParameterDeclaration>
-    ): boolean {
+    protected isRestParameterReferenced(identifier: tstl.Identifier, scope: Scope): boolean {
         if (!identifier.symbolId) {
             return true;
         }
@@ -1408,7 +1404,7 @@ export class LuaTransformer {
                     return true;
                 }
                 const scopeFunction = tsHelper.findFirstNodeAbove(r, ts.isFunctionLike);
-                return scopeFunction === undefined || scopeFunction.parameters !== parameters;
+                return scopeFunction === undefined || !tsHelper.hasParameter(scopeFunction.parameters, r, this.checker);
             })
         );
     }
@@ -1453,7 +1449,7 @@ export class LuaTransformer {
         }
 
         // Push spread operator here
-        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope, parameters)) {
+        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope)) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
@@ -4568,11 +4564,8 @@ export class LuaTransformer {
 
         if (tsHelper.isRestParameter(expression.expression, this.checker)) {
             const scopeFunction = tsHelper.findFirstNodeAbove(expression, ts.isFunctionLike);
-            if (scopeFunction) {
-                const symbol = this.checker.getSymbolAtLocation(expression.expression);
-                if (symbol && scopeFunction.parameters.some(p => symbol === this.checker.getSymbolAtLocation(p.name))) {
-                    return tstl.createDotsLiteral(expression);
-                }
+            if (scopeFunction && tsHelper.hasParameter(scopeFunction.parameters, expression.expression, this.checker)) {
+                return tstl.createDotsLiteral(expression);
             }
         }
 

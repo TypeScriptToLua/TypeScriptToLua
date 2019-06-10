@@ -516,6 +516,20 @@ test("Function rest parameter", () => {
     expect(util.transpileAndExecute(code)).toBe("BCD");
 });
 
+test("Function nested rest parameter", () => {
+    const code = `
+        function foo(a: unknown, ...b: string[]) {
+            function bar() {
+                return b.join("");
+            }
+            return bar();
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileAndExecute(code)).toBe("BCD");
+});
+
 test("Function rest forward", () => {
     const code = `
         function foo(a: unknown, ...b: string[]) {
@@ -529,5 +543,20 @@ test("Function rest forward", () => {
     `;
 
     expect(util.transpileString(code)).not.toMatch("b = ({...})");
+    expect(util.transpileAndExecute(code)).toBe("BCD");
+});
+
+test("Function nested rest forward", () => {
+    const code = `
+        function foo(a: unknown, ...b: string[]) {
+            function bar() {
+                const c = [...b];
+                return c.join("");
+            }
+            return bar();
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
     expect(util.transpileAndExecute(code)).toBe("BCD");
 });

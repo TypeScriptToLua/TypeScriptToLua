@@ -1388,7 +1388,11 @@ export class LuaTransformer {
         return [paramNames, dotsLiteral, restParamName];
     }
 
-    protected isRestParameterReferenced(identifier: tstl.Identifier, scope: Scope): boolean {
+    protected isRestParameterReferenced(
+        identifier: tstl.Identifier,
+        scope: Scope,
+        parameters: ts.NodeArray<ts.ParameterDeclaration>
+    ): boolean {
         if (!identifier.symbolId) {
             return true;
         }
@@ -1398,8 +1402,14 @@ export class LuaTransformer {
         const references = scope.referencedSymbols.get(identifier.symbolId);
         return (
             references !== undefined &&
-            // Ignore references that have spread element applied
-            references.some(r => r.parent === undefined || !ts.isSpreadElement(r.parent))
+            // Ignore references that have spread element applied (unless the reference is in a nested function)
+            references.some(r => {
+                if (r.parent === undefined || !ts.isSpreadElement(r.parent)) {
+                    return true;
+                }
+                const scopeFunction = tsHelper.findFirstNodeAbove(r, ts.isFunctionLike);
+                return scopeFunction === undefined || scopeFunction.parameters !== parameters;
+            })
         );
     }
 
@@ -1443,7 +1453,7 @@ export class LuaTransformer {
         }
 
         // Push spread operator here
-        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope)) {
+        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope, parameters)) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
@@ -4557,7 +4567,13 @@ export class LuaTransformer {
         }
 
         if (tsHelper.isRestParameter(expression.expression, this.checker)) {
-            return tstl.createDotsLiteral(expression);
+            const scopeFunction = tsHelper.findFirstNodeAbove(expression, ts.isFunctionLike);
+            if (scopeFunction) {
+                const symbol = this.checker.getSymbolAtLocation(expression.expression);
+                if (symbol && scopeFunction.parameters.some(p => symbol === this.checker.getSymbolAtLocation(p.name))) {
+                    return tstl.createDotsLiteral(expression);
+                }
+            }
         }
 
         const type = this.checker.getTypeAtLocation(expression.expression);

@@ -5252,7 +5252,9 @@ export class LuaTransformer {
                 if (declaration && identifier.pos < declaration.pos) {
                     throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
                 }
-            } else if (symbolId !== undefined) {
+            }
+
+            if (symbolId !== undefined) {
                 //Mark symbol as seen in all current scopes
                 for (const scope of this.scopeStack) {
                     if (!scope.referencedSymbols) {

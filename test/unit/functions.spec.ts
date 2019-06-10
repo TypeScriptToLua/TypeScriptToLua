@@ -505,7 +505,7 @@ test("Function rest binding pattern", () => {
     expect(result).toBe("defxyzabc");
 });
 
-test("Function rest parameter", () => {
+test.each([{}, { noHoisting: true }])("Function rest parameter", compilerOptions => {
     const code = `
         function foo(a: unknown, ...b: string[]) {
             return b.join("");
@@ -513,10 +513,10 @@ test("Function rest parameter", () => {
         return foo("A", "B", "C", "D");
     `;
 
-    expect(util.transpileAndExecute(code)).toBe("BCD");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test("Function nested rest parameter", () => {
+test.each([{}, { noHoisting: true }])("Function nested rest parameter", compilerOptions => {
     const code = `
         function foo(a: unknown, ...b: string[]) {
             function bar() {
@@ -527,10 +527,10 @@ test("Function nested rest parameter", () => {
         return foo("A", "B", "C", "D");
     `;
 
-    expect(util.transpileAndExecute(code)).toBe("BCD");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test("Function nested rest spread", () => {
+test.each([{}, { noHoisting: true }])("Function nested rest spread", compilerOptions => {
     const code = `
         function foo(a: unknown, ...b: string[]) {
             function bar() {
@@ -542,10 +542,10 @@ test("Function nested rest spread", () => {
         return foo("A", "B", "C", "D");
     `;
 
-    expect(util.transpileAndExecute(code)).toBe("BCD");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test("@elipsisForward", () => {
+test.each([{}, { noHoisting: true }])("@elipsisForward", compilerOptions => {
     const tsHeader = `
         /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
     `;
@@ -561,7 +561,23 @@ test("@elipsisForward", () => {
     `;
 
     expect(util.transpileString(tsHeader + code)).not.toMatch("b = ({...})");
-    expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("BCD");
+    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCD");
+});
+
+test.each([{}, { noHoisting: true }])("@elipsisForward mixed with rest spread", compilerOptions => {
+    const tsHeader = `
+        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
+    `;
+    const code = `
+        function foo(a: unknown, ...b: unknown[]) {
+            const c = [...elipsisForward(b)];
+            const d = [...b];
+            return c.join("") + d.join("");
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCDBCD");
 });
 
 test("invalid non-ambient @elipsisForward", () => {

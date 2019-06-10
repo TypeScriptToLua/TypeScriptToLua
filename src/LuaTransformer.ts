@@ -2674,17 +2674,29 @@ export class LuaTransformer {
     }
 
     protected transformComparisonExpression(expression: ts.BinaryExpression): ExpressionVisitResult {
-        const left = this.transformExpression(expression.left);
-        const right = this.transformExpression(expression.right);
+        let left: tstl.Expression | undefined;
+        let right: tstl.Expression | undefined;
         const operator = expression.operatorToken.kind;
 
         // Custom handling for 'typeof(foo) === "type"'
-        if (ts.isTypeOfExpression(expression.left) && tstl.isStringLiteral(right)) {
-            return this.transformTypeOfLiteralComparison(expression.left, right, operator, expression);
-        } else if (ts.isTypeOfExpression(expression.right) && tstl.isStringLiteral(left)) {
-            return this.transformTypeOfLiteralComparison(expression.right, left, operator, expression);
+        if (ts.isTypeOfExpression(expression.left)) {
+            right = this.transformExpression(expression.right);
+            if (tstl.isStringLiteral(right)) {
+                return this.transformTypeOfLiteralComparison(expression.left, right, operator, expression);
+            }
+        } else if (ts.isTypeOfExpression(expression.right)) {
+            left = this.transformExpression(expression.left);
+            if (tstl.isStringLiteral(left)) {
+                return this.transformTypeOfLiteralComparison(expression.right, left, operator, expression);
+            }
         }
 
+        if (!left) {
+            left = this.transformExpression(expression.left);
+        }
+        if (!right) {
+            right = this.transformExpression(expression.right);
+        }
         return this.transformBinaryOperation(left, right, operator, expression);
     }
 

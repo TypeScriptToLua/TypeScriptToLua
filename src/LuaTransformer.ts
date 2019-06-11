@@ -4660,8 +4660,9 @@ export class LuaTransformer {
                     "@elipsesForward can only be used on a function, and called in a spread expression."
                 );
             } else if (
-                callExpression.arguments.length !== 1 ||
-                !tsHelper.isRestParameter(callExpression.arguments[0], this.checker)
+                callExpression.arguments.length > 1 ||
+                (callExpression.arguments.length === 1 &&
+                    !tsHelper.isRestParameter(callExpression.arguments[0], this.checker))
             ) {
                 throw TSTLErrors.InvalidElipsisForward(
                     callExpression,

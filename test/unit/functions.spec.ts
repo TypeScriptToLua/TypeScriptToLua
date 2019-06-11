@@ -633,7 +633,7 @@ test.each(["unknown", "unknown[]", "Array<[]>", "Iterable<unknown>"])(
     }
 );
 
-test.each(["", "a, 0", "a, 0, 1"])("invalid @elipsisForward argument count (%p)", args => {
+test.each(["a, 0", "a, 0, 1"])("invalid @elipsisForward argument count (%p)", args => {
     const code = `
         /** @elipsisForward */ declare function elipsisForward(...args: unknown[]): unknown[];
         function foo(...a: unknown[]) {
@@ -646,4 +646,20 @@ test.each(["", "a, 0", "a, 0, 1"])("invalid @elipsisForward argument count (%p)"
             "@elipsesForward function can only be passed a single rest parameter."
         ).message
     );
+});
+
+test.each([{}, { noHoisting: true }])("@elipsisForward with no argument", compilerOptions => {
+    const tsHeader = `
+        /** @elipsisForward */ declare function elipsisForward(args?: unknown): unknown[];
+    `;
+    const code = `
+        function foo(a: unknown, ...b: unknown[]) {
+            const c = [...elipsisForward()];
+            return c.join("");
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileString(tsHeader + code)).not.toMatch("b = ({...})");
+    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCD");
 });

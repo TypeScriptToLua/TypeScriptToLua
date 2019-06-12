@@ -545,121 +545,68 @@ test.each([{}, { noHoisting: true }])("Function nested rest spread", compilerOpt
     expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test.each([{}, { noHoisting: true }])("@elipsisForward", compilerOptions => {
-    const tsHeader = `
-        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
-    `;
+test.each([{}, { noHoisting: true }])("Function rest parameter (unreferenced)", compilerOptions => {
     const code = `
-        function foo(a: unknown, ...b: unknown[]) {
-            const c = [...elipsisForward(b)];
+        function foo(a: unknown, ...b: string[]) {
+            return "foobar";
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileString(code, compilerOptions)).not.toMatch("b = ({...})");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("foobar");
+});
+
+test.each([{}, { noHoisting: true }])("@varArg", compilerOptions => {
+    const code = `
+        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
+            const c = [...b];
             return c.join("");
         }
-        function bar(a: unknown, ...b: unknown[]) {
-            return foo(a, ...elipsisForward(b));
+        function bar(a: unknown, ...b: LuaVarArg<unknown[]>) {
+            return foo(a, ...b);
         }
         return bar("A", "B", "C", "D");
     `;
 
-    expect(util.transpileString(tsHeader + code)).not.toMatch("b = ({...})");
-    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCD");
+    const lua = util.transpileString(code, compilerOptions);
+    expect(lua).not.toMatch("b = ({...})");
+    expect(lua).not.toMatch("unpack");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test.each([{}, { noHoisting: true }])("@elipsisForward mixed with rest spread", compilerOptions => {
-    const tsHeader = `
-        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
-    `;
+test.each([{}, { noHoisting: true }])("@varArg array access", compilerOptions => {
     const code = `
-        function foo(a: unknown, ...b: unknown[]) {
-            const c = [...elipsisForward(b)];
-            const d = [...b];
-            return c.join("") + d.join("");
+        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
+            const c = [...b];
+            return c.join("") + b[0];
         }
         return foo("A", "B", "C", "D");
     `;
 
-    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCDBCD");
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCDB");
 });
 
-test("invalid non-ambient @elipsisForward", () => {
+test.each([{}, { noHoisting: true }])("@varArg global", compilerOptions => {
     const code = `
-        /** @elipsisForward */ function elipsisForward(args: unknown): unknown[] { return []; }
-    `;
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidElipsisForward(
-            ts.createEmptyStatement(),
-            "@elipsesForward can only be used on a function, and called in a spread expression."
-        ).message
-    );
-});
-
-test.each([
-    "const a = elipsisForward(args);",
-    "const a = [...[elipsisForward()]]",
-    "for (const v of elipsisForward(args)) {}",
-    "console.log(elipsisForward);",
-    "elipsisForward.call(null, 0, 0, 0);",
-    "let array = [0, elipsisForward, 1];",
-    "const call: any; call(elipsisForward);",
-])("invalid @elipsisForward use (%p)", statement => {
-    const code = `
-        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
-        function foo(...args: unknown[]) {
-            ${statement}
-        }`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidElipsisForward(
-            ts.createEmptyStatement(),
-            "@elipsesForward can only be used on a function, and called in a spread expression."
-        ).message
-    );
-});
-
-test.each(["unknown", "unknown[]", "Array<[]>", "Iterable<unknown>"])(
-    "invalid @elipsisForward argument type (%p)",
-    type => {
-        const code = `
-        /** @elipsisForward */ declare function elipsisForward(args: unknown): unknown[];
-        function foo(a: ${type}) {
-            const x = [...elipsisForward(a)];
-        }`;
-
-        expect(() => util.transpileString(code)).toThrow(
-            TSTLErrors.InvalidElipsisForward(
-                ts.createEmptyStatement(),
-                "@elipsesForward function can only be passed a single rest parameter."
-            ).message
-        );
-    }
-);
-
-test.each(["a, 0", "a, 0, 1"])("invalid @elipsisForward argument count (%p)", args => {
-    const code = `
-        /** @elipsisForward */ declare function elipsisForward(...args: unknown[]): unknown[];
-        function foo(...a: unknown[]) {
-            const x = [...elipsisForward(${args})];
-        }`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidElipsisForward(
-            ts.createEmptyStatement(),
-            "@elipsesForward function can only be passed a single rest parameter."
-        ).message
-    );
-});
-
-test.each([{}, { noHoisting: true }])("@elipsisForward with no argument", compilerOptions => {
-    const tsHeader = `
-        /** @elipsisForward */ declare function elipsisForward(args?: unknown): unknown[];
-    `;
-    const code = `
-        function foo(a: unknown, ...b: unknown[]) {
-            const c = [...elipsisForward()];
-            return c.join("");
-        }
-        return foo("A", "B", "C", "D");
+        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        declare const arg: LuaVarArg<string[]>;
+        const arr = [...arg];
+        const result = arr.join("");
     `;
 
-    expect(util.transpileString(tsHeader + code)).not.toMatch("b = ({...})");
-    expect(util.transpileAndExecute(code, compilerOptions, undefined, tsHeader)).toBe("BCD");
+    const luaBody = util.transpileString(code, compilerOptions, false);
+    expect(luaBody).not.toMatch("unpack");
+
+    const lua = `
+        function test(...)
+            ${luaBody}
+            return result
+        end
+        return test("A", "B", "C", "D")
+    `;
+
+    expect(util.executeLua(lua)).toBe("ABCD");
 });

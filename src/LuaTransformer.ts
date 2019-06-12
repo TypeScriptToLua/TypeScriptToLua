@@ -1396,15 +1396,12 @@ export class LuaTransformer {
             return false;
         }
         const references = scope.referencedSymbols.get(identifier.symbolId);
-        return (
-            references !== undefined &&
-            // Ignore references using @elipsisForward
-            references.some(
-                r =>
-                    r.parent === undefined ||
-                    !ts.isCallExpression(r.parent) ||
-                    !tsHelper.isElipsisForwardType(r.parent.expression, this.checker)
-            )
+        if (!references) {
+            return false;
+        }
+        // Ignore references to @varArg types in spread elements
+        return references.some(
+            r => !r.parent || !ts.isSpreadElement(r.parent) || !tsHelper.isVarArgType(r, this.checker)
         );
     }
 
@@ -4561,10 +4558,7 @@ export class LuaTransformer {
             return innerExpression;
         }
 
-        if (
-            ts.isCallExpression(expression.expression) &&
-            tsHelper.isElipsisForwardType(expression.expression.expression, this.checker)
-        ) {
+        if (ts.isIdentifier(expression.expression) && tsHelper.isVarArgType(expression.expression, this.checker)) {
             return tstl.createDotsLiteral(expression);
         }
 
@@ -4649,26 +4643,6 @@ export class LuaTransformer {
             // But this should be changed to return tstl.createNilLiteral()
             // at some point.
             return tstl.createIdentifier("nil");
-        }
-
-        // Validate @elipsisForward
-        if (tsHelper.isElipsisForwardType(identifier, this.checker)) {
-            const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
-            if (!callExpression || !callExpression.parent || !ts.isSpreadElement(callExpression.parent)) {
-                throw TSTLErrors.InvalidElipsisForward(
-                    identifier,
-                    "@elipsesForward can only be used on a function, and called in a spread expression."
-                );
-            } else if (
-                callExpression.arguments.length > 1 ||
-                (callExpression.arguments.length === 1 &&
-                    !tsHelper.isRestParameter(callExpression.arguments[0], this.checker))
-            ) {
-                throw TSTLErrors.InvalidElipsisForward(
-                    callExpression,
-                    "@elipsesForward function can only be passed a single rest parameter."
-                );
-            }
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)

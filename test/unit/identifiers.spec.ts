@@ -788,3 +788,46 @@ test("exported variable with lua keyword as name is not renamed", () => {
 
     expect(util.transpileExecuteAndReturnExport(code, "print")).toBe("foobar");
 });
+
+describe("globalThis translation", () => {
+    test("globalThis to _G (expression)", () => {
+        const code = `
+        var foo = "bar";
+        return globalThis.foo;`;
+    
+        const lua = util.transpileString(code);
+    
+        expect(util.executeLua(lua)).toBe("bar");
+    });
+
+    test("globalThis to _G (assign)", () => {
+        const code = `
+        globalThis.foo = "bar";
+        return globalThis.foo;`;
+    
+        const lua = util.transpileString(code);
+    
+        expect(util.executeLua(lua)).toBe("bar");
+    });
+
+    test("globalThis to _G (reassign)", () => {
+        const code = `
+        globalThis.foo = "bar";
+        globalThis.foo = "baz";
+        return globalThis.foo;`;
+    
+        const lua = util.transpileString(code);
+    
+        expect(util.executeLua(lua)).toBe("baz");
+    });
+
+    test("globalThis to _G (function)", () => {
+        const code = `
+        globalThis.foo = () => "bar";
+        return globalThis.foo();`;
+    
+        const lua = util.transpileString(code);
+    
+        expect(util.executeLua(lua)).toBe("bar");
+    });
+});

@@ -4630,18 +4630,6 @@ export class LuaTransformer {
     }
 
     public transformIdentifier(identifier: ts.Identifier): tstl.Identifier {
-        if (identifier.escapedText === "globalThis") {
-            return tstl.createIdentifier("_G", identifier, this.getIdentifierSymbolId(identifier));
-        }
-
-        if (identifier.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
-            // TODO this is a hack that allows use to keep Identifier
-            // as return time as changing that would break a lot of stuff.
-            // But this should be changed to return tstl.createNilLiteral()
-            // at some point.
-            return tstl.createIdentifier("nil");
-        }
-
         const text = this.hasUnsafeIdentifierName(identifier)
             ? this.createSafeName(this.getIdentifierText(identifier))
             : this.getIdentifierText(identifier);
@@ -4656,6 +4644,10 @@ export class LuaTransformer {
         const exportScope = this.getIdentifierExportScope(identifier);
         if (exportScope) {
             return this.createExportedIdentifier(identifier, exportScope);
+        }
+
+        if (expression.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+            return tstl.createNilLiteral();
         }
 
         switch (this.getIdentifierText(expression)) {
@@ -4673,6 +4665,17 @@ export class LuaTransformer {
                 const math = tstl.createIdentifier("math");
                 const huge = tstl.createStringLiteral("huge");
                 return tstl.createTableIndexExpression(math, huge, expression);
+
+            case "globalThis":
+                const isIdentifierStandardLibraryType = !tsHelper.isStandardLibraryType(
+                    this.checker.getTypeAtLocation(expression),
+                    undefined,
+                    this.program
+                );
+                if (isIdentifierStandardLibraryType) {
+                    return tstl.createIdentifier("_G", expression, this.getIdentifierSymbolId(expression));
+                }
+                break;
         }
 
         return identifier;
@@ -5176,8 +5179,7 @@ export class LuaTransformer {
     protected hasUnsafeSymbolName(symbol: ts.Symbol, tsOriginal?: ts.Identifier): boolean {
         const isLuaKeyword = luaKeywords.has(symbol.name);
         const isInvalidIdentifier = !tsHelper.isValidLuaIdentifier(symbol.name);
-        // TODO investigate: declarations will be undefined if "globalThis" is passed, could be a TS bug
-        // WORKAROUND: added check for symbol.declarations
+        // TODO rework once microsoft/TypeScript#24706 is fixed and maybe remove check for symbol.declarations
         const isAmbient = symbol.declarations && symbol.declarations.some(d => tsHelper.isAmbient(d));
         if ((isLuaKeyword || isInvalidIdentifier) && isAmbient) {
             // Catch ambient declarations of identifiers with bad names

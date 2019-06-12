@@ -794,9 +794,9 @@ describe("globalThis translation", () => {
         const code = `
         var foo = "bar";
         return globalThis.foo;`;
-    
+
         const lua = util.transpileString(code);
-    
+
         expect(util.executeLua(lua)).toBe("bar");
     });
 
@@ -804,9 +804,9 @@ describe("globalThis translation", () => {
         const code = `
         globalThis.foo = "bar";
         return globalThis.foo;`;
-    
+
         const lua = util.transpileString(code);
-    
+
         expect(util.executeLua(lua)).toBe("bar");
     });
 
@@ -815,9 +815,9 @@ describe("globalThis translation", () => {
         globalThis.foo = "bar";
         globalThis.foo = "baz";
         return globalThis.foo;`;
-    
+
         const lua = util.transpileString(code);
-    
+
         expect(util.executeLua(lua)).toBe("baz");
     });
 
@@ -825,9 +825,9 @@ describe("globalThis translation", () => {
         const code = `
         globalThis.foo = () => "bar";
         return globalThis.foo();`;
-    
+
         const lua = util.transpileString(code);
-    
+
         expect(util.executeLua(lua)).toBe("bar");
     });
 });

@@ -198,7 +198,7 @@ export class TSHelper {
 
     public static isVarArgType(node: ts.Node, checker: ts.TypeChecker): boolean {
         const type = checker.getTypeAtLocation(node);
-        return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.VarArg);
+        return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.Vararg);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {

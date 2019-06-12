@@ -557,9 +557,9 @@ test.each([{}, { noHoisting: true }])("Function rest parameter (unreferenced)", 
     expect(util.transpileAndExecute(code, compilerOptions)).toBe("foobar");
 });
 
-test.each([{}, { noHoisting: true }])("@varArg", compilerOptions => {
+test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
     const code = `
-        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("");
@@ -576,9 +576,9 @@ test.each([{}, { noHoisting: true }])("@varArg", compilerOptions => {
     expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
 });
 
-test.each([{}, { noHoisting: true }])("@varArg array access", compilerOptions => {
+test.each([{}, { noHoisting: true }])("@vararg array access", compilerOptions => {
     const code = `
-        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("") + b[0];
@@ -589,9 +589,9 @@ test.each([{}, { noHoisting: true }])("@varArg array access", compilerOptions =>
     expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCDB");
 });
 
-test.each([{}, { noHoisting: true }])("@varArg global", compilerOptions => {
+test.each([{}, { noHoisting: true }])("@vararg global", compilerOptions => {
     const code = `
-        /** @varArg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         declare const arg: LuaVarArg<string[]>;
         const arr = [...arg];
         const result = arr.join("");

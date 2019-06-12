@@ -1399,7 +1399,7 @@ export class LuaTransformer {
         if (!references) {
             return false;
         }
-        // Ignore references to @varArg types in spread elements
+        // Ignore references to @vararg types in spread elements
         return references.some(
             r => !r.parent || !ts.isSpreadElement(r.parent) || !tsHelper.isVarArgType(r, this.checker)
         );

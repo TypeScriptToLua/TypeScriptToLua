@@ -30,7 +30,7 @@ export class Decorator {
             case "noselfinfile":
                 return DecoratorKind.NoSelfInFile;
             case "vararg":
-                return DecoratorKind.VarArg;
+                return DecoratorKind.Vararg;
         }
 
         return undefined;
@@ -63,5 +63,5 @@ export enum DecoratorKind {
     LuaTable = "LuaTable",
     NoSelf = "NoSelf",
     NoSelfInFile = "NoSelfInFile",
-    VarArg = "VarArg",
+    Vararg = "Vararg",
 }

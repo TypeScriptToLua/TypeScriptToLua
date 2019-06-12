@@ -204,8 +204,4 @@ export class TSTLErrors {
             node
         );
     };
-
-    public static InvalidElipsisForward = (node: ts.Node, message: string) => {
-        return new TranspileError(`Invalid use of @elipsisForward: ${message}`, node);
-    };
 }

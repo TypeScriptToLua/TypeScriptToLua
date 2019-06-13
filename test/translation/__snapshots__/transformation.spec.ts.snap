@@ -256,6 +256,7 @@ end"
 exports[`Transformation (functionRestArguments) 1`] = `
 "function varargsFunction(self, a, ...)
     local b = ({...})
+    local c = b
 end"
 `;
 
@@ -319,7 +320,6 @@ end
 function MyClass.prototype.____constructor(self)
 end
 function MyClass.prototype.varargsFunction(self, a, ...)
-    local b = ({...})
 end"
 `;
 

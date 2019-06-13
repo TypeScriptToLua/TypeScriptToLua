@@ -1,1 +1,3 @@
-function varargsFunction(a: string, ...b: string[]): void {}
+function varargsFunction(a: string, ...b: string[]): void {
+    const c = b;
+}

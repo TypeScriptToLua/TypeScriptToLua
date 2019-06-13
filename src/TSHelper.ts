@@ -184,6 +184,28 @@ export class TSHelper {
         return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
     }
 
+    public static isRestParameter(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const symbol = checker.getSymbolAtLocation(node);
+        if (!symbol) {
+            return false;
+        }
+        const declarations = symbol.getDeclarations();
+        if (!declarations) {
+            return false;
+        }
+        return declarations.some(d => ts.isParameter(d) && d.dotDotDotToken !== undefined);
+    }
+
+    public static isVarArgType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.Vararg);
+    }
+
+    public static isForRangeType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ForRange);
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const signature = checker.getResolvedSignature(node);

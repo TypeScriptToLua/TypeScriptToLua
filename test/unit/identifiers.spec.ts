@@ -830,4 +830,19 @@ describe("globalThis translation", () => {
 
         expect(util.executeLua(lua)).toBe("bar");
     });
+
+    test("globalThis to _G (type alias)", () => {
+        const code = `
+        declare let globalAlias: typeof globalThis;
+        globalAlias.foo = "bar";
+        return globalThis.foo;`;
+
+        const lua = util.transpileString(code);
+
+        expect(util.executeLua(lua)).toBe("bar");
+    });
+
+    // TODO globalThis type tests for union and intersection
 });
+
+	

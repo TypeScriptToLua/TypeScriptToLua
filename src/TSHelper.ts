@@ -201,6 +201,11 @@ export class TSHelper {
         return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.Vararg);
     }
 
+    public static isForRangeType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ForRange);
+    }
+
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {
         if (ts.isCallExpression(node)) {
             const signature = checker.getResolvedSignature(node);

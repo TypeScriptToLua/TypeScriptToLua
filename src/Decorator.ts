@@ -31,6 +31,8 @@ export class Decorator {
                 return DecoratorKind.NoSelfInFile;
             case "vararg":
                 return DecoratorKind.Vararg;
+            case "forrange":
+                return DecoratorKind.ForRange;
         }
 
         return undefined;
@@ -64,4 +66,5 @@ export enum DecoratorKind {
     NoSelf = "NoSelf",
     NoSelfInFile = "NoSelfInFile",
     Vararg = "Vararg",
+    ForRange = "ForRange",
 }

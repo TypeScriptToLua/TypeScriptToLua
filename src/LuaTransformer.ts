@@ -2379,11 +2379,59 @@ export class LuaTransformer {
         }
     }
 
+    protected transformForRangeStatement(statement: ts.ForOfStatement, body: tstl.Block): StatementVisitResult {
+        if (!ts.isCallExpression(statement.expression)) {
+            throw TSTLErrors.InvalidForRangeCall(statement.expression, "Expression must be a call expression.");
+        }
+
+        if (statement.expression.arguments.length < 2 || statement.expression.arguments.length > 3) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.expression,
+                "@forRange function must take 2 or 3 arguments."
+            );
+        }
+
+        if (statement.expression.arguments.some(a => !tsHelper.isNumberType(this.checker.getTypeAtLocation(a)))) {
+            throw TSTLErrors.InvalidForRangeCall(statement.expression, "@forRange arguments must be number types.");
+        }
+
+        if (!ts.isVariableDeclarationList(statement.initializer)) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.initializer,
+                "@forRange loop must declare its own control variable."
+            );
+        }
+
+        const controlDeclaration = statement.initializer.declarations[0];
+        if (!ts.isIdentifier(controlDeclaration.name)) {
+            throw TSTLErrors.InvalidForRangeCall(statement.initializer, "@forRange loop cannot use destructuring.");
+        }
+
+        const controlType = this.checker.getTypeAtLocation(controlDeclaration);
+        if (controlType && !tsHelper.isNumberType(controlType)) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.expression,
+                "@forRange function must return Iterable<number> or Array<number>."
+            );
+        }
+
+        const control = this.transformIdentifier(controlDeclaration.name);
+        const signature = this.checker.getResolvedSignature(statement.expression);
+        const [start, limit, step] = this.transformArguments(statement.expression.arguments, signature);
+        return tstl.createForStatement(body, control, start, limit, step, statement);
+    }
+
     public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
         // Transpile body
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
+        if (
+            ts.isCallExpression(statement.expression) &&
+            tsHelper.isForRangeType(statement.expression.expression, this.checker)
+        ) {
+            // ForRange
+            return this.transformForRangeStatement(statement, body);
+        } else if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
             // LuaIterators
             return this.transformForOfLuaIteratorStatement(statement, body);
         } else if (
@@ -4636,6 +4684,16 @@ export class LuaTransformer {
             // But this should be changed to return tstl.createNilLiteral()
             // at some point.
             return tstl.createIdentifier("nil");
+        }
+
+        if (tsHelper.isForRangeType(identifier, this.checker)) {
+            const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
+            if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
+                throw TSTLErrors.InvalidForRangeCall(
+                    identifier,
+                    "@forRange function can only be used as an iterable in a for...of loop."
+                );
+            }
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)

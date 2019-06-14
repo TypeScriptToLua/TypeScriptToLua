@@ -72,6 +72,14 @@ export class TSHelper {
         );
     }
 
+    public static getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
+        const declarations = symbol.getDeclarations();
+        if (declarations) {
+            return declarations.find(d => (ts.getCombinedModifierFlags(d) & ts.ModifierFlags.Export) !== 0);
+        }
+        return undefined;
+    }
+
     public static isDeclaration(node: ts.Node): node is ts.Declaration {
         return (
             ts.isEnumDeclaration(node) ||
@@ -174,6 +182,28 @@ export class TSHelper {
     public static isLuaIteratorType(node: ts.Node, checker: ts.TypeChecker): boolean {
         const type = checker.getTypeAtLocation(node);
         return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.LuaIterator);
+    }
+
+    public static isRestParameter(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const symbol = checker.getSymbolAtLocation(node);
+        if (!symbol) {
+            return false;
+        }
+        const declarations = symbol.getDeclarations();
+        if (!declarations) {
+            return false;
+        }
+        return declarations.some(d => ts.isParameter(d) && d.dotDotDotToken !== undefined);
+    }
+
+    public static isVarArgType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return type !== undefined && TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.Vararg);
+    }
+
+    public static isForRangeType(node: ts.Node, checker: ts.TypeChecker): boolean {
+        const type = checker.getTypeAtLocation(node);
+        return TSHelper.getCustomDecorators(type, checker).has(DecoratorKind.ForRange);
     }
 
     public static isTupleReturnCall(node: ts.Node, checker: ts.TypeChecker): boolean {

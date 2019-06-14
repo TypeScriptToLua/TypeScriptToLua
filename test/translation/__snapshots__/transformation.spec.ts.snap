@@ -256,6 +256,7 @@ end"
 exports[`Transformation (functionRestArguments) 1`] = `
 "function varargsFunction(self, a, ...)
     local b = ({...})
+    local c = b
 end"
 `;
 
@@ -319,7 +320,6 @@ end
 function MyClass.prototype.____constructor(self)
 end
 function MyClass.prototype.varargsFunction(self, a, ...)
-    local b = ({...})
 end"
 `;
 
@@ -580,7 +580,7 @@ exports[`Transformation (tryCatch) 1`] = `
     local ____TS_try, er = pcall(function()
         local a = 42
     end)
-    if not (____TS_try) then
+    if not ____TS_try then
         local b = \\"fail\\"
     end
 end"
@@ -591,7 +591,7 @@ exports[`Transformation (tryCatchFinally) 1`] = `
     local ____TS_try, er = pcall(function()
         local a = 42
     end)
-    if not (____TS_try) then
+    if not ____TS_try then
         local b = \\"fail\\"
     end
     do

@@ -142,3 +142,11 @@ test("Object.fromEntries (Map)", () => {
 
     expect(JSON.parse(result)).toEqual({ foo: "bar" });
 });
+
+test("lualibs should not include tstl header", () => {
+    const code = `
+        const arr = [1, 2, 3];
+        arr.push(4);`;
+
+    expect(util.transpileString(code)).not.toMatch("Generated with");
+});

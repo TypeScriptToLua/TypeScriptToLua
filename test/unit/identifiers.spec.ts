@@ -841,8 +841,4 @@ describe("globalThis translation", () => {
 
         expect(util.executeLua(lua)).toBe("bar");
     });
-
-    // TODO globalThis type tests for union and intersection
 });
-
-	

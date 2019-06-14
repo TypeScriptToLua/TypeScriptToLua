@@ -1,90 +1,81 @@
 import * as util from "../util";
 
 test("Array access", () => {
-    const result = util.transpileAndExecute(
-        `const arr: Array<number> = [3,5,1];
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+    util.testFunction`
+        const arr: Array<number> = [3, 5, 1];
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("ReadonlyArray access", () => {
-    const result = util.transpileAndExecute(
-        `const arr: ReadonlyArray<number> = [3,5,1];
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+    util.testFunction`
+        const arr: ReadonlyArray<number> = [3, 5, 1];
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Array literal access", () => {
-    const result = util.transpileAndExecute(
-        `const arr: number[] = [3,5,1];
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+    util.testFunction`
+        const arr: number[] = [3, 5, 1];
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Readonly array literal access", () => {
-    const result = util.transpileAndExecute(
-        `const arr: readonly number[] = [3,5,1];
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+    util.testFunction`
+        const arr: readonly number[] = [3, 5, 1];
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Array union access", () => {
-    const result = util.transpileAndExecute(
-        `function makeArray(): number[] | string[] { return [3,5,1]; }
+    util.testFunction`
+        function makeArray(): number[] | string[] { return [3, 5, 1]; }
         const arr = makeArray();
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Array union access with empty tuple", () => {
-    const result = util.transpileAndExecute(
-        `function makeArray(): number[] | [] { return [3,5,1]; }
+    util.testFunction`
+        function makeArray(): number[] | [] { return [3, 5, 1]; }
         const arr = makeArray();
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Array union length", () => {
-    const result = util.transpileAndExecute(
-        `function makeArray(): number[] | string[] { return [3,5,1]; }
+    util.testFunction`
+        function makeArray(): number[] | string[] { return [3, 5, 1]; }
         const arr = makeArray();
-        return arr.length;`
-    );
-    expect(result).toBe(3);
+        return arr.length;
+    `.expectToMatchJsResult();
 });
 
 test("Array intersection access", () => {
-    const result = util.transpileAndExecute(
-        `type I = number[] & {foo: string};
+    util.testFunction`
+        type I = number[] & { foo: string };
         function makeArray(): I {
-            let t = [3,5,1];
+            let t = [3, 5, 1];
             (t as I).foo = "bar";
             return (t as I);
         }
         const arr = makeArray();
-        return arr[1];`
-    );
-    expect(result).toBe(5);
+        return arr[1];
+    `.expectToMatchJsResult();
 });
 
 test("Array intersection length", () => {
-    const result = util.transpileAndExecute(
-        `type I = number[] & {foo: string};
+    util.testFunction`
+        type I = number[] & { foo: string };
         function makeArray(): I {
-            let t = [3,5,1];
+            let t = [3, 5, 1];
             (t as I).foo = "bar";
             return (t as I);
         }
         const arr = makeArray();
-        return arr.length;`
-    );
-    expect(result).toBe(3);
+        return arr.length;
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -92,102 +83,89 @@ test.each([
     { member: "name", expected: "array" },
     { member: "length", expected: 1 },
 ])("Derived array access (%p)", ({ member, expected }) => {
-    const luaHeader = `local arr = {name="array", firstElement=function(self) return self[1]; end};`;
-    const typeScriptHeader = `
-        interface CustomArray<T> extends Array<T>{
-            name:string,
-            firstElement():number;
+    const luaHeader = `
+        local arr = {
+            name = "array",
+            firstElement = function(self) return self[1] end
+        }
+    `;
+
+    const tsHeader = `
+        interface CustomArray<T> extends Array<T> {
+            name: string;
+            firstElement(): number;
         };
+
         declare const arr: CustomArray<number>;
     `;
 
-    const result = util.transpileAndExecute(
-        `
+    util.testFunction`
         arr[0] = 3;
-        return arr.${member};`,
-        undefined,
-        luaHeader,
-        typeScriptHeader
-    );
-
-    expect(result).toBe(expected);
+        return arr.${member};
+    `
+        .luaHeader(luaHeader)
+        .tsHeader(tsHeader)
+        .expectToEqual(expected);
 });
 
 test("Array delete", () => {
-    const result = util.transpileAndExecute(
-        `const myarray = [1,2,3,4];
-        delete myarray[2];
-        return \`\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
-    );
-
-    expect(result).toBe("1,2,nil,4");
+    util.testFunction`
+        const array = [1, 2, 3, 4];
+        delete array[2];
+        return { a: array[0], b: array[1], c: array[2], d: array[3] };
+    `.expectToMatchJsResult();
 });
 
 test("Array delete return true", () => {
-    const result = util.transpileAndExecute(
-        `const myarray = [1,2,3,4];
-        const exists = delete myarray[2];
-        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
-    );
-
-    expect(result).toBe("true:1,2,nil,4");
+    util.testFunction`
+        const array = [1, 2, 3, 4];
+        const exists = delete array[2];
+        return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
+    `.expectToMatchJsResult();
 });
 
 test("Array delete return false", () => {
-    const result = util.transpileAndExecute(
-        `const myarray = [1,2,3,4];
-        const exists = delete myarray[4];
-        return \`\${exists}:\${myarray[0]},\${myarray[1]},\${myarray[2]},\${myarray[3]}\`;`
-    );
-
-    expect(result).toBe("true:1,2,3,4");
+    util.testFunction`
+        const array = [1, 2, 3, 4];
+        const exists = delete array[4];
+        return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
+    `.expectToMatchJsResult();
 });
 
 test("Array property access", () => {
-    const code = `
-        type A = number[] & {foo?: string};
-        const a: A = [1,2,3];
+    util.testFunction`
+        type A = number[] & { foo?: string };
+        const a: A = [1, 2, 3];
         a.foo = "bar";
-        return \`\${a.foo}\${a[0]}\${a[1]}\${a[2]}\`;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar123");
+        return { foo: a.foo, a: a[0], b: a[1], c: a[2] };
+    `.expectToMatchJsResult();
 });
 
-test.each([{ length: 0, result: 0 }, { length: 1, result: 1 }, { length: 7, result: 3 }])(
+test.each([{ length: 0, arrayLength: 0 }, { length: 1, arrayLength: 1 }, { length: 7, arrayLength: 3 }])(
     "Array length set",
-    ({ length, result }) => {
-        const code = `
-        const arr = [1, 2, 3];
-        arr.length = ${length};
-        return arr.length;
-    `;
-        expect(util.transpileAndExecute(code)).toBe(result);
+    ({ length, arrayLength }) => {
+        util.testFunction`
+            const array = [1, 2, 3];
+            array.length = ${length};
+            return array.length;
+        `.expectToEqual(arrayLength);
     }
 );
 
-test.each([{ length: 0, result: "0/0" }, { length: 1, result: "1/1" }, { length: 7, result: "7/3" }])(
+test.each([{ length: 0, arrayLength: 0 }, { length: 1, arrayLength: 1 }, { length: 7, arrayLength: 3 }])(
     "Array length set as expression",
-    ({ length, result }) => {
-        const code = `
-        const arr = [1, 2, 3];
-        const l = arr.length = ${length};
-        return \`\${l}/\${arr.length}\`;
-    `;
-        expect(util.transpileAndExecute(code)).toBe(result);
+    ({ length, arrayLength }) => {
+        util.testFunction`
+            const array = [1, 2, 3];
+            const expressionValue = array.length = ${length};
+            return { expressionValue, arrayLength: array.length };
+        `.expectToEqual({ expressionValue: length, arrayLength });
     }
 );
 
-test.each([
-    { length: -1, result: -1 },
-    { length: -7, result: -7 },
-    { length: 0.1, result: 0.1 },
-    { length: "0 / 0", result: "NaN" },
-    { length: "1 / 0", result: "Infinity" },
-    { length: "-1 / 0", result: "-Infinity" },
-])("Invalid array length set", ({ length, result }) => {
-    const code = `
+test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("Invalid array length set", length => {
+    util.testFunction`
         const arr = [1, 2, 3];
         arr.length = ${length};
-    `;
-    expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${result}`);
+    `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
 });

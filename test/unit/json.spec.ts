@@ -9,16 +9,15 @@ const jsonOptions = {
 };
 
 test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" } }'])("JSON (%p)", json => {
-    const lua = util
-        .transpileString({ "main.json": json }, jsonOptions, false)
-        .replace(/^return ([\s\S]+)$/, "return JSONStringify($1)");
-
-    const result = util.executeLua(lua);
-    expect(JSON.parse(result)).toEqual(JSON.parse(json));
+    util.testModule(json)
+        .options(jsonOptions)
+        .setMainFileName("main.json")
+        .expectToEqual(JSON.parse(json));
 });
 
 test("Empty JSON", () => {
-    expect(() => util.transpileString({ "main.json": "" }, jsonOptions, false)).toThrowExactError(
-        TSTLErrors.InvalidJsonFileContent(util.nodeStub)
-    );
+    util.testModule("")
+        .options(jsonOptions)
+        .setMainFileName("main.json")
+        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidJsonFileContent(util.nodeStub));
 });

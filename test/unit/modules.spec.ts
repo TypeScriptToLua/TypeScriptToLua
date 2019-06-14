@@ -11,54 +11,46 @@ describe("module import/export elision", () => {
         }
     `;
 
-    const expectToElideImport = (code: string) => {
-        const lua = util.transpileString(
-            { "module.d.ts": moduleDeclaration, "main.ts": code },
-            { module: ts.ModuleKind.CommonJS },
-            false
-        );
-
-        expect(() => util.executeLua(lua)).not.toThrow();
+    const expectToElideImport: util.TapCallback = builder => {
+        builder.addExtraFile("module.d.ts", moduleDeclaration).options({ module: ts.ModuleKind.CommonJS });
+        expect(builder.getLuaExecutionResult()).not.toBeInstanceOf(util.ExecutionError);
     };
 
     test("should elide named type imports", () => {
-        expectToElideImport(`
+        util.testModule`
             import { Type } from "module";
             const foo: Type = "bar";
-        `);
+        `.tap(expectToElideImport);
     });
 
     test("should elide named value imports used only as a type", () => {
-        expectToElideImport(`
+        util.testModule`
             import { value } from "module";
             const foo: typeof value = "bar";
-        `);
+        `.tap(expectToElideImport);
     });
 
     test("should elide namespace imports with unused values", () => {
-        expectToElideImport(`
+        util.testModule`
             import * as module from "module";
             const foo: module.Type = "bar";
-        `);
+        `.tap(expectToElideImport);
     });
 
     test("should elide `import =` declarations", () => {
-        expectToElideImport(`
+        util.testModule`
             import module = require("module");
             const foo: module.Type = "bar";
-        `);
+        `.tap(expectToElideImport);
     });
 
     test("should elide type exports", () => {
-        const code = `
+        util.testModule`
             declare const _G: any;
-
             _G.foo = true;
             type foo = boolean;
             export { foo };
-        `;
-
-        expect(util.transpileExecuteAndReturnExport(code, "foo")).toBeUndefined();
+        `.expectToEqual([]);
     });
 });
 
@@ -72,46 +64,47 @@ test.each([
         .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedDefaultExport(util.nodeStub));
 });
 
+test("defaultImport", () => {
+    util.testModule`
+        import Test from "test";
+    `
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
+});
+
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
     "Import module names with invalid lua identifier characters (%p)",
     name => {
-        const code = `
-            import { foo } from "${name}";
-            foo;
-        `;
-
-        const lua = `
-            setmetatable(package.loaded, {__index = function() return {foo = "bar"} end})
-            ${util.transpileString(code)}
-            return foo;`;
-
-        expect(util.executeLua(lua)).toBe("bar");
+        util.testModule`
+            import { foo } from "./${name}";
+            export { foo };
+        `
+            .disableSemanticCheck()
+            .luaHeader(`setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })`)
+            .export("foo")
+            .expectToEqual("bar");
     }
 );
 
-test("defaultImport", () => {
-    expect(() => {
-        util.transpileString(`import TestClass from "test"`);
-    }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
-});
-
 test("lualibRequire", () => {
-    const lua = util.transpileString(`let a = b instanceof c;`, {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.LuaJIT,
-    });
-
-    expect(lua.startsWith(`require("lualib_bundle")`));
+    util.testExpression`b instanceof c`
+        .options({ luaLibImport: tstl.LuaLibImportKind.Require, luaTarget: tstl.LuaTarget.LuaJIT })
+        .disableSemanticCheck()
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
 });
 
 test("lualibRequireAlways", () => {
-    const lua = util.transpileString(``, {
-        luaLibImport: tstl.LuaLibImportKind.Always,
-        luaTarget: tstl.LuaTarget.LuaJIT,
-    });
-
-    expect(lua).toBe(`require("lualib_bundle");`);
+    util.testModule``
+        .options({ luaLibImport: tstl.LuaLibImportKind.Always, luaTarget: tstl.LuaTarget.LuaJIT })
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
 });
+
+test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(
+    "LuaLib no uses? No code (%p)",
+    luaLibImport => {
+        util.testModule``.options({ luaLibImport }).tap(builder => expect(builder.getMainLuaCodeChunk()).toBe(""));
+    }
+);
 
 test("Non-exported module", () => {
     const result = util.transpileAndExecute(
@@ -123,15 +116,6 @@ test("Non-exported module", () => {
 
     expect(result).toBe(3);
 });
-
-test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(
-    "LuaLib no uses? No code (%p)",
-    luaLibImport => {
-        const lua = util.transpileString(``, { luaLibImport });
-
-        expect(lua).toBe(``);
-    }
-);
 
 test("Nested module with dot in name", () => {
     const code = `module a.b {

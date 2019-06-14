@@ -243,6 +243,13 @@ export class TestBuilder {
         return this;
     }
 
+    private _jsHeader = "";
+    public jsHeader(jsHeader: string): this {
+        expect(this._hasTsCode).toBe(false);
+        this._jsHeader += jsHeader;
+        return this;
+    }
+
     private _semanticCheck = true;
     public disableSemanticCheck(): this {
         this._semanticCheck = false;
@@ -366,13 +373,16 @@ export class TestBuilder {
         const { transpiledFiles } = this.getJsResult();
         const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
         expect(mainFile).toBeDefined();
-        return mainFile!.js! + `;module.exports = exports${this._accessor}`;
+
+        const header = this._jsHeader ? `${this._jsHeader.trimRight()}\n` : "";
+        return header + mainFile!.js! + `;module.exports = exports${this._accessor}`;
     }
 
     @memoize
     public getJsExecutionResult(): any {
         const exports = {};
         const context = vm.createContext({ exports, module: { exports } });
+        context.global = context;
         try {
             return vm.runInContext(this.getJsCode(), context);
         } catch (error) {
@@ -414,17 +424,24 @@ export class TestBuilder {
         return this;
     }
 
+    public expectNoExecutionError(): this {
+        const luaResult = this.getLuaExecutionResult();
+        if (luaResult instanceof ExecutionError) {
+            throw luaResult;
+        }
+
+        return this;
+    }
+
     public expectToMatchJsResult(allowErrors = false): this {
         this.expectToHaveNoDiagnostics();
+        if (!allowErrors) this.expectNoExecutionError();
+
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
         // tslint:disable-next-line: no-null-keyword
         if (luaResult !== undefined || jsResult != null) {
             expect(luaResult).toEqual(jsResult);
-        }
-
-        if (!allowErrors && luaResult instanceof ExecutionError) {
-            throw luaResult;
         }
 
         return this;

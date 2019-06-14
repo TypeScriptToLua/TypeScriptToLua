@@ -1,32 +1,27 @@
 import * as tstl from "../../src";
 import * as util from "../util";
 
-const assignmentDestruturingTs = `
+const assignmentDestructuringCode = `
     declare function myFunc(this: void): [number, string];
-    let [a, b] = myFunc();`;
+    let [a, b] = myFunc();
+`;
 
 test("Assignment destructuring [5.1]", () => {
-    const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: tstl.LuaTarget.Lua51,
-        luaLibImport: tstl.LuaLibImportKind.None,
-    });
-    expect(lua).toBe(`local a, b = unpack(myFunc())`);
+    util.testModule(assignmentDestructuringCode)
+        .options({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
+        .expectLuaToMatchSnapshot();
 });
 
 test("Assignment destructuring [5.2]", () => {
-    const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: tstl.LuaTarget.Lua52,
-        luaLibImport: tstl.LuaLibImportKind.None,
-    });
-    expect(lua).toBe(`local a, b = table.unpack(myFunc())`);
+    util.testModule(assignmentDestructuringCode)
+        .options({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
+        .expectLuaToMatchSnapshot();
 });
 
 test("Assignment destructuring [JIT]", () => {
-    const lua = util.transpileString(assignmentDestruturingTs, {
-        luaTarget: tstl.LuaTarget.LuaJIT,
-        luaLibImport: tstl.LuaLibImportKind.None,
-    });
-    expect(lua).toBe(`local a, b = unpack(myFunc())`);
+    util.testModule(assignmentDestructuringCode)
+        .options({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
+        .expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -39,15 +34,14 @@ test.each([
     "[] = [];",
     "[] = [] = [];",
 ])("Empty destructuring (%p)", code => {
-    expect(() => util.transpileAndExecute(code)).not.toThrow();
+    util.testFunction(code).expectNoExecutionError();
 });
 
 test("Union destructuring", () => {
-    const code = `
+    util.testFunction`
         function foo(): [string] | [] { return ["bar"]; }
         let x: string;
         [x] = foo();
         return x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("bar");
+    `.expectToMatchJsResult();
 });

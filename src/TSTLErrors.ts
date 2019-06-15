@@ -8,9 +8,6 @@ export class TSTLErrors {
     public static CouldNotCast = (castName: string) =>
         new Error(`Failed to cast all elements to expected type using ${castName}.`);
 
-    public static CouldNotFindEnumMember = (enumDeclaration: ts.EnumDeclaration, enumMember: string, node: ts.Node) =>
-        new TranspileError(`Could not find ${enumMember} in ${enumDeclaration.name.text}`, node);
-
     public static DefaultImportsNotSupported = (node: ts.Node) =>
         new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
 
@@ -203,5 +200,9 @@ export class TSTLErrors {
             `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,
             node
         );
+    };
+
+    public static InvalidForRangeCall = (node: ts.Node, message: string) => {
+        return new TranspileError(`Invalid @forRange call: ${message}`, node);
     };
 }

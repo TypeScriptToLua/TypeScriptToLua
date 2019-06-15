@@ -25,14 +25,14 @@ interface SymbolInfo {
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Set<tstl.SymbolId>;
+    referencedSymbols: Map<tstl.SymbolId, ts.Node[]>;
     definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
 }
 
 interface Scope {
     type: ScopeType;
     id: number;
-    referencedSymbols?: Set<tstl.SymbolId>;
+    referencedSymbols?: Map<tstl.SymbolId, ts.Node[]>;
     variableDeclarations?: tstl.VariableDeclarationStatement[];
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
     importStatements?: tstl.Statement[];
@@ -1388,12 +1388,31 @@ export class LuaTransformer {
         return [paramNames, dotsLiteral, restParamName];
     }
 
+    protected isRestParameterReferenced(identifier: tstl.Identifier, scope: Scope): boolean {
+        if (!identifier.symbolId) {
+            return true;
+        }
+        if (scope.referencedSymbols === undefined) {
+            return false;
+        }
+        const references = scope.referencedSymbols.get(identifier.symbolId);
+        if (!references) {
+            return false;
+        }
+        // Ignore references to @vararg types in spread elements
+        return references.some(
+            r => !r.parent || !ts.isSpreadElement(r.parent) || !tsHelper.isVarArgType(r, this.checker)
+        );
+    }
+
     protected transformFunctionBody(
         parameters: ts.NodeArray<ts.ParameterDeclaration>,
         body: ts.Block,
         spreadIdentifier?: tstl.Identifier
     ): [tstl.Statement[], Scope] {
         this.pushScope(ScopeType.Function);
+        const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
+        const scope = this.popScope();
 
         const headerStatements = [];
 
@@ -1426,17 +1445,13 @@ export class LuaTransformer {
         }
 
         // Push spread operator here
-        if (spreadIdentifier) {
+        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope)) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
 
         // Binding pattern statements need to be after spread table is declared
         headerStatements.push(...bindingPatternDeclarations);
-
-        const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
-
-        const scope = this.popScope();
 
         return [headerStatements.concat(bodyStatements), scope];
     }
@@ -1844,7 +1859,7 @@ export class LuaTransformer {
             if (!scope.functionDefinitions) {
                 scope.functionDefinitions = new Map();
             }
-            const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Set() };
+            const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Map() };
             scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
@@ -2379,11 +2394,59 @@ export class LuaTransformer {
         }
     }
 
+    protected transformForRangeStatement(statement: ts.ForOfStatement, body: tstl.Block): StatementVisitResult {
+        if (!ts.isCallExpression(statement.expression)) {
+            throw TSTLErrors.InvalidForRangeCall(statement.expression, "Expression must be a call expression.");
+        }
+
+        if (statement.expression.arguments.length < 2 || statement.expression.arguments.length > 3) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.expression,
+                "@forRange function must take 2 or 3 arguments."
+            );
+        }
+
+        if (statement.expression.arguments.some(a => !tsHelper.isNumberType(this.checker.getTypeAtLocation(a)))) {
+            throw TSTLErrors.InvalidForRangeCall(statement.expression, "@forRange arguments must be number types.");
+        }
+
+        if (!ts.isVariableDeclarationList(statement.initializer)) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.initializer,
+                "@forRange loop must declare its own control variable."
+            );
+        }
+
+        const controlDeclaration = statement.initializer.declarations[0];
+        if (!ts.isIdentifier(controlDeclaration.name)) {
+            throw TSTLErrors.InvalidForRangeCall(statement.initializer, "@forRange loop cannot use destructuring.");
+        }
+
+        const controlType = this.checker.getTypeAtLocation(controlDeclaration);
+        if (controlType && !tsHelper.isNumberType(controlType)) {
+            throw TSTLErrors.InvalidForRangeCall(
+                statement.expression,
+                "@forRange function must return Iterable<number> or Array<number>."
+            );
+        }
+
+        const control = this.transformIdentifier(controlDeclaration.name);
+        const signature = this.checker.getResolvedSignature(statement.expression);
+        const [start, limit, step] = this.transformArguments(statement.expression.arguments, signature);
+        return tstl.createForStatement(body, control, start, limit, step, statement);
+    }
+
     public transformForOfStatement(statement: ts.ForOfStatement): StatementVisitResult {
         // Transpile body
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
+        if (
+            ts.isCallExpression(statement.expression) &&
+            tsHelper.isForRangeType(statement.expression.expression, this.checker)
+        ) {
+            // ForRange
+            return this.transformForRangeStatement(statement, body);
+        } else if (tsHelper.isLuaIteratorType(statement.expression, this.checker)) {
             // LuaIterators
             return this.transformForOfLuaIteratorStatement(statement, body);
         } else if (
@@ -3826,6 +3889,11 @@ export class LuaTransformer {
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
         const property = this.getIdentifierText(expression.name);
 
+        const constEnumValue = this.tryGetConstEnumValue(expression);
+        if (constEnumValue) {
+            return constEnumValue;
+        }
+
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isStringType(type)) {
@@ -3835,8 +3903,6 @@ export class LuaTransformer {
             if (arrayPropertyAccess) {
                 return arrayPropertyAccess;
             }
-        } else if (type.symbol && type.symbol.flags & ts.SymbolFlags.ConstEnum) {
-            return this.transformConstEnumValue(type, property, expression);
         }
 
         this.checkForLuaLibType(type);
@@ -3999,16 +4065,12 @@ export class LuaTransformer {
         const table = this.transformExpression(expression.expression);
         const index = this.transformExpression(expression.argumentExpression);
 
-        const type = this.checker.getTypeAtLocation(expression.expression);
-
-        if (
-            type.symbol &&
-            type.symbol.flags & ts.SymbolFlags.ConstEnum &&
-            ts.isStringLiteral(expression.argumentExpression)
-        ) {
-            return this.transformConstEnumValue(type, expression.argumentExpression.text, expression);
+        const constEnumValue = this.tryGetConstEnumValue(expression);
+        if (constEnumValue) {
+            return constEnumValue;
         }
 
+        const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), expression);
         } else if (tsHelper.isStringType(type)) {
@@ -4022,46 +4084,15 @@ export class LuaTransformer {
         }
     }
 
-    protected transformConstEnumValue(
-        enumType: ts.EnumType,
-        memberName: string,
-        tsOriginal: ts.Node
-    ): ExpressionVisitResult {
-        // Assumption: the enum only has one declaration
-        const enumDeclaration = enumType.symbol.declarations.find(d => ts.isEnumDeclaration(d)) as ts.EnumDeclaration;
-        const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === memberName);
-
-        if (enumMember) {
-            if (enumMember.initializer) {
-                if (ts.isIdentifier(enumMember.initializer)) {
-                    const [isEnumMember, valueName] = tsHelper.isEnumMember(enumDeclaration, enumMember.initializer);
-                    if (isEnumMember && valueName) {
-                        if (ts.isIdentifier(valueName)) {
-                            return this.transformConstEnumValue(enumType, valueName.text, tsOriginal);
-                        }
-                    } else {
-                        return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
-                    }
-                } else {
-                    return tstl.setNodeOriginal(this.transformExpression(enumMember.initializer), tsOriginal);
-                }
-            } else {
-                let enumValue = 0;
-                for (const member of enumDeclaration.members) {
-                    if (member === enumMember) {
-                        return tstl.createNumericLiteral(enumValue, tsOriginal);
-                    }
-                    if (member.initializer === undefined) {
-                        enumValue++;
-                    } else if (ts.isNumericLiteral(member.initializer)) {
-                        enumValue = Number(member.initializer.text) + 1;
-                    }
-                }
-
-                throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
-            }
+    private tryGetConstEnumValue(
+        node: ts.PropertyAccessExpression | ts.ElementAccessExpression
+    ): tstl.Expression | undefined {
+        const value = this.checker.getConstantValue(node);
+        if (typeof value === "string") {
+            return tstl.createStringLiteral(value, node);
+        } else if (typeof value === "number") {
+            return tstl.createNumericLiteral(value, node);
         }
-        throw TSTLErrors.CouldNotFindEnumMember(enumDeclaration, memberName, tsOriginal);
     }
 
     protected transformStringCallExpression(node: ts.CallExpression): tstl.Expression {
@@ -4555,6 +4586,10 @@ export class LuaTransformer {
             return innerExpression;
         }
 
+        if (ts.isIdentifier(expression.expression) && tsHelper.isVarArgType(expression.expression, this.checker)) {
+            return tstl.createDotsLiteral(expression);
+        }
+
         const type = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isArrayType(type, this.checker, this.program)) {
             return this.createUnpackCall(innerExpression, expression);
@@ -4630,6 +4665,16 @@ export class LuaTransformer {
     }
 
     public transformIdentifier(identifier: ts.Identifier): tstl.Identifier {
+        if (tsHelper.isForRangeType(identifier, this.checker)) {
+            const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
+            if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
+                throw TSTLErrors.InvalidForRangeCall(
+                    identifier,
+                    "@forRange function can only be used as an iterable in a for...of loop."
+                );
+            }
+        }
+
         const text = this.hasUnsafeIdentifierName(identifier)
             ? this.createSafeName(this.getIdentifierText(identifier))
             : this.getIdentifierText(identifier);
@@ -5222,13 +5267,20 @@ export class LuaTransformer {
                 if (declaration && identifier.pos < declaration.pos) {
                     throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
                 }
-            } else if (symbolId !== undefined) {
+            }
+
+            if (symbolId !== undefined) {
                 //Mark symbol as seen in all current scopes
                 for (const scope of this.scopeStack) {
                     if (!scope.referencedSymbols) {
-                        scope.referencedSymbols = new Set();
+                        scope.referencedSymbols = new Map();
                     }
-                    scope.referencedSymbols.add(symbolId);
+                    let references = scope.referencedSymbols.get(symbolId);
+                    if (!references) {
+                        references = [];
+                        scope.referencedSymbols.set(symbolId, references);
+                    }
+                    references.push(identifier);
                 }
             }
         }

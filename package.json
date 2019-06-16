@@ -39,21 +39,21 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "resolve": "^1.10.1",
+        "resolve": "^1.11.0",
         "source-map": "^0.7.3",
-        "typescript": "^3.4.5"
+        "typescript": "^3.5.2"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
-        "@types/jest": "^24.0.12",
-        "@types/node": "^11.13.0",
+        "@types/jest": "^24.0.15",
+        "@types/node": "^11.13.14",
         "@types/resolve": "0.0.8",
         "fengari": "^0.1.4",
         "jest": "^24.8.0",
         "jest-circus": "^24.8.0",
-        "prettier": "^1.17.0",
+        "prettier": "^1.18.2",
         "ts-jest": "^24.0.2",
-        "ts-node": "^7.0.0",
-        "tslint": "^5.16.0"
+        "ts-node": "^7.0.1",
+        "tslint": "^5.17.0"
     }
 }

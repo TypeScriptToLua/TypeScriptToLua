@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.22.0
+
+- Added the [@vararg](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#vararg) directive.
+- Added the [@forRange](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#forRange) directive.
+- Custom ts transformers can now be loaded from tsconfig.
+
+- Fixed default tstl header incorrectly showing up above lualib functions.
+- Some improvements to typeof expressions.
+
 ## 0.21.0
 
 - Imports/exports that are ambient (declarations, types, interfaces, etc) or are not used in value positions no longer generate `require` statements.

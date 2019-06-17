@@ -516,13 +516,13 @@ export class LuaPrinter {
                 ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
-            chunks.push(" end");
+            chunks.push(this.createSourceNode(expression, " end"));
         } else {
             chunks.push("\n");
             this.pushIndent();
             chunks.push(this.printBlock(expression.body));
             this.popIndent();
-            chunks.push(this.indent("end"));
+            chunks.push(this.indent(this.createSourceNode(expression, "end")));
         }
 
         return this.createSourceNode(expression, chunks);
@@ -541,7 +541,7 @@ export class LuaPrinter {
         this.pushIndent();
         chunks.push(this.printBlock(expression.body));
         this.popIndent();
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(this.createSourceNode(statement, "end")));
 
         return this.createSourceNode(expression, chunks);
     }

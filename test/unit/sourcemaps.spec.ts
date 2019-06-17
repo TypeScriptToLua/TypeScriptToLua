@@ -33,6 +33,7 @@ test.each([
             { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
             { luaPattern: "function def(", typeScriptPattern: "function def() {" },
             { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
+            { luaPattern: "end", typeScriptPattern: "function def() {" },
         ],
     },
     {

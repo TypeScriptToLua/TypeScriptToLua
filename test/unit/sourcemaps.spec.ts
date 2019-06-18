@@ -70,7 +70,11 @@ test.each([
     },
     {
         typeScriptSource: `
-            class Bar extends Foo {}
+            class Bar extends Foo {
+                constructor() {
+                    super();
+                }
+            }
         `,
 
         assertPatterns: [
@@ -83,7 +87,26 @@ test.each([
             { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },
+            { luaPattern: "function Bar.new", typeScriptPattern: "class Bar" },
+            { luaPattern: "function Bar.prototype.____constructor", typeScriptPattern: "constructor" },
         ],
+    },
+    {
+        typeScriptSource: `
+            class Foo {
+            }
+        `,
+
+        assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
+    },
+    {
+        typeScriptSource: `
+            class Foo {
+                bar = "baz";
+            }
+        `,
+
+        assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
     },
     {
         typeScriptSource: `

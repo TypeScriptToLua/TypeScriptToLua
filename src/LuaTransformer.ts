@@ -1065,7 +1065,8 @@ export class LuaTransformer {
             tstl.createCallExpression(tstl.createIdentifier("setmetatable"), [
                 tstl.createTableExpression(),
                 createClassPrototype(),
-            ])
+            ]),
+            statement
         );
         newFuncStatements.push(assignSelf);
 
@@ -1073,12 +1074,13 @@ export class LuaTransformer {
         const callConstructor = tstl.createExpressionStatement(
             tstl.createMethodCallExpression(this.createSelfIdentifier(), tstl.createIdentifier("____constructor"), [
                 tstl.createDotsLiteral(),
-            ])
+            ]),
+            statement
         );
         newFuncStatements.push(callConstructor);
 
         // return self
-        const returnSelf = tstl.createReturnStatement([this.createSelfIdentifier()]);
+        const returnSelf = tstl.createReturnStatement([this.createSelfIdentifier()], statement);
         newFuncStatements.push(returnSelf);
 
         // function localClassName.new(construct, ...) ... end
@@ -1091,7 +1093,8 @@ export class LuaTransformer {
                 tstl.createDotsLiteral(),
                 undefined,
                 tstl.FunctionExpressionFlags.Declaration
-            )
+            ),
+            statement
         );
         result.push(newFunc);
 
@@ -1133,7 +1136,8 @@ export class LuaTransformer {
                     this.createSelfIdentifier(),
                     getterName,
                     tstl.createNilLiteral(),
-                ])
+                ]),
+                classDeclaration.members.find(ts.isConstructorDeclaration) || classDeclaration
             );
             statements.push(resetGetter);
         }
@@ -1234,7 +1238,7 @@ export class LuaTransformer {
                 restParamName,
                 tstl.FunctionExpressionFlags.Declaration
             ),
-            statement
+            statement.pos >= 0 ? statement : classDeclaration
         );
 
         return result;

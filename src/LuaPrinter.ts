@@ -274,7 +274,7 @@ export class LuaPrinter {
             }
         }
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     public printVariableAssignmentStatement(statement: tstl.AssignmentStatement): SourceNode {

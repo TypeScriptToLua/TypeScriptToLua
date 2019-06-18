@@ -162,6 +162,30 @@ test("Source map has correct source root", async () => {
     expect(sourceMap.sourceRoot).toBe(".");
 });
 
+test.each([
+    { code: `const type = "foobar";`, name: "type" },
+    { code: `const and = "foobar";`, name: "and" },
+    { code: `const $$$ = "foobar";`, name: "$$$" },
+    { code: `const foo = { bar() { console.log(this); } };`, name: "this" },
+    { code: `function foo($$$: unknown) {}`, name: "$$$" },
+    { code: `class $$$ {}`, name: "$$$" },
+    { code: `namespace $$$ { const foo = "bar"; }`, name: "$$$" },
+])("Source map has correct name mappings (%p)", async ({ code, name }) => {
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const consumer = await new SourceMapConsumer(file.sourceMap);
+    const typescriptPosition = lineAndColumnOf(code, name);
+    let mappedName: string | undefined;
+    consumer.eachMapping(mapping => {
+        if (mapping.originalLine === typescriptPosition.line && mapping.originalColumn === typescriptPosition.column) {
+            mappedName = mapping.name;
+        }
+    });
+    expect(mappedName).toBe(name);
+});
+
 test("sourceMapTraceback saves sourcemap in _G", () => {
     // Arrange
     const typeScriptSource = `

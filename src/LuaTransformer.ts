@@ -625,7 +625,12 @@ export class LuaTransformer {
 
         let localClassName: tstl.Identifier;
         if (this.isUnsafeName(className.text)) {
-            localClassName = tstl.createIdentifier(this.createSafeName(className.text), undefined, className.symbolId);
+            localClassName = tstl.createIdentifier(
+                this.createSafeName(className.text),
+                undefined,
+                className.symbolId,
+                className.text
+            );
             tstl.setNodePosition(localClassName, className);
         } else {
             localClassName = className;
@@ -1550,7 +1555,8 @@ export class LuaTransformer {
             return tstl.createIdentifier(
                 this.createSafeName(declaration.name.text),
                 declaration.name,
-                moduleSymbol && this.symbolIds.get(moduleSymbol)
+                moduleSymbol && this.symbolIds.get(moduleSymbol),
+                declaration.name.text
             );
         }
         return this.transformIdentifier(declaration.name as ts.Identifier);
@@ -4688,7 +4694,7 @@ export class LuaTransformer {
             : this.getIdentifierText(identifier);
 
         const symbolId = this.getIdentifierSymbolId(identifier);
-        return tstl.createIdentifier(text, identifier, symbolId);
+        return tstl.createIdentifier(text, identifier, symbolId, this.getIdentifierText(identifier));
     }
 
     protected transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
@@ -4917,7 +4923,7 @@ export class LuaTransformer {
     }
 
     protected createSelfIdentifier(tsOriginal?: ts.Node): tstl.Identifier {
-        return tstl.createIdentifier("self", tsOriginal);
+        return tstl.createIdentifier("self", tsOriginal, undefined, "this");
     }
 
     protected createExportsIdentifier(): tstl.Identifier {

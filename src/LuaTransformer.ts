@@ -360,9 +360,9 @@ export class LuaTransformer {
         let shouldResolve = true;
         const moduleOwnerSymbol = this.checker.getSymbolAtLocation(statement.moduleSpecifier);
         if (moduleOwnerSymbol) {
-            const decMap = new Map<DecoratorKind, Decorator>();
-            tsHelper.collectCustomDecorators(moduleOwnerSymbol, this.checker, decMap);
-            if (decMap.has(DecoratorKind.NoResolution)) {
+            const decorators = new Map<DecoratorKind, Decorator>();
+            tsHelper.collectCustomDecorators(moduleOwnerSymbol, this.checker, decorators);
+            if (decorators.has(DecoratorKind.NoResolution)) {
                 shouldResolve = false;
             }
         }

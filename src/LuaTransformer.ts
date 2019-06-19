@@ -357,11 +357,28 @@ export class LuaTransformer {
             scope.importStatements = [];
         }
 
+        let shouldResolve = true;
+        const moduleOwnerSymbol = this.checker.getSymbolAtLocation(statement.moduleSpecifier);
+        if (moduleOwnerSymbol) {
+            for (const declaration of moduleOwnerSymbol.declarations) {
+                if (tsHelper.isNonNamespaceModuleDeclaration(declaration)) {
+                    const type = this.checker.getTypeAtLocation(declaration);
+                    if (type) {
+                        const decorators = tsHelper.getCustomDecorators(type, this.checker);
+                        if (decorators.has(DecoratorKind.NoResolution)) {
+                            shouldResolve = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp('"', "g"), "");
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (!statement.importClause) {
-            const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             result.push(tstl.createExpressionStatement(requireCall));
             if (scope.importStatements) {
                 scope.importStatements.push(...result);
@@ -375,28 +392,6 @@ export class LuaTransformer {
         if (imports === undefined) {
             throw TSTLErrors.UnsupportedImportType(statement.importClause);
         }
-
-        let shouldResolve = true;
-        if (ts.isNamedImports(imports)) {
-            for (const importSpecifier of imports.elements) {
-                const parentModule = tsHelper.getImportSpecifierModuleDeclaration(importSpecifier, this.checker);
-                if (parentModule) {
-                    const type = this.checker.getTypeAtLocation(parentModule);
-                    const decorators = tsHelper.getCustomDecorators(type, this.checker);
-                    if (decorators.has(DecoratorKind.NoResolution)) {
-                        shouldResolve = false;
-                        break;
-                    }
-                }
-            }
-        } else if (ts.isNamespaceImport(imports)) {
-            const type = this.checker.getTypeAtLocation(imports);
-            if (tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution)) {
-                shouldResolve = false;
-            }
-        }
-
-        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {

@@ -358,27 +358,6 @@ export class TSHelper {
         return directivesMap;
     }
 
-    public static getImportSpecifierModuleDeclaration(
-        node: ts.ImportSpecifier,
-        checker: ts.TypeChecker
-    ): ts.ModuleDeclaration | undefined {
-        const symbol = checker.getSymbolAtLocation(node.name);
-        if (symbol) {
-            const originalSymbol = checker.getAliasedSymbol(symbol);
-            if (originalSymbol.declarations) {
-                for (const declaration of originalSymbol.declarations) {
-                    const parentAmbientModule = this.findFirstNodeAbove(
-                        declaration,
-                        this.isNonNamespaceModuleDeclaration
-                    );
-                    if (parentAmbientModule) {
-                        return parentAmbientModule;
-                    }
-                }
-            }
-        }
-    }
-
     // Search up until finding a node satisfying the callback
     public static findFirstNodeAbove<T extends ts.Node>(
         node: ts.Node,

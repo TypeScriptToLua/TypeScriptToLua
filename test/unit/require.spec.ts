@@ -151,6 +151,21 @@ test.each([
         mainCode: "import { y } from 'fake'; y;",
         expectedPath: "src.fake",
     },
+    {
+        declarationStatement: `
+            declare module 'fake' {}
+        `,
+        mainCode: "import 'fake';",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {}
+        `,
+        mainCode: "import 'fake';",
+        expectedPath: "fake",
+    },
 ])("noResolution prevents any module path resolution behaviour", ({ declarationStatement, mainCode, expectedPath }) => {
     const lua = util.transpileString({
         "src/main.ts": mainCode,

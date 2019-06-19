@@ -1238,7 +1238,7 @@ export class LuaTransformer {
                 restParamName,
                 tstl.FunctionExpressionFlags.Declaration
             ),
-            statement.pos >= 0 ? statement : classDeclaration
+            statement.pos >= 0 ? statement : classDeclaration // Map to class declaration if constructor was generated
         );
 
         return result;

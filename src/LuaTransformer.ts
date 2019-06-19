@@ -3568,11 +3568,15 @@ export class LuaTransformer {
         }
 
         const extendsExpression = typeNode.expression;
-        let baseClassName: tstl.AssignmentLeftHandSideExpression;
+        let baseClassName: tstl.AssignmentLeftHandSideExpression | undefined;
         if (ts.isIdentifier(extendsExpression)) {
-            // Use "baseClassName" if base is a simple identifier
-            baseClassName = this.transformIdentifier(extendsExpression);
-        } else {
+            const symbol = this.checker.getSymbolAtLocation(extendsExpression);
+            if (symbol && !this.isSymbolExported(symbol)) {
+                // Use "baseClassName" if base is a simple identifier
+                baseClassName = this.transformIdentifier(extendsExpression);
+            }
+        }
+        if (!baseClassName) {
             if (classDeclaration.name === undefined) {
                 throw TSTLErrors.MissingClassName(expression);
             }

@@ -91,20 +91,77 @@ test.each([
     }
 );
 
-test.each([{ comment: "", expectedPath: "src.fake" }, { comment: "/** @noResolution */", expectedPath: "fake" }])(
-    "noResolution on ambient modules causes no path alterations (%p)",
-    ({ comment, expectedPath }) => {
-        const lua = util.transpileString({
-            "src/main.ts": `import * as fake from "fake"; fake;`,
-            "module.d.ts": `${comment} declare module "fake" {}`,
-        });
-        const match = requireRegex.exec(lua);
+test.each([
+    {
+        declarationStatement: `
+            declare module 'fake' {}
+        `,
+        mainCode: "import * as fake from 'fake'; fake;",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {}
+        `,
+        mainCode: "import * as fake from 'fake'; fake;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            declare module 'fake' {
+                export const x: number;
+            }
+        `,
+        mainCode: "import { x } from 'fake'; x;",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {
+                export const x: number;
+            }
+        `,
+        mainCode: "import { x } from 'fake'; x;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {
+                export const x: number;
+            }
+            declare module 'fake' {
+                export const y: number;
+            }
+        `,
+        mainCode: "import { y } from 'fake'; y;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            declare module 'fake' {
+                export const x: number;
+            }
+            declare module 'fake' {
+                export const y: number;
+            }
+        `,
+        mainCode: "import { y } from 'fake'; y;",
+        expectedPath: "src.fake",
+    },
+])("noResolution prevents any module path resolution behaviour", ({ declarationStatement, mainCode, expectedPath }) => {
+    const lua = util.transpileString({
+        "src/main.ts": mainCode,
+        "module.d.ts": declarationStatement,
+    });
+    const match = requireRegex.exec(lua);
 
-        if (util.expectToBeDefined(match)) {
-            expect(match[1]).toBe(expectedPath);
-        }
+    if (util.expectToBeDefined(match)) {
+        expect(match[1]).toBe(expectedPath);
     }
-);
+});
 
 test("ImportEquals declaration require", () => {
     const input = `import foo = require("./foo/bar"); foo;`;

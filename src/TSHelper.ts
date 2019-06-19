@@ -131,6 +131,10 @@ export class TSHelper {
         return !((ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Ambient) === 0);
     }
 
+    public static isNonNamespaceModuleDeclaration(node: ts.Node): node is ts.ModuleDeclaration {
+        return ts.isModuleDeclaration(node) && (node.flags & ts.NodeFlags.Namespace) === 0;
+    }
+
     public static isStatic(node: ts.Node): boolean {
         return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
     }
@@ -352,6 +356,27 @@ export class TSHelper {
         }
 
         return directivesMap;
+    }
+
+    public static getImportSpecifierModuleDeclaration(
+        node: ts.ImportSpecifier,
+        checker: ts.TypeChecker
+    ): ts.ModuleDeclaration | undefined {
+        const symbol = checker.getSymbolAtLocation(node.name);
+        if (symbol) {
+            const originalSymbol = checker.getAliasedSymbol(symbol);
+            if (originalSymbol.declarations) {
+                for (const declaration of originalSymbol.declarations) {
+                    const parentAmbientModule = this.findFirstNodeAbove(
+                        declaration,
+                        this.isNonNamespaceModuleDeclaration
+                    );
+                    if (parentAmbientModule) {
+                        return parentAmbientModule;
+                    }
+                }
+            }
+        }
     }
 
     // Search up until finding a node satisfying the callback

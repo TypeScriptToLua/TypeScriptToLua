@@ -376,8 +376,26 @@ export class LuaTransformer {
             throw TSTLErrors.UnsupportedImportType(statement.importClause);
         }
 
-        const type = this.checker.getTypeAtLocation(imports);
-        const shouldResolve = !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution);
+        let shouldResolve = true;
+        if (ts.isNamedImports(imports)) {
+            for (const importSpecifier of imports.elements) {
+                const parentModule = tsHelper.getImportSpecifierModuleDeclaration(importSpecifier, this.checker);
+                if (parentModule) {
+                    const type = this.checker.getTypeAtLocation(parentModule);
+                    const decorators = tsHelper.getCustomDecorators(type, this.checker);
+                    if (decorators.has(DecoratorKind.NoResolution)) {
+                        shouldResolve = false;
+                        break;
+                    }
+                }
+            }
+        } else if (ts.isNamespaceImport(imports)) {
+            const type = this.checker.getTypeAtLocation(imports);
+            if (tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution)) {
+                shouldResolve = false;
+            }
+        }
+
         const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (ts.isNamedImports(imports)) {

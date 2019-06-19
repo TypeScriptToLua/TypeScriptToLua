@@ -131,10 +131,6 @@ export class TSHelper {
         return !((ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Ambient) === 0);
     }
 
-    public static isNonNamespaceModuleDeclaration(node: ts.Node): node is ts.ModuleDeclaration {
-        return ts.isModuleDeclaration(node) && (node.flags & ts.NodeFlags.Namespace) === 0;
-    }
-
     public static isStatic(node: ts.Node): boolean {
         return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
     }

@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
-import { DecoratorKind } from "./Decorator";
+import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
@@ -360,17 +360,10 @@ export class LuaTransformer {
         let shouldResolve = true;
         const moduleOwnerSymbol = this.checker.getSymbolAtLocation(statement.moduleSpecifier);
         if (moduleOwnerSymbol) {
-            for (const declaration of moduleOwnerSymbol.declarations) {
-                if (tsHelper.isNonNamespaceModuleDeclaration(declaration)) {
-                    const type = this.checker.getTypeAtLocation(declaration);
-                    if (type) {
-                        const decorators = tsHelper.getCustomDecorators(type, this.checker);
-                        if (decorators.has(DecoratorKind.NoResolution)) {
-                            shouldResolve = false;
-                            break;
-                        }
-                    }
-                }
+            const decMap = new Map<DecoratorKind, Decorator>();
+            tsHelper.collectCustomDecorators(moduleOwnerSymbol, this.checker, decMap);
+            if (decMap.has(DecoratorKind.NoResolution)) {
+                shouldResolve = false;
             }
         }
 

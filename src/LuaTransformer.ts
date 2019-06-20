@@ -631,7 +631,12 @@ export class LuaTransformer {
 
         let localClassName: tstl.Identifier;
         if (this.isUnsafeName(className.text)) {
-            localClassName = tstl.createIdentifier(this.createSafeName(className.text), undefined, className.symbolId);
+            localClassName = tstl.createIdentifier(
+                this.createSafeName(className.text),
+                undefined,
+                className.symbolId,
+                className.text
+            );
             tstl.setNodePosition(localClassName, className);
         } else {
             localClassName = className;
@@ -1066,7 +1071,8 @@ export class LuaTransformer {
             tstl.createCallExpression(tstl.createIdentifier("setmetatable"), [
                 tstl.createTableExpression(),
                 createClassPrototype(),
-            ])
+            ]),
+            statement
         );
         newFuncStatements.push(assignSelf);
 
@@ -1074,12 +1080,13 @@ export class LuaTransformer {
         const callConstructor = tstl.createExpressionStatement(
             tstl.createMethodCallExpression(this.createSelfIdentifier(), tstl.createIdentifier("____constructor"), [
                 tstl.createDotsLiteral(),
-            ])
+            ]),
+            statement
         );
         newFuncStatements.push(callConstructor);
 
         // return self
-        const returnSelf = tstl.createReturnStatement([this.createSelfIdentifier()]);
+        const returnSelf = tstl.createReturnStatement([this.createSelfIdentifier()], statement);
         newFuncStatements.push(returnSelf);
 
         // function localClassName.new(construct, ...) ... end
@@ -1092,7 +1099,8 @@ export class LuaTransformer {
                 tstl.createDotsLiteral(),
                 undefined,
                 tstl.FunctionExpressionFlags.Declaration
-            )
+            ),
+            statement
         );
         result.push(newFunc);
 
@@ -1134,7 +1142,8 @@ export class LuaTransformer {
                     this.createSelfIdentifier(),
                     getterName,
                     tstl.createNilLiteral(),
-                ])
+                ]),
+                classDeclaration.members.find(ts.isConstructorDeclaration) || classDeclaration
             );
             statements.push(resetGetter);
         }
@@ -1226,6 +1235,8 @@ export class LuaTransformer {
 
         const block: tstl.Block = tstl.createBlock(bodyWithFieldInitializers);
 
+        const constructorWasGenerated = statement.pos === -1;
+
         const result = tstl.createAssignmentStatement(
             this.createConstructorName(className),
             tstl.createFunctionExpression(
@@ -1235,7 +1246,7 @@ export class LuaTransformer {
                 restParamName,
                 tstl.FunctionExpressionFlags.Declaration
             ),
-            statement
+            constructorWasGenerated ? classDeclaration : statement
         );
 
         return result;
@@ -1556,7 +1567,8 @@ export class LuaTransformer {
             return tstl.createIdentifier(
                 this.createSafeName(declaration.name.text),
                 declaration.name,
-                moduleSymbol && this.symbolIds.get(moduleSymbol)
+                moduleSymbol && this.symbolIds.get(moduleSymbol),
+                declaration.name.text
             );
         }
         return this.transformIdentifier(declaration.name as ts.Identifier);
@@ -4698,7 +4710,7 @@ export class LuaTransformer {
             : this.getIdentifierText(identifier);
 
         const symbolId = this.getIdentifierSymbolId(identifier);
-        return tstl.createIdentifier(text, identifier, symbolId);
+        return tstl.createIdentifier(text, identifier, symbolId, this.getIdentifierText(identifier));
     }
 
     protected transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
@@ -4927,7 +4939,7 @@ export class LuaTransformer {
     }
 
     protected createSelfIdentifier(tsOriginal?: ts.Node): tstl.Identifier {
-        return tstl.createIdentifier("self", tsOriginal);
+        return tstl.createIdentifier("self", tsOriginal, undefined, "this");
     }
 
     protected createExportsIdentifier(): tstl.Identifier {

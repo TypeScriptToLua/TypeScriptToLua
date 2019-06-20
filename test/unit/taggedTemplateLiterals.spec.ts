@@ -30,6 +30,10 @@ test.each([
         expectedResult: "hello hello",
     },
     {
+        callExpression: "func`hello \\u00A9`",
+        expectedResult: "hello ©",
+    },
+    {
         callExpression: "obj.func`hello ${'propertyAccessExpression'}`",
         expectedResult: "hello propertyAccessExpression",
     },

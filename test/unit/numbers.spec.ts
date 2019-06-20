@@ -11,59 +11,52 @@ test.each([
     "1 + NaN",
     "1 / NaN",
     "NaN * 0",
-])("%s", code => expect(util.transpileAndExecute(`return ${code}`)).toBe(eval(code)));
+
+    "Infinity",
+    "Infinity - Infinity",
+    "Infinity / -1",
+    "Infinity * -1",
+    "Infinity + 1",
+    "Infinity - 1",
+])("%s", code => util.testExpression(code).expectToMatchJsResult());
 
 test("NaN reassignment", () => {
-    const result = util.transpileAndExecute(`const NaN = 1; return NaN`);
-
-    expect(result).toBe(NaN);
+    util.testFunction`
+        const NaN = 1;
+        return NaN;
+    `.expectToMatchJsResult();
 });
 
-test.each(["Infinity", "Infinity - Infinity", "Infinity / -1", "Infinity * -1", "Infinity + 1", "Infinity - 1"])(
-    "%s",
-    code => expect(util.transpileAndExecute(`return ${code}`)).toBe(eval(code))
-);
-
 test("Infinity reassignment", () => {
-    const result = util.transpileAndExecute(`const Infinity = 1; return Infinity`);
-
-    expect(result).toBe(Infinity);
+    util.testFunction`
+        const Infinity = 1;
+        return Infinity;
+    `.expectToMatchJsResult();
 });
 
 const numberCases = [-1, 0, 1, 1.5, Infinity, -Infinity];
 const stringCases = ["-1", "0", "1", "1.5", "Infinity", "-Infinity"];
-const restCases: any[] = [true, false, "", " ", "\t", "\n", "foo", {}];
-const cases: any[] = [...numberCases, ...stringCases, ...restCases];
+const restCases = [true, false, "", " ", "\t", "\n", "foo", {}];
+const cases = [...numberCases, ...stringCases, ...restCases];
 
 describe("Number", () => {
     test.each(cases)("constructor(%p)", value => {
-        const result = util.transpileAndExecute(`return Number(${util.valueToString(value)})`);
-        expect(result).toBe(Number(value));
+        util.testExpressionTemplate`Number(${value})`.expectToMatchJsResult();
     });
 
     test.each(cases)("isNaN(%p)", value => {
-        const result = util.transpileAndExecute(`
-            return Number.isNaN(${util.valueToString(value)} as any)
-        `);
-
-        expect(result).toBe(Number.isNaN(value));
+        util.testExpressionTemplate`Number.isNaN(${value} as any)`.expectToMatchJsResult();
     });
 
     test.each(cases)("isFinite(%p)", value => {
-        const result = util.transpileAndExecute(`
-            return Number.isFinite(${util.valueToString(value)} as any)
-        `);
-
-        expect(result).toBe(Number.isFinite(value));
+        util.testExpressionTemplate`Number.isFinite(${value} as any)`.expectToMatchJsResult();
     });
 });
 
 test.each(cases)("isNaN(%p)", value => {
-    const result = util.transpileAndExecute(`return isNaN(${util.valueToString(value)} as any)`);
-    expect(result).toBe(isNaN(value));
+    util.testExpressionTemplate`isNaN(${value} as any)`.expectToMatchJsResult();
 });
 
 test.each(cases)("isFinite(%p)", value => {
-    const result = util.transpileAndExecute(`return isFinite(${util.valueToString(value)} as any)`);
-    expect(result).toBe(isFinite(value));
+    util.testExpressionTemplate`isFinite(${value} as any)`.expectToMatchJsResult();
 });

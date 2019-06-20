@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
-import { DecoratorKind } from "./Decorator";
+import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import { ContextType, TSHelper as tsHelper } from "./TSHelper";
@@ -357,11 +357,21 @@ export class LuaTransformer {
             scope.importStatements = [];
         }
 
+        let shouldResolve = true;
+        const moduleOwnerSymbol = this.checker.getSymbolAtLocation(statement.moduleSpecifier);
+        if (moduleOwnerSymbol) {
+            const decorators = new Map<DecoratorKind, Decorator>();
+            tsHelper.collectCustomDecorators(moduleOwnerSymbol, this.checker, decorators);
+            if (decorators.has(DecoratorKind.NoResolution)) {
+                shouldResolve = false;
+            }
+        }
+
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp('"', "g"), "");
+        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (!statement.importClause) {
-            const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
             result.push(tstl.createExpressionStatement(requireCall));
             if (scope.importStatements) {
                 scope.importStatements.push(...result);
@@ -375,10 +385,6 @@ export class LuaTransformer {
         if (imports === undefined) {
             throw TSTLErrors.UnsupportedImportType(statement.importClause);
         }
-
-        const type = this.checker.getTypeAtLocation(imports);
-        const shouldResolve = !tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.NoResolution);
-        const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
         if (ts.isNamedImports(imports)) {
             const filteredElements = imports.elements.filter(e => {
@@ -3570,11 +3576,15 @@ export class LuaTransformer {
         }
 
         const extendsExpression = typeNode.expression;
-        let baseClassName: tstl.AssignmentLeftHandSideExpression;
+        let baseClassName: tstl.AssignmentLeftHandSideExpression | undefined;
         if (ts.isIdentifier(extendsExpression)) {
-            // Use "baseClassName" if base is a simple identifier
-            baseClassName = this.transformIdentifier(extendsExpression);
-        } else {
+            const symbol = this.checker.getSymbolAtLocation(extendsExpression);
+            if (symbol && !this.isSymbolExported(symbol)) {
+                // Use "baseClassName" if base is a simple identifier
+                baseClassName = this.transformIdentifier(extendsExpression);
+            }
+        }
+        if (!baseClassName) {
             if (classDeclaration.name === undefined) {
                 throw TSTLErrors.MissingClassName(expression);
             }

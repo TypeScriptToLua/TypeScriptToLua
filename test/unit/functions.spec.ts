@@ -423,7 +423,7 @@ test("Function local overriding export", () => {
         }
         export const result = bar(7);
     `
-        .export("result")
+        .setExport("result")
         .expectToMatchJsResult();
 });
 
@@ -435,7 +435,7 @@ test("Function using global as this", () => {
         }
     `;
 
-    util.testExpression`foo`.tsHeader(tsHeader).expectToMatchJsResult();
+    util.testExpression`foo`.setTsHeader(tsHeader).expectToMatchJsResult();
 });
 
 test("Function rest binding pattern", () => {

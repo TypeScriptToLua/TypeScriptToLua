@@ -224,33 +224,41 @@ export class ExecutionError extends Error {
 
 export type TapCallback = (builder: TestBuilder) => void;
 export class TestBuilder {
-    protected _accessor = "";
+    protected accessor = "";
     constructor(protected _tsCode: string) {}
 
     // Options
 
-    private _luaHeader = "";
-    public luaHeader(luaHeader: string): this {
+    // TODO: Use testModule in these cases?
+    protected tsHeader = "";
+    public setTsHeader(tsHeader: string): this {
         expect(this._hasProgram).toBe(false);
-        this._luaHeader += luaHeader;
+        this.tsHeader = tsHeader;
         return this;
     }
 
-    private _jsHeader = "";
-    public jsHeader(jsHeader: string): this {
+    private luaHeader = "";
+    public setLuaHeader(luaHeader: string): this {
         expect(this._hasProgram).toBe(false);
-        this._jsHeader += jsHeader;
+        this.luaHeader += luaHeader;
         return this;
     }
 
-    private _semanticCheck = true;
+    private jsHeader = "";
+    public setJsHeader(jsHeader: string): this {
+        expect(this._hasProgram).toBe(false);
+        this.jsHeader += jsHeader;
+        return this;
+    }
+
+    private semanticCheck = true;
     public disableSemanticCheck(): this {
         expect(this._hasProgram).toBe(false);
-        this._semanticCheck = false;
+        this.semanticCheck = false;
         return this;
     }
 
-    private _options: tstl.CompilerOptions = {
+    private options: tstl.CompilerOptions = {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
         skipLibCheck: true,
@@ -258,48 +266,37 @@ export class TestBuilder {
         lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
     };
-    public options(options: tstl.CompilerOptions = {}): this {
+    public setOptions(options: tstl.CompilerOptions = {}): this {
         expect(this._hasProgram).toBe(false);
-        Object.assign(this._options, options);
+        Object.assign(this.options, options);
         return this;
     }
 
-    protected _mainFileName = "main.ts";
+    protected mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
         expect(this._hasProgram).toBe(false);
-        this._mainFileName = mainFileName;
+        this.mainFileName = mainFileName;
         return this;
     }
 
-    private _extraFiles: Record<string, string> = {};
+    private extraFiles: Record<string, string> = {};
     public addExtraFile(fileName: string, code: string): this {
         expect(this._hasProgram).toBe(false);
-        this._extraFiles[fileName] = code;
-        return this;
-    }
-
-    // TODO: Use testModule in these cases?
-    protected _tsHeader = "";
-    public tsHeader(tsHeader: string): this {
-        expect(this._hasProgram).toBe(false);
-        this._tsHeader = tsHeader;
+        this.extraFiles[fileName] = code;
         return this;
     }
 
     // Transpilation and execution
 
     public getTsCode(): string {
-        return `${this._tsHeader}${this._tsCode}`;
+        return `${this.tsHeader}${this._tsCode}`;
     }
 
     private _hasProgram = false;
     @memoize
     public getProgram(): ts.Program {
         this._hasProgram = true;
-        return tstl.createVirtualProgram(
-            { ...this._extraFiles, [this._mainFileName]: this.getTsCode() },
-            this._options
-        );
+        return tstl.createVirtualProgram({ ...this.extraFiles, [this.mainFileName]: this.getTsCode() }, this.options);
     }
 
     @memoize
@@ -317,10 +314,10 @@ export class TestBuilder {
     @memoize
     public getMainLuaCodeChunk(): string {
         const { transpiledFiles } = this.getLuaResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
+        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
         expect(mainFile).toBeDefined();
 
-        const header = this._luaHeader ? `${this._luaHeader.trimRight()}\n` : "";
+        const header = this.luaHeader ? `${this.luaHeader.trimRight()}\n` : "";
         return header + mainFile!.lua!.trimRight();
     }
 
@@ -331,7 +328,7 @@ export class TestBuilder {
             code = `package.preload.lualib_bundle = function()\n${lualibContent}\nend\n${code}`;
         }
 
-        return `${minimalTestLib}\nreturn JSONStringify((function()\n${code}\nend)()${this._accessor})`;
+        return `${minimalTestLib}\nreturn JSONStringify((function()\n${code}\nend)()${this.accessor})`;
     }
 
     @memoize
@@ -365,11 +362,11 @@ export class TestBuilder {
     @memoize
     protected getJsCode(): string {
         const { transpiledFiles } = this.getJsResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this._mainFileName);
+        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
         expect(mainFile).toBeDefined();
 
-        const header = this._jsHeader ? `${this._jsHeader.trimRight()}\n` : "";
-        return header + mainFile!.js! + `;module.exports = exports${this._accessor}`;
+        const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";
+        return header + mainFile!.js! + `;module.exports = exports${this.accessor}`;
     }
 
     @memoize
@@ -388,7 +385,7 @@ export class TestBuilder {
 
     private getLuaDiagnostics(): ts.Diagnostic[] {
         const { diagnostics } = this.getLuaResult();
-        return diagnostics.filter(d => this._semanticCheck || d.source === "typescript-to-lua");
+        return diagnostics.filter(d => this.semanticCheck || d.source === "typescript-to-lua");
     }
 
     // Actions
@@ -467,23 +464,23 @@ export class TestBuilder {
 }
 
 class ModuleTestBuilder extends TestBuilder {
-    public export(name: string): this {
-        this._accessor = `.${name}`;
+    public setExport(name: string): this {
+        this.accessor = `.${name}`;
         return this;
     }
 }
 
 class FunctionTestBuilder extends TestBuilder {
-    protected _accessor = ".__main()";
+    protected accessor = ".__main()";
     public getTsCode(): string {
-        return `${this._tsHeader}export function __main() {${this._tsCode}}`;
+        return `${this.tsHeader}export function __main() {${this._tsCode}}`;
     }
 }
 
 class ExpressionTestBuilder extends TestBuilder {
-    protected _accessor = ".__result";
+    protected accessor = ".__result";
     public getTsCode(): string {
-        return `${this._tsHeader}export const __result = ${this._tsCode};`;
+        return `${this.tsHeader}export const __result = ${this._tsCode};`;
     }
 }
 

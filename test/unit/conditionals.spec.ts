@@ -299,7 +299,7 @@ test("switch not allowed in 5.1", () => {
     util.testFunction`
         switch ("abc") {}
     `
-        .options({ luaTarget: tstl.LuaTarget.Lua51 })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
         .expectToHaveDiagnosticOfError(
             TSTLErrors.UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub)
         );

@@ -177,6 +177,6 @@ test("Exported class decorator", () => {
         @decorator
         export class Foo {}
     `
-        .export("Foo.bar")
+        .setExport("Foo.bar")
         .expectToMatchJsResult();
 });

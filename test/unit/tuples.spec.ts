@@ -421,7 +421,7 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
         const [c, d] = fn("foo", "bar");
         return (a + b) + c + d;
     `
-        .tsHeader(tsHeader)
-        .luaHeader(luaHeader)
+        .setTsHeader(tsHeader)
+        .setLuaHeader(luaHeader)
         .expectToEqual("7foobar");
 });

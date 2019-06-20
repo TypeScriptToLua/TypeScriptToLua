@@ -16,7 +16,7 @@ test("Supported lua string function", () => {
         }
     `;
 
-    util.testExpression`"test".upper()`.tsHeader(tsHeader).expectToEqual("TEST");
+    util.testExpression`"test".upper()`.setTsHeader(tsHeader).expectToEqual("TEST");
 });
 
 test.each([[], [65], [65, 66], [65, 66, 67]])("String.fromCharCode (%p)", (...args) => {

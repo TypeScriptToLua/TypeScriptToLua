@@ -98,7 +98,7 @@ test("instanceof export", () => {
         let inst = new myClass();
         export const result = inst instanceof myClass;
     `
-        .export("result")
+        .setExport("result")
         .expectToMatchJsResult();
 });
 

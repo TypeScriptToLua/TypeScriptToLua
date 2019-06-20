@@ -10,14 +10,14 @@ const jsonOptions = {
 
 test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" } }'])("JSON (%p)", json => {
     util.testModule(json)
-        .options(jsonOptions)
+        .setOptions(jsonOptions)
         .setMainFileName("main.json")
         .expectToEqual(JSON.parse(json));
 });
 
 test("Empty JSON", () => {
     util.testModule("")
-        .options(jsonOptions)
+        .setOptions(jsonOptions)
         .setMainFileName("main.json")
         .expectToHaveDiagnosticOfError(TSTLErrors.InvalidJsonFileContent(util.nodeStub));
 });

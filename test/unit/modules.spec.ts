@@ -12,7 +12,7 @@ describe("module import/export elision", () => {
     `;
 
     const expectToElideImport: util.TapCallback = builder => {
-        builder.addExtraFile("module.d.ts", moduleDeclaration).options({ module: ts.ModuleKind.CommonJS });
+        builder.addExtraFile("module.d.ts", moduleDeclaration).setOptions({ module: ts.ModuleKind.CommonJS });
         expect(builder.getLuaExecutionResult()).not.toBeInstanceOf(util.ExecutionError);
     };
 
@@ -80,29 +80,29 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             export { foo };
         `
             .disableSemanticCheck()
-            .luaHeader(`setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })`)
-            .export("foo")
+            .setLuaHeader(`setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })`)
+            .setExport("foo")
             .expectToEqual("bar");
     }
 );
 
 test("lualibRequire", () => {
     util.testExpression`b instanceof c`
-        .options({ luaLibImport: tstl.LuaLibImportKind.Require, luaTarget: tstl.LuaTarget.LuaJIT })
+        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Require, luaTarget: tstl.LuaTarget.LuaJIT })
         .disableSemanticCheck()
         .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
 });
 
 test("lualibRequireAlways", () => {
     util.testModule``
-        .options({ luaLibImport: tstl.LuaLibImportKind.Always, luaTarget: tstl.LuaTarget.LuaJIT })
+        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Always, luaTarget: tstl.LuaTarget.LuaJIT })
         .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
 });
 
 test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(
     "LuaLib no uses? No code (%p)",
     luaLibImport => {
-        util.testModule``.options({ luaLibImport }).tap(builder => expect(builder.getMainLuaCodeChunk()).toBe(""));
+        util.testModule``.setOptions({ luaLibImport }).tap(builder => expect(builder.getMainLuaCodeChunk()).toBe(""));
     }
 );
 

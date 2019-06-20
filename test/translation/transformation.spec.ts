@@ -12,7 +12,7 @@ const fixtures = fs
 
 test.each(fixtures)("Transformation (%s)", (_name, content) => {
     util.testModule(content)
-        .options({ luaLibImport: tstl.LuaLibImportKind.Require })
+        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Require })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });

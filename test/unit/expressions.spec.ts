@@ -56,7 +56,7 @@ const allBinaryOperators = [...supportedInAll, ...unsupportedIn53];
 test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     // Bit operations not supported in 5.1, expect an exception
     util.testExpression(input)
-        .options({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectToHaveDiagnosticOfError(
             TSTLErrors.UnsupportedForTarget("Bitwise operations", tstl.LuaTarget.Lua51, util.nodeStub)
@@ -65,28 +65,28 @@ test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
 
 test.each(allBinaryOperators)("Bitop [JIT] (%p)", input => {
     util.testExpression(input)
-        .options({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
 test.each(allBinaryOperators)("Bitop [5.2] (%p)", input => {
     util.testExpression(input)
-        .options({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
 test.each(supportedInAll)("Bitop [5.3] (%p)", input => {
     util.testExpression(input)
-        .options({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
 test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", input => {
     util.testExpression(input)
-        .options({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectToHaveDiagnosticOfError(
             TSTLErrors.UnsupportedKind(
@@ -156,7 +156,7 @@ test.each([
         let maybeUndefinedValue: string | undefined;
         return ${input};
     `
-        .options(options)
+        .setOptions(options)
         .expectToMatchJsResult();
 });
 

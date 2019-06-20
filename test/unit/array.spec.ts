@@ -103,8 +103,8 @@ test.each([
         arr[0] = 3;
         return arr.${member};
     `
-        .luaHeader(luaHeader)
-        .tsHeader(tsHeader)
+        .setLuaHeader(luaHeader)
+        .setTsHeader(tsHeader)
         .expectToEqual(expected);
 });
 

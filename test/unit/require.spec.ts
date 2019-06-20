@@ -86,7 +86,7 @@ test.each([
         module;
     `;
 
-    builder.options(options).setMainFileName(filePath);
+    builder.setOptions(options).setMainFileName(filePath);
 
     if (throwsError) {
         builder.expectToHaveDiagnostics();
@@ -182,6 +182,6 @@ test("ImportEquals declaration require", () => {
         import foo = require("./foo/bar");
         foo;
     `
-        .options({ module: ts.ModuleKind.CommonJS })
+        .setOptions({ module: ts.ModuleKind.CommonJS })
         .tap(expectToRequire("foo.bar"));
 });

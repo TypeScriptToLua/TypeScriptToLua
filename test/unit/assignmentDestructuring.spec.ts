@@ -8,19 +8,19 @@ const assignmentDestructuringCode = `
 
 test("Assignment destructuring [5.1]", () => {
     util.testModule(assignmentDestructuringCode)
-        .options({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
         .expectLuaToMatchSnapshot();
 });
 
 test("Assignment destructuring [5.2]", () => {
     util.testModule(assignmentDestructuringCode)
-        .options({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
         .expectLuaToMatchSnapshot();
 });
 
 test("Assignment destructuring [JIT]", () => {
     util.testModule(assignmentDestructuringCode)
-        .options({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
+        .setOptions({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
         .expectLuaToMatchSnapshot();
 });
 

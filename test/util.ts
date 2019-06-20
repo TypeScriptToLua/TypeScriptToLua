@@ -340,7 +340,7 @@ export class TestBuilder {
 
         if (status === lua.LUA_OK) {
             if (lua.lua_isstring(L, -1)) {
-                const result = JSON.parse(lua.lua_tojsstring(L, -1));
+                const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
                 return result === null ? undefined : result;
             } else {
                 const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));

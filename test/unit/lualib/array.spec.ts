@@ -202,7 +202,7 @@ test.each([[1, 2, 3], [1, 2, 3, 4], [1], []])("array.reverse (%p)", (...array) =
     util.testFunction`
         let array = ${util.valueToString(array)};
         let val = array.reverse();
-        return array
+        return array;
     `.expectToMatchJsResult();
 });
 
@@ -210,7 +210,7 @@ test.each([[1, 2, 3], [1], []])("array.shift (%p)", (...array) => {
     util.testFunction`
         let array = ${util.valueToString(array)};
         let value = array.shift();
-        return { array, value }
+        return { array, value };
     `.expectToMatchJsResult();
 });
 

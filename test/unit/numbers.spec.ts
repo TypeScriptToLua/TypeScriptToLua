@@ -18,19 +18,14 @@ test.each([
     "Infinity * -1",
     "Infinity + 1",
     "Infinity - 1",
-])("%s", code => util.testExpression(code).expectToMatchJsResult());
-
-test("NaN reassignment", () => {
-    util.testFunction`
-        const NaN = 1;
-        return NaN;
-    `.expectToMatchJsResult();
+])("%s", code => {
+    util.testExpression(code).expectToMatchJsResult();
 });
 
-test("Infinity reassignment", () => {
+test.skip.each(["NaN", "Infinity"])("%s reassignment", name => {
     util.testFunction`
-        const Infinity = 1;
-        return Infinity;
+        const ${name} = 1;
+        return ${name};
     `.expectToMatchJsResult();
 });
 

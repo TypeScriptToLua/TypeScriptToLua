@@ -95,18 +95,87 @@ test.each([
     }
 });
 
-test.each([{ comment: "", expected: "src.fake" }, { comment: "/** @noResolution */", expected: "fake" }])(
-    "noResolution on ambient modules causes no path alterations (%p)",
-    ({ comment, expected }) => {
-        util.testModule`
-            import * as fake from "fake";
-            fake;
-        `
-            .setMainFileName("src/main.ts")
-            .addExtraFile("module.d.ts", `${comment} declare module "fake" {}`)
-            .tap(expectToRequire(expected));
-    }
-);
+test.each([
+    {
+        declarationStatement: `
+            declare module 'fake' {}
+        `,
+        mainCode: "import * as fake from 'fake'; fake;",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {}
+        `,
+        mainCode: "import * as fake from 'fake'; fake;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            declare module 'fake' {
+                export const x: number;
+            }
+        `,
+        mainCode: "import { x } from 'fake'; x;",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {
+                export const x: number;
+            }
+        `,
+        mainCode: "import { x } from 'fake'; x;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {
+                export const x: number;
+            }
+            declare module 'fake' {
+                export const y: number;
+            }
+        `,
+        mainCode: "import { y } from 'fake'; y;",
+        expectedPath: "fake",
+    },
+    {
+        declarationStatement: `
+            declare module 'fake' {
+                export const x: number;
+            }
+            declare module 'fake' {
+                export const y: number;
+            }
+        `,
+        mainCode: "import { y } from 'fake'; y;",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            declare module 'fake' {}
+        `,
+        mainCode: "import 'fake';",
+        expectedPath: "src.fake",
+    },
+    {
+        declarationStatement: `
+            /** @noResolution */
+            declare module 'fake' {}
+        `,
+        mainCode: "import 'fake';",
+        expectedPath: "fake",
+    },
+])("noResolution prevents any module path resolution behaviour", ({ declarationStatement, mainCode, expectedPath }) => {
+    util.testModule(mainCode)
+        .setMainFileName("src/main.ts")
+        .addExtraFile("module.d.ts", declarationStatement)
+        .tap(expectToRequire(expectedPath));
+});
 
 test("ImportEquals declaration require", () => {
     util.testModule`

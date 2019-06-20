@@ -1,5 +1,5 @@
 import * as tstl from "../../src";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])("if (%p)", ({ inp, expected }) => {

@@ -24,14 +24,12 @@ test.each([
 test.each([{ array: [0, 2, 4, 8], expected: 3, value: 8 }, { array: [0, 2, 4, 8], expected: 1, value: 2 }])(
     "array.findIndex[index] (%p)",
     ({ array, expected, value }) => {
-        util.testFunction`
+        util.testFunctionTemplate`
             let array = ${array};
             return array.findIndex((elem, index, arr) => {
                 return index === ${expected} && arr[${expected}] === ${value};
             });
-        `
-            .serialize()
-            .expectToMatchJsResult();
+        `.expectToMatchJsResult();
     }
 );
 
@@ -230,13 +228,11 @@ test.each([
 });
 
 test.each([[[4, 5, 3, 2, 1]], [[1]], [[]]])("array.sort (%p)", array => {
-    util.testFunction`
+    util.testFunctionTemplate`
         const array = ${array};
         array.sort();
         return array;
-    `
-        .serialize()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -244,13 +240,11 @@ test.each([
     { array: ["4", "5", "3", "2", "1"], compare: (a: string, b: string) => Number(a) - Number(b) },
     { array: ["4", "5", "3", "2", "1"], compare: (a: string, b: string) => Number(b) - Number(a) },
 ])("array.sort with compare function (%p)", ({ array, compare }) => {
-    util.testFunction`
+    util.testFunctionTemplate`
         const array = ${array};
         array.sort(${compare});
         return array;
-    `
-        .serialize()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -260,7 +254,7 @@ test.each([
     { array: [1, [[[2], [3]]], 4], depth: Infinity, expected: [1, 2, 3, 4] },
 ])("array.flat (%p)", ({ array, depth, expected }) => {
     // TODO: Node 12
-    util.testExpression`${array}.flat(${depth})`.serialize().expectToEqual(expected);
+    util.testExpressionTemplate`${array}.flat(${depth})`.expectToEqual(expected);
 });
 
 test.each([
@@ -271,21 +265,21 @@ test.each([
     { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i], expected: [0, 4, 12] },
 ])("array.flatMap (%p)", ({ array, map, expected }) => {
     // TODO: Node 12
-    util.testExpression`${array}.flatMap(${map})`.serialize().expectToEqual(expected);
+    util.testExpressionTemplate`${array}.flatMap(${map})`.expectToEqual(expected);
 });
 
 test.each<(total: number, currentItem: number) => number>([
     (total, currentItem) => total + currentItem,
     (total, currentItem) => total * currentItem,
 ])("array reduce (%p)", reducer => {
-    util.testExpression`[1, 3, 5, 7].reduce(${reducer})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`[1, 3, 5, 7].reduce(${reducer})`.expectToMatchJsResult();
 });
 
 test.each<(total: number, currentItem: number) => number>([
     (total, currentItem) => total + currentItem,
     (total, currentItem) => total * currentItem,
 ])("array reduce with initial value (%p)", reducer => {
-    util.testExpression`[1, 3, 5, 7].reduce(${reducer}, 10)`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`[1, 3, 5, 7].reduce(${reducer}, 10)`.expectToMatchJsResult();
 });
 
 test("array reduce index & array arguments (%p)", () => {

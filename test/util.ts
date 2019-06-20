@@ -225,33 +225,27 @@ export class ExecutionError extends Error {
 export type TapCallback = (builder: TestBuilder) => void;
 export class TestBuilder {
     protected _accessor = "";
-    constructor(private template: TemplateStringsArray, private substitutions: any[]) {}
+    constructor(protected _tsCode: string) {}
 
     // Options
 
-    private _serialize = false;
-    public serialize(serialize = true): this {
-        expect(this._hasTsCode).toBe(false);
-        this._serialize = serialize;
-        return this;
-    }
-
     private _luaHeader = "";
     public luaHeader(luaHeader: string): this {
-        expect(this._hasTsCode).toBe(false);
+        expect(this._hasProgram).toBe(false);
         this._luaHeader += luaHeader;
         return this;
     }
 
     private _jsHeader = "";
     public jsHeader(jsHeader: string): this {
-        expect(this._hasTsCode).toBe(false);
+        expect(this._hasProgram).toBe(false);
         this._jsHeader += jsHeader;
         return this;
     }
 
     private _semanticCheck = true;
     public disableSemanticCheck(): this {
+        expect(this._hasProgram).toBe(false);
         this._semanticCheck = false;
         return this;
     }
@@ -265,13 +259,14 @@ export class TestBuilder {
         experimentalDecorators: true,
     };
     public options(options: tstl.CompilerOptions = {}): this {
-        expect(this._hasTsCode).toBe(false);
+        expect(this._hasProgram).toBe(false);
         Object.assign(this._options, options);
         return this;
     }
 
     protected _mainFileName = "main.ts";
     public setMainFileName(mainFileName: string): this {
+        expect(this._hasProgram).toBe(false);
         this._mainFileName = mainFileName;
         return this;
     }
@@ -283,19 +278,18 @@ export class TestBuilder {
         return this;
     }
 
+    // TODO: Use testModule in these cases?
+    protected _tsHeader = "";
+    public tsHeader(tsHeader: string): this {
+        expect(this._hasProgram).toBe(false);
+        this._tsHeader = tsHeader;
+        return this;
+    }
+
     // Transpilation and execution
 
-    private _hasTsCode = false;
-    @memoize
     public getTsCode(): string {
-        this._hasTsCode = true;
-        const substitutions = this._serialize ? this.substitutions.map(valueToString) : this.substitutions;
-
-        const templateString = this.template
-            .map((chunk, index) => (substitutions[index - 1] !== undefined ? substitutions[index - 1] : "") + chunk)
-            .join("");
-
-        return templateString;
+        return `${this._tsHeader}${this._tsCode}`;
     }
 
     private _hasProgram = false;
@@ -482,49 +476,42 @@ class ModuleTestBuilder extends TestBuilder {
 class FunctionTestBuilder extends TestBuilder {
     protected _accessor = ".__main()";
     public getTsCode(): string {
-        return `${this._tsHeader} export function __main() {${super.getTsCode()}}`;
-    }
-
-    // TODO: Use testModule in these cases?
-    private _tsHeader = "";
-    public tsHeader(tsHeader: string): this {
-        this._tsHeader = tsHeader;
-        return this;
+        return `${this._tsHeader}export function __main() {${this._tsCode}}`;
     }
 }
 
 class ExpressionTestBuilder extends TestBuilder {
     protected _accessor = ".__result";
     public getTsCode(): string {
-        return `${this._tsHeader} export const __result = ${super.getTsCode()};`;
-    }
-
-    private _tsHeader = "";
-    public tsHeader(tsHeader: string): this {
-        this._tsHeader = tsHeader;
-        return this;
+        return `${this._tsHeader}export const __result = ${this._tsCode};`;
     }
 }
 
-const templateFromValue = (valueOrTemplate: any): TemplateStringsArray =>
-    typeof valueOrTemplate === "string"
-        ? Object.assign([valueOrTemplate], { raw: [valueOrTemplate] })
-        : valueOrTemplate;
+const createTestBuilderFactory = <T extends TestBuilder>(
+    builderClass: new (_tsCode: string) => T,
+    serializeSubstitutions: boolean
+) => (...args: [string] | [TemplateStringsArray, ...any[]]): T => {
+    let tsCode: string;
+    if (typeof args[0] === "string") {
+        expect(serializeSubstitutions).toBe(false);
+        tsCode = args[0];
+    } else {
+        let [template, ...substitutions] = args;
+        if (serializeSubstitutions) {
+            substitutions = substitutions.map(valueToString);
+        }
 
-export function testModule(value: string): ModuleTestBuilder;
-export function testModule(template: TemplateStringsArray, ...substitutions: any[]): ModuleTestBuilder;
-export function testModule(valueOrTemplate: any, ...substitutions: any[]): ModuleTestBuilder {
-    return new ModuleTestBuilder(templateFromValue(valueOrTemplate), substitutions);
-}
+        tsCode = template
+            .map((chunk, index) => (substitutions[index - 1] !== undefined ? substitutions[index - 1] : "") + chunk)
+            .join("");
+    }
 
-export function testFunction(value: string): FunctionTestBuilder;
-export function testFunction(template: TemplateStringsArray, ...substitutions: any[]): FunctionTestBuilder;
-export function testFunction(valueOrTemplate: any, ...substitutions: any[]): FunctionTestBuilder {
-    return new FunctionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
-}
+    return new builderClass(tsCode);
+};
 
-export function testExpression(value: string): ExpressionTestBuilder;
-export function testExpression(template: TemplateStringsArray, ...substitutions: any[]): ExpressionTestBuilder;
-export function testExpression(valueOrTemplate: any, ...substitutions: any[]): ExpressionTestBuilder {
-    return new ExpressionTestBuilder(templateFromValue(valueOrTemplate), substitutions);
-}
+export const testModule = createTestBuilderFactory(ModuleTestBuilder, false);
+export const testModuleTemplate = createTestBuilderFactory(ModuleTestBuilder, true);
+export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false);
+export const testFunctionTemplate = createTestBuilderFactory(FunctionTestBuilder, true);
+export const testExpression = createTestBuilderFactory(ExpressionTestBuilder, false);
+export const testExpressionTemplate = createTestBuilderFactory(ExpressionTestBuilder, true);

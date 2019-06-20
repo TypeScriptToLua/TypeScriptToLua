@@ -31,14 +31,12 @@ test.each([
     { a: "test", b: 42, c: true },
     { a: false, b: 42, c: 12 },
 ])("Template Strings (%p)", ({ a, b, c }) => {
-    util.testFunction`
+    util.testFunctionTemplate`
         let a = ${a};
         let b = ${b};
         let c = ${c};
         return \`${a} ${b} test ${c}\`;
-    `
-        .serialize()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -49,14 +47,12 @@ test.each([
     { a: "test", b: 42, c: true },
     { a: false, b: 42, c: 12 },
 ])("String Concat Operator (%p)", ({ a, b, c }) => {
-    util.testFunction`
+    util.testFunctionTemplate`
         let a = ${a};
         let b = ${b};
         let c = ${c};
         return a + " " + b + " test " + c;
-    `
-        .serialize()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -65,7 +61,7 @@ test.each([
     { input: "abcde", index: 0 },
     { input: "a", index: 0 },
 ])("string index (%p)", ({ input, index }) => {
-    util.testExpression`${input}[${index}]`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${input}[${index}]`.expectToMatchJsResult();
 });
 
 test.each([
@@ -106,7 +102,7 @@ test.each([
     { inp: "hello test", searchValue: "h" },
     { inp: "hello test", searchValue: "invalid" },
 ])("string.indexOf (%p)", ({ inp, searchValue }) => {
-    util.testExpression`${inp}.indexOf(${searchValue})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.indexOf(${searchValue})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -115,13 +111,13 @@ test.each([
     { inp: "hello test", searchValue: "t", offset: 7 },
     { inp: "hello test", searchValue: "h", offset: 4 },
 ])("string.indexOf with offset (%p)", ({ inp, searchValue, offset }) => {
-    util.testExpression`${inp}.indexOf(${searchValue}, ${offset})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.indexOf(${searchValue}, ${offset})`.expectToMatchJsResult();
 });
 
 test.each([{ inp: "hello test", searchValue: "t", x: 4, y: 3 }, { inp: "hello test", searchValue: "h", x: 3, y: 4 }])(
     "string.indexOf with offset expression (%p)",
     ({ inp, searchValue, x, y }) => {
-        util.testExpression`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.serialize().expectToMatchJsResult();
+        util.testExpressionTemplate`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.expectToMatchJsResult();
     }
 );
 
@@ -172,15 +168,15 @@ test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", sta
 );
 
 test.each(["", "h", "hello"])("string.length (%p)", input => {
-    util.testExpression`${input}.length`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${input}.length`.expectToMatchJsResult();
 });
 
 test.each(["hello TEST"])("string.toLowerCase (%p)", inp => {
-    util.testExpression`${inp}.toLowerCase()`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.toLowerCase()`.expectToMatchJsResult();
 });
 
 test.each(["hello test"])("string.toUpperCase (%p)", inp => {
-    util.testExpression`${inp}.toUpperCase()`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.toUpperCase()`.expectToMatchJsResult();
 });
 
 test.each([
@@ -192,7 +188,7 @@ test.each([
     { inp: "hello test", separator: "invalid" },
     { inp: "hello test", separator: "hello test" },
 ])("string.split (%p)", ({ inp, separator }) => {
-    util.testExpression`${inp}.split(${separator})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.split(${separator})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -201,13 +197,13 @@ test.each([
     { inp: "hello test", index: 3 },
     { inp: "hello test", index: 99 },
 ])("string.charAt (%p)", ({ inp, index }) => {
-    util.testExpression`${inp}.charAt(${index})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.charAt(${index})`.expectToMatchJsResult();
 });
 
 test.each([{ inp: "hello test", index: 1 }, { inp: "hello test", index: 2 }, { inp: "hello test", index: 3 }])(
     "string.charCodeAt (%p)",
     ({ inp, index }) => {
-        util.testExpression`${inp}.charCodeAt(${index})`.serialize().expectToMatchJsResult();
+        util.testExpressionTemplate`${inp}.charCodeAt(${index})`.expectToMatchJsResult();
     }
 );
 
@@ -217,7 +213,7 @@ test.each([
     { inp: "hello test", index: 3, ignored: 2 },
     { inp: "hello test", index: 3, ignored: 99 },
 ])("string.charAt with expression (%p)", ({ inp, index, ignored }) => {
-    util.testExpression`${inp}.charAt(2 > 1 && ${index} || ${ignored})`.serialize().expectToMatchJsResult();
+    util.testExpressionTemplate`${inp}.charAt(2 > 1 && ${index} || ${ignored})`.expectToMatchJsResult();
 });
 
 test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([

@@ -4638,31 +4638,70 @@ export class LuaTransformer {
 
     public transformTaggedTemplateExpression(expression: ts.TaggedTemplateExpression): ExpressionVisitResult {
         const strings: ts.StringLiteral[] = [];
+        const rawStrings: string[] = [];
         const expressions: ts.Expression[] = [];
         if (ts.isTemplateExpression(expression.template)) {
             // Expressions are in the string.
             strings.push(ts.createStringLiteral(expression.template.head.text));
+            rawStrings.push(expression.template.head.getText());
             strings.push(...expression.template.templateSpans.map(span => ts.createStringLiteral(span.literal.text)));
+            rawStrings.push(...expression.template.templateSpans.map(span => span.literal.getText()));
             expressions.push(...expression.template.templateSpans.map(span => span.expression));
         } else if (ts.isNoSubstitutionTemplateLiteral(expression.template)) {
             // No expressions are in the string.
             strings.push(ts.createStringLiteral(expression.template.text));
+            rawStrings.push(expression.template.getText());
         } else {
             throw TSTLErrors.UnsupportedKind("TaggedTemplateExpression", expression.kind, expression);
         }
+
+        // Preserve some special characters
+        const preservedRawStrings = rawStrings.map(rawString => {
+            const preservedString = rawString
+                .replace(/`/g, "")
+                .replace(/\$/g, "")
+                .replace(/\{/g, "")
+                .replace(/\}/g, "")
+                .replace(/\\/g, "\\\\");
+            return tstl.createStringLiteral(preservedString);
+        });
+
+        // Construct call expression
         const stringArray = ts.createArrayLiteral(strings);
+        const rawStringArray = tstl.createTableExpression(
+            preservedRawStrings.map(rawString => tstl.createTableFieldExpression(rawString))
+        );
         const signature = this.checker.getResolvedSignature(expression);
         const signatureDeclaration = signature && signature.getDeclaration();
         let parameters: tstl.Expression[];
+        let tableLiteralExpression: tstl.TableExpression | undefined;
+
+        // Evaluate if `self` should be used
         if (
             signatureDeclaration &&
             tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
         ) {
             const context = this.isStrict ? ts.createNull() : ts.createIdentifier("_G");
             parameters = this.transformArguments([stringArray, ...expressions], signature, context);
+            tableLiteralExpression =
+                parameters.length > 1 && parameters[1].kind === tstl.SyntaxKind.TableExpression
+                    ? (parameters[1] as tstl.TableExpression)
+                    : undefined;
         } else {
             parameters = this.transformArguments([stringArray, ...expressions], signature);
+            tableLiteralExpression =
+                parameters.length > 0 && parameters[0].kind === tstl.SyntaxKind.TableExpression
+                    ? (parameters[0] as tstl.TableExpression)
+                    : undefined;
         }
+
+        // Keep track of raw strings.
+        if (tableLiteralExpression && tableLiteralExpression.fields) {
+            tableLiteralExpression.fields.push(
+                tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
+            );
+        }
+
         const leftHandSideExpression = this.transformExpression(expression.tag);
         return tstl.createCallExpression(leftHandSideExpression, parameters);
     }

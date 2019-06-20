@@ -1,47 +1,59 @@
 import * as util from "../util";
 
-test.each([
+const testCases = [
     {
         callExpression: "func``",
-        expectedResult: "",
+        joinAllResult: "",
+        joinRawResult: "",
     },
     {
         callExpression: "func`hello`",
-        expectedResult: "hello",
+        joinAllResult: "hello",
+        joinRawResult: "hello",
     },
     {
         callExpression: "func`hello ${1} ${2} ${3}`",
-        expectedResult: "hello 1 2 3",
+        joinAllResult: "hello 1 2 3",
+        joinRawResult: "hello   ",
     },
     {
         callExpression: "func`hello ${(() => 'iife')()}`",
-        expectedResult: "hello iife",
+        joinAllResult: "hello iife",
+        joinRawResult: "hello ",
     },
     {
         callExpression: "func`hello ${1 + 2 + 3} arithmetic`",
-        expectedResult: "hello 6 arithmetic",
+        joinAllResult: "hello 6 arithmetic",
+        joinRawResult: "hello  arithmetic",
     },
     {
         callExpression: "func`begin ${'middle'} end`",
-        expectedResult: "begin middle end",
+        joinAllResult: "begin middle end",
+        joinRawResult: "begin  end",
     },
     {
         callExpression: "func`hello ${func`hello`}`",
-        expectedResult: "hello hello",
+        joinAllResult: "hello hello",
+        joinRawResult: "hello ",
     },
     {
         callExpression: "func`hello \\u00A9`",
-        expectedResult: "hello ©",
+        joinAllResult: "hello ©",
+        joinRawResult: "hello \\u00A9",
     },
     {
         callExpression: "obj.func`hello ${'propertyAccessExpression'}`",
-        expectedResult: "hello propertyAccessExpression",
+        joinAllResult: "hello propertyAccessExpression",
+        joinRawResult: "hello ",
     },
     {
         callExpression: "obj['func']`hello ${'elementAccessExpression'}`",
-        expectedResult: "hello elementAccessExpression",
+        joinAllResult: "hello elementAccessExpression",
+        joinRawResult: "hello ",
     },
-])("TaggedTemplateLiteral call (%p)", ({ callExpression, expectedResult }) => {
+];
+
+test.each(testCases)("TaggedTemplateLiteral call (%p)", ({ callExpression, joinAllResult }) => {
     const result = util.transpileAndExecute(`
             function func(strings: TemplateStringsArray, ...expressions: any[]) {
                 const toJoin = [];
@@ -61,7 +73,21 @@ test.each([
             return ${callExpression};
         `);
 
-    expect(result).toBe(expectedResult);
+    expect(result).toBe(joinAllResult);
+});
+
+test.each(testCases)("TaggedTemplateLiteral raw preservation (%p)", ({ callExpression, joinRawResult }) => {
+    const result = util.transpileAndExecute(`
+            function func(strings: TemplateStringsArray, ...expressions: any[]) {
+                return strings.raw.join("");
+            }
+            const obj = {
+                func
+            };
+            return ${callExpression};
+        `);
+
+    expect(result).toBe(joinRawResult);
 });
 
 test("TaggedTemplateLiteral no self parameter", () => {

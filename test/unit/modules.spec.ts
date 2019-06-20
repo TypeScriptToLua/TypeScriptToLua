@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import * as tstl from "../../src";
 import { TSTLErrors } from "../../src/TSTLErrors";
 import * as util from "../util";
 
@@ -83,26 +82,6 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             .setLuaHeader(`setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })`)
             .setExport("foo")
             .expectToEqual("bar");
-    }
-);
-
-test("lualibRequire", () => {
-    util.testExpression`b instanceof c`
-        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Require, luaTarget: tstl.LuaTarget.LuaJIT })
-        .disableSemanticCheck()
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
-});
-
-test("lualibRequireAlways", () => {
-    util.testModule``
-        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Always, luaTarget: tstl.LuaTarget.LuaJIT })
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain(`require("lualib_bundle")`));
-});
-
-test.each([tstl.LuaLibImportKind.Inline, tstl.LuaLibImportKind.None, tstl.LuaLibImportKind.Require])(
-    "LuaLib no uses? No code (%p)",
-    luaLibImport => {
-        util.testModule``.setOptions({ luaLibImport }).tap(builder => expect(builder.getMainLuaCodeChunk()).toBe(""));
     }
 );
 

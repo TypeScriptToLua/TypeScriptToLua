@@ -161,6 +161,23 @@ test.each([
 });
 
 test.each([
+    { condition: true, lhs: 4, rhs: 5 },
+    { condition: false, lhs: 4, rhs: 5 },
+    { condition: 3, lhs: 4, rhs: 5 },
+])("Ternary Conditional (%p)", ({ condition, lhs, rhs }) => {
+    util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`.expectToMatchJsResult();
+});
+
+test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", condition => {
+    util.testFunction`
+        let a = 3;
+        let delay = () => ${condition} ? a + 3 : a + 5;
+        a = 8;
+        return delay();
+    `.expectToMatchJsResult();
+});
+
+test.each([
     "inst.field",
     "inst.field + 3",
     "inst.field * 3",

@@ -2644,6 +2644,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.StringLiteral:
             case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 return this.transformStringLiteral(expression as ts.StringLiteral);
+            case ts.SyntaxKind.TaggedTemplateExpression:
+                return this.transformTaggedTemplateExpression(expression as ts.TaggedTemplateExpression);
             case ts.SyntaxKind.TemplateExpression:
                 return this.transformTemplateExpression(expression as ts.TemplateExpression);
             case ts.SyntaxKind.NumericLiteral:
@@ -4622,6 +4624,37 @@ export class LuaTransformer {
 
     public transformThisKeyword(thisKeyword: ts.ThisExpression): ExpressionVisitResult {
         return this.createSelfIdentifier(thisKeyword);
+    }
+
+    public transformTaggedTemplateExpression(expression: ts.TaggedTemplateExpression): ExpressionVisitResult {
+        const strings: ts.StringLiteral[] = [];
+        const expressions: ts.Expression[] = [];
+        if (ts.isTemplateExpression(expression.template)) {
+            // Expressions are in the string.
+            strings.push(ts.createStringLiteral(expression.template.head.text));
+            strings.push(...expression.template.templateSpans.map(span => ts.createStringLiteral(span.literal.text)));
+            expressions.push(...expression.template.templateSpans.map(span => span.expression));
+        } else if (ts.isNoSubstitutionTemplateLiteral(expression.template)) {
+            // No expressions are in the string.
+            strings.push(ts.createStringLiteral(expression.template.text));
+        } else {
+            throw TSTLErrors.UnsupportedKind("TaggedTemplateExpression", expression.kind, expression);
+        }
+        const stringArray = ts.createArrayLiteral(strings);
+        const signature = this.checker.getResolvedSignature(expression);
+        const signatureDeclaration = signature && signature.getDeclaration();
+        let parameters: tstl.Expression[];
+        if (
+            signatureDeclaration &&
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
+        ) {
+            const context = this.isStrict ? ts.createNull() : ts.createIdentifier("_G");
+            parameters = this.transformArguments([stringArray, ...expressions], signature, context);
+        } else {
+            parameters = this.transformArguments([stringArray, ...expressions], signature);
+        }
+        const leftHandSideExpression = this.transformExpression(expression.tag);
+        return tstl.createCallExpression(leftHandSideExpression, parameters);
     }
 
     public transformTemplateExpression(expression: ts.TemplateExpression): ExpressionVisitResult {

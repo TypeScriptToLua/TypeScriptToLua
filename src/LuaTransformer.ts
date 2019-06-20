@@ -1229,6 +1229,8 @@ export class LuaTransformer {
 
         const block: tstl.Block = tstl.createBlock(bodyWithFieldInitializers);
 
+        const constructorWasGenerated = statement.pos === -1;
+
         const result = tstl.createAssignmentStatement(
             this.createConstructorName(className),
             tstl.createFunctionExpression(
@@ -1238,7 +1240,7 @@ export class LuaTransformer {
                 restParamName,
                 tstl.FunctionExpressionFlags.Declaration
             ),
-            statement.pos >= 0 ? statement : classDeclaration // Map to class declaration if constructor was generated
+            constructorWasGenerated ? classDeclaration : statement
         );
 
         return result;

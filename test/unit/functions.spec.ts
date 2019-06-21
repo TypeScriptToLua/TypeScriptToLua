@@ -9,6 +9,13 @@ test("Arrow Function Expression", () => {
     `.expectToMatchJsResult();
 });
 
+test("Returning arrow function from arrow function (%p)", () => {
+    util.testFunction`
+        const add = (x: number) => (y: number) => x + y;
+        return add(1)(2);
+    `.expectToMatchJsResult();
+});
+
 test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", lambda => {
     util.testFunction`
         let i = 10;

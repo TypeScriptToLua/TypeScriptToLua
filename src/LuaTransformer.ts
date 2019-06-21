@@ -4640,36 +4640,53 @@ export class LuaTransformer {
         const strings: ts.StringLiteral[] = [];
         const rawStrings: string[] = [];
         const expressions: ts.Expression[] = [];
+
         if (ts.isTemplateExpression(expression.template)) {
             // Expressions are in the string.
             strings.push(ts.createStringLiteral(expression.template.head.text));
-            rawStrings.push(expression.template.head.getText());
+            // If there is a head, it beings with "`" and ends with "${"
+            rawStrings.push(
+                expression.template.head
+                    .getText()
+                    .replace(/\$\{/, "")
+                    .replace(/^`/, "")
+            );
             strings.push(...expression.template.templateSpans.map(span => ts.createStringLiteral(span.literal.text)));
-            rawStrings.push(...expression.template.templateSpans.map(span => span.literal.getText()));
+            // Following spans end with "}"
+            rawStrings.push(
+                ...expression.template.templateSpans.map(span => {
+                    if (span.literal.kind === ts.SyntaxKind.TemplateMiddle) {
+                        // The middle sections end with "${"
+                        return span.literal
+                            .getText()
+                            .replace(/^\}/, "")
+                            .replace(/\$\{$/, "");
+                    } else {
+                        // The tail ends with "`"
+                        return span.literal
+                            .getText()
+                            .replace(/^\}/, "")
+                            .replace(/`$/, "");
+                    }
+                })
+            );
             expressions.push(...expression.template.templateSpans.map(span => span.expression));
-        } else if (ts.isNoSubstitutionTemplateLiteral(expression.template)) {
+        } else {
             // No expressions are in the string.
             strings.push(ts.createStringLiteral(expression.template.text));
-            rawStrings.push(expression.template.getText());
-        } else {
-            throw TSTLErrors.UnsupportedKind("TaggedTemplateExpression", expression.kind, expression);
+            rawStrings.push(expression.template.getText().replace(/(^`|`$)/g, ""));
         }
 
-        // Preserve some special characters
-        const preservedRawStrings = rawStrings.map(rawString => {
-            const preservedString = rawString
-                .replace(/`/g, "")
-                .replace(/\$/g, "")
-                .replace(/\{/g, "")
-                .replace(/\}/g, "")
-                .replace(/\\/g, "\\\\");
-            return tstl.createStringLiteral(preservedString);
+        // Preserve "\"
+        const preparedRawStrings = rawStrings.map(rawString => {
+            const preparedString = rawString.replace(/\\/g, "\\\\");
+            return tstl.createStringLiteral(preparedString);
         });
 
         // Construct call expression
         const stringArray = ts.createArrayLiteral(strings);
         const rawStringArray = tstl.createTableExpression(
-            preservedRawStrings.map(rawString => tstl.createTableFieldExpression(rawString))
+            preparedRawStrings.map(rawString => tstl.createTableFieldExpression(rawString))
         );
         const signature = this.checker.getResolvedSignature(expression);
         const signatureDeclaration = signature && signature.getDeclaration();

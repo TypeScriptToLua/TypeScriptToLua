@@ -42,6 +42,21 @@ const testCases = [
         joinRawResult: "hello \\u00A9",
     },
     {
+        callExpression: "func`hello $ { }`",
+        joinAllResult: "hello $ { }",
+        joinRawResult: "hello $ { }",
+    },
+    {
+        callExpression: "func`hello { ${'brackets'} }`",
+        joinAllResult: "hello { brackets }",
+        joinRawResult: "hello {  }",
+    },
+    {
+        callExpression: "func`hello \\``",
+        joinAllResult: "hello `",
+        joinRawResult: "hello \\`",
+    },
+    {
         callExpression: "obj.func`hello ${'propertyAccessExpression'}`",
         joinAllResult: "hello propertyAccessExpression",
         joinRawResult: "hello ",

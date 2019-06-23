@@ -33,6 +33,7 @@ test.each([
             { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
             { luaPattern: "function def(", typeScriptPattern: "function def() {" },
             { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
+            { luaPattern: "end", typeScriptPattern: "function def() {" },
         ],
     },
     {
@@ -69,7 +70,11 @@ test.each([
     },
     {
         typeScriptSource: `
-            class Bar extends Foo {}
+            class Bar extends Foo {
+                constructor() {
+                    super();
+                }
+            }
         `,
 
         assertPatterns: [
@@ -82,7 +87,26 @@ test.each([
             { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },
+            { luaPattern: "function Bar.new", typeScriptPattern: "class Bar" },
+            { luaPattern: "function Bar.prototype.____constructor", typeScriptPattern: "constructor" },
         ],
+    },
+    {
+        typeScriptSource: `
+            class Foo {
+            }
+        `,
+
+        assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
+    },
+    {
+        typeScriptSource: `
+            class Foo {
+                bar = "baz";
+            }
+        `,
+
+        assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
     },
     {
         typeScriptSource: `
@@ -159,6 +183,30 @@ test("Source map has correct source root", async () => {
 
     const sourceMap = JSON.parse(file.sourceMap);
     expect(sourceMap.sourceRoot).toBe(".");
+});
+
+test.each([
+    { code: `const type = "foobar";`, name: "type" },
+    { code: `const and = "foobar";`, name: "and" },
+    { code: `const $$$ = "foobar";`, name: "$$$" },
+    { code: `const foo = { bar() { console.log(this); } };`, name: "this" },
+    { code: `function foo($$$: unknown) {}`, name: "$$$" },
+    { code: `class $$$ {}`, name: "$$$" },
+    { code: `namespace $$$ { const foo = "bar"; }`, name: "$$$" },
+])("Source map has correct name mappings (%p)", async ({ code, name }) => {
+    const { file } = util.transpileStringResult(code);
+
+    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+
+    const consumer = await new SourceMapConsumer(file.sourceMap);
+    const typescriptPosition = lineAndColumnOf(code, name);
+    let mappedName: string | undefined;
+    consumer.eachMapping(mapping => {
+        if (mapping.originalLine === typescriptPosition.line && mapping.originalColumn === typescriptPosition.column) {
+            mappedName = mapping.name;
+        }
+    });
+    expect(mappedName).toBe(name);
 });
 
 test("sourceMapTraceback saves sourcemap in _G", () => {

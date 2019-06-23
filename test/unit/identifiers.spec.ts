@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as util from "../util";
 import { luaKeywords } from "../../src/LuaKeywords";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 
 const invalidLuaCharNames = ["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"];
 const validTsInvalidLuaKeywordNames = [

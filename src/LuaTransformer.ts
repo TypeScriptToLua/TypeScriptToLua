@@ -4682,11 +4682,11 @@ export class LuaTransformer {
 
         // Assign raw strings to the "raw" property of the string table.
         const tableParameterIndex = useSelfParameter ? 1 : 0;
-        const tableLiteralExpression =
-            parameters[tableParameterIndex].kind === tstl.SyntaxKind.TableExpression
-                ? (parameters[tableParameterIndex] as tstl.TableExpression)
-                : undefined;
-        if (tableLiteralExpression && tableLiteralExpression.fields) {
+        const [tableLiteralExpression] = this.filterUndefinedAndCast(
+            [parameters[tableParameterIndex]],
+            tstl.isTableExpression
+        );
+        if (tableLiteralExpression.fields) {
             const rawStringArray = tstl.createTableExpression(
                 rawStrings.map(stringLiteral =>
                     tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))

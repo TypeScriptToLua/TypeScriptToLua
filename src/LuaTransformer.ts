@@ -4674,7 +4674,7 @@ export class LuaTransformer {
         const signatureDeclaration = signature && signature.getDeclaration();
         const useSelfParameter =
             signatureDeclaration &&
-            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void;
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void;
         const context = useSelfParameter ? (this.isStrict ? ts.createNull() : ts.createIdentifier("_G")) : undefined;
 
         // Argument evaluation.

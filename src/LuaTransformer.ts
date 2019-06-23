@@ -4637,83 +4637,50 @@ export class LuaTransformer {
     }
 
     public transformTaggedTemplateExpression(expression: ts.TaggedTemplateExpression): ExpressionVisitResult {
-        const strings: ts.StringLiteral[] = [];
+        const strings: string[] = [];
         const rawStrings: string[] = [];
         const expressions: ts.Expression[] = [];
 
         if (ts.isTemplateExpression(expression.template)) {
             // Expressions are in the string.
-            strings.push(ts.createStringLiteral(expression.template.head.text));
-            // If there is a head, it beings with "`" and ends with "${"
-            rawStrings.push(
-                expression.template.head
-                    .getText()
-                    .replace(/\$\{/, "")
-                    .replace(/^`/, "")
-            );
-            strings.push(...expression.template.templateSpans.map(span => ts.createStringLiteral(span.literal.text)));
-            // Following spans end with "}"
-            rawStrings.push(
-                ...expression.template.templateSpans.map(span => {
-                    if (span.literal.kind === ts.SyntaxKind.TemplateMiddle) {
-                        // The middle sections end with "${"
-                        return span.literal
-                            .getText()
-                            .replace(/^\}/, "")
-                            .replace(/\$\{$/, "");
-                    } else {
-                        // The tail ends with "`"
-                        return span.literal
-                            .getText()
-                            .replace(/^\}/, "")
-                            .replace(/`$/, "");
-                    }
-                })
-            );
+            strings.push(expression.template.head.text);
+            rawStrings.push(tsHelper.getRawLiteral(expression.template.head));
+            strings.push(...expression.template.templateSpans.map(span => span.literal.text));
+            rawStrings.push(...expression.template.templateSpans.map(span => tsHelper.getRawLiteral(span.literal)));
             expressions.push(...expression.template.templateSpans.map(span => span.expression));
         } else {
             // No expressions are in the string.
-            strings.push(ts.createStringLiteral(expression.template.text));
-            rawStrings.push(expression.template.getText().replace(/(^`|`$)/g, ""));
+            strings.push(expression.template.text);
+            rawStrings.push(tsHelper.getRawLiteral(expression.template));
         }
 
-        // Preserve "\"
-        const preparedRawStrings = rawStrings.map(rawString => {
-            const preparedString = rawString.replace(/\\/g, "\\\\");
-            return tstl.createStringLiteral(preparedString);
-        });
+        // Construct string arrays for parameters.
+        const stringArray = ts.createArrayLiteral(strings.map(partialString => ts.createStringLiteral(partialString)));
 
-        // Construct call expression
-        const stringArray = ts.createArrayLiteral(strings);
-        const rawStringArray = tstl.createTableExpression(
-            preparedRawStrings.map(rawString => tstl.createTableFieldExpression(rawString))
-        );
+        // Evaluate if there is a self parameter to be used.
         const signature = this.checker.getResolvedSignature(expression);
         const signatureDeclaration = signature && signature.getDeclaration();
-        let parameters: tstl.Expression[];
-        let tableLiteralExpression: tstl.TableExpression | undefined;
-
-        // Evaluate if `self` should be used
-        if (
+        const useSelfParameter =
             signatureDeclaration &&
-            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void
-        ) {
-            const context = this.isStrict ? ts.createNull() : ts.createIdentifier("_G");
-            parameters = this.transformArguments([stringArray, ...expressions], signature, context);
-            tableLiteralExpression =
-                parameters.length > 1 && parameters[1].kind === tstl.SyntaxKind.TableExpression
-                    ? (parameters[1] as tstl.TableExpression)
-                    : undefined;
-        } else {
-            parameters = this.transformArguments([stringArray, ...expressions], signature);
-            tableLiteralExpression =
-                parameters.length > 0 && parameters[0].kind === tstl.SyntaxKind.TableExpression
-                    ? (parameters[0] as tstl.TableExpression)
-                    : undefined;
-        }
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== ContextType.Void;
+        const context = useSelfParameter ? (this.isStrict ? ts.createNull() : ts.createIdentifier("_G")) : undefined;
 
-        // Keep track of raw strings.
+        // Argument evaluation.
+        const parameters = this.transformArguments([stringArray, ...expressions], signature, context);
+
+        // Assign raw strings to the "raw" property of the string table.
+        const tableParameterIndex = useSelfParameter ? 1 : 0;
+        const tableLiteralExpression =
+            parameters.length > tableParameterIndex &&
+            parameters[tableParameterIndex].kind === tstl.SyntaxKind.TableExpression
+                ? (parameters[tableParameterIndex] as tstl.TableExpression)
+                : undefined;
         if (tableLiteralExpression && tableLiteralExpression.fields) {
+            const rawStringArray = tstl.createTableExpression(
+                rawStrings.map(stringLiteral =>
+                    tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
+                )
+            );
             tableLiteralExpression.fields.push(
                 tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
             );

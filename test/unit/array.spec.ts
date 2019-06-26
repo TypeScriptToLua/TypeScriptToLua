@@ -200,3 +200,13 @@ test.each([0, 1, 2])("Array with OmittedExpression", index => {
 
     expect(result).toBe([1, , 2][index]);
 });
+
+test("OmittedExpression in Array Binding Assignment Statement", () => {
+    const result = util.transpileAndExecute(
+        `let a, c;
+        [a, , c] = [1, 2, 3];
+        return a + c;`
+    );
+
+    expect(result).toBe(4);
+});

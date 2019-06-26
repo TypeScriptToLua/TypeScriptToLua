@@ -2909,9 +2909,14 @@ export class LuaTransformer {
 
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
+            const omittedExpressionAssignmentIdentifier = tstl.createAnonymousIdentifier();
             const left =
                 expression.left.elements.length > 0
-                    ? expression.left.elements.map(e => this.transformExpression(e))
+                    ? expression.left.elements.map(e =>
+                          ts.isOmittedExpression(e)
+                              ? omittedExpressionAssignmentIdentifier
+                              : this.transformExpression(e)
+                      )
                     : [tstl.createAnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {

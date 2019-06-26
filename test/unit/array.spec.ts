@@ -191,3 +191,12 @@ test.each([
     `;
     expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${result}`);
 });
+
+test("Array OmittedExpression", () => {
+    const result = util.transpileAndExecute(
+        `const myarray = [1, , 2];
+        return myarray[2];`
+    );
+
+    expect(result).toBe(2);
+});

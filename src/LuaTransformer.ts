@@ -2683,6 +2683,8 @@ export class LuaTransformer {
                 return this.transformArrayLiteral(expression as ts.ArrayLiteralExpression);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transformObjectLiteral(expression as ts.ObjectLiteralExpression);
+            case ts.SyntaxKind.OmittedExpression:
+                return this.transformOmittedExpression(expression as ts.OmittedExpression);
             case ts.SyntaxKind.DeleteExpression:
                 return this.transformDeleteExpression(expression as ts.DeleteExpression);
             case ts.SyntaxKind.FunctionExpression:
@@ -3464,6 +3466,10 @@ export class LuaTransformer {
         });
 
         return tstl.createTableExpression(properties, expression);
+    }
+
+    public transformOmittedExpression(node: ts.OmittedExpression): ExpressionVisitResult {
+        return tstl.createNilLiteral(node);
     }
 
     public transformDeleteExpression(expression: ts.DeleteExpression): ExpressionVisitResult {

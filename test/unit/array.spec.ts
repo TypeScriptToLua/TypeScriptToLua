@@ -194,6 +194,15 @@ test.each([
 
 test("Array OmittedExpression", () => {
     const result = util.transpileAndExecute(
+        `const myarray = [,];
+        return myarray[0];`
+    );
+
+    expect(result).toBe(undefined);
+});
+
+test("Part of Array can be an OmittedExpression", () => {
+    const result = util.transpileAndExecute(
         `const myarray = [1, , 2];
         return myarray[2];`
     );

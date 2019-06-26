@@ -192,20 +192,14 @@ test.each([
     expect(() => util.transpileAndExecute(code)).toThrowError(`invalid array length: ${result}`);
 });
 
-test("Array OmittedExpression", () => {
-    const result = util.transpileAndExecute(
-        `const myarray = [,];
-        return myarray[0];`
-    );
+test.each([{ index: 0, expectedResult: 1 }, { index: 1, expectedResult: undefined }, { index: 2, expectedResult: 2 }])(
+    "Array with OmittedExpression",
+    ({ index, expectedResult }) => {
+        const result = util.transpileAndExecute(
+            `const myarray = [1, , 2];
+        return myarray[${index}];`
+        );
 
-    expect(result).toBe(undefined);
-});
-
-test("Part of Array can be an OmittedExpression", () => {
-    const result = util.transpileAndExecute(
-        `const myarray = [1, , 2];
-        return myarray[2];`
-    );
-
-    expect(result).toBe(2);
-});
+        expect(result).toBe(expectedResult);
+    }
+);

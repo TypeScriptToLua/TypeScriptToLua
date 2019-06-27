@@ -2909,14 +2909,9 @@ export class LuaTransformer {
 
         if (ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
-            const omittedExpressionAssignmentIdentifier = tstl.createAnonymousIdentifier();
             const left =
                 expression.left.elements.length > 0
-                    ? expression.left.elements.map(e =>
-                          ts.isOmittedExpression(e)
-                              ? omittedExpressionAssignmentIdentifier
-                              : this.transformExpression(e)
-                      )
+                    ? expression.left.elements.map(e => this.transformArrayBindingExpression(e))
                     : [tstl.createAnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
@@ -3474,7 +3469,8 @@ export class LuaTransformer {
     }
 
     public transformOmittedExpression(node: ts.OmittedExpression): ExpressionVisitResult {
-        return tstl.createNilLiteral(node);
+        const isWithinBindingAssignmentStatement = tsHelper.isWithinLiteralAssignmentStatement(node);
+        return isWithinBindingAssignmentStatement ? tstl.createAnonymousIdentifier() : tstl.createNilLiteral(node);
     }
 
     public transformDeleteExpression(expression: ts.DeleteExpression): ExpressionVisitResult {
@@ -4588,14 +4584,18 @@ export class LuaTransformer {
     }
 
     public transformArrayBindingElement(name: ts.ArrayBindingElement): ExpressionVisitResult {
+        return this.transformArrayBindingExpression(name as ts.Expression);
+    }
+
+    public transformArrayBindingExpression(name: ts.Expression): ExpressionVisitResult {
         if (ts.isOmittedExpression(name)) {
-            return tstl.createIdentifier("__", name);
+            return this.transformOmittedExpression(name);
         } else if (ts.isIdentifier(name)) {
             return this.transformIdentifier(name);
         } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
             return this.transformIdentifier(name.name);
         } else {
-            throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
+            throw TSTLErrors.UnsupportedKind("array binding expression", name.kind, name);
         }
     }
 

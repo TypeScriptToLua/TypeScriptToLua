@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { DecoratorKind } from "../../src/Decorator";
-import { TSHelper as tsHelper } from "../../src/TSHelper";
+import * as tsHelper from "../../src/TSHelper";
 import * as util from "../util";
 
 test("GetCustomDecorators single", () => {

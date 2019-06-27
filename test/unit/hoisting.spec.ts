@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("Var Hoisting", () => {

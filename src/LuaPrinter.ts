@@ -709,47 +709,10 @@ export class LuaPrinter {
         return result;
     }
 
-    protected isSimpleExpression(expression: tstl.Expression): boolean {
-        switch (expression.kind) {
-            case tstl.SyntaxKind.CallExpression:
-            case tstl.SyntaxKind.MethodCallExpression:
-            case tstl.SyntaxKind.FunctionExpression:
-                return false;
-
-            case tstl.SyntaxKind.TableExpression:
-                const tableExpression = expression as tstl.TableExpression;
-                return !tableExpression.fields || tableExpression.fields.every(e => this.isSimpleExpression(e));
-
-            case tstl.SyntaxKind.TableFieldExpression:
-                const fieldExpression = expression as tstl.TableFieldExpression;
-                return (
-                    (!fieldExpression.key || this.isSimpleExpression(fieldExpression.key)) &&
-                    this.isSimpleExpression(fieldExpression.value)
-                );
-
-            case tstl.SyntaxKind.TableIndexExpression:
-                const indexExpression = expression as tstl.TableIndexExpression;
-                return this.isSimpleExpression(indexExpression.table) && this.isSimpleExpression(indexExpression.index);
-
-            case tstl.SyntaxKind.UnaryExpression:
-                return this.isSimpleExpression((expression as tstl.UnaryExpression).operand);
-
-            case tstl.SyntaxKind.BinaryExpression:
-                const binaryExpression = expression as tstl.BinaryExpression;
-                return (
-                    this.isSimpleExpression(binaryExpression.left) && this.isSimpleExpression(binaryExpression.right)
-                );
-
-            case tstl.SyntaxKind.ParenthesizedExpression:
-                return this.isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
-        }
-        return true;
-    }
-
     protected printExpressionList(expressions: tstl.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
-        if (expressions.every(e => this.isSimpleExpression(e))) {
+        if (expressions.every(e => tsHelper.isSimpleExpression(e))) {
             chunks.push(...this.joinChunks(", ", expressions.map(e => this.printExpression(e))));
         } else {
             chunks.push("\n");

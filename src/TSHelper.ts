@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { Decorator, DecoratorKind } from "./Decorator";
+import * as tstl from "./LuaAST";
 
 export enum ContextType {
     None,
@@ -834,4 +835,40 @@ export function isArrayLengthAssignment(
         : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
 
     return name === "length";
+}
+
+// Returns true if expression contains no function calls
+export function isSimpleExpression(expression: tstl.Expression): boolean {
+    switch (expression.kind) {
+        case tstl.SyntaxKind.CallExpression:
+        case tstl.SyntaxKind.MethodCallExpression:
+        case tstl.SyntaxKind.FunctionExpression:
+            return false;
+
+        case tstl.SyntaxKind.TableExpression:
+            const tableExpression = expression as tstl.TableExpression;
+            return !tableExpression.fields || tableExpression.fields.every(e => isSimpleExpression(e));
+
+        case tstl.SyntaxKind.TableFieldExpression:
+            const fieldExpression = expression as tstl.TableFieldExpression;
+            return (
+                (!fieldExpression.key || isSimpleExpression(fieldExpression.key)) &&
+                isSimpleExpression(fieldExpression.value)
+            );
+
+        case tstl.SyntaxKind.TableIndexExpression:
+            const indexExpression = expression as tstl.TableIndexExpression;
+            return isSimpleExpression(indexExpression.table) && isSimpleExpression(indexExpression.index);
+
+        case tstl.SyntaxKind.UnaryExpression:
+            return isSimpleExpression((expression as tstl.UnaryExpression).operand);
+
+        case tstl.SyntaxKind.BinaryExpression:
+            const binaryExpression = expression as tstl.BinaryExpression;
+            return isSimpleExpression(binaryExpression.left) && isSimpleExpression(binaryExpression.right);
+
+        case tstl.SyntaxKind.ParenthesizedExpression:
+            return isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
+    }
+    return true;
 }

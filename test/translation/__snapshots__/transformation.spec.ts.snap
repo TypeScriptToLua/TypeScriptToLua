@@ -228,28 +228,12 @@ end"
 `;
 
 exports[`Transformation (forIn) 1`] = `
-"for i in pairs({
-    a = 1,
-    b = 2,
-    c = 3,
-    d = 4,
-}) do
+"for i in pairs({a = 1, b = 2, c = 3, d = 4}) do
 end"
 `;
 
 exports[`Transformation (forOf) 1`] = `
-"for ____, i in ipairs({
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-}) do
+"for ____, i in ipairs({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) do
 end"
 `;
 
@@ -577,9 +561,11 @@ f = function(____, x) return ({x = x}) end"
 
 exports[`Transformation (tryCatch) 1`] = `
 "do
-    local ____TS_try, er = pcall(function()
-        local a = 42
-    end)
+    local ____TS_try, er = pcall(
+        function()
+            local a = 42
+        end
+    )
     if not ____TS_try then
         local b = \\"fail\\"
     end
@@ -588,9 +574,11 @@ end"
 
 exports[`Transformation (tryCatchFinally) 1`] = `
 "do
-    local ____TS_try, er = pcall(function()
-        local a = 42
-    end)
+    local ____TS_try, er = pcall(
+        function()
+            local a = 42
+        end
+    )
     if not ____TS_try then
         local b = \\"fail\\"
     end
@@ -602,9 +590,11 @@ end"
 
 exports[`Transformation (tryFinally) 1`] = `
 "do
-    pcall(function()
-        local a = 42
-    end)
+    pcall(
+        function()
+            local a = 42
+        end
+    )
     do
         local b = \\"finally\\"
     end
@@ -618,30 +608,47 @@ end
 tupleReturn(_G)
 noTupleReturn(_G)
 local a, b = tupleReturn(_G)
-local c, d = table.unpack(noTupleReturn(_G))
+local c, d = table.unpack(
+    noTupleReturn(_G)
+)
 a, b = tupleReturn(_G)
-c, d = table.unpack(noTupleReturn(_G))
-local e = ({tupleReturn(_G)})
+c, d = table.unpack(
+    noTupleReturn(_G)
+)
+local e = ({
+    tupleReturn(_G)
+})
 local f = noTupleReturn(_G)
-e = ({tupleReturn(_G)})
+e = ({
+    tupleReturn(_G)
+})
 f = noTupleReturn(_G)
-foo(_G, ({tupleReturn(_G)}))
-foo(_G, noTupleReturn(_G))
+foo(
+    _G,
+    ({
+        tupleReturn(_G)
+    })
+)
+foo(
+    _G,
+    noTupleReturn(_G)
+)
 function tupleReturnFromVar(self)
-    local r = {
-        1,
-        \\"baz\\",
-    }
+    local r = {1, \\"baz\\"}
     return table.unpack(r)
 end
 function tupleReturnForward(self)
     return tupleReturn(_G)
 end
 function tupleNoForward(self)
-    return ({tupleReturn(_G)})
+    return ({
+        tupleReturn(_G)
+    })
 end
 function tupleReturnUnpack(self)
-    return table.unpack(tupleNoForward(_G))
+    return table.unpack(
+        tupleNoForward(_G)
+    )
 end"
 `;
 

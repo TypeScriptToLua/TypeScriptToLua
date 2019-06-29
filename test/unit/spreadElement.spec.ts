@@ -15,7 +15,7 @@ test("Spread Element Lua 5.1", () => {
         luaLibImport: tstl.LuaLibImportKind.None,
     };
     const lua = util.transpileString(`[].push(...${JSON.stringify([1, 2, 3])});`, options);
-    expect(lua).toBe("__TS__ArrayPush({}, unpack({\n    1,\n    2,\n    3,\n}))");
+    expect(lua).toBe("__TS__ArrayPush(\n    {},\n    unpack({1, 2, 3})\n)");
 });
 
 test("Spread Element Lua 5.2", () => {
@@ -24,7 +24,7 @@ test("Spread Element Lua 5.2", () => {
         luaLibImport: tstl.LuaLibImportKind.None,
     };
     const lua = util.transpileString(`[...[0, 1, 2]]`, options);
-    expect(lua).toBe("local ____ = {table.unpack({\n    0,\n    1,\n    2,\n})}");
+    expect(lua).toBe("local ____ = {\n    table.unpack({0, 1, 2})\n}");
 });
 
 test("Spread Element Lua 5.3", () => {
@@ -33,7 +33,7 @@ test("Spread Element Lua 5.3", () => {
         luaLibImport: tstl.LuaLibImportKind.None,
     };
     const lua = util.transpileString(`[...[0, 1, 2]]`, options);
-    expect(lua).toBe("local ____ = {table.unpack({\n    0,\n    1,\n    2,\n})}");
+    expect(lua).toBe("local ____ = {\n    table.unpack({0, 1, 2})\n}");
 });
 
 test("Spread Element Lua JIT", () => {
@@ -42,7 +42,7 @@ test("Spread Element Lua JIT", () => {
         luaLibImport: tstl.LuaLibImportKind.None,
     };
     const lua = util.transpileString(`[...[0, 1, 2]]`, options);
-    expect(lua).toBe("local ____ = {unpack({\n    0,\n    1,\n    2,\n})}");
+    expect(lua).toBe("local ____ = {\n    unpack({0, 1, 2})\n}");
 });
 
 test("Spread Element Iterable", () => {

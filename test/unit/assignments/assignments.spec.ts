@@ -4,10 +4,10 @@ import * as util from "../../util";
 test.each([
     { inp: `"abc"`, out: `"abc"` },
     { inp: "3", out: "3" },
-    { inp: "[1,2,3]", out: "{\n    1,\n    2,\n    3,\n}" },
+    { inp: "[1,2,3]", out: "{1, 2, 3}" },
     { inp: "true", out: "true" },
     { inp: "false", out: "false" },
-    { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
+    { inp: `{a:3,b:"4"}`, out: `{a = 3, b = "4"}` },
 ])("Const assignment (%p)", ({ inp, out }) => {
     const lua = util.transpileString(`const myvar = ${inp}`);
     expect(lua).toBe(`local myvar = ${out}`);
@@ -16,10 +16,10 @@ test.each([
 test.each([
     { inp: `"abc"`, out: `"abc"` },
     { inp: "3", out: "3" },
-    { inp: "[1,2,3]", out: "{\n    1,\n    2,\n    3,\n}" },
+    { inp: "[1,2,3]", out: "{1, 2, 3}" },
     { inp: "true", out: "true" },
     { inp: "false", out: "false" },
-    { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
+    { inp: `{a:3,b:"4"}`, out: `{a = 3, b = "4"}` },
 ])("Let assignment (%p)", ({ inp, out }) => {
     const lua = util.transpileString(`let myvar = ${inp}`);
     expect(lua).toBe(`local myvar = ${out}`);
@@ -28,10 +28,10 @@ test.each([
 test.each([
     { inp: `"abc"`, out: `"abc"` },
     { inp: "3", out: "3" },
-    { inp: "[1,2,3]", out: "{\n    1,\n    2,\n    3,\n}" },
+    { inp: "[1,2,3]", out: "{1, 2, 3}" },
     { inp: "true", out: "true" },
     { inp: "false", out: "false" },
-    { inp: `{a:3,b:"4"}`, out: `{\n    a = 3,\n    b = "4",\n}` },
+    { inp: `{a:3,b:"4"}`, out: `{a = 3, b = "4"}` },
 ])("Var assignment (%p)", ({ inp, out }) => {
     const lua = util.transpileString(`var myvar = ${inp}`);
     expect(lua).toBe(`myvar = ${out}`);
@@ -95,7 +95,7 @@ test("TupleReturn Single assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local a = ({abc()})\na = ({abc()})");
+    expect(lua).toBe("local a = ({\n    abc()\n})\na = ({\n    abc()\n})");
 });
 
 test("TupleReturn interface assignment", () => {

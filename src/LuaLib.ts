@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import * as path from "path";
+import { EmitHost } from "./Transpile";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -73,7 +73,7 @@ const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
 };
 
 export class LuaLib {
-    public static loadFeatures(features: Iterable<LuaLibFeature>): string {
+    public static loadFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
         let result = "";
 
         const loadedFeatures = new Set<LuaLibFeature>();
@@ -86,7 +86,7 @@ export class LuaLib {
                     dependencies.forEach(load);
                 }
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-                result += fs.readFileSync(featureFile).toString() + "\n";
+                result += emitHost.readFile(featureFile).toString() + "\n";
             }
         }
 

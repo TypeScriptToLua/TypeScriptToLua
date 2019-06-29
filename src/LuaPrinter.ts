@@ -5,6 +5,7 @@ import * as tstl from "./LuaAST";
 import { luaKeywords } from "./LuaKeywords";
 import { LuaLib, LuaLibFeature } from "./LuaLib";
 import * as tsHelper from "./TSHelper";
+import { EmitHost } from "./Transpile";
 
 type SourceChunk = string | SourceNode;
 
@@ -38,12 +39,15 @@ export class LuaPrinter {
     };
 
     private options: CompilerOptions;
+    private emitHost: EmitHost;
+
     private currentIndent: string;
 
     private sourceFile = "";
 
-    public constructor(options: CompilerOptions) {
+    public constructor(options: CompilerOptions, emitHost: EmitHost) {
         this.options = options;
+        this.emitHost = emitHost;
         this.currentIndent = "";
     }
 
@@ -128,7 +132,7 @@ export class LuaPrinter {
             // Inline lualib features
             else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
-                header += LuaLib.loadFeatures(luaLibFeatures);
+                header += LuaLib.loadFeatures(luaLibFeatures, this.emitHost);
             }
         }
 

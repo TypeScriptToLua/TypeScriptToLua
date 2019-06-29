@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as path from "path";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { TranspiledFile, EmitHost } from "./Transpile";
@@ -14,7 +15,7 @@ let lualibContent: string;
 export function emitTranspiledFiles(
     options: CompilerOptions,
     transpiledFiles: TranspiledFile[],
-    emitHost: EmitHost
+    emitHost: EmitHost = { readFile: (path: string) => fs.readFileSync(path, "utf-8"), writeFile: fs.writeFileSync }
 ): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 

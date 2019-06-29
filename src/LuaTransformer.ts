@@ -2683,6 +2683,8 @@ export class LuaTransformer {
                 return this.transformArrayLiteral(expression as ts.ArrayLiteralExpression);
             case ts.SyntaxKind.ObjectLiteralExpression:
                 return this.transformObjectLiteral(expression as ts.ObjectLiteralExpression);
+            case ts.SyntaxKind.OmittedExpression:
+                return this.transformOmittedExpression(expression as ts.OmittedExpression);
             case ts.SyntaxKind.DeleteExpression:
                 return this.transformDeleteExpression(expression as ts.DeleteExpression);
             case ts.SyntaxKind.FunctionExpression:
@@ -2909,7 +2911,7 @@ export class LuaTransformer {
             // Destructuring assignment
             const left =
                 expression.left.elements.length > 0
-                    ? expression.left.elements.map(e => this.transformExpression(e))
+                    ? expression.left.elements.map(e => this.transformArrayBindingExpression(e))
                     : [tstl.createAnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
@@ -3464,6 +3466,11 @@ export class LuaTransformer {
         });
 
         return tstl.createTableExpression(properties, expression);
+    }
+
+    public transformOmittedExpression(node: ts.OmittedExpression): ExpressionVisitResult {
+        const isWithinBindingAssignmentStatement = tsHelper.isWithinLiteralAssignmentStatement(node);
+        return isWithinBindingAssignmentStatement ? tstl.createAnonymousIdentifier() : tstl.createNilLiteral(node);
     }
 
     public transformDeleteExpression(expression: ts.DeleteExpression): ExpressionVisitResult {
@@ -4577,14 +4584,18 @@ export class LuaTransformer {
     }
 
     public transformArrayBindingElement(name: ts.ArrayBindingElement): ExpressionVisitResult {
+        return this.transformArrayBindingExpression(name as ts.Expression);
+    }
+
+    public transformArrayBindingExpression(name: ts.Expression): ExpressionVisitResult {
         if (ts.isOmittedExpression(name)) {
-            return tstl.createIdentifier("__", name);
+            return this.transformOmittedExpression(name);
         } else if (ts.isIdentifier(name)) {
             return this.transformIdentifier(name);
         } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
             return this.transformIdentifier(name.name);
         } else {
-            throw TSTLErrors.UnsupportedKind("array binding element", name.kind, name);
+            throw TSTLErrors.UnsupportedKind("array binding expression", name.kind, name);
         }
     }
 

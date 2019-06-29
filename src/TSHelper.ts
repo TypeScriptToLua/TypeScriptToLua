@@ -794,6 +794,19 @@ export function isEnumMember(
     }
 }
 
+export function isWithinLiteralAssignmentStatement(node: ts.Node): boolean {
+    if (!node.parent) {
+        return false;
+    }
+    if (ts.isArrayLiteralExpression(node.parent) || ts.isObjectLiteralExpression(node.parent)) {
+        return isWithinLiteralAssignmentStatement(node.parent);
+    } else if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 export function moduleHasEmittedBody(
     statement: ts.ModuleDeclaration
 ): statement is ts.ModuleDeclaration & { body: ts.ModuleBlock | ts.ModuleDeclaration } {

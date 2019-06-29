@@ -1586,6 +1586,8 @@ export class LuaTransformer {
         const symbol = this.checker.getSymbolAtLocation(statement.name);
         const hasExports = symbol !== undefined && this.checker.getExportsOfModule(symbol).length > 0;
 
+        const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
+
         // This is NOT the first declaration if:
         // - declared as a module before this (ignore interfaces with same name)
         // - declared as a class or function at all (TS requires these to be before module, unless module is empty)
@@ -1594,9 +1596,19 @@ export class LuaTransformer {
             (symbol.declarations.findIndex(d => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) === -1 &&
                 statement === symbol.declarations.find(ts.isModuleDeclaration));
 
-        const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
+        if (!this.isModule) {
+            // 'local NS = NS or {}' or 'exportTable.NS = exportTable.NS or {}'
+            const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
+                nameIdentifier,
+                tstl.createBinaryExpression(
+                    this.addExportToIdentifier(nameIdentifier),
+                    tstl.createTableExpression(),
+                    tstl.SyntaxKind.OrOperator
+                )
+            );
 
-        if (isFirstDeclaration) {
+            result.push(...localDeclaration);
+        } else if (isFirstDeclaration) {
             // local NS = {} or exportTable.NS = {}
             const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
                 nameIdentifier,
@@ -1604,7 +1616,9 @@ export class LuaTransformer {
             );
 
             result.push(...localDeclaration);
+        }
 
+        if (!this.isModule || isFirstDeclaration) {
             const exportScope = this.getIdentifierExportScope(nameIdentifier);
             if (exportScope && hasExports && tsHelper.moduleHasEmittedBody(statement)) {
                 // local NS = exportTable.NS

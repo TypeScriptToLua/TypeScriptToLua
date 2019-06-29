@@ -176,7 +176,7 @@ test("module merged across files", () => {
             }
         }
     `;
-    const { transpiledFiles } = util.transpileStringsAsProject({"testA.ts": testA, "testB.ts": testB});
+    const { transpiledFiles } = util.transpileStringsAsProject({ "testA.ts": testA, "testB.ts": testB });
     const lua = transpiledFiles.map(f => f.lua).join("\n") + "\nreturn NS.Inner.foo .. NS.Inner.bar";
     expect(util.executeLua(lua)).toBe("foobar");
 });

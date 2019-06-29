@@ -1585,8 +1585,13 @@ export class LuaTransformer {
 
         const symbol = this.checker.getSymbolAtLocation(statement.name);
         const hasExports = symbol !== undefined && this.checker.getExportsOfModule(symbol).length > 0;
-
         const nameIdentifier = this.transformIdentifier(statement.name as ts.Identifier);
+        const exportScope = this.getIdentifierExportScope(nameIdentifier);
+
+        // Non-module namespace could be merged if:
+        // - is top level
+        // - is nested and exported
+        const isNonModuleMergeable = !this.isModule && (!this.currentNamespace || exportScope);
 
         // This is NOT the first declaration if:
         // - declared as a module before this (ignore interfaces with same name)
@@ -1596,7 +1601,7 @@ export class LuaTransformer {
             (symbol.declarations.findIndex(d => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) === -1 &&
                 statement === symbol.declarations.find(ts.isModuleDeclaration));
 
-        if (!this.isModule) {
+        if (isNonModuleMergeable) {
             // 'local NS = NS or {}' or 'exportTable.NS = exportTable.NS or {}'
             const localDeclaration = this.createLocalOrExportedOrGlobalDeclaration(
                 nameIdentifier,
@@ -1618,17 +1623,19 @@ export class LuaTransformer {
             result.push(...localDeclaration);
         }
 
-        if (!this.isModule || isFirstDeclaration) {
-            const exportScope = this.getIdentifierExportScope(nameIdentifier);
-            if (exportScope && hasExports && tsHelper.moduleHasEmittedBody(statement)) {
-                // local NS = exportTable.NS
-                const localDeclaration = this.createHoistableVariableDeclarationStatement(
-                    this.createModuleLocalNameIdentifier(statement),
-                    this.createExportedIdentifier(nameIdentifier, exportScope)
-                );
+        if (
+            (isNonModuleMergeable || isFirstDeclaration) &&
+            exportScope &&
+            hasExports &&
+            tsHelper.moduleHasEmittedBody(statement)
+        ) {
+            // local NS = exportTable.NS
+            const localDeclaration = this.createHoistableVariableDeclarationStatement(
+                this.createModuleLocalNameIdentifier(statement),
+                this.createExportedIdentifier(nameIdentifier, exportScope)
+            );
 
-                result.push(localDeclaration);
-            }
+            result.push(localDeclaration);
         }
 
         // Set current namespace for nested NS

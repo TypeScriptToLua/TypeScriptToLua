@@ -552,7 +552,7 @@ MergedClass:namespaceFunc()"
 exports[`Transformation (namespaceNested) 1`] = `
 "myNamespace = myNamespace or {}
 do
-    local myNestedNamespace = myNestedNamespace or {}
+    local myNestedNamespace = {}
     do
         local function nsMember(self)
         end

@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import * as path from "path";
+import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { TranspiledFile, EmitHost } from "./Transpile";
 
@@ -15,7 +15,7 @@ let lualibContent: string;
 export function emitTranspiledFiles(
     options: CompilerOptions,
     transpiledFiles: TranspiledFile[],
-    emitHost: EmitHost = { readFile: (path: string) => fs.readFileSync(path, "utf-8"), writeFile: fs.writeFileSync }
+    emitHost: EmitHost = { readFile: ts.sys.readFile }
 ): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 
@@ -61,7 +61,12 @@ export function emitTranspiledFiles(
 
     if (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always) {
         if (lualibContent === undefined) {
-            lualibContent = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
+            const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
+            if (lualibBundle !== undefined) {
+                lualibContent = lualibBundle;
+            } else {
+                throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+            }
         }
 
         let outPath = path.resolve(rootDir, "lualib_bundle.lua");

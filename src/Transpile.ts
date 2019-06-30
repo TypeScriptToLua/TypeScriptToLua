@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
@@ -32,15 +31,14 @@ export interface TranspileOptions {
 }
 
 export interface EmitHost {
-    readFile: (path: string, encoding?: string) => string;
-    writeFile: (path: string, data: any) => void;
+    readFile: (path: string, encoding?: string | undefined) => string | undefined;
 }
 
 export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
-    emitHost = { readFile: (path: string) => fs.readFileSync(path, "utf-8"), writeFile: fs.writeFileSync },
+    emitHost = { readFile: ts.sys.readFile },
     transformer = new LuaTransformer(program),
     printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {

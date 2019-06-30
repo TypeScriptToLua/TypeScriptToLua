@@ -86,7 +86,12 @@ export class LuaLib {
                     dependencies.forEach(load);
                 }
                 const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-                result += emitHost.readFile(featureFile).toString() + "\n";
+                const luaLibFeature = emitHost.readFile(featureFile);
+                if (luaLibFeature !== undefined) {
+                    result += luaLibFeature.toString() + "\n";
+                } else {
+                    throw new Error(`Could not read lualib feature ../dist/lualib/${feature}.lua`);
+                }
             }
         }
 

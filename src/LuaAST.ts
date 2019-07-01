@@ -677,7 +677,7 @@ export function createTableFieldExpression(
     tsOriginal?: ts.Node,
     parent?: Node
 ): TableFieldExpression {
-    const expression = createNode(SyntaxKind.TableExpression, tsOriginal, parent) as TableFieldExpression;
+    const expression = createNode(SyntaxKind.TableFieldExpression, tsOriginal, parent) as TableFieldExpression;
     setParent(value, expression);
     expression.value = value;
     setParent(key, expression);

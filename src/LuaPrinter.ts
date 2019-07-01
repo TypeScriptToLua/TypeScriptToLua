@@ -571,17 +571,8 @@ export class LuaPrinter {
 
         chunks.push("{");
 
-        if (expression.fields && expression.fields.length > 0) {
-            if (expression.fields.length === 1) {
-                // Inline tables with only one entry
-                chunks.push(this.printTableFieldExpression(expression.fields[0]));
-            } else {
-                chunks.push("\n");
-                this.pushIndent();
-                expression.fields.forEach(f => chunks.push(this.indent(), this.printTableFieldExpression(f), ",\n"));
-                this.popIndent();
-                chunks.push(this.indent());
-            }
+        if (expression.fields) {
+            chunks.push(...this.printExpressionList(expression.fields));
         }
 
         chunks.push("}");
@@ -632,30 +623,33 @@ export class LuaPrinter {
     public printCallExpression(expression: tstl.CallExpression): SourceNode {
         const chunks = [];
 
-        const parameterChunks =
-            expression.params !== undefined ? expression.params.map(e => this.printExpression(e)) : [];
+        chunks.push(this.printExpression(expression.expression), "(");
 
-        chunks.push(this.printExpression(expression.expression), "(", ...this.joinChunks(", ", parameterChunks), ")");
+        if (expression.params) {
+            chunks.push(...this.printExpressionList(expression.params));
+        }
+
+        chunks.push(")");
 
         return this.createSourceNode(expression, chunks);
     }
 
     public printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
-        const prefix = this.printExpression(expression.prefixExpression);
+        const chunks = [];
 
-        const parameterChunks =
-            expression.params !== undefined ? expression.params.map(e => this.printExpression(e)) : [];
+        const prefix = this.printExpression(expression.prefixExpression);
 
         const name = this.printIdentifier(expression.name);
 
-        return this.createSourceNode(expression, [
-            prefix,
-            ":",
-            name,
-            "(",
-            ...this.joinChunks(", ", parameterChunks),
-            ")",
-        ]);
+        chunks.push(prefix, ":", name, "(");
+
+        if (expression.params) {
+            chunks.push(...this.printExpressionList(expression.params));
+        }
+
+        chunks.push(")");
+
+        return this.createSourceNode(expression, chunks);
     }
 
     public printIdentifier(expression: tstl.Identifier): SourceNode {
@@ -713,6 +707,25 @@ export class LuaPrinter {
             }
         }
         return result;
+    }
+
+    protected printExpressionList(expressions: tstl.Expression[]): SourceChunk[] {
+        const chunks: SourceChunk[] = [];
+
+        if (expressions.every(e => tsHelper.isSimpleExpression(e))) {
+            chunks.push(...this.joinChunks(", ", expressions.map(e => this.printExpression(e))));
+        } else {
+            chunks.push("\n");
+            this.pushIndent();
+            expressions.forEach((p, i) => {
+                const tail = i < expressions.length - 1 ? ",\n" : "\n";
+                chunks.push(this.indent(), this.printExpression(p), tail);
+            });
+            this.popIndent();
+            chunks.push(this.indent());
+        }
+
+        return chunks;
     }
 
     // The key difference between this and SourceNode.toStringWithSourceMap() is that SourceNodes with null line/column

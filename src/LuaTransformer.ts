@@ -3809,20 +3809,8 @@ export class LuaTransformer {
                     !signatureDeclaration ||
                     tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void
                 ) {
-                    if (
-                        luaKeywords.has(node.expression.name.text) ||
-                        !tsHelper.isValidLuaIdentifier(node.expression.name.text)
-                    ) {
-                        return this.transformElementCall(node);
-                    } else {
-                        // table:name()
-                        return tstl.createMethodCallExpression(
-                            table,
-                            this.transformIdentifier(node.expression.name),
-                            parameters,
-                            node
-                        );
-                    }
+                    // table:name()
+                    return this.transformContextualCallExpression(node, parameters);
                 } else {
                     // table.name()
                     const callPath = tstl.createTableIndexExpression(
@@ -3842,43 +3830,67 @@ export class LuaTransformer {
         }
 
         const signature = this.checker.getResolvedSignature(node);
-        let parameters = this.transformArguments(node.arguments, signature);
-
         const signatureDeclaration = signature && signature.getDeclaration();
+        const parameters = this.transformArguments(node.arguments, signature);
         if (
             !signatureDeclaration ||
             tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void
         ) {
-            // Pass left-side as context
-
-            const context = this.transformExpression(node.expression.expression);
-            if (tsHelper.isExpressionWithEvaluationEffect(node.expression.expression)) {
-                // Inject context parameter
-                if (node.arguments.length > 0) {
-                    parameters.unshift(tstl.createIdentifier("____TS_self"));
-                } else {
-                    parameters = [tstl.createIdentifier("____TS_self")];
-                }
-
-                // Cache left-side if it has effects
-                //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
-                const argumentExpression = ts.isElementAccessExpression(node.expression)
-                    ? node.expression.argumentExpression
-                    : ts.createStringLiteral(node.expression.name.text);
-                const argument = this.transformExpression(argumentExpression);
-                const selfIdentifier = tstl.createIdentifier("____TS_self");
-                const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
-                const index = tstl.createTableIndexExpression(selfIdentifier, argument);
-                const callExpression = tstl.createCallExpression(index, parameters);
-                return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression, node);
-            } else {
-                const expression = this.transformExpression(node.expression);
-                return tstl.createCallExpression(expression, [context, ...parameters]);
-            }
+            // A contextual parameter must be given to this call expression
+            return this.transformContextualCallExpression(node, parameters);
         } else {
             // No context
             const expression = this.transformExpression(node.expression);
             return tstl.createCallExpression(expression, parameters);
+        }
+    }
+
+    public transformContextualCallExpression(
+        node: ts.CallExpression | ts.TaggedTemplateExpression,
+        transformedArguments: tstl.Expression[]
+    ): ExpressionVisitResult {
+        const left = ts.isCallExpression(node) ? node.expression : node.tag;
+        const leftHandSideExpression = this.transformExpression(left);
+        if (
+            ts.isPropertyAccessExpression(left) &&
+            !luaKeywords.has(left.name.text) &&
+            tsHelper.isValidLuaIdentifier(left.name.text)
+        ) {
+            // table:name()
+            const table = this.transformExpression(left.expression);
+            return tstl.createMethodCallExpression(
+                table,
+                this.transformIdentifier(left.name),
+                transformedArguments,
+                node
+            );
+        } else if (ts.isElementAccessExpression(left) || ts.isPropertyAccessExpression(left)) {
+            const context = this.transformExpression(left.expression);
+            if (tsHelper.isExpressionWithEvaluationEffect(left.expression)) {
+                // Inject context parameter
+                transformedArguments.unshift(tstl.createIdentifier("____TS_self"));
+
+                // Cache left-side if it has effects
+                //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
+                const argumentExpression = ts.isElementAccessExpression(left)
+                    ? left.argumentExpression
+                    : ts.createStringLiteral(left.name.text);
+                const argument = this.transformExpression(argumentExpression);
+                const selfIdentifier = tstl.createIdentifier("____TS_self");
+                const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
+                const index = tstl.createTableIndexExpression(selfIdentifier, argument);
+                const callExpression = tstl.createCallExpression(index, transformedArguments);
+                return this.createImmediatelyInvokedFunctionExpression([selfAssignment], callExpression, node);
+            } else {
+                const expression = this.transformExpression(left);
+                return tstl.createCallExpression(expression, [context, ...transformedArguments]);
+            }
+        } else if (ts.isIdentifier(left)) {
+            const context = this.isStrict ? tstl.createNilLiteral() : tstl.createIdentifier("_G");
+            transformedArguments.unshift(context);
+            return tstl.createCallExpression(leftHandSideExpression, transformedArguments, node);
+        } else {
+            throw TSTLErrors.UnsupportedKind("Left Hand Side Call Expression", left.kind, left);
         }
     }
 
@@ -4666,8 +4678,20 @@ export class LuaTransformer {
             rawStrings.push(tsHelper.getRawLiteral(expression.template));
         }
 
-        // Construct string arrays for parameters.
-        const stringArray = ts.createArrayLiteral(strings.map(partialString => ts.createStringLiteral(partialString)));
+        // Construct table with strings and literal strings
+        const stringTableLiteral = tstl.createTableExpression(
+            strings.map(partialString => tstl.createTableFieldExpression(tstl.createStringLiteral(partialString)))
+        );
+        if (stringTableLiteral.fields) {
+            const rawStringArray = tstl.createTableExpression(
+                rawStrings.map(stringLiteral =>
+                    tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
+                )
+            );
+            stringTableLiteral.fields.push(
+                tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
+            );
+        }
 
         // Evaluate if there is a self parameter to be used.
         const signature = this.checker.getResolvedSignature(expression);
@@ -4675,30 +4699,17 @@ export class LuaTransformer {
         const useSelfParameter =
             signatureDeclaration &&
             tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void;
-        const context = useSelfParameter ? (this.isStrict ? ts.createNull() : ts.createIdentifier("_G")) : undefined;
 
         // Argument evaluation.
-        const parameters = this.transformArguments([stringArray, ...expressions], signature, context);
+        const callArguments = this.transformArguments(expressions, signature);
+        callArguments.unshift(stringTableLiteral);
 
-        // Assign raw strings to the "raw" property of the string table.
-        const tableParameterIndex = useSelfParameter ? 1 : 0;
-        const [tableLiteralExpression] = this.filterUndefinedAndCast(
-            [parameters[tableParameterIndex]],
-            tstl.isTableExpression
-        );
-        if (tableLiteralExpression.fields) {
-            const rawStringArray = tstl.createTableExpression(
-                rawStrings.map(stringLiteral =>
-                    tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
-                )
-            );
-            tableLiteralExpression.fields.push(
-                tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
-            );
+        if (useSelfParameter) {
+            return this.transformContextualCallExpression(expression, callArguments);
         }
 
         const leftHandSideExpression = this.transformExpression(expression.tag);
-        return tstl.createCallExpression(leftHandSideExpression, parameters);
+        return tstl.createCallExpression(leftHandSideExpression, callArguments);
     }
 
     public transformTemplateExpression(expression: ts.TemplateExpression): ExpressionVisitResult {

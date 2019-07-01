@@ -105,13 +105,19 @@ test.each(testCases)("TaggedTemplateLiteral raw preservation (%p)", ({ callExpre
     expect(result).toBe(joinRawResult);
 });
 
-test("TaggedTemplateLiteral no self parameter", () => {
-    const result = util.transpileAndExecute(`
+test.each(["func`noSelfParameter`", "obj.func`noSelfParameter`", "obj[`func`]`noSelfParameter`"])(
+    "TaggedTemplateLiteral no self parameter",
+    callExpression => {
+        const result = util.transpileAndExecute(`
             function func(this: void, strings: TemplateStringsArray, ...expressions: any[]) {
                 return strings.join("");
             }
-            return func\`noSelfParameter\`;
+            const obj = {
+                func
+            };
+            return ${callExpression};
         `);
 
-    expect(result).toBe("noSelfParameter");
-});
+        expect(result).toBe("noSelfParameter");
+    }
+);

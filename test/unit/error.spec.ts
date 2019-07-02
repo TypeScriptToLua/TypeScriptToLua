@@ -234,6 +234,51 @@ test("return from catch->finally", () => {
     expect(util.transpileAndExecute(code)).toBe("finally evaluated");
 });
 
+test("tuple return from try->finally", () => {
+    const code = `
+        let x = "unevaluated";
+        function evaluate(arg: string) {
+            x = "evaluated";
+            return arg;
+        }
+        /** @tupleReturn */
+        function foobar() {
+            try {
+                return [evaluate("foo"), "bar"];
+            } catch {
+            } finally {
+                return ["final", "ly"];
+            }
+        }
+        const [foo, bar] = foobar();
+        return foo + bar + " " + x;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+});
+
+test("tuple return from catch->finally", () => {
+    const code = `
+        let x = "unevaluated";
+        function evaluate(arg: string) {
+            x = "evaluated";
+            return arg;
+        }
+        /** @tupleReturn */
+        function foobar() {
+            try {
+                throw "foo";
+            } catch (e) {
+                return [evaluate(e), "bar"];
+            } finally {
+                return ["final", "ly"];
+            }
+        }
+        const [foo, bar] = foobar();
+        return foo + bar + " " + x;
+    `;
+    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+});
+
 test("return from nested finally", () => {
     const code = `
         let x = "";

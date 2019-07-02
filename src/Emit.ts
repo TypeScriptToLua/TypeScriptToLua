@@ -15,7 +15,7 @@ let lualibContent: string;
 export function emitTranspiledFiles(
     options: CompilerOptions,
     transpiledFiles: TranspiledFile[],
-    emitHost: EmitHost = { readFile: ts.sys.readFile }
+    emitHost: EmitHost = ts.sys
 ): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 

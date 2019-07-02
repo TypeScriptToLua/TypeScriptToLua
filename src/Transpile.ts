@@ -31,14 +31,14 @@ export interface TranspileOptions {
 }
 
 export interface EmitHost {
-    readFile: (path: string, encoding?: string | undefined) => string | undefined;
+    readFile: (path: string) => string | undefined;
 }
 
 export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
-    emitHost = { readFile: ts.sys.readFile },
+    emitHost = ts.sys,
     transformer = new LuaTransformer(program),
     printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {

@@ -28,9 +28,8 @@ export interface TranspileFilesResult {
 
 export function transpileFiles(rootNames: string[], options: CompilerOptions = {}): TranspileFilesResult {
     const program = ts.createProgram(rootNames, options);
-    const emitHost = { readFile: ts.sys.readFile };
     const { transpiledFiles, diagnostics: transpileDiagnostics } = transpile({ program });
-    const emitResult = emitTranspiledFiles(program.getCompilerOptions(), transpiledFiles, emitHost);
+    const emitResult = emitTranspiledFiles(program.getCompilerOptions(), transpiledFiles);
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),

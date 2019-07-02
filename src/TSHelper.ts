@@ -742,6 +742,15 @@ export function getFirstDeclaration(symbol: ts.Symbol, sourceFile?: ts.SourceFil
     return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
 }
 
+export function getRawLiteral(node: ts.LiteralLikeNode): string {
+    let text = node.getText();
+    const isLast =
+        node.kind === ts.SyntaxKind.NoSubstitutionTemplateLiteral || node.kind === ts.SyntaxKind.TemplateTail;
+    text = text.substring(1, text.length - (isLast ? 1 : 2));
+    text = text.replace(/\r\n?/g, "\n").replace(/\\/g, "\\\\");
+    return text;
+}
+
 export function isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
     const symbol = checker.getSymbolAtLocation(node.name);
     if (!symbol) {

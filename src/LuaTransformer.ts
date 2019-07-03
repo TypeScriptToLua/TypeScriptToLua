@@ -2661,7 +2661,7 @@ export class LuaTransformer {
             const returnedVariables = [tryResultIdentfier, returnedIdentifier, returnValueIdentifier];
             result.push(tstl.createVariableDeclarationStatement(returnedVariables, tryCall));
 
-            // change return condition to '____TS_try and ____TS_returned'
+            // change return condition from '____TS_returned' to '____TS_try and ____TS_returned'
             returnCondition = tstl.createBinaryExpression(
                 tstl.cloneIdentifier(tryResultIdentfier),
                 returnedIdentifier,
@@ -2677,7 +2677,10 @@ export class LuaTransformer {
         }
 
         if (returnCondition && returnedIdentifier) {
-            // if [____TS_try and] ____TS_returned then return ____TS_returnValue end
+            // With catch clause:
+            //     if ____TS_returned then return ____TS_returnValue end
+            // No catch clause:
+            //     if ____TS_try and ____TS_returned then return ____TS_returnValue end
             const returnValues: tstl.Expression[] = [];
             const parentTryCatch = this.findScope(ScopeType.Function | ScopeType.Try | ScopeType.Catch);
             if (parentTryCatch && parentTryCatch.type !== ScopeType.Function) {

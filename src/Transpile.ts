@@ -31,7 +31,7 @@ export interface TranspileOptions {
 }
 
 export interface EmitHost {
-    readFile: (path: string) => string | undefined;
+    readFile(path: string): string | undefined;
 }
 
 export function transpile({

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.23.0
+
+- Added support for OmittedExpression in array literals and array binding patterns.
+- Added support for [tagged template literals](https://basarat.gitbooks.io/typescript/docs/template-strings.html#tagged-templates).
+- Changed output lua formatting to be more debugger-friendly.
+- Various improvements to source maps.
+
+- Fixed an issue with the interaction of super calls and exported classes.
+- Fixed `@noResolution` not working on named modules.
+- Fixed namespace merging not working due to an earlier change.
+
+- Some refactoring and plumbing for the website.
+
 ## 0.22.0
 
 - Added the [@vararg](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#vararg) directive.

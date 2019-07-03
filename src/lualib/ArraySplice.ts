@@ -1,7 +1,7 @@
 function __TS__ArraySplice<T>(this: void, list: T[], start: number, deleteCount: number, ...items: T[]): T[] {
     const len = list.length;
 
-    let actualStart;
+    let actualStart: number;
 
     if (start < 0) {
         actualStart = Math.max(len + start, 0);

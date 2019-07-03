@@ -55,3 +55,12 @@ test("undefined as object key", () => {
         return foo.undefined;`;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
+
+test.each([`({x: "foobar"}.x)`, `({x: "foobar"}["x"])`, `({x: () => "foobar"}.x())`, `({x: () => "foobar"}["x"]())`])(
+    "object literal property access (%p)",
+    expression => {
+        const code = `return ${expression}`;
+        const expectResult = eval(expression);
+        expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+);

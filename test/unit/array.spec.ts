@@ -210,3 +210,19 @@ test("OmittedExpression in Array Binding Assignment Statement", () => {
 
     expect(result).toBe(4);
 });
+
+test("array access call", () => {
+    const code = `
+        const arr = [() => "foo", () => "bar"];
+        return arr[1]();`;
+    expect(util.transpileAndExecute(code)).toBe("bar");
+});
+
+test.each([`["foo", "bar"].length`, `["foo", "bar"][0]`, `[() => "foo", () => "bar"][0]()`])(
+    "array literal property access (%p)",
+    expression => {
+        const code = `return ${expression}`;
+        const expectResult = eval(expression);
+        expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+);

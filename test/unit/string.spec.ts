@@ -339,3 +339,12 @@ test.each(padCases)("string.padEnd (%p)", ({ inp, maxLength, fillString }) => {
 
     expect(result).toBe(inp.padEnd(maxLength, fillString));
 });
+
+test.each([`"foobar".length`, `"foobar".repeat(2)`, "`foo${'bar'}`.length", "`foo${'bar'}`.repeat(2)"])(
+    "string literal property access (%p)",
+    expression => {
+        const code = `return ${expression}`;
+        const expectResult = eval(expression);
+        expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+);

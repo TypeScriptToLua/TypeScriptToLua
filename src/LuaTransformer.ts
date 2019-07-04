@@ -17,6 +17,8 @@ export enum ScopeType {
     Loop = 0x8,
     Conditional = 0x10,
     Block = 0x20,
+    Try = 0x40,
+    Catch = 0x80,
 }
 
 interface SymbolInfo {
@@ -37,6 +39,7 @@ interface Scope {
     functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
     importStatements?: tstl.Statement[];
     loopContinued?: boolean;
+    functionReturned?: boolean;
 }
 
 export interface EmitResolver {
@@ -2132,23 +2135,33 @@ export class LuaTransformer {
     }
 
     public transformReturnStatement(statement: ts.ReturnStatement): StatementVisitResult {
+        // Bubble up explicit return flag and check if we're inside a try/catch block
+        let insideTryCatch = false;
+        for (let i = this.scopeStack.length - 1; i >= 0; --i) {
+            const scope = this.scopeStack[i];
+            scope.functionReturned = true;
+
+            if (scope.type === ScopeType.Function) {
+                break;
+            }
+
+            insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
+        }
+
+        let results: tstl.Expression[];
+
         if (statement.expression) {
+            const expressionType = this.checker.getTypeAtLocation(statement.expression);
             const returnType = tsHelper.getContainingFunctionReturnType(statement, this.checker);
             if (returnType) {
-                const expressionType = this.checker.getTypeAtLocation(statement.expression);
                 this.validateFunctionAssignment(statement, expressionType, returnType);
             }
             if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
                 // Parent function is a TupleReturn function
                 if (ts.isArrayLiteralExpression(statement.expression)) {
                     // If return expression is an array literal, leave out brackets.
-                    return tstl.createReturnStatement(
-                        statement.expression.elements.map(elem => this.transformExpression(elem))
-                    );
-                }
-
-                const expressionType = this.checker.getTypeAtLocation(statement.expression);
-                if (
+                    results = statement.expression.elements.map(elem => this.transformExpression(elem));
+                } else if (
                     !tsHelper.isTupleReturnCall(statement.expression, this.checker) &&
                     tsHelper.isArrayType(expressionType, this.checker, this.program)
                 ) {
@@ -2157,15 +2170,28 @@ export class LuaTransformer {
                         this.transformExpression(statement.expression),
                         statement.expression
                     );
-                    return tstl.createReturnStatement([expression]);
+                    results = [expression];
+                } else {
+                    results = [this.transformExpression(statement.expression)];
                 }
+
+                // Wrap tupleReturn results when returning inside try/catch
+                if (insideTryCatch) {
+                    results = [this.wrapInTable(...results)];
+                }
+            } else {
+                results = [this.transformExpression(statement.expression)];
             }
-            const returnExpressions = [this.transformExpression(statement.expression)];
-            return tstl.createReturnStatement(returnExpressions, statement);
         } else {
             // Empty return
-            return tstl.createReturnStatement([], statement);
+            results = [];
         }
+
+        if (insideTryCatch) {
+            results.unshift(tstl.createBooleanLiteral(true));
+        }
+
+        return tstl.createReturnStatement(results, statement);
     }
 
     public transformIfStatement(statement: ts.IfStatement): StatementVisitResult {
@@ -2592,39 +2618,104 @@ export class LuaTransformer {
         }
     }
 
+    protected transformScopeBlock(block: ts.Block, scopeType: ScopeType): [tstl.Block, Scope] {
+        this.pushScope(scopeType);
+        const statements = this.performHoisting(this.transformStatements(block.statements));
+        const scope = this.popScope();
+        return [tstl.createBlock(statements, block), scope];
+    }
+
     public transformTryStatement(statement: ts.TryStatement): StatementVisitResult {
-        const pCall = tstl.createIdentifier("pcall");
-        const tryBlock = this.transformBlock(statement.tryBlock);
-        const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
+        const [tryBlock, tryScope] = this.transformScopeBlock(statement.tryBlock, ScopeType.Try);
+
+        const tryResultIdentfier = tstl.createIdentifier("____TS_try");
+        const returnValueIdentifier = tstl.createIdentifier("____TS_returnValue");
 
         const result: tstl.Statement[] = [];
 
-        if (statement.catchClause) {
-            const tryResult = tstl.createIdentifier("____TS_try");
+        let returnedIdentifier: tstl.Identifier | undefined;
+        let returnCondition: tstl.Expression | undefined;
 
-            const returnVariables =
-                statement.catchClause && statement.catchClause.variableDeclaration
-                    ? [
-                          tryResult,
-                          this.transformIdentifier(statement.catchClause.variableDeclaration.name as ts.Identifier),
-                      ]
-                    : [tryResult];
+        const pCall = tstl.createIdentifier("pcall");
+        const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
 
-            const catchAssignment = tstl.createVariableDeclarationStatement(returnVariables, tryCall);
+        if (statement.catchClause && statement.catchClause.block.statements.length > 0) {
+            // try with catch
+            let [catchBlock, catchScope] = this.transformScopeBlock(statement.catchClause.block, ScopeType.Catch);
+            if (statement.catchClause.variableDeclaration) {
+                // Replace ____TS_returned with catch variable
+                returnedIdentifier = this.transformIdentifier(statement.catchClause.variableDeclaration
+                    .name as ts.Identifier);
+            } else if (tryScope.functionReturned || catchScope.functionReturned) {
+                returnedIdentifier = tstl.createIdentifier("____TS_returned");
+            }
 
-            result.push(catchAssignment);
+            const tryReturnIdentifiers = [tryResultIdentfier]; // ____TS_try
+            if (returnedIdentifier) {
+                tryReturnIdentifiers.push(returnedIdentifier); // ____TS_returned or catch variable
+                if (tryScope.functionReturned || catchScope.functionReturned) {
+                    tryReturnIdentifiers.push(returnValueIdentifier); // ____TS_returnValue
+                    returnCondition = tstl.cloneIdentifier(returnedIdentifier);
+                }
+            }
+            result.push(tstl.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall));
 
-            const notTryResult = tstl.createUnaryExpression(
-                tstl.createParenthesizedExpression(tryResult),
+            if ((tryScope.functionReturned || catchScope.functionReturned) && returnedIdentifier) {
+                // Wrap catch in function if try or catch has return
+                const catchCall = tstl.createCallExpression(
+                    tstl.createParenthesizedExpression(tstl.createFunctionExpression(catchBlock))
+                );
+                const catchAssign = tstl.createAssignmentStatement(
+                    [tstl.cloneIdentifier(returnedIdentifier), tstl.cloneIdentifier(returnValueIdentifier)],
+                    catchCall
+                );
+                catchBlock = tstl.createBlock([catchAssign]);
+            }
+            const notTryCondition = tstl.createUnaryExpression(
+                tstl.createParenthesizedExpression(tryResultIdentfier),
                 tstl.SyntaxKind.NotOperator
             );
-            result.push(tstl.createIfStatement(notTryResult, this.transformBlock(statement.catchClause.block)));
+            result.push(tstl.createIfStatement(notTryCondition, catchBlock));
+        } else if (tryScope.functionReturned) {
+            // try with return, but no catch
+            returnedIdentifier = tstl.createIdentifier("____TS_returned");
+            const returnedVariables = [tryResultIdentfier, returnedIdentifier, returnValueIdentifier];
+            result.push(tstl.createVariableDeclarationStatement(returnedVariables, tryCall));
+
+            // change return condition from '____TS_returned' to '____TS_try and ____TS_returned'
+            returnCondition = tstl.createBinaryExpression(
+                tstl.cloneIdentifier(tryResultIdentfier),
+                returnedIdentifier,
+                tstl.SyntaxKind.AndOperator
+            );
         } else {
+            // try without return or catch
             result.push(tstl.createExpressionStatement(tryCall));
         }
 
-        if (statement.finallyBlock) {
-            result.push(tstl.createDoStatement(this.transformBlock(statement.finallyBlock).statements));
+        if (statement.finallyBlock && statement.finallyBlock.statements.length > 0) {
+            result.push(...this.statementVisitResultToArray(this.transformBlockAsDoStatement(statement.finallyBlock)));
+        }
+
+        if (returnCondition && returnedIdentifier) {
+            // With catch clause:
+            //     if ____TS_returned then return ____TS_returnValue end
+            // No catch clause:
+            //     if ____TS_try and ____TS_returned then return ____TS_returnValue end
+            const returnValues: tstl.Expression[] = [];
+            const parentTryCatch = this.findScope(ScopeType.Function | ScopeType.Try | ScopeType.Catch);
+            if (parentTryCatch && parentTryCatch.type !== ScopeType.Function) {
+                // Nested try/catch needs to prefix a 'true' return value
+                returnValues.push(tstl.createBooleanLiteral(true));
+            }
+            if (tsHelper.isInTupleReturnFunction(statement, this.checker)) {
+                returnValues.push(this.createUnpackCall(tstl.cloneIdentifier(returnValueIdentifier)));
+            } else {
+                returnValues.push(tstl.cloneIdentifier(returnValueIdentifier));
+            }
+            const returnStatement = tstl.createReturnStatement(returnValues);
+            const ifReturnedStatement = tstl.createIfStatement(returnCondition, tstl.createBlock([returnStatement]));
+            result.push(ifReturnedStatement);
         }
 
         return tstl.createDoStatement(result, statement);
@@ -4980,7 +5071,7 @@ export class LuaTransformer {
         return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), [], tsOriginal);
     }
 
-    protected createUnpackCall(expression: tstl.Expression | undefined, tsOriginal: ts.Node): tstl.Expression {
+    protected createUnpackCall(expression: tstl.Expression | undefined, tsOriginal?: ts.Node): tstl.Expression {
         switch (this.luaTarget) {
             case LuaTarget.Lua51:
             case LuaTarget.LuaJIT:

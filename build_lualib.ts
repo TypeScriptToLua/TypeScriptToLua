@@ -16,4 +16,8 @@ if (fs.existsSync(bundlePath)) {
     fs.unlinkSync(bundlePath);
 }
 
-fs.writeFileSync(bundlePath, LuaLib.loadFeatures(Object.values(tstl.LuaLibFeature)));
+const emitHost = {
+    readFile: (path: string) => fs.readFileSync(path, "utf-8"),
+    writeFile: fs.writeFileSync,
+};
+fs.writeFileSync(bundlePath, LuaLib.loadFeatures(Object.values(tstl.LuaLibFeature), emitHost));

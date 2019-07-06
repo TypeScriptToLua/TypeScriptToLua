@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("ClassFieldInitializer", () => {
@@ -196,6 +196,27 @@ test("SubclassConstructor", () => {
     );
 
     expect(result).toBe(11);
+});
+
+test("Subclass constructor across merged namespace", () => {
+    const tsHeader = `
+        namespace NS {
+            export class Super {
+                prop: string;
+                constructor() {
+                    this.prop = "foo";
+                }
+            }
+        }
+        namespace NS {
+            export class Sub extends Super {
+                constructor() {
+                    super();
+                }
+            }
+        }`;
+
+    expect(util.transpileAndExecute("return (new NS.Sub()).prop", undefined, undefined, tsHeader)).toBe("foo");
 });
 
 test("classSuper", () => {

@@ -836,7 +836,7 @@ describe("globalThis translation", () => {
         (<any>globalThis).foo = "bar";
         return (<any>globalThis).foo;`;
 
-        const lua = util.transpileString(code, {noImplicitAny: true});
+        const lua = util.transpileString(code, { noImplicitAny: true });
 
         expect(util.executeLua(lua)).toBe("bar");
     });

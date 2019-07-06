@@ -27,14 +27,20 @@ export interface TranspileOptions {
     customTransformers?: ts.CustomTransformers;
     transformer?: LuaTransformer;
     printer?: LuaPrinter;
+    emitHost?: EmitHost;
+}
+
+export interface EmitHost {
+    readFile(path: string): string | undefined;
 }
 
 export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
+    emitHost = ts.sys,
     transformer = new LuaTransformer(program),
-    printer = new LuaPrinter(program.getCompilerOptions()),
+    printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 

@@ -20,10 +20,10 @@ export function transpileString(
     return file.lua.trim();
 }
 
-export function transpileStringResult(
-    input: string | Record<string, string>,
+export function transpileStringsAsProject(
+    input: Record<string, string>,
     options: tstl.CompilerOptions = {}
-): Required<tstl.TranspileStringResult> {
+): tstl.TranspileResult {
     const optionsWithDefaults = {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
@@ -34,9 +34,16 @@ export function transpileStringResult(
         ...options,
     };
 
-    const { diagnostics, transpiledFiles } = tstl.transpileVirtualProject(
+    return tstl.transpileVirtualProject(input, optionsWithDefaults);
+}
+
+export function transpileStringResult(
+    input: string | Record<string, string>,
+    options: tstl.CompilerOptions = {}
+): Required<tstl.TranspileStringResult> {
+    const { diagnostics, transpiledFiles } = transpileStringsAsProject(
         typeof input === "string" ? { "main.ts": input } : input,
-        optionsWithDefaults
+        options
     );
 
     const file = transpiledFiles.find(({ fileName }) => /\bmain\.[a-z]+$/.test(fileName));

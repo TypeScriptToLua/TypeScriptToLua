@@ -677,7 +677,7 @@ export function createTableFieldExpression(
     tsOriginal?: ts.Node,
     parent?: Node
 ): TableFieldExpression {
-    const expression = createNode(SyntaxKind.TableExpression, tsOriginal, parent) as TableFieldExpression;
+    const expression = createNode(SyntaxKind.TableFieldExpression, tsOriginal, parent) as TableFieldExpression;
     setParent(value, expression);
     expression.value = value;
     setParent(key, expression);
@@ -830,6 +830,7 @@ export function createMethodCallExpression(
 export interface Identifier extends Expression {
     kind: SyntaxKind.Identifier;
     text: string;
+    originalName?: string;
     symbolId?: SymbolId;
 }
 
@@ -841,16 +842,18 @@ export function createIdentifier(
     text: string | ts.__String,
     tsOriginal?: ts.Node,
     symbolId?: SymbolId,
+    originalName?: string,
     parent?: Node
 ): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
     expression.text = text as string;
     expression.symbolId = symbolId;
+    expression.originalName = originalName;
     return expression;
 }
 
 export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): Identifier {
-    return createIdentifier(identifier.text, tsOriginal, identifier.symbolId);
+    return createIdentifier(identifier.text, tsOriginal, identifier.symbolId, identifier.originalName);
 }
 
 export function createAnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {

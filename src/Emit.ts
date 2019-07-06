@@ -1,7 +1,7 @@
-import * as fs from "fs";
 import * as path from "path";
+import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import { TranspiledFile } from "./Transpile";
+import { TranspiledFile, EmitHost } from "./Transpile";
 
 const trimExt = (filePath: string) => filePath.slice(0, -path.extname(filePath).length);
 const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
@@ -12,7 +12,11 @@ export interface OutputFile {
 }
 
 let lualibContent: string;
-export function emitTranspiledFiles(options: CompilerOptions, transpiledFiles: TranspiledFile[]): OutputFile[] {
+export function emitTranspiledFiles(
+    options: CompilerOptions,
+    transpiledFiles: TranspiledFile[],
+    emitHost: EmitHost = ts.sys
+): OutputFile[] {
     let { rootDir, outDir, outFile, luaLibImport } = options;
 
     const configFileName = options.configFilePath as string | undefined;
@@ -57,7 +61,12 @@ export function emitTranspiledFiles(options: CompilerOptions, transpiledFiles: T
 
     if (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always) {
         if (lualibContent === undefined) {
-            lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+            const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
+            if (lualibBundle !== undefined) {
+                lualibContent = lualibBundle;
+            } else {
+                throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+            }
         }
 
         let outPath = path.resolve(rootDir, "lualib_bundle.lua");

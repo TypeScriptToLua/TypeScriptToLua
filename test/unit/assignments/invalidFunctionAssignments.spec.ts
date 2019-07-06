@@ -1,4 +1,4 @@
-import { TSTLErrors } from "../../../src/TSTLErrors";
+import * as TSTLErrors from "../../../src/TSTLErrors";
 import * as util from "../../util";
 import { invalidTestFunctionAssignments, invalidTestFunctionCasts } from "./functionPermutations";
 

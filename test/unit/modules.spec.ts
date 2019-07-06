@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 describe("module import/export elision", () => {
@@ -159,4 +159,24 @@ test("Module merged with interface", () => {
         }`;
     const code = `return Foo.bar();`;
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foobar");
+});
+
+test("module merged across files", () => {
+    const testA = `
+        namespace NS {
+            export namespace Inner {
+                export const foo = "foo";
+            }
+        }
+    `;
+    const testB = `
+        namespace NS {
+            export namespace Inner {
+                export const bar = "bar";
+            }
+        }
+    `;
+    const { transpiledFiles } = util.transpileStringsAsProject({ "testA.ts": testA, "testB.ts": testB });
+    const lua = transpiledFiles.map(f => f.lua).join("\n") + "\nreturn NS.Inner.foo .. NS.Inner.bar";
+    expect(util.executeLua(lua)).toBe("foobar");
 });

@@ -831,14 +831,33 @@ describe("globalThis translation", () => {
         expect(util.executeLua(lua)).toBe("bar");
     });
 
-    test("globalThis to _G (type alias)", () => {
+    test("globalThis to _G (assign + noImplicitAny)", () => {
         const code = `
-        declare let globalAlias: typeof globalThis;
-        globalAlias.foo = "bar";
-        return globalThis.foo;`;
+        (<any>globalThis).foo = "bar";
+        return (<any>globalThis).foo;`;
+
+        const lua = util.transpileString(code, {noImplicitAny: true});
+
+        expect(util.executeLua(lua)).toBe("bar");
+    });
+
+    test("globalThis to _G (var)", () => {
+        const code = `
+        var globalFoo = "bar";
+        return globalThis.globalFoo;`;
 
         const lua = util.transpileString(code);
 
         expect(util.executeLua(lua)).toBe("bar");
+    });
+
+    test("globalThis to _G (let)", () => {
+        const code = `
+        let NotAGlobalFoo = "bar";
+        return (<any>globalThis).NotAGlobalFoo;`;
+
+        const lua = util.transpileString(code);
+
+        expect(util.executeLua(lua)).toBe(undefined);
     });
 });

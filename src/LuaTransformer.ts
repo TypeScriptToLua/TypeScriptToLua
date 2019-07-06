@@ -4695,11 +4695,6 @@ export class LuaTransformer {
             return tstl.createNilLiteral();
         }
 
-        const identifierType = this.checker.getTypeAtLocation(expression);
-        if (identifierType.symbol && identifierType.symbol.escapedName === "globalThis") {
-            return tstl.createIdentifier("_G", expression, this.getIdentifierSymbolId(expression));
-        }
-
         switch (this.getIdentifierText(expression)) {
             case "NaN":
                 return tstl.createParenthesizedExpression(
@@ -4715,6 +4710,9 @@ export class LuaTransformer {
                 const math = tstl.createIdentifier("math");
                 const huge = tstl.createStringLiteral("huge");
                 return tstl.createTableIndexExpression(math, huge, expression);
+
+            case "globalThis":
+                return tstl.createIdentifier("_G", expression, this.getIdentifierSymbolId(expression));
         }
 
         return identifier;

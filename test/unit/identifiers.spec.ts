@@ -805,9 +805,7 @@ describe("globalThis translation", () => {
         globalThis.foo = "bar";
         return globalThis.foo;`;
 
-        const lua = util.transpileString(code);
-
-        expect(util.executeLua(lua)).toBe("bar");
+        expect(util.transpileAndExecute(code)).toBe("bar");
     });
 
     test("globalThis to _G (reassign)", () => {
@@ -816,9 +814,7 @@ describe("globalThis translation", () => {
         globalThis.foo = "baz";
         return globalThis.foo;`;
 
-        const lua = util.transpileString(code);
-
-        expect(util.executeLua(lua)).toBe("baz");
+        expect(util.transpileAndExecute(code)).toBe("baz");
     });
 
     test("globalThis to _G (function)", () => {
@@ -826,9 +822,7 @@ describe("globalThis translation", () => {
         globalThis.foo = () => "bar";
         return globalThis.foo();`;
 
-        const lua = util.transpileString(code);
-
-        expect(util.executeLua(lua)).toBe("bar");
+        expect(util.transpileAndExecute(code)).toBe("bar");
     });
 
     test("globalThis to _G (assign + noImplicitAny)", () => {
@@ -836,9 +830,7 @@ describe("globalThis translation", () => {
         (<any>globalThis).foo = "bar";
         return (<any>globalThis).foo;`;
 
-        const lua = util.transpileString(code, { noImplicitAny: true });
-
-        expect(util.executeLua(lua)).toBe("bar");
+        expect(util.transpileAndExecute(code)).toBe("bar");
     });
 
     test("globalThis to _G (var)", () => {
@@ -856,8 +848,6 @@ describe("globalThis translation", () => {
         let NotAGlobalFoo = "bar";
         return (<any>globalThis).NotAGlobalFoo;`;
 
-        const lua = util.transpileString(code);
-
-        expect(util.executeLua(lua)).toBe(undefined);
+        expect(util.transpileAndExecute(code)).toBe(undefined);
     });
 });

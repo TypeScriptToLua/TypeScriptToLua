@@ -4876,14 +4876,6 @@ export class LuaTransformer {
     }
 
     public transformIdentifier(identifier: ts.Identifier): tstl.Identifier {
-        if (identifier.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
-            // TODO this is a hack that allows use to keep Identifier
-            // as return time as changing that would break a lot of stuff.
-            // But this should be changed to return tstl.createNilLiteral()
-            // at some point.
-            return tstl.createIdentifier("nil");
-        }
-
         if (tsHelper.isForRangeType(identifier, this.checker)) {
             const callExpression = tsHelper.findFirstNodeAbove(identifier, ts.isCallExpression);
             if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
@@ -4910,6 +4902,10 @@ export class LuaTransformer {
             return this.createExportedIdentifier(identifier, exportScope);
         }
 
+        if (expression.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
+            return tstl.createNilLiteral();
+        }
+
         switch (this.getIdentifierText(expression)) {
             case "NaN":
                 return tstl.createParenthesizedExpression(
@@ -4925,6 +4921,9 @@ export class LuaTransformer {
                 const math = tstl.createIdentifier("math");
                 const huge = tstl.createStringLiteral("huge");
                 return tstl.createTableIndexExpression(math, huge, expression);
+
+            case "globalThis":
+                return tstl.createIdentifier("_G", expression, this.getIdentifierSymbolId(expression));
         }
 
         return identifier;
@@ -5432,7 +5431,8 @@ export class LuaTransformer {
     protected hasUnsafeSymbolName(symbol: ts.Symbol, tsOriginal?: ts.Identifier): boolean {
         const isLuaKeyword = luaKeywords.has(symbol.name);
         const isInvalidIdentifier = !tsHelper.isValidLuaIdentifier(symbol.name);
-        const isAmbient = symbol.declarations.some(d => tsHelper.isAmbientNode(d));
+        // TODO rework once microsoft/TypeScript#24706 is fixed and remove check for symbol.declarations
+        const isAmbient = symbol.declarations && symbol.declarations.some(d => tsHelper.isAmbientNode(d));
         if ((isLuaKeyword || isInvalidIdentifier) && isAmbient) {
             // Catch ambient declarations of identifiers with bad names
             throw TSTLErrors.InvalidAmbientIdentifierName(tsOriginal || ts.createIdentifier(symbol.name));

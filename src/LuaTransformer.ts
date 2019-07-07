@@ -3118,12 +3118,7 @@ export class LuaTransformer {
                 indexExpression = tstl.createStringLiteral(expression.left.name.text);
             } else {
                 // Element access
-                indexExpression = this.transformExpression(expression.left.argumentExpression);
-                const argType = this.checker.getTypeAtLocation(expression.left.expression);
-                if (tsHelper.isArrayType(argType, this.checker, this.program)) {
-                    // Array access needs a +1
-                    indexExpression = this.expressionPlusOne(indexExpression);
-                }
+                indexExpression = this.transformElementAccessArgument(expression.left);
             }
 
             const args = [objExpression, indexExpression, this.transformExpression(expression.right)];
@@ -3922,7 +3917,10 @@ export class LuaTransformer {
                 );
             } else {
                 const parameters = this.transformArguments(node.arguments, signature);
-                const table = this.transformExpression(node.expression.expression);
+                let table = this.transformExpression(node.expression.expression);
+                if (tstl.isTableExpression(table)) {
+                    table = tstl.createParenthesizedExpression(table);
+                }
                 const signatureDeclaration = signature && signature.getDeclaration();
                 if (
                     !signatureDeclaration ||
@@ -3959,7 +3957,10 @@ export class LuaTransformer {
             return this.transformContextualCallExpression(node, parameters);
         } else {
             // No context
-            const expression = this.transformExpression(node.expression);
+            let expression = this.transformExpression(node.expression);
+            if (tstl.isTableExpression(expression)) {
+                expression = tstl.createParenthesizedExpression(expression);
+            }
             return tstl.createCallExpression(expression, parameters);
         }
     }
@@ -3976,7 +3977,10 @@ export class LuaTransformer {
             tsHelper.isValidLuaIdentifier(left.name.text)
         ) {
             // table:name()
-            const table = this.transformExpression(left.expression);
+            let table = this.transformExpression(left.expression);
+            if (tstl.isTableExpression(table)) {
+                table = tstl.createParenthesizedExpression(table);
+            }
             return tstl.createMethodCallExpression(
                 table,
                 this.transformIdentifier(left.name),
@@ -3991,10 +3995,9 @@ export class LuaTransformer {
 
                 // Cache left-side if it has effects
                 //(function() local ____TS_self = context; return ____TS_self[argument](parameters); end)()
-                const argumentExpression = ts.isElementAccessExpression(left)
-                    ? left.argumentExpression
-                    : ts.createStringLiteral(left.name.text);
-                const argument = this.transformExpression(argumentExpression);
+                const argument = ts.isElementAccessExpression(left)
+                    ? this.transformElementAccessArgument(left)
+                    : tstl.createStringLiteral(left.name.text);
                 const selfIdentifier = tstl.createIdentifier("____TS_self");
                 const selfAssignment = tstl.createVariableDeclarationStatement(selfIdentifier, context);
                 const index = tstl.createTableIndexExpression(selfIdentifier, argument);
@@ -4084,7 +4087,10 @@ export class LuaTransformer {
             }
         }
 
-        const callPath = this.transformExpression(expression.expression);
+        let callPath = this.transformExpression(expression.expression);
+        if (tstl.isTableExpression(callPath)) {
+            callPath = tstl.createParenthesizedExpression(callPath);
+        }
         return tstl.createTableIndexExpression(callPath, tstl.createStringLiteral(property), expression);
     }
 
@@ -4188,7 +4194,10 @@ export class LuaTransformer {
     protected transformStringProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
         switch (node.name.escapedText) {
             case "length":
-                const expression = this.transformExpression(node.expression);
+                let expression = this.transformExpression(node.expression);
+                if (ts.isTemplateExpression(node.expression)) {
+                    expression = tstl.createParenthesizedExpression(expression);
+                }
                 return tstl.createUnaryExpression(expression, tstl.SyntaxKind.LengthOperator, node);
             default:
                 throw TSTLErrors.UnsupportedProperty("string", node.name.escapedText as string, node);
@@ -4199,7 +4208,10 @@ export class LuaTransformer {
     protected transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
         switch (node.name.escapedText) {
             case "length":
-                const expression = this.transformExpression(node.expression);
+                let expression = this.transformExpression(node.expression);
+                if (tstl.isTableExpression(expression)) {
+                    expression = tstl.createParenthesizedExpression(expression);
+                }
                 return tstl.createUnaryExpression(expression, tstl.SyntaxKind.LengthOperator, node);
             default:
                 return undefined;
@@ -4216,27 +4228,40 @@ export class LuaTransformer {
         }
     }
 
-    public transformElementAccessExpression(expression: ts.ElementAccessExpression): ExpressionVisitResult {
-        const table = this.transformExpression(expression.expression);
+    protected transformElementAccessArgument(expression: ts.ElementAccessExpression): tstl.Expression {
         const index = this.transformExpression(expression.argumentExpression);
+        const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
+        const type = this.checker.getTypeAtLocation(expression.expression);
+        if (tsHelper.isNumberType(argumentType) && tsHelper.isArrayType(type, this.checker, this.program)) {
+            return this.expressionPlusOne(index);
+        } else {
+            return index;
+        }
+    }
+
+    public transformElementAccessExpression(expression: ts.ElementAccessExpression): ExpressionVisitResult {
+        let table = this.transformExpression(expression.expression);
+        if (tstl.isTableExpression(table)) {
+            table = tstl.createParenthesizedExpression(table);
+        }
 
         const constEnumValue = this.tryGetConstEnumValue(expression);
         if (constEnumValue) {
             return constEnumValue;
         }
 
+        const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.isArrayType(type, this.checker, this.program)) {
-            return tstl.createTableIndexExpression(table, this.expressionPlusOne(index), expression);
-        } else if (tsHelper.isStringType(type)) {
+        if (tsHelper.isNumberType(argumentType) && tsHelper.isStringType(type)) {
+            const index = this.transformExpression(expression.argumentExpression);
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),
                 [table, this.expressionPlusOne(index), this.expressionPlusOne(index)],
                 expression
             );
-        } else {
-            return tstl.createTableIndexExpression(table, index, expression);
         }
+
+        return tstl.createTableIndexExpression(table, this.transformElementAccessArgument(expression), expression);
     }
 
     private tryGetConstEnumValue(
@@ -4369,7 +4394,7 @@ export class LuaTransformer {
             case "upper":
                 // Allow lua's string instance methods
                 let stringVariable = this.transformExpression(expression.expression);
-                if (ts.isStringLiteral(expression.expression)) {
+                if (ts.isStringLiteralLike(expression.expression)) {
                     // "foo":method() needs to be ("foo"):method()
                     stringVariable = tstl.createParenthesizedExpression(stringVariable);
                 }

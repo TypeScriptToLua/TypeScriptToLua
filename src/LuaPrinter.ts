@@ -571,17 +571,7 @@ export class LuaPrinter {
     }
 
     public printTableExpression(expression: tstl.TableExpression): SourceNode {
-        const chunks: SourceChunk[] = [];
-
-        chunks.push("{");
-
-        if (expression.fields) {
-            chunks.push(...this.printExpressionList(expression.fields));
-        }
-
-        chunks.push("}");
-
-        return this.createSourceNode(expression, chunks);
+        return this.createSourceNode(expression, ["{", ...this.printExpressionList(expression.fields), "}"]);
     }
 
     public printUnaryExpression(expression: tstl.UnaryExpression): SourceNode {

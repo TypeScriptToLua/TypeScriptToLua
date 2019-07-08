@@ -869,7 +869,7 @@ export function isSimpleExpression(expression: tstl.Expression): boolean {
 
         case tstl.SyntaxKind.TableExpression:
             const tableExpression = expression as tstl.TableExpression;
-            return !tableExpression.fields || tableExpression.fields.every(e => isSimpleExpression(e));
+            return tableExpression.fields.every(e => isSimpleExpression(e));
 
         case tstl.SyntaxKind.TableFieldExpression:
             const fieldExpression = expression as tstl.TableFieldExpression;

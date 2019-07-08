@@ -785,7 +785,7 @@ export class LuaTransformer {
         const result: tstl.Statement[] = [];
 
         // [____exports.]className = {}
-        const classTable: tstl.Expression = tstl.createTableExpression([]);
+        const classTable: tstl.Expression = tstl.createTableExpression();
 
         const classVar = this.createLocalOrExportedOrGlobalDeclaration(className, classTable, statement);
         result.push(...classVar);
@@ -4830,16 +4830,14 @@ export class LuaTransformer {
         const stringTableLiteral = tstl.createTableExpression(
             strings.map(partialString => tstl.createTableFieldExpression(tstl.createStringLiteral(partialString)))
         );
-        if (stringTableLiteral.fields) {
-            const rawStringArray = tstl.createTableExpression(
-                rawStrings.map(stringLiteral =>
-                    tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
-                )
-            );
-            stringTableLiteral.fields.push(
-                tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
-            );
-        }
+        const rawStringArray = tstl.createTableExpression(
+            rawStrings.map(stringLiteral =>
+                tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
+            )
+        );
+        stringTableLiteral.fields.push(
+            tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
+        );
 
         // Evaluate if there is a self parameter to be used.
         const signature = this.checker.getResolvedSignature(expression);

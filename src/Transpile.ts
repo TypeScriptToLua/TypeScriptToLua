@@ -82,7 +82,7 @@ export function transpile({
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         try {
-            const [luaAst, lualibFeatureSet] = transformer.run(sourceFile);
+            const [luaAst, lualibFeatureSet] = transformer.transform(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
                 const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
                 updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });

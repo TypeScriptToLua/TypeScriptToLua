@@ -103,7 +103,7 @@ export class LuaTransformer {
     protected resolver!: EmitResolver;
 
     /** @internal */
-    public run(sourceFile: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
+    public transform(sourceFile: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
         this.currentSourceFile = sourceFile;
         this.isModule = tsHelper.isFileModule(sourceFile);

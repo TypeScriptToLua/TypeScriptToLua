@@ -40,6 +40,7 @@ export class LuaPrinter {
 
     private currentIndent = "";
     private sourceFile = "";
+
     public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {

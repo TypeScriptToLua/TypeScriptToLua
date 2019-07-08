@@ -731,14 +731,12 @@ export function isFalsible(type: ts.Type, strictNullChecks: boolean): boolean {
     return false;
 }
 
-export function getFirstDeclaration(symbol: ts.Symbol, sourceFile?: ts.SourceFile): ts.Declaration | undefined {
+export function getFirstDeclaration(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
     let declarations = symbol.getDeclarations();
     if (!declarations) {
         return undefined;
     }
-    if (sourceFile) {
-        declarations = declarations.filter(d => findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
-    }
+    declarations = declarations.filter(d => findFirstNodeAbove(d, ts.isSourceFile) === sourceFile);
     return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
 }
 
@@ -751,12 +749,17 @@ export function getRawLiteral(node: ts.LiteralLikeNode): string {
     return text;
 }
 
-export function isFirstDeclaration(node: ts.VariableDeclaration, checker: ts.TypeChecker): boolean {
+export function isFirstDeclaration(
+    node: ts.VariableDeclaration,
+    checker: ts.TypeChecker,
+    sourceFile: ts.SourceFile
+): boolean {
     const symbol = checker.getSymbolAtLocation(node.name);
     if (!symbol) {
         return false;
     }
-    const firstDeclaration = getFirstDeclaration(symbol);
+
+    const firstDeclaration = getFirstDeclaration(symbol, sourceFile);
     return firstDeclaration === node;
 }
 

@@ -54,85 +54,81 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 }
 
 export class LuaTransformer {
-    protected isStrict: boolean;
-    protected luaTarget: LuaTarget;
+    protected readonly typeValidationCache = new Map<ts.Type, Set<ts.Type>>();
+    protected currentNamespace?: ts.ModuleDeclaration;
 
     protected checker: DiagnosticsProducingTypeChecker;
     protected options: CompilerOptions;
 
-    // Resolver is lazy-initialized in transformSourceFile to avoid type-checking all files
-    protected resolver!: EmitResolver;
-
-    protected isModule = false;
-    protected currentSourceFile?: ts.SourceFile;
-
-    protected currentNamespace: ts.ModuleDeclaration | undefined;
-    protected classStack: ts.ClassLikeDeclaration[] = [];
-
-    protected scopeStack: Scope[] = [];
-    protected genVarCounter = 0;
-
-    protected luaLibFeatureSet = new Set<LuaLibFeature>();
-
-    protected symbolInfo = new Map<tstl.SymbolId, SymbolInfo>();
-    protected symbolIds = new Map<ts.Symbol, tstl.SymbolId>();
-
-    protected genSymbolIdCounter = 0;
-
-    protected readonly typeValidationCache: Map<ts.Type, Set<ts.Type>> = new Map<ts.Type, Set<ts.Type>>();
+    protected luaTarget: LuaTarget;
+    protected isStrict: boolean;
 
     public constructor(protected program: ts.Program) {
         this.checker = (program as any).getDiagnosticsProducingTypeChecker();
         this.options = program.getCompilerOptions();
+
+        this.luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
         this.isStrict =
             this.options.alwaysStrict !== undefined ||
             (this.options.strict !== undefined && this.options.alwaysStrict !== false) ||
             (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 
-        this.luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
-
         this.setupState();
     }
 
-    protected setupState(): void {
+    protected genVarCounter!: number;
+    protected luaLibFeatureSet!: Set<LuaLibFeature>;
+
+    protected scopeStack!: Scope[];
+    protected classStack!: ts.ClassLikeDeclaration[];
+
+    protected symbolInfo!: Map<tstl.SymbolId, SymbolInfo>;
+    protected symbolIds!: Map<ts.Symbol, tstl.SymbolId>;
+    protected genSymbolIdCounter!: number;
+
+    private setupState(): void {
         this.genVarCounter = 0;
-        this.currentSourceFile = undefined;
-        this.isModule = false;
+        this.luaLibFeatureSet = new Set<LuaLibFeature>();
+
         this.scopeStack = [];
         this.classStack = [];
-        this.luaLibFeatureSet = new Set<LuaLibFeature>();
-        this.symbolIds = new Map();
+
         this.symbolInfo = new Map();
+        this.symbolIds = new Map();
         this.genSymbolIdCounter = 1;
     }
 
-    public transformSourceFile(node: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
-        this.setupState();
+    protected currentSourceFile!: ts.SourceFile;
+    protected isModule!: boolean;
+    protected resolver!: EmitResolver;
 
-        this.currentSourceFile = node;
+    /** @internal */
+    public transform(sourceFile: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
+        this.setupState();
+        this.currentSourceFile = sourceFile;
+        this.isModule = tsHelper.isFileModule(sourceFile);
 
         // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
         // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
         // and would try to re-analyze the file, which would fail because of replaced nodes.
-        const originalSourceFile = ts.getParseTreeNode(node, ts.isSourceFile) || node;
+        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
         this.resolver = this.checker.getEmitResolver(originalSourceFile);
 
-        let statements: tstl.Statement[] = [];
-        if (node.flags & ts.NodeFlags.JsonFile) {
-            this.isModule = false;
+        return [this.transformSourceFile(sourceFile), this.luaLibFeatureSet];
+    }
 
-            const statement = node.statements[0];
+    public transformSourceFile(sourceFile: ts.SourceFile): tstl.Block {
+        let statements: tstl.Statement[] = [];
+        if (sourceFile.flags & ts.NodeFlags.JsonFile) {
+            const statement = sourceFile.statements[0];
             if (!statement || !ts.isExpressionStatement(statement)) {
-                throw TSTLErrors.InvalidJsonFileContent(node);
+                throw TSTLErrors.InvalidJsonFileContent(sourceFile);
             }
 
             statements.push(tstl.createReturnStatement([this.transformExpression(statement.expression)]));
         } else {
             this.pushScope(ScopeType.File);
-
-            this.isModule = tsHelper.isFileModule(node);
-            statements = this.performHoisting(this.transformStatements(node.statements));
-
+            statements = this.performHoisting(this.transformStatements(sourceFile.statements));
             this.popScope();
 
             if (this.isModule) {
@@ -149,7 +145,7 @@ export class LuaTransformer {
             }
         }
 
-        return [tstl.createBlock(statements, node), this.luaLibFeatureSet];
+        return tstl.createBlock(statements, sourceFile);
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {
@@ -484,10 +480,6 @@ export class LuaTransformer {
 
             expression = this.transformExternalModuleReference(declaration.moduleReference);
         } else {
-            if (this.currentSourceFile === undefined) {
-                throw TSTLErrors.MissingSourceFile();
-            }
-
             const shouldEmit =
                 this.resolver.isReferencedAliasDeclaration(declaration) ||
                 (!ts.isExternalModule(this.currentSourceFile) &&
@@ -4974,14 +4966,11 @@ export class LuaTransformer {
     }
 
     protected isSymbolExported(symbol: ts.Symbol): boolean {
-        if (tsHelper.getExportedSymbolDeclaration(symbol) !== undefined) {
-            return true;
-        } else if (this.currentSourceFile) {
+        return (
+            tsHelper.getExportedSymbolDeclaration(symbol) !== undefined ||
             // Symbol may have been exported separately (e.g. 'const foo = "bar"; export { foo }')
-            return this.isSymbolExportedFromScope(symbol, this.currentSourceFile);
-        } else {
-            return false;
-        }
+            this.isSymbolExportedFromScope(symbol, this.currentSourceFile)
+        );
     }
 
     protected isSymbolExportedFromScope(symbol: ts.Symbol, scope: ts.SourceFile | ts.ModuleDeclaration): boolean {
@@ -5120,10 +5109,6 @@ export class LuaTransformer {
             return path.resolve(this.options.baseUrl, relativePath);
         }
 
-        if (this.currentSourceFile === undefined) {
-            throw TSTLErrors.MissingSourceFile();
-        }
-
         return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
     }
 
@@ -5194,7 +5179,8 @@ export class LuaTransformer {
             let isFirstDeclaration = true; // var can have multiple declarations for the same variable :/
             if (tsOriginal && ts.isVariableDeclaration(tsOriginal) && tsOriginal.parent) {
                 isLetOrConst = (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
-                isFirstDeclaration = isLetOrConst || tsHelper.isFirstDeclaration(tsOriginal, this.checker);
+                isFirstDeclaration =
+                    isLetOrConst || tsHelper.isFirstDeclaration(tsOriginal, this.checker, this.currentSourceFile);
             }
             if ((this.isModule || this.currentNamespace || insideFunction || isLetOrConst) && isFirstDeclaration) {
                 // local
@@ -5560,10 +5546,6 @@ export class LuaTransformer {
         }
 
         if (scope.functionDefinitions) {
-            if (this.currentSourceFile === undefined) {
-                throw TSTLErrors.MissingSourceFile();
-            }
-
             for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
                 if (functionDefinition.definition === undefined) {
                     throw TSTLErrors.UndefinedFunctionDefinition(functionSymbolId);

@@ -38,18 +38,10 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };
 
-    private options: CompilerOptions;
-    private emitHost: EmitHost;
-
-    private currentIndent: string;
-
+    private currentIndent = "";
     private sourceFile = "";
 
-    public constructor(options: CompilerOptions, emitHost: EmitHost) {
-        this.options = options;
-        this.emitHost = emitHost;
-        this.currentIndent = "";
-    }
+    public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled

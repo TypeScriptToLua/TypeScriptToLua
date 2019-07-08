@@ -90,8 +90,6 @@ export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
 export const MissingMetaExtension = (node: ts.Node) =>
     new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
 
-export const MissingSourceFile = () => new Error("Expected transformer.sourceFile to be set, but it isn't.");
-
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 

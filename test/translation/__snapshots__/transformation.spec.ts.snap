@@ -562,12 +562,12 @@ f = function(____, x) return ({x = x}) end"
 
 exports[`Transformation (tryCatch) 1`] = `
 "do
-    local ____TS_try, er = pcall(
+    local ____try, er = pcall(
         function()
             local a = 42
         end
     )
-    if not ____TS_try then
+    if not ____try then
         local b = \\"fail\\"
     end
 end"
@@ -575,12 +575,12 @@ end"
 
 exports[`Transformation (tryCatchFinally) 1`] = `
 "do
-    local ____TS_try, er = pcall(
+    local ____try, er = pcall(
         function()
             local a = 42
         end
     )
-    if not ____TS_try then
+    if not ____try then
         local b = \\"fail\\"
     end
     do

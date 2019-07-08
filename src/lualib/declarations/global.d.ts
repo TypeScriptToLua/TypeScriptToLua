@@ -1,7 +1,5 @@
 /** @noSelfInFile */
 
-declare const _G: typeof globalThis;
-
 declare var __TS__sourcemap: Record<number, number> | undefined;
 declare var __TS__originalTraceback:
     | ((this: void, thread?: any, message?: string, level?: number) => string)

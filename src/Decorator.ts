@@ -10,6 +10,7 @@ export class Decorator {
     }
 
     public kind: DecoratorKind;
+
     constructor(name: string, public args: string[]) {
         const kind = Decorator.getDecoratorKind(name);
         if (kind === undefined) {

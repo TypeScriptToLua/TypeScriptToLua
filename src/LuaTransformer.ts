@@ -517,7 +517,7 @@ export class LuaTransformer {
     }
 
     public transformQualifiedName(qualifiedName: ts.QualifiedName): ExpressionVisitResult {
-        const right = tstl.createStringLiteral(this.getIdentifierText(qualifiedName.right), qualifiedName.right);
+        const right = tstl.createStringLiteral(qualifiedName.right.text, qualifiedName.right);
         const left = this.transformEntityName(qualifiedName.left);
 
         return tstl.createTableIndexExpression(left, right, qualifiedName);
@@ -4045,7 +4045,7 @@ export class LuaTransformer {
     }
 
     public transformPropertyAccessExpression(expression: ts.PropertyAccessExpression): ExpressionVisitResult {
-        const property = this.getIdentifierText(expression.name);
+        const property = expression.name.text;
 
         const constEnumValue = this.tryGetConstEnumValue(expression);
         if (constEnumValue) {
@@ -4884,12 +4884,8 @@ export class LuaTransformer {
             const value = Number(propertyName.text);
             return tstl.createNumericLiteral(value, propertyName);
         } else {
-            return tstl.createStringLiteral(this.getIdentifierText(propertyName));
+            return tstl.createStringLiteral(propertyName.text);
         }
-    }
-
-    protected getIdentifierText(identifier: ts.Identifier): string {
-        return ts.idText(identifier);
     }
 
     public transformIdentifier(identifier: ts.Identifier): tstl.Identifier {
@@ -4904,11 +4900,11 @@ export class LuaTransformer {
         }
 
         const text = this.hasUnsafeIdentifierName(identifier)
-            ? this.createSafeName(this.getIdentifierText(identifier))
-            : this.getIdentifierText(identifier);
+            ? this.createSafeName(identifier.text)
+            : identifier.text;
 
         const symbolId = this.getIdentifierSymbolId(identifier);
-        return tstl.createIdentifier(text, identifier, symbolId, this.getIdentifierText(identifier));
+        return tstl.createIdentifier(text, identifier, symbolId, identifier.text);
     }
 
     protected transformIdentifierExpression(expression: ts.Identifier): tstl.Expression {
@@ -4923,7 +4919,7 @@ export class LuaTransformer {
             return tstl.createNilLiteral();
         }
 
-        switch (this.getIdentifierText(expression)) {
+        switch (expression.text) {
             case "NaN":
                 return tstl.createParenthesizedExpression(
                     tstl.createBinaryExpression(
@@ -5420,7 +5416,7 @@ export class LuaTransformer {
                 ? this.createSafeName(valueSymbol.name)
                 : valueSymbol.name;
         } else {
-            const propertyName = this.getIdentifierText(propertyIdentifier);
+            const propertyName = propertyIdentifier.text;
             if (luaKeywords.has(propertyName) || !tsHelper.isValidLuaIdentifier(propertyName)) {
                 // Catch ambient declarations of identifiers with bad names
                 throw TSTLErrors.InvalidAmbientIdentifierName(propertyIdentifier);

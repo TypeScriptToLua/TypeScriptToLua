@@ -3025,7 +3025,7 @@ export class LuaTransformer {
             // Destructuring assignment
             const left =
                 expression.left.elements.length > 0
-                    ? expression.left.elements.map(e => this.transformArrayBindingExpression(e))
+                    ? expression.left.elements.map(e => this.transformArrayBindingElement(e))
                     : [tstl.createAnonymousIdentifier(expression.left)];
             let right: tstl.Expression[];
             if (ts.isArrayLiteralExpression(expression.right)) {
@@ -4734,11 +4734,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformArrayBindingElement(name: ts.ArrayBindingElement): ExpressionVisitResult {
-        return this.transformArrayBindingExpression(name as ts.Expression);
-    }
-
-    public transformArrayBindingExpression(name: ts.Expression): ExpressionVisitResult {
+    public transformArrayBindingElement(name: ts.ArrayBindingElement | ts.Expression): ExpressionVisitResult {
         if (ts.isOmittedExpression(name)) {
             return this.transformOmittedExpression(name);
         } else if (ts.isIdentifier(name)) {

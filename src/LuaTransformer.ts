@@ -319,7 +319,7 @@ export class LuaTransformer {
             }
 
             const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-            const tempModuleIdentifier = tstl.createIdentifier("__TSTL_export");
+            const tempModuleIdentifier = tstl.createIdentifier("____export");
 
             const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
 
@@ -404,7 +404,7 @@ export class LuaTransformer {
                 return undefined;
             }
 
-            const tstlIdentifier = (name: string) => "__TSTL_" + tsHelper.fixInvalidLuaIdentifier(name);
+            const tstlIdentifier = (name: string) => "____" + tsHelper.fixInvalidLuaIdentifier(name);
             const importUniqueName = tstl.createIdentifier(tstlIdentifier(path.basename(importPath)));
             const requireStatement = tstl.createVariableDeclarationStatement(
                 tstl.createIdentifier(tstlIdentifier(path.basename(importPath))),

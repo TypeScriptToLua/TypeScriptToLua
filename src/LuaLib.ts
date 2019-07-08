@@ -72,32 +72,32 @@ const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 
-export class LuaLib {
-    public static loadFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
-        let result = "";
+export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
+    let result = "";
 
-        const loadedFeatures = new Set<LuaLibFeature>();
+    const loadedFeatures = new Set<LuaLibFeature>();
 
-        function load(feature: LuaLibFeature): void {
-            if (!loadedFeatures.has(feature)) {
-                loadedFeatures.add(feature);
-                const dependencies = luaLibDependencies[feature];
-                if (dependencies) {
-                    dependencies.forEach(load);
-                }
-                const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-                const luaLibFeature = emitHost.readFile(featureFile);
-                if (luaLibFeature !== undefined) {
-                    result += luaLibFeature.toString() + "\n";
-                } else {
-                    throw new Error(`Could not read lualib feature ../dist/lualib/${feature}.lua`);
-                }
-            }
+    function load(feature: LuaLibFeature): void {
+        if (loadedFeatures.has(feature)) return;
+        loadedFeatures.add(feature);
+
+        const dependencies = luaLibDependencies[feature];
+        if (dependencies) {
+            dependencies.forEach(load);
         }
 
-        for (const feature of features) {
-            load(feature);
+        const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+        const luaLibFeature = emitHost.readFile(featureFile);
+        if (luaLibFeature !== undefined) {
+            result += luaLibFeature + "\n";
+        } else {
+            throw new Error(`Could not read lualib feature ../dist/lualib/${feature}.lua`);
         }
-        return result;
     }
+
+    for (const feature of features) {
+        load(feature);
+    }
+
+    return result;
 }

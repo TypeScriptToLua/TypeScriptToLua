@@ -4,51 +4,19 @@ export class Decorator {
     }
 
     public static getDecoratorKind(decoratorKindString: string): DecoratorKind | undefined {
-        switch (decoratorKindString.toLowerCase()) {
-            case "extension":
-                return DecoratorKind.Extension;
-            case "metaextension":
-                return DecoratorKind.MetaExtension;
-            case "customconstructor":
-                return DecoratorKind.CustomConstructor;
-            case "compilemembersonly":
-                return DecoratorKind.CompileMembersOnly;
-            case "noresolution":
-                return DecoratorKind.NoResolution;
-            case "pureabstract":
-                return DecoratorKind.PureAbstract;
-            case "phantom":
-                return DecoratorKind.Phantom;
-            case "tuplereturn":
-                return DecoratorKind.TupleReturn;
-            case "luaiterator":
-                return DecoratorKind.LuaIterator;
-            case "luatable":
-                return DecoratorKind.LuaTable;
-            case "noself":
-                return DecoratorKind.NoSelf;
-            case "noselfinfile":
-                return DecoratorKind.NoSelfInFile;
-            case "vararg":
-                return DecoratorKind.Vararg;
-            case "forrange":
-                return DecoratorKind.ForRange;
-        }
-
-        return undefined;
+        return Object.values(DecoratorKind).find(
+            decoratorKind => decoratorKind.toLowerCase() === decoratorKindString.toLowerCase()
+        );
     }
 
     public kind: DecoratorKind;
-    public args: string[];
-
-    constructor(name: string, args: string[]) {
+    constructor(name: string, public args: string[]) {
         const kind = Decorator.getDecoratorKind(name);
         if (kind === undefined) {
             throw new Error(`Failed to parse decorator '${name}'`);
         }
 
         this.kind = kind;
-        this.args = args;
     }
 }
 

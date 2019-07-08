@@ -4745,6 +4745,11 @@ export class LuaTransformer {
     }
 
     public transformAssertionExpression(expression: ts.AssertionExpression): ExpressionVisitResult {
+        this.validateFunctionAssignment(
+            expression,
+            this.checker.getTypeAtLocation(expression.expression),
+            this.checker.getTypeAtLocation(expression.type)
+        );
         return this.transformExpression(expression.expression);
     }
 

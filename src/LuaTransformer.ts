@@ -3878,7 +3878,7 @@ export class LuaTransformer {
         // if ownerType inherits from an array, use array calls where appropriate
         if (
             tsHelper.isArrayType(ownerType, this.checker, this.program) &&
-            tsHelper.isDefaultArrayCallMethodName(node.expression.name.escapedText as string)
+            tsHelper.isDefaultArrayCallMethodName(node.expression.name.text)
         ) {
             return this.transformArrayCallExpression(node);
         }
@@ -3894,7 +3894,7 @@ export class LuaTransformer {
             return tstl.createCallExpression(this.transformExpression(node.expression), parameters);
         } else {
             // Replace last . with : here
-            const name = node.expression.name.escapedText;
+            const name = node.expression.name.text;
             if (name === "toString") {
                 const toStringIdentifier = tstl.createIdentifier("tostring");
                 return tstl.createCallExpression(
@@ -4096,7 +4096,7 @@ export class LuaTransformer {
 
     // Transpile a Math._ property
     protected transformMathExpression(identifier: ts.Identifier): tstl.Expression {
-        const name = identifier.escapedText as string;
+        const name = identifier.text;
         switch (name) {
             case "PI":
                 const property = tstl.createStringLiteral("pi");
@@ -4122,7 +4122,7 @@ export class LuaTransformer {
         const expression = node.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
-        const expressionName = expression.name.escapedText as string;
+        const expressionName = expression.name.text;
         switch (expressionName) {
             // math.tan(x / y)
             case "atan2": {
@@ -4192,7 +4192,7 @@ export class LuaTransformer {
 
     // Transpile access of string properties, only supported properties are allowed
     protected transformStringProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
-        switch (node.name.escapedText) {
+        switch (node.name.text) {
             case "length":
                 let expression = this.transformExpression(node.expression);
                 if (ts.isTemplateExpression(node.expression)) {
@@ -4200,13 +4200,13 @@ export class LuaTransformer {
                 }
                 return tstl.createUnaryExpression(expression, tstl.SyntaxKind.LengthOperator, node);
             default:
-                throw TSTLErrors.UnsupportedProperty("string", node.name.escapedText as string, node);
+                throw TSTLErrors.UnsupportedProperty("string", node.name.text, node);
         }
     }
 
     // Transpile access of array properties, only supported properties are allowed
     protected transformArrayProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression | undefined {
-        switch (node.name.escapedText) {
+        switch (node.name.text) {
             case "length":
                 let expression = this.transformExpression(node.expression);
                 if (tstl.isTableExpression(expression)) {
@@ -4219,12 +4219,12 @@ export class LuaTransformer {
     }
 
     protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
-        switch (node.name.escapedText) {
+        switch (node.name.text) {
             case "length":
                 const propertyAccessExpression = this.transformExpression(node.expression);
                 return tstl.createUnaryExpression(propertyAccessExpression, tstl.SyntaxKind.LengthOperator, node);
             default:
-                throw TSTLErrors.UnsupportedProperty("LuaTable", node.name.escapedText as string, node);
+                throw TSTLErrors.UnsupportedProperty("LuaTable", node.name.text, node);
         }
     }
 
@@ -4281,7 +4281,7 @@ export class LuaTransformer {
         const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
 
-        const expressionName = expression.name.escapedText as string;
+        const expressionName = expression.name.text;
         switch (expressionName) {
             case "replace":
                 return this.transformLuaLibFunction(LuaLibFeature.StringReplace, node, caller, ...params);
@@ -4424,7 +4424,7 @@ export class LuaTransformer {
 
     // Transpile a String._ property
     protected transformStringExpression(identifier: ts.Identifier): ExpressionVisitResult {
-        const identifierString = identifier.escapedText as string;
+        const identifierString = identifier.text;
 
         switch (identifierString) {
             case "fromCharCode":
@@ -4445,7 +4445,7 @@ export class LuaTransformer {
     protected transformObjectCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
         const parameters = this.transformArguments(expression.arguments);
-        const methodName = method.name.escapedText;
+        const methodName = method.name.text;
 
         switch (methodName) {
             case "assign":
@@ -4465,7 +4465,7 @@ export class LuaTransformer {
 
     protected transformConsoleCallExpression(expression: ts.CallExpression): ExpressionVisitResult {
         const method = expression.expression as ts.PropertyAccessExpression;
-        const methodName = method.name.escapedText;
+        const methodName = method.name.text;
         const signature = this.checker.getResolvedSignature(expression);
 
         switch (methodName) {
@@ -4543,7 +4543,7 @@ export class LuaTransformer {
         const method = expression.expression as ts.PropertyAccessExpression;
         const signature = this.checker.getResolvedSignature(expression);
         const parameters = this.transformArguments(expression.arguments, signature);
-        const methodName = method.name.escapedText;
+        const methodName = method.name.text;
 
         switch (methodName) {
             case "for":
@@ -4561,7 +4561,7 @@ export class LuaTransformer {
     protected transformNumberCallExpression(expression: ts.CallExpression): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
         const parameters = this.transformArguments(expression.arguments);
-        const methodName = method.name.escapedText;
+        const methodName = method.name.text;
 
         switch (methodName) {
             case "isNaN":
@@ -4577,7 +4577,7 @@ export class LuaTransformer {
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression },
         isWithinExpressionStatement: boolean
     ): void {
-        const methodName = expression.expression.name.escapedText;
+        const methodName = expression.expression.name.text;
         if (expression.arguments.some(argument => ts.isSpreadElement(argument))) {
             throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", expression);
         }
@@ -4607,9 +4607,9 @@ export class LuaTransformer {
             expression: { expression: ts.PropertyAccessExpression };
         }
     ): tstl.VariableDeclarationStatement | tstl.AssignmentStatement {
-        const methodName = node.expression.expression.name.escapedText;
+        const methodName = node.expression.expression.name.text;
         const signature = this.checker.getResolvedSignature(node.expression);
-        const tableName = (node.expression.expression.expression as ts.Identifier).escapedText;
+        const tableName = (node.expression.expression.expression as ts.Identifier).text;
         const luaTable = tstl.createIdentifier(tableName);
         const params = this.transformArguments((node.expression as ts.CallExpression).arguments, signature);
 
@@ -4635,9 +4635,9 @@ export class LuaTransformer {
         expression: ts.CallExpression & { expression: ts.PropertyAccessExpression }
     ): tstl.Expression {
         const method = expression.expression;
-        const methodName = method.name.escapedText;
+        const methodName = method.name.text;
         const signature = this.checker.getResolvedSignature(expression);
-        const tableName = (method.expression as ts.Identifier).escapedText;
+        const tableName = (method.expression as ts.Identifier).text;
         const luaTable = tstl.createIdentifier(tableName);
         const params = this.transformArguments(expression.arguments, signature);
 
@@ -4654,7 +4654,7 @@ export class LuaTransformer {
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
-        const expressionName = expression.name.escapedText;
+        const expressionName = expression.name.text;
         switch (expressionName) {
             case "concat":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayConcat, node, caller, ...params);
@@ -4708,7 +4708,7 @@ export class LuaTransformer {
             case "flatMap":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFlatMap, node, caller, ...params);
             default:
-                throw TSTLErrors.UnsupportedProperty("array", expressionName as string, node);
+                throw TSTLErrors.UnsupportedProperty("array", expressionName, node);
         }
     }
 
@@ -4721,7 +4721,7 @@ export class LuaTransformer {
         const signature = this.checker.getResolvedSignature(node);
         const params = this.transformArguments(node.arguments, signature);
         const caller = this.transformExpression(expression.expression);
-        const expressionName = expression.name.escapedText;
+        const expressionName = expression.name.text;
         switch (expressionName) {
             case "apply":
                 return this.transformLuaLibFunction(LuaLibFeature.FunctionApply, node, caller, ...params);
@@ -4730,7 +4730,7 @@ export class LuaTransformer {
             case "call":
                 return this.transformLuaLibFunction(LuaLibFeature.FunctionCall, node, caller, ...params);
             default:
-                throw TSTLErrors.UnsupportedProperty("function", expressionName as string, node);
+                throw TSTLErrors.UnsupportedProperty("function", expressionName, node);
         }
     }
 
@@ -4827,9 +4827,7 @@ export class LuaTransformer {
             strings.map(partialString => tstl.createTableFieldExpression(tstl.createStringLiteral(partialString)))
         );
         const rawStringArray = tstl.createTableExpression(
-            rawStrings.map(stringLiteral =>
-                tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral))
-            )
+            rawStrings.map(stringLiteral => tstl.createTableFieldExpression(tstl.createStringLiteral(stringLiteral)))
         );
         stringTableLiteral.fields.push(
             tstl.createTableFieldExpression(rawStringArray, tstl.createStringLiteral("raw"))
@@ -5352,7 +5350,7 @@ export class LuaTransformer {
             const leftType = this.checker.getTypeAtLocation(node.left.expression);
             const decorators = tsHelper.getCustomDecorators(leftType, this.checker);
             if (decorators.has(DecoratorKind.LuaTable)) {
-                switch (node.left.name.escapedText as string) {
+                switch (node.left.name.text) {
                     case "length":
                         throw TSTLErrors.ForbiddenLuaTableUseException(
                             `A LuaTable object's length cannot be re-assigned.`,

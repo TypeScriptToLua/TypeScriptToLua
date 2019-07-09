@@ -754,6 +754,142 @@ test("forof forwarded lua iterator with tupleReturn", () => {
     expect(result).toBe("0a1b2c");
 });
 
+test("forof array empty destructuring declaration", () => {
+    const code = `
+        const arr = [["a"], ["b"], ["c"]];
+        let i = 0;
+        for (const [] of arr) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof array empty destructuring assignment", () => {
+    const code = `
+        const arr = [["a"], ["b"], ["c"]];
+        let i = 0;
+        for ([] of arr) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof iterable empty destructuring declaration", () => {
+    const code = `
+        const iter: Iterable<string[]> = [["a"], ["b"], ["c"]];
+        let i = 0;
+        for (const [] of iter) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof iterable empty destructuring assignment", () => {
+    const code = `
+        const iter: Iterable<string[]> = [["a"], ["b"], ["c"]];
+        let i = 0;
+        for ([] of iter) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof luaIterator empty destructuring declaration", () => {
+    const code = `
+        const arr = [["a"], ["b"], ["c"]];
+        /** @luaIterator */
+        interface Iter extends Iterable<string[]> {}
+        function luaIter(): Iter {
+            let it = 0;
+            return (() => arr[it++]) as any;
+        }
+        let i = 0;
+        for (const [] of luaIter()) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof luaIterator empty destructuring assignment", () => {
+    const code = `
+        const arr = [["a"], ["b"], ["c"]];
+        /** @luaIterator */
+        interface Iter extends Iterable<string[]> {}
+        function luaIter(): Iter {
+            let it = 0;
+            return (() => arr[it++]) as any;
+        }
+        let i = 0;
+        for ([] of luaIter()) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof luaIterator+tupleReturn empty destructuring declaration", () => {
+    const code = `
+        const arr = [["a", "b"], ["c", "d"], ["e", "f"]];
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let it = 0;
+            /** @tupleReturn */
+            function iter() {
+                const e = arr[it++];
+                if (e) {
+                    return e;
+                }
+            }
+            return iter as any;
+        }
+        let i = 0;
+        for (const [] of luaIter()) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
+test("forof luaIterator+tupleReturn empty destructuring assignment", () => {
+    const code = `
+        const arr = [["a", "b"], ["c", "d"], ["e", "f"]];
+        /** @luaIterator */
+        /** @tupleReturn */
+        interface Iter extends Iterable<[string, string]> {}
+        function luaIter(): Iter {
+            let it = 0;
+            /** @tupleReturn */
+            function iter() {
+                const e = arr[it++];
+                if (e) {
+                    return e;
+                }
+            }
+            return iter as any;
+        }
+        let i = 0;
+        for ([] of luaIter()) {
+            ++i;
+        }
+        return i;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});
+
 test.each([
     "while (a < b) { i++; continue; }",
     "do { i++; continue; } while (a < b)",

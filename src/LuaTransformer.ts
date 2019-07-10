@@ -2400,9 +2400,7 @@ export class LuaTransformer {
                 // for ____value0 in ${iterable} do
                 //     ${initializer} = ____value0
                 if (ts.isArrayLiteralExpression(statement.initializer)) {
-                    const tmps = statement.initializer.elements.map((_, i) =>
-                        tstl.createIdentifier(`____value${i}`)
-                    );
+                    const tmps = statement.initializer.elements.map((_, i) => tstl.createIdentifier(`____value${i}`));
                     if (tmps.length > 0) {
                         const assign = tstl.createAssignmentStatement(
                             statement.initializer.elements.map(

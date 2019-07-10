@@ -1,4 +1,4 @@
-    import * as path from "path";
+import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { Decorator, DecoratorKind } from "./Decorator";

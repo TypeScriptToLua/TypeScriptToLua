@@ -3,9 +3,9 @@ import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as tstl from "./LuaAST";
 import { luaKeywords } from "./LuaKeywords";
-import { LuaLib, LuaLibFeature } from "./LuaLib";
-import * as tsHelper from "./TSHelper";
+import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { EmitHost } from "./Transpile";
+import * as tsHelper from "./TSHelper";
 
 type SourceChunk = string | SourceNode;
 
@@ -124,7 +124,7 @@ export class LuaPrinter {
             // Inline lualib features
             else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
-                header += LuaLib.loadFeatures(luaLibFeatures, this.emitHost);
+                header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
             }
         }
 
@@ -563,17 +563,7 @@ export class LuaPrinter {
     }
 
     public printTableExpression(expression: tstl.TableExpression): SourceNode {
-        const chunks: SourceChunk[] = [];
-
-        chunks.push("{");
-
-        if (expression.fields) {
-            chunks.push(...this.printExpressionList(expression.fields));
-        }
-
-        chunks.push("}");
-
-        return this.createSourceNode(expression, chunks);
+        return this.createSourceNode(expression, ["{", ...this.printExpressionList(expression.fields), "}"]);
     }
 
     public printUnaryExpression(expression: tstl.UnaryExpression): SourceNode {

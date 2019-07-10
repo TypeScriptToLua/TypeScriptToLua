@@ -2260,11 +2260,18 @@ export class LuaTransformer {
         return tstl.createDoStatement(result, statement);
     }
 
-    protected transformForOfInitializer(initializer: ts.ForInitializer, expression: tstl.Expression): tstl.Statement {
+    protected transformForOfInitializer(
+        initializer: ts.ForInitializer,
+        expression: tstl.Expression
+    ): tstl.Statement | undefined {
         if (ts.isVariableDeclarationList(initializer)) {
             // Declaration of new variable
             const variableDeclarations = this.transformVariableDeclaration(initializer.declarations[0]);
             if (ts.isArrayBindingPattern(initializer.declarations[0].name)) {
+                if (initializer.declarations[0].name.elements.length === 0) {
+                    // Ignore empty destructuring assignment
+                    return undefined;
+                }
                 expression = this.createUnpackCall(expression, initializer);
             } else if (ts.isObjectBindingPattern(initializer.declarations[0].name)) {
                 throw TSTLErrors.UnsupportedObjectDestructuringInForOf(initializer);
@@ -2284,10 +2291,15 @@ export class LuaTransformer {
             // Assignment to existing variable
             let variables: tstl.AssignmentLeftHandSideExpression | tstl.AssignmentLeftHandSideExpression[];
             if (ts.isArrayLiteralExpression(initializer)) {
-                expression = this.createUnpackCall(expression, initializer);
-                variables = initializer.elements.map(e =>
-                    this.transformExpression(e)
-                ) as tstl.AssignmentLeftHandSideExpression[];
+                if (initializer.elements.length > 0) {
+                    expression = this.createUnpackCall(expression, initializer);
+                    variables = initializer.elements.map(e =>
+                        this.transformExpression(e)
+                    ) as tstl.AssignmentLeftHandSideExpression[];
+                } else {
+                    // Ignore empty destructring assignment
+                    return undefined;
+                }
             } else if (ts.isObjectLiteralExpression(initializer)) {
                 throw TSTLErrors.UnsupportedObjectDestructuringInForOf(initializer);
             } else {
@@ -2329,14 +2341,20 @@ export class LuaTransformer {
             const variables = statement.initializer.declarations[0].name;
             if (ts.isArrayBindingPattern(variables) || ts.isObjectBindingPattern(variables)) {
                 valueVariable = tstl.createIdentifier("____values");
-                block.statements.unshift(this.transformForOfInitializer(statement.initializer, valueVariable));
+                const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
+                if (initializer) {
+                    block.statements.unshift(initializer);
+                }
             } else {
                 valueVariable = this.transformIdentifier(variables);
             }
         } else {
             // Assignment to existing variable
             valueVariable = tstl.createIdentifier("____value");
-            block.statements.unshift(this.transformForOfInitializer(statement.initializer, valueVariable));
+            const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
+            if (initializer) {
+                block.statements.unshift(initializer);
+            }
         }
 
         const ipairsCall = tstl.createCallExpression(tstl.createIdentifier("ipairs"), [
@@ -2365,14 +2383,14 @@ export class LuaTransformer {
                 // for ${initializer} in ${iterable} do
                 const initializerVariable = statement.initializer.declarations[0].name;
                 if (ts.isArrayBindingPattern(initializerVariable)) {
-                    return tstl.createForInStatement(
-                        block,
-                        this.filterUndefinedAndCast(
-                            initializerVariable.elements.map(e => this.transformArrayBindingElement(e)),
-                            tstl.isIdentifier
-                        ),
-                        [luaIterator]
+                    const identifiers = this.filterUndefinedAndCast(
+                        initializerVariable.elements.map(e => this.transformArrayBindingElement(e)),
+                        tstl.isIdentifier
                     );
+                    if (identifiers.length === 0) {
+                        identifiers.push(tstl.createAnonymousIdentifier());
+                    }
+                    return tstl.createForInStatement(block, identifiers, [luaIterator]);
                 } else {
                     // Single variable is not allowed
                     throw TSTLErrors.UnsupportedNonDestructuringLuaIterator(statement.initializer);
@@ -2383,13 +2401,17 @@ export class LuaTransformer {
                 //     ${initializer} = ____value0
                 if (ts.isArrayLiteralExpression(statement.initializer)) {
                     const tmps = statement.initializer.elements.map((_, i) => tstl.createIdentifier(`____value${i}`));
-                    const assign = tstl.createAssignmentStatement(
-                        statement.initializer.elements.map(
-                            e => this.transformExpression(e) as tstl.AssignmentLeftHandSideExpression
-                        ),
-                        tmps
-                    );
-                    block.statements.splice(0, 0, assign);
+                    if (tmps.length > 0) {
+                        const assign = tstl.createAssignmentStatement(
+                            statement.initializer.elements.map(
+                                e => this.transformExpression(e) as tstl.AssignmentLeftHandSideExpression
+                            ),
+                            tmps
+                        );
+                        block.statements.splice(0, 0, assign);
+                    } else {
+                        tmps.push(tstl.createAnonymousIdentifier());
+                    }
                     return tstl.createForInStatement(block, tmps, [luaIterator]);
                 } else {
                     // Single variable is not allowed
@@ -2415,7 +2437,9 @@ export class LuaTransformer {
                 //     local ${initializer} = unpack(____value)
                 const valueVariable = tstl.createIdentifier("____value");
                 const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
-                block.statements.splice(0, 0, initializer);
+                if (initializer) {
+                    block.statements.splice(0, 0, initializer);
+                }
                 return tstl.createForInStatement(block, [valueVariable], [luaIterator]);
             }
         }
@@ -2440,7 +2464,9 @@ export class LuaTransformer {
             //     local ${initializer} = ____value
             const valueVariable = tstl.createIdentifier("____value");
             const initializer = this.transformForOfInitializer(statement.initializer, valueVariable);
-            block.statements.splice(0, 0, initializer);
+            if (initializer) {
+                block.statements.splice(0, 0, initializer);
+            }
             return tstl.createForInStatement(
                 block,
                 [valueVariable],

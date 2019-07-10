@@ -1,11 +1,9 @@
 /** @noSelfInFile */
 
-// TODO: TS3.4: typeof globalThis
-declare const _G: {
-    // Required?
-    __TS__originalTraceback(this: void, thread?: any, message?: string, level?: number): string;
-    [key: string]: any;
-};
+declare var __TS__sourcemap: Record<number, number> | undefined;
+declare var __TS__originalTraceback:
+    | ((this: void, thread?: any, message?: string, level?: number) => string)
+    | undefined;
 
 declare function tonumber(value: any, base?: number): number | undefined;
 declare function type(

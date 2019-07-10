@@ -10,17 +10,10 @@ export function getCustomTransformers(
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
-    // TODO: https://github.com/Microsoft/TypeScript/issues/28310
-    const forEachSourceFile = (node: ts.SourceFile, callback: (sourceFile: ts.SourceFile) => ts.SourceFile) =>
-        ts.isBundle(node)
-            ? ((ts.updateBundle(node, node.sourceFiles.map(callback)) as unknown) as ts.SourceFile)
-            : callback(node);
-
-    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => node =>
-        forEachSourceFile(node, sourceFile => {
-            onSourceFile(sourceFile);
-            return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
-        });
+    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => sourceFile => {
+        onSourceFile(sourceFile);
+        return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
+    };
 
     const transformersFromOptions = loadTransformersFromOptions(program, diagnostics);
     return {

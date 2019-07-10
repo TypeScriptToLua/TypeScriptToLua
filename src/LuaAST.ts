@@ -614,7 +614,7 @@ export function isStringLiteral(node: Node): node is StringLiteral {
     return node.kind === SyntaxKind.StringLiteral;
 }
 
-export function createStringLiteral(value: string | ts.__String, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
+export function createStringLiteral(value: string, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
     const expression = createNode(SyntaxKind.StringLiteral, tsOriginal, parent) as StringLiteral;
     expression.value = value as string;
     return expression;
@@ -687,7 +687,7 @@ export function createTableFieldExpression(
 
 export interface TableExpression extends Expression {
     kind: SyntaxKind.TableExpression;
-    fields?: TableFieldExpression[];
+    fields: TableFieldExpression[];
 }
 
 export function isTableExpression(node: Node): node is TableExpression {
@@ -695,7 +695,7 @@ export function isTableExpression(node: Node): node is TableExpression {
 }
 
 export function createTableExpression(
-    fields?: TableFieldExpression[],
+    fields: TableFieldExpression[] = [],
     tsOriginal?: ts.Node,
     parent?: Node
 ): TableExpression {
@@ -839,14 +839,14 @@ export function isIdentifier(node: Node): node is Identifier {
 }
 
 export function createIdentifier(
-    text: string | ts.__String,
+    text: string,
     tsOriginal?: ts.Node,
     symbolId?: SymbolId,
     originalName?: string,
     parent?: Node
 ): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
-    expression.text = text as string;
+    expression.text = text;
     expression.symbolId = symbolId;
     expression.originalName = originalName;
     return expression;

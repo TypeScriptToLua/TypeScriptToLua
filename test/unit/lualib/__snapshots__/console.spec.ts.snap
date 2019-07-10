@@ -11,7 +11,10 @@ return ____exports"
 exports[`console.assert ("console.assert(false, \\"message %%s\\", \\"info\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    assert(false, string.format(\\"message %%s\\", \\"info\\"))
+    assert(
+        false,
+        string.format(\\"message %%s\\", \\"info\\")
+    )
 end
 return ____exports"
 `;
@@ -19,7 +22,10 @@ return ____exports"
 exports[`console.assert ("console.assert(false, \\"message %s\\", \\"info\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    assert(false, string.format(\\"message %s\\", \\"info\\"))
+    assert(
+        false,
+        string.format(\\"message %s\\", \\"info\\")
+    )
 end
 return ____exports"
 `;
@@ -51,7 +57,9 @@ return ____exports"
 exports[`console.log ("console.log(\\"Hello %%s\\", \\"there\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(string.format(\\"Hello %%s\\", \\"there\\"))
+    print(
+        string.format(\\"Hello %%s\\", \\"there\\")
+    )
 end
 return ____exports"
 `;
@@ -59,7 +67,9 @@ return ____exports"
 exports[`console.log ("console.log(\\"Hello %s\\", \\"there\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(string.format(\\"Hello %s\\", \\"there\\"))
+    print(
+        string.format(\\"Hello %s\\", \\"there\\")
+    )
 end
 return ____exports"
 `;
@@ -83,7 +93,9 @@ return ____exports"
 exports[`console.trace ("console.trace()") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(debug.traceback())
+    print(
+        debug.traceback()
+    )
 end
 return ____exports"
 `;
@@ -91,7 +103,11 @@ return ____exports"
 exports[`console.trace ("console.trace(\\"Hello %%s\\", \\"there\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(debug.traceback(string.format(\\"Hello %%s\\", \\"there\\")))
+    print(
+        debug.traceback(
+            string.format(\\"Hello %%s\\", \\"there\\")
+        )
+    )
 end
 return ____exports"
 `;
@@ -99,7 +115,11 @@ return ____exports"
 exports[`console.trace ("console.trace(\\"Hello %s\\", \\"there\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(debug.traceback(string.format(\\"Hello %s\\", \\"there\\")))
+    print(
+        debug.traceback(
+            string.format(\\"Hello %s\\", \\"there\\")
+        )
+    )
 end
 return ____exports"
 `;
@@ -107,7 +127,9 @@ return ____exports"
 exports[`console.trace ("console.trace(\\"Hello\\", \\"there\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(debug.traceback(\\"Hello\\", \\"there\\"))
+    print(
+        debug.traceback(\\"Hello\\", \\"there\\")
+    )
 end
 return ____exports"
 `;
@@ -115,7 +137,9 @@ return ____exports"
 exports[`console.trace ("console.trace(\\"message\\")") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    print(debug.traceback(\\"message\\"))
+    print(
+        debug.traceback(\\"message\\")
+    )
 end
 return ____exports"
 `;

@@ -198,21 +198,21 @@ local xyz = 4
 ____exports.xyz = xyz
 ____exports.uwv = xyz
 do
-    local __TSTL_export = require(\\"xyz\\")
-    for ____exportKey, ____exportValue in pairs(__TSTL_export) do
+    local ____export = require(\\"xyz\\")
+    for ____exportKey, ____exportValue in pairs(____export) do
         ____exports[____exportKey] = ____exportValue
     end
 end
 do
-    local __TSTL_xyz = require(\\"xyz\\")
-    local abc = __TSTL_xyz.abc
-    local def = __TSTL_xyz.def
+    local ____xyz = require(\\"xyz\\")
+    local abc = ____xyz.abc
+    local def = ____xyz.def
     ____exports.abc = abc
     ____exports.def = def
 end
 do
-    local __TSTL_xyz = require(\\"xyz\\")
-    local def = __TSTL_xyz.abc
+    local ____xyz = require(\\"xyz\\")
+    local def = ____xyz.abc
     ____exports.def = def
 end
 return ____exports"
@@ -228,28 +228,12 @@ end"
 `;
 
 exports[`Transformation (forIn) 1`] = `
-"for i in pairs({
-    a = 1,
-    b = 2,
-    c = 3,
-    d = 4,
-}) do
+"for i in pairs({a = 1, b = 2, c = 3, d = 4}) do
 end"
 `;
 
 exports[`Transformation (forOf) 1`] = `
-"for ____, i in ipairs({
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-}) do
+"for ____, i in ipairs({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) do
 end"
 `;
 
@@ -387,22 +371,22 @@ local ____ = Test"
 `;
 
 exports[`Transformation (modulesImportNamed) 1`] = `
-"local __TSTL_test = require(\\"test\\")
-local TestClass = __TSTL_test.TestClass
+"local ____test = require(\\"test\\")
+local TestClass = ____test.TestClass
 local ____ = TestClass"
 `;
 
 exports[`Transformation (modulesImportNamedSpecialChars) 1`] = `
-"local __TSTL_kebab_2Dmodule = require(\\"kebab-module\\")
-local TestClass1 = __TSTL_kebab_2Dmodule.TestClass1
-local __TSTL_dollar_24module = require(\\"dollar$module\\")
-local TestClass2 = __TSTL_dollar_24module.TestClass2
-local __TSTL_singlequote_27module = require(\\"singlequote'module\\")
-local TestClass3 = __TSTL_singlequote_27module.TestClass3
-local __TSTL_hash_23module = require(\\"hash#module\\")
-local TestClass4 = __TSTL_hash_23module.TestClass4
-local __TSTL_space_20module = require(\\"space module\\")
-local TestClass5 = __TSTL_space_20module.TestClass5
+"local ____kebab_2Dmodule = require(\\"kebab-module\\")
+local TestClass1 = ____kebab_2Dmodule.TestClass1
+local ____dollar_24module = require(\\"dollar$module\\")
+local TestClass2 = ____dollar_24module.TestClass2
+local ____singlequote_27module = require(\\"singlequote'module\\")
+local TestClass3 = ____singlequote_27module.TestClass3
+local ____hash_23module = require(\\"hash#module\\")
+local TestClass4 = ____hash_23module.TestClass4
+local ____space_20module = require(\\"space module\\")
+local TestClass5 = ____space_20module.TestClass5
 local ____ = TestClass1
 local ____ = TestClass2
 local ____ = TestClass3
@@ -411,22 +395,22 @@ local ____ = TestClass5"
 `;
 
 exports[`Transformation (modulesImportRenamed) 1`] = `
-"local __TSTL_test = require(\\"test\\")
-local RenamedClass = __TSTL_test.TestClass
+"local ____test = require(\\"test\\")
+local RenamedClass = ____test.TestClass
 local ____ = RenamedClass"
 `;
 
 exports[`Transformation (modulesImportRenamedSpecialChars) 1`] = `
-"local __TSTL_kebab_2Dmodule = require(\\"kebab-module\\")
-local RenamedClass1 = __TSTL_kebab_2Dmodule.TestClass
-local __TSTL_dollar_24module = require(\\"dollar$module\\")
-local RenamedClass2 = __TSTL_dollar_24module.TestClass
-local __TSTL_singlequote_27module = require(\\"singlequote'module\\")
-local RenamedClass3 = __TSTL_singlequote_27module.TestClass
-local __TSTL_hash_23module = require(\\"hash#module\\")
-local RenamedClass4 = __TSTL_hash_23module.TestClass
-local __TSTL_space_20module = require(\\"space module\\")
-local RenamedClass5 = __TSTL_space_20module.TestClass
+"local ____kebab_2Dmodule = require(\\"kebab-module\\")
+local RenamedClass1 = ____kebab_2Dmodule.TestClass
+local ____dollar_24module = require(\\"dollar$module\\")
+local RenamedClass2 = ____dollar_24module.TestClass
+local ____singlequote_27module = require(\\"singlequote'module\\")
+local RenamedClass3 = ____singlequote_27module.TestClass
+local ____hash_23module = require(\\"hash#module\\")
+local RenamedClass4 = ____hash_23module.TestClass
+local ____space_20module = require(\\"space module\\")
+local RenamedClass5 = ____space_20module.TestClass
 local ____ = RenamedClass1
 local ____ = RenamedClass2
 local ____ = RenamedClass3
@@ -471,7 +455,7 @@ end
 return ____exports"
 `;
 
-exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = {}"`;
+exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = TestSpace or {}"`;
 
 exports[`Transformation (modulesNamespaceWithMemberExport) 1`] = `
 "local ____exports = {}
@@ -503,7 +487,7 @@ return ____exports"
 exports[`Transformation (modulesVariableNoExport) 1`] = `"local foo = \\"bar\\""`;
 
 exports[`Transformation (namespace) 1`] = `
-"myNamespace = {}
+"myNamespace = myNamespace or {}
 do
     local function nsMember(self)
     end
@@ -537,6 +521,7 @@ function MergedClass.prototype.methodB(self)
     self:methodA()
     self:propertyFunc()
 end
+MergedClass = MergedClass or {}
 do
     function MergedClass.namespaceFunc(self)
     end
@@ -549,7 +534,7 @@ MergedClass:namespaceFunc()"
 `;
 
 exports[`Transformation (namespaceNested) 1`] = `
-"myNamespace = {}
+"myNamespace = myNamespace or {}
 do
     local myNestedNamespace = {}
     do
@@ -577,10 +562,12 @@ f = function(____, x) return ({x = x}) end"
 
 exports[`Transformation (tryCatch) 1`] = `
 "do
-    local ____TS_try, er = pcall(function()
-        local a = 42
-    end)
-    if not ____TS_try then
+    local ____try, er = pcall(
+        function()
+            local a = 42
+        end
+    )
+    if not ____try then
         local b = \\"fail\\"
     end
 end"
@@ -588,10 +575,12 @@ end"
 
 exports[`Transformation (tryCatchFinally) 1`] = `
 "do
-    local ____TS_try, er = pcall(function()
-        local a = 42
-    end)
-    if not ____TS_try then
+    local ____try, er = pcall(
+        function()
+            local a = 42
+        end
+    )
+    if not ____try then
         local b = \\"fail\\"
     end
     do
@@ -602,9 +591,11 @@ end"
 
 exports[`Transformation (tryFinally) 1`] = `
 "do
-    pcall(function()
-        local a = 42
-    end)
+    pcall(
+        function()
+            local a = 42
+        end
+    )
     do
         local b = \\"finally\\"
     end
@@ -618,30 +609,47 @@ end
 tupleReturn(_G)
 noTupleReturn(_G)
 local a, b = tupleReturn(_G)
-local c, d = table.unpack(noTupleReturn(_G))
+local c, d = table.unpack(
+    noTupleReturn(_G)
+)
 a, b = tupleReturn(_G)
-c, d = table.unpack(noTupleReturn(_G))
-local e = ({tupleReturn(_G)})
+c, d = table.unpack(
+    noTupleReturn(_G)
+)
+local e = ({
+    tupleReturn(_G)
+})
 local f = noTupleReturn(_G)
-e = ({tupleReturn(_G)})
+e = ({
+    tupleReturn(_G)
+})
 f = noTupleReturn(_G)
-foo(_G, ({tupleReturn(_G)}))
-foo(_G, noTupleReturn(_G))
+foo(
+    _G,
+    ({
+        tupleReturn(_G)
+    })
+)
+foo(
+    _G,
+    noTupleReturn(_G)
+)
 function tupleReturnFromVar(self)
-    local r = {
-        1,
-        \\"baz\\",
-    }
+    local r = {1, \\"baz\\"}
     return table.unpack(r)
 end
 function tupleReturnForward(self)
     return tupleReturn(_G)
 end
 function tupleNoForward(self)
-    return ({tupleReturn(_G)})
+    return ({
+        tupleReturn(_G)
+    })
 end
 function tupleReturnUnpack(self)
-    return table.unpack(tupleNoForward(_G))
+    return table.unpack(
+        tupleNoForward(_G)
+    )
 end"
 `;
 

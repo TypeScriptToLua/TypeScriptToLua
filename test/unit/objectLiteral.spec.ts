@@ -1,11 +1,11 @@
 import * as util from "../util";
 
 test.each([
-    { inp: `{a:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
-    { inp: `{"a":3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
-    { inp: `{["a"]:3,b:"4"}`, out: '{\n    a = 3,\n    b = "4",\n}' },
-    { inp: `{["a"+123]:3,b:"4"}`, out: '{\n    ["a" .. 123] = 3,\n    b = "4",\n}' },
-    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4",\n}' },
+    { inp: `{a:3,b:"4"}`, out: '{a = 3, b = "4"}' },
+    { inp: `{"a":3,b:"4"}`, out: '{a = 3, b = "4"}' },
+    { inp: `{["a"]:3,b:"4"}`, out: '{a = 3, b = "4"}' },
+    { inp: `{["a"+123]:3,b:"4"}`, out: '{["a" .. 123] = 3, b = "4"}' },
+    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4"\n}' },
     { inp: `{x}`, out: `{x = x}` },
 ])("Object Literal (%p)", ({ inp, out }) => {
     const lua = util.transpileString(`const myvar = ${inp};`);
@@ -55,3 +55,12 @@ test("undefined as object key", () => {
         return foo.undefined;`;
     expect(util.transpileAndExecute(code)).toBe("foo");
 });
+
+test.each([`({x: "foobar"}.x)`, `({x: "foobar"}["x"])`, `({x: () => "foobar"}.x())`, `({x: () => "foobar"}["x"]())`])(
+    "object literal property access (%p)",
+    expression => {
+        const code = `return ${expression}`;
+        const expectResult = eval(expression);
+        expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+);

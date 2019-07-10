@@ -453,3 +453,38 @@ test("array reduce index & array arguments (%p)", () => {
         new util.ExecutionError("Reduce of empty array with no initial value")
     );
 });
+
+test.each([0, 1, 2])("Array with OmittedExpression", index => {
+    const result = util.transpileAndExecute(
+        `const myarray = [1, , 2];
+        return myarray[${index}];`
+    );
+
+    expect(result).toBe([1, , 2][index]);
+});
+
+test("OmittedExpression in Array Binding Assignment Statement", () => {
+    const result = util.transpileAndExecute(
+        `let a, c;
+        [a, , c] = [1, 2, 3];
+        return a + c;`
+    );
+
+    expect(result).toBe(4);
+});
+
+test("array access call", () => {
+    const code = `
+        const arr = [() => "foo", () => "bar"];
+        return arr[1]();`;
+    expect(util.transpileAndExecute(code)).toBe("bar");
+});
+
+test.each([`["foo", "bar"].length`, `["foo", "bar"][0]`, `[() => "foo", () => "bar"][0]()`])(
+    "array literal property access (%p)",
+    expression => {
+        const code = `return ${expression}`;
+        const expectResult = eval(expression);
+        expect(util.transpileAndExecute(code)).toBe(expectResult);
+    }
+);

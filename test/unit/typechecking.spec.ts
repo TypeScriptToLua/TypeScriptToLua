@@ -1,4 +1,4 @@
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {

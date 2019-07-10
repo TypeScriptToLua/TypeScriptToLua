@@ -1,5 +1,5 @@
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
-import { TSTLErrors } from "../../src/TSTLErrors";
 
 test("Class decorator with no parameters", () => {
     util.testFunction`

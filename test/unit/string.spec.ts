@@ -30,22 +30,6 @@ test.each([
     { a: "test", b: 42, c: 12 },
     { a: "test", b: 42, c: true },
     { a: false, b: 42, c: 12 },
-])("Template Strings (%p)", ({ a, b, c }) => {
-    util.testFunctionTemplate`
-        let a = ${a};
-        let b = ${b};
-        let c = ${c};
-        return \`${a} ${b} test ${c}\`;
-    `.expectToMatchJsResult();
-});
-
-test.each([
-    { a: 12, b: 23, c: 43 },
-    { a: "test", b: "hello", c: "bye" },
-    { a: "test", b: 42, c: "bye" },
-    { a: "test", b: 42, c: 12 },
-    { a: "test", b: 42, c: true },
-    { a: false, b: 42, c: 12 },
 ])("String Concat Operator (%p)", ({ a, b, c }) => {
     util.testFunctionTemplate`
         let a = ${a};

@@ -264,13 +264,6 @@ test.each(["i++", "i--", "++i", "--i"])("Incrementor value (%p)", expression => 
     `.expectToMatchJsResult();
 });
 
-test.each(["a++", "a--", "--a", "++a"])("Template string expression (%p)", lambda => {
-    util.testFunction`
-        let a = 3;
-        return \`val\${${lambda}}\`;
-    `.expectToMatchJsResult();
-});
-
 test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {
     util.testFunction`
         let x = "x";

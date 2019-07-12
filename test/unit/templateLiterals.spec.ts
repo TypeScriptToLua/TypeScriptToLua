@@ -1,5 +1,28 @@
 import * as util from "../util";
 
+test.each(["a++", "a--", "--a", "++a"])("Template string expression (%p)", lambda => {
+    util.testFunction`
+        let a = 3;
+        return \`val\${${lambda}}\`;
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { a: 12, b: 23, c: 43 },
+    { a: "test", b: "hello", c: "bye" },
+    { a: "test", b: 42, c: "bye" },
+    { a: "test", b: 42, c: 12 },
+    { a: "test", b: 42, c: true },
+    { a: false, b: 42, c: 12 },
+])("Template Strings (%p)", ({ a, b, c }) => {
+    util.testFunctionTemplate`
+        let a = ${a};
+        let b = ${b};
+        let c = ${c};
+        return \`${a} ${b} test ${c}\`;
+    `.expectToMatchJsResult();
+});
+
 const testCases = [
     {
         callExpression: "func``",

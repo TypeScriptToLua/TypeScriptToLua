@@ -24,6 +24,14 @@ test("Assignment destructuring [JIT]", () => {
         .expectLuaToMatchSnapshot();
 });
 
+test("OmittedExpression in Array Binding Assignment Statement", () => {
+    util.testFunction`
+        let a, c;
+        [a, , c] = [1, 2, 3];
+        return { a, c };
+    `.expectToMatchJsResult();
+});
+
 test.each([
     "function foo(): [] { return []; }; let [] = foo();",
     "let [] = ['a', 'b', 'c'];",

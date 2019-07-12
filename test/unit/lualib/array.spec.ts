@@ -1,182 +1,163 @@
 import * as util from "../../util";
 
-test("Array access", () => {
+test("omitted expression", () => {
     util.testFunction`
-        const arr: Array<number> = [3, 5, 1];
-        return arr[1];
+        const array = [1, , 2];
+        return { a: array[0], b: array[1], c: array[2] };
     `.expectToMatchJsResult();
 });
 
-test("ReadonlyArray access", () => {
-    util.testFunction`
-        const arr: ReadonlyArray<number> = [3, 5, 1];
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Array literal access", () => {
-    util.testFunction`
-        const arr: number[] = [3, 5, 1];
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Readonly array literal access", () => {
-    util.testFunction`
-        const arr: readonly number[] = [3, 5, 1];
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Array union access", () => {
-    util.testFunction`
-        function makeArray(): number[] | string[] { return [3, 5, 1]; }
-        const arr = makeArray();
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Array union access with empty tuple", () => {
-    util.testFunction`
-        function makeArray(): number[] | [] { return [3, 5, 1]; }
-        const arr = makeArray();
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Array union length", () => {
-    util.testFunction`
-        function makeArray(): number[] | string[] { return [3, 5, 1]; }
-        const arr = makeArray();
-        return arr.length;
-    `.expectToMatchJsResult();
-});
-
-test("Array intersection access", () => {
-    util.testFunction`
-        type I = number[] & { foo: string };
-        function makeArray(): I {
-            let t = [3, 5, 1];
-            (t as I).foo = "bar";
-            return (t as I);
-        }
-        const arr = makeArray();
-        return arr[1];
-    `.expectToMatchJsResult();
-});
-
-test("Array intersection length", () => {
-    util.testFunction`
-        type I = number[] & { foo: string };
-        function makeArray(): I {
-            let t = [3, 5, 1];
-            (t as I).foo = "bar";
-            return (t as I);
-        }
-        const arr = makeArray();
-        return arr.length;
-    `.expectToMatchJsResult();
-});
-
-test.each([
-    { member: "firstElement()", expected: 3 },
-    { member: "name", expected: "array" },
-    { member: "length", expected: 1 },
-])("Derived array access (%p)", ({ member, expected }) => {
-    const luaHeader = `
-        local arr = {
-            name = "array",
-            firstElement = function(self) return self[1] end
-        }
-    `;
-
-    const tsHeader = `
-        interface CustomArray<T> extends Array<T> {
-            name: string;
-            firstElement(): number;
-        };
-
-        declare const arr: CustomArray<number>;
-    `;
-
-    util.testFunction`
-        arr[0] = 3;
-        return arr.${member};
-    `
-        .setLuaHeader(luaHeader)
-        .setTsHeader(tsHeader)
-        .expectToEqual(expected);
-});
-
-test("Array delete", () => {
-    util.testFunction`
-        const array = [1, 2, 3, 4];
-        delete array[2];
-        return { a: array[0], b: array[1], c: array[2], d: array[3] };
-    `.expectToMatchJsResult();
-});
-
-test("Array delete return true", () => {
-    util.testFunction`
-        const array = [1, 2, 3, 4];
-        const exists = delete array[2];
-        return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
-    `.expectToMatchJsResult();
-});
-
-test("Array delete return false", () => {
-    util.testFunction`
-        const array = [1, 2, 3, 4];
-        const exists = delete array[4];
-        return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
-    `.expectToMatchJsResult();
-});
-
-test("Array property access", () => {
-    util.testFunction`
-        type A = number[] & { foo?: string };
-        const a: A = [1, 2, 3];
-        a.foo = "bar";
-        return { foo: a.foo, a: a[0], b: a[1], c: a[2] };
-    `.expectToMatchJsResult();
-});
-
-test.each([{ length: 0, arrayLength: 0 }, { length: 1, arrayLength: 1 }, { length: 7, arrayLength: 3 }])(
-    "Array length set",
-    ({ length, arrayLength }) => {
+describe("access", () => {
+    test("Array", () => {
         util.testFunction`
-            const array = [1, 2, 3];
-            array.length = ${length};
-            return array.length;
-        `.expectToEqual(arrayLength);
-    }
-);
+            const array: Array<number> = [3, 5, 1];
+            return array[1];
+        `.expectToMatchJsResult();
+    });
 
-test.each([{ length: 0, arrayLength: 0 }, { length: 1, arrayLength: 1 }, { length: 7, arrayLength: 3 }])(
-    "Array length set as expression",
-    ({ length, arrayLength }) => {
+    test("ReadonlyArray", () => {
         util.testFunction`
-            const array = [1, 2, 3];
-            const expressionValue = array.length = ${length};
-            return { expressionValue, arrayLength: array.length };
-        `.expectToEqual({ expressionValue: length, arrayLength });
-    }
-);
+            const array: ReadonlyArray<number> = [3, 5, 1];
+            return array[1];
+        `.expectToMatchJsResult();
+    });
 
-test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("Invalid array length set", length => {
-    util.testFunction`
-        const arr = [1, 2, 3];
-        arr.length = ${length};
-    `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
+    test("array literal", () => {
+        util.testExpression`[3, 5, 1][1]`.expectToMatchJsResult();
+    });
+
+    test.skip("const array literal", () => {
+        util.testExpression`([3, 5, 1] as const)[1]`.expectToMatchJsResult();
+    });
+
+    test("union", () => {
+        util.testFunction`
+            const array: number[] | string[] = [3, 5, 1];
+            return array[1];
+        `.expectToMatchJsResult();
+    });
+
+    test("union with empty tuple", () => {
+        util.testFunction`
+            const array: number[] | [] = [3, 5, 1];
+            return array[1];
+        `.expectToMatchJsResult();
+    });
+
+    test("access in call", () => {
+        util.testExpression`[() => "foo", () => "bar"][0]()`.expectToMatchJsResult();
+    });
+
+    test("intersection", () => {
+        util.testFunction`
+            const array = Object.assign([3, 5, 1], { foo: "bar" });
+            return { foo: array.foo, a: array[0], b: array[1], c: array[2] };
+        `.expectToMatchJsResult();
+    });
+
+    test.each([
+        { member: "firstElement()", expected: 3 },
+        { member: "name", expected: "array" },
+        { member: "length", expected: 1 },
+    ])("derived array (.%p)", ({ member, expected }) => {
+        const luaHeader = `
+            local array = {
+                name = "array",
+                firstElement = function(self) return self[1] end
+            }
+        `;
+
+        util.testModule`
+            interface CustomArray<T> extends Array<T> {
+                name: string;
+                firstElement(): number;
+            };
+
+            declare const array: CustomArray<number>;
+
+            array[0] = 3;
+            export const result = array.${member};
+        `
+            .setExport("result")
+            .setLuaHeader(luaHeader)
+            .expectToEqual(expected);
+    });
 });
 
-test.each([[0, 1, 2, 3]])("array.forEach (%p)", (...array) => {
+describe(".length", () => {
+    describe("get", () => {
+        test("union", () => {
+            util.testFunction`
+                const array: number[] | string[] = [3, 5, 1];
+                return array.length;
+            `.expectToMatchJsResult();
+        });
+
+        test("intersection", () => {
+            util.testFunction`
+                const array = Object.assign([3, 5, 1], { foo: "bar" });
+                return array.length;
+            `.expectToMatchJsResult();
+        });
+    });
+
+    describe("set", () => {
+        test.each([{ length: 0, newLength: 0 }, { length: 1, newLength: 1 }, { length: 7, newLength: 3 }])(
+            "removes extra elements",
+            ({ length, newLength }) => {
+                util.testFunction`
+                    const array = [1, 2, 3];
+                    array.length = ${length};
+                    return array.length;
+                `.expectToEqual(newLength);
+            }
+        );
+
+        test.each([0, 1, 7])("returns right-hand side value", length => {
+            util.testExpression`[1, 2, 3].length = ${length}`.expectToEqual(length);
+        });
+
+        test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("throws on invalid values (%p)", length => {
+            util.testFunction`
+                [1, 2, 3].length = ${length};
+            `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
+        });
+    });
+});
+
+describe("delete", () => {
+    test("deletes element", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            delete array[2];
+            return { a: array[0], b: array[1], c: array[2], d: array[3] };
+        `.expectToMatchJsResult();
+    });
+
+    test("returns true when element exists", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            const exists = delete array[2];
+            return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
+        `.expectToMatchJsResult();
+    });
+
+    test("returns false when element not exists", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            const exists = delete array[4];
+            return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
+        `.expectToMatchJsResult();
+    });
+});
+
+test("array.forEach (%p)", () => {
     util.testFunction`
-        let arrTest = ${util.valueToString(array)};
-        arrTest.forEach((elem, index) => {
-            arrTest[index] = arrTest[index] + 1;
-        })
-        return arrTest;
+        const array = [0, 1, 2, 3];
+        array.forEach((elem, index) => {
+            array[index] = array[index] + 1;
+        });
+        return array;
     `.expectToMatchJsResult();
 });
 
@@ -184,24 +165,12 @@ test.each([
     { array: [], searchElement: 3 },
     { array: [0, 2, 4, 8], searchElement: 10 },
     { array: [0, 2, 4, 8], searchElement: 8 },
-])("array.findIndex[value] (%p)", ({ array, searchElement }) => {
+])("array.findIndex (%p)", ({ array, searchElement }) => {
     util.testFunction`
-        let arrTest = ${util.valueToString(array)};
-        return arrTest.findIndex((elem, index) => elem === ${searchElement});
+        const array = ${util.valueToString(array)};
+        return array.findIndex((elem, index, arr) => elem === ${searchElement} && arr[index] === elem);
     `.expectToMatchJsResult();
 });
-
-test.each([{ array: [0, 2, 4, 8], expected: 3, value: 8 }, { array: [0, 2, 4, 8], expected: 1, value: 2 }])(
-    "array.findIndex[index] (%p)",
-    ({ array, expected, value }) => {
-        util.testFunctionTemplate`
-            let array = ${array};
-            return array.findIndex((elem, index, arr) => {
-                return index === ${expected} && arr[${expected}] === ${value};
-            });
-        `.expectToMatchJsResult();
-    }
-);
 
 test.each([
     { array: [], func: "x => x" },
@@ -245,22 +214,20 @@ test.each([
 });
 
 test.each([
-    { inp: [], start: 1, end: 2 },
-    { inp: [0, 1, 2, 3], start: 1, end: 2 },
-    { inp: [0, 1, 2, 3], start: 1, end: 1 },
-    { inp: [0, 1, 2, 3], start: 1, end: -1 },
-    { inp: [0, 1, 2, 3], start: -3, end: -1 },
-    { inp: [0, 1, 2, 3, 4, 5], start: 1, end: 3 },
-    { inp: [0, 1, 2, 3, 4, 5], start: 3 },
-])("array.slice (%p)", ({ inp, start, end }) => {
-    util.testExpression`${util.valueToString(inp)}.slice(${start}, ${end})`.expectToMatchJsResult();
-});
-
-test("array.slice no argument", () => {
-    util.testExpression`[2, 3, 4, 5].slice()`.expectToMatchJsResult();
+    { array: [2, 3, 4, 5], args: [] },
+    { array: [], args: [1, 2] },
+    { array: [0, 1, 2, 3], args: [1, 2] },
+    { array: [0, 1, 2, 3], args: [1, 1] },
+    { array: [0, 1, 2, 3], args: [1, -1] },
+    { array: [0, 1, 2, 3], args: [-3, -1] },
+    { array: [0, 1, 2, 3, 4, 5], args: [1, 3] },
+    { array: [0, 1, 2, 3, 4, 5], args: [3] },
+])("array.slice (%p)", ({ array, args }) => {
+    util.testExpression`${util.valueToString(array)}.slice(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
 
 test.each([
+    // Insert
     { array: [], start: 0, deleteCount: 0, newElements: [9, 10, 11] },
     { array: [0, 1, 2, 3], start: 1, deleteCount: 0, newElements: [9, 10, 11] },
     { array: [0, 1, 2, 3], start: 2, deleteCount: 2, newElements: [9, 10, 11] },
@@ -270,15 +237,8 @@ test.each([
     { array: [0, 1, 2, 3], start: -3, deleteCount: 0, newElements: [8, 9] },
     { array: [0, 1, 2, 3, 4, 5], start: 5, deleteCount: 9, newElements: [10, 11] },
     { array: [0, 1, 2, 3, 4, 5], start: 3, deleteCount: 2, newElements: [3, 4, 5] },
-])("array.splice[Insert] (%p)", ({ array, start, deleteCount, newElements }) => {
-    util.testFunction`
-        const array = ${util.valueToString(array)};
-        array.splice(${start}, ${deleteCount}, ${util.valuesToString(newElements)});
-        return array;
-    `.expectToMatchJsResult();
-});
 
-test.each([
+    // Remove
     { array: [], start: 1, deleteCount: 1 },
     { array: [0, 1, 2, 3], start: 1, deleteCount: 1 },
     { array: [0, 1, 2, 3], start: 10, deleteCount: 1 },
@@ -289,7 +249,7 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], start: -2 },
     { array: [0, 1, 2, 3, 4, 5], start: 2, deleteCount: 2 },
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: 9, newElements: [10, 11] },
-])("array.splice[Remove] (%p)", ({ array, start, deleteCount, newElements = [] }) => {
+])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
     util.testFunction`
         const array = ${util.valueToString(array)};
         array.splice(${util.valuesToString([start, deleteCount, ...newElements])});
@@ -310,8 +270,8 @@ test.each([
     { array: [1, 2, "test"], args: ["test", ["test1", "test2"]] },
 ])("array.concat (%p)", ({ array, args }) => {
     util.testFunction`
-        let concatTestTable: any[] = ${util.valueToString(array)};
-        return concatTestTable.concat(${util.valuesToString(args)});
+        const array: any[] = ${util.valueToString(array)};
+        return array.concat(${util.valuesToString(args)});
     `.expectToMatchJsResult();
 });
 
@@ -322,10 +282,7 @@ test.each([
     { array: ["test1", "test2"], separator: ";" },
     { array: ["test1", "test2"], separator: "" },
 ])("array.join (%p)", ({ array, separator }) => {
-    util.testFunction`
-        const joinTestTable = ${util.valueToString(array)};
-        return joinTestTable.join(${util.valueToString(separator)});
-    `.expectToMatchJsResult();
+    util.testExpression`${util.valueToString(array)}.join(${util.valueToString(separator)})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -340,11 +297,11 @@ test.each([
     util.testExpression`${util.valueToString(array)}.indexOf(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
 
-test.each([[1], [1, 2, 3]])("array.push (%p)", (...args) => {
+test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) => {
     util.testFunction`
-        let testArray = [0];
-        testArray.push(${util.valuesToString(args)});
-        return testArray;
+        const array = [0];
+        const value = array.push(${util.valuesToString(args)});
+        return { array, value };
     `.expectToMatchJsResult();
 });
 
@@ -353,43 +310,46 @@ test.each([{ array: [1, 2, 3], expected: [3, 2] }, { array: [1, 2, 3, null], exp
     "array.pop (%p)",
     ({ array, expected }) => {
         util.testFunction`
-            let array = ${util.valueToString(array)};
-            let value = array.pop();
+            const array = ${util.valueToString(array)};
+            const value = array.pop();
             return [value, array.length];
         `.expectToEqual(expected);
     }
 );
 
-test.each([[1, 2, 3], [1, 2, 3, 4], [1], []])("array.reverse (%p)", (...array) => {
-    util.testFunction`
-        let array = ${util.valueToString(array)};
-        let val = array.reverse();
-        return array;
-    `.expectToMatchJsResult();
-});
+test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { array: [] }])(
+    "array.reverse (%p)",
+    ({ array }) => {
+        util.testFunction`
+            const array = ${util.valueToString(array)};
+            array.reverse();
+            return array;
+        `.expectToMatchJsResult();
+    }
+);
 
-test.each([[1, 2, 3], [1], []])("array.shift (%p)", (...array) => {
+test.each([{ array: [1, 2, 3] }, { array: [1] }, { array: [] }])("array.shift (%p)", ({ array }) => {
     util.testFunction`
-        let array = ${util.valueToString(array)};
-        let value = array.shift();
+        const array = ${util.valueToString(array)};
+        const value = array.shift();
         return { array, value };
     `.expectToMatchJsResult();
 });
 
 test.each([
-    { array: "[3, 4, 5]", args: [1, 2] },
-    { array: "[]", args: [] },
-    { array: "[1]", args: [] },
-    { array: "[]", args: [1] },
+    { array: [3, 4, 5], args: [1, 2] },
+    { array: [], args: [] },
+    { array: [1], args: [] },
+    { array: [], args: [1] },
 ])("array.unshift (%p)", ({ array, args }) => {
     util.testFunction`
-        let array = ${array};
-        array.unshift(${util.valuesToString(args)});
-        return array;
+        const array = ${util.valueToString(array)};
+        const value = array.unshift(${util.valuesToString(args)});
+        return { array, value };
     `.expectToMatchJsResult();
 });
 
-test.each([[[4, 5, 3, 2, 1]], [[1]], [[]]])("array.sort (%p)", array => {
+test.each([{ array: [4, 5, 3, 2, 1] }, { array: [1] }, { array: [] }])("array.sort (%p)", ({ array }) => {
     util.testFunctionTemplate`
         const array = ${array};
         array.sort();
@@ -430,61 +390,13 @@ test.each([
     util.testExpressionTemplate`${array}.flatMap(${map})`.expectToEqual(expected);
 });
 
-test.each<(total: number, currentItem: number) => number>([
-    (total, currentItem) => total + currentItem,
-    (total, currentItem) => total * currentItem,
-])("array reduce (%p)", reducer => {
-    util.testExpressionTemplate`[1, 3, 5, 7].reduce(${reducer})`.expectToMatchJsResult();
+test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
+    [[(total, currentItem) => total + currentItem]],
+    [[(total, currentItem) => total * currentItem]],
+    [[(total, currentItem) => total + currentItem, 10]],
+    [[(total, currentItem) => total * currentItem, 10]],
+    [[(total, _, index, array) => total + array[index]]],
+    [[(a, b) => a + b]],
+])("array.reduce (%p)", args => {
+    util.testExpression`[1, 3, 5, 7].reduce(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
-
-test.each<(total: number, currentItem: number) => number>([
-    (total, currentItem) => total + currentItem,
-    (total, currentItem) => total * currentItem,
-])("array reduce with initial value (%p)", reducer => {
-    util.testExpressionTemplate`[1, 3, 5, 7].reduce(${reducer}, 10)`.expectToMatchJsResult();
-});
-
-test("array reduce index & array arguments (%p)", () => {
-    util.testExpression`[1, 3, 5, 7].reduce((total, _, index, array) => total + array[index])`.expectToMatchJsResult();
-});
-
-test("array reduce index & array arguments (%p)", () => {
-    util.testExpression`[].reduce((a, b) => a + b)`.expectToEqual(
-        new util.ExecutionError("Reduce of empty array with no initial value")
-    );
-});
-
-test.each([0, 1, 2])("Array with OmittedExpression", index => {
-    const result = util.transpileAndExecute(
-        `const myarray = [1, , 2];
-        return myarray[${index}];`
-    );
-
-    expect(result).toBe([1, , 2][index]);
-});
-
-test("OmittedExpression in Array Binding Assignment Statement", () => {
-    const result = util.transpileAndExecute(
-        `let a, c;
-        [a, , c] = [1, 2, 3];
-        return a + c;`
-    );
-
-    expect(result).toBe(4);
-});
-
-test("array access call", () => {
-    const code = `
-        const arr = [() => "foo", () => "bar"];
-        return arr[1]();`;
-    expect(util.transpileAndExecute(code)).toBe("bar");
-});
-
-test.each([`["foo", "bar"].length`, `["foo", "bar"][0]`, `[() => "foo", () => "bar"][0]()`])(
-    "array literal property access (%p)",
-    expression => {
-        const code = `return ${expression}`;
-        const expectResult = eval(expression);
-        expect(util.transpileAndExecute(code)).toBe(expectResult);
-    }
-);

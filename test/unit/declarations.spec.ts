@@ -11,24 +11,6 @@ test("Declaration function call", () => {
     expect(result).toBe(10);
 });
 
-test("Declaration function call tupleReturn", () => {
-    const libLua = `function declaredFunction(x) return x, 2*x + 1 end`;
-
-    const tsHeader = `
-        /** @tupleReturn */
-        declare function declaredFunction(this: void, x: number): [number, number];
-    `;
-
-    const source = `
-        const tuple = declaredFunction(3);
-        const [destructedLeft, destructedRight] = declaredFunction(2);
-        return \`\${tuple[0] + destructedLeft},\${tuple[1] + destructedRight}\`;
-    `;
-
-    const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
-    expect(result).toBe("5,12");
-});
-
 test("Declaration namespace function call", () => {
     const libLua = `
         myNameSpace = {}

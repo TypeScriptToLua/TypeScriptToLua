@@ -1,4 +1,3 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {
@@ -80,16 +79,6 @@ test("null instanceof Class", () => {
         class myClass {}
         return (null as any) instanceof myClass;
     `.expectToMatchJsResult();
-});
-
-test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
-    util.testModule`
-        declare class A {}
-        /** @${extensionType} **/
-        class B extends A {}
-        declare const foo: any;
-        const result = foo instanceof B;
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidInstanceOfExtension(util.nodeStub));
 });
 
 test("instanceof export", () => {

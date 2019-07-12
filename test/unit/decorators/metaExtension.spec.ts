@@ -1,5 +1,5 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
+import * as TSTLErrors from "../../../src/TSTLErrors";
+import * as util from "../../util";
 
 test("MetaExtension", () => {
     const tsHeader = `

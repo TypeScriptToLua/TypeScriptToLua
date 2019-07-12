@@ -733,28 +733,6 @@ test.each([{ input: "(new Foo())", expectResult: "foo" }, { input: "Foo", expect
     }
 );
 
-test.each(["extension", "metaExtension"])("Class extends extension (%p)", extensionType => {
-    const code = `
-        declare class A {}
-        /** @${extensionType} **/
-        class B extends A {}
-        class C extends B {}
-    `;
-    expect(() => util.transpileString(code)).toThrowExactError(TSTLErrors.InvalidExtendsExtension(util.nodeStub));
-});
-
-test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
-    const code = `
-        declare class A {}
-        /** @${extensionType} **/
-        class B extends A {}
-        const b = new B();
-    `;
-    expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub)
-    );
-});
-
 test("Class static instance of self", () => {
     const code = `
         class Foo {

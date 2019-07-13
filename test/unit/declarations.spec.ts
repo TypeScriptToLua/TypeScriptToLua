@@ -11,20 +11,6 @@ test("Declaration function call", () => {
     expect(result).toBe(10);
 });
 
-test("Declaration namespace function call", () => {
-    const libLua = `
-        myNameSpace = {}
-        function myNameSpace.declaredFunction(x) return 3*x end
-    `;
-
-    const tsHeader = `declare namespace myNameSpace { function declaredFunction(this: void, x: number): number; }`;
-
-    const source = `return myNameSpace.declaredFunction(2) + 4;`;
-
-    const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
-    expect(result).toBe(10);
-});
-
 test("Declaration interface function call", () => {
     const libLua = `
         myInterfaceInstance = {}
@@ -73,45 +59,4 @@ test("Declaration instance function callback", () => {
 
     const result = util.transpileAndExecute(source, undefined, libLua, tsHeader);
     expect(result).toBe(20);
-});
-
-test("ImportEquals declaration", () => {
-    const header = `
-        namespace outerNamespace {
-            export namespace innerNamespace {
-                export function func() { return "foo" }
-            }
-        };
-
-        import importedFunc = outerNamespace.innerNamespace.func;
-    `;
-
-    const execution = `return importedFunc();`;
-
-    const result = util.transpileAndExecute(execution, undefined, undefined, header);
-    expect(result).toEqual("foo");
-});
-
-test("ImportEquals declaration ambient", () => {
-    const header = `
-        declare namespace outerNamespace {
-            namespace innerNamespace {
-                function func(): string;
-            }
-        };
-
-        import importedFunc = outerNamespace.innerNamespace.func;
-    `;
-
-    const luaHeader = `outerNamespace = {
-        innerNamespace = {
-            func = function() return "foo" end
-        }
-    }
-    `;
-
-    const execution = `return importedFunc();`;
-
-    const result = util.transpileAndExecute(execution, undefined, luaHeader, header);
-    expect(result).toEqual("foo");
 });

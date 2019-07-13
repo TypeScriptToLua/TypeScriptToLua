@@ -1675,16 +1675,27 @@ export class LuaTransformer {
         for (const enumMember of this.computeEnumMembers(enumDeclaration)) {
             const memberName = this.transformPropertyName(enumMember.name);
             if (membersOnly) {
+                const enumSymbol = this.checker.getSymbolAtLocation(enumDeclaration.name);
+                const exportScope = enumSymbol ? this.getSymbolExportScope(enumSymbol) : undefined;
+
                 if (tstl.isIdentifier(memberName)) {
                     result.push(
-                        ...this.createLocalOrExportedOrGlobalDeclaration(memberName, enumMember.value, enumDeclaration)
+                        ...this.createLocalOrExportedOrGlobalDeclaration(
+                            memberName,
+                            enumMember.value,
+                            enumDeclaration,
+                            undefined,
+                            exportScope
+                        )
                     );
                 } else {
                     result.push(
                         ...this.createLocalOrExportedOrGlobalDeclaration(
                             tstl.createIdentifier(enumMember.name.getText(), enumMember.name),
                             enumMember.value,
-                            enumDeclaration
+                            enumDeclaration,
+                            undefined,
+                            exportScope
                         )
                     );
                 }
@@ -4087,7 +4098,16 @@ export class LuaTransformer {
         const decorators = tsHelper.getCustomDecorators(type, this.checker);
         // Do not output path for member only enums
         if (decorators.has(DecoratorKind.CompileMembersOnly)) {
-            return tstl.createIdentifier(property, expression);
+            if (ts.isPropertyAccessExpression(expression.expression)) {
+                // in case of ...x.enum.y transform to ...x.y
+                return tstl.createTableIndexExpression(
+                    this.transformExpression(expression.expression.expression),
+                    tstl.createStringLiteral(property),
+                    expression
+                );
+            } else {
+                return tstl.createIdentifier(property, expression);
+            }
         }
 
         if (decorators.has(DecoratorKind.LuaTable)) {
@@ -5161,7 +5181,8 @@ export class LuaTransformer {
         lhs: tstl.Identifier | tstl.Identifier[],
         rhs?: tstl.Expression | tstl.Expression[],
         tsOriginal?: ts.Node,
-        parent?: tstl.Node
+        parent?: tstl.Node,
+        overrideExportScope?: ts.SourceFile | ts.ModuleDeclaration
     ): tstl.Statement[] {
         let declaration: tstl.VariableDeclarationStatement | undefined;
         let assignment: tstl.AssignmentStatement | undefined;
@@ -5173,7 +5194,7 @@ export class LuaTransformer {
             return [];
         }
 
-        const exportScope = this.getIdentifierExportScope(identifiers[0]);
+        const exportScope = overrideExportScope || this.getIdentifierExportScope(identifiers[0]);
         if (exportScope) {
             // exported
             if (!rhs) {

@@ -18,6 +18,10 @@ test.each(["a++", "a--", "--a", "++a"])("template literal with expression (%p)",
     `.expectToMatchJsResult();
 });
 
+test.each(["`foo${'bar'}`.length", "`foo${'bar'}`.repeat(2)"])("template literal property access (%p)", expression => {
+    util.testExpression(expression).expectToMatchJsResult();
+});
+
 test.each([
     "func``",
     "func`hello`",

@@ -1,5 +1,5 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
+import * as TSTLErrors from "../../../src/TSTLErrors";
+import * as util from "../../util";
 
 test("Unsupported string function", () => {
     util.testExpression`"test".testThisIsNoMember()`
@@ -67,7 +67,7 @@ test.each([
 test.each([["", ""], ["hello", "test"], ["hello", "test", "bye"], ["hello", 42], [42, "hello"]])(
     "string.concat[+] (%p)",
     (...elements) => {
-        util.testExpression(elements.map(e => util.valueToString(e)).join(" + "));
+        util.testExpression(elements.map(e => util.valueToString(e)).join(" + ")).expectToMatchJsResult();
     }
 );
 
@@ -248,12 +248,3 @@ test.each(padCases)("string.padStart (%p)", ({ inp, args }) => {
 test.each(padCases)("string.padEnd (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".padEnd(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
-
-test.each([`"foobar".length`, `"foobar".repeat(2)`, "`foo${'bar'}`.length", "`foo${'bar'}`.repeat(2)"])(
-    "string literal property access (%p)",
-    expression => {
-        const code = `return ${expression}`;
-        const expectResult = eval(expression);
-        expect(util.transpileAndExecute(code)).toBe(expectResult);
-    }
-);

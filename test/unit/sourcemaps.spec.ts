@@ -4,11 +4,12 @@ import * as util from "../util";
 
 test.each([
     {
-        typeScriptSource: `
+        code: `
             const abc = "foo";
             const def = "bar";
 
-            const xyz = "baz";`,
+            const xyz = "baz";
+        `,
 
         assertPatterns: [
             { luaPattern: "abc", typeScriptPattern: "abc" },
@@ -20,26 +21,28 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
             function abc() {
                 return def();
             }
+
             function def() {
                 return "foo";
             }
-            return abc();`,
+        `,
 
         assertPatterns: [
             { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
             { luaPattern: "function def(", typeScriptPattern: "function def() {" },
-            { luaPattern: "return abc(", typeScriptPattern: "return abc(" },
+            { luaPattern: "return def(", typeScriptPattern: "return def(" },
             { luaPattern: "end", typeScriptPattern: "function def() {" },
         ],
     },
     {
-        typeScriptSource: `
+        code: `
             const enum abc { foo = 2, bar = 4 };
-            const xyz = abc.foo;`,
+            const xyz = abc.foo;
+        `,
 
         assertPatterns: [
             { luaPattern: "xyz", typeScriptPattern: "xyz" },
@@ -47,8 +50,9 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
-            import {Foo} from "foo";
+        code: `
+            // @ts-ignore
+            import { Foo } from "foo";
             Foo;
         `,
 
@@ -58,7 +62,8 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
+            // @ts-ignore
             import * as Foo from "foo";
             Foo;
         `,
@@ -69,7 +74,8 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
+            // @ts-ignore
             class Bar extends Foo {
                 constructor() {
                     super();
@@ -92,7 +98,7 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
             class Foo {
             }
         `,
@@ -100,7 +106,7 @@ test.each([
         assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
     },
     {
-        typeScriptSource: `
+        code: `
             class Foo {
                 bar = "baz";
             }
@@ -109,7 +115,7 @@ test.each([
         assertPatterns: [{ luaPattern: "function Foo.prototype.____constructor", typeScriptPattern: "class Foo" }],
     },
     {
-        typeScriptSource: `
+        code: `
             declare const arr: string[];
             for (const element of arr) {}
         `,
@@ -120,7 +126,7 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
             declare function getArr(this: void): string[];
             for (const element of getArr()) {}
         `,
@@ -132,7 +138,7 @@ test.each([
         ],
     },
     {
-        typeScriptSource: `
+        code: `
             declare const arr: string[]
             for (let i = 0; i < arr.length; ++i) {}
         `,
@@ -143,31 +149,28 @@ test.each([
             { luaPattern: "i + 1", typeScriptPattern: "++i" },
         ],
     },
-])("Source map has correct mapping (%p)", async ({ typeScriptSource, assertPatterns }) => {
-    // Act
-    const { file } = util.transpileStringResult(typeScriptSource);
-
-    // Assert
-    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
+    const file = util
+        .testModule(code)
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
         const luaPosition = lineAndColumnOf(file.lua, luaPattern);
         const mappedPosition = consumer.originalPositionFor(luaPosition);
+        const typescriptPosition = lineAndColumnOf(code, typeScriptPattern);
 
-        const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
-
-        const mappedLineColumn = { line: mappedPosition.line, column: mappedPosition.column };
-        expect(mappedLineColumn).toEqual(typescriptPosition);
+        expect(mappedPosition).toMatchObject(typescriptPosition);
     }
 });
 
 test("Source map has correct sources", async () => {
-    const code = `const foo = "foo"`;
-
-    const { file } = util.transpileStringResult(code);
-
-    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+    const file = util.testModule`
+        const foo = "foo"
+    `
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     expect(consumer.sources.length).toBe(1);
@@ -175,11 +178,11 @@ test("Source map has correct sources", async () => {
 });
 
 test("Source map has correct source root", async () => {
-    const code = `const foo = "foo"`;
-
-    const { file } = util.transpileStringResult(code);
-
-    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+    const file = util.testModule`
+        const foo = "foo"
+    `
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const sourceMap = JSON.parse(file.sourceMap);
     expect(sourceMap.sourceRoot).toBe(".");
@@ -189,14 +192,15 @@ test.each([
     { code: `const type = "foobar";`, name: "type" },
     { code: `const and = "foobar";`, name: "and" },
     { code: `const $$$ = "foobar";`, name: "$$$" },
-    { code: `const foo = { bar() { console.log(this); } };`, name: "this" },
+    { code: `const foo = { bar() { this; } };`, name: "this" },
     { code: `function foo($$$: unknown) {}`, name: "$$$" },
     { code: `class $$$ {}`, name: "$$$" },
     { code: `namespace $$$ { const foo = "bar"; }`, name: "$$$" },
 ])("Source map has correct name mappings (%p)", async ({ code, name }) => {
-    const { file } = util.transpileStringResult(code);
-
-    if (!util.expectToBeDefined(file.lua) || !util.expectToBeDefined(file.sourceMap)) return;
+    const file = util
+        .testModule(code)
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     const typescriptPosition = lineAndColumnOf(code, name);
@@ -206,41 +210,30 @@ test.each([
             mappedName = mapping.name;
         }
     });
+
     expect(mappedName).toBe(name);
 });
 
 test("sourceMapTraceback saves sourcemap in _G", () => {
-    // Arrange
-    const typeScriptSource = `
+    const code = `
         function abc() {
             return "foo";
         }
-        return JSONStringify(_G.__TS__sourcemap);`;
 
-    const options: tstl.CompilerOptions = {
-        sourceMapTraceback: true,
-        luaLibImport: tstl.LuaLibImportKind.Inline,
-    };
+        return (globalThis as any).__TS__sourcemap;
+    `;
 
-    // Act
-    const transpiledLua = util.transpileString(typeScriptSource, options);
+    const builder = util
+        .testFunction(code)
+        .setOptions({ sourceMapTraceback: true, luaLibImport: tstl.LuaLibImportKind.Inline });
 
-    const sourceMapJson = util.transpileAndExecute(
-        typeScriptSource,
-        options,
-        undefined,
-        "declare const _G: {__TS__sourcemap: any};"
-    );
+    const sourceMap = builder.getLuaExecutionResult();
+    const transpiledLua = builder.getMainLuaCodeChunk();
 
-    // Assert
-    expect(sourceMapJson).toBeDefined();
-
-    const sourceMap = JSON.parse(sourceMapJson);
-
+    expect(sourceMap).toEqual(expect.any(Object));
     const sourceMapFiles = Object.keys(sourceMap);
-
-    expect(sourceMapFiles.length).toBe(1);
-    expect(sourceMap[sourceMapFiles[0]]).toBeDefined();
+    expect(sourceMapFiles).toHaveLength(1);
+    const mainSourceMap = sourceMap[sourceMapFiles[0]];
 
     const assertPatterns = [
         { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
@@ -249,37 +242,36 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
 
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
         const luaPosition = lineAndColumnOf(transpiledLua, luaPattern);
-        const mappedLine = sourceMap[sourceMapFiles[0]][luaPosition.line.toString()];
+        const mappedLine = mainSourceMap[luaPosition.line.toString()];
 
-        const typescriptPosition = lineAndColumnOf(typeScriptSource, typeScriptPattern);
-
-        // Add 1 to account for transpiledAndExecute-added function header
-        expect(mappedLine).toEqual(typescriptPosition.line + 1);
+        const typescriptPosition = lineAndColumnOf(code, typeScriptPattern);
+        expect(mappedLine).toEqual(typescriptPosition.line);
     }
 });
 
 test("Inline sourcemaps", () => {
-    const typeScriptSource = `
+    const code = `
         function abc() {
             return def();
         }
+
         function def() {
             return "foo";
         }
-        return abc();`;
 
-    const compilerOptions: tstl.CompilerOptions = { inlineSourceMap: true };
+        return abc();
+    `;
 
-    const { file } = util.transpileStringResult(typeScriptSource, compilerOptions);
-    if (!util.expectToBeDefined(file.lua)) return;
+    const file = util
+        .testFunction(code)
+        .setOptions({ inlineSourceMap: true })
+        .expectToMatchJsResult()
+        .getMainLuaFileResult();
 
     const inlineSourceMapMatch = file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/);
-
     if (util.expectToBeDefined(inlineSourceMapMatch)) {
         const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
         expect(file.sourceMap).toBe(inlineSourceMap);
-
-        expect(util.executeLua(file.lua)).toBe("foo");
     }
 });
 

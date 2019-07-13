@@ -981,3 +981,39 @@ test.each([
         ).message
     );
 });
+
+test("do...while", () => {
+    const code = `
+        let result = 0;
+        do {
+            ++result;
+        } while (result < 2);
+        return result;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(2);
+});
+
+test("do...while scoping", () => {
+    const code = `
+        let x = 0;
+        let result = 0;
+        do {
+            let x = 1;
+            ++result;
+        } while (x === 0 && result < 2);
+        return result;
+    `;
+    expect(util.transpileAndExecute(code)).toBe(2);
+});
+
+test("do...while double-negation", () => {
+    const code = `
+        let result = 0;
+        do {
+            ++result;
+        } while (!(result >= 2));
+        return result;
+    `;
+    expect(util.transpileString(code)).not.toMatch("not");
+    expect(util.transpileAndExecute(code)).toBe(2);
+});

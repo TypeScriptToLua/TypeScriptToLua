@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
+import * as TSTLErrors from "../../../src/TSTLErrors";
+import * as util from "../../util";
 
 test("ClassFieldInitializer", () => {
     const result = util.transpileAndExecute(

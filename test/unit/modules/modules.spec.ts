@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
+import * as TSTLErrors from "../../../src/TSTLErrors";
+import * as util from "../../util";
 
 describe("module import/export elision", () => {
     const moduleDeclaration = `
@@ -45,8 +45,7 @@ describe("module import/export elision", () => {
 
     test("should elide type exports", () => {
         util.testModule`
-            declare const _G: any;
-            _G.foo = true;
+            (globalThis as any).foo = true;
             type foo = boolean;
             export { foo };
         `.expectToEqual([]);
@@ -54,18 +53,18 @@ describe("module import/export elision", () => {
 });
 
 test.each([
-    "export { default } from '...'",
-    "export { x as default } from '...';",
-    "export { default as x } from '...';",
-])("Export default keyword disallowed (%p)", exportStatement => {
-    util.testFunction(exportStatement)
+    `export { default } from "..."`,
+    `export { x as default } from "...";`,
+    `export { default as x } from "...";`,
+])("Export default disallowed (%p)", exportStatement => {
+    util.testModule(exportStatement)
         .disableSemanticCheck()
         .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedDefaultExport(util.nodeStub));
 });
 
-test("defaultImport", () => {
+test("Import default disallowed", () => {
     util.testModule`
-        import Test from "test";
+        import Test from "...";
     `
         .disableSemanticCheck()
         .expectToHaveDiagnosticOfError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));

@@ -41,7 +41,9 @@ test.each([
 test("console.differentiation", () => {
     util.testModule`
         export class Console {
-            test() { return 42; }
+            public test() {
+                return 42;
+            }
         }
 
         function test() {

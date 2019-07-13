@@ -1,4 +1,5 @@
 import * as tstl from "../../../src";
+import * as TSTLErrors from "../../../src/TSTLErrors";
 import * as util from "../../util";
 
 describe("luaLibImport", () => {
@@ -34,4 +35,32 @@ test("lualibs should not include tstl header", () => {
         const arr = [1, 2, 3];
         arr.push(4);
     `.tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("Generated with"));
+});
+
+test("Incompatible fromCodePoint expression error", () => {
+    util.testExpression`String.fromCodePoint(123)`
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(
+            TSTLErrors.UnsupportedForTarget("string property fromCodePoint", tstl.LuaTarget.Lua53, util.nodeStub)
+        );
+});
+
+test("Unknown string expression error", () => {
+    util.testExpression`String.abcd()`
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(
+            TSTLErrors.UnsupportedForTarget("string property abcd", tstl.LuaTarget.Lua53, util.nodeStub)
+        );
+});
+
+test("Unsupported array function error", () => {
+    util.testFunction`[].unknownFunction()`
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub));
+});
+
+test("Unsupported math property error", () => {
+    util.testExpression`Math.unknownProperty`
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub));
 });

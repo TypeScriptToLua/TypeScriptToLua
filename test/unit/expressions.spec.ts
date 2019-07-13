@@ -3,6 +3,15 @@ import * as tstl from "../../src";
 import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
+// TODO:
+test("Block statement", () => {
+    util.testFunction`
+        let a = 4;
+        { let a = 42; }
+        return a;
+    `.expectToMatchJsResult();
+});
+
 test.each([
     "i++",
     "++i",
@@ -129,134 +138,6 @@ test("Undefined Expression", () => {
     expect(util.transpileString("undefined")).toBe("local ____ = nil");
 });
 
-test.each([
-    { input: "true ? 'a' : 'b'" },
-    { input: "false ? 'a' : 'b'" },
-    { input: "true ? false : true" },
-    { input: "false ? false : true" },
-    { input: "true ? literalValue : true" },
-    { input: "true ? variableValue : true" },
-    { input: "true ? maybeUndefinedValue : true" },
-    { input: "true ? maybeBooleanValue : true" },
-    { input: "true ? maybeUndefinedValue : true", options: { strictNullChecks: true } },
-    { input: "true ? maybeBooleanValue : true", options: { strictNullChecks: true } },
-    { input: "true ? undefined : true", options: { strictNullChecks: true } },
-    { input: "true ? null : true", options: { strictNullChecks: true } },
-    { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
-    { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-    { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-])("Ternary operator (%p)", ({ input, options }) => {
-    util.testFunction`
-        const literalValue = "literal";
-        let variableValue: string;
-        let maybeBooleanValue: string | boolean = false;
-        let maybeUndefinedValue: string | undefined;
-        return ${input};
-    `
-        .setOptions(options)
-        .expectToMatchJsResult();
-});
-
-test.each([
-    { condition: true, lhs: 4, rhs: 5 },
-    { condition: false, lhs: 4, rhs: 5 },
-    { condition: 3, lhs: 4, rhs: 5 },
-])("Ternary Conditional (%p)", ({ condition, lhs, rhs }) => {
-    util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`.expectToMatchJsResult();
-});
-
-test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", condition => {
-    util.testFunction`
-        let a = 3;
-        let delay = () => ${condition} ? a + 3 : a + 5;
-        a = 8;
-        return delay();
-    `.expectToMatchJsResult();
-});
-
-test.each([
-    "inst.field",
-    "inst.field + 3",
-    "inst.field * 3",
-    "inst.field / 2",
-    "inst.field && 3",
-    "inst.field || 3",
-    "(inst.field + 3) & 3",
-    "inst.field | 3",
-    "inst.field << 3",
-    "inst.field >>> 1",
-    "inst.field = 3",
-    `"abc" + inst.field`,
-])("Get accessor expression (%p)", expression => {
-    util.testFunction`
-        class MyClass {
-            public _field: number;
-            public get field(): number { return this._field + 4; }
-            public set field(v: number) { this._field = v; }
-        }
-        var inst = new MyClass();
-        inst._field = 4;
-        return ${expression};
-    `.expectToMatchJsResult();
-});
-
-test.each(["= 4", "-= 3", "+= 3", "*= 3", "/= 2", "&= 3", "|= 3", "<<= 3", ">>>= 3"])(
-    "Set accessorExpression (%p)",
-    expression => {
-        util.testFunction`
-            class MyClass {
-                public _field: number = 4;
-                public get field(): number { return this._field; }
-                public set field(v: number) { this._field = v + 4; }
-            }
-            var inst = new MyClass();
-            inst.field ${expression};
-            return inst._field;
-        `.expectToMatchJsResult();
-    }
-);
-
-test.each(["inst.baseField", "inst.field", "inst.superField", "inst.superBaseField"])(
-    "Inherited accessors (%p)",
-    expression => {
-        util.testFunction`
-            class MyBaseClass {
-                public _baseField: number;
-                public get baseField(): number { return this._baseField + 6; }
-                public set baseField(v: number) { this._baseField = v; }
-            }
-            class MyClass extends MyBaseClass {
-                public _field: number;
-                public get field(): number { return this._field + 4; }
-                public set field(v: number) { this._field = v; }
-            }
-            class MySuperClass extends MyClass {
-                public _superField: number;
-                public get superField(): number { return this._superField + 2; }
-                public set superField(v: number) { this._superField = v; }
-                public get superBaseField() { return this.baseField - 3; }
-            }
-            var inst = new MySuperClass();
-            inst.baseField = 1;
-            inst.field = 2;
-            inst.superField = 3;
-            return ${expression};
-        `.expectToMatchJsResult();
-    }
-);
-
-test.each(["return x.value;", "x.value = 3; return x.value;"])("Union accessors (%p)", expression => {
-    util.testFunction`
-        class A{ get value(){ return this.v || 1; } set value(v){ this.v = v; } v: number; }
-        class B{ get value(){ return this.v || 2; } set value(v){ this.v = v; } v: number; }
-        let x: A|B = new A();
-        ${expression}
-    `.expectToMatchJsResult();
-});
-
 test.each(["i++", "i--", "++i", "--i"])("Incrementor value (%p)", expression => {
     util.testFunction`
         let i = 10;
@@ -313,95 +194,12 @@ test.each([
     `.expectToMatchJsResult();
 });
 
-test("Block expression", () => {
-    util.testFunction`
-        let a = 4;
-        { let a = 42; }
-        return a;
-    `.expectToMatchJsResult();
-});
-
 test("Non-null expression", () => {
     util.testFunction`
         function abc(): number | undefined { return 3; }
         const a: number = abc()!;
         return a;
     `.expectToMatchJsResult();
-});
-
-test("Unknown unary postfix error", () => {
-    const transformer = util.makeTestTransformer();
-
-    const mockExpression: any = {
-        operand: ts.createLiteral(false),
-        operator: ts.SyntaxKind.AsteriskToken,
-    };
-
-    expect(() =>
-        transformer.transformPostfixUnaryExpression(mockExpression as ts.PostfixUnaryExpression)
-    ).toThrowExactError(
-        TSTLErrors.UnsupportedKind("unary postfix operator", ts.SyntaxKind.AsteriskToken, util.nodeStub)
-    );
-});
-
-test("Unknown unary postfix error", () => {
-    const transformer = util.makeTestTransformer();
-
-    const mockExpression: any = {
-        operand: ts.createLiteral(false),
-        operator: ts.SyntaxKind.AsteriskToken,
-    };
-
-    expect(() =>
-        transformer.transformPrefixUnaryExpression(mockExpression as ts.PrefixUnaryExpression)
-    ).toThrowExactError(
-        TSTLErrors.UnsupportedKind("unary prefix operator", ts.SyntaxKind.AsteriskToken, util.nodeStub)
-    );
-});
-
-test("Incompatible fromCodePoint expression error", () => {
-    util.testExpression`String.fromCodePoint(123)`
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(
-            TSTLErrors.UnsupportedForTarget("string property fromCodePoint", tstl.LuaTarget.Lua53, util.nodeStub)
-        );
-});
-
-test("Unknown string expression error", () => {
-    util.testExpression`String.abcd()`
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(
-            TSTLErrors.UnsupportedForTarget("string property abcd", tstl.LuaTarget.Lua53, util.nodeStub)
-        );
-});
-
-test("Unsupported array function error", () => {
-    util.testFunction`[].unknownFunction()`
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedProperty("array", "unknownFunction", util.nodeStub));
-});
-
-test("Unsupported math property error", () => {
-    util.testExpression`Math.unknownProperty`
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedProperty("math", "unknownProperty", util.nodeStub));
-});
-
-test("Unsupported object literal element error", () => {
-    const transformer = util.makeTestTransformer();
-
-    const mockObject: any = {
-        properties: [
-            {
-                kind: ts.SyntaxKind.FalseKeyword,
-                name: ts.createIdentifier("testProperty"),
-            },
-        ],
-    };
-
-    expect(() => transformer.transformObjectLiteral(mockObject as ts.ObjectLiteralExpression)).toThrowExactError(
-        TSTLErrors.UnsupportedKind("object literal element", ts.SyntaxKind.FalseKeyword, util.nodeStub)
-    );
 });
 
 test.each([
@@ -415,17 +213,15 @@ test.each([
     "!foo()",
     "foo()",
     "typeof foo",
-    '"bar" in bar',
+    '"bar" in foo',
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
 ])("Expression statements (%p)", input => {
     util.testFunction`
         function foo() { return 17; }
-        const bar = {};
         ${input};
-        return 1;
-    `.expectToMatchJsResult();
+    `.expectNoExecutionError();
 });
 
 test("binary expression with 'as' type assertion wrapped in parenthesis", () => {

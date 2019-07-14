@@ -1,4 +1,4 @@
-import * as util from "../../util";
+import * as util from "../../../util";
 
 test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", noSelfTag => {
     const header = `

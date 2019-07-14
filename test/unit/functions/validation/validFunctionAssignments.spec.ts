@@ -1,17 +1,17 @@
-import * as util from "../../util";
+import * as util from "../../../util";
 import {
+    anonTestFunctionExpressions,
+    anonTestFunctionType,
+    noSelfTestFunctionExpressions,
+    noSelfTestFunctions,
+    noSelfTestFunctionType,
+    selfTestFunctionExpressions,
+    selfTestFunctions,
+    selfTestFunctionType,
+    TestFunction,
+    TestFunctionAssignment,
     validTestFunctionAssignments,
     validTestFunctionCasts,
-    selfTestFunctions,
-    noSelfTestFunctions,
-    TestFunctionAssignment,
-    selfTestFunctionExpressions,
-    noSelfTestFunctionExpressions,
-    selfTestFunctionType,
-    anonTestFunctionType,
-    noSelfTestFunctionType,
-    anonTestFunctionExpressions,
-    TestFunction,
 } from "./functionPermutations";
 
 test.each(validTestFunctionAssignments)("Valid function variable declaration (%p)", (testFunction, functionType) => {

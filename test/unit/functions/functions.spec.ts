@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
+import * as TSTLErrors from "../../../src/TSTLErrors";
+import * as util from "../../util";
 
 test("Arrow Function Expression", () => {
     util.testFunction`
@@ -9,7 +9,7 @@ test("Arrow Function Expression", () => {
     `.expectToMatchJsResult();
 });
 
-test("Returning arrow function from arrow function (%p)", () => {
+test("Returning arrow function from arrow function", () => {
     util.testFunction`
         const add = (x: number) => (y: number) => x + y;
         return add(1)(2);

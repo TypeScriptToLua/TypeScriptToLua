@@ -44,6 +44,20 @@ describe("access", () => {
         `.expectToMatchJsResult();
     });
 
+    test("tuple", () => {
+        util.testFunction`
+            const tuple: [number, number, number] = [3, 5, 1];
+            return tuple[1];
+        `.expectToMatchJsResult();
+    });
+
+    test("union with tuple", () => {
+        util.testFunction`
+            const tuple: number[] | [number, number, number] = [3, 5, 1];
+            return tuple[1];
+        `.expectToMatchJsResult();
+    });
+
     test("access in call", () => {
         util.testExpression`[() => "foo", () => "bar"][0]()`.expectToMatchJsResult();
     });
@@ -84,7 +98,7 @@ describe("access", () => {
     });
 });
 
-describe(".length", () => {
+describe("array.length", () => {
     describe("get", () => {
         test("union", () => {
             util.testFunction`
@@ -97,6 +111,13 @@ describe(".length", () => {
             util.testFunction`
                 const array = Object.assign([3, 5, 1], { foo: "bar" });
                 return array.length;
+            `.expectToMatchJsResult();
+        });
+
+        test("tuple", () => {
+            util.testFunction`
+                const tuple: [number, number, number] = [3, 5, 1];
+                return tuple.length;
             `.expectToMatchJsResult();
         });
     });
@@ -149,6 +170,17 @@ describe("delete", () => {
             return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
         `.expectToMatchJsResult();
     });
+});
+
+test("tuple.forEach", () => {
+    util.testFunction`
+        const tuple: [number, number, number] = [3, 5, 1];
+        let count = 0;
+        tuple.forEach(value => {
+            count += value;
+        });
+        return count;
+    `.expectToMatchJsResult();
 });
 
 test("array.forEach (%p)", () => {

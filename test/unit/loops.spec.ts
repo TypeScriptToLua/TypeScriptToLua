@@ -274,6 +274,15 @@ test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expec
     expect(result).toBe(JSON.stringify(expected));
 });
 
+test("Tuple loop", () => {
+    util.testFunction`
+        const tuple: [number, number, number] = [3,5,1];
+        let count = 0;
+        for (const value of tuple) { count += value; }
+        return count;
+    `.expectToMatchJsResult();
+});
+
 test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof existing variable (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
         `let objTest = ${JSON.stringify(inp)};

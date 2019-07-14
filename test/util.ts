@@ -453,8 +453,17 @@ export abstract class TestBuilder {
 
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
-        // tslint:disable-next-line: no-null-keyword
-        if (luaResult !== undefined || jsResult != null) {
+        if (
+            // tslint:disable-next-line: no-null-keyword
+            !(luaResult === undefined && jsResult == null) &&
+            // Assume {} and [] to be equal
+            !(
+                typeof luaResult === "object" &&
+                typeof jsResult === "object" &&
+                Object.values(luaResult).filter(x => x !== undefined).length === 0 &&
+                Object.values(jsResult).filter(x => x !== undefined).length === 0
+            )
+        ) {
             expect(luaResult).toEqual(jsResult);
         }
 

@@ -46,36 +46,6 @@ test("Tuple intersection access", () => {
     `.expectToMatchJsResult();
 });
 
-test("Tuple Destruct", () => {
-    util.testFunction`
-        function tuple(): [number, number, number] { return [3,5,1]; }
-        const [a,b,c] = tuple();
-        return b;
-    `.expectToMatchJsResult();
-});
-
-const expectNoUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack");
-
-test("Tuple Destruct Array Literal", () => {
-    util.testFunction`
-        const [a, b, c] = [3, 5, 1];
-        return b;
-    `
-        .tap(expectNoUnpack)
-        .expectToMatchJsResult();
-});
-
-test("Tuple Destruct Array Literal Extra Values", () => {
-    util.testFunction`
-        let result = "";
-        const set = () => { result = "bar"; };
-        const [a] = ["foo", set()];
-        return a + result;
-    `
-        .tap(expectNoUnpack)
-        .expectToMatchJsResult();
-});
-
 test("Tuple length", () => {
     util.testFunction`
         const tuple: [number, number, number] = [3, 5, 1];

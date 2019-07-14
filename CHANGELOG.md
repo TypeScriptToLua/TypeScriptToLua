@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.24.0
+
+- Returns in try/catch statements now properly return from the current function.
+- TypeScript's `globalThis` is now translated to lua's `_G`. Lualib functions were updated where relevant.
+
+- Fixed issue where string/table literals were missing parentheses and caused lua syntax errors.
+- Various improvements/refactorings across the codebase.
+- Fixed syntax error in for...of loops with empty destructuring argument.
+- Fixed issue with `do ... while` scope.
+- Fixed a bug with [@combileMembersOnly](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#compilemembersonly) where it would ignore anything before the enum name.
+
 ## 0.23.0
 
 - Added support for OmittedExpression in array literals and array binding patterns.

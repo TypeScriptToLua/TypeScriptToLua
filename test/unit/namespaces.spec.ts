@@ -88,6 +88,7 @@ test("declared namespace function call", () => {
 
         export const result = myNameSpace.declaredFunction(2);
     `
+        .setExport("result")
         .setLuaHeader(luaHeader)
         .expectToEqual(6);
 });

@@ -1,6 +1,6 @@
 import { Position, SourceMapConsumer } from "source-map";
-import * as tstl from "../../src";
-import * as util from "../util";
+import * as tstl from "../../../src";
+import * as util from "../../util";
 
 test.each([
     {

@@ -273,28 +273,6 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test("If dead code after return", () => {
-    util.testFunction`
-        if (true) {
-            return 3;
-            const b = 8;
-        }
-    `.expectToMatchJsResult();
-});
-
-test("switch dead code after return", () => {
-    util.testFunction`
-        switch ("abc" as string) {
-            case "def":
-                return 4;
-                let abc = 4;
-            case "abc":
-                return 5;
-                let def = 6;
-        }
-    `.expectToMatchJsResult();
-});
-
 test("switch not allowed in 5.1", () => {
     util.testFunction`
         switch ("abc") {}

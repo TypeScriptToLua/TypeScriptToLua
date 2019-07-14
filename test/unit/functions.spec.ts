@@ -208,20 +208,6 @@ test("Invalid property access call transpilation", () => {
     );
 });
 
-test("Function dead code after return", () => {
-    util.testFunction`
-        function abc() { return 3; const a = 5; }
-        return abc();
-    `.expectToMatchJsResult();
-});
-
-test("Method dead code after return", () => {
-    util.testFunction`
-        class def { public static abc() { return 3; const a = 5; } }
-        return def.abc();
-    `.expectToMatchJsResult();
-});
-
 test("Recursive function definition", () => {
     util.testFunction`
         function f() { return typeof f; };

@@ -170,6 +170,24 @@ export const valueToString = (value: unknown) =>
 
 export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");
 
+export function testEachVersion<T extends TestBuilder>(
+    name: string | undefined,
+    common: () => T,
+    special: Record<tstl.LuaTarget, ((builder: T) => T) | false>
+): void {
+    for (const version of Object.values(tstl.LuaTarget) as tstl.LuaTarget[]) {
+        const specialBuilder = special[version];
+        if (specialBuilder === false) return;
+
+        const testName = name === undefined ? version : `${name} [${version}]`;
+        test(testName, () => {
+            const builder = common();
+            builder.setOptions({ luaTarget: version });
+            specialBuilder(builder);
+        });
+    }
+}
+
 interface TranspiledJsFile {
     fileName: string;
     js?: string;

@@ -213,13 +213,14 @@ test.each([
     "!foo()",
     "foo()",
     "typeof foo",
-    '"bar" in foo',
+    '"foo" in bar',
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
 ])("Expression statements (%p)", input => {
     util.testFunction`
         function foo() { return 17; }
+        const bar = { foo };
         ${input};
     `.expectNoExecutionError();
 });

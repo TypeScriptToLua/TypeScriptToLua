@@ -150,7 +150,9 @@ end"
 exports[`Transformation (do) 1`] = `
 "local e = 10
 repeat
-    e = e - 1
+    do
+        e = e - 1
+    end
 until not (e > 0)"
 `;
 

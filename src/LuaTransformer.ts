@@ -2216,14 +2216,17 @@ export class LuaTransformer {
     }
 
     public transformDoStatement(statement: ts.DoStatement): StatementVisitResult {
-        return tstl.createRepeatStatement(
-            tstl.createBlock(this.transformLoopBody(statement)),
-            tstl.createUnaryExpression(
-                tstl.createParenthesizedExpression(this.transformExpression(statement.expression)),
+        const body = tstl.createDoStatement(this.transformLoopBody(statement));
+        let condition = this.transformExpression(statement.expression);
+        if (tstl.isUnaryExpression(condition) && condition.operator === tstl.SyntaxKind.NotOperator) {
+            condition = condition.operand;
+        } else {
+            condition = tstl.createUnaryExpression(
+                tstl.createParenthesizedExpression(condition),
                 tstl.SyntaxKind.NotOperator
-            ),
-            statement
-        );
+            );
+        }
+        return tstl.createRepeatStatement(tstl.createBlock([body]), condition, statement);
     }
 
     public transformForStatement(statement: ts.ForStatement): StatementVisitResult {

@@ -348,3 +348,16 @@ test.each([`"foobar".length`, `"foobar".repeat(2)`, "`foo${'bar'}`.length", "`fo
         expect(util.transpileAndExecute(code)).toBe(expectResult);
     }
 );
+
+test.each([
+    "function generic<T extends string>(string: T)",
+    "type StringType = string; function generic<T extends StringType>(string: T)",
+])("string constrained generic foreach (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                return string.length;
+            }
+            return generic("string");
+        `;
+    expect(util.transpileAndExecute(code)).toBe(6);
+});

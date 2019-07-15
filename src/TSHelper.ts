@@ -132,7 +132,14 @@ export function isStaticNode(node: ts.Node): boolean {
     return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
-export function isStringType(type: ts.Type): boolean {
+export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    if (type.symbol) {
+        const baseConstraint = checker.getBaseConstraintOfType(type);
+        if (baseConstraint) {
+            return isStringType(baseConstraint, checker, program);
+        }
+    }
+
     return (
         (type.flags & ts.TypeFlags.String) !== 0 ||
         (type.flags & ts.TypeFlags.StringLike) !== 0 ||

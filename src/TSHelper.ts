@@ -173,7 +173,7 @@ export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, prog
 
     const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
     const typeNode = checker.typeToTypeNode(type, undefined, flags);
-    return typeNode !== undefined ? ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode) : false;
+    return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
 }
 
 export function isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {

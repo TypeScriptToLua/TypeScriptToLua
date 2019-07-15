@@ -157,9 +157,16 @@ export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, prog
         return true;
     }
 
+    if (type.symbol) {
+        const baseConstraint = checker.getBaseConstraintOfType(type);
+        if (baseConstraint) {
+            return isExplicitArrayType(baseConstraint, checker, program);
+        }
+    }
+
     const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
     const typeNode = checker.typeToTypeNode(type, undefined, flags);
-    return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
+    return typeNode !== undefined ? ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode) : false;
 }
 
 export function isFunctionType(type: ts.Type, checker: ts.TypeChecker): boolean {

@@ -226,3 +226,36 @@ test.each([`["foo", "bar"].length`, `["foo", "bar"][0]`, `[() => "foo", () => "b
         expect(util.transpileAndExecute(code)).toBe(expectResult);
     }
 );
+
+const genericChecks = [
+    "function generic<T extends number[]>(array: T)",
+    "function generic<T extends [...number[]]>(array: T)",
+    "function generic<T extends any>(array: T[])",
+    "type ArrayType = number[]; function generic<T extends ArrayType>(array: T)",
+];
+
+test.each(genericChecks)("array constrained generic foreach (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                let sum = 0;
+                array.forEach(item => {
+                    if (typeof item === "number") {
+                        sum += item;
+                    }
+                });
+                return sum;
+            }
+            return generic([1, 2, 3]);
+        `;
+    expect(util.transpileAndExecute(code)).toBe(6);
+});
+
+test.each(genericChecks)("array constrained generic length (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                return array.length;
+            }
+            return generic([1, 2, 3]);
+        `;
+    expect(util.transpileAndExecute(code)).toBe(3);
+});

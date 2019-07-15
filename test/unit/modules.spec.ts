@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 describe("module import/export elision", () => {

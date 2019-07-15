@@ -115,7 +115,7 @@ export function transpileAndExecuteProjectReturningMainExport(
     typeScriptFiles: Record<string, string>,
     exportName: string,
     options: tstl.CompilerOptions = {}
-): any {
+): [any, string] {
     const mainFile = Object.keys(typeScriptFiles).find(typeScriptFileName => typeScriptFileName === "main.ts");
     if (!mainFile) {
         throw new Error("An entry point file needs to be specified. This should be called main.ts");
@@ -138,7 +138,17 @@ export function transpileAndExecuteProjectReturningMainExport(
         ${transpileString(typeScriptFiles[mainFile])}
     end)().${exportName}`;
 
-    return executeLua(luaCode);
+    try {
+        return [executeLua(luaCode), luaCode];
+    } catch (err) {
+        throw new Error(`
+            Encountered an error when executing the following Lua code:
+
+            ${luaCode}
+
+            ${err}
+        `);
+    }
 }
 
 export function transpileExecuteAndReturnExport(

@@ -188,8 +188,8 @@ test("ImportEquals declaration require", () => {
     }
 });
 
-test.only("Export Default From", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Export Default From", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 export { default } from "./module";
@@ -205,10 +205,10 @@ test.only("Export Default From", () => {
     expect(result).toBe(true);
 });
 
-test.only.each(["export default value;", "export { value as default };"])(
+test.each(["export default value;", "export { value as default };"])(
     "Default Import and Export (%p)",
     exportStatement => {
-        const result = util.transpileAndExecuteProjectReturningMainExport(
+        const [result] = util.transpileAndExecuteProjectReturningMainExport(
             {
                 "main.ts": `
                     export * from "./module";
@@ -225,8 +225,8 @@ test.only.each(["export default value;", "export { value as default };"])(
     }
 );
 
-test.only("Default Import and Export Expression", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Default Import and Export Expression", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport from "./module";
@@ -242,8 +242,8 @@ test.only("Default Import and Export Expression", () => {
     expect(result).toBe(6);
 });
 
-test.only("Import and Export Assignment", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Import and Export Assignment", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import * as m from "./module";
@@ -259,8 +259,8 @@ test.only("Import and Export Assignment", () => {
     expect(result).toBe(true);
 });
 
-test.only("Mixed Exports, Default and Named Imports", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Mixed Exports, Default and Named Imports", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport, { a, b, c } from "./module";
@@ -279,8 +279,8 @@ test.only("Mixed Exports, Default and Named Imports", () => {
     expect(result).toBe(6);
 });
 
-test.only("Mixed Exports, Default and Namespace Import", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Mixed Exports, Default and Namespace Import", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport, * as ns from "./module";
@@ -299,8 +299,8 @@ test.only("Mixed Exports, Default and Namespace Import", () => {
     expect(result).toBe(6);
 });
 
-test.only("Export Default Function", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Export Default Function", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport from "./module";
@@ -318,8 +318,8 @@ test.only("Export Default Function", () => {
     expect(result).toBe(true);
 });
 
-test.only("Export Default Class", () => {
-    const result = util.transpileAndExecuteProjectReturningMainExport(
+test("Export Default Class", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport from "./module";

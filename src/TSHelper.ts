@@ -3,6 +3,7 @@ import * as path from "path";
 import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import * as TSTLErrors from "./TSTLErrors";
+import { EmitResolver } from "./LuaTransformer";
 
 export enum ContextType {
     None,
@@ -53,6 +54,47 @@ export function getExtendedTypeNode(
 export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.TypeChecker): ts.Type | undefined {
     const extendedTypeNode = getExtendedTypeNode(node, checker);
     return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
+}
+
+export function getExportable(exportSpecifiers: ts.NamedExports, resolver: EmitResolver): ts.ExportSpecifier[] {
+    return exportSpecifiers.elements.filter(exportSpecifier => isExportable(exportSpecifier, resolver));
+}
+
+export function isExportable(exportSpecifier: ts.ExportSpecifier, resolver: EmitResolver): boolean {
+    return resolver.isValueAliasDeclaration(exportSpecifier);
+}
+
+export function isDefaultExportSpecifier(node: ts.ExportSpecifier): boolean {
+    return (
+        (node.name !== undefined && node.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword) ||
+        (node.propertyName !== undefined && node.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
+    );
+}
+
+export function shouldResolveModulePath(moduleSpecifier: ts.Expression, checker: ts.TypeChecker): boolean {
+    const moduleOwnerSymbol = checker.getSymbolAtLocation(moduleSpecifier);
+    if (moduleOwnerSymbol) {
+        const decorators = new Map<DecoratorKind, Decorator>();
+        collectCustomDecorators(moduleOwnerSymbol, checker, decorators);
+        if (decorators.has(DecoratorKind.NoResolution)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function shouldBeImported(
+    importNode: ts.ImportClause | ts.ImportSpecifier,
+    checker: ts.TypeChecker,
+    resolver: EmitResolver
+): boolean {
+    const decorators = getCustomDecorators(checker.getTypeAtLocation(importNode), checker);
+
+    return (
+        resolver.isReferencedAliasDeclaration(importNode) &&
+        !decorators.has(DecoratorKind.Extension) &&
+        !decorators.has(DecoratorKind.MetaExtension)
+    );
 }
 
 export function isFileModule(sourceFile: ts.SourceFile): boolean {

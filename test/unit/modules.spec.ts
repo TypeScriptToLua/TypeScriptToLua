@@ -62,16 +62,6 @@ describe("module import/export elision", () => {
     });
 });
 
-test.each([
-    "export { default } from '...'",
-    "export { x as default } from '...';",
-    "export { default as x } from '...';",
-])("Export default keyword disallowed (%p)", exportStatement => {
-    expect(() => util.transpileString(exportStatement)).toThrowExactError(
-        TSTLErrors.UnsupportedDefaultExport(util.nodeStub)
-    );
-});
-
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
     "Import module names with invalid lua identifier characters (%p)",
     name => {
@@ -88,12 +78,6 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
         expect(util.executeLua(lua)).toBe("bar");
     }
 );
-
-test("defaultImport", () => {
-    expect(() => {
-        util.transpileString(`import TestClass from "test"`);
-    }).toThrowExactError(TSTLErrors.DefaultImportsNotSupported(util.nodeStub));
-});
 
 test("lualibRequire", () => {
     const lua = util.transpileString(`let a = b instanceof c;`, {

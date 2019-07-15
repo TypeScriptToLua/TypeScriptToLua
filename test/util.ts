@@ -1,3 +1,4 @@
+import * as tsHelper from "../src/TSHelper";
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import * as path from "path";
@@ -108,6 +109,36 @@ export function transpileAndExecute(
         return __runTest();`;
 
     return executeLua(lua);
+}
+
+export function transpileAndExecuteProjectReturningMainExport(
+    typeScriptFiles: Record<string, string>,
+    exportName: string,
+    options: tstl.CompilerOptions = {}
+): any {
+    const mainFile = Object.keys(typeScriptFiles).find(typeScriptFileName => typeScriptFileName === "main.ts");
+    if (!mainFile) {
+        throw new Error("An entry point file needs to be specified. This should be called main.ts");
+    }
+
+    const joinedTranspiledFiles = Object.keys(typeScriptFiles)
+        .filter(typeScriptFileName => typeScriptFileName !== "main.ts")
+        .map(typeScriptFileName => {
+            const modulePath = tsHelper.getExportPath(typeScriptFileName, options);
+            const tsCode = typeScriptFiles[typeScriptFileName];
+            const luaCode = transpileString(tsCode, options);
+            return `package.preload["${modulePath}"] = function()
+                ${luaCode}
+            end`;
+        })
+        .join("\n");
+
+    const luaCode = `return (function()
+        ${joinedTranspiledFiles}
+        ${transpileString(typeScriptFiles[mainFile])}
+    end)().${exportName}`;
+
+    return executeLua(luaCode);
 }
 
 export function transpileExecuteAndReturnExport(

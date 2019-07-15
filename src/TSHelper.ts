@@ -1,6 +1,8 @@
 import * as ts from "typescript";
+import * as path from "path";
 import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
+import * as TSTLErrors from "./TSTLErrors";
 
 export enum ContextType {
     None,
@@ -910,4 +912,56 @@ export function isSimpleExpression(expression: tstl.Expression): boolean {
             return isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
     }
     return true;
+}
+
+export function getAbsoluteImportPath(
+    relativePath: string,
+    directoryPath: string,
+    options: ts.CompilerOptions
+): string {
+    if (relativePath.charAt(0) !== "." && options.baseUrl) {
+        return path.resolve(options.baseUrl, relativePath);
+    }
+
+    return path.resolve(directoryPath, relativePath);
+}
+
+export function getImportPath(
+    fileName: string,
+    relativePath: string,
+    node: ts.Node,
+    options: ts.CompilerOptions
+): string {
+    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
+
+    const absoluteImportPath = path.format(
+        path.parse(getAbsoluteImportPath(relativePath, path.dirname(fileName), options))
+    );
+    const absoluteRootDirPath = path.format(path.parse(rootDir));
+    if (absoluteImportPath.includes(absoluteRootDirPath)) {
+        return formatPathToLuaPath(absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
+    } else {
+        throw TSTLErrors.UnresolvableRequirePath(
+            node,
+            `Cannot create require path. Module does not exist within --rootDir`,
+            relativePath
+        );
+    }
+}
+
+export function getExportPath(fileName: string, options: ts.CompilerOptions): string {
+    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
+
+    const absolutePath = path.resolve(fileName.replace(/.ts$/, ""));
+    const absoluteRootDirPath = path.format(path.parse(rootDir));
+    return formatPathToLuaPath(absolutePath.replace(absoluteRootDirPath, "").slice(1));
+}
+
+export function formatPathToLuaPath(filePath: string): string {
+    filePath = filePath.replace(/\.json$/, "");
+    if (process.platform === "win32") {
+        // Windows can use backslashes
+        filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
+    }
+    return filePath.replace(/\.\//g, "").replace(/\//g, ".");
 }

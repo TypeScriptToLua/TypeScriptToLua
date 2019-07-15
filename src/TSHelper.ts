@@ -659,11 +659,12 @@ export function getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): 
     return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(s, checker)));
 }
 
-export function escapeString(text: string): string {
+export function escapeString(text: string, exclude: RegExp[] = []): string {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String
     const escapeSequences: Array<[RegExp, string]> = [
         [/[\\]/g, "\\\\"],
-        [/[\']/g, "\\'"],
+        [/\\'/g, "\\'"],
+        [/[\`]/g, "\\\\`"],
         [/[\"]/g, '\\"'],
         [/[\n]/g, "\\n"],
         [/[\r]/g, "\\r"],
@@ -674,8 +675,14 @@ export function escapeString(text: string): string {
         [/[\0]/g, "\\0"],
     ];
 
+    const filteredEscapeSequences = escapeSequences.filter(([seq]) => {
+        return !exclude.some(ex => {
+            return ex.source === seq.source;
+        });
+    });
+
     if (text.length > 0) {
-        for (const [regex, replacement] of escapeSequences) {
+        for (const [regex, replacement] of filteredEscapeSequences) {
             text = text.replace(regex, replacement);
         }
     }

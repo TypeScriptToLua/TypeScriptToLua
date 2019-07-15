@@ -26,6 +26,7 @@ export enum SyntaxKind {
 
     // Expression
     StringLiteral,
+    MultilineStringLiteral,
     NumericLiteral,
     NilKeyword,
     DotsKeyword,
@@ -610,12 +611,27 @@ export interface StringLiteral extends Expression {
     value: string;
 }
 
+export interface MultilineStringLiteral extends Expression {
+    kind: SyntaxKind.MultilineStringLiteral;
+    value: string;
+}
+
 export function isStringLiteral(node: Node): node is StringLiteral {
-    return node.kind === SyntaxKind.StringLiteral;
+    return node.kind === SyntaxKind.StringLiteral || node.kind === SyntaxKind.MultilineStringLiteral;
 }
 
 export function createStringLiteral(value: string, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
     const expression = createNode(SyntaxKind.StringLiteral, tsOriginal, parent) as StringLiteral;
+    expression.value = value as string;
+    return expression;
+}
+
+export function createMultilineStringLiteral(
+    value: string,
+    tsOriginal?: ts.Node,
+    parent?: Node
+): MultilineStringLiteral {
+    const expression = createNode(SyntaxKind.MultilineStringLiteral, tsOriginal, parent) as MultilineStringLiteral;
     expression.value = value as string;
     return expression;
 }

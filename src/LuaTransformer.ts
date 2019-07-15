@@ -2802,8 +2802,9 @@ export class LuaTransformer {
             case ts.SyntaxKind.Identifier:
                 return this.transformIdentifierExpression(expression as ts.Identifier);
             case ts.SyntaxKind.StringLiteral:
-            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
                 return this.transformStringLiteral(expression as ts.StringLiteral);
+            case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
+                return this.transformMultilineStringLiteral(expression as ts.NoSubstitutionTemplateLiteral);
             case ts.SyntaxKind.TaggedTemplateExpression:
                 return this.transformTaggedTemplateExpression(expression as ts.TaggedTemplateExpression);
             case ts.SyntaxKind.TemplateExpression:
@@ -4817,9 +4818,14 @@ export class LuaTransformer {
         return this.transformLuaLibFunction(LuaLibFeature.Spread, expression, innerExpression);
     }
 
-    public transformStringLiteral(literal: ts.StringLiteralLike): ExpressionVisitResult {
+    public transformStringLiteral(literal: ts.StringLiteral): ExpressionVisitResult {
         const text = tsHelper.escapeString(literal.text);
         return tstl.createStringLiteral(text, literal);
+    }
+
+    public transformMultilineStringLiteral(literal: ts.NoSubstitutionTemplateLiteral): ExpressionVisitResult {
+        const text = tsHelper.escapeString(literal.text, [/[\"]/g, /[\n]/g, /[\\]/g]);
+        return tstl.createMultilineStringLiteral(text, literal);
     }
 
     public transformNumericLiteral(literal: ts.NumericLiteral): ExpressionVisitResult {
@@ -4894,18 +4900,18 @@ export class LuaTransformer {
     public transformTemplateExpression(expression: ts.TemplateExpression): ExpressionVisitResult {
         const parts: tstl.Expression[] = [];
 
-        const head = tsHelper.escapeString(expression.head.text);
+        const head = tsHelper.escapeString(expression.head.text, [/[\"]/g, /[\n]/g, /[\\]/g]);
         if (head.length > 0) {
-            parts.push(tstl.createStringLiteral(head, expression.head));
+            parts.push(tstl.createMultilineStringLiteral(head, expression.head));
         }
 
         expression.templateSpans.forEach(span => {
             const expression = this.transformExpression(span.expression);
             parts.push(this.wrapInToStringForConcat(expression));
 
-            const text = tsHelper.escapeString(span.literal.text);
+            const text = tsHelper.escapeString(span.literal.text, [/[\"]/g, /[\n]/g, /[\\]/g]);
             if (text.length > 0) {
-                parts.push(tstl.createStringLiteral(text, span.literal));
+                parts.push(tstl.createMultilineStringLiteral(text, span.literal));
             }
         });
 

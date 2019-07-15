@@ -425,6 +425,8 @@ export class LuaPrinter {
         switch (expression.kind) {
             case tstl.SyntaxKind.StringLiteral:
                 return this.printStringLiteral(expression as tstl.StringLiteral);
+            case tstl.SyntaxKind.MultilineStringLiteral:
+                return this.printMultilineStringLiteral(expression as tstl.MultilineStringLiteral);
             case tstl.SyntaxKind.NumericLiteral:
                 return this.printNumericLiteral(expression as tstl.NumericLiteral);
             case tstl.SyntaxKind.NilKeyword:
@@ -461,6 +463,23 @@ export class LuaPrinter {
 
     public printStringLiteral(expression: tstl.StringLiteral): SourceNode {
         return this.createSourceNode(expression, `"${expression.value}"`);
+    }
+
+    public printMultilineStringLiteral(expression: tstl.MultilineStringLiteral): SourceNode {
+        const chunks = [];
+
+        const braces = ["\\]"];
+        while (expression.value.match(new RegExp(braces.join("")))) {
+            braces.push("=\\]");
+        }
+
+        const bracesSeparators = [...new Array(braces.length - 1)].map(() => "=").join("");
+
+        chunks.push(`[${bracesSeparators}[`);
+        chunks.push(expression.value);
+        chunks.push(`]${bracesSeparators}]`);
+
+        return this.createSourceNode(expression, chunks);
     }
 
     public printNumericLiteral(expression: tstl.NumericLiteral): SourceNode {

@@ -2757,7 +2757,7 @@ export class LuaTransformer {
         }
 
         const type = this.checker.getTypeAtLocation(statement.expression);
-        if (tsHelper.isStringType(type)) {
+        if (tsHelper.isStringType(type, this.checker, this.program)) {
             const error = tstl.createIdentifier("error");
             return tstl.createExpressionStatement(
                 tstl.createCallExpression(error, [this.transformExpression(statement.expression)]),
@@ -3289,7 +3289,10 @@ export class LuaTransformer {
                     // Check is we need to use string concat operator
                     const typeLeft = this.checker.getTypeAtLocation(node.left);
                     const typeRight = this.checker.getTypeAtLocation(node.right);
-                    if (tsHelper.isStringType(typeLeft) || tsHelper.isStringType(typeRight)) {
+                    if (
+                        tsHelper.isStringType(typeLeft, this.checker, this.program) ||
+                        tsHelper.isStringType(typeRight, this.checker, this.program)
+                    ) {
                         return tstl.SyntaxKind.ConcatOperator;
                     }
                 }
@@ -4084,7 +4087,7 @@ export class LuaTransformer {
 
         // Check for primitive types to override
         const type = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.isStringType(type)) {
+        if (tsHelper.isStringType(type, this.checker, this.program)) {
             return this.transformStringProperty(expression);
         } else if (tsHelper.isArrayType(type, this.checker, this.program)) {
             const arrayPropertyAccess = this.transformArrayProperty(expression);
@@ -4291,7 +4294,7 @@ export class LuaTransformer {
 
         const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.isNumberType(argumentType) && tsHelper.isStringType(type)) {
+        if (tsHelper.isNumberType(argumentType) && tsHelper.isStringType(type, this.checker, this.program)) {
             const index = this.transformExpression(expression.argumentExpression);
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),

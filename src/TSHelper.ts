@@ -156,19 +156,19 @@ export function isNumberType(type: ts.Type): boolean {
 }
 
 export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    if (type.symbol) {
+        const baseConstraint = checker.getBaseConstraintOfType(type);
+        if (baseConstraint) {
+            return isExplicitArrayType(baseConstraint, checker, program);
+        }
+    }
+
     if (type.isUnionOrIntersection()) {
         return type.types.some(t => isExplicitArrayType(t, checker, program));
     }
 
     if (isStandardLibraryType(type, "ReadonlyArray", program)) {
         return true;
-    }
-
-    if (type.symbol) {
-        const baseConstraint = checker.getBaseConstraintOfType(type);
-        if (baseConstraint) {
-            return isExplicitArrayType(baseConstraint, checker, program);
-        }
     }
 
     const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;

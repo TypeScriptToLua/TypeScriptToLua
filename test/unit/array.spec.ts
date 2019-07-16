@@ -232,6 +232,8 @@ const genericChecks = [
     "function generic<T extends [...number[]]>(array: T)",
     "function generic<T extends any>(array: T[])",
     "type ArrayType = number[]; function generic<T extends ArrayType>(array: T)",
+    "function generic<T extends number[]>(array: T & {})",
+    "function generic<T extends number[] & {}>(array: T)",
 ];
 
 test.each(genericChecks)("array constrained generic foreach (%p)", signature => {

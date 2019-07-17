@@ -245,6 +245,10 @@ export class LuaTransformer {
     }
 
     public transformExportAssignment(statement: ts.ExportAssignment): StatementVisitResult {
+        if (!this.resolver.isValueAliasDeclaration(statement)) {
+            return undefined;
+        }
+
         // export = [expression];
         // ____exports = [expression];
         if (statement.isExportEquals) {

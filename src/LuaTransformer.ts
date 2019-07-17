@@ -3664,9 +3664,9 @@ export class LuaTransformer {
             flags |= tstl.FunctionExpressionFlags.Inline;
         }
 
-        const [transformedBody] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
+        const [transformedBody, scope] = this.transformFunctionBody(node.parameters, body, spreadIdentifier);
 
-        return tstl.createFunctionExpression(
+        const functionExpression = tstl.createFunctionExpression(
             tstl.createBlock(transformedBody),
             paramNames,
             dotsLiteral,
@@ -3674,6 +3674,22 @@ export class LuaTransformer {
             flags,
             node
         );
+
+        if (ts.isFunctionExpression(node) && node.name && scope.referencedSymbols) {
+            const symbol = this.checker.getSymbolAtLocation(node.name);
+            if (symbol) {
+                const symbolId = this.symbolIds.get(symbol);
+                if (symbolId && scope.referencedSymbols.has(symbolId)) {
+                    const nameIdentifier = this.transformIdentifier(node.name);
+                    return this.createImmediatelyInvokedFunctionExpression(
+                        [tstl.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
+                        tstl.cloneIdentifier(nameIdentifier)
+                    );
+                }
+            }
+        }
+
+        return functionExpression;
     }
 
     public transformNewExpression(node: ts.NewExpression): ExpressionVisitResult {
@@ -5111,7 +5127,7 @@ export class LuaTransformer {
     protected createImmediatelyInvokedFunctionExpression(
         statements: tstl.Statement[],
         result: tstl.Expression | tstl.Expression[],
-        tsOriginal: ts.Node
+        tsOriginal?: ts.Node
     ): tstl.CallExpression {
         const body = statements ? statements.slice(0) : [];
         body.push(tstl.createReturnStatement(Array.isArray(result) ? result : [result]));

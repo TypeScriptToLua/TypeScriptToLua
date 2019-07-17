@@ -72,7 +72,7 @@ export function isDefaultExportSpecifier(node: ts.ExportSpecifier): boolean {
 }
 
 export function hasDefaultExportModifier(modifiers?: ts.NodeArray<ts.Modifier>): boolean {
-    return modifiers && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+    return modifiers ? modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword) : false;
 }
 
 export function shouldResolveModulePath(moduleSpecifier: ts.Expression, checker: ts.TypeChecker): boolean {

@@ -188,25 +188,22 @@ test("ImportEquals declaration require", () => {
     }
 });
 
-test.each(["export default value;", "export { value as default };"])(
-    "Export Default From (%p)",
-    exportStatement => {
-        const [result] = util.transpileAndExecuteProjectReturningMainExport(
-            {
-                "main.ts": `
-                    export { default } from "./module";
-                `,
-                "module.ts": `
-                    export const value = true;
-                    ${exportStatement};
-                `,
-            },
-            "default"
-        );
+test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                export { default } from "./module";
+            `,
+            "module.ts": `
+                export const value = true;
+                ${exportStatement};
+            `,
+        },
+        "default"
+    );
 
-        expect(result).toBe(true);
-    }
-);
+    expect(result).toBe(true);
+});
 
 test("Default Import and Export Expression", () => {
     const [result] = util.transpileAndExecuteProjectReturningMainExport(
@@ -314,6 +311,23 @@ test("Export Default Class", () => {
                         return true;
                     }
                 }
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(true);
+});
+
+test("Export Equals", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import * as module from "./module";
+                export const value = module;
+            `,
+            "module.ts": `
+                export = true;
             `,
         },
         "value"

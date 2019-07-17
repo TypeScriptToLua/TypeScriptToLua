@@ -302,7 +302,7 @@ export class LuaTransformer {
         return tstl.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
     }
 
-    public transformExportSpecifiersFrom(
+    protected transformExportSpecifiersFrom(
         statement: ts.ExportDeclaration,
         moduleSpecifier: ts.Expression,
         exportSpecifiers: ts.ExportSpecifier[]
@@ -338,7 +338,7 @@ export class LuaTransformer {
         return tstl.createDoStatement(this.filterUndefined(result), statement);
     }
 
-    public transformExportAllFrom(statement: ts.ExportDeclaration): tstl.Statement | undefined {
+    protected transformExportAllFrom(statement: ts.ExportDeclaration): tstl.Statement | undefined {
         if (statement.moduleSpecifier === undefined) {
             throw TSTLErrors.InvalidExportDeclaration(statement);
         }
@@ -476,7 +476,7 @@ export class LuaTransformer {
         }
     }
 
-    protected transformImportSpecifier(
+    public transformImportSpecifier(
         importSpecifier: ts.ImportSpecifier,
         moduleTableName: tstl.Identifier
     ): tstl.VariableDeclarationStatement {

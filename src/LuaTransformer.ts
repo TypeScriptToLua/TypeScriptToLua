@@ -829,22 +829,22 @@ export class LuaTransformer {
         const isDefaultExport =
             statement.modifiers && statement.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
 
-        const defaultExportLeftHandSize = isDefaultExport
+        const defaultExportLeftHandSide = isDefaultExport
             ? tstl.createTableIndexExpression(
                   this.createExportsIdentifier(),
                   this.createDefaultExportStringLiteral(statement)
               )
             : undefined;
 
-        const classVar = defaultExportLeftHandSize
-            ? [tstl.createAssignmentStatement(defaultExportLeftHandSize, classTable, statement)]
+        const classVar = defaultExportLeftHandSide
+            ? [tstl.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
             : this.createLocalOrExportedOrGlobalDeclaration(className, classTable, statement);
 
         result.push(...classVar);
 
-        if (defaultExportLeftHandSize) {
+        if (defaultExportLeftHandSide) {
             // local localClassName = ____exports.default
-            result.push(tstl.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSize));
+            result.push(tstl.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
         } else {
             const exportScope = this.getIdentifierExportScope(className);
             if (exportScope) {

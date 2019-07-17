@@ -5129,14 +5129,11 @@ export class LuaTransformer {
         identifier: tstl.Identifier,
         exportScope?: ts.SourceFile | ts.ModuleDeclaration
     ): tstl.AssignmentLeftHandSideExpression {
-        const stringLiteral = tstl.createStringLiteral(identifier.text);
-
         const exportTable =
             exportScope && ts.isModuleDeclaration(exportScope)
                 ? this.createModuleLocalNameIdentifier(exportScope)
                 : this.createExportsIdentifier();
-
-        return tstl.createTableIndexExpression(exportTable, stringLiteral);
+        return tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(identifier.text));
     }
 
     protected createDefaultExportIdentifier(original: ts.Node): tstl.Identifier {

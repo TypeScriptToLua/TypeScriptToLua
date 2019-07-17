@@ -298,20 +298,17 @@ test("Export Default Function", () => {
     expect(result).toBe(true);
 });
 
-test("Export Default Class", () => {
+test.each([
+    "export default class Test { static method() { return true; } }",
+    "export default class { static method() { return true; } }",
+])("Export Default Class", classDeclarationStatement => {
     const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
                 import defaultExport from "./module";
                 export const value = defaultExport.method();
             `,
-            "module.ts": `
-                export default class Test {
-                    static method() {
-                        return true;
-                    }
-                }
-            `,
+            "module.ts": classDeclarationStatement,
         },
         "value"
     );

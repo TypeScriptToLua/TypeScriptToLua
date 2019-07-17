@@ -564,10 +564,6 @@ export class LuaTransformer {
     ): StatementVisitResult {
         this.classStack.push(statement);
 
-        if (statement.name === undefined && nameOverride === undefined) {
-            throw TSTLErrors.MissingClassName(statement);
-        }
-
         let className: tstl.Identifier;
         let classNameText: string;
         if (nameOverride !== undefined) {
@@ -577,7 +573,15 @@ export class LuaTransformer {
             className = this.transformIdentifier(statement.name);
             classNameText = statement.name.text;
         } else {
-            throw TSTLErrors.MissingClassName(statement);
+            const isDefaultExport = tsHelper.hasDefaultExportModifier(statement.modifiers);
+            if (isDefaultExport) {
+                const left = this.createExportedIdentifier(this.createDefaultExportIdentifier(statement));
+                const right = this.transformClassExpression(statement);
+
+                return tstl.createAssignmentStatement(left, right, statement);
+            } else {
+                throw TSTLErrors.MissingClassName(statement);
+            }
         }
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(statement), this.checker);
@@ -3399,7 +3403,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
+    public transformClassExpression(expression: ts.ClassLikeDeclaration): ExpressionVisitResult {
         const className =
             expression.name !== undefined
                 ? this.transformIdentifier(expression.name)

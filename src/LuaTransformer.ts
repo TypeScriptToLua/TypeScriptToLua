@@ -79,6 +79,8 @@ export class LuaTransformer {
     protected genVarCounter!: number;
     protected luaLibFeatureSet!: Set<LuaLibFeature>;
 
+    protected visitedExportEquals!: boolean;
+
     protected scopeStack!: Scope[];
     protected classStack!: ts.ClassLikeDeclaration[];
 
@@ -90,6 +92,8 @@ export class LuaTransformer {
         this.genVarCounter = 0;
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
 
+        this.visitedExportEquals = false;
+
         this.scopeStack = [];
         this.classStack = [];
 
@@ -100,7 +104,6 @@ export class LuaTransformer {
 
     protected currentSourceFile!: ts.SourceFile;
     protected isModule!: boolean;
-    protected visitedExportEquals!: boolean;
     protected resolver!: EmitResolver;
 
     /** @internal */

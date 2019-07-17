@@ -188,25 +188,8 @@ test("ImportEquals declaration require", () => {
     }
 });
 
-test("Export Default From", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                export { default } from "./module";
-            `,
-            "module.ts": `
-                export const value = true;
-                export default value;
-            `,
-        },
-        "default"
-    );
-
-    expect(result).toBe(true);
-});
-
 test.each(["export default value;", "export { value as default };"])(
-    "Default Import and Export (%p)",
+    "Export Default From (%p)",
     exportStatement => {
         const [result] = util.transpileAndExecuteProjectReturningMainExport(
             {

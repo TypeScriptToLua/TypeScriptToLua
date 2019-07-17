@@ -71,6 +71,10 @@ export function isDefaultExportSpecifier(node: ts.ExportSpecifier): boolean {
     );
 }
 
+export function hasDefaultExportModifier(modifiers?: ts.NodeArray<ts.Modifier>): boolean {
+    return modifiers && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+}
+
 export function shouldResolveModulePath(moduleSpecifier: ts.Expression, checker: ts.TypeChecker): boolean {
     const moduleOwnerSymbol = checker.getSymbolAtLocation(moduleSpecifier);
     if (moduleOwnerSymbol) {

@@ -822,8 +822,7 @@ export class LuaTransformer {
         // [____exports.]className = {}
         const classTable: tstl.Expression = tstl.createTableExpression();
 
-        const isDefaultExport =
-            statement.modifiers && statement.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(statement.modifiers);
 
         const defaultExportLeftHandSide = isDefaultExport
             ? tstl.createTableIndexExpression(
@@ -1969,9 +1968,7 @@ export class LuaTransformer {
             }
         }
 
-        const isDefaultExport =
-            functionDeclaration.modifiers &&
-            functionDeclaration.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(functionDeclaration.modifiers);
 
         if (isDefaultExport) {
             return tstl.createAssignmentStatement(

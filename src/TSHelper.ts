@@ -57,11 +57,7 @@ export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.T
 }
 
 export function getExportable(exportSpecifiers: ts.NamedExports, resolver: EmitResolver): ts.ExportSpecifier[] {
-    return exportSpecifiers.elements.filter(exportSpecifier => isExportable(exportSpecifier, resolver));
-}
-
-export function isExportable(exportSpecifier: ts.ExportSpecifier, resolver: EmitResolver): boolean {
-    return resolver.isValueAliasDeclaration(exportSpecifier);
+    return exportSpecifiers.elements.filter(exportSpecifier => resolver.isValueAliasDeclaration(exportSpecifier));
 }
 
 export function isDefaultExportSpecifier(node: ts.ExportSpecifier): boolean {

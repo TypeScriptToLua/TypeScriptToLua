@@ -3404,9 +3404,13 @@ export class LuaTransformer {
     }
 
     public transformClassExpression(expression: ts.ClassLikeDeclaration): ExpressionVisitResult {
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(expression.modifiers);
+
         const className =
             expression.name !== undefined
                 ? this.transformIdentifier(expression.name)
+                : isDefaultExport
+                ? this.createDefaultExportIdentifier(expression)
                 : tstl.createAnonymousIdentifier();
 
         const classDeclaration = this.transformClassDeclaration(expression, className);

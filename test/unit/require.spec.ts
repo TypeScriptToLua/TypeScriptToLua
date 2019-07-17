@@ -316,6 +316,23 @@ test.each([
     expect(result).toBe(true);
 });
 
+test("Class exported by default has name `default`", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import moduleClass from "./module";
+                export const value = moduleClass.name;
+            `,
+            "module.ts": `
+                export default class {}
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe("default");
+});
+
 test("Export Equals", () => {
     const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {

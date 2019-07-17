@@ -3679,7 +3679,7 @@ export class LuaTransformer {
             const symbol = this.checker.getSymbolAtLocation(node.name);
             if (symbol) {
                 const symbolId = this.symbolIds.get(symbol);
-                if (symbolId && scope.referencedSymbols.has(symbolId)) {
+                if (symbolId !== undefined && scope.referencedSymbols.has(symbolId)) {
                     const nameIdentifier = this.transformIdentifier(node.name);
                     return this.createImmediatelyInvokedFunctionExpression(
                         [tstl.createVariableDeclarationStatement(nameIdentifier, functionExpression)],

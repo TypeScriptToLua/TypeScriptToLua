@@ -289,13 +289,9 @@ export class LuaTransformer {
     }
 
     public transformExportSpecifier(node: ts.ExportSpecifier): tstl.AssignmentStatement {
-        let exportedExpression: tstl.Expression | undefined;
-        if (node.propertyName !== undefined) {
-            exportedExpression = this.transformIdentifier(node.propertyName);
-        } else {
-            const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(node);
-            exportedExpression = this.createShorthandIdentifier(exportedSymbol, node.name);
-        }
+        const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(node);
+        const exportedIdentifier = node.propertyName ? node.propertyName : node.name;
+        const exportedExpression = this.createShorthandIdentifier(exportedSymbol, exportedIdentifier);
 
         const isDefault = tsHelper.isDefaultExportSpecifier(node);
         const identifierToExport = isDefault

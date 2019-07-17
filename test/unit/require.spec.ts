@@ -211,14 +211,14 @@ test.each(["export default value;", "export { value as default };"])(
         const [result] = util.transpileAndExecuteProjectReturningMainExport(
             {
                 "main.ts": `
-                    export * from "./module";
+                    export { default } from "./module";
                 `,
                 "module.ts": `
                     export const value = true;
                     ${exportStatement};
                 `,
             },
-            "value"
+            "default"
         );
 
         expect(result).toBe(true);

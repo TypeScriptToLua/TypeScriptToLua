@@ -195,8 +195,7 @@ TestEnum.baz = \\"val3\\""
 `;
 
 exports[`Transformation (exportEquals) 1`] = `
-"local ____exports
-____exports = true
+"local ____exports = true
 return ____exports"
 `;
 

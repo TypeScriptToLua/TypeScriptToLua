@@ -133,14 +133,16 @@ export class LuaTransformer {
             this.popScope();
 
             if (this.isModule) {
-                const exportsTable = !this.visitedExportEquals ? tstl.createTableExpression() : undefined;
-
+                // If export equals was not used. Create the exports table.
                 // local exports = {}
-                // or
-                // local exports
-                statements.unshift(
-                    tstl.createVariableDeclarationStatement(this.createExportsIdentifier(), exportsTable)
-                );
+                if (!this.visitedExportEquals) {
+                    statements.unshift(
+                        tstl.createVariableDeclarationStatement(
+                            this.createExportsIdentifier(),
+                            tstl.createTableExpression()
+                        )
+                    );
+                }
 
                 // return exports
                 statements.push(tstl.createReturnStatement([this.createExportsIdentifier()]));
@@ -250,7 +252,7 @@ export class LuaTransformer {
             // This should be the only export of the module.
             this.visitedExportEquals = true;
 
-            return tstl.createAssignmentStatement(
+            return tstl.createVariableDeclarationStatement(
                 this.createExportsIdentifier(),
                 this.transformExpression(statement.expression),
                 statement

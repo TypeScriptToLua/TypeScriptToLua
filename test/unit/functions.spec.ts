@@ -610,3 +610,12 @@ test.each([{}, { noHoisting: true }])("@vararg global", compilerOptions => {
 
     expect(util.executeLua(lua)).toBe("ABCD");
 });
+
+test("named function expression reference", () => {
+    const code = `
+        const y = function x(inp: string) {
+            return inp + typeof x;
+        };
+        return y("foo-");`;
+    expect(util.transpileAndExecute(code)).toBe("foo-function");
+});

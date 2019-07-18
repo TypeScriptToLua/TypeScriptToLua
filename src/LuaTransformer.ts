@@ -3675,10 +3675,12 @@ export class LuaTransformer {
             node
         );
 
+        //Handle named function expressions which reference themselves
         if (ts.isFunctionExpression(node) && node.name && scope.referencedSymbols) {
             const symbol = this.checker.getSymbolAtLocation(node.name);
             if (symbol) {
                 const symbolId = this.symbolIds.get(symbol);
+                //Only wrap if the name is actually referenced inside the function
                 if (symbolId !== undefined && scope.referencedSymbols.has(symbolId)) {
                     const nameIdentifier = this.transformIdentifier(node.name);
                     return this.createImmediatelyInvokedFunctionExpression(

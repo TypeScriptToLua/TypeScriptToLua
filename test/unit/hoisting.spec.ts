@@ -235,6 +235,7 @@ test.each([
     },
     { code: `function makeFoo() { return new Foo(); } class Foo {}`, identifier: "Foo" },
     { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
+    { code: `function setBar() { const bar = { foo }; } let foo = "foo";`, identifier: "foo" },
 ])("No Hoisting (%p)", ({ code, identifier }) => {
     expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
         TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
@@ -291,4 +292,14 @@ test("Import hoisted before function", () => {
     const tsHeader = "declare const bar: any;";
     const code = "return bar;";
     expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+});
+
+test("Hoisting Shorthand Property", () => {
+    const code = `
+        function foo() {
+            return { bar }.bar;
+        }
+        let bar = "foobar";
+        return foo();`;
+    expect(util.transpileAndExecute(code)).toBe("foobar");
 });

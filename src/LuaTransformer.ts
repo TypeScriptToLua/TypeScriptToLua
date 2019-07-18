@@ -3597,6 +3597,9 @@ export class LuaTransformer {
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isShorthandPropertyAssignment(element)) {
                 const valueSymbol = this.checker.getShorthandAssignmentValueSymbol(element);
+                if (valueSymbol) {
+                    this.trackSymbolReference(valueSymbol, element.name);
+                }
                 const identifier = this.createShorthandIdentifier(valueSymbol, element.name);
                 properties.push(tstl.createTableFieldExpression(identifier, name, element));
             } else if (ts.isMethodDeclaration(element)) {
@@ -5525,45 +5528,48 @@ export class LuaTransformer {
         return "____" + tsHelper.fixInvalidLuaIdentifier(name);
     }
 
-    protected getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId | undefined {
-        const symbol = this.checker.getSymbolAtLocation(identifier);
-        let symbolId: tstl.SymbolId | undefined;
-        if (symbol) {
-            // Track first time symbols are seen
-            if (!this.symbolIds.has(symbol)) {
-                symbolId = this.genSymbolIdCounter++;
+    protected trackSymbolReference(symbol: ts.Symbol, identifier: ts.Identifier): tstl.SymbolId | undefined {
+        // Track first time symbols are seen
+        let symbolId = this.symbolIds.get(symbol);
+        if (!symbolId) {
+            symbolId = this.genSymbolIdCounter++;
 
-                const symbolInfo: SymbolInfo = { symbol, firstSeenAtPos: identifier.pos };
-                this.symbolIds.set(symbol, symbolId);
-                this.symbolInfo.set(symbolId, symbolInfo);
-            } else {
-                symbolId = this.symbolIds.get(symbol);
-            }
+            const symbolInfo: SymbolInfo = { symbol, firstSeenAtPos: identifier.pos };
+            this.symbolIds.set(symbol, symbolId);
+            this.symbolInfo.set(symbolId, symbolInfo);
+        }
 
-            if (this.options.noHoisting) {
-                // Check for reference-before-declaration
-                const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
-                if (declaration && identifier.pos < declaration.pos) {
-                    throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
-                }
-            }
-
-            if (symbolId !== undefined) {
-                //Mark symbol as seen in all current scopes
-                for (const scope of this.scopeStack) {
-                    if (!scope.referencedSymbols) {
-                        scope.referencedSymbols = new Map();
-                    }
-                    let references = scope.referencedSymbols.get(symbolId);
-                    if (!references) {
-                        references = [];
-                        scope.referencedSymbols.set(symbolId, references);
-                    }
-                    references.push(identifier);
-                }
+        if (this.options.noHoisting) {
+            // Check for reference-before-declaration
+            const declaration = tsHelper.getFirstDeclaration(symbol, this.currentSourceFile);
+            if (declaration && identifier.pos < declaration.pos) {
+                throw TSTLErrors.ReferencedBeforeDeclaration(identifier);
             }
         }
+
+        //Mark symbol as seen in all current scopes
+        for (const scope of this.scopeStack) {
+            if (!scope.referencedSymbols) {
+                scope.referencedSymbols = new Map();
+            }
+            let references = scope.referencedSymbols.get(symbolId);
+            if (!references) {
+                references = [];
+                scope.referencedSymbols.set(symbolId, references);
+            }
+            references.push(identifier);
+        }
+
         return symbolId;
+    }
+
+    protected getIdentifierSymbolId(identifier: ts.Identifier): tstl.SymbolId | undefined {
+        const symbol = this.checker.getSymbolAtLocation(identifier);
+        if (symbol) {
+            return this.trackSymbolReference(symbol, identifier);
+        } else {
+            return undefined;
+        }
     }
 
     protected findScope(scopeTypes: ScopeType): Scope | undefined {

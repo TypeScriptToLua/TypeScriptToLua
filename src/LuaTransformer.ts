@@ -297,7 +297,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformExportSpecifier(node: ts.ExportSpecifier): tstl.AssignmentStatement {
+    protected transformExportSpecifier(node: ts.ExportSpecifier): tstl.AssignmentStatement {
         const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(node);
         const exportedIdentifier = node.propertyName ? node.propertyName : node.name;
         const exportedExpression = this.createShorthandIdentifier(exportedSymbol, exportedIdentifier);

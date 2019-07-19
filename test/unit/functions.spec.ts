@@ -557,6 +557,18 @@ test.each([{}, { noHoisting: true }])("Function rest parameter (unreferenced)", 
     expect(util.transpileAndExecute(code, compilerOptions)).toBe("foobar");
 });
 
+test.each([{}, { noHoisting: true }])("Function rest parameter (referenced in property shorthand)", compilerOptions => {
+    const code = `
+        function foo(a: unknown, ...b: string[]) {
+            const c = { b };
+            return c.b.join("");
+        }
+        return foo("A", "B", "C", "D");
+    `;
+
+    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+});
+
 test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
     const code = `
         /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
@@ -609,4 +621,13 @@ test.each([{}, { noHoisting: true }])("@vararg global", compilerOptions => {
     `;
 
     expect(util.executeLua(lua)).toBe("ABCD");
+});
+
+test("named function expression reference", () => {
+    const code = `
+        const y = function x(inp: string) {
+            return inp + typeof x;
+        };
+        return y("foo-");`;
+    expect(util.transpileAndExecute(code)).toBe("foo-function");
 });

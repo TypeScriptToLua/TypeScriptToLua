@@ -4063,10 +4063,6 @@ export class LuaTransformer {
                 );
             } else {
                 const parameters = this.transformArguments(node.arguments, signature);
-                let table = this.transformExpression(node.expression.expression);
-                if (tstl.isTableExpression(table)) {
-                    table = tstl.createParenthesizedExpression(table);
-                }
                 const signatureDeclaration = signature && signature.getDeclaration();
                 if (
                     !signatureDeclaration ||
@@ -4075,6 +4071,11 @@ export class LuaTransformer {
                     // table:name()
                     return this.transformContextualCallExpression(node, parameters);
                 } else {
+                    let table = this.transformExpression(node.expression.expression);
+                    if (tstl.isTableExpression(table)) {
+                        table = tstl.createParenthesizedExpression(table);
+                    }
+
                     // table.name()
                     const callPath = tstl.createTableIndexExpression(
                         table,
@@ -4116,7 +4117,6 @@ export class LuaTransformer {
         transformedArguments: tstl.Expression[]
     ): ExpressionVisitResult {
         const left = ts.isCallExpression(node) ? node.expression : node.tag;
-        const leftHandSideExpression = this.transformExpression(left);
         if (
             ts.isPropertyAccessExpression(left) &&
             !luaKeywords.has(left.name.text) &&
@@ -4156,7 +4156,8 @@ export class LuaTransformer {
         } else if (ts.isIdentifier(left)) {
             const context = this.isStrict ? tstl.createNilLiteral() : tstl.createIdentifier("_G");
             transformedArguments.unshift(context);
-            return tstl.createCallExpression(leftHandSideExpression, transformedArguments, node);
+            const expression = this.transformExpression(left);
+            return tstl.createCallExpression(expression, transformedArguments, node);
         } else {
             throw TSTLErrors.UnsupportedKind("Left Hand Side Call Expression", left.kind, left);
         }

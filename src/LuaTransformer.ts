@@ -485,7 +485,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformImportSpecifier(
+    protected transformImportSpecifier(
         importSpecifier: ts.ImportSpecifier,
         moduleTableName: tstl.Identifier
     ): tstl.VariableDeclarationStatement {
@@ -3415,12 +3415,14 @@ export class LuaTransformer {
     public transformClassExpression(expression: ts.ClassLikeDeclaration): ExpressionVisitResult {
         const isDefaultExport = tsHelper.hasDefaultExportModifier(expression.modifiers);
 
-        const className =
-            expression.name !== undefined
-                ? this.transformIdentifier(expression.name)
-                : isDefaultExport
-                ? this.createDefaultExportIdentifier(expression)
-                : tstl.createAnonymousIdentifier();
+        let className: tstl.Identifier;
+        if (expression.name) {
+            className = this.transformIdentifier(expression.name);
+        } else if (isDefaultExport) {
+            className = this.createDefaultExportIdentifier(expression);
+        } else {
+            className = tstl.createAnonymousIdentifier();
+        }
 
         const classDeclaration = this.transformClassDeclaration(expression, className);
         return this.createImmediatelyInvokedFunctionExpression(

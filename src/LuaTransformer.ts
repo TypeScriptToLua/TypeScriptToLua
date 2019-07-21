@@ -3075,8 +3075,6 @@ export class LuaTransformer {
 
         if (ts.isObjectLiteralExpression(expression.left) || ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
-            let right = this.transformExpression(expression.right);
-
             const flattenable = tsHelper.isValidFlattenableDestructuringAssignmentLeftHandSide(
                 expression as ts.DestructuringAssignment,
                 this.checker,
@@ -3100,6 +3098,7 @@ export class LuaTransformer {
                 );
             }
 
+            let right = this.transformExpression(expression.right);
             const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
 
             if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {

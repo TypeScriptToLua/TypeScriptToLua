@@ -31,6 +31,15 @@ test("Tuple access", () => {
     expect(result).toBe(5);
 });
 
+test("Readonly Tuple access", () => {
+    const result = util.transpileAndExecute(
+        `const tuple: readonly [number, number, number] = [3,5,1];
+        return tuple[1];`
+    );
+
+    expect(result).toBe(5);
+});
+
 test("Tuple union access", () => {
     const result = util.transpileAndExecute(
         `function makeTuple(): [number, number, number] | [string, string, string] { return [3,5,1]; }

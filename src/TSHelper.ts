@@ -167,12 +167,12 @@ export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, prog
         return type.types.some(t => isExplicitArrayType(t, checker, program));
     }
 
-    if (isStandardLibraryType(type, "ReadonlyArray", program)) {
-        return true;
+    const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
+    let typeNode = checker.typeToTypeNode(type, undefined, flags);
+    if (typeNode && ts.isTypeOperatorNode(typeNode) && typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
+        typeNode = typeNode.type;
     }
 
-    const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
-    const typeNode = checker.typeToTypeNode(type, undefined, flags);
     return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
 }
 

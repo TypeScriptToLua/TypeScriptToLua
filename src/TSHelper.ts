@@ -851,27 +851,23 @@ export function moduleHasEmittedBody(
     return false;
 }
 
-export function isArrayLengthAssignment(
-    expression: ts.BinaryExpression,
+export function isArrayLength(
+    expression: ts.Expression,
     checker: ts.TypeChecker,
     program: ts.Program
-): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression } {
-    if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+): expression is ts.PropertyAccessExpression | ts.ElementAccessExpression {
+    if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) {
         return false;
     }
 
-    if (!ts.isPropertyAccessExpression(expression.left) && !ts.isElementAccessExpression(expression.left)) {
-        return false;
-    }
-
-    const type = checker.getTypeAtLocation(expression.left.expression);
+    const type = checker.getTypeAtLocation(expression.expression);
     if (!isArrayType(type, checker, program)) {
         return false;
     }
 
-    const name = ts.isPropertyAccessExpression(expression.left)
-        ? (expression.left.name.escapedText as string)
-        : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
+    const name = ts.isPropertyAccessExpression(expression)
+        ? (expression.name.escapedText as string)
+        : ts.isStringLiteral(expression.argumentExpression) && expression.argumentExpression.text;
 
     return name === "length";
 }

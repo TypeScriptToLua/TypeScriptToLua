@@ -2047,7 +2047,18 @@ export class LuaTransformer {
     }
 
     public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): StatementVisitResult {
-        const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
+        let expression: ts.Expression;
+        if (ts.isExpressionStatement(statement)) {
+            expression = statement.expression;
+        } else {
+            expression = statement;
+        }
+
+        // Outer parenthesis have no effect on the expression within an ExpressionStatement
+        while (ts.isParenthesizedExpression(expression)) {
+            expression = expression.expression;
+        }
+
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);
             if (isCompound && replacementOperator) {
@@ -3024,7 +3035,18 @@ export class LuaTransformer {
         }
     }
 
-    protected transformAssignment(lhs: ts.Expression, right?: tstl.Expression): tstl.Statement {
+    protected transformAssignment(lhs: ts.Expression, right: tstl.Expression, parent?: ts.Expression): tstl.Statement {
+        if (tsHelper.isArrayLength(lhs, this.checker, this.program)) {
+            return tstl.createExpressionStatement(
+                this.transformLuaLibFunction(
+                    LuaLibFeature.ArraySetLength,
+                    parent,
+                    this.transformExpression(lhs.expression),
+                    right
+                )
+            );
+        }
+
         return tstl.createAssignmentStatement(
             this.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression,
             right,
@@ -3039,7 +3061,7 @@ export class LuaTransformer {
         this.validateFunctionAssignment(expression.right, rightType, leftType);
         this.validatePropertyAssignment(expression);
 
-        if (tsHelper.isArrayLengthAssignment(expression, this.checker, this.program)) {
+        if (tsHelper.isArrayLength(expression.left, this.checker, this.program)) {
             // array.length = x
             return tstl.createExpressionStatement(
                 this.transformLuaLibFunction(
@@ -3051,30 +3073,244 @@ export class LuaTransformer {
             );
         }
 
-        if (ts.isArrayLiteralExpression(expression.left)) {
+        if (ts.isObjectLiteralExpression(expression.left) || ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
-            const left =
-                expression.left.elements.length > 0
-                    ? expression.left.elements.map(e => this.transformArrayBindingElement(e))
-                    : [tstl.createAnonymousIdentifier(expression.left)];
-            let right: tstl.Expression[];
-            if (ts.isArrayLiteralExpression(expression.right)) {
-                if (expression.right.elements.length > 0) {
-                    const visitResults = expression.right.elements.map(e => this.transformExpression(e));
-                    right = this.filterUndefined(visitResults);
-                } else {
-                    right = [tstl.createNilLiteral()];
-                }
-            } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
-                right = [this.transformExpression(expression.right)];
-            } else {
-                right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
+            const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
+
+            let right = this.transformExpression(expression.right);
+            if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
+                right = this.wrapInTable(right);
             }
-            return tstl.createAssignmentStatement(left as tstl.AssignmentLeftHandSideExpression[], right, expression);
+
+            const rootDeclaration = tstl.createVariableDeclarationStatement(rootIdentifier, right);
+
+            const statements = this.transformDestructuringAssignment(
+                expression as ts.DestructuringAssignment,
+                rootIdentifier
+            );
+            statements.unshift(rootDeclaration);
+
+            return statements;
         } else {
             // Simple assignment
             return this.transformAssignment(expression.left, this.transformExpression(expression.right));
         }
+    }
+
+    protected transformDestructuringAssignment(
+        node: ts.DestructuringAssignment,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        switch (node.left.kind) {
+            case ts.SyntaxKind.ObjectLiteralExpression:
+                return this.transformObjectDestructuringAssignment(node as ts.ObjectDestructuringAssignment, root);
+            case ts.SyntaxKind.ArrayLiteralExpression:
+                return this.transformArrayDestructuringAssignment(node as ts.ArrayDestructuringAssignment, root);
+        }
+    }
+
+    protected transformObjectDestructuringAssignment(
+        node: ts.ObjectDestructuringAssignment,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        return this.transformObjectLiteralAssignmentPattern(node.left, root);
+    }
+
+    protected transformArrayDestructuringAssignment(
+        node: ts.ArrayDestructuringAssignment,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        return this.transformArrayLiteralAssignmentPattern(node.left, root);
+    }
+
+    protected transformShorthandPropertyAssignment(
+        node: ts.ShorthandPropertyAssignment,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        const result: tstl.Statement[] = [];
+        const assignmentVariableName = this.transformIdentifier(node.name);
+        const extractionIndex = tstl.createStringLiteral(node.name.text);
+        const variableExtractionAssignmentStatement = tstl.createAssignmentStatement(
+            assignmentVariableName,
+            tstl.createTableIndexExpression(root, extractionIndex)
+        );
+
+        result.push(variableExtractionAssignmentStatement);
+
+        const defaultInitializer = node.objectAssignmentInitializer
+            ? this.transformExpression(node.objectAssignmentInitializer)
+            : undefined;
+
+        if (defaultInitializer) {
+            const nilCondition = tstl.createBinaryExpression(
+                assignmentVariableName,
+                tstl.createNilLiteral(),
+                tstl.SyntaxKind.EqualityOperator
+            );
+
+            const assignment = tstl.createAssignmentStatement(assignmentVariableName, defaultInitializer);
+
+            const ifBlock = tstl.createBlock([assignment]);
+
+            result.push(tstl.createIfStatement(nilCondition, ifBlock, undefined, node));
+        }
+
+        return result;
+    }
+
+    protected transformObjectLiteralAssignmentPattern(
+        node: ts.ObjectLiteralExpression,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        const result: tstl.Statement[] = [];
+
+        for (const property of node.properties) {
+            switch (property.kind) {
+                case ts.SyntaxKind.ShorthandPropertyAssignment:
+                    result.push(...this.transformShorthandPropertyAssignment(property, root));
+                    break;
+                case ts.SyntaxKind.PropertyAssignment:
+                    result.push(...this.transformPropertyAssignment(property, root));
+                    break;
+                case ts.SyntaxKind.SpreadAssignment:
+                    throw TSTLErrors.ForbiddenEllipsisDestruction(property);
+                default:
+                    throw TSTLErrors.UnsupportedKind("Object Destructure Property", property.kind, property);
+            }
+        }
+
+        return result;
+    }
+
+    protected transformArrayLiteralAssignmentPattern(
+        node: ts.ArrayLiteralExpression,
+        root: tstl.Expression
+    ): tstl.Statement[] {
+        const result: tstl.Statement[] = [];
+
+        node.elements.forEach((element, index) => {
+            const indexedRoot = tstl.createTableIndexExpression(
+                root as tstl.Expression,
+                tstl.createNumericLiteral(index + 1),
+                element
+            );
+
+            switch (element.kind) {
+                case ts.SyntaxKind.ObjectLiteralExpression:
+                    result.push(
+                        ...this.transformObjectLiteralAssignmentPattern(
+                            element as ts.ObjectLiteralExpression,
+                            indexedRoot
+                        )
+                    );
+                    break;
+                case ts.SyntaxKind.ArrayLiteralExpression:
+                    result.push(
+                        ...this.transformArrayLiteralAssignmentPattern(
+                            element as ts.ArrayLiteralExpression,
+                            indexedRoot
+                        )
+                    );
+                    break;
+                case ts.SyntaxKind.BinaryExpression:
+                    const assignedVariable = tstl.createIdentifier("____bindingAssignmentValue");
+
+                    const assignedVariableDeclaration = tstl.createVariableDeclarationStatement(
+                        assignedVariable,
+                        indexedRoot
+                    );
+
+                    const nilCondition = tstl.createBinaryExpression(
+                        assignedVariable,
+                        tstl.createNilLiteral(),
+                        tstl.SyntaxKind.EqualityOperator
+                    );
+
+                    const defaultAssignmentStatement = this.transformAssignment(
+                        (element as ts.BinaryExpression).left,
+                        this.transformExpression((element as ts.BinaryExpression).right)
+                    );
+
+                    const elseAssignmentStatement = this.transformAssignment(
+                        (element as ts.BinaryExpression).left,
+                        assignedVariable
+                    );
+
+                    const ifBlock = tstl.createBlock([defaultAssignmentStatement]);
+
+                    const elseBlock = tstl.createBlock([elseAssignmentStatement]);
+
+                    const ifStatement = tstl.createIfStatement(nilCondition, ifBlock, elseBlock, node);
+
+                    result.push(assignedVariableDeclaration);
+                    result.push(ifStatement);
+                    break;
+                case ts.SyntaxKind.Identifier:
+                case ts.SyntaxKind.PropertyAccessExpression:
+                case ts.SyntaxKind.ElementAccessExpression:
+                    const assignmentStatement = this.transformAssignment(element, indexedRoot);
+
+                    result.push(assignmentStatement);
+                    break;
+                case ts.SyntaxKind.OmittedExpression:
+                    break;
+                default:
+                    throw TSTLErrors.UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
+            }
+        });
+
+        return result;
+    }
+
+    protected transformPropertyAssignment(node: ts.PropertyAssignment, root: tstl.Expression): tstl.Statement[] {
+        const result: tstl.Statement[] = [];
+
+        if (ts.isObjectLiteralExpression(node.initializer) || ts.isArrayLiteralExpression(node.initializer)) {
+            const propertyAccessString = this.transformPropertyName(node.name);
+            const newRootAccess = tstl.createTableIndexExpression(root, propertyAccessString);
+
+            if (ts.isObjectLiteralExpression(node.initializer)) {
+                return this.transformObjectLiteralAssignmentPattern(node.initializer, newRootAccess);
+            }
+
+            if (ts.isArrayLiteralExpression(node.initializer)) {
+                return this.transformArrayLiteralAssignmentPattern(node.initializer, newRootAccess);
+            }
+        }
+
+        let leftExpression: ts.Expression;
+        if (ts.isBinaryExpression(node.initializer)) {
+            leftExpression = node.initializer.left;
+        } else {
+            leftExpression = node.initializer;
+        }
+
+        const variableToExtract = this.transformPropertyName(node.name);
+        const extractingExpression = tstl.createTableIndexExpression(root, variableToExtract);
+
+        const destructureAssignmentStatement = this.transformAssignment(leftExpression, extractingExpression);
+
+        result.push(destructureAssignmentStatement);
+
+        if (ts.isBinaryExpression(node.initializer)) {
+            const assignmentLeftHandSide = this.transformExpression(node.initializer.left);
+
+            const nilCondition = tstl.createBinaryExpression(
+                assignmentLeftHandSide,
+                tstl.createNilLiteral(),
+                tstl.SyntaxKind.EqualityOperator
+            );
+
+            const assignmentStatements = this.statementVisitResultToArray(
+                this.transformAssignmentStatement(node.initializer)
+            );
+
+            const ifBlock = tstl.createBlock(assignmentStatements);
+
+            result.push(tstl.createIfStatement(nilCondition, ifBlock, undefined, node));
+        }
+
+        return result;
     }
 
     protected transformAssignmentExpression(
@@ -3085,7 +3321,7 @@ export class LuaTransformer {
         const leftType = this.checker.getTypeAtLocation(expression.left);
         this.validateFunctionAssignment(expression.right, rightType, leftType);
 
-        if (tsHelper.isArrayLengthAssignment(expression, this.checker, this.program)) {
+        if (tsHelper.isArrayLength(expression.left, this.checker, this.program)) {
             // array.length = x
             return this.transformLuaLibFunction(
                 LuaLibFeature.ArraySetLength,
@@ -3095,34 +3331,24 @@ export class LuaTransformer {
             );
         }
 
-        if (ts.isArrayLiteralExpression(expression.left)) {
+        if (ts.isArrayLiteralExpression(expression.left) || ts.isObjectLiteralExpression(expression.left)) {
             // Destructuring assignment
-            // (function() local ${tmps} = ${right}; ${left} = ${tmps}; return {${tmps}} end)()
-            const left =
-                expression.left.elements.length > 0
-                    ? expression.left.elements.map(e => this.transformExpression(e))
-                    : [tstl.createAnonymousIdentifier(expression.left)];
-            let right: tstl.Expression[];
-            if (ts.isArrayLiteralExpression(expression.right)) {
-                right =
-                    expression.right.elements.length > 0
-                        ? expression.right.elements.map(e => this.transformExpression(e))
-                        : [tstl.createNilLiteral()];
-            } else if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
-                right = [this.transformExpression(expression.right)];
-            } else {
-                right = [this.createUnpackCall(this.transformExpression(expression.right), expression.right)];
+            const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
+
+            let right = this.transformExpression(expression.right);
+            if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
+                right = this.wrapInTable(right);
             }
-            const tmps = left.map((_, i) => tstl.createIdentifier(`____tmp${i}`));
-            const statements: tstl.Statement[] = [
-                tstl.createVariableDeclarationStatement(tmps, right),
-                tstl.createAssignmentStatement(left as tstl.AssignmentLeftHandSideExpression[], tmps),
-            ];
-            return this.createImmediatelyInvokedFunctionExpression(
-                statements,
-                tstl.createTableExpression(tmps.map(t => tstl.createTableFieldExpression(t))),
-                expression
+
+            const rootDeclaration = tstl.createVariableDeclarationStatement(rootIdentifier, right);
+
+            const statements = this.transformDestructuringAssignment(
+                expression as ts.DestructuringAssignment,
+                rootIdentifier
             );
+            statements.unshift(rootDeclaration);
+
+            return this.createImmediatelyInvokedFunctionExpression(statements, rootIdentifier, expression);
         }
 
         if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {

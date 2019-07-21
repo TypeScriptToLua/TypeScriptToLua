@@ -851,6 +851,34 @@ export function moduleHasEmittedBody(
     return false;
 }
 
+export function isValidFlattenableDestructuringAssignmentLeftHandSide(
+    node: ts.DestructuringAssignment,
+    checker: ts.TypeChecker,
+    program: ts.Program
+): boolean {
+    if (ts.isArrayLiteralExpression(node.left)) {
+        if (node.left.elements.length > 0) {
+            return !node.left.elements.some(element => {
+                switch (element.kind) {
+                    case ts.SyntaxKind.Identifier:
+                    case ts.SyntaxKind.PropertyAccessExpression:
+                        if (isArrayLength(element, checker, program)) {
+                            return true;
+                        }
+                    case ts.SyntaxKind.ElementAccessExpression:
+                        // Can be on the left hand side of a Lua assignment statement
+                        return false;
+                    default:
+                        // Cannot be
+                        return true;
+                }
+            });
+        }
+    }
+
+    return false;
+}
+
 export function isArrayLength(
     expression: ts.Expression,
     checker: ts.TypeChecker,

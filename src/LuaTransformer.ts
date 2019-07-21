@@ -3075,9 +3075,33 @@ export class LuaTransformer {
 
         if (ts.isObjectLiteralExpression(expression.left) || ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
+            let right = this.transformExpression(expression.right);
+
+            const flattenable = tsHelper.isValidFlattenableDestructuringAssignmentLeftHandSide(
+                expression as ts.DestructuringAssignment,
+                this.checker,
+                this.program
+            );
+
+            if (flattenable) {
+                const expressionType = this.checker.getTypeAtLocation(expression.right);
+                let right = this.transformExpression(expression.right);
+
+                if (
+                    !tsHelper.isTupleReturnCall(expression.right, this.checker) &&
+                    tsHelper.isArrayType(expressionType, this.checker, this.program)
+                ) {
+                    right = this.createUnpackCall(right, expression.right);
+                }
+
+                return this.transformFlattenableDestructuringAssignment(
+                    expression as ts.DestructuringAssignment,
+                    right
+                );
+            }
+
             const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
 
-            let right = this.transformExpression(expression.right);
             if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = this.wrapInTable(right);
             }
@@ -3095,6 +3119,20 @@ export class LuaTransformer {
             // Simple assignment
             return this.transformAssignment(expression.left, this.transformExpression(expression.right));
         }
+    }
+
+    protected transformFlattenableDestructuringAssignment(
+        node: ts.DestructuringAssignment,
+        right: tstl.Expression | tstl.Expression[]
+    ): tstl.Statement {
+        if (ts.isArrayLiteralExpression(node.left)) {
+            const left: tstl.AssignmentLeftHandSideExpression[] = node.left.elements.map(
+                element => this.transformExpression(element) as tstl.AssignmentLeftHandSideExpression
+            );
+            return tstl.createAssignmentStatement(left, right, node);
+        }
+
+        throw TSTLErrors.NonFlattenableDestructure(node);
     }
 
     protected transformDestructuringAssignment(

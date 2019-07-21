@@ -90,6 +90,9 @@ export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
 export const MissingMetaExtension = (node: ts.Node) =>
     new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
 
+export const NonFlattenableDestructure = (node: ts.Node) =>
+    new TranspileError(`This node cannot be destructured using a standard Lua assignment statement.`, node);
+
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 

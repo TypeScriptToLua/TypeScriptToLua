@@ -132,7 +132,14 @@ export function isStaticNode(node: ts.Node): boolean {
     return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
-export function isStringType(type: ts.Type): boolean {
+export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    if (type.symbol) {
+        const baseConstraint = checker.getBaseConstraintOfType(type);
+        if (baseConstraint) {
+            return isStringType(baseConstraint, checker, program);
+        }
+    }
+
     return (
         (type.flags & ts.TypeFlags.String) !== 0 ||
         (type.flags & ts.TypeFlags.StringLike) !== 0 ||
@@ -149,16 +156,23 @@ export function isNumberType(type: ts.Type): boolean {
 }
 
 export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    if (type.symbol) {
+        const baseConstraint = checker.getBaseConstraintOfType(type);
+        if (baseConstraint) {
+            return isExplicitArrayType(baseConstraint, checker, program);
+        }
+    }
+
     if (type.isUnionOrIntersection()) {
         return type.types.some(t => isExplicitArrayType(t, checker, program));
     }
 
-    if (isStandardLibraryType(type, "ReadonlyArray", program)) {
-        return true;
+    const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
+    let typeNode = checker.typeToTypeNode(type, undefined, flags);
+    if (typeNode && ts.isTypeOperatorNode(typeNode) && typeNode.operator === ts.SyntaxKind.ReadonlyKeyword) {
+        typeNode = typeNode.type;
     }
 
-    const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
-    const typeNode = checker.typeToTypeNode(type, undefined, flags);
     return typeNode !== undefined && (ts.isArrayTypeNode(typeNode) || ts.isTupleTypeNode(typeNode));
 }
 

@@ -248,3 +248,16 @@ test.each(padCases)("string.padStart (%p)", ({ inp, args }) => {
 test.each(padCases)("string.padEnd (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".padEnd(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
+
+test.each([
+    "function generic<T extends string>(string: T)",
+    "type StringType = string; function generic<T extends StringType>(string: T)",
+])("string constrained generic foreach (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                return string.length;
+            }
+            return generic("string");
+        `;
+    expect(util.transpileAndExecute(code)).toBe(6);
+});

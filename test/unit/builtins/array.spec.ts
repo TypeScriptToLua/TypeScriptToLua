@@ -30,6 +30,20 @@ describe("access", () => {
         util.testExpression`([3, 5, 1] as const)[1]`.expectToMatchJsResult();
     });
 
+    test("tuple", () => {
+        util.testFunction`
+            const tuple: [number, number, number] = [3, 5, 1];
+            return tuple[1];
+        `.expectToMatchJsResult();
+    });
+
+    test("readonly tuple", () => {
+        util.testFunction`
+            const tuple: readonly [number, number, number] = [3, 5, 1];
+            return tuple[1];
+        `.expectToMatchJsResult();
+    });
+
     test("union", () => {
         util.testFunction`
             const array: number[] | string[] = [3, 5, 1];
@@ -41,13 +55,6 @@ describe("access", () => {
         util.testFunction`
             const array: number[] | [] = [3, 5, 1];
             return array[1];
-        `.expectToMatchJsResult();
-    });
-
-    test("tuple", () => {
-        util.testFunction`
-            const tuple: [number, number, number] = [3, 5, 1];
-            return tuple[1];
         `.expectToMatchJsResult();
     });
 
@@ -431,4 +438,39 @@ test.each<[[(total: number, currentItem: number, index: number, array: number[])
     [[(a, b) => a + b]],
 ])("array.reduce (%p)", args => {
     util.testExpression`[1, 3, 5, 7].reduce(${util.valuesToString(args)})`.expectToMatchJsResult();
+});
+
+const genericChecks = [
+    "function generic<T extends number[]>(array: T)",
+    "function generic<T extends [...number[]]>(array: T)",
+    "function generic<T extends any>(array: T[])",
+    "type ArrayType = number[]; function generic<T extends ArrayType>(array: T)",
+    "function generic<T extends number[]>(array: T & {})",
+    "function generic<T extends number[] & {}>(array: T)",
+];
+
+test.each(genericChecks)("array constrained generic foreach (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                let sum = 0;
+                array.forEach(item => {
+                    if (typeof item === "number") {
+                        sum += item;
+                    }
+                });
+                return sum;
+            }
+            return generic([1, 2, 3]);
+        `;
+    expect(util.transpileAndExecute(code)).toBe(6);
+});
+
+test.each(genericChecks)("array constrained generic length (%p)", signature => {
+    const code = `
+            ${signature}: number {
+                return array.length;
+            }
+            return generic([1, 2, 3]);
+        `;
+    expect(util.transpileAndExecute(code)).toBe(3);
 });

@@ -4352,7 +4352,14 @@ export class LuaTransformer {
             case "indexOf":
                 const stringExpression =
                     node.arguments.length === 1
-                        ? this.createStringCall("find", node, caller, params[0])
+                        ? this.createStringCall(
+                              "find",
+                              node,
+                              caller,
+                              params[0],
+                              tstl.createNilLiteral(),
+                              tstl.createBooleanLiteral(true)
+                          )
                         : this.createStringCall(
                               "find",
                               node,

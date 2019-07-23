@@ -3061,18 +3061,6 @@ export class LuaTransformer {
         this.validateFunctionAssignment(expression.right, rightType, leftType);
         this.validatePropertyAssignment(expression);
 
-        if (tsHelper.isArrayLength(expression.left, this.checker, this.program)) {
-            // array.length = x
-            return tstl.createExpressionStatement(
-                this.transformLuaLibFunction(
-                    LuaLibFeature.ArraySetLength,
-                    expression,
-                    this.transformExpression(expression.left.expression),
-                    this.transformExpression(expression.right)
-                )
-            );
-        }
-
         if (ts.isObjectLiteralExpression(expression.left) || ts.isArrayLiteralExpression(expression.left)) {
             // Destructuring assignment
             const flattenable = tsHelper.isValidFlattenableDestructuringAssignmentLeftHandSide(

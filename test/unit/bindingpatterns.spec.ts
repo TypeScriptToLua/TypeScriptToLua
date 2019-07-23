@@ -18,6 +18,7 @@ const testCases = [
 const testCasesDefault = [
     { bindingString: "{x = true}", objectString: "{}", returnVariable: "x" },
     { bindingString: "{x, y = true}", objectString: "{x: false}", returnVariable: "y" },
+    { bindingString: "[x = true, y = false]", objectString: "[undefined, undefined]", returnVariable: "x" },
 ];
 
 test.each([

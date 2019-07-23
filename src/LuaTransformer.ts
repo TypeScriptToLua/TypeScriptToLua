@@ -4012,10 +4012,8 @@ export class LuaTransformer {
             });
         }
 
-        switch (ownerType.flags) {
-            case ts.TypeFlags.String:
-            case ts.TypeFlags.StringLiteral:
-                return this.transformStringCallExpression(node);
+        if (tsHelper.isStringType(ownerType, this.checker, this.program)) {
+            return this.transformStringCallExpression(node);
         }
 
         // if ownerType is a array, use only supported functions

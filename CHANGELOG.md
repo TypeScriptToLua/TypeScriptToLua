@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.25.0
+
+- Added support for named function assignments, i.e. `const myFunc = function x(n) { ...; return x(n - 1); }`
+
+- Made detection of string methods more robust.
+- Fixed issue regarding readonly tuple detection.
+- Fixed a nasty issue causing exponential complexity on chained properties/method expressions.
+- Improved handling of constrained generic types related to string and array detection.
+
 ## 0.24.0
 
 - Returns in try/catch statements now properly return from the current function.

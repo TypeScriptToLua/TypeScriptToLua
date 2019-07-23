@@ -349,6 +349,22 @@ test.each([`"foobar".length`, `"foobar".repeat(2)`, "`foo${'bar'}`.length", "`fo
     }
 );
 
+test("scoped string-union inference", () => {
+    const inp = "foo";
+
+    const result = util.transpileAndExecute(`
+        const union: string = "${inp}";
+
+        if (union === "foo" || union === "bar") {
+            return union.length;
+        }
+
+        return 0;
+    `);
+
+    expect(result).toBe(inp.length);
+});
+
 test.each([
     "function generic<T extends string>(string: T)",
     "type StringType = string; function generic<T extends StringType>(string: T)",

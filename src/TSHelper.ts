@@ -140,6 +140,14 @@ export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts
         }
     }
 
+    if (type.isUnion()) {
+        return type.types.every(t => isStringType(t, checker, program));
+    }
+
+    if (type.isIntersection()) {
+        return type.types.some(t => isStringType(t, checker, program));
+    }
+
     return (
         (type.flags & ts.TypeFlags.String) !== 0 ||
         (type.flags & ts.TypeFlags.StringLike) !== 0 ||

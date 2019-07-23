@@ -140,6 +140,11 @@ test.each([
         returnValue: "typeof y === 'object'",
         expectedResult: true,
     },
+    {
+        bindingString: "{ x: x.prop = false } = { x: true }",
+        returnValue: "x.prop",
+        expectedResult: true,
+    },
 ])("Binding pattern assignment pass-through (%p)", ({ bindingString, returnValue, expectedResult }) => {
     const result = util.transpileAndExecute(`
             let x: any = {}, y: any = {};

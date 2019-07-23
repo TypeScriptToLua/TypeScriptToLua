@@ -832,8 +832,14 @@ export function isWithinLiteralAssignmentStatement(node: ts.Node): boolean {
     if (!node.parent) {
         return false;
     }
-    if (ts.isArrayLiteralExpression(node.parent) || ts.isObjectLiteralExpression(node.parent)) {
+    if (
+        ts.isArrayLiteralExpression(node.parent) ||
+        ts.isArrayBindingPattern(node.parent) ||
+        ts.isObjectLiteralExpression(node.parent)
+    ) {
         return isWithinLiteralAssignmentStatement(node.parent);
+    } else if (isInDestructingAssignment(node)) {
+        return true;
     } else if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
         return true;
     } else {

@@ -135,7 +135,7 @@ export function isStaticNode(node: ts.Node): boolean {
 export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
     if (type.symbol) {
         const baseConstraint = checker.getBaseConstraintOfType(type);
-        if (baseConstraint) {
+        if (baseConstraint && baseConstraint !== type) {
             return isStringType(baseConstraint, checker, program);
         }
     }
@@ -158,7 +158,7 @@ export function isNumberType(type: ts.Type): boolean {
 export function isExplicitArrayType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
     if (type.symbol) {
         const baseConstraint = checker.getBaseConstraintOfType(type);
-        if (baseConstraint) {
+        if (baseConstraint && baseConstraint !== type) {
             return isExplicitArrayType(baseConstraint, checker, program);
         }
     }

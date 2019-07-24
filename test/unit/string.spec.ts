@@ -132,6 +132,7 @@ test.each([
     { inp: "hello test", searchValue: "t" },
     { inp: "hello test", searchValue: "h" },
     { inp: "hello test", searchValue: "invalid" },
+    { inp: "hello.test", searchValue: "." },
 ])("string.indexOf (%p)", ({ inp, searchValue }) => {
     const result = util.transpileAndExecute(`return "${inp}".indexOf("${searchValue}")`);
 

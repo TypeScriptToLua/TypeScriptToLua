@@ -57,14 +57,6 @@ function ClassB.prototype.____constructor(self)
 end"
 `;
 
-exports[`Transformation (enumMembersOnly) 1`] = `
-"val1 = 0
-val2 = 2
-val3 = 3
-val4 = \\"bye\\"
-local a = val1"
-`;
-
 exports[`Transformation (exportStatement) 1`] = `
 "local ____exports = {}
 local xyz = 4
@@ -237,20 +229,6 @@ exports[`Transformation (modulesImportWithoutFromClause) 1`] = `"require(\\"test
 exports[`Transformation (modulesNamespaceExport) 1`] = `
 "local ____exports = {}
 ____exports.TestSpace = {}
-return ____exports"
-`;
-
-exports[`Transformation (modulesNamespaceExportEnum) 1`] = `
-"local ____exports = {}
-____exports.test = {}
-local test = ____exports.test
-do
-    test.TestEnum = {}
-    test.TestEnum.foo = \\"foo\\"
-    test.TestEnum.foo = \\"foo\\"
-    test.TestEnum.bar = \\"bar\\"
-    test.TestEnum.bar = \\"bar\\"
-end
 return ____exports"
 `;
 

@@ -2,82 +2,97 @@ import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 // TODO: string.toString()
-const serializeAndReturnTestEnum = () => `
+const serializeAndReturn = (identifier: string) => `
     const mappedTestEnum: any = {};
-    for (const key in TestEnum) {
-        mappedTestEnum[(key as any).toString()] = TestEnum[key];
+    for (const key in ${identifier}) {
+        mappedTestEnum[(key as any).toString()] = ${identifier}[key];
     }
     return mappedTestEnum;
 `;
 
-test("without initializer", () => {
+// TODO: Move to namespace tests?
+test("in a namespace", () => {
     util.testFunction`
-        enum TestEnum {
-            A,
-            B,
-            C,
+        namespace Test {
+            export enum TestEnum {
+                A,
+                B,
+            }
         }
 
-        ${serializeAndReturnTestEnum}
+        ${serializeAndReturn("Test.TestEnum")}
     `.expectToMatchJsResult();
 });
 
-test("expression initializer", () => {
+test.skip("string literal as a member name", () => {
     util.testFunction`
-        const value = 6;
         enum TestEnum {
-            A,
-            B = value,
+            ["A"],
         }
 
-        ${serializeAndReturnTestEnum}
+        ${serializeAndReturn("TestEnum")}
     `.expectToMatchJsResult();
 });
 
-test("initializer inference", () => {
-    util.testFunction`
-        const enum TestEnum {
-            A = 3,
-            B,
-            C = 5,
-        }
+describe("initializers", () => {
+    test("expression", () => {
+        util.testFunction`
+            const value = 6;
+            enum TestEnum {
+                A,
+                B = value,
+            }
 
-        return TestEnum.B;
-    `.expectToMatchJsResult();
-});
+            ${serializeAndReturn("TestEnum")}
+        `.expectToMatchJsResult();
+    });
 
-test("initializer referencing other member", () => {
-    util.testFunction`
-        enum TestEnum {
-            A,
-            B = A,
-            C,
-        }
+    test("inference", () => {
+        util.testFunction`
+            enum TestEnum {
+                A,
+                B,
+                C,
+            }
 
-        ${serializeAndReturnTestEnum}
-    `.expectToMatchJsResult();
-});
+            ${serializeAndReturn("TestEnum")}
+        `.expectToMatchJsResult();
+    });
 
-test("initializer referencing other member with initializer referencing other member", () => {
-    util.testFunction`
-        enum TestEnum {
-            A,
-            B = A,
-            C = B,
-        }
+    test("partial inference", () => {
+        util.testFunction`
+            const enum TestEnum {
+                A = 3,
+                B,
+                C = 5,
+            }
 
-        ${serializeAndReturnTestEnum}
-    `.expectToMatchJsResult();
-});
+            return TestEnum.B;
+        `.expectToMatchJsResult();
+    });
 
-test.skip("string literal member name", () => {
-    util.testFunction`
-        enum TestEnum {
-            ["A"] = "foo",
-        }
+    test("other member reference", () => {
+        util.testFunction`
+            enum TestEnum {
+                A,
+                B = A,
+                C,
+            }
 
-        ${serializeAndReturnTestEnum}
-    `.expectToMatchJsResult();
+            ${serializeAndReturn("TestEnum")}
+        `.expectToMatchJsResult();
+    });
+
+    test.skip("string literal member reference", () => {
+        util.testFunction`
+            enum TestEnum {
+                ["A"],
+                B = A,
+            }
+
+            ${serializeAndReturn("TestEnum")}
+        `.expectToMatchJsResult();
+    });
 });
 
 test("invalid heterogeneous enum", () => {

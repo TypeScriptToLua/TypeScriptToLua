@@ -317,7 +317,7 @@ export abstract class TestBuilder {
         return `${this.tsHeader}${this._tsCode}`;
     }
 
-    private hasProgram = false;
+    protected hasProgram = false;
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
@@ -510,12 +510,13 @@ class AccessorTestBuilder extends TestBuilder {
 
     @memoize
     protected getJsCodeWithWrapper(): string {
-        return this.getMainJsCodeChunk() + `\n;module.exports = exports${this.accessor}`;
+        return this.getMainJsCodeChunk() + `\n;module.exports = module.exports${this.accessor}`;
     }
 }
 
 class ModuleTestBuilder extends AccessorTestBuilder {
     public setExport(name: string): this {
+        expect(this.hasProgram).toBe(false);
         this.accessor = `.${name}`;
         return this;
     }

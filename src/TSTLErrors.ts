@@ -34,13 +34,6 @@ export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
 export const ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
     new TranspileError(`Invalid @luaTable usage: ${description}`, node);
 
-export const HeterogeneousEnum = (node: ts.Node) =>
-    new TranspileError(
-        `Invalid heterogeneous enum. Enums should either specify no member values, ` +
-            `or specify values (of the same type) for all members.`,
-        node
-    );
-
 export const InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
     new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
 

@@ -808,26 +808,6 @@ export function isStandardLibraryType(type: ts.Type, name: string | undefined, p
     return isStandardLibraryDeclaration(declaration, program);
 }
 
-export function isEnumMember(
-    enumDeclaration: ts.EnumDeclaration,
-    value: ts.Expression
-): [true, ts.PropertyName] | [false, undefined] {
-    if (ts.isIdentifier(value)) {
-        const enumMember = enumDeclaration.members.find(m => ts.isIdentifier(m.name) && m.name.text === value.text);
-        if (enumMember !== undefined) {
-            if (enumMember.initializer && ts.isIdentifier(enumMember.initializer)) {
-                return isEnumMember(enumDeclaration, enumMember.initializer);
-            } else {
-                return [true, enumMember.name];
-            }
-        } else {
-            return [false, undefined];
-        }
-    } else {
-        return [false, undefined];
-    }
-}
-
 export function isWithinLiteralAssignmentStatement(node: ts.Node): boolean {
     if (!node.parent) {
         return false;

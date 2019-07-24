@@ -1,4 +1,3 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("Declare const enum", () => {
@@ -52,18 +51,6 @@ test("Const enum without initializer in some values", () => {
     `;
 
     expect(util.transpileString(testCode)).toBe(`local valueOne = 4`);
-});
-
-test("Invalid heterogeneous enum", () => {
-    expect(() => {
-        util.transpileString(`
-            enum TestEnum {
-                a,
-                b = "ok",
-                c,
-            }
-        `);
-    }).toThrowExactError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
 });
 
 test("String literal name in enum", () => {

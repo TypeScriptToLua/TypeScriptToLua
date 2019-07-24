@@ -4350,24 +4350,14 @@ export class LuaTransformer {
             case "concat":
                 return this.transformLuaLibFunction(LuaLibFeature.StringConcat, node, caller, ...params);
             case "indexOf":
-                const stringExpression =
-                    node.arguments.length === 1
-                        ? this.createStringCall(
-                              "find",
-                              node,
-                              caller,
-                              params[0],
-                              tstl.createNilLiteral(),
-                              tstl.createBooleanLiteral(true)
-                          )
-                        : this.createStringCall(
-                              "find",
-                              node,
-                              caller,
-                              params[0],
-                              this.expressionPlusOne(params[1]),
-                              tstl.createBooleanLiteral(true)
-                          );
+                const stringExpression = this.createStringCall(
+                    "find",
+                    node,
+                    caller,
+                    params[0],
+                    params[1] ? this.expressionPlusOne(params[1]) : tstl.createNilLiteral(),
+                    tstl.createBooleanLiteral(true)
+                );
 
                 return tstl.createParenthesizedExpression(
                     tstl.createBinaryExpression(

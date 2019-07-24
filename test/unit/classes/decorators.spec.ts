@@ -3,121 +3,83 @@ import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
     util.testFunction`
-        function SetBool<T extends { new(...args: any[]): {} }>(constructor: T) {
+        function setBool<T extends new (...args: any[]) => {}>(constructor: T) {
             return class extends constructor {
                 decoratorBool = true;
             }
         }
 
-        @SetBool
+        @setBool
         class TestClass {
             public decoratorBool = false;
         }
 
-        const classInstance = new TestClass();
-        return classInstance.decoratorBool;
+        return new TestClass();
     `.expectToMatchJsResult();
 });
 
 test("Class decorator with parameters", () => {
     util.testFunction`
-        function SetNum(numArg: number) {
-            return <T extends new(...args: any[]) => {}>(constructor: T) => {
+        function setNum(numArg: number) {
+            return <T extends new (...args: any[]) => {}>(constructor: T) => {
                 return class extends constructor {
                     decoratorNum = numArg;
                 };
             };
         }
 
-        @SetNum(420)
+        @setNum(420)
         class TestClass {
             public decoratorNum;
         }
 
-        const classInstance = new TestClass();
-        return classInstance.decoratorNum;
-    `.expectToMatchJsResult();
-});
-
-test("Class decorator with variable parameters", () => {
-    util.testFunction`
-        function SetNumbers(...numArgs: number[]) {
-            return <T extends new(...args: any[]) => {}>(constructor: T) => {
-                return class extends constructor {
-                    decoratorNums = new Set<number>(numArgs);
-                };
-            };
-        }
-
-        @SetNumbers(120, 30, 54)
-        class TestClass {
-            public decoratorNums;
-        }
-
-        const classInstance = new TestClass();
-        let sum = 0;
-        for (const value of classInstance.decoratorNums) {
-            sum += value;
-        }
-        return sum;
+        return new TestClass();
     `.expectToMatchJsResult();
 });
 
 test("Multiple class decorators", () => {
     util.testFunction`
-        function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
+        function setTen<T extends new (...args: any[]) => {}>(constructor: T) {
             return class extends constructor {
                 decoratorTen = 10;
             }
         }
 
-        function SetNum(numArg: number) {
-            return <T extends new(...args: any[]) => {}>(constructor: T) => {
-                return class extends constructor {
-                    decoratorNum = numArg;
-                };
-            };
+        function setNum<T extends new (...args: any[]) => {}>(constructor: T) {
+            return class extends constructor {
+                decoratorNum = 410;
+            }
         }
 
-        @SetTen
-        @SetNum(410)
+        @setTen
+        @setNum
         class TestClass {
             public decoratorTen;
             public decoratorNum;
         }
 
-        const classInstance = new TestClass();
-        return classInstance.decoratorNum + classInstance.decoratorTen;
+        return new TestClass();
     `.expectToMatchJsResult();
 });
 
 test("Class decorator with inheritance", () => {
     util.testFunction`
-        function SetTen<T extends { new(...args: any[]): {} }>(constructor: T) {
+        function setTen<T extends new (...args: any[]) => {}>(constructor: T) {
             return class extends constructor {
                 decoratorTen = 10;
             }
         }
 
-        function SetNum(numArg: number) {
-            return <T extends new(...args: any[]) => {}>(constructor: T) => {
-                return class extends constructor {
-                    decoratorNum = numArg;
-                };
-            };
-        }
-
         class TestClass {
             public decoratorTen = 0;
-            public decoratorNum = 0;
         }
 
-        @SetTen
-        @SetNum(410)
-        class SubTestClass extends TestClass {}
+        @setTen
+        class SubTestClass extends TestClass {
+            public decoratorTen = 5;
+        }
 
-        const classInstance = new SubTestClass();
-        return classInstance.decoratorNum + classInstance.decoratorTen;
+        return new SubTestClass();
     `.expectToMatchJsResult();
 });
 
@@ -125,46 +87,29 @@ test("Class decorators are applied in order and executed in reverse order", () =
     util.testFunction`
         const order = [];
 
-        function SetString(stringArg: string) {
-            order.push("eval " + stringArg);
-            return <T extends new (...args: any[]) => {}>(constructor: T) => {
-                order.push("execute " + stringArg);
-                return class extends constructor {
-                    decoratorString = stringArg;
-                };
+        function pushOrder(index: number) {
+            order.push("eval " + index);
+            return (constructor: new (...args: any[]) => {}) => {
+                order.push("execute " + index);
             };
         }
 
-        @SetString("fox")
-        @SetString("jumped")
-        @SetString("over dog")
-        class TestClass {
-            public static decoratorString = "";
-        }
+        @pushOrder(1)
+        @pushOrder(2)
+        @pushOrder(3)
+        class TestClass {}
 
-        const inst = new TestClass();
-        return order.join(" ");
+        return order;
     `.expectToMatchJsResult();
 });
 
 test("Throws error if decorator function has void context", () => {
-    const source = `
-        function SetBool<T extends { new(...args: any[]): {} }>(this: void, constructor: T) {
-            return class extends constructor {
-                decoratorBool = true;
-            }
-        }
+    util.testFunction`
+        function SetBool(this: void, constructor: new (...args: any[]) => {}) {}
 
         @SetBool
-        class TestClass {
-            public decoratorBool = false;
-        }
-
-        const classInstance = new TestClass();
-        return classInstance.decoratorBool;
-    `;
-
-    expect(() => util.transpileAndExecute(source)).toThrowExactError(TSTLErrors.InvalidDecoratorContext(util.nodeStub));
+        class TestClass {}
+    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidDecoratorContext(util.nodeStub));
 });
 
 test("Exported class decorator", () => {

@@ -1,174 +1,138 @@
 import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
-test("Declare const enum", () => {
-    const testCode = `
-        declare const enum TestEnum {
-            MEMBER_ONE = "test",
-            MEMBER_TWO = "test2"
-        }
+// TODO: string.toString()
+const serializeAndReturnTestEnum = () => `
+    const mappedTestEnum: any = {};
+    for (const key in TestEnum) {
+        mappedTestEnum[(key as any).toString()] = TestEnum[key];
+    }
+    return mappedTestEnum;
+`;
 
-        const valueOne = TestEnum.MEMBER_ONE;
-    `;
-
-    expect(util.transpileString(testCode)).toBe(`local valueOne = "test"`);
-});
-
-test("Const enum", () => {
-    const testCode = `
-        const enum TestEnum {
-            MEMBER_ONE = "test",
-            MEMBER_TWO = "test2"
-        }
-
-        const valueOne = TestEnum.MEMBER_TWO;
-    `;
-
-    expect(util.transpileString(testCode)).toBe(`local valueOne = "test2"`);
-});
-
-test("Const enum without initializer", () => {
-    const testCode = `
-        const enum TestEnum {
-            MEMBER_ONE,
-            MEMBER_TWO
-        }
-
-        const valueOne = TestEnum.MEMBER_TWO;
-    `;
-
-    expect(util.transpileString(testCode)).toBe(`local valueOne = 1`);
-});
-
-test("Const enum without initializer in some values", () => {
-    const testCode = `
-        const enum TestEnum {
-            MEMBER_ONE = 3,
-            MEMBER_TWO,
-            MEMBER_THREE = 5
-        }
-
-        const valueOne = TestEnum.MEMBER_TWO;
-    `;
-
-    expect(util.transpileString(testCode)).toBe(`local valueOne = 4`);
-});
-
-test("Invalid heterogeneous enum", () => {
-    expect(() => {
-        util.transpileString(`
-            enum TestEnum {
-                a,
-                b = "ok",
-                c,
-            }
-        `);
-    }).toThrowExactError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
-});
-
-test("String literal name in enum", () => {
-    const code = `
+test("without initializer", () => {
+    util.testFunction`
         enum TestEnum {
-            ["name"] = "foo"
+            A,
+            B,
+            C,
         }
-        return TestEnum["name"];
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foo");
+
+        ${serializeAndReturnTestEnum}
+    `.expectToMatchJsResult();
 });
 
-test("Enum identifier value internal", () => {
-    const result = util.transpileAndExecute(
-        `enum testEnum {
-            abc,
-            def,
-            ghi = def,
-            jkl,
+test("expression initializer", () => {
+    util.testFunction`
+        const value = 6;
+        enum TestEnum {
+            A,
+            B = value,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
-    );
 
-    expect(result).toBe("0,1,1,2");
+        ${serializeAndReturnTestEnum}
+    `.expectToMatchJsResult();
 });
 
-test("Enum identifier value internal recursive", () => {
-    const result = util.transpileAndExecute(
-        `enum testEnum {
-            abc,
-            def,
-            ghi = def,
-            jkl = ghi,
+test("initializer inference", () => {
+    util.testFunction`
+        const enum TestEnum {
+            A = 3,
+            B,
+            C = 5,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi},\${testEnum.jkl}\`;`
-    );
 
-    expect(result).toBe("0,1,1,1");
+        return TestEnum.B;
+    `.expectToMatchJsResult();
 });
 
-test("Enum identifier value external", () => {
-    const result = util.transpileAndExecute(
-        `const ext = 6;
-        enum testEnum {
-            abc,
-            def,
-            ghi = ext,
+test("initializer referencing other member", () => {
+    util.testFunction`
+        enum TestEnum {
+            A,
+            B = A,
+            C,
         }
-        return \`\${testEnum.abc},\${testEnum.def},\${testEnum.ghi}\`;`
-    );
 
-    expect(result).toBe("0,1,6");
+        ${serializeAndReturnTestEnum}
+    `.expectToMatchJsResult();
 });
 
-test("Enum reverse mapping", () => {
-    const result = util.transpileAndExecute(
-        `enum testEnum {
-            abc,
-            def,
-            ghi
+test("initializer referencing other member with initializer referencing other member", () => {
+    util.testFunction`
+        enum TestEnum {
+            A,
+            B = A,
+            C = B,
         }
-        return testEnum[testEnum.abc] + testEnum[testEnum.ghi]`
-    );
 
-    expect(result).toBe("abcghi");
+        ${serializeAndReturnTestEnum}
+    `.expectToMatchJsResult();
 });
 
-test("Const enum index", () => {
-    const result = util.transpileAndExecute(
-        `const enum testEnum {
-            abc,
-            def,
-            ghi
+test.skip("string literal member name", () => {
+    util.testFunction`
+        enum TestEnum {
+            ["A"] = "foo",
         }
-        return testEnum["def"];`
-    );
 
-    expect(result).toBe(1);
+        ${serializeAndReturnTestEnum}
+    `.expectToMatchJsResult();
 });
 
-test("Const enum index identifier value", () => {
-    const result = util.transpileAndExecute(
-        `const enum testEnum {
-            abc,
-            def = 4,
-            ghi,
-            jkl = ghi
+test("invalid heterogeneous enum", () => {
+    util.testFunction`
+        enum TestEnum {
+            A,
+            B = "B",
+            C,
         }
-        return testEnum["jkl"];`
-    );
-
-    expect(result).toBe(5);
+    `
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
 });
 
-test("Const enum index identifier chain", () => {
-    const result = util.transpileAndExecute(
-        `const enum testEnum {
-            abc = 3,
-            def,
-            ghi = def,
-            jkl = ghi,
-        }
-        return testEnum["ghi"];`
-    );
+describe("const enum", () => {
+    const expectToBeConst: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).not.toContain("TestEnum");
 
-    expect(result).toBe(4);
+    test.each(["", "declare"])("%s without initializer", () => {
+        util.testFunction`
+            const enum TestEnum {
+                A,
+                B,
+            }
+
+            return TestEnum.A;
+        `
+            .tap(expectToBeConst)
+            .expectToMatchJsResult();
+    });
+
+    test("with initializer", () => {
+        util.testFunction`
+            const enum TestEnum {
+                A = "ONE",
+                B = "TWO",
+            }
+
+            return TestEnum.A;
+        `
+            .tap(expectToBeConst)
+            .expectToMatchJsResult();
+    });
+
+    test("access with string literal", () => {
+        util.testFunction`
+            const enum TestEnum {
+                A,
+                B,
+                C,
+            }
+
+            return TestEnum["C"];
+        `
+            .tap(expectToBeConst)
+            .expectToMatchJsResult();
+    });
 });

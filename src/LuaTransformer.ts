@@ -3918,10 +3918,8 @@ export class LuaTransformer {
             });
         }
 
-        switch (ownerType.flags) {
-            case ts.TypeFlags.String:
-            case ts.TypeFlags.StringLiteral:
-                return this.transformStringCallExpression(node);
+        if (tsHelper.isStringType(ownerType, this.checker, this.program)) {
+            return this.transformStringCallExpression(node);
         }
 
         // if ownerType is a array, use only supported functions
@@ -4352,17 +4350,14 @@ export class LuaTransformer {
             case "concat":
                 return this.transformLuaLibFunction(LuaLibFeature.StringConcat, node, caller, ...params);
             case "indexOf":
-                const stringExpression =
-                    node.arguments.length === 1
-                        ? this.createStringCall("find", node, caller, params[0])
-                        : this.createStringCall(
-                              "find",
-                              node,
-                              caller,
-                              params[0],
-                              this.expressionPlusOne(params[1]),
-                              tstl.createBooleanLiteral(true)
-                          );
+                const stringExpression = this.createStringCall(
+                    "find",
+                    node,
+                    caller,
+                    params[0],
+                    params[1] ? this.expressionPlusOne(params[1]) : tstl.createNilLiteral(),
+                    tstl.createBooleanLiteral(true)
+                );
 
                 return tstl.createParenthesizedExpression(
                     tstl.createBinaryExpression(

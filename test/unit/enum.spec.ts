@@ -151,3 +151,27 @@ describe("const enum", () => {
             .expectToMatchJsResult();
     });
 });
+
+test("enum toString", () => {
+    const code = `
+        enum TestEnum {
+            A,
+            B,
+            C,
+        }
+        let test = TestEnum.A;
+        return test.toString();`;
+    expect(util.transpileAndExecute(code)).toBe(0);
+});
+
+test("enum concat", () => {
+    const code = `
+        enum TestEnum {
+            A,
+            B,
+            C,
+        }
+        let test = TestEnum.A;
+        return test + "_foobar";`;
+    expect(util.transpileAndExecute(code)).toBe("0_foobar");
+});

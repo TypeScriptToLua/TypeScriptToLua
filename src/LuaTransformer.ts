@@ -2112,14 +2112,6 @@ export class LuaTransformer {
             );
         }
 
-        if (!ts.isCallLikeExpression(expression)) {
-            // Assign expression statements to dummy to make sure they're legal lua
-            return tstl.createVariableDeclarationStatement(
-                tstl.createAnonymousIdentifier(),
-                this.transformExpression(expression)
-            );
-        }
-
         if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
             const ownerType = this.checker.getTypeAtLocation(expression.expression.expression);
             const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
@@ -2134,7 +2126,11 @@ export class LuaTransformer {
             }
         }
 
-        return tstl.createExpressionStatement(this.transformExpression(expression));
+        const result = this.transformExpression(expression);
+        return tstl.isCallExpression(result) || tstl.isMethodCallExpression(result)
+            ? tstl.createExpressionStatement(result)
+            : // Assign expression statements to dummy to make sure they're legal Lua
+              tstl.createVariableDeclarationStatement(tstl.createAnonymousIdentifier(), result);
     }
 
     public transformYieldExpression(expression: ts.YieldExpression): ExpressionVisitResult {
@@ -4210,10 +4206,7 @@ export class LuaTransformer {
                 const logCall1 = tstl.createCallExpression(log1, params);
                 const e = tstl.createNumericLiteral(expressionName === "log10" ? Math.LN10 : Math.LN2);
                 const div = tstl.createBinaryExpression(logCall1, e, tstl.SyntaxKind.DivisionOperator);
-                return ts.isExpressionStatement(node.parent)
-                    ? // if used as a stand-alone statement, needs to be a call expression to be valid lua
-                      this.createImmediatelyInvokedFunctionExpression([], div, node)
-                    : tstl.createParenthesizedExpression(div, node);
+                return tstl.createParenthesizedExpression(div, node);
             }
 
             // math.log(1 + x)

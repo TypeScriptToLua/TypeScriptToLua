@@ -97,18 +97,18 @@ test.each([
 });
 
 test.each([
-    { input: "~a", lua: "local ____ = bit.bnot(a)" },
-    { input: "a&b", lua: "local ____ = bit.band(a, b)" },
+    { input: "~a", lua: "bit.bnot(a)" },
+    { input: "a&b", lua: "bit.band(a, b)" },
     { input: "a&=b", lua: "a = bit.band(a, b)" },
-    { input: "a|b", lua: "local ____ = bit.bor(a, b)" },
+    { input: "a|b", lua: "bit.bor(a, b)" },
     { input: "a|=b", lua: "a = bit.bor(a, b)" },
-    { input: "a^b", lua: "local ____ = bit.bxor(a, b)" },
+    { input: "a^b", lua: "bit.bxor(a, b)" },
     { input: "a^=b", lua: "a = bit.bxor(a, b)" },
-    { input: "a<<b", lua: "local ____ = bit.lshift(a, b)" },
+    { input: "a<<b", lua: "bit.lshift(a, b)" },
     { input: "a<<=b", lua: "a = bit.lshift(a, b)" },
-    { input: "a>>b", lua: "local ____ = bit.arshift(a, b)" },
+    { input: "a>>b", lua: "bit.arshift(a, b)" },
     { input: "a>>=b", lua: "a = bit.arshift(a, b)" },
-    { input: "a>>>b", lua: "local ____ = bit.rshift(a, b)" },
+    { input: "a>>>b", lua: "bit.rshift(a, b)" },
     { input: "a>>>=b", lua: "a = bit.rshift(a, b)" },
 ])("Bitop [JIT] (%p)", ({ input, lua }) => {
     const options = { luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None };
@@ -116,18 +116,18 @@ test.each([
 });
 
 test.each([
-    { input: "~a", lua: "local ____ = bit32.bnot(a)" },
-    { input: "a&b", lua: "local ____ = bit32.band(a, b)" },
+    { input: "~a", lua: "bit32.bnot(a)" },
+    { input: "a&b", lua: "bit32.band(a, b)" },
     { input: "a&=b", lua: "a = bit32.band(a, b)" },
-    { input: "a|b", lua: "local ____ = bit32.bor(a, b)" },
+    { input: "a|b", lua: "bit32.bor(a, b)" },
     { input: "a|=b", lua: "a = bit32.bor(a, b)" },
-    { input: "a^b", lua: "local ____ = bit32.bxor(a, b)" },
+    { input: "a^b", lua: "bit32.bxor(a, b)" },
     { input: "a^=b", lua: "a = bit32.bxor(a, b)" },
-    { input: "a<<b", lua: "local ____ = bit32.lshift(a, b)" },
+    { input: "a<<b", lua: "bit32.lshift(a, b)" },
     { input: "a<<=b", lua: "a = bit32.lshift(a, b)" },
-    { input: "a>>b", lua: "local ____ = bit32.arshift(a, b)" },
+    { input: "a>>b", lua: "bit32.arshift(a, b)" },
     { input: "a>>=b", lua: "a = bit32.arshift(a, b)" },
-    { input: "a>>>b", lua: "local ____ = bit32.rshift(a, b)" },
+    { input: "a>>>b", lua: "bit32.rshift(a, b)" },
     { input: "a>>>=b", lua: "a = bit32.rshift(a, b)" },
 ])("Bitop [5.2] (%p)", ({ input, lua }) => {
     const options = { luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None };
@@ -518,6 +518,7 @@ test.each([
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
+    '"".indexOf("")',
 ])("Expression statements (%p)", input => {
     const code = `
         function foo() { return 17; }

@@ -122,7 +122,7 @@ test("Tuple Return Destruct Declaration", () => {
     const code = `
         /** @tupleReturn */
         function tuple(): [number, number, number] { return [3,5,1]; }
-        const [a,b,c] = tuple();
+        const [,b,c] = tuple();
         return b;`;
 
     const lua = util.transpileString(code);

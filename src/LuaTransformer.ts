@@ -1943,7 +1943,9 @@ export class LuaTransformer {
             // For nested bindings and object bindings, fall back to transformBindingPattern
             if (
                 ts.isObjectBindingPattern(statement.name) ||
-                statement.name.elements.some(elem => !ts.isBindingElement(elem) || !ts.isIdentifier(elem.name))
+                statement.name.elements.some(
+                    elem => (!ts.isBindingElement(elem) || !ts.isIdentifier(elem.name)) && !ts.isOmittedExpression(elem)
+                )
             ) {
                 const statements = [];
                 let table: tstl.Identifier;
@@ -1968,7 +1970,13 @@ export class LuaTransformer {
             }
 
             // Disallow ellipsis destruction
-            if (statement.name.elements.some(elem => !ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined)) {
+            if (
+                statement.name.elements.some(
+                    elem =>
+                        (!ts.isBindingElement(elem) || elem.dotDotDotToken !== undefined) &&
+                        !ts.isOmittedExpression(elem)
+                )
+            ) {
                 throw TSTLErrors.ForbiddenEllipsisDestruction(statement);
             }
 

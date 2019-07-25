@@ -138,7 +138,7 @@ function performCompilation(
         configFileParsingDiagnostics,
     });
     const transformer = options.luaTransformer
-        ? new (require(resolve(options.luaTransformer, { basedir: process.cwd() })).default)(program)
+        ? new (require(resolve(options.luaTransformer, { basedir: process.cwd() }))).default(program)
         : undefined;
 
     const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.transpile({ program, ...{ transformer } });

@@ -22,9 +22,18 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+interface CommandLineOptionOfString extends CommandLineOptionBase {
+    type: "string";
+}
+
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfString;
 
 const optionDeclarations: CommandLineOption[] = [
+    {
+        name: "luaTransformer",
+        description: "Specifies how the lua transformer to use",
+        type: "string",
+    },
     {
         name: "luaLibImport",
         description: "Specifies how js standard features missing in lua are imported.",
@@ -221,6 +230,17 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             }
 
             return { value: enumValue };
+        }
+
+        case "string": {
+            if (typeof value !== "string") {
+                return {
+                    value: undefined,
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
+                };
+            }
+
+            return { value };
         }
     }
 }

@@ -39,7 +39,7 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
-        "resolve": "^1.11.0",
+        "resolve": "^1.11.1",
         "source-map": "^0.7.3",
         "typescript": "^3.5.2"
     },

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as path from "path";
 import * as ts from "typescript";
+import { sync as resolve } from "resolve";
 import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
 import * as diagnosticFactories from "./diagnostics";
@@ -136,8 +137,11 @@ function performCompilation(
         projectReferences,
         configFileParsingDiagnostics,
     });
+    const transformer = options.luaTransformer
+        ? new (require(resolve(options.luaTransformer, { basedir: process.cwd() })).default)(program)
+        : undefined;
 
-    const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.transpile({ program });
+    const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.transpile({ program, ...{ transformer } });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),

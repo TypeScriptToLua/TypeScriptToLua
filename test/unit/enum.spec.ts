@@ -2,17 +2,17 @@ import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 // TODO: string.toString()
-const serializeAndReturn = (identifier: string) => `
+const serializeEnum = (identifier: string) => `(() => {
     const mappedTestEnum: any = {};
     for (const key in ${identifier}) {
         mappedTestEnum[(key as any).toString()] = ${identifier}[key];
     }
     return mappedTestEnum;
-`;
+})()`;
 
 // TODO: Move to namespace tests?
 test("in a namespace", () => {
-    util.testFunction`
+    util.testModule`
         namespace Test {
             export enum TestEnum {
                 A,
@@ -20,7 +20,7 @@ test("in a namespace", () => {
             }
         }
 
-        ${serializeAndReturn("Test.TestEnum")}
+        export const result = ${serializeEnum("Test.TestEnum")}
     `.expectToMatchJsResult();
 });
 
@@ -30,7 +30,7 @@ test.skip("string literal as a member name", () => {
             ["A"],
         }
 
-        ${serializeAndReturn("TestEnum")}
+        return ${serializeEnum("TestEnum")}
     `.expectToMatchJsResult();
 });
 
@@ -43,7 +43,7 @@ describe("initializers", () => {
                 B = value,
             }
 
-            ${serializeAndReturn("TestEnum")}
+            return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
 
@@ -55,19 +55,19 @@ describe("initializers", () => {
                 C,
             }
 
-            ${serializeAndReturn("TestEnum")}
+            return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
 
     test("partial inference", () => {
         util.testFunction`
-            const enum TestEnum {
+            enum TestEnum {
                 A = 3,
                 B,
                 C = 5,
             }
 
-            return TestEnum.B;
+            return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
 
@@ -76,10 +76,10 @@ describe("initializers", () => {
             enum TestEnum {
                 A,
                 B = A,
-                C,
+                C = B,
             }
 
-            ${serializeAndReturn("TestEnum")}
+            return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
 
@@ -90,7 +90,7 @@ describe("initializers", () => {
                 B = A,
             }
 
-            ${serializeAndReturn("TestEnum")}
+            return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
 });

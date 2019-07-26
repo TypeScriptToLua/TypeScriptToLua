@@ -53,6 +53,10 @@ export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.T
     return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
 }
 
+export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
+    return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
+}
+
 export function isFileModule(sourceFile: ts.SourceFile): boolean {
     return sourceFile.statements.some(isStatementExported);
 }

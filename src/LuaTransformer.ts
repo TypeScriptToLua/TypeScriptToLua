@@ -3065,7 +3065,7 @@ export class LuaTransformer {
         this.validateFunctionAssignment(expression.right, rightType, leftType);
         this.validatePropertyAssignment(expression);
 
-        if (ts.isObjectLiteralExpression(expression.left) || ts.isArrayLiteralExpression(expression.left)) {
+        if (tsHelper.isAssignmentPattern(expression.left)) {
             // Destructuring assignment
             const flattenable = tsHelper.isValidFlattenableDestructuringAssignmentLeftHandSide(
                 expression as ts.DestructuringAssignment,
@@ -3294,7 +3294,7 @@ export class LuaTransformer {
     protected transformPropertyAssignment(node: ts.PropertyAssignment, root: tstl.Expression): tstl.Statement[] {
         const result: tstl.Statement[] = [];
 
-        if (ts.isObjectLiteralExpression(node.initializer) || ts.isArrayLiteralExpression(node.initializer)) {
+        if (tsHelper.isAssignmentPattern(node.initializer)) {
             const propertyAccessString = this.transformPropertyName(node.name);
             const newRootAccess = tstl.createTableIndexExpression(root, propertyAccessString);
 
@@ -3360,7 +3360,7 @@ export class LuaTransformer {
             );
         }
 
-        if (ts.isArrayLiteralExpression(expression.left) || ts.isObjectLiteralExpression(expression.left)) {
+        if (tsHelper.isAssignmentPattern(expression.left)) {
             // Destructuring assignment
             const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
 

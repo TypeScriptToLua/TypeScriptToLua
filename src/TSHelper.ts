@@ -132,34 +132,45 @@ export function isStaticNode(node: ts.Node): boolean {
     return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
-export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+export function isTypeWithFlags(
+    type: ts.Type,
+    flags: ts.TypeFlags,
+    checker: ts.TypeChecker,
+    program: ts.Program
+): boolean {
     if (type.symbol) {
         const baseConstraint = checker.getBaseConstraintOfType(type);
         if (baseConstraint && baseConstraint !== type) {
-            return isStringType(baseConstraint, checker, program);
+            return isTypeWithFlags(baseConstraint, flags, checker, program);
         }
     }
 
     if (type.isUnion()) {
-        return type.types.every(t => isStringType(t, checker, program));
+        return type.types.every(t => isTypeWithFlags(t, flags, checker, program));
     }
 
     if (type.isIntersection()) {
-        return type.types.some(t => isStringType(t, checker, program));
+        return type.types.some(t => isTypeWithFlags(t, flags, checker, program));
     }
 
-    return (
-        (type.flags & ts.TypeFlags.String) !== 0 ||
-        (type.flags & ts.TypeFlags.StringLike) !== 0 ||
-        (type.flags & ts.TypeFlags.StringLiteral) !== 0
+    return (type.flags & flags) !== 0;
+}
+
+export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    return isTypeWithFlags(
+        type,
+        ts.TypeFlags.String | ts.TypeFlags.StringLike | ts.TypeFlags.StringLiteral,
+        checker,
+        program
     );
 }
 
-export function isNumberType(type: ts.Type): boolean {
-    return (
-        (type.flags & ts.TypeFlags.Number) !== 0 ||
-        (type.flags & ts.TypeFlags.NumberLike) !== 0 ||
-        (type.flags & ts.TypeFlags.NumberLiteral) !== 0
+export function isNumberType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    return isTypeWithFlags(
+        type,
+        ts.TypeFlags.Number | ts.TypeFlags.NumberLike | ts.TypeFlags.NumberLiteral,
+        checker,
+        program
     );
 }
 

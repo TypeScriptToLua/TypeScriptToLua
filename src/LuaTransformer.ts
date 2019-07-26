@@ -2501,7 +2501,11 @@ export class LuaTransformer {
             );
         }
 
-        if (statement.expression.arguments.some(a => !tsHelper.isNumberType(this.checker.getTypeAtLocation(a)))) {
+        if (
+            statement.expression.arguments.some(
+                a => !tsHelper.isNumberType(this.checker.getTypeAtLocation(a), this.checker, this.program)
+            )
+        ) {
             throw TSTLErrors.InvalidForRangeCall(statement.expression, "@forRange arguments must be number types.");
         }
 
@@ -2518,7 +2522,7 @@ export class LuaTransformer {
         }
 
         const controlType = this.checker.getTypeAtLocation(controlDeclaration);
-        if (controlType && !tsHelper.isNumberType(controlType)) {
+        if (controlType && !tsHelper.isNumberType(controlType, this.checker, this.program)) {
             throw TSTLErrors.InvalidForRangeCall(
                 statement.expression,
                 "@forRange function must return Iterable<number> or Array<number>."
@@ -3856,7 +3860,7 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.Number, node, ...parameters);
             case "isNaN":
             case "isFinite":
-                const numberParameters = tsHelper.isNumberType(expressionType)
+                const numberParameters = tsHelper.isNumberType(expressionType, this.checker, this.program)
                     ? parameters
                     : [this.transformLuaLibFunction(LuaLibFeature.Number, undefined, ...parameters)];
 
@@ -4294,7 +4298,10 @@ export class LuaTransformer {
         const index = this.transformExpression(expression.argumentExpression);
         const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.isNumberType(argumentType) && tsHelper.isArrayType(type, this.checker, this.program)) {
+        if (
+            tsHelper.isNumberType(argumentType, this.checker, this.program) &&
+            tsHelper.isArrayType(type, this.checker, this.program)
+        ) {
             return this.expressionPlusOne(index);
         } else {
             return index;
@@ -4314,7 +4321,10 @@ export class LuaTransformer {
 
         const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.isNumberType(argumentType) && tsHelper.isStringType(type, this.checker, this.program)) {
+        if (
+            tsHelper.isNumberType(argumentType, this.checker, this.program) &&
+            tsHelper.isStringType(type, this.checker, this.program)
+        ) {
             const index = this.transformExpression(expression.argumentExpression);
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),

@@ -348,19 +348,25 @@ export function getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map
     return decMap;
 }
 
-export function getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
-    const decMap = new Map<DecoratorKind, Decorator>();
-    if (file.statements.length > 0) {
-        const tags = ts.getJSDocTags(file.statements[0]);
-        for (const tag of tags) {
-            const tagName = tag.tagName.escapedText as string;
-            if (Decorator.isValid(tagName)) {
-                const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
-                decMap.set(dec.kind, dec);
-            }
+export function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decorator> {
+    const directivesMap = new Map<DecoratorKind, Decorator>();
+
+    ts.getJSDocTags(node).forEach(tag => {
+        const tagName = tag.tagName.escapedText as string;
+        if (Decorator.isValid(tagName)) {
+            const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+            directivesMap.set(dec.kind, dec);
         }
+    });
+
+    return directivesMap;
+}
+
+export function getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
+    if (file.statements.length > 0) {
+        return getCustomNodeDirectives(file.statements[0]);
     }
-    return decMap;
+    return new Map();
 }
 
 export function getCustomSignatureDirectives(
@@ -607,8 +613,7 @@ export function hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeC
     if (ts.isSourceFile(scopeDeclaration)) {
         return getCustomFileDirectives(scopeDeclaration).has(DecoratorKind.NoSelfInFile);
     }
-    const scopeType = checker.getTypeAtLocation(scopeDeclaration);
-    if (scopeType && getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+    if (getCustomNodeDirectives(scopeDeclaration).has(DecoratorKind.NoSelf)) {
         return true;
     }
     return hasNoSelfAncestor(scopeDeclaration, checker);
@@ -645,8 +650,7 @@ export function getDeclarationContextType(
             return ContextType.NonVoid;
         }
 
-        const scopeType = checker.getTypeAtLocation(scopeDeclaration);
-        if (scopeType && getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+        if (getCustomNodeDirectives(scopeDeclaration).has(DecoratorKind.NoSelf)) {
             return ContextType.Void;
         }
         return ContextType.NonVoid;

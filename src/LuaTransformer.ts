@@ -2056,7 +2056,6 @@ export class LuaTransformer {
 
     public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): StatementVisitResult {
         const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
-
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);
             if (isCompound && replacementOperator) {

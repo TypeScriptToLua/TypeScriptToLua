@@ -2055,17 +2055,7 @@ export class LuaTransformer {
     }
 
     public transformExpressionStatement(statement: ts.ExpressionStatement | ts.Expression): StatementVisitResult {
-        let expression: ts.Expression;
-        if (ts.isExpressionStatement(statement)) {
-            expression = statement.expression;
-        } else {
-            expression = statement;
-        }
-
-        // Outer parenthesis have no effect on the expression within an ExpressionStatement
-        while (ts.isParenthesizedExpression(expression)) {
-            expression = expression.expression;
-        }
+        const expression = ts.isExpressionStatement(statement) ? statement.expression : statement;
 
         if (ts.isBinaryExpression(expression)) {
             const [isCompound, replacementOperator] = tsHelper.isBinaryAssignmentToken(expression.operatorToken.kind);

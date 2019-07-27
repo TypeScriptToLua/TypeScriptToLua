@@ -56,6 +56,10 @@ export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.T
     return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
 }
 
+export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
+    return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
+}
+
 export function getExportable(exportSpecifiers: ts.NamedExports, resolver: EmitResolver): ts.ExportSpecifier[] {
     return exportSpecifiers.elements.filter(exportSpecifier => resolver.isValueAliasDeclaration(exportSpecifier));
 }
@@ -176,34 +180,45 @@ export function isStaticNode(node: ts.Node): boolean {
     return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
-export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+export function isTypeWithFlags(
+    type: ts.Type,
+    flags: ts.TypeFlags,
+    checker: ts.TypeChecker,
+    program: ts.Program
+): boolean {
     if (type.symbol) {
         const baseConstraint = checker.getBaseConstraintOfType(type);
         if (baseConstraint && baseConstraint !== type) {
-            return isStringType(baseConstraint, checker, program);
+            return isTypeWithFlags(baseConstraint, flags, checker, program);
         }
     }
 
     if (type.isUnion()) {
-        return type.types.every(t => isStringType(t, checker, program));
+        return type.types.every(t => isTypeWithFlags(t, flags, checker, program));
     }
 
     if (type.isIntersection()) {
-        return type.types.some(t => isStringType(t, checker, program));
+        return type.types.some(t => isTypeWithFlags(t, flags, checker, program));
     }
 
-    return (
-        (type.flags & ts.TypeFlags.String) !== 0 ||
-        (type.flags & ts.TypeFlags.StringLike) !== 0 ||
-        (type.flags & ts.TypeFlags.StringLiteral) !== 0
+    return (type.flags & flags) !== 0;
+}
+
+export function isStringType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    return isTypeWithFlags(
+        type,
+        ts.TypeFlags.String | ts.TypeFlags.StringLike | ts.TypeFlags.StringLiteral,
+        checker,
+        program
     );
 }
 
-export function isNumberType(type: ts.Type): boolean {
-    return (
-        (type.flags & ts.TypeFlags.Number) !== 0 ||
-        (type.flags & ts.TypeFlags.NumberLike) !== 0 ||
-        (type.flags & ts.TypeFlags.NumberLiteral) !== 0
+export function isNumberType(type: ts.Type, checker: ts.TypeChecker, program: ts.Program): boolean {
+    return isTypeWithFlags(
+        type,
+        ts.TypeFlags.Number | ts.TypeFlags.NumberLike | ts.TypeFlags.NumberLiteral,
+        checker,
+        program
     );
 }
 
@@ -381,19 +396,25 @@ export function getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map
     return decMap;
 }
 
-export function getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
-    const decMap = new Map<DecoratorKind, Decorator>();
-    if (file.statements.length > 0) {
-        const tags = ts.getJSDocTags(file.statements[0]);
-        for (const tag of tags) {
-            const tagName = tag.tagName.escapedText as string;
-            if (Decorator.isValid(tagName)) {
-                const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
-                decMap.set(dec.kind, dec);
-            }
+export function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decorator> {
+    const directivesMap = new Map<DecoratorKind, Decorator>();
+
+    ts.getJSDocTags(node).forEach(tag => {
+        const tagName = tag.tagName.escapedText as string;
+        if (Decorator.isValid(tagName)) {
+            const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+            directivesMap.set(dec.kind, dec);
         }
+    });
+
+    return directivesMap;
+}
+
+export function getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
+    if (file.statements.length > 0) {
+        return getCustomNodeDirectives(file.statements[0]);
     }
-    return decMap;
+    return new Map();
 }
 
 export function getCustomSignatureDirectives(
@@ -640,8 +661,7 @@ export function hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeC
     if (ts.isSourceFile(scopeDeclaration)) {
         return getCustomFileDirectives(scopeDeclaration).has(DecoratorKind.NoSelfInFile);
     }
-    const scopeType = checker.getTypeAtLocation(scopeDeclaration);
-    if (scopeType && getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+    if (getCustomNodeDirectives(scopeDeclaration).has(DecoratorKind.NoSelf)) {
         return true;
     }
     return hasNoSelfAncestor(scopeDeclaration, checker);
@@ -678,8 +698,7 @@ export function getDeclarationContextType(
             return ContextType.NonVoid;
         }
 
-        const scopeType = checker.getTypeAtLocation(scopeDeclaration);
-        if (scopeType && getCustomDecorators(scopeType, checker).has(DecoratorKind.NoSelf)) {
+        if (getCustomNodeDirectives(scopeDeclaration).has(DecoratorKind.NoSelf)) {
             return ContextType.Void;
         }
         return ContextType.NonVoid;
@@ -909,27 +928,51 @@ export function moduleHasEmittedBody(
     return false;
 }
 
-export function isArrayLengthAssignment(
-    expression: ts.BinaryExpression,
+export function isValidFlattenableDestructuringAssignmentLeftHandSide(
+    node: ts.DestructuringAssignment,
     checker: ts.TypeChecker,
     program: ts.Program
-): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression } {
-    if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+): boolean {
+    if (ts.isArrayLiteralExpression(node.left)) {
+        if (node.left.elements.length > 0) {
+            return !node.left.elements.some(element => {
+                switch (element.kind) {
+                    case ts.SyntaxKind.Identifier:
+                    case ts.SyntaxKind.PropertyAccessExpression:
+                        if (isArrayLength(element, checker, program)) {
+                            return true;
+                        }
+                    case ts.SyntaxKind.ElementAccessExpression:
+                        // Can be on the left hand side of a Lua assignment statement
+                        return false;
+                    default:
+                        // Cannot be
+                        return true;
+                }
+            });
+        }
+    }
+
+    return false;
+}
+
+export function isArrayLength(
+    expression: ts.Expression,
+    checker: ts.TypeChecker,
+    program: ts.Program
+): expression is ts.PropertyAccessExpression | ts.ElementAccessExpression {
+    if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) {
         return false;
     }
 
-    if (!ts.isPropertyAccessExpression(expression.left) && !ts.isElementAccessExpression(expression.left)) {
-        return false;
-    }
-
-    const type = checker.getTypeAtLocation(expression.left.expression);
+    const type = checker.getTypeAtLocation(expression.expression);
     if (!isArrayType(type, checker, program)) {
         return false;
     }
 
-    const name = ts.isPropertyAccessExpression(expression.left)
-        ? (expression.left.name.escapedText as string)
-        : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
+    const name = ts.isPropertyAccessExpression(expression)
+        ? (expression.name.escapedText as string)
+        : ts.isStringLiteral(expression.argumentExpression) && expression.argumentExpression.text;
 
     return name === "length";
 }

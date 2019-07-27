@@ -53,6 +53,10 @@ export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.T
     return extendedTypeNode && checker.getTypeAtLocation(extendedTypeNode);
 }
 
+export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
+    return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
+}
+
 export function isFileModule(sourceFile: ts.SourceFile): boolean {
     return sourceFile.statements.some(isStatementExported);
 }
@@ -880,27 +884,51 @@ export function moduleHasEmittedBody(
     return false;
 }
 
-export function isArrayLengthAssignment(
-    expression: ts.BinaryExpression,
+export function isValidFlattenableDestructuringAssignmentLeftHandSide(
+    node: ts.DestructuringAssignment,
     checker: ts.TypeChecker,
     program: ts.Program
-): expression is ts.BinaryExpression & { left: ts.PropertyAccessExpression | ts.ElementAccessExpression } {
-    if (expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+): boolean {
+    if (ts.isArrayLiteralExpression(node.left)) {
+        if (node.left.elements.length > 0) {
+            return !node.left.elements.some(element => {
+                switch (element.kind) {
+                    case ts.SyntaxKind.Identifier:
+                    case ts.SyntaxKind.PropertyAccessExpression:
+                        if (isArrayLength(element, checker, program)) {
+                            return true;
+                        }
+                    case ts.SyntaxKind.ElementAccessExpression:
+                        // Can be on the left hand side of a Lua assignment statement
+                        return false;
+                    default:
+                        // Cannot be
+                        return true;
+                }
+            });
+        }
+    }
+
+    return false;
+}
+
+export function isArrayLength(
+    expression: ts.Expression,
+    checker: ts.TypeChecker,
+    program: ts.Program
+): expression is ts.PropertyAccessExpression | ts.ElementAccessExpression {
+    if (!ts.isPropertyAccessExpression(expression) && !ts.isElementAccessExpression(expression)) {
         return false;
     }
 
-    if (!ts.isPropertyAccessExpression(expression.left) && !ts.isElementAccessExpression(expression.left)) {
-        return false;
-    }
-
-    const type = checker.getTypeAtLocation(expression.left.expression);
+    const type = checker.getTypeAtLocation(expression.expression);
     if (!isArrayType(type, checker, program)) {
         return false;
     }
 
-    const name = ts.isPropertyAccessExpression(expression.left)
-        ? (expression.left.name.escapedText as string)
-        : ts.isStringLiteral(expression.left.argumentExpression) && expression.left.argumentExpression.text;
+    const name = ts.isPropertyAccessExpression(expression)
+        ? (expression.name.escapedText as string)
+        : ts.isStringLiteral(expression.argumentExpression) && expression.argumentExpression.text;
 
     return name === "length";
 }

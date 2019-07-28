@@ -3858,8 +3858,8 @@ export class LuaTransformer {
                 if (properties.length > 0) {
                     const tableExpression = tstl.createTableExpression(properties, expression);
                     tableExpressions.push(tableExpression);
-                    properties = [];
                 }
+                properties = [];
                 tableExpressions.push(this.transformExpression(element.expression));
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, expression);
@@ -3869,6 +3869,9 @@ export class LuaTransformer {
         if (tableExpressions.length === 0) {
             return tstl.createTableExpression(properties, expression);
         } else {
+            const tableExpression = tstl.createTableExpression(properties, expression);
+            tableExpressions.push(tableExpression);
+
             return this.transformLuaLibFunction(LuaLibFeature.MergeObjects, expression, ...tableExpressions);
         }
     }

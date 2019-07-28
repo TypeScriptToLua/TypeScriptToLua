@@ -187,3 +187,148 @@ test("ImportEquals declaration require", () => {
         expect(match[1]).toBe("foo.bar");
     }
 });
+
+test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                export { default } from "./module";
+            `,
+            "module.ts": `
+                export const value = true;
+                ${exportStatement};
+            `,
+        },
+        "default"
+    );
+
+    expect(result).toBe(true);
+});
+
+test("Default Import and Export Expression", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import defaultExport from "./module";
+                export const value = defaultExport;
+            `,
+            "module.ts": `
+                export default 1 + 2 + 3;
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(6);
+});
+
+test("Import and Export Assignment", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import * as m from "./module";
+                export const value = m;
+            `,
+            "module.ts": `
+                export = true;
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(true);
+});
+
+test("Mixed Exports, Default and Named Imports", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import defaultExport, { a, b, c } from "./module";
+                export const value = defaultExport + b + c;
+            `,
+            "module.ts": `
+                export const a = 1;
+                export default a;
+                export const b = 2;
+                export const c = 3;
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(6);
+});
+
+test("Mixed Exports, Default and Namespace Import", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import defaultExport, * as ns from "./module";
+                export const value = defaultExport + ns.b + ns.c;
+            `,
+            "module.ts": `
+                export const a = 1;
+                export default a;
+                export const b = 2;
+                export const c = 3;
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(6);
+});
+
+test("Export Default Function", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import defaultExport from "./module";
+                export const value = defaultExport();
+            `,
+            "module.ts": `
+                export default function() {
+                    return true;
+                }
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(true);
+});
+
+test.each([
+    ["Test", "export default class Test { static method() { return true; } }"],
+    ["default", "export default class { static method() { return true; } }"],
+])("Export Default Class Name (%p)", (expectedClassName, classDeclarationStatement) => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import defaultExport from "./module";
+                export const value = defaultExport.name;
+            `,
+            "module.ts": classDeclarationStatement,
+        },
+        "value"
+    );
+
+    expect(result).toBe(expectedClassName);
+});
+
+test("Export Equals", () => {
+    const [result] = util.transpileAndExecuteProjectReturningMainExport(
+        {
+            "main.ts": `
+                import * as module from "./module";
+                export const value = module;
+            `,
+            "module.ts": `
+                export = true;
+            `,
+        },
+        "value"
+    );
+
+    expect(result).toBe(true);
+});

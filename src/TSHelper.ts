@@ -1,6 +1,9 @@
 import * as ts from "typescript";
+import * as path from "path";
 import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
+import * as TSTLErrors from "./TSTLErrors";
+import { EmitResolver } from "./LuaTransformer";
 
 export enum ContextType {
     None,
@@ -55,6 +58,47 @@ export function getExtendedType(node: ts.ClassLikeDeclarationBase, checker: ts.T
 
 export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
     return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
+}
+
+export function getExportable(exportSpecifiers: ts.NamedExports, resolver: EmitResolver): ts.ExportSpecifier[] {
+    return exportSpecifiers.elements.filter(exportSpecifier => resolver.isValueAliasDeclaration(exportSpecifier));
+}
+
+export function isDefaultExportSpecifier(node: ts.ExportSpecifier): boolean {
+    return (
+        (node.name !== undefined && node.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword) ||
+        (node.propertyName !== undefined && node.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
+    );
+}
+
+export function hasDefaultExportModifier(modifiers?: ts.NodeArray<ts.Modifier>): boolean {
+    return modifiers ? modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword) : false;
+}
+
+export function shouldResolveModulePath(moduleSpecifier: ts.Expression, checker: ts.TypeChecker): boolean {
+    const moduleOwnerSymbol = checker.getSymbolAtLocation(moduleSpecifier);
+    if (moduleOwnerSymbol) {
+        const decorators = new Map<DecoratorKind, Decorator>();
+        collectCustomDecorators(moduleOwnerSymbol, checker, decorators);
+        if (decorators.has(DecoratorKind.NoResolution)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function shouldBeImported(
+    importNode: ts.ImportClause | ts.ImportSpecifier,
+    checker: ts.TypeChecker,
+    resolver: EmitResolver
+): boolean {
+    const decorators = getCustomDecorators(checker.getTypeAtLocation(importNode), checker);
+
+    return (
+        resolver.isReferencedAliasDeclaration(importNode) &&
+        !decorators.has(DecoratorKind.Extension) &&
+        !decorators.has(DecoratorKind.MetaExtension)
+    );
 }
 
 export function isFileModule(sourceFile: ts.SourceFile): boolean {
@@ -967,4 +1011,56 @@ export function isSimpleExpression(expression: tstl.Expression): boolean {
             return isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
     }
     return true;
+}
+
+export function getAbsoluteImportPath(
+    relativePath: string,
+    directoryPath: string,
+    options: ts.CompilerOptions
+): string {
+    if (relativePath.charAt(0) !== "." && options.baseUrl) {
+        return path.resolve(options.baseUrl, relativePath);
+    }
+
+    return path.resolve(directoryPath, relativePath);
+}
+
+export function getImportPath(
+    fileName: string,
+    relativePath: string,
+    node: ts.Node,
+    options: ts.CompilerOptions
+): string {
+    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
+
+    const absoluteImportPath = path.format(
+        path.parse(getAbsoluteImportPath(relativePath, path.dirname(fileName), options))
+    );
+    const absoluteRootDirPath = path.format(path.parse(rootDir));
+    if (absoluteImportPath.includes(absoluteRootDirPath)) {
+        return formatPathToLuaPath(absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
+    } else {
+        throw TSTLErrors.UnresolvableRequirePath(
+            node,
+            `Cannot create require path. Module does not exist within --rootDir`,
+            relativePath
+        );
+    }
+}
+
+export function getExportPath(fileName: string, options: ts.CompilerOptions): string {
+    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
+
+    const absolutePath = path.resolve(fileName.replace(/.ts$/, ""));
+    const absoluteRootDirPath = path.format(path.parse(rootDir));
+    return formatPathToLuaPath(absolutePath.replace(absoluteRootDirPath, "").slice(1));
+}
+
+export function formatPathToLuaPath(filePath: string): string {
+    filePath = filePath.replace(/\.json$/, "");
+    if (process.platform === "win32") {
+        // Windows can use backslashes
+        filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
+    }
+    return filePath.replace(/\.\//g, "").replace(/\//g, ".");
 }

@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "./CompilerOptions";
-import { Decorator, DecoratorKind } from "./Decorator";
+import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
 import * as tsHelper from "./TSHelper";
@@ -79,6 +79,8 @@ export class LuaTransformer {
     protected genVarCounter!: number;
     protected luaLibFeatureSet!: Set<LuaLibFeature>;
 
+    protected visitedExportEquals!: boolean;
+
     protected scopeStack!: Scope[];
     protected classStack!: ts.ClassLikeDeclaration[];
 
@@ -89,6 +91,8 @@ export class LuaTransformer {
     private setupState(): void {
         this.genVarCounter = 0;
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
+
+        this.visitedExportEquals = false;
 
         this.scopeStack = [];
         this.classStack = [];
@@ -132,13 +136,16 @@ export class LuaTransformer {
             this.popScope();
 
             if (this.isModule) {
+                // If export equals was not used. Create the exports table.
                 // local exports = {}
-                statements.unshift(
-                    tstl.createVariableDeclarationStatement(
-                        this.createExportsIdentifier(),
-                        tstl.createTableExpression()
-                    )
-                );
+                if (!this.visitedExportEquals) {
+                    statements.unshift(
+                        tstl.createVariableDeclarationStatement(
+                            this.createExportsIdentifier(),
+                            tstl.createTableExpression()
+                        )
+                    );
+                }
 
                 // return exports
                 statements.push(tstl.createReturnStatement([this.createExportsIdentifier()]));
@@ -159,6 +166,8 @@ export class LuaTransformer {
             case ts.SyntaxKind.Block:
                 return this.transformBlockAsDoStatement(node as ts.Block);
             // Declaration Statements
+            case ts.SyntaxKind.ExportAssignment:
+                return this.transformExportAssignment(node as ts.ExportAssignment);
             case ts.SyntaxKind.ExportDeclaration:
                 return this.transformExportDeclaration(node as ts.ExportDeclaration);
             case ts.SyntaxKind.ImportDeclaration:
@@ -238,140 +247,163 @@ export class LuaTransformer {
         return tstl.createDoStatement(statements, block);
     }
 
+    public transformExportAssignment(statement: ts.ExportAssignment): StatementVisitResult {
+        if (!this.resolver.isValueAliasDeclaration(statement)) {
+            return undefined;
+        }
+
+        // export = [expression];
+        // ____exports = [expression];
+        if (statement.isExportEquals) {
+            // Stop the creation of the exports table.
+            // This should be the only export of the module.
+            this.visitedExportEquals = true;
+
+            return tstl.createVariableDeclarationStatement(
+                this.createExportsIdentifier(),
+                this.transformExpression(statement.expression),
+                statement
+            );
+        }
+
+        // export default [expression];
+        // ____exports.default = [expression];
+        const defaultIdentifier = this.createDefaultExportStringLiteral(statement);
+        return tstl.createAssignmentStatement(
+            tstl.createTableIndexExpression(this.createExportsIdentifier(), defaultIdentifier),
+            this.transformExpression(statement.expression),
+            statement
+        );
+    }
+
     public transformExportDeclaration(statement: ts.ExportDeclaration): StatementVisitResult {
         if (statement.exportClause) {
-            if (
-                statement.exportClause.elements.some(
-                    e =>
-                        (e.name !== undefined && e.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword) ||
-                        (e.propertyName !== undefined &&
-                            e.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword)
-                )
-            ) {
-                throw TSTLErrors.UnsupportedDefaultExport(statement);
-            }
-
             if (!this.resolver.isValueAliasDeclaration(statement)) {
                 return undefined;
             }
 
-            const exportSpecifiers = statement.exportClause.elements.filter(e =>
-                this.resolver.isValueAliasDeclaration(e)
-            );
+            const exportSpecifiers = tsHelper.getExportable(statement.exportClause, this.resolver);
 
+            // export { ... };
             if (statement.moduleSpecifier === undefined) {
-                return exportSpecifiers.map(specifier => {
-                    let exportedIdentifier: tstl.Expression | undefined;
-                    if (specifier.propertyName !== undefined) {
-                        exportedIdentifier = this.transformIdentifier(specifier.propertyName);
-                    } else {
-                        const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(specifier);
-                        exportedIdentifier = this.createShorthandIdentifier(exportedSymbol, specifier.name);
-                    }
-
-                    return tstl.createAssignmentStatement(
-                        this.createExportedIdentifier(this.transformIdentifier(specifier.name)),
-                        exportedIdentifier
-                    );
-                });
+                return exportSpecifiers.map(exportSpecifier => this.transformExportSpecifier(exportSpecifier));
             }
 
-            // First transpile as import clause
-            const importClause = ts.createImportClause(
-                undefined,
-                ts.createNamedImports(exportSpecifiers.map(s => ts.createImportSpecifier(s.propertyName, s.name)))
-            );
-
-            const importDeclaration = ts.createImportDeclaration(
-                statement.decorators,
-                statement.modifiers,
-                importClause,
-                statement.moduleSpecifier
-            );
-
-            // Wrap in block to prevent imports from hoisting out of `do` statement
-            const block = ts.createBlock([importDeclaration]);
-            const result = this.transformBlock(block).statements;
-
-            // Now the module is imported, add the imports to the export table
-            for (const specifier of exportSpecifiers) {
-                result.push(
-                    tstl.createAssignmentStatement(
-                        this.createExportedIdentifier(this.transformIdentifier(specifier.name)),
-                        this.transformIdentifier(specifier.name)
-                    )
-                );
-            }
-
-            // Wrap this in a DoStatement to prevent polluting the scope.
-            return tstl.createDoStatement(this.filterUndefined(result), statement);
+            // export { ... } from "...";
+            return this.transformExportSpecifiersFrom(statement, statement.moduleSpecifier, exportSpecifiers);
         } else {
-            if (statement.moduleSpecifier === undefined) {
-                throw TSTLErrors.InvalidExportDeclaration(statement);
-            }
-
-            if (!this.resolver.moduleExportsSomeValue(statement.moduleSpecifier)) {
-                return undefined;
-            }
-
-            const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
-            const tempModuleIdentifier = tstl.createIdentifier("____export");
-
-            const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
-
-            const forKey = tstl.createIdentifier("____exportKey");
-            const forValue = tstl.createIdentifier("____exportValue");
-
-            const body = tstl.createBlock([
-                tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(this.createExportsIdentifier(), forKey),
-                    forValue
-                ),
-            ]);
-
-            const pairsIdentifier = tstl.createIdentifier("pairs");
-            const forIn = tstl.createForInStatement(
-                body,
-                [tstl.cloneIdentifier(forKey), tstl.cloneIdentifier(forValue)],
-                [tstl.createCallExpression(pairsIdentifier, [tstl.cloneIdentifier(tempModuleIdentifier)])]
-            );
-
-            // Wrap this in a DoStatement to prevent polluting the scope.
-            return tstl.createDoStatement([declaration, forIn], statement);
+            // export * from "...";
+            return this.transformExportAllFrom(statement);
         }
     }
 
-    public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
-        if (statement.importClause && !statement.importClause.namedBindings) {
-            throw TSTLErrors.DefaultImportsNotSupported(statement);
+    protected transformExportSpecifier(node: ts.ExportSpecifier): tstl.AssignmentStatement {
+        const exportedSymbol = this.checker.getExportSpecifierLocalTargetSymbol(node);
+        const exportedIdentifier = node.propertyName ? node.propertyName : node.name;
+        const exportedExpression = this.createShorthandIdentifier(exportedSymbol, exportedIdentifier);
+
+        const isDefault = tsHelper.isDefaultExportSpecifier(node);
+        const identifierToExport = isDefault
+            ? this.createDefaultExportIdentifier(node)
+            : this.transformIdentifier(node.name);
+        const exportAssignmentLeftHandSide = this.createExportedIdentifier(identifierToExport);
+
+        return tstl.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
+    }
+
+    protected transformExportSpecifiersFrom(
+        statement: ts.ExportDeclaration,
+        moduleSpecifier: ts.Expression,
+        exportSpecifiers: ts.ExportSpecifier[]
+    ): tstl.Statement {
+        // First transpile as import clause
+        const importClause = ts.createImportClause(
+            undefined,
+            ts.createNamedImports(exportSpecifiers.map(s => ts.createImportSpecifier(s.propertyName, s.name)))
+        );
+
+        const importDeclaration = ts.createImportDeclaration(
+            statement.decorators,
+            statement.modifiers,
+            importClause,
+            moduleSpecifier
+        );
+
+        // Wrap in block to prevent imports from hoisting out of `do` statement
+        const block = ts.createBlock([importDeclaration]);
+        const result = this.transformBlock(block).statements;
+
+        // Now the module is imported, add the imports to the export table
+        for (const specifier of exportSpecifiers) {
+            result.push(
+                tstl.createAssignmentStatement(
+                    this.createExportedIdentifier(this.transformIdentifier(specifier.name)),
+                    this.transformIdentifier(specifier.name)
+                )
+            );
         }
 
-        const result: tstl.Statement[] = [];
+        // Wrap this in a DoStatement to prevent polluting the scope.
+        return tstl.createDoStatement(this.filterUndefined(result), statement);
+    }
 
+    protected transformExportAllFrom(statement: ts.ExportDeclaration): tstl.Statement | undefined {
+        if (statement.moduleSpecifier === undefined) {
+            throw TSTLErrors.InvalidExportDeclaration(statement);
+        }
+
+        if (!this.resolver.moduleExportsSomeValue(statement.moduleSpecifier)) {
+            return undefined;
+        }
+
+        const moduleRequire = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral);
+        const tempModuleIdentifier = tstl.createIdentifier("____export");
+
+        const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+
+        const forKey = tstl.createIdentifier("____exportKey");
+        const forValue = tstl.createIdentifier("____exportValue");
+
+        const body = tstl.createBlock([
+            tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(this.createExportsIdentifier(), forKey),
+                forValue
+            ),
+        ]);
+
+        const pairsIdentifier = tstl.createIdentifier("pairs");
+        const forIn = tstl.createForInStatement(
+            body,
+            [tstl.cloneIdentifier(forKey), tstl.cloneIdentifier(forValue)],
+            [tstl.createCallExpression(pairsIdentifier, [tstl.cloneIdentifier(tempModuleIdentifier)])]
+        );
+
+        // Wrap this in a DoStatement to prevent polluting the scope.
+        return tstl.createDoStatement([declaration, forIn], statement);
+    }
+
+    public transformImportDeclaration(statement: ts.ImportDeclaration): StatementVisitResult {
         const scope = this.peekScope();
         if (scope === undefined) {
             throw TSTLErrors.UndefinedScope();
         }
+
         if (!this.options.noHoisting && !scope.importStatements) {
             scope.importStatements = [];
         }
 
-        let shouldResolve = true;
-        const moduleOwnerSymbol = this.checker.getSymbolAtLocation(statement.moduleSpecifier);
-        if (moduleOwnerSymbol) {
-            const decorators = new Map<DecoratorKind, Decorator>();
-            tsHelper.collectCustomDecorators(moduleOwnerSymbol, this.checker, decorators);
-            if (decorators.has(DecoratorKind.NoResolution)) {
-                shouldResolve = false;
-            }
-        }
-
+        const shouldResolve = tsHelper.shouldResolveModulePath(statement.moduleSpecifier, this.checker);
         const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
         const importPath = moduleSpecifier.text.replace(new RegExp('"', "g"), "");
         const requireCall = this.createModuleRequire(statement.moduleSpecifier as ts.StringLiteral, shouldResolve);
 
-        if (!statement.importClause) {
+        const result: tstl.Statement[] = [];
+
+        // import "./module";
+        // require("module")
+        if (statement.importClause === undefined) {
             result.push(tstl.createExpressionStatement(requireCall));
+
             if (scope.importStatements) {
                 scope.importStatements.push(...result);
                 return undefined;
@@ -380,83 +412,103 @@ export class LuaTransformer {
             }
         }
 
-        const imports = statement.importClause.namedBindings;
-        if (imports === undefined) {
-            throw TSTLErrors.UnsupportedImportType(statement.importClause);
-        }
+        // Create the require statement to extract values.
+        // local ____module = require("module")
+        const tstlIdentifier = (name: string) => "____" + tsHelper.fixInvalidLuaIdentifier(name);
+        const importUniqueName = tstl.createIdentifier(tstlIdentifier(path.basename(importPath)));
+        const requireStatement = tstl.createVariableDeclarationStatement(
+            tstl.createIdentifier(tstlIdentifier(path.basename(importPath))),
+            requireCall,
+            statement
+        );
 
-        if (ts.isNamedImports(imports)) {
-            const filteredElements = imports.elements.filter(e => {
-                const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(e), this.checker);
-                return (
-                    this.resolver.isReferencedAliasDeclaration(e) &&
-                    !decorators.has(DecoratorKind.Extension) &&
-                    !decorators.has(DecoratorKind.MetaExtension)
+        let usingRequireStatement = false;
+
+        // import defaultValue from "./module";
+        // local defaultValue = __module.default
+        if (statement.importClause.name) {
+            if (tsHelper.shouldBeImported(statement.importClause, this.checker, this.resolver)) {
+                const propertyName = this.createDefaultExportStringLiteral(statement.importClause.name);
+                const defaultImportAssignmentStatement = tstl.createVariableDeclarationStatement(
+                    this.transformIdentifier(statement.importClause.name),
+                    tstl.createTableIndexExpression(importUniqueName, propertyName),
+                    statement.importClause.name
                 );
-            });
 
-            // Elide import if all imported types are extension classes
-            if (filteredElements.length === 0) {
-                return undefined;
-            }
-
-            const tstlIdentifier = (name: string) => "____" + tsHelper.fixInvalidLuaIdentifier(name);
-            const importUniqueName = tstl.createIdentifier(tstlIdentifier(path.basename(importPath)));
-            const requireStatement = tstl.createVariableDeclarationStatement(
-                tstl.createIdentifier(tstlIdentifier(path.basename(importPath))),
-                requireCall,
-                statement
-            );
-            result.push(requireStatement);
-
-            filteredElements.forEach(importSpecifier => {
-                if (importSpecifier.propertyName) {
-                    const propertyName = this.transformPropertyName(importSpecifier.propertyName);
-                    const renamedImport = tstl.createVariableDeclarationStatement(
-                        this.transformIdentifier(importSpecifier.name),
-                        tstl.createTableIndexExpression(importUniqueName, propertyName),
-                        importSpecifier
-                    );
-                    result.push(renamedImport);
-                } else {
-                    const name = tstl.createStringLiteral(importSpecifier.name.text);
-                    const namedImport = tstl.createVariableDeclarationStatement(
-                        this.transformIdentifier(importSpecifier.name),
-                        tstl.createTableIndexExpression(importUniqueName, name),
-                        importSpecifier
-                    );
-                    result.push(namedImport);
-                }
-            });
-            if (scope.importStatements) {
-                scope.importStatements.push(...result);
-                return undefined;
-            } else {
-                return result;
-            }
-        } else if (ts.isNamespaceImport(imports)) {
-            if (!this.resolver.isReferencedAliasDeclaration(imports)) {
-                return undefined;
-            }
-
-            const requireStatement = tstl.createVariableDeclarationStatement(
-                this.transformIdentifier(imports.name),
-                requireCall,
-                statement
-            );
-            result.push(requireStatement);
-            if (scope.importStatements) {
-                scope.importStatements.push(...result);
-                return undefined;
-            } else {
-                return result;
+                result.push(defaultImportAssignmentStatement);
+                usingRequireStatement = true;
             }
         }
+
+        // import * as module from "./module";
+        // local module = require("module")
+        if (statement.importClause.namedBindings && ts.isNamespaceImport(statement.importClause.namedBindings)) {
+            if (this.resolver.isReferencedAliasDeclaration(statement.importClause.namedBindings)) {
+                const requireStatement = tstl.createVariableDeclarationStatement(
+                    this.transformIdentifier(statement.importClause.namedBindings.name),
+                    requireCall,
+                    statement
+                );
+
+                result.push(requireStatement);
+            }
+        }
+
+        // import { a, b, c } from "./module";
+        // local a = __module.a
+        // local b = __module.b
+        // local c = __module.c
+        if (statement.importClause.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
+            const assignmentStatements = statement.importClause.namedBindings.elements
+                .filter(importSpecifier => tsHelper.shouldBeImported(importSpecifier, this.checker, this.resolver))
+                .map(importSpecifier => this.transformImportSpecifier(importSpecifier, importUniqueName));
+
+            if (assignmentStatements.length > 0) {
+                usingRequireStatement = true;
+            }
+            result.push(...assignmentStatements);
+        }
+
+        if (result.length === 0) {
+            return undefined;
+        }
+
+        if (usingRequireStatement) {
+            result.unshift(requireStatement);
+        }
+
+        if (scope.importStatements) {
+            scope.importStatements.push(...result);
+            return undefined;
+        } else {
+            return result;
+        }
+    }
+
+    protected transformImportSpecifier(
+        importSpecifier: ts.ImportSpecifier,
+        moduleTableName: tstl.Identifier
+    ): tstl.VariableDeclarationStatement {
+        const leftIdentifier = this.transformIdentifier(importSpecifier.name);
+        const propertyName = this.transformPropertyName(
+            importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name
+        );
+
+        return tstl.createVariableDeclarationStatement(
+            leftIdentifier,
+            tstl.createTableIndexExpression(moduleTableName, propertyName),
+            importSpecifier
+        );
     }
 
     protected createModuleRequire(moduleSpecifier: ts.StringLiteral, resolveModule = true): tstl.CallExpression {
         const modulePathString = resolveModule
-            ? this.getImportPath(moduleSpecifier.text.replace(new RegExp('"', "g"), ""), moduleSpecifier)
+            ? tsHelper.getImportPath(
+                  this.currentSourceFile.fileName,
+                  moduleSpecifier.text.replace(new RegExp('"', "g"), ""),
+                  moduleSpecifier,
+                  this.options
+              )
             : moduleSpecifier.text;
         const modulePath = tstl.createStringLiteral(modulePathString);
         return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath], moduleSpecifier);
@@ -521,10 +573,6 @@ export class LuaTransformer {
     ): StatementVisitResult {
         this.classStack.push(statement);
 
-        if (statement.name === undefined && nameOverride === undefined) {
-            throw TSTLErrors.MissingClassName(statement);
-        }
-
         let className: tstl.Identifier;
         let classNameText: string;
         if (nameOverride !== undefined) {
@@ -534,7 +582,15 @@ export class LuaTransformer {
             className = this.transformIdentifier(statement.name);
             classNameText = statement.name.text;
         } else {
-            throw TSTLErrors.MissingClassName(statement);
+            const isDefaultExport = tsHelper.hasDefaultExportModifier(statement.modifiers);
+            if (isDefaultExport) {
+                const left = this.createExportedIdentifier(this.createDefaultExportIdentifier(statement));
+                const right = this.transformClassExpression(statement);
+
+                return tstl.createAssignmentStatement(left, right, statement);
+            } else {
+                throw TSTLErrors.MissingClassName(statement);
+            }
         }
 
         const decorators = tsHelper.getCustomDecorators(this.checker.getTypeAtLocation(statement), this.checker);
@@ -779,18 +835,35 @@ export class LuaTransformer {
         // [____exports.]className = {}
         const classTable: tstl.Expression = tstl.createTableExpression();
 
-        const classVar = this.createLocalOrExportedOrGlobalDeclaration(className, classTable, statement);
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(statement.modifiers);
+
+        const defaultExportLeftHandSide = isDefaultExport
+            ? tstl.createTableIndexExpression(
+                  this.createExportsIdentifier(),
+                  this.createDefaultExportStringLiteral(statement)
+              )
+            : undefined;
+
+        const classVar = defaultExportLeftHandSide
+            ? [tstl.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
+            : this.createLocalOrExportedOrGlobalDeclaration(className, classTable, statement);
+
         result.push(...classVar);
 
-        const exportScope = this.getIdentifierExportScope(className);
-        if (exportScope) {
-            // local localClassName = ____exports.className
-            result.push(
-                tstl.createVariableDeclarationStatement(
-                    localClassName,
-                    this.createExportedIdentifier(tstl.cloneIdentifier(className), exportScope)
-                )
-            );
+        if (defaultExportLeftHandSide) {
+            // local localClassName = ____exports.default
+            result.push(tstl.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
+        } else {
+            const exportScope = this.getIdentifierExportScope(className);
+            if (exportScope) {
+                // local localClassName = ____exports.className
+                result.push(
+                    tstl.createVariableDeclarationStatement(
+                        localClassName,
+                        this.createExportedIdentifier(tstl.cloneIdentifier(className), exportScope)
+                    )
+                );
+            }
         }
 
         // localClassName.name = className
@@ -1879,11 +1952,6 @@ export class LuaTransformer {
                 : undefined;
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
 
-        if (functionDeclaration.name === undefined) {
-            throw TSTLErrors.MissingFunctionName(functionDeclaration);
-        }
-
-        const name = this.transformIdentifier(functionDeclaration.name);
         const [body, functionScope] = functionDeclaration.asteriskToken
             ? this.transformGeneratorFunction(functionDeclaration.parameters, functionDeclaration.body, restParamName)
             : this.transformFunctionBody(functionDeclaration.parameters, functionDeclaration.body, restParamName);
@@ -1895,18 +1963,38 @@ export class LuaTransformer {
             restParamName,
             tstl.FunctionExpressionFlags.Declaration
         );
-        // Remember symbols referenced in this function for hoisting later
-        if (!this.options.noHoisting && name.symbolId !== undefined) {
-            const scope = this.peekScope();
-            if (scope === undefined) {
-                throw TSTLErrors.UndefinedScope();
+
+        const name = functionDeclaration.name ? this.transformIdentifier(functionDeclaration.name) : undefined;
+
+        if (name) {
+            // Remember symbols referenced in this function for hoisting later
+            if (!this.options.noHoisting && name.symbolId !== undefined) {
+                const scope = this.peekScope();
+                if (scope === undefined) {
+                    throw TSTLErrors.UndefinedScope();
+                }
+                if (!scope.functionDefinitions) {
+                    scope.functionDefinitions = new Map();
+                }
+                const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Map() };
+                scope.functionDefinitions.set(name.symbolId, functionInfo);
             }
-            if (!scope.functionDefinitions) {
-                scope.functionDefinitions = new Map();
-            }
-            const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Map() };
-            scope.functionDefinitions.set(name.symbolId, functionInfo);
         }
+
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(functionDeclaration.modifiers);
+
+        if (isDefaultExport) {
+            return tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(
+                    this.createExportsIdentifier(),
+                    this.createDefaultExportStringLiteral(functionDeclaration)
+                ),
+                this.transformFunctionExpression(functionDeclaration)
+            );
+        } else if (!name) {
+            throw TSTLErrors.MissingFunctionName(functionDeclaration);
+        }
+
         return this.createLocalOrExportedOrGlobalDeclaration(name, functionExpression, functionDeclaration);
     }
 
@@ -3572,11 +3660,17 @@ export class LuaTransformer {
         }
     }
 
-    public transformClassExpression(expression: ts.ClassExpression): ExpressionVisitResult {
-        const className =
-            expression.name !== undefined
-                ? this.transformIdentifier(expression.name)
-                : tstl.createAnonymousIdentifier();
+    public transformClassExpression(expression: ts.ClassLikeDeclaration): ExpressionVisitResult {
+        const isDefaultExport = tsHelper.hasDefaultExportModifier(expression.modifiers);
+
+        let className: tstl.Identifier;
+        if (expression.name) {
+            className = this.transformIdentifier(expression.name);
+        } else if (isDefaultExport) {
+            className = this.createDefaultExportIdentifier(expression);
+        } else {
+            className = tstl.createAnonymousIdentifier();
+        }
 
         const classDeclaration = this.transformClassDeclaration(expression, className);
         return this.createImmediatelyInvokedFunctionExpression(
@@ -5322,6 +5416,14 @@ export class LuaTransformer {
         return tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(identifier.text));
     }
 
+    protected createDefaultExportIdentifier(original: ts.Node): tstl.Identifier {
+        return tstl.createIdentifier("default", original);
+    }
+
+    protected createDefaultExportStringLiteral(original: ts.Node): tstl.StringLiteral {
+        return tstl.createStringLiteral("default", original);
+    }
+
     protected getSymbolExportScope(symbol: ts.Symbol): ts.SourceFile | ts.ModuleDeclaration | undefined {
         const exportedDeclaration = tsHelper.getExportedSymbolDeclaration(symbol);
         if (!exportedDeclaration) {
@@ -5406,38 +5508,6 @@ export class LuaTransformer {
                     tsOriginal
                 );
         }
-    }
-
-    protected getAbsoluteImportPath(relativePath: string): string {
-        if (relativePath.charAt(0) !== "." && this.options.baseUrl) {
-            return path.resolve(this.options.baseUrl, relativePath);
-        }
-
-        return path.resolve(path.dirname(this.currentSourceFile.fileName), relativePath);
-    }
-
-    protected getImportPath(relativePath: string, node: ts.Node): string {
-        const rootDir = this.options.rootDir ? path.resolve(this.options.rootDir) : path.resolve(".");
-        const absoluteImportPath = path.format(path.parse(this.getAbsoluteImportPath(relativePath)));
-        const absoluteRootDirPath = path.format(path.parse(rootDir));
-        if (absoluteImportPath.includes(absoluteRootDirPath)) {
-            return this.formatPathToLuaPath(absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
-        } else {
-            throw TSTLErrors.UnresolvableRequirePath(
-                node,
-                `Cannot create require path. Module does not exist within --rootDir`,
-                relativePath
-            );
-        }
-    }
-
-    protected formatPathToLuaPath(filePath: string): string {
-        filePath = filePath.replace(/\.json$/, "");
-        if (process.platform === "win32") {
-            // Windows can use backslashes
-            filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
-        }
-        return filePath.replace(/\.\//g, "").replace(/\//g, ".");
     }
 
     protected createSelfIdentifier(tsOriginal?: ts.Node): tstl.Identifier {

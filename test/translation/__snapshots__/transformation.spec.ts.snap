@@ -562,6 +562,13 @@ exports[`Transformation (shorthandPropertyAssignment) 1`] = `
 f = function(____, x) return ({x = x}) end"
 `;
 
+exports[`Transformation (spreadAssignment) 1`] = `
+"require(\\"lualib_bundle\\");
+local xy = __TS__ObjectAssign({x = 0, y = 1})
+local xyz = __TS__ObjectAssign({x = 0, y = 1}, {z = 2})
+local xyz2 = __TS__ObjectAssign({z = 2}, {x = 0, y = 1})"
+`;
+
 exports[`Transformation (tryCatch) 1`] = `
 "do
     local ____try, er = pcall(

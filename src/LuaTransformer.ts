@@ -3869,8 +3869,10 @@ export class LuaTransformer {
         if (tableExpressions.length === 0) {
             return tstl.createTableExpression(properties, expression);
         } else {
-            const tableExpression = tstl.createTableExpression(properties, expression);
-            tableExpressions.push(tableExpression);
+            if (properties.length > 0) {
+                const tableExpression = tstl.createTableExpression(properties, expression);
+                tableExpressions.push(tableExpression);
+            }
 
             return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
         }

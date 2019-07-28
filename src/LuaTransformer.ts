@@ -3874,6 +3874,10 @@ export class LuaTransformer {
                 tableExpressions.push(tableExpression);
             }
 
+            if (tableExpressions[0].kind !== tstl.SyntaxKind.TableExpression) {
+                tableExpressions.unshift(tstl.createTableExpression(undefined, expression));
+            }
+
             return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
         }
     }

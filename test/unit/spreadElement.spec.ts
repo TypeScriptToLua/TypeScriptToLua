@@ -83,3 +83,11 @@ test.each([
         return obj.value;`;
     expect(JSON.parse(util.transpileAndExecute(code))).toBe(true);
 });
+
+test('SpreadAssignment No Mutation "%s"', () => {
+    const code = `
+        const obj: { x: number, y: number, z?: number } = { x: 0, y: 1 };
+        const merge = { ...obj, z: 2 };
+        return obj.z;`;
+    expect(util.transpileAndExecute(code)).toBe(undefined);
+});

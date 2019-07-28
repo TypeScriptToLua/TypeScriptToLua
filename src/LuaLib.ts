@@ -32,7 +32,6 @@ export enum LuaLibFeature {
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
     Map = "Map",
-    MergeObjects = "MergeObjects",
     NewIndex = "NewIndex",
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",

@@ -3872,7 +3872,7 @@ export class LuaTransformer {
             const tableExpression = tstl.createTableExpression(properties, expression);
             tableExpressions.push(tableExpression);
 
-            return this.transformLuaLibFunction(LuaLibFeature.MergeObjects, expression, ...tableExpressions);
+            return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
         }
     }
 

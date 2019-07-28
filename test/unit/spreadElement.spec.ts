@@ -71,3 +71,15 @@ test.each(["", "string", "string with spaces", "string 1 2 3"])('Spread Element 
         return JSONStringify(arr)`;
     expect(JSON.parse(util.transpileAndExecute(code))).toEqual([...str]);
 });
+
+test.each([
+    "{ ...{ value: true } }",
+    "{ value: false, ...{ value: true } }",
+    "{ ...{ value: false }, value: true }",
+    "{ ...{ value: false }, value: false, ...{ value: true } }",
+])('SpreadAssignment "%s"', expression => {
+    const code = `
+        const obj = ${expression};
+        return obj.value;`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toBe(true);
+});

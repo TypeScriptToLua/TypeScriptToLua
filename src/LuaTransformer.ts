@@ -3836,7 +3836,8 @@ export class LuaTransformer {
     }
 
     public transformObjectLiteral(expression: ts.ObjectLiteralExpression): ExpressionVisitResult {
-        const properties: tstl.TableFieldExpression[] = [];
+        let properties: tstl.TableFieldExpression[] = [];
+        const tableExpressions: tstl.Expression[] = [];
         // Add all property assignments
         expression.properties.forEach(element => {
             const name = element.name ? this.transformPropertyName(element.name) : undefined;
@@ -3853,12 +3854,23 @@ export class LuaTransformer {
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.transformFunctionExpression(element);
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
+            } else if (ts.isSpreadAssignment(element)) {
+                if (properties.length > 0) {
+                    const tableExpression = tstl.createTableExpression(properties, expression);
+                    tableExpressions.push(tableExpression);
+                    properties = [];
+                }
+                tableExpressions.push(this.transformExpression(element.expression));
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, expression);
             }
         });
 
-        return tstl.createTableExpression(properties, expression);
+        if (tableExpressions.length === 0) {
+            return tstl.createTableExpression(properties, expression);
+        } else {
+            return this.transformLuaLibFunction(LuaLibFeature.MergeObjects, expression, ...tableExpressions);
+        }
     }
 
     public transformOmittedExpression(node: ts.OmittedExpression): ExpressionVisitResult {

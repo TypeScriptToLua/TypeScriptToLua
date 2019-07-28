@@ -1,5 +1,8 @@
 /** @noSelf */
 declare namespace string {
+    /** @luaIterator @tupleReturn */
+    interface GmatchIterable extends Array<string[]> {}
+    function gmatch(string: string, pattern: string): GmatchIterable;
     /** @tupleReturn */
     function gsub(
         source: string,

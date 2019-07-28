@@ -64,3 +64,10 @@ test("Spread Element Iterable", () => {
         return JSONStringify(arr)`;
     expect(JSON.parse(util.transpileAndExecute(code))).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256]);
 });
+
+test.each(["", "string", "string with spaces", "string 1 2 3"])('Spread Element String "%s"', str => {
+    const code = `
+        const arr = [..."${str}"];
+        return JSONStringify(arr)`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([...str]);
+});

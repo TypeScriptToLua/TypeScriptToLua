@@ -8,11 +8,10 @@ const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLua
 describe("in function call", () => {
     util.testEachVersion(
         undefined,
-        // TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/663
-        // TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/664
+        // TODO: as const
         () => util.testFunction`
             function foo(a: number, b: number, ...rest: number[]) {
-                return { a, b, rest: rest }
+                return { a, b, rest }
             }
 
             const array: [number, number, number, number] = [0, 1, 2, 3];

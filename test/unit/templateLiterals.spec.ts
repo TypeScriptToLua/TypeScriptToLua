@@ -37,10 +37,9 @@ test.each([
     "obj.func`hello ${'propertyAccessExpression'}`",
     "obj['func']`hello ${'elementAccessExpression'}`",
 ])("tagged template literal (%p)", expression => {
-    // TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/663
     util.testFunction`
         function func(strings: TemplateStringsArray, ...expressions: any[]) {
-            return { strings: [...strings], raw: strings.raw, expressions: expressions };
+            return { strings: [...strings], raw: strings.raw, expressions };
         }
 
         const obj = { func };

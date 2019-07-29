@@ -24,7 +24,7 @@ test("global scoping", () => {
 test("nested namespace", () => {
     util.testModule`
         namespace A {
-            namespace B {
+            export namespace B {
                 export const foo = "foo";
             }
         }

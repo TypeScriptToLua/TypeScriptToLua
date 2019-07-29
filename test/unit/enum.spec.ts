@@ -175,34 +175,3 @@ test("enum concat", () => {
         return test + "_foobar";`;
     expect(util.transpileAndExecute(code)).toBe("0_foobar");
 });
-
-test("enum value as array index", () => {
-    const code = `
-        enum TestEnum {
-            A,
-            B,
-            C,
-        }
-        const arr = ["a", "b", "c"];
-        let i = TestEnum.A;
-        return arr[i];`;
-    expect(util.transpileAndExecute(code)).toBe("a");
-});
-
-test("enum property value as array index", () => {
-    const code = `
-        enum TestEnum {
-            A,
-            B,
-            C,
-        }
-
-        class Foo {
-            i = TestEnum.A;
-        }
-        const foo = new Foo();
-
-        const arr = ["a", "b", "c"];
-        return arr[foo.i];`;
-    expect(util.transpileAndExecute(code)).toBe("a");
-});

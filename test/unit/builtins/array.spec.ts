@@ -76,6 +76,20 @@ describe("access", () => {
         `.expectToMatchJsResult();
     });
 
+    test("with enum value index", () => {
+        util.testFunction`
+            enum TestEnum {
+                A,
+                B,
+                C,
+            }
+
+            const array = ["a", "b", "c"];
+            let index = TestEnum.A;
+            return array[index];
+        `.expectToMatchJsResult();
+    });
+
     test.each([
         { member: "firstElement()", expected: 3 },
         { member: "name", expected: "array" },

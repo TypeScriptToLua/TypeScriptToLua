@@ -21,13 +21,25 @@ test("global scoping", () => {
     expect(result).toBe("bar");
 });
 
+test("nested namespace", () => {
+    util.testModule`
+        namespace A {
+            namespace B {
+                export const foo = "foo";
+            }
+        }
+
+        export const foo = A.B.foo;
+    `.expectToMatchJsResult();
+});
+
 test("nested namespace with dot in name", () => {
     util.testModule`
-        namespace a.b {
+        namespace A.B {
             export const foo = "foo";
         }
 
-        export const foo = a.b.foo;
+        export const foo = A.B.foo;
     `.expectToMatchJsResult();
 });
 

@@ -77,14 +77,27 @@ test.each([
     "{ value: false, ...{ value: true } }",
     "{ ...{ value: false }, value: true }",
     "{ ...{ value: false }, value: false, ...{ value: true } }",
+    "{ ...{ x: true, y: true } }",
+    "{ x: true, y: true }",
+    "{ x: true, ...{ y: true, z: true } }",
+    "{ ...{ x: true }, ...{ y: true, z: true } }",
 ])('SpreadAssignment "%s"', expression => {
-    const code = `
-        const obj = ${expression};
-        return obj.value;`;
-    expect(util.transpileAndExecute(code)).toBe(true);
+    const code = `return JSONStringify(${expression});`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual(eval(`(${expression})`));
 });
 
-test('SpreadAssignment No Mutation "%s"', () => {
+test("SpreadAssignment Destructure", () => {
+    const code = `let obj = { x: 0, y: 1, z: 2 };`;
+    const luaCode = `
+        ${code}
+        return JSONStringify({ a: 0, ...obj, b: 1, c: 2 });`;
+    const jsCode = `
+        ${code}
+        ({ a: 0, ...obj, b: 1, c: 2 })`;
+    expect(JSON.parse(util.transpileAndExecute(luaCode))).toStrictEqual(eval(jsCode));
+});
+
+test("SpreadAssignment No Mutation", () => {
     const code = `
         const obj: { x: number, y: number, z?: number } = { x: 0, y: 1 };
         const merge = { ...obj, z: 2 };

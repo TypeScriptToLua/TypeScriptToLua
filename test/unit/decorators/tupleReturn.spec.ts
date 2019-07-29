@@ -16,7 +16,7 @@ test("Tuple Return Destruct Declaration", () => {
     util.testFunction`
         /** @tupleReturn */
         function tuple(): [number, number, number] { return [3,5,1]; }
-        const [a,b,c] = tuple();
+        const [,b,c] = tuple();
         return b;
     `
         .tap(expectNoUnpack)

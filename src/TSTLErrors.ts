@@ -7,9 +7,6 @@ const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ?
 export const CouldNotCast = (castName: string) =>
     new Error(`Failed to cast all elements to expected type using ${castName}.`);
 
-export const DefaultImportsNotSupported = (node: ts.Node) =>
-    new TranspileError(`Default Imports are not supported, please use named imports instead!`, node);
-
 export const ForbiddenEllipsisDestruction = (node: ts.Node) =>
     new TranspileError(`Ellipsis destruction is not allowed.`, node);
 
@@ -90,6 +87,9 @@ export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
 export const MissingMetaExtension = (node: ts.Node) =>
     new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
 
+export const NonFlattenableDestructure = (node: ts.Node) =>
+    new TranspileError(`This node cannot be destructured using a standard Lua assignment statement.`, node);
+
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 
@@ -99,9 +99,6 @@ export const UndefinedTypeNode = (node: ts.Node) => new TranspileError("Failed t
 
 export const UnknownSuperType = (node: ts.Node) =>
     new TranspileError("Unable to resolve type of super expression.", node);
-
-export const UnsupportedDefaultExport = (node: ts.Node) =>
-    new TranspileError(`Default exports are not supported.`, node);
 
 export const UnsupportedImportType = (node: ts.Node) => new TranspileError(`Unsupported import type.`, node);
 

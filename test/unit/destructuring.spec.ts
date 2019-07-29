@@ -22,9 +22,9 @@ const testCases = [
 ].map(({ binding, value }) => ({ binding, value: util.valueToString(value) }));
 
 test.each([
+    ...testCases,
     { binding: "{ x, y }, z", value: "{ x: false, y: false }, true" },
     { binding: "{ x, y }, { z }", value: "{ x: false, y: false }, { z: true }" },
-    ...testCases,
 ])("in function parameter (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};
@@ -46,18 +46,34 @@ test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     `.expectToMatchJsResult();
 });
 
-// TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/574
-test.skip.each(testCases)("in assignment (%p)", ({ binding, value }) => {
+// TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/695
+test.each(testCases.filter(x => x.binding !== "[x, , y]"))(
+    "in exported variable declaration (%p)",
+    ({ binding, value }) => {
+        util.testModule`
+            export const ${binding} = ${value};
+        `.expectToMatchJsResult();
+    }
+);
+
+const assignmentTestCases = [
+    ...testCases,
+    ...[
+        { binding: "{ x: obj.prop }", value: { x: true } },
+        { binding: "{ x: obj.prop = true }", value: {} },
+        { binding: "[{ x: obj.prop }]", value: [{ x: true }] },
+        { binding: "{ obj: { prop: obj.prop } }", value: { obj: { prop: true } } },
+        { binding: "{ x = true }", value: {} },
+    ].map(({ binding, value }) => ({ binding, value: util.valueToString(value) })),
+    { binding: "{ x: { [(3).toString()]: y } }", value: "{ x: { [(3).toString()]: true } }" },
+];
+
+test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};
-        (${binding} = ${value});
-        return { ${allBindings} };
-    `.expectToMatchJsResult();
-});
-
-test.each(testCases)("in exported variable declaration (%p)", ({ binding, value }) => {
-    util.testModule`
-        export const ${binding} = ${value};
+        const obj = { prop: false };
+        const expressionResult = (${binding} = ${value});
+        return { ${allBindings}, obj, expressionResult };
     `.expectToMatchJsResult();
 });
 

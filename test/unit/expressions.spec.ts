@@ -168,6 +168,7 @@ test.each([
     "foo as Function",
     "Math.log2(2)",
     "Math.log10(2)",
+    '"".indexOf("")',
 ])("Expression statements (%p)", input => {
     util.testFunction`
         function foo() { return 17; }

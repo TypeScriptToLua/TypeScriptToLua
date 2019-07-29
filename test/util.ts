@@ -1,3 +1,4 @@
+import * as tsHelper from "../src/TSHelper";
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import * as path from "path";
@@ -110,6 +111,46 @@ export function transpileAndExecute(
         return __runTest();`;
 
     return executeLua(lua);
+}
+
+export function transpileAndExecuteProjectReturningMainExport(
+    typeScriptFiles: Record<string, string>,
+    exportName: string,
+    options: tstl.CompilerOptions = {}
+): [any, string] {
+    const mainFile = Object.keys(typeScriptFiles).find(typeScriptFileName => typeScriptFileName === "main.ts");
+    if (!mainFile) {
+        throw new Error("An entry point file needs to be specified. This should be called main.ts");
+    }
+
+    const joinedTranspiledFiles = Object.keys(typeScriptFiles)
+        .filter(typeScriptFileName => typeScriptFileName !== "main.ts")
+        .map(typeScriptFileName => {
+            const modulePath = tsHelper.getExportPath(typeScriptFileName, options);
+            const tsCode = typeScriptFiles[typeScriptFileName];
+            const luaCode = transpileString(tsCode, options);
+            return `package.preload["${modulePath}"] = function()
+                ${luaCode}
+            end`;
+        })
+        .join("\n");
+
+    const luaCode = `return (function()
+        ${joinedTranspiledFiles}
+        ${transpileString(typeScriptFiles[mainFile])}
+    end)().${exportName}`;
+
+    try {
+        return [executeLua(luaCode), luaCode];
+    } catch (err) {
+        throw new Error(`
+            Encountered an error when executing the following Lua code:
+
+            ${luaCode}
+
+            ${err}
+        `);
+    }
 }
 
 export function transpileExecuteAndReturnExport(
@@ -397,11 +438,39 @@ export abstract class TestBuilder {
         const exports = {};
         const context = vm.createContext({ exports, module: { exports } });
         context.global = context;
+        let result: unknown;
         try {
-            return vm.runInContext(this.getJsCodeWithWrapper(), context);
+            result = vm.runInContext(this.getJsCodeWithWrapper(), context);
         } catch (error) {
             return new ExecutionError(error.message);
         }
+
+        function transform(currentValue: any): any {
+            if (currentValue === null) {
+                return undefined;
+            }
+
+            if (Array.isArray(currentValue)) {
+                return currentValue.map(transform);
+            }
+
+            if (typeof currentValue === "object") {
+                for (const [key, value] of Object.entries(currentValue)) {
+                    currentValue[key] = transform(value);
+                    if (currentValue[key] === undefined) {
+                        delete currentValue[key];
+                    }
+                }
+
+                if (Object.keys(currentValue).length === 0) {
+                    return [];
+                }
+            }
+
+            return currentValue;
+        }
+
+        return transform(result);
     }
 
     // Utilities
@@ -453,19 +522,7 @@ export abstract class TestBuilder {
 
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
-        if (
-            // tslint:disable-next-line: no-null-keyword
-            !(luaResult === undefined && jsResult == null) &&
-            // Assume {} and [] to be equal
-            !(
-                typeof luaResult === "object" &&
-                typeof jsResult === "object" &&
-                Object.values(luaResult).filter(x => x !== undefined).length === 0 &&
-                Object.values(jsResult).filter(x => x !== undefined).length === 0
-            )
-        ) {
-            expect(luaResult).toEqual(jsResult);
-        }
+        expect(luaResult).toEqual(jsResult);
 
         return this;
     }

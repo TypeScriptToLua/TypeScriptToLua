@@ -150,6 +150,38 @@ describe("array.length", () => {
                 [1, 2, 3].length = ${length};
             `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
         });
+
+        test("in array destructuring", () => {
+            util.testFunction`
+                const array = [0, 1, 2];
+                [array.length] = [0];
+                return array.length;
+            `.expectToEqual(0);
+        });
+
+        test("in nested array destructuring", () => {
+            util.testFunction`
+                const array = [0, 1, 2];
+                [[array.length]] = [[0]];
+                return array.length;
+            `.expectToEqual(0);
+        });
+
+        test("in object destructuring", () => {
+            util.testFunction`
+                const array = [0, 1, 2];
+                ({ length: array.length } = { length: 0 });
+                return array.length;
+            `.expectToEqual(0);
+        });
+
+        test("in nested object destructuring", () => {
+            util.testFunction`
+                const array = [0, 1, 2];
+                ({ obj: { length: array.length } } = { obj: { length: 0 } });
+                return array.length;
+            `.expectToEqual(0);
+        });
     });
 });
 

@@ -57,6 +57,11 @@ function ClassB.prototype.____constructor(self)
 end"
 `;
 
+exports[`Transformation (exportEquals) 1`] = `
+"local ____exports = true
+return ____exports"
+`;
+
 exports[`Transformation (exportStatement) 1`] = `
 "local ____exports = {}
 local xyz = 4
@@ -355,4 +360,9 @@ f = function(____, x) return ({x = x}) end"
 exports[`Transformation (typeAssert) 1`] = `
 "local test1 = 10
 local test2 = 10"
+`;
+
+exports[`Transformation (unusedDefaultWithNamespaceImport) 1`] = `
+"local x = require(\\"module\\")
+local ____ = x"
 `;

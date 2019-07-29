@@ -133,6 +133,22 @@ export const selfTestFunctions: TestFunction[] = [
         }
         const anonFunctionNestedInNoSelfClass = (new AnonFunctionNestedInNoSelfClass).method();`,
     },
+    {
+        value: "anonMethodClassMergedNoSelfNS.method",
+        definition: `class AnonMethodClassMergedNoSelfNS { method(s: string): string { return s; } }
+            /** @noSelf */ namespace AnonMethodClassMergedNoSelfNS { export function nsFunc(s: string) { return s; } }
+            const anonMethodClassMergedNoSelfNS = new AnonMethodClassMergedNoSelfNS();`,
+    },
+    {
+        value: "AnonFuncNSMergedNoSelfClass.nsFunc",
+        definition: `/** @noSelf */ class AnonFuncNSMergedNoSelfClass { method(s: string): string { return s; } }
+            namespace AnonFuncNSMergedNoSelfClass { export function nsFunc(s: string) { return s; } }`,
+    },
+    {
+        value: "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf",
+        definition: `namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
+        /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }`,
+    },
 ];
 
 export const noSelfTestFunctions: TestFunction[] = [
@@ -262,6 +278,22 @@ export const noSelfTestFunctions: TestFunction[] = [
         }
         const anonFunctionNestedInClassInNoSelfNs =
             (new AnonFunctionNestedInClassInNoSelfNs.AnonFunctionNestedInClass).method();`,
+    },
+    {
+        value: "noSelfAnonMethodClassMergedNS.method",
+        definition: `/** @noSelf */ class NoSelfAnonMethodClassMergedNS { method(s: string): string { return s; } }
+            namespace NoSelfAnonMethodClassMergedNS { export function nsFunc(s: string) { return s; } }
+            const noSelfAnonMethodClassMergedNS = new NoSelfAnonMethodClassMergedNS();`,
+    },
+    {
+        value: "NoSelfAnonFuncNSMergedClass.nsFunc",
+        definition: `class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
+        /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }`,
+    },
+    {
+        value: "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf",
+        definition: `namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
+        /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }`,
     },
 ];
 

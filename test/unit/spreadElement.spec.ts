@@ -81,7 +81,7 @@ test.each([
     const code = `
         const obj = ${expression};
         return obj.value;`;
-    expect(JSON.parse(util.transpileAndExecute(code))).toBe(true);
+    expect(util.transpileAndExecute(code)).toBe(true);
 });
 
 test('SpreadAssignment No Mutation "%s"', () => {

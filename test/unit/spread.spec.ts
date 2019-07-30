@@ -8,13 +8,12 @@ const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLua
 describe("in function call", () => {
     util.testEachVersion(
         undefined,
-        // TODO: as const
         () => util.testFunction`
             function foo(a: number, b: number, ...rest: number[]) {
                 return { a, b, rest }
             }
 
-            const array: [number, number, number, number] = [0, 1, 2, 3];
+            const array = [0, 1, 2, 3] as const;
             return foo(...array);
         `,
         {

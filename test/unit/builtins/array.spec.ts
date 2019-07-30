@@ -26,7 +26,7 @@ describe("access", () => {
         util.testExpression`[3, 5, 1][1]`.expectToMatchJsResult();
     });
 
-    test.skip("const array literal", () => {
+    test("const array literal", () => {
         util.testExpression`([3, 5, 1] as const)[1]`.expectToMatchJsResult();
     });
 

@@ -1,6 +1,5 @@
 import * as util from "../../util";
 
-// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/660
 test("equals _G", () => {
     util.testExpression`globalThis === _G`.setTsHeader("declare const _G: typeof globalThis;").expectToEqual(true);
 });

@@ -3855,11 +3855,14 @@ export class LuaTransformer {
                 const expression = this.transformFunctionExpression(element);
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
             } else if (ts.isSpreadAssignment(element)) {
+                // Create a table for preceding properties to preserve property order
+                // { x: 0, ...{ y: 2 }, y: 1, z: 2 } --> __TS__ObjectAssign({x = 0}, {y = 2}, {y = 1, z = 2})
                 if (properties.length > 0) {
                     const tableExpression = tstl.createTableExpression(properties, expression);
                     tableExpressions.push(tableExpression);
                 }
                 properties = [];
+
                 const type = this.checker.getTypeAtLocation(element.expression);
                 let tableExpression = this.transformExpression(element.expression);
                 if (type && tsHelper.isArrayType(type, this.checker, this.program)) {

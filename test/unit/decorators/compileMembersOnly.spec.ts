@@ -28,7 +28,7 @@ test("@compileMembersOnly in a namespace", () => {
 
         export const A = Test.TestEnum.A;
     `
-        .setExport("A")
+        .setReturnExport("A")
         .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("Test.A"))
         .expectToEqual("A");
 });

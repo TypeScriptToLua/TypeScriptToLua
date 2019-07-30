@@ -53,6 +53,6 @@ test("console.differentiation", () => {
 
         export const result = test();
     `
-        .setExport("result")
+        .setReturnExport("result")
         .expectToMatchJsResult();
 });

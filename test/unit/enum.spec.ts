@@ -24,16 +24,6 @@ test("in a namespace", () => {
     `.expectToMatchJsResult();
 });
 
-test.skip("string literal as a member name", () => {
-    util.testFunction`
-        enum TestEnum {
-            ["A"],
-        }
-
-        return ${serializeEnum("TestEnum")}
-    `.expectToMatchJsResult();
-});
-
 describe("initializers", () => {
     test("expression", () => {
         util.testFunction`
@@ -77,17 +67,6 @@ describe("initializers", () => {
                 A,
                 B = A,
                 C = B,
-            }
-
-            return ${serializeEnum("TestEnum")}
-        `.expectToMatchJsResult();
-    });
-
-    test.skip("string literal member reference", () => {
-        util.testFunction`
-            enum TestEnum {
-                ["A"],
-                B = A,
             }
 
             return ${serializeEnum("TestEnum")}

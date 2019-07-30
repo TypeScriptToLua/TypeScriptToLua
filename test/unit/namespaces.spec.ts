@@ -100,7 +100,7 @@ test("declared namespace function call", () => {
 
         export const result = myNameSpace.declaredFunction(2);
     `
-        .setExport("result")
+        .setReturnExport("result")
         .setLuaHeader(luaHeader)
         .expectToEqual(6);
 });

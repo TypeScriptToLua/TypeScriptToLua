@@ -113,7 +113,7 @@ describe("access", () => {
             array[0] = 3;
             export const result = array.${member};
         `
-            .setExport("result")
+            .setReturnExport("result")
             .setLuaHeader(luaHeader)
             .expectToEqual(expected);
     });

@@ -416,7 +416,7 @@ test("Function local overriding export", () => {
         }
         export const result = bar(7);
     `
-        .setExport("result")
+        .setReturnExport("result")
         .expectToMatchJsResult();
 });
 

@@ -55,7 +55,7 @@ test("instanceof export", () => {
         const instance = new myClass();
         export const result = instance instanceof myClass;
     `
-        .setExport("result")
+        .setReturnExport("result")
         .expectToMatchJsResult();
 });
 

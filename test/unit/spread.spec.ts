@@ -46,9 +46,6 @@ describe("in array literal", () => {
         `.expectToMatchJsResult();
     });
 
-    test.todo("of generator");
-    test.todo("of string");
-
     util.testEachVersion("of array literal", () => util.testExpression`[...[0, 1, 2]]`, {
         [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
         [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),

@@ -104,3 +104,13 @@ test("SpreadAssignment No Mutation", () => {
         return obj.z;`;
     expect(util.transpileAndExecute(code)).toBe(undefined);
 });
+
+test.each([
+    "function spread() { return [0, 1, 2] } const object = { ...spread() };",
+    "const object = { ...[0, 1, 2] };",
+])('SpreadAssignment Array "%s"', expressionToCreateObject => {
+    const code = `
+        ${expressionToCreateObject}
+        return JSONStringify([object[0], object[1], object[2]]);`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([0, 1, 2]);
+});

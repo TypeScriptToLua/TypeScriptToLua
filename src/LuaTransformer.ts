@@ -3860,7 +3860,16 @@ export class LuaTransformer {
                     tableExpressions.push(tableExpression);
                 }
                 properties = [];
-                tableExpressions.push(this.transformExpression(element.expression));
+                const type = this.checker.getTypeAtLocation(element.expression);
+                let tableExpression = this.transformExpression(element.expression);
+                if (type && tsHelper.isArrayType(type, this.checker, this.program)) {
+                    tableExpression = this.transformLuaLibFunction(
+                        LuaLibFeature.ArrayToObject,
+                        element.expression,
+                        tableExpression
+                    );
+                }
+                tableExpressions.push(tableExpression);
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, expression);
             }

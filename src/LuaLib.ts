@@ -18,6 +18,7 @@ export enum LuaLibFeature {
     ArraySlice = "ArraySlice",
     ArraySome = "ArraySome",
     ArraySplice = "ArraySplice",
+    ArrayToObject = "ArrayToObject",
     ArrayFlat = "ArrayFlat",
     ArrayFlatMap = "ArrayFlatMap",
     ArraySetLength = "ArraySetLength",

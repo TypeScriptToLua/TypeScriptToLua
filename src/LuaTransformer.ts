@@ -3864,13 +3864,15 @@ export class LuaTransformer {
                 properties = [];
 
                 const type = this.checker.getTypeAtLocation(element.expression);
-                let tableExpression = this.transformExpression(element.expression);
+                let tableExpression: tstl.Expression;
                 if (type && tsHelper.isArrayType(type, this.checker, this.program)) {
                     tableExpression = this.transformLuaLibFunction(
                         LuaLibFeature.ArrayToObject,
                         element.expression,
-                        tableExpression
+                        this.transformExpression(element.expression)
                     );
+                } else {
+                    tableExpression = this.transformExpression(element.expression);
                 }
                 tableExpressions.push(tableExpression);
             } else {

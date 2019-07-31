@@ -26,6 +26,17 @@ describe("in function call", () => {
 });
 
 describe("in array literal", () => {
+    util.testEachVersion("of array literal", () => util.testExpression`[...[0, 1, 2]]`, {
+        [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
+        [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
+        [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
+        [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+    });
+
+    test.each(["", "string", "string with spaces", "string 1 2 3"])("of string literal (%p)", str => {
+        util.testExpressionTemplate`[...${str}]`.expectToMatchJsResult();
+    });
+
     test("of iterable", () => {
         util.testFunction`
             const it = {
@@ -45,60 +56,34 @@ describe("in array literal", () => {
             return [...it]
         `.expectToMatchJsResult();
     });
+});
 
-    util.testEachVersion("of array literal", () => util.testExpression`[...[0, 1, 2]]`, {
-        [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
-        [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+describe("in object literal", () => {
+    test.each([
+        "{ x: false, ...{ x: true, y: true } }",
+        "{ ...{ x: true, y: true } }",
+        "{ ...{ x: true }, ...{ y: true, z: true } }",
+        "{ ...{ x: false }, x: true }",
+        "{ ...{ x: false }, x: false, ...{ x: true } }",
+    ])("of object literal (%p)", expression => {
+        util.testExpression(expression).expectToMatchJsResult();
+    });
+
+    test("of object reference", () => {
+        util.testFunction`
+            const object = { x: 0, y: 1 };
+            const result = { ...object, z: 2 };
+            return { object, result };
+        `.expectToMatchJsResult();
+    });
+
+    test.each([
+        ["literal", "const object = { ...[0, 1, 2] };"],
+        ["reference", "const array = [0, 1, 2]; const object = { ...array };"],
+    ])("of array %p", (_name, expressionToCreateObject) => {
+        util.testFunction`
+            ${expressionToCreateObject}
+            return { "0": object[0], "1": object[1], "2": object[2] };
+        `.expectToMatchJsResult();
     });
 });
-
-test.each(["", "string", "string with spaces", "string 1 2 3"])('Spread Element String "%s"', str => {
-    const code = `
-        const arr = [..."${str}"];
-        return JSONStringify(arr)`;
-    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([...str]);
-});
-
-test.each([
-    "{ value: false, ...{ value: true } }",
-    "{ ...{ value: false }, value: true }",
-    "{ ...{ value: false }, value: false, ...{ value: true } }",
-    "{ ...{ x: true, y: true } }",
-    "{ x: true, ...{ y: true, z: true } }",
-    "{ ...{ x: true }, ...{ y: true, z: true } }",
-])('SpreadAssignment "%s"', expression => {
-    const code = `return JSONStringify(${expression});`;
-    expect(JSON.parse(util.transpileAndExecute(code))).toEqual(eval(`(${expression})`));
-});
-
-test("SpreadAssignment Destructure", () => {
-    const code = `let obj = { x: 0, y: 1, z: 2 };`;
-    const luaCode = `
-        ${code}
-        return JSONStringify({ a: 0, ...obj, b: 1, c: 2 });`;
-    const jsCode = `
-        ${code}
-        ({ a: 0, ...obj, b: 1, c: 2 })`;
-    expect(JSON.parse(util.transpileAndExecute(luaCode))).toStrictEqual(eval(jsCode));
-});
-
-test("SpreadAssignment No Mutation", () => {
-    const code = `
-        const obj: { x: number, y: number, z?: number } = { x: 0, y: 1 };
-        const merge = { ...obj, z: 2 };
-        return obj.z;`;
-    expect(util.transpileAndExecute(code)).toBe(undefined);
-});
-
-test.each([
-    "function spread() { return [0, 1, 2] } const object = { ...spread() };",
-    "const object = { ...[0, 1, 2] };",
-])('SpreadAssignment Array "%s"', expressionToCreateObject => {
-    const code = `
-        ${expressionToCreateObject}
-        return JSONStringify([object[0], object[1], object[2]]);`;
-    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([0, 1, 2]);
-});
-

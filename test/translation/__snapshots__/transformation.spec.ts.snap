@@ -275,6 +275,13 @@ exports[`Transformation (returnDefault) 1`] = `
 end"
 `;
 
+exports[`Transformation (spreadAssignment) 1`] = `
+"require(\\"lualib_bundle\\");
+local xy = __TS__ObjectAssign({x = 0, y = 1})
+local xyz = __TS__ObjectAssign({x = 0, y = 1}, {z = 2})
+local xyz2 = __TS__ObjectAssign({z = 2}, {x = 0, y = 1})"
+`;
+
 exports[`Transformation (unusedDefaultWithNamespaceImport) 1`] = `
 "local x = require(\\"module\\")
 local ____ = x"

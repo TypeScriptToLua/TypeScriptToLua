@@ -73,12 +73,10 @@ test.each(["", "string", "string with spaces", "string 1 2 3"])('Spread Element 
 });
 
 test.each([
-    "{ ...{ value: true } }",
     "{ value: false, ...{ value: true } }",
     "{ ...{ value: false }, value: true }",
     "{ ...{ value: false }, value: false, ...{ value: true } }",
     "{ ...{ x: true, y: true } }",
-    "{ x: true, y: true }",
     "{ x: true, ...{ y: true, z: true } }",
     "{ ...{ x: true }, ...{ y: true, z: true } }",
 ])('SpreadAssignment "%s"', expression => {

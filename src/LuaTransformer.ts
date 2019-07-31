@@ -4552,7 +4552,7 @@ export class LuaTransformer {
                 return tstl.createNumericLiteral(Math[name], identifier);
 
             default:
-                throw TSTLErrors.UnsupportedProperty("math", name, identifier);
+                throw TSTLErrors.UnsupportedProperty("Math", name, identifier);
         }
     }
 
@@ -4622,7 +4622,7 @@ export class LuaTransformer {
             }
 
             default:
-                throw TSTLErrors.UnsupportedProperty("math", expressionName, expression);
+                throw TSTLErrors.UnsupportedProperty("Math", expressionName, expression);
         }
     }
 
@@ -4872,11 +4872,7 @@ export class LuaTransformer {
                     tstl.createStringLiteral("char")
                 );
             default:
-                throw TSTLErrors.UnsupportedForTarget(
-                    `string property ${identifierString}`,
-                    this.luaTarget,
-                    identifier
-                );
+                throw TSTLErrors.UnsupportedProperty("String", identifierString, identifier);
         }
     }
 
@@ -4898,7 +4894,7 @@ export class LuaTransformer {
             case "values":
                 return this.transformLuaLibFunction(LuaLibFeature.ObjectValues, expression, ...parameters);
             default:
-                throw TSTLErrors.UnsupportedForTarget(`object property ${methodName}`, this.luaTarget, expression);
+                throw TSTLErrors.UnsupportedProperty("Object", methodName, expression);
         }
     }
 
@@ -4969,7 +4965,7 @@ export class LuaTransformer {
                 );
                 return tstl.createCallExpression(tstl.createIdentifier("print"), [debugTracebackCall]);
             default:
-                throw TSTLErrors.UnsupportedForTarget(`console property ${methodName}`, this.luaTarget, expression);
+                throw TSTLErrors.UnsupportedProperty("console", methodName, expression);
         }
     }
 
@@ -4992,7 +4988,7 @@ export class LuaTransformer {
                 const functionIdentifier = tstl.createIdentifier(`__TS__SymbolRegistry${upperMethodName}`);
                 return tstl.createCallExpression(functionIdentifier, parameters, expression);
             default:
-                throw TSTLErrors.UnsupportedForTarget(`symbol property ${methodName}`, this.luaTarget, expression);
+                throw TSTLErrors.UnsupportedProperty("Symbol", methodName, expression);
         }
     }
 
@@ -5008,7 +5004,7 @@ export class LuaTransformer {
             case "isFinite":
                 return this.transformLuaLibFunction(LuaLibFeature.NumberIsFinite, expression, ...parameters);
             default:
-                throw TSTLErrors.UnsupportedForTarget(`number property ${methodName}`, this.luaTarget, expression);
+                throw TSTLErrors.UnsupportedProperty("Number", methodName, expression);
         }
     }
 
@@ -5186,11 +5182,14 @@ export class LuaTransformer {
     }
 
     public transformAssertionExpression(expression: ts.AssertionExpression): ExpressionVisitResult {
-        this.validateFunctionAssignment(
-            expression,
-            this.checker.getTypeAtLocation(expression.expression),
-            this.checker.getTypeAtLocation(expression.type)
-        );
+        if (!ts.isConstTypeReference(expression.type)) {
+            this.validateFunctionAssignment(
+                expression,
+                this.checker.getTypeAtLocation(expression.expression),
+                this.checker.getTypeAtLocation(expression.type)
+            );
+        }
+
         return this.transformExpression(expression.expression);
     }
 

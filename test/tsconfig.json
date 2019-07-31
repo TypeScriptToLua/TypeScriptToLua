@@ -8,6 +8,7 @@
         "target": "es2017",
         "lib": ["es2017"],
         "types": ["node", "jest"],
+        "experimentalDecorators": true,
 
         "noEmit": true,
         "module": "commonjs"

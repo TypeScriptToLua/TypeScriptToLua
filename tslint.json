@@ -22,7 +22,6 @@
         "interface-name": [true, "never-prefix"],
         "jsdoc-format": true,
         "label-position": true,
-        "max-classes-per-file": [true, 1],
         "member-access": true,
         "no-angle-bracket-type-assertion": true,
         "no-any": false,

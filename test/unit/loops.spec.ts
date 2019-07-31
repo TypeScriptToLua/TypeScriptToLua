@@ -170,53 +170,48 @@ test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoCondition (%p)"
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoPostExpression (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            for (;;) {
-                if (i >= arrTest.length) {
-                    break;
-                }
-
-                arrTest[i] = arrTest[i] + 1;
-
-                i++;
+test("forNoPostExpression (%p)", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
+        let i = 0;
+        for (;;) {
+            if (i >= arrTest.length) {
+                break;
             }
-            return JSONStringify(arrTest);`
-    );
 
-    expect(result).toBe(JSON.stringify(expected));
+            arrTest[i] = arrTest[i] + 1;
+
+            i++;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
 test.each([
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i < arrTest.length; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; i <= arrTest.length - 1; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length > i; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = 0; arrTest.length - 1 >= i; i++" },
-    { inp: [0, 1, 2, 3], expected: [1, 1, 3, 3], header: "let i = 0; i < arrTest.length; i += 2" },
-    { inp: [0, 1, 2, 3], expected: [1, 2, 3, 4], header: "let i = arrTest.length - 1; i >= 0; i--" },
-    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
-    { inp: [0, 1, 2, 3], expected: [0, 2, 2, 4], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
-])("forheader (%p)", ({ inp, expected, header }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
+    { inp: [0, 1, 2, 3], header: "let i = 0; i < arrTest.length; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; i <= arrTest.length - 1; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; arrTest.length > i; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; arrTest.length - 1 >= i; i++" },
+    { inp: [0, 1, 2, 3], header: "let i = 0; i < arrTest.length; i += 2" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i >= 0; i--" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i >= 0; i -= 2" },
+    { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
+])("forheader (%p)", ({ inp, header }) => {
+    util.testFunction`
+        let arrTest = ${JSON.stringify(inp)};
         for (${header}) {
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
 test("for scope", () => {
-    const code = `
+    util.testFunction`
         let i = 42;
         for (let i = 0; i < 10; ++i) {}
         return i;
-    `;
-    expect(util.transpileAndExecute(code)).toBe(42);
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -277,6 +272,15 @@ test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expec
     );
 
     expect(result).toBe(JSON.stringify(expected));
+});
+
+test("Tuple loop", () => {
+    util.testFunction`
+        const tuple: [number, number, number] = [3,5,1];
+        let count = 0;
+        for (const value of tuple) { count += value; }
+        return count;
+    `.expectToMatchJsResult();
 });
 
 test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof existing variable (%p)", ({ inp, expected }) => {
@@ -496,264 +500,6 @@ test("forof with array typed as iterable", () => {
     expect(util.transpileAndExecute(code)).toBe("ABC");
 });
 
-test("forof lua iterator", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Iterable<string> {}
-        function luaIter(): Iter {
-            let i = 0;
-            return (() => arr[i++]) as any;
-        }
-        let result = "";
-        for (let e of luaIter()) { result += e; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
-});
-
-test("forof array lua iterator", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Array<string> {}
-        function luaIter(): Iter {
-            let i = 0;
-            return (() => arr[i++]) as any;
-        }
-        let result = "";
-        for (let e of luaIter()) { result += e; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
-});
-
-test("forof lua iterator with existing variable", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Iterable<string> {}
-        function luaIter(): Iter {
-            let i = 0;
-            return (() => arr[i++]) as any;
-        }
-        let result = "";
-        let e: string;
-        for (e of luaIter()) { result += e; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
-});
-
-test("forof lua iterator destructuring", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Iterable<[string, string]> {}
-        function luaIter(): Iter {
-            let i = 0;
-            return (() => arr[i] && [i.toString(), arr[i++]]) as any;
-        }
-        let result = "";
-        for (let [a, b] of luaIter()) { result += a + b; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
-});
-
-test("forof lua iterator destructuring with existing variables", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Iterable<[string, string]> {}
-        function luaIter(): Iter {
-            let i = 0;
-            return (() => arr[i] && [i.toString(), arr[i++]]) as any;
-        }
-        let result = "";
-        let a: string;
-        let b: string;
-        for ([a, b] of luaIter()) { result += a + b; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
-});
-
-test("forof lua iterator tuple-return", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
-        interface Iter extends Iterable<[string, string]> {}
-        function luaIter(): Iter {
-            let i = 0;
-            /** @tupleReturn */
-            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-            return iter as any;
-        }
-        let result = "";
-        for (let [a, b] of luaIter()) { result += a + b; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
-});
-
-test("forof lua iterator tuple-return with existing variables", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
-        interface Iter extends Iterable<[string, string]> {}
-        function luaIter(): Iter {
-            let i = 0;
-            /** @tupleReturn */
-            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-            return iter as any;
-        }
-        let result = "";
-        let a: string;
-        let b: string;
-        for ([a, b] of luaIter()) { result += a + b; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
-});
-
-test("forof lua iterator tuple-return single variable", () => {
-    const code = `
-        /** @luaIterator */
-        /** @tupleReturn */
-        interface Iter extends Iterable<[string, string]> {}
-        declare function luaIter(): Iter;
-        for (let x of luaIter()) {}
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
-    );
-});
-
-test("forof lua iterator tuple-return single existing variable", () => {
-    const code = `
-        /** @luaIterator */
-        /** @tupleReturn */
-        interface Iter extends Iterable<[string, string]> {}
-        declare function luaIter(): Iter;
-        let x: [string, string];
-        for (x of luaIter()) {}
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
-    );
-});
-
-test("forof forwarded lua iterator", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        interface Iter extends Iterable<string> {}
-        function luaIter(): Iter {
-            let i = 0;
-            function iter() { return arr[i++]; }
-            return iter as any;
-        }
-        function forward() {
-            const iter = luaIter();
-            return iter;
-        }
-        let result = "";
-        for (let a of forward()) { result += a; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
-});
-
-test("forof forwarded lua iterator with tupleReturn", () => {
-    const code = `
-        const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
-        interface Iter extends Iterable<[string, string]> {}
-        function luaIter(): Iter {
-            let i = 0;
-            /** @tupleReturn */
-            function iter() { return arr[i] && [i.toString(), arr[i++]] || []; }
-            return iter as any;
-        }
-        function forward() {
-            const iter = luaIter();
-            return iter;
-        }
-        let result = "";
-        for (let [a, b] of forward()) { result += a + b; }
-        return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
-});
-
 describe("for...of empty destructuring", () => {
     const declareTests = (destructuringPrefix: string) => {
         test("array", () => {
@@ -847,139 +593,6 @@ test.each([
     expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
     expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);
     expect(util.transpileString(loop, luajit).indexOf("::__continue1::") !== -1).toBe(true);
-});
-
-test("for dead code after return", () => {
-    const result = util.transpileAndExecute(`for (let i = 0; i < 10; i++) { return 3; const b = 8; }`);
-
-    expect(result).toBe(3);
-});
-
-test("for..in dead code after return", () => {
-    const result = util.transpileAndExecute(`for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }`);
-
-    expect(result).toBe(3);
-});
-
-test("for..of dead code after return", () => {
-    const result = util.transpileAndExecute(`for (let a of [1,2,4]) { return 3; const b = 8; }`);
-
-    expect(result).toBe(3);
-});
-
-test("while dead code after return", () => {
-    const result = util.transpileAndExecute(`while (true) { return 3; const b = 8; }`);
-
-    expect(result).toBe(3);
-});
-
-test.each([
-    { args: [1, 10], expectResult: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
-    { args: [1, 10, 2], expectResult: [1, 3, 5, 7, 9] },
-    { args: [10, 1, -1], expectResult: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] },
-    { args: [10, 1, -2], expectResult: [10, 8, 6, 4, 2] },
-])("@forRange loop", ({ args, expectResult }) => {
-    const tsHeader = "/** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];";
-    const code = `
-        const results: number[] = [];
-        for (const i of luaRange(${args})) {
-            results.push(i);
-        }
-        return JSONStringify(results);`;
-
-    const result = util.transpileAndExecute(code, undefined, undefined, tsHeader);
-    expect(JSON.parse(result)).toEqual(expectResult);
-});
-
-test("invalid non-ambient @forRange function", () => {
-    const code = `
-        /** @forRange **/ function luaRange(i: number, j: number, k?: number): number[] { return []; }
-        for (const i of luaRange(1, 10, 2)) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
-            ts.createEmptyStatement(),
-            "@forRange function can only be used as an iterable in a for...of loop."
-        ).message
-    );
-});
-
-test.each([[1], [1, 2, 3, 4]])("invalid @forRange argument count", args => {
-    const code = `
-        /** @forRange **/ declare function luaRange(...args: number[]): number[] { return []; }
-        for (const i of luaRange(${args})) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.")
-            .message
-    );
-});
-
-test("invalid @forRange control variable", () => {
-    const code = `
-        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];
-        let i: number;
-        for (i of luaRange(1, 10, 2)) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
-            ts.createEmptyStatement(),
-            "@forRange loop must declare its own control variable."
-        ).message
-    );
-});
-
-test("invalid @forRange argument type", () => {
-    const code = `
-        /** @forRange **/ declare function luaRange(i: string, j: number): number[] { return []; }
-        for (const i of luaRange("foo", 2)) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange arguments must be number types.").message
-    );
-});
-
-test("invalid @forRange destructuring", () => {
-    const code = `
-        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[][];
-        for (const [i] of luaRange(1, 10, 2)) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop cannot use destructuring.").message
-    );
-});
-
-test("invalid @forRange return type", () => {
-    const code = `
-        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): string[];
-        for (const i of luaRange(1, 10)) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
-            ts.createEmptyStatement(),
-            "@forRange function must return Iterable<number> or Array<number>."
-        ).message
-    );
-});
-
-test.each([
-    "const range = luaRange(1, 10);",
-    "console.log(luaRange);",
-    "luaRange.call(null, 0, 0, 0);",
-    "let array = [0, luaRange, 1];",
-    "const call: any; call(luaRange);",
-    "for (const i of [...luaRange(1, 10)]) {}",
-])("invalid @forRange reference (%p)", statement => {
-    const code = `
-        /** @forRange **/ declare function luaRange(i: number, j: number, k?: number): number[];
-        ${statement}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
-            ts.createEmptyStatement(),
-            "@forRange function can only be used as an iterable in a for...of loop."
-        ).message
-    );
 });
 
 test("do...while", () => {

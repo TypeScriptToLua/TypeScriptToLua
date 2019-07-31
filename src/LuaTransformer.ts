@@ -3930,7 +3930,8 @@ export class LuaTransformer {
     }
 
     public transformObjectLiteral(expression: ts.ObjectLiteralExpression): ExpressionVisitResult {
-        const properties: tstl.TableFieldExpression[] = [];
+        let properties: tstl.TableFieldExpression[] = [];
+        const tableExpressions: tstl.Expression[] = [];
         // Add all property assignments
         expression.properties.forEach(element => {
             const name = element.name ? this.transformPropertyName(element.name) : undefined;
@@ -3947,12 +3948,46 @@ export class LuaTransformer {
             } else if (ts.isMethodDeclaration(element)) {
                 const expression = this.transformFunctionExpression(element);
                 properties.push(tstl.createTableFieldExpression(expression, name, element));
+            } else if (ts.isSpreadAssignment(element)) {
+                // Create a table for preceding properties to preserve property order
+                // { x: 0, ...{ y: 2 }, y: 1, z: 2 } --> __TS__ObjectAssign({x = 0}, {y = 2}, {y = 1, z = 2})
+                if (properties.length > 0) {
+                    const tableExpression = tstl.createTableExpression(properties, expression);
+                    tableExpressions.push(tableExpression);
+                }
+                properties = [];
+
+                const type = this.checker.getTypeAtLocation(element.expression);
+                let tableExpression: tstl.Expression;
+                if (type && tsHelper.isArrayType(type, this.checker, this.program)) {
+                    tableExpression = this.transformLuaLibFunction(
+                        LuaLibFeature.ArrayToObject,
+                        element.expression,
+                        this.transformExpression(element.expression)
+                    );
+                } else {
+                    tableExpression = this.transformExpression(element.expression);
+                }
+                tableExpressions.push(tableExpression);
             } else {
                 throw TSTLErrors.UnsupportedKind("object literal element", element.kind, expression);
             }
         });
 
-        return tstl.createTableExpression(properties, expression);
+        if (tableExpressions.length === 0) {
+            return tstl.createTableExpression(properties, expression);
+        } else {
+            if (properties.length > 0) {
+                const tableExpression = tstl.createTableExpression(properties, expression);
+                tableExpressions.push(tableExpression);
+            }
+
+            if (tableExpressions[0].kind !== tstl.SyntaxKind.TableExpression) {
+                tableExpressions.unshift(tstl.createTableExpression(undefined, expression));
+            }
+
+            return this.transformLuaLibFunction(LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
+        }
     }
 
     public transformOmittedExpression(node: ts.OmittedExpression): ExpressionVisitResult {

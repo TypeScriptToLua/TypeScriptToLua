@@ -64,3 +64,51 @@ test("Spread Element Iterable", () => {
         return JSONStringify(arr)`;
     expect(JSON.parse(util.transpileAndExecute(code))).toEqual([1, 2, 4, 8, 16, 32, 64, 128, 256]);
 });
+
+test.each(["", "string", "string with spaces", "string 1 2 3"])('Spread Element String "%s"', str => {
+    const code = `
+        const arr = [..."${str}"];
+        return JSONStringify(arr)`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([...str]);
+});
+
+test.each([
+    "{ value: false, ...{ value: true } }",
+    "{ ...{ value: false }, value: true }",
+    "{ ...{ value: false }, value: false, ...{ value: true } }",
+    "{ ...{ x: true, y: true } }",
+    "{ x: true, ...{ y: true, z: true } }",
+    "{ ...{ x: true }, ...{ y: true, z: true } }",
+])('SpreadAssignment "%s"', expression => {
+    const code = `return JSONStringify(${expression});`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual(eval(`(${expression})`));
+});
+
+test("SpreadAssignment Destructure", () => {
+    const code = `let obj = { x: 0, y: 1, z: 2 };`;
+    const luaCode = `
+        ${code}
+        return JSONStringify({ a: 0, ...obj, b: 1, c: 2 });`;
+    const jsCode = `
+        ${code}
+        ({ a: 0, ...obj, b: 1, c: 2 })`;
+    expect(JSON.parse(util.transpileAndExecute(luaCode))).toStrictEqual(eval(jsCode));
+});
+
+test("SpreadAssignment No Mutation", () => {
+    const code = `
+        const obj: { x: number, y: number, z?: number } = { x: 0, y: 1 };
+        const merge = { ...obj, z: 2 };
+        return obj.z;`;
+    expect(util.transpileAndExecute(code)).toBe(undefined);
+});
+
+test.each([
+    "function spread() { return [0, 1, 2] } const object = { ...spread() };",
+    "const object = { ...[0, 1, 2] };",
+])('SpreadAssignment Array "%s"', expressionToCreateObject => {
+    const code = `
+        ${expressionToCreateObject}
+        return JSONStringify([object[0], object[1], object[2]]);`;
+    expect(JSON.parse(util.transpileAndExecute(code))).toEqual([0, 1, 2]);
+});

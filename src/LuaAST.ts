@@ -887,6 +887,9 @@ export function createTableIndexExpression(
 }
 
 export type AssignmentLeftHandSideExpression = Identifier | TableIndexExpression;
+export function isAssignmentLeftHandSideExpression(node: Node): node is AssignmentLeftHandSideExpression {
+    return isIdentifier(node) || isTableIndexExpression(node);
+}
 
 export type FunctionDefinition = (VariableDeclarationStatement | AssignmentStatement) & {
     right: [FunctionExpression];

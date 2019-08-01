@@ -60,6 +60,14 @@ export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern
     return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
 }
 
+export function isDestructuringAssignment(node: ts.Node): node is ts.DestructuringAssignment {
+    return (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        isAssignmentPattern(node.left)
+    );
+}
+
 export function getExportable(exportSpecifiers: ts.NamedExports, resolver: EmitResolver): ts.ExportSpecifier[] {
     return exportSpecifiers.elements.filter(exportSpecifier => resolver.isValueAliasDeclaration(exportSpecifier));
 }
@@ -400,7 +408,7 @@ export function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decor
     const directivesMap = new Map<DecoratorKind, Decorator>();
 
     ts.getJSDocTags(node).forEach(tag => {
-        const tagName = tag.tagName.escapedText as string;
+        const tagName = tag.tagName.text;
         if (Decorator.isValid(tagName)) {
             const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
             directivesMap.set(dec.kind, dec);
@@ -928,34 +936,6 @@ export function moduleHasEmittedBody(
     return false;
 }
 
-export function isValidFlattenableDestructuringAssignmentLeftHandSide(
-    node: ts.DestructuringAssignment,
-    checker: ts.TypeChecker,
-    program: ts.Program
-): boolean {
-    if (ts.isArrayLiteralExpression(node.left)) {
-        if (node.left.elements.length > 0) {
-            return !node.left.elements.some(element => {
-                switch (element.kind) {
-                    case ts.SyntaxKind.Identifier:
-                    case ts.SyntaxKind.PropertyAccessExpression:
-                        if (isArrayLength(element, checker, program)) {
-                            return true;
-                        }
-                    case ts.SyntaxKind.ElementAccessExpression:
-                        // Can be on the left hand side of a Lua assignment statement
-                        return false;
-                    default:
-                        // Cannot be
-                        return true;
-                }
-            });
-        }
-    }
-
-    return false;
-}
-
 export function isArrayLength(
     expression: ts.Expression,
     checker: ts.TypeChecker,
@@ -971,8 +951,10 @@ export function isArrayLength(
     }
 
     const name = ts.isPropertyAccessExpression(expression)
-        ? (expression.name.escapedText as string)
-        : ts.isStringLiteral(expression.argumentExpression) && expression.argumentExpression.text;
+        ? expression.name.text
+        : ts.isStringLiteral(expression.argumentExpression)
+        ? expression.argumentExpression.text
+        : undefined;
 
     return name === "length";
 }

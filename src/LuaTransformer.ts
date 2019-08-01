@@ -2055,16 +2055,15 @@ export class LuaTransformer {
             }
         } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
             // Destructuring types
-
             const statements: tstl.Statement[] = [];
+
             // For object, nested, omitted or rest bindings fall back to transformBindingPattern
             if (
                 ts.isObjectBindingPattern(statement.name) ||
                 statement.name.elements.some(
-                    elem => ts.isBindingElement(elem) && (!ts.isIdentifier(elem.name) || elem.dotDotDotToken)
+                    e => ts.isBindingElement(e) && (!ts.isIdentifier(e.name) || e.dotDotDotToken)
                 )
             ) {
-                const statements = [];
                 let table: tstl.Identifier;
                 if (statement.initializer !== undefined && ts.isIdentifier(statement.initializer)) {
                     table = this.transformIdentifier(statement.initializer);
@@ -3164,65 +3163,47 @@ export class LuaTransformer {
         this.validateFunctionAssignment(expression.right, rightType, leftType);
         this.validatePropertyAssignment(expression);
 
-        if (tsHelper.isAssignmentPattern(expression.left)) {
+        if (tsHelper.isDestructuringAssignment(expression)) {
             // Destructuring assignment
-            const flattenable = tsHelper.isValidFlattenableDestructuringAssignmentLeftHandSide(
-                expression as ts.DestructuringAssignment,
-                this.checker,
-                this.program
-            );
-
-            if (flattenable) {
-                const expressionType = this.checker.getTypeAtLocation(expression.right);
+            if (
+                ts.isArrayLiteralExpression(expression.left) &&
+                expression.left.elements.every(
+                    e =>
+                        (ts.isIdentifier(e) || ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) &&
+                        !tsHelper.isArrayLength(e, this.checker, this.program)
+                )
+            ) {
+                const rightType = this.checker.getTypeAtLocation(expression.right);
                 let right = this.transformExpression(expression.right);
-
                 if (
                     !tsHelper.isTupleReturnCall(expression.right, this.checker) &&
-                    tsHelper.isArrayType(expressionType, this.checker, this.program)
+                    tsHelper.isArrayType(rightType, this.checker, this.program)
                 ) {
                     right = this.createUnpackCall(right, expression.right);
                 }
 
-                return this.transformFlattenableDestructuringAssignment(
-                    expression as ts.DestructuringAssignment,
-                    right
+                const left = this.castElements(
+                    expression.left.elements.map(e => this.transformExpression(e)),
+                    tstl.isAssignmentLeftHandSideExpression
                 );
+
+                return tstl.createAssignmentStatement(left, right, expression);
             }
 
             let right = this.transformExpression(expression.right);
-            const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
-
             if (tsHelper.isTupleReturnCall(expression.right, this.checker)) {
                 right = this.wrapInTable(right);
             }
 
-            const rootDeclaration = tstl.createVariableDeclarationStatement(rootIdentifier, right);
-
-            const statements = this.transformDestructuringAssignment(
-                expression as ts.DestructuringAssignment,
-                rootIdentifier
-            );
-            statements.unshift(rootDeclaration);
-
-            return statements;
+            const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
+            return [
+                tstl.createVariableDeclarationStatement(rootIdentifier, right),
+                ...this.transformDestructuringAssignment(expression, rootIdentifier),
+            ];
         } else {
             // Simple assignment
             return this.transformAssignment(expression.left, this.transformExpression(expression.right));
         }
-    }
-
-    protected transformFlattenableDestructuringAssignment(
-        node: ts.DestructuringAssignment,
-        right: tstl.Expression | tstl.Expression[]
-    ): tstl.Statement {
-        if (ts.isArrayLiteralExpression(node.left)) {
-            const left: tstl.AssignmentLeftHandSideExpression[] = node.left.elements.map(
-                element => this.transformExpression(element) as tstl.AssignmentLeftHandSideExpression
-            );
-            return tstl.createAssignmentStatement(left, right, node);
-        }
-
-        throw TSTLErrors.NonFlattenableDestructure(node);
     }
 
     protected transformDestructuringAssignment(
@@ -3459,7 +3440,7 @@ export class LuaTransformer {
             );
         }
 
-        if (tsHelper.isAssignmentPattern(expression.left)) {
+        if (tsHelper.isDestructuringAssignment(expression)) {
             // Destructuring assignment
             const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
 
@@ -3468,13 +3449,10 @@ export class LuaTransformer {
                 right = this.wrapInTable(right);
             }
 
-            const rootDeclaration = tstl.createVariableDeclarationStatement(rootIdentifier, right);
-
-            const statements = this.transformDestructuringAssignment(
-                expression as ts.DestructuringAssignment,
-                rootIdentifier
-            );
-            statements.unshift(rootDeclaration);
+            const statements = [
+                tstl.createVariableDeclarationStatement(rootIdentifier, right),
+                ...this.transformDestructuringAssignment(expression, rootIdentifier),
+            ];
 
             return this.createImmediatelyInvokedFunctionExpression(statements, rootIdentifier, expression);
         }
@@ -6142,6 +6120,17 @@ export class LuaTransformer {
         return this.filterUndefined(visitResult);
     }
 
+    public castElements<TOriginal, TCast extends TOriginal>(
+        items: TOriginal[],
+        cast: (item: TOriginal) => item is TCast
+    ): TCast[] {
+        if (items.every(cast)) {
+            return items as TCast[];
+        } else {
+            throw TSTLErrors.CouldNotCast(cast.name);
+        }
+    }
+
     protected filterUndefined<T>(items: Array<T | undefined>): T[] {
         return items.filter(i => i !== undefined) as T[];
     }
@@ -6150,12 +6139,7 @@ export class LuaTransformer {
         items: Array<TOriginal | undefined>,
         cast: (item: TOriginal) => item is TCast
     ): TCast[] {
-        const filteredItems = items.filter(i => i !== undefined) as TOriginal[];
-        if (filteredItems.every(i => cast(i))) {
-            return filteredItems as TCast[];
-        } else {
-            throw TSTLErrors.CouldNotCast(cast.name);
-        }
+        return this.castElements(this.filterUndefined(items), cast);
     }
 
     protected createConstructorDecorationStatement(

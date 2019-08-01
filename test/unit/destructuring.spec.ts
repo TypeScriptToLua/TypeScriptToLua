@@ -63,8 +63,7 @@ test.each(testCases.filter(x => x.binding !== "[x, , y]" && x.binding !== "{ x, 
 );
 
 const assignmentTestCases = [
-    // TODO:
-    ...testCases.filter(x => !x.binding.includes("...")),
+    ...testCases,
     ...[
         { binding: "{ x: obj.prop }", value: { x: true } },
         { binding: "{ x: obj.prop = true }", value: {} },

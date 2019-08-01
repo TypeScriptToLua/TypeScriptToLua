@@ -3267,6 +3267,36 @@ export class LuaTransformer {
         return result;
     }
 
+    protected transformSpreadAssignment(
+        node: ts.SpreadAssignment,
+        root: tstl.Expression,
+        properties: ts.NodeArray<ts.ObjectLiteralElementLike>
+    ): tstl.Statement[] {
+        const usedProperties: tstl.TableFieldExpression[] = [];
+        // TODO: .flatMap
+        for (const property of properties) {
+            if (
+                (ts.isShorthandPropertyAssignment(property) || ts.isPropertyAssignment(property)) &&
+                !ts.isComputedPropertyName(property.name)
+            ) {
+                const name = ts.isIdentifier(property.name)
+                    ? tstl.createStringLiteral(property.name.text)
+                    : this.transformExpression(property.name);
+
+                usedProperties.push(tstl.createTableFieldExpression(tstl.createBooleanLiteral(true), name));
+            }
+        }
+
+        const extractingExpression = this.transformLuaLibFunction(
+            LuaLibFeature.ObjectRest,
+            undefined,
+            root,
+            tstl.createTableExpression(usedProperties)
+        );
+
+        return [this.transformAssignment(node.expression, extractingExpression)];
+    }
+
     protected transformObjectLiteralAssignmentPattern(
         node: ts.ObjectLiteralExpression,
         root: tstl.Expression
@@ -3282,7 +3312,8 @@ export class LuaTransformer {
                     result.push(...this.transformPropertyAssignment(property, root));
                     break;
                 case ts.SyntaxKind.SpreadAssignment:
-                    throw new Error("TODO");
+                    result.push(...this.transformSpreadAssignment(property, root, node.properties));
+                    break;
                 default:
                     throw TSTLErrors.UnsupportedKind("Object Destructure Property", property.kind, property);
             }
@@ -3298,11 +3329,7 @@ export class LuaTransformer {
         const result: tstl.Statement[] = [];
 
         node.elements.forEach((element, index) => {
-            const indexedRoot = tstl.createTableIndexExpression(
-                root as tstl.Expression,
-                tstl.createNumericLiteral(index + 1),
-                element
-            );
+            const indexedRoot = tstl.createTableIndexExpression(root, tstl.createNumericLiteral(index + 1), element);
 
             switch (element.kind) {
                 case ts.SyntaxKind.ObjectLiteralExpression:
@@ -3361,6 +3388,18 @@ export class LuaTransformer {
 
                     result.push(assignmentStatement);
                     break;
+                case ts.SyntaxKind.SpreadElement:
+                    if (index !== node.elements.length - 1) break;
+
+                    const restElements = this.transformLuaLibFunction(
+                        LuaLibFeature.ArraySlice,
+                        undefined,
+                        root,
+                        tstl.createNumericLiteral(index)
+                    );
+
+                    result.push(this.transformAssignment((element as ts.SpreadElement).expression, restElements));
+                    break;
                 case ts.SyntaxKind.OmittedExpression:
                     break;
                 default:
@@ -3387,13 +3426,7 @@ export class LuaTransformer {
             }
         }
 
-        let leftExpression: ts.Expression;
-        if (ts.isBinaryExpression(node.initializer)) {
-            leftExpression = node.initializer.left;
-        } else {
-            leftExpression = node.initializer;
-        }
-
+        const leftExpression = ts.isBinaryExpression(node.initializer) ? node.initializer.left : node.initializer;
         const variableToExtract = this.transformPropertyName(node.name);
         const extractingExpression = tstl.createTableIndexExpression(root, variableToExtract);
 

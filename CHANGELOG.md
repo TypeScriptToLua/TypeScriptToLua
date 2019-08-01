@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.26.0
+
+- Added support for [default exports and export equals statements](https://github.com/Microsoft/TypeScript/issues/7185#issuecomment-421632656).
+- Added support for [object spread expressions](https://mariusschulz.com/blog/object-rest-and-spread-in-typescript).
+- Added support for most common [destructuring assignments](https://basarat.gitbooks.io/typescript/content/docs/destructuring.html).
+- Added support for omitted declarations in destructuring tuples. (i.e. `const [a,,c] = foo();`)
+
+- `@noSelf` now only applies to members of the namespace with the directive, in case of namespace merging.
+- Fixed issue with isNumerType causing enum members as array indices not to recieve the `+1`.
+- Fixed string.indexOf failing in case the search string was a Lua string pattern.
+- Fixed some crashes from recursive type constraints.
+
+- Some simplification to the printing of expression statements.
+- Added new testing util methods to improve the testing process.
+
 ## 0.25.0
 
 - Added support for named function assignments, i.e. `const myFunc = function x(n) { ...; return x(n - 1); }`

@@ -1,6 +1,6 @@
 import * as util from "../util";
 
-const allBindings = "x, y, z";
+const allBindings = "x, y, z, rest";
 const testCases = [
     { binding: "{ x }", value: { x: true } },
     { binding: "{ x, y }", value: { x: false, y: true } },
@@ -9,12 +9,17 @@ const testCases = [
     { binding: "{ x, y = true }", value: { x: false, y: false } },
     { binding: "{ x = true }", value: {} },
     { binding: "{ x, y = true }", value: { x: false } },
+    { binding: "{ ...rest }", value: {} },
+    { binding: "{ x, ...rest }", value: { x: "x" } },
+    { binding: "{ x, ...rest }", value: { x: "x", y: "y", z: "z" } },
 
     { binding: "[]", value: [] },
     { binding: "[x, y]", value: ["x", "y"] },
     { binding: "[x, , y]", value: ["x", "", "y"] },
     { binding: "[x = true]", value: [false] },
     { binding: "[[x, y]]", value: [["x", "y"]] },
+    { binding: "[x, ...rest]", value: ["x"] },
+    { binding: "[x, ...rest]", value: ["x", "y", "z"] },
 
     { binding: "{ y: [z = true] }", value: { y: [false] } },
     { binding: "{ x: [x, y] }", value: { x: ["x", "y"] } },
@@ -47,7 +52,8 @@ test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
 });
 
 // TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/695
-test.each(testCases.filter(x => x.binding !== "[x, , y]"))(
+// TODO: https://github.com/microsoft/TypeScript/issues/32656
+test.each(testCases.filter(x => x.binding !== "[x, , y]" && x.binding !== "{ x, ...rest }"))(
     "in exported variable declaration (%p)",
     ({ binding, value }) => {
         util.testModule`
@@ -57,7 +63,8 @@ test.each(testCases.filter(x => x.binding !== "[x, , y]"))(
 );
 
 const assignmentTestCases = [
-    ...testCases,
+    // TODO:
+    ...testCases.filter(x => !x.binding.includes("...")),
     ...[
         { binding: "{ x: obj.prop }", value: { x: true } },
         { binding: "{ x: obj.prop = true }", value: {} },
@@ -119,25 +126,5 @@ describe("array destructuring optimization", () => {
         `
             .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
             .expectToMatchJsResult();
-    });
-});
-
-describe("rest binding patterns", () => {
-    test("should support object rest element", () => {
-        const result = util.transpileAndExecute(`
-            const { foo, ...rest } = { foo: 1, bar: 2 };
-            return JSONStringify({ foo, rest })
-        `);
-
-        expect(JSON.parse(result)).toEqual({ foo: 1, rest: { bar: 2 } });
-    });
-
-    test("should support array rest element", () => {
-        const result = util.transpileAndExecute(`
-            const [foo, ...rest] = [1, 2, 3];
-            return JSONStringify({ foo, rest });
-        `);
-
-        expect(JSON.parse(result)).toEqual({ foo: 1, rest: [2, 3] });
     });
 });

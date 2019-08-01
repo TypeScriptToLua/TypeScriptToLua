@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as util from "../util";
 import { luaKeywords } from "../../src/LuaKeywords";
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 
 const invalidLuaCharNames = ["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"];
 const validTsInvalidLuaKeywordNames = [
@@ -21,56 +21,50 @@ const invalidLuaNames = [...invalidLuaCharNames, ...luaKeywords.values()];
 const validTsInvalidLuaNames = [...invalidLuaCharNames, ...validTsInvalidLuaKeywordNames];
 
 test.each(validTsInvalidLuaNames)("invalid lua identifier name (%p)", name => {
-    const code = `
+    util.testFunction`
         const ${name} = "foobar";
-        return ${name};`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return ${name};
+    `.expectToMatchJsResult();
 });
 
 test.each([...luaKeywords.values()])("lua keyword as property name (%p)", keyword => {
-    const code = `
+    util.testFunction`
         const x = { ${keyword}: "foobar" };
-        return x.${keyword};`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return x.${keyword};
+    `.expectToMatchJsResult();
 });
 
 test.each(validTsInvalidLuaKeywordNames)("destructuring lua keyword (%p)", keyword => {
-    const code = `
-            const { foo: ${keyword} } = { foo: "foobar" };
-            return ${keyword};`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    util.testFunction`
+        const { foo: ${keyword} } = { foo: "foobar" };
+        return ${keyword};
+    `.expectToMatchJsResult();
 });
 
 test.each(validTsInvalidLuaKeywordNames)("destructuring shorthand lua keyword (%p)", keyword => {
-    const code = `
-            const { ${keyword} } = { ${keyword}: "foobar" };
-            return ${keyword};`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    util.testFunction`
+        const { ${keyword} } = { ${keyword}: "foobar" };
+        return ${keyword};
+    `.expectToMatchJsResult();
 });
 
 test.each(invalidLuaNames)("lua keyword or invalid identifier as method call (%p)", name => {
-    const code = `
+    util.testFunction`
         const foo = {
             ${name}(arg: string) { return "foo" + arg; }
         };
-        return foo.${name}("bar");`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return foo.${name}("bar");
+    `.expectToMatchJsResult();
 });
 
 test.each(invalidLuaNames)("lua keyword or invalid identifier as complex method call (%p)", name => {
-    const code = `
+    util.testFunction`
         const foo = {
             ${name}(arg: string) { return "foo" + arg; }
         };
         function getFoo() { return foo; }
-        return getFoo().${name}("bar");`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return getFoo().${name}("bar");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -84,13 +78,12 @@ test.each([
     "enum local {}",
     "function local() {}",
 ])("ambient identifier cannot be a lua keyword (%p)", statement => {
-    const code = `
+    util.testModule`
         declare ${statement}
-        const foo = local;`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")).message
-    );
+        local;
+    `
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")));
 });
 
 test.each([
@@ -102,42 +95,40 @@ test.each([
     "namespace $$$ { export const bar: any; }",
     "module $$$ { export const bar: any; }",
     "enum $$$ {}",
-    "function $$$() {}",
+    "function $$$();",
 ])("ambient identifier must be a valid lua identifier (%p)", statement => {
-    const code = `
+    util.testModule`
         declare ${statement}
-        const foo = $$$;`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")).message
-    );
+        $$$;
+    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")));
 });
 
 test.each(validTsInvalidLuaNames)(
     "ambient identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {
-        const code = `
-        declare var ${name}: any;
-        const foo = { ${name} };`;
-
-        expect(() => util.transpileString(code)).toThrow(
-            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
-        );
+        util.testModule`
+            declare var ${name}: any;
+            const foo = { ${name} };
+        `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
     }
 );
 
 test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua identifier (%p)", name => {
-    expect(() => util.transpileString(`const foo = ${name};`)).toThrow(
-        TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
-    );
+    util.testModule`
+        const foo = ${name};
+    `
+        .disableSemanticCheck()
+        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
 });
 
 test.each(validTsInvalidLuaNames)(
     "undeclared identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {
-        expect(() => util.transpileString(`const foo = { ${name} };`)).toThrow(
-            TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)).message
-        );
+        util.testModule`
+            const foo = { ${name} };
+        `
+            .disableSemanticCheck()
+            .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
     }
 );
 
@@ -148,16 +139,62 @@ test.each(validTsInvalidLuaNames)("exported values with invalid lua identifier n
     expect(util.executeLua(`return (function() ${lua} end)()["${name}"]`)).toBe("foobar");
 });
 
-test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
+test("exported identifiers referenced in namespace (%p)", () => {
     const code = `
-        class ${name} {}
-        return ${name}.name;`;
+        export const foo = "foobar";
+        namespace NS {
+            export const bar = foo;
+        }
+        export const baz = NS.bar;`;
+    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+});
 
-    expect(util.transpileAndExecute(code)).toBe(name);
+test("exported namespace identifiers referenced in different namespace (%p)", () => {
+    const tsHeader = `
+        namespace A {
+            export const foo = "foobar";
+            namespace B {
+                export const bar = foo;
+            }
+            export const baz = B.bar;
+        }`;
+    expect(util.transpileAndExecute("return A.baz", undefined, undefined, tsHeader)).toBe("foobar");
+});
+
+test("exported identifiers referenced in nested scope (%p)", () => {
+    const code = `
+        export const foo = "foobar";
+        namespace A {
+            export namespace B {
+                export const bar = foo;
+            }
+        }
+        export const baz = A.B.bar;`;
+    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+});
+
+test.each(validTsInvalidLuaNames)(
+    "exported values with invalid lua identifier names referenced in different scope (%p)",
+    name => {
+        const code = `
+        export const ${name} = "foobar";
+        namespace NS {
+            export const foo = ${name};
+        }
+        export const bar = NS.foo;`;
+        expect(util.transpileExecuteAndReturnExport(code, "bar")).toBe("foobar");
+    }
+);
+
+test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name property", name => {
+    util.testFunction`
+        class ${name} {}
+        return ${name}.name;
+    `.expectToMatchJsResult();
 });
 
 test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name => {
-    const code = `
+    util.testFunction`
         function decorator<T extends any>(c: T): T {
             c.bar = "foobar";
             return c;
@@ -165,9 +202,8 @@ test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name 
 
         @decorator
         class ${name} {}
-        return (${name} as any).bar;`;
-
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return (${name} as any).bar;
+    `.expectToMatchJsResult();
 });
 
 test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua name", name => {

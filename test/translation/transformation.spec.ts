@@ -11,6 +11,8 @@ const fixtures = fs
     .map(f => [path.parse(f).name, fs.readFileSync(path.join(fixturesPath, f), "utf8")]);
 
 test.each(fixtures)("Transformation (%s)", (_name, content) => {
-    const result = util.transpileString(content, { luaLibImport: tstl.LuaLibImportKind.Require });
-    expect(result).toMatchSnapshot();
+    util.testModule(content)
+        .setOptions({ luaLibImport: tstl.LuaLibImportKind.Require })
+        .disableSemanticCheck()
+        .expectLuaToMatchSnapshot();
 });

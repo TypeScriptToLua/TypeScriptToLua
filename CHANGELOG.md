@@ -1,5 +1,58 @@
 # Changelog
 
+## 0.25.0
+
+- Added support for named function assignments, i.e. `const myFunc = function x(n) { ...; return x(n - 1); }`
+
+- Made detection of string methods more robust.
+- Fixed issue regarding readonly tuple detection.
+- Fixed a nasty issue causing exponential complexity on chained properties/method expressions.
+- Improved handling of constrained generic types related to string and array detection.
+
+## 0.24.0
+
+- Returns in try/catch statements now properly return from the current function.
+- TypeScript's `globalThis` is now translated to lua's `_G`. Lualib functions were updated where relevant.
+
+- Fixed issue where string/table literals were missing parentheses and caused lua syntax errors.
+- Various improvements/refactorings across the codebase.
+- Fixed syntax error in for...of loops with empty destructuring argument.
+- Fixed issue with `do ... while` scope.
+- Fixed a bug with [@combileMembersOnly](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#compilemembersonly) where it would ignore anything before the enum name.
+
+## 0.23.0
+
+- Added support for OmittedExpression in array literals and array binding patterns.
+- Added support for [tagged template literals](https://basarat.gitbooks.io/typescript/docs/template-strings.html#tagged-templates).
+- Changed output lua formatting to be more debugger-friendly.
+- Various improvements to source maps.
+
+- Fixed an issue with the interaction of super calls and exported classes.
+- Fixed `@noResolution` not working on named modules.
+- Fixed namespace merging not working due to an earlier change.
+
+- Some refactoring and plumbing for the website.
+
+## 0.22.0
+
+- Added the [@vararg](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#vararg) directive.
+- Added the [@forRange](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#forRange) directive.
+- Custom ts transformers can now be loaded from tsconfig.
+
+- Fixed default tstl header incorrectly showing up above lualib functions.
+- Some improvements to typeof expressions.
+
+## 0.21.0
+
+- Imports/exports that are ambient (declarations, types, interfaces, etc) or are not used in value positions no longer generate `require` statements.
+- For ... of loops are now translated using `ipairs`.
+- Added support for `array.reduce`.
+- Added support for `import foo = bar.baz;` statements.
+
+- Fixed some issues with binding pattern parameter default values.
+- Fixed some issues with variable naming.
+- Enabled prettier on the entire codebase.
+
 ## 0.20.0
 
 - Added support for `string.repeat`, `string.padStart` and `string.padEnd`.

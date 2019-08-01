@@ -1,12 +1,11 @@
 import * as path from "path";
-
-import { Mapping, SourceNode, SourceMapGenerator } from "source-map";
-
-import * as tstl from "./LuaAST";
+import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import { LuaLib, LuaLibFeature } from "./LuaLib";
-import { TSHelper as tsHelper } from "./TSHelper";
+import * as tstl from "./LuaAST";
 import { luaKeywords } from "./LuaKeywords";
+import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
+import { EmitHost } from "./Transpile";
+import * as tsHelper from "./TSHelper";
 
 type SourceChunk = string | SourceNode;
 
@@ -39,15 +38,10 @@ export class LuaPrinter {
         [tstl.SyntaxKind.BitwiseNotOperator]: "~",
     };
 
-    private options: CompilerOptions;
-    private currentIndent: string;
-
+    private currentIndent = "";
     private sourceFile = "";
 
-    public constructor(options: CompilerOptions) {
-        this.options = options;
-        this.currentIndent = "";
-    }
+    public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
     public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
@@ -130,7 +124,7 @@ export class LuaPrinter {
             // Inline lualib features
             else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
                 header += "-- Lua Library inline imports\n";
-                header += LuaLib.loadFeatures(luaLibFeatures);
+                header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
             }
         }
 
@@ -157,12 +151,12 @@ export class LuaPrinter {
         return this.concatNodes(this.currentIndent, input);
     }
 
-    protected createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[]): SourceNode {
+    protected createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
         const originalPos = tstl.getOriginalPos(node);
 
         return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
-            ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks)
-            : new SourceNode(null, null, this.sourceFile, chunks); // tslint:disable-line:no-null-keyword
+            ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks, name)
+            : new SourceNode(null, null, this.sourceFile, chunks, name); // tslint:disable-line:no-null-keyword
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {
@@ -274,7 +268,7 @@ export class LuaPrinter {
             }
         }
 
-        return this.concatNodes(...chunks);
+        return this.createSourceNode(statement, chunks);
     }
 
     public printVariableAssignmentStatement(statement: tstl.AssignmentStatement): SourceNode {
@@ -516,13 +510,13 @@ export class LuaPrinter {
                 ...this.joinChunks(", ", returnStatement.expressions.map(e => this.printExpression(e))),
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
-            chunks.push(" end");
+            chunks.push(this.createSourceNode(expression, " end"));
         } else {
             chunks.push("\n");
             this.pushIndent();
             chunks.push(this.printBlock(expression.body));
             this.popIndent();
-            chunks.push(this.indent("end"));
+            chunks.push(this.indent(this.createSourceNode(expression, "end")));
         }
 
         return this.createSourceNode(expression, chunks);
@@ -541,7 +535,7 @@ export class LuaPrinter {
         this.pushIndent();
         chunks.push(this.printBlock(expression.body));
         this.popIndent();
-        chunks.push(this.indent("end"));
+        chunks.push(this.indent(this.createSourceNode(statement, "end")));
 
         return this.createSourceNode(expression, chunks);
     }
@@ -569,26 +563,7 @@ export class LuaPrinter {
     }
 
     public printTableExpression(expression: tstl.TableExpression): SourceNode {
-        const chunks: SourceChunk[] = [];
-
-        chunks.push("{");
-
-        if (expression.fields && expression.fields.length > 0) {
-            if (expression.fields.length === 1) {
-                // Inline tables with only one entry
-                chunks.push(this.printTableFieldExpression(expression.fields[0]));
-            } else {
-                chunks.push("\n");
-                this.pushIndent();
-                expression.fields.forEach(f => chunks.push(this.indent(), this.printTableFieldExpression(f), ",\n"));
-                this.popIndent();
-                chunks.push(this.indent());
-            }
-        }
-
-        chunks.push("}");
-
-        return this.createSourceNode(expression, chunks);
+        return this.createSourceNode(expression, ["{", ...this.printExpressionList(expression.fields), "}"]);
     }
 
     public printUnaryExpression(expression: tstl.UnaryExpression): SourceNode {
@@ -610,41 +585,65 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
+    private canStripParenthesis(expression: tstl.Expression): boolean {
+        return (
+            tstl.isParenthesizedExpression(expression) ||
+            tstl.isTableIndexExpression(expression) ||
+            tstl.isCallExpression(expression) ||
+            tstl.isMethodCallExpression(expression) ||
+            tstl.isIdentifier(expression) ||
+            tstl.isNilLiteral(expression) ||
+            tstl.isNumericLiteral(expression) ||
+            tstl.isBooleanLiteral(expression)
+        );
+    }
+
     public printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
-        return this.createSourceNode(expression, ["(", this.printExpression(expression.innerExpression), ")"]);
+        const innerExpression = this.printExpression(expression.innerExpression);
+        if (this.canStripParenthesis(expression.innerExpression)) {
+            return this.createSourceNode(expression, innerExpression);
+        }
+        return this.createSourceNode(expression, ["(", innerExpression, ")"]);
     }
 
     public printCallExpression(expression: tstl.CallExpression): SourceNode {
         const chunks = [];
 
-        const parameterChunks =
-            expression.params !== undefined ? expression.params.map(e => this.printExpression(e)) : [];
+        chunks.push(this.printExpression(expression.expression), "(");
 
-        chunks.push(this.printExpression(expression.expression), "(", ...this.joinChunks(", ", parameterChunks), ")");
+        if (expression.params) {
+            chunks.push(...this.printExpressionList(expression.params));
+        }
+
+        chunks.push(")");
 
         return this.createSourceNode(expression, chunks);
     }
 
     public printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
-        const prefix = this.printExpression(expression.prefixExpression);
+        const chunks = [];
 
-        const parameterChunks =
-            expression.params !== undefined ? expression.params.map(e => this.printExpression(e)) : [];
+        const prefix = this.printExpression(expression.prefixExpression);
 
         const name = this.printIdentifier(expression.name);
 
-        return this.createSourceNode(expression, [
-            prefix,
-            ":",
-            name,
-            "(",
-            ...this.joinChunks(", ", parameterChunks),
-            ")",
-        ]);
+        chunks.push(prefix, ":", name, "(");
+
+        if (expression.params) {
+            chunks.push(...this.printExpressionList(expression.params));
+        }
+
+        chunks.push(")");
+
+        return this.createSourceNode(expression, chunks);
     }
 
     public printIdentifier(expression: tstl.Identifier): SourceNode {
-        return this.createSourceNode(expression, expression.text);
+        return this.createSourceNode(
+            expression,
+            expression.text,
+            expression.originalName !== expression.text ? expression.originalName : undefined
+        );
     }
 
     public printTableIndexExpression(expression: tstl.TableIndexExpression): SourceNode {
@@ -696,6 +695,25 @@ export class LuaPrinter {
         return result;
     }
 
+    protected printExpressionList(expressions: tstl.Expression[]): SourceChunk[] {
+        const chunks: SourceChunk[] = [];
+
+        if (expressions.every(e => tsHelper.isSimpleExpression(e))) {
+            chunks.push(...this.joinChunks(", ", expressions.map(e => this.printExpression(e))));
+        } else {
+            chunks.push("\n");
+            this.pushIndent();
+            expressions.forEach((p, i) => {
+                const tail = i < expressions.length - 1 ? ",\n" : "\n";
+                chunks.push(this.indent(), this.printExpression(p), tail);
+            });
+            this.popIndent();
+            chunks.push(this.indent());
+        }
+
+        return chunks;
+    }
+
     // The key difference between this and SourceNode.toStringWithSourceMap() is that SourceNodes with null line/column
     // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
     private buildSourceMap(sourceFile: string, sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
@@ -717,12 +735,15 @@ export class LuaPrinter {
             }
             if (
                 currentMapping.generated.line === generatedLine &&
-                currentMapping.generated.column === generatedColumn
+                currentMapping.generated.column === generatedColumn &&
+                currentMapping.name === sourceNode.name
             ) {
                 return false;
             }
             return (
-                currentMapping.original.line !== sourceNode.line || currentMapping.original.column !== sourceNode.column
+                currentMapping.original.line !== sourceNode.line ||
+                currentMapping.original.column !== sourceNode.column ||
+                currentMapping.name !== sourceNode.name
             );
         };
 
@@ -732,6 +753,7 @@ export class LuaPrinter {
                     source: sourceNode.source,
                     original: { line: sourceNode.line, column: sourceNode.column },
                     generated: { line: generatedLine, column: generatedColumn },
+                    name: sourceNode.name,
                 };
                 map.addMapping(currentMapping);
             }

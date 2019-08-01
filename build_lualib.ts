@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "./src";
-import { LuaLib } from "./src/LuaLib";
+import { loadLuaLibFeatures } from "./src/LuaLib";
 
 const configFileName = path.resolve(__dirname, "src/lualib/tsconfig.json");
 const { emitResult, diagnostics } = tstl.transpileProject(configFileName);
@@ -16,4 +16,4 @@ if (fs.existsSync(bundlePath)) {
     fs.unlinkSync(bundlePath);
 }
 
-fs.writeFileSync(bundlePath, LuaLib.loadFeatures(Object.values(tstl.LuaLibFeature)));
+fs.writeFileSync(bundlePath, loadLuaLibFeatures(Object.values(tstl.LuaLibFeature), ts.sys));

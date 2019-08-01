@@ -1,6 +1,6 @@
 {
     "name": "typescript-to-lua",
-    "version": "0.20.0",
+    "version": "0.25.0",
     "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
     "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
     "license": "MIT",
@@ -23,9 +23,9 @@
         "pretest": "npm run lint && ts-node --transpile-only ./build_lualib.ts",
         "test": "jest",
         "lint": "npm run lint:tslint && npm run lint:prettier",
-        "lint:prettier": "prettier --check **/*.{js,ts,yml,json,md} || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
+        "lint:prettier": "prettier --check \"**/*.{js,ts,yml,json,md}\" || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:tslint": "tslint -p . && tslint -p test && tslint -p src/lualib",
-        "fix:prettier": "prettier --check --write **/*.{js,ts,yml,json,md}",
+        "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
         "release-major": "npm version major",
         "release-minor": "npm version minor",
         "release-patch": "npm version patch",
@@ -39,19 +39,21 @@
         "node": ">=8.5.0"
     },
     "dependencies": {
+        "resolve": "^1.11.0",
         "source-map": "^0.7.3",
-        "typescript": "^3.4.5"
+        "typescript": "^3.5.2"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
-        "@types/jest": "^24.0.12",
-        "@types/node": "^11.13.0",
+        "@types/jest": "^24.0.15",
+        "@types/node": "^11.13.14",
+        "@types/resolve": "0.0.8",
         "fengari": "^0.1.4",
         "jest": "^24.8.0",
         "jest-circus": "^24.8.0",
-        "prettier": "^1.17.0",
+        "prettier": "^1.18.2",
         "ts-jest": "^24.0.2",
-        "ts-node": "^7.0.0",
-        "tslint": "^5.16.0"
+        "ts-node": "^7.0.1",
+        "tslint": "^5.17.0"
     }
 }

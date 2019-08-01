@@ -1,4 +1,4 @@
-import { TSTLErrors } from "../../src/TSTLErrors";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 import * as ts from "typescript";
 
@@ -8,17 +8,16 @@ const jsonOptions = {
     moduleResolution: ts.ModuleResolutionKind.NodeJs,
 };
 
-test.each(["0", '""', "[]", '[1, "2", []]', '{ "a": "b" }', '{ "a": { "b": "c" } }'])("JSON (%p)", json => {
-    const lua = util
-        .transpileString({ "main.json": json }, jsonOptions, false)
-        .replace(/^return ([\s\S]+)$/, "return JSONStringify($1)");
-
-    const result = util.executeLua(lua);
-    expect(JSON.parse(result)).toEqual(JSON.parse(json));
+test.each([0, "", [], [1, "2", []], { a: "b" }, { a: { b: "c" } }])("JSON (%p)", json => {
+    util.testModule(JSON.stringify(json))
+        .setOptions(jsonOptions)
+        .setMainFileName("main.json")
+        .expectToEqual(json);
 });
 
 test("Empty JSON", () => {
-    expect(() => util.transpileString({ "main.json": "" }, jsonOptions, false)).toThrowExactError(
-        TSTLErrors.InvalidJsonFileContent(util.nodeStub)
-    );
+    util.testModule("")
+        .setOptions(jsonOptions)
+        .setMainFileName("main.json")
+        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidJsonFileContent(util.nodeStub));
 });

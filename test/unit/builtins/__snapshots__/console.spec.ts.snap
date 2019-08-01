@@ -1,0 +1,145 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`console.assert ("console.assert(false)") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    assert(false)
+end
+return ____exports"
+`;
+
+exports[`console.assert ("console.assert(false, \\"message %%s\\", \\"info\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    assert(
+        false,
+        string.format(\\"message %%s\\", \\"info\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.assert ("console.assert(false, \\"message %s\\", \\"info\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    assert(
+        false,
+        string.format(\\"message %s\\", \\"info\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.assert ("console.assert(false, \\"message\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    assert(false, \\"message\\")
+end
+return ____exports"
+`;
+
+exports[`console.assert ("console.assert(false, \\"message\\", \\"more\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    assert(false, \\"message\\", \\"more\\")
+end
+return ____exports"
+`;
+
+exports[`console.log ("console.log()") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print()
+end
+return ____exports"
+`;
+
+exports[`console.log ("console.log(\\"Hello %%s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        string.format(\\"Hello %%s\\", \\"there\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.log ("console.log(\\"Hello %s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        string.format(\\"Hello %s\\", \\"there\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.log ("console.log(\\"Hello\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(\\"Hello\\")
+end
+return ____exports"
+`;
+
+exports[`console.log ("console.log(\\"Hello\\", \\"There\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(\\"Hello\\", \\"There\\")
+end
+return ____exports"
+`;
+
+exports[`console.trace ("console.trace()") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        debug.traceback()
+    )
+end
+return ____exports"
+`;
+
+exports[`console.trace ("console.trace(\\"Hello %%s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        debug.traceback(
+            string.format(\\"Hello %%s\\", \\"there\\")
+        )
+    )
+end
+return ____exports"
+`;
+
+exports[`console.trace ("console.trace(\\"Hello %s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        debug.traceback(
+            string.format(\\"Hello %s\\", \\"there\\")
+        )
+    )
+end
+return ____exports"
+`;
+
+exports[`console.trace ("console.trace(\\"Hello\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        debug.traceback(\\"Hello\\", \\"there\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.trace ("console.trace(\\"message\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        debug.traceback(\\"message\\")
+    )
+end
+return ____exports"
+`;

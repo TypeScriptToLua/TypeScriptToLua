@@ -13,7 +13,7 @@ function __TS__ArrayIndexOf<T>(this: void, arr: T[], searchElement: T, fromIndex
         return -1;
     }
 
-    let k;
+    let k: number;
     if (n >= 0) {
         k = n;
     } else {

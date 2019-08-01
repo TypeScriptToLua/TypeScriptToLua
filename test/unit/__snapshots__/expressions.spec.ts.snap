@@ -1,0 +1,404 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Binary expressions ordering parentheses ("-1+1") 1`] = `
+"local ____exports = {}
+____exports.__result = -1 + 1
+return ____exports"
+`;
+
+exports[`Binary expressions ordering parentheses ("1*(3+4)") 1`] = `
+"local ____exports = {}
+____exports.__result = 1 * (3 + 4)
+return ____exports"
+`;
+
+exports[`Binary expressions ordering parentheses ("1*(3+4*2)") 1`] = `
+"local ____exports = {}
+____exports.__result = 1 * (3 + 4 * 2)
+return ____exports"
+`;
+
+exports[`Binary expressions ordering parentheses ("1*30+4") 1`] = `
+"local ____exports = {}
+____exports.__result = 1 * 30 + 4
+return ____exports"
+`;
+
+exports[`Binary expressions ordering parentheses ("1+1") 1`] = `
+"local ____exports = {}
+____exports.__result = 1 + 1
+return ____exports"
+`;
+
+exports[`Binary expressions ordering parentheses ("10-(4+5)") 1`] = `
+"local ____exports = {}
+____exports.__result = 10 - (4 + 5)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("~a") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.bnot(a)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a&=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.band(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a&b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.band(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a<<=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.lshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a<<b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.lshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.arshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a>>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.rshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a>>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.rshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.arshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a^=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.bxor(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a^b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.bxor(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a|=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit32.bor(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.2] ("a|b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit32.bor(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("~a") 1`] = `
+"local ____exports = {}
+____exports.__result = ~a
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a&=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a & b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a&b") 1`] = `
+"local ____exports = {}
+____exports.__result = a & b
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a<<=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a << b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a<<b") 1`] = `
+"local ____exports = {}
+____exports.__result = a << b
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a>>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a >> b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a>>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a^=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a ~ b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a^b") 1`] = `
+"local ____exports = {}
+____exports.__result = a ~ b
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a|=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a | b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [5.3] ("a|b") 1`] = `
+"local ____exports = {}
+____exports.__result = a | b
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("~a") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.bnot(a)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a&=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.band(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a&b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.band(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a<<=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.lshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a<<b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.lshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.arshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a>>>=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.rshift(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a>>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.rshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a>>b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.arshift(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a^=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.bxor(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a^b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.bxor(a, b)
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a|=b") 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = bit.bor(a, b)
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Bitop [JIT] ("a|b") 1`] = `
+"local ____exports = {}
+____exports.__result = bit.bor(a, b)
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("!a") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____ = not a
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("++i") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    i = i + 1
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("+a") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____ = a
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("--i") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    i = i - 1
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("-a") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local ____ = -a
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("delete tbl.test") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    tbl.test = nil
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("delete tbl['test']") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    tbl.test = nil
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("i++") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    i = i + 1
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("i--") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    i = i - 1
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("let a = delete tbl.test") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local a = (function()
+        tbl.test = nil
+        return true
+    end)()
+end
+return ____exports"
+`;
+
+exports[`Unary expressions basic ("let a = delete tbl['test']") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local a = (function()
+        tbl.test = nil
+        return true
+    end)()
+end
+return ____exports"
+`;

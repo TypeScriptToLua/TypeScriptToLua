@@ -139,14 +139,18 @@ describe("const enum", () => {
     });
 });
 
-test("enum toString", () => {
-    const code = `
+test("toString", () => {
+    util.testFunction`
         enum TestEnum {
             A,
             B,
             C,
         }
-        let test = TestEnum.A;
-        return test.toString();`;
-    expect(util.transpileAndExecute(code)).toBe(0);
+
+        function foo(value: TestEnum) {
+            return value.toString();
+        }
+
+        return foo(TestEnum.A);
+    `.expectToMatchJsResult();
 });

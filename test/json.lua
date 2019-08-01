@@ -112,11 +112,15 @@ end
 
 
 local function encode_number(val)
-  -- Check for NaN, -inf and inf
-  if val ~= val or val <= -math.huge or val >= math.huge then
-    error("unexpected number value '" .. tostring(val) .. "'")
+  if val ~= val then
+    return "NaN"
+  elseif val == math.huge then
+    return "Infinity"
+  elseif val == -math.huge then
+    return "-Infinity"
+  else
+    return string.format("%.17g", val)
   end
-  return string.format("%.14g", val)
 end
 
 
@@ -139,6 +143,7 @@ encode = function(val, stack)
 end
 
 
+-- TODO: Since it supports NaN and Infinity it is considered a superset of JSON, so it probably should be renamed
 function JSONStringify(val)
   return ( encode(val) )
 end

@@ -2,36 +2,30 @@ import * as tstl from "../../src";
 import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])("if (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let input: number = ${inp};
+test.each([0, 1])("if (%p)", inp => {
+    util.testFunction`
+        let input: number = ${inp};
         if (input === 0) {
             return 0;
         }
-        return 1;`
-    );
-
-    expect(result).toBe(expected);
+        return 1;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }])("ifelse (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let input: number = ${inp};
-            if (input === 0) {
-                return 0;
-            } else {
-                return 1;
-            }`
-    );
-
-    expect(result).toBe(expected);
+test.each([0, 1])("ifelse (%p)", inp => {
+    util.testFunction`
+        let input: number = ${inp};
+        if (input === 0) {
+            return 0;
+        } else {
+            return 1;
+        }
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: 3 }])(
-    "ifelseif (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let input: number = ${inp};
+test.each([0, 1, 2, 3])("ifelseif (%p)", inp => {
+    util.testFunction`
+        let input: number = ${inp};
         if (input === 0) {
             return 0;
         } else if (input === 1){
@@ -39,18 +33,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
         } else if (input === 2){
             return 2;
         }
-        return 3;`
-        );
+        return 3;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: 3 }])(
-    "ifelseifelse (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let input: number = ${inp};
+test.each([0, 1, 2, 3])("ifelseifelse (%p)", inp => {
+    util.testFunction`
+        let input: number = ${inp};
         if (input === 0) {
             return 0;
         } else if (input === 1){
@@ -59,18 +48,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
             return 2;
         } else {
             return 3;
-        }`
-        );
+        }
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -1 }])(
-    "switch (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
+test.each([0, 1, 2, 3])("switch (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
         switch (<number>${inp}) {
             case 0:
@@ -83,18 +67,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 result = 2;
                 break;
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -2 }])(
-    "switchdefault (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
+test.each([0, 1, 2, 3])("switchdefault (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
         switch (<number>${inp}) {
             case 0:
@@ -110,24 +89,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 result = -2;
                 break;
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([
-    { inp: 0, expected: 1 },
-    { inp: 0, expected: 1 },
-    { inp: 2, expected: 4 },
-    { inp: 3, expected: 4 },
-    { inp: 4, expected: 4 },
-    { inp: 5, expected: 15 },
-    { inp: 7, expected: -2 },
-])("switchfallthrough (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let result: number = -1;
+test.each([0, 0, 2, 3, 4, 5, 7])("switchfallthrough (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
         switch (<number>${inp}) {
             case 0:
@@ -152,24 +120,21 @@ test.each([
                 result = -2;
                 break;
         }
-        return result;`
-    );
 
-    expect(result).toBe(expected);
+        return result;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -2 }])(
-    "nestedSwitch (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
+test.each([0, 1, 2, 3])("nestedSwitch (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
-        switch (<number>${inp}) {
+        switch (${inp} as number) {
             case 0:
                 result = 0;
                 break;
             case 1:
-                switch(<number>${inp}) {
+                switch(${inp} as number) {
                     case 0:
                         result = 0;
                         break;
@@ -188,47 +153,37 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 result = -2;
                 break;
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
+test.each([0, 1, 2])("switchLocalScope (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 2 }, { inp: 2, expected: 2 }])(
-    "switchLocalScope (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
-
-            switch (<number>${inp}) {
-                case 0: {
-                    let x = 0;
-                    result = 0;
-                    break;
-                }
-                case 1: {
-                    let x = 1;
-                    result = x;
-                }
-                case 2: {
-                    let x = 2;
-                    result = x;
-                    break;
-                }
+        switch (<number>${inp}) {
+            case 0: {
+                let x = 0;
+                result = 0;
+                break;
             }
-            return result;`
-        );
+            case 1: {
+                let x = 1;
+                result = x;
+            }
+            case 2: {
+                let x = 2;
+                result = x;
+                break;
+            }
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -1 }])(
-    "switchReturn (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `const result: number = -1;
+test.each([0, 1, 2, 3])("switchReturn (%p)", inp => {
+    util.testFunction`
+        const result: number = -1;
 
         switch (<number>${inp}) {
             case 0:
@@ -240,18 +195,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 return 2;
                 break;
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -1 }])(
-    "switchWithBrackets (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
+test.each([0, 1, 2, 3])("switchWithBrackets (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
         switch (<number>${inp}) {
             case 0: {
@@ -267,18 +217,13 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 break;
             }
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
-
-test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected: 2 }, { inp: 3, expected: -1 }])(
-    "switchWithBracketsBreakInConditional (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
+test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
         switch (<number>${inp}) {
             case 0: {
@@ -295,20 +240,15 @@ test.each([{ inp: 0, expected: 0 }, { inp: 1, expected: 1 }, { inp: 2, expected:
                 break;
             }
         }
-        return result;`
-        );
+        return result;
+    `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(expected);
-    }
-);
+test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
+    util.testFunction`
+        let result: number = -1;
 
-test.each([{ inp: 0, expected: 4 }, { inp: 1, expected: 0 }, { inp: 2, expected: 2 }, { inp: 3, expected: -1 }])(
-    "switchWithBracketsBreakInInternalLoop (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let result: number = -1;
-
-        switch (<number>${inp}) {
+        switch (${inp} as number) {
             case 0: {
                 result = 0;
 
@@ -329,29 +269,64 @@ test.each([{ inp: 0, expected: 4 }, { inp: 1, expected: 0 }, { inp: 2, expected:
                 break;
             }
         }
-        return result;`
-        );
-
-        expect(result).toBe(expected);
-    }
-);
-
-test("If dead code after return", () => {
-    const result = util.transpileAndExecute(`if (true) { return 3; const b = 8; }`);
-
-    expect(result).toBe(3);
-});
-
-test("switch dead code after return", () => {
-    const result = util.transpileAndExecute(
-        `switch (<string>"abc") { case "def": return 4; let abc = 4; case "abc": return 5; let def = 6; }`
-    );
-
-    expect(result).toBe(5);
+        return result;
+    `.expectToMatchJsResult();
 });
 
 test("switch not allowed in 5.1", () => {
-    expect(() => util.transpileString(`switch ("abc") {}`, { luaTarget: tstl.LuaTarget.Lua51 })).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub)
-    );
+    util.testFunction`
+        switch ("abc") {}
+    `
+        .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
+        .expectToHaveDiagnosticOfError(
+            TSTLErrors.UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub)
+        );
+});
+
+test.each([
+    { input: "true ? 'a' : 'b'" },
+    { input: "false ? 'a' : 'b'" },
+    { input: "true ? false : true" },
+    { input: "false ? false : true" },
+    { input: "true ? literalValue : true" },
+    { input: "true ? variableValue : true" },
+    { input: "true ? maybeUndefinedValue : true" },
+    { input: "true ? maybeBooleanValue : true" },
+    { input: "true ? maybeUndefinedValue : true", options: { strictNullChecks: true } },
+    { input: "true ? maybeBooleanValue : true", options: { strictNullChecks: true } },
+    { input: "true ? undefined : true", options: { strictNullChecks: true } },
+    { input: "true ? null : true", options: { strictNullChecks: true } },
+    { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.Lua51 } },
+    { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
+    { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
+    { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
+])("Ternary operator (%p)", ({ input, options }) => {
+    util.testFunction`
+        const literalValue = "literal";
+        let variableValue: string;
+        let maybeBooleanValue: string | boolean = false;
+        let maybeUndefinedValue: string | undefined;
+        return ${input};
+    `
+        .setOptions(options)
+        .expectToMatchJsResult();
+});
+
+test.each([
+    { condition: true, lhs: 4, rhs: 5 },
+    { condition: false, lhs: 4, rhs: 5 },
+    { condition: 3, lhs: 4, rhs: 5 },
+])("Ternary Conditional (%p)", ({ condition, lhs, rhs }) => {
+    util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`.expectToMatchJsResult();
+});
+
+test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", condition => {
+    util.testFunction`
+        let a = 3;
+        let delay = () => ${condition} ? a + 3 : a + 5;
+        a = 8;
+        return delay();
+    `.expectToMatchJsResult();
 });

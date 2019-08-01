@@ -252,7 +252,9 @@ export abstract class TestBuilder {
                 throw new Error(`Unsupported Lua return type: ${returnType}`);
             }
         } else {
-            const message = to_jsstring(lua.lua_tostring(L, -1)).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+            // Filter out control characters appearing on some systems
+            const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
+            const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
             return new ExecutionError(message);
         }
     }

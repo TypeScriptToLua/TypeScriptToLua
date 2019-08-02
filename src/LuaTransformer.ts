@@ -1790,7 +1790,7 @@ export class LuaTransformer {
                 const memberAccessor = tstl.createTableIndexExpression(enumReference, memberName);
                 result.push(tstl.createAssignmentStatement(memberAccessor, valueExpression, member));
 
-                if (!tstl.isStringLiteral(valueExpression)) {
+                if (!tstl.isStringLiteral(valueExpression) && !tstl.isNilLiteral(valueExpression)) {
                     const reverseMemberAccessor = tstl.createTableIndexExpression(enumReference, memberAccessor);
                     result.push(tstl.createAssignmentStatement(reverseMemberAccessor, memberName, member));
                 }

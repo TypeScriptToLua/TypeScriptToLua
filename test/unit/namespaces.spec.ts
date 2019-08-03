@@ -119,3 +119,15 @@ test("`import =` on a namespace", () => {
         export const result = importedFunc();
     `.expectToMatchJsResult();
 });
+
+test("enum in a namespace", () => {
+    util.testModule`
+        namespace Test {
+            export enum TestEnum {
+                A,
+            }
+        }
+
+        export const result = Test.TestEnum.A;
+    `.expectToMatchJsResult();
+});

@@ -1,4 +1,3 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 // TODO: string.toString()
@@ -10,27 +9,36 @@ const serializeEnum = (identifier: string) => `(() => {
     return mappedTestEnum;
 })()`;
 
-// TODO: Move to namespace tests?
-test("in a namespace", () => {
-    util.testModule`
-        namespace Test {
-            export enum TestEnum {
-                A,
-                B,
-            }
-        }
-
-        export const result = ${serializeEnum("Test.TestEnum")}
-    `.expectToMatchJsResult();
-});
-
 describe("initializers", () => {
+    test("string", () => {
+        util.testFunction`
+            enum TestEnum {
+                A = "A",
+                B = "B",
+            }
+
+            return ${serializeEnum("TestEnum")}
+        `.expectToMatchJsResult();
+    });
+
     test("expression", () => {
         util.testFunction`
             const value = 6;
             enum TestEnum {
                 A,
                 B = value,
+            }
+
+            return ${serializeEnum("TestEnum")}
+        `.expectToMatchJsResult();
+    });
+
+    test("expression with side effect", () => {
+        util.testFunction`
+            let value = 0;
+            enum TestEnum {
+                A = value++,
+                B = A,
             }
 
             return ${serializeEnum("TestEnum")}
@@ -61,7 +69,7 @@ describe("initializers", () => {
         `.expectToMatchJsResult();
     });
 
-    test("other member reference", () => {
+    test("member reference", () => {
         util.testFunction`
             enum TestEnum {
                 A,
@@ -72,38 +80,38 @@ describe("initializers", () => {
             return ${serializeEnum("TestEnum")}
         `.expectToMatchJsResult();
     });
-});
 
-test("invalid heterogeneous enum", () => {
-    util.testFunction`
-        enum TestEnum {
-            A,
-            B = "B",
-            C,
-        }
-    `
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.HeterogeneousEnum(util.nodeStub));
+    test("string literal member reference", () => {
+        util.testFunction`
+            enum TestEnum {
+                ["A"],
+                "B" = A,
+                C = B,
+            }
+
+            return ${serializeEnum("TestEnum")}
+        `.expectToMatchJsResult();
+    });
 });
 
 describe("const enum", () => {
     const expectToBeConst: util.TapCallback = builder =>
         expect(builder.getMainLuaCodeChunk()).not.toContain("TestEnum");
 
-    test.each(["", "declare"])("%s without initializer", () => {
-        util.testFunction`
-            const enum TestEnum {
+    test.each(["", "declare "])("%swithout initializer", modifier => {
+        util.testModule`
+            ${modifier} const enum TestEnum {
                 A,
                 B,
             }
 
-            return TestEnum.A;
+            export const A = TestEnum.A;
         `
             .tap(expectToBeConst)
             .expectToMatchJsResult();
     });
 
-    test("with initializer", () => {
+    test("with string initializer", () => {
         util.testFunction`
             const enum TestEnum {
                 A = "ONE",
@@ -131,26 +139,18 @@ describe("const enum", () => {
     });
 });
 
-test("enum toString", () => {
-    const code = `
+test("toString", () => {
+    util.testFunction`
         enum TestEnum {
             A,
             B,
             C,
         }
-        let test = TestEnum.A;
-        return test.toString();`;
-    expect(util.transpileAndExecute(code)).toBe(0);
-});
 
-test("enum concat", () => {
-    const code = `
-        enum TestEnum {
-            A,
-            B,
-            C,
+        function foo(value: TestEnum) {
+            return value.toString();
         }
-        let test = TestEnum.A;
-        return test + "_foobar";`;
-    expect(util.transpileAndExecute(code)).toBe("0_foobar");
+
+        return foo(TestEnum.A);
+    `.expectToMatchJsResult();
 });

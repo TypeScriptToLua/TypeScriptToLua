@@ -1727,115 +1727,77 @@ export class LuaTransformer {
         return result;
     }
 
-    public transformEnumDeclaration(enumDeclaration: ts.EnumDeclaration): StatementVisitResult {
-        const type = this.checker.getTypeAtLocation(enumDeclaration);
-
-        // Const enums should never appear in the resulting code
-        if (type.symbol.getFlags() & ts.SymbolFlags.ConstEnum) {
+    public transformEnumDeclaration(node: ts.EnumDeclaration): StatementVisitResult {
+        if (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Const && !this.options.preserveConstEnums) {
             return undefined;
         }
 
+        const type = this.checker.getTypeAtLocation(node);
         const membersOnly = tsHelper.getCustomDecorators(type, this.checker).has(DecoratorKind.CompileMembersOnly);
-
         const result: tstl.Statement[] = [];
 
         if (!membersOnly) {
-            const name = this.transformIdentifier(enumDeclaration.name);
+            const name = this.transformIdentifier(node.name);
             const table = tstl.createTableExpression();
-            result.push(...this.createLocalOrExportedOrGlobalDeclaration(name, table, enumDeclaration));
+            result.push(...this.createLocalOrExportedOrGlobalDeclaration(name, table, node));
         }
 
-        for (const enumMember of this.computeEnumMembers(enumDeclaration)) {
-            const memberName = this.transformPropertyName(enumMember.name);
-            if (membersOnly) {
-                const enumSymbol = this.checker.getSymbolAtLocation(enumDeclaration.name);
-                const exportScope = enumSymbol ? this.getSymbolExportScope(enumSymbol) : undefined;
+        const enumReference = this.transformExpression(node.name);
+        for (const member of node.members) {
+            const memberName = this.transformPropertyName(member.name);
 
-                if (tstl.isIdentifier(memberName)) {
-                    result.push(
-                        ...this.createLocalOrExportedOrGlobalDeclaration(
-                            memberName,
-                            enumMember.value,
-                            enumDeclaration,
-                            undefined,
-                            exportScope
-                        )
-                    );
-                } else {
-                    result.push(
-                        ...this.createLocalOrExportedOrGlobalDeclaration(
-                            tstl.createIdentifier(enumMember.name.getText(), enumMember.name),
-                            enumMember.value,
-                            enumDeclaration,
-                            undefined,
-                            exportScope
-                        )
-                    );
+            let valueExpression: tstl.Expression | undefined;
+            const constEnumValue = this.tryGetConstEnumValue(member);
+            if (constEnumValue) {
+                valueExpression = constEnumValue;
+            } else if (member.initializer) {
+                if (ts.isIdentifier(member.initializer)) {
+                    const symbol = this.checker.getSymbolAtLocation(member.initializer);
+                    if (
+                        symbol &&
+                        symbol.valueDeclaration &&
+                        ts.isEnumMember(symbol.valueDeclaration) &&
+                        symbol.valueDeclaration.parent === node
+                    ) {
+                        const otherMemberName = this.transformPropertyName(symbol.valueDeclaration.name);
+                        valueExpression = tstl.createTableIndexExpression(enumReference, otherMemberName);
+                    }
+                }
+
+                if (!valueExpression) {
+                    valueExpression = this.transformExpression(member.initializer);
                 }
             } else {
-                const enumTable = this.transformIdentifierExpression(enumDeclaration.name);
-                const property = tstl.createTableIndexExpression(enumTable, memberName);
-                result.push(tstl.createAssignmentStatement(property, enumMember.value, enumMember.original));
+                valueExpression = tstl.createNilLiteral();
+            }
 
-                const valueIndex = tstl.createTableIndexExpression(enumTable, enumMember.value);
-                result.push(tstl.createAssignmentStatement(valueIndex, memberName, enumMember.original));
+            if (membersOnly) {
+                const enumSymbol = this.checker.getSymbolAtLocation(node.name);
+                const exportScope = enumSymbol ? this.getSymbolExportScope(enumSymbol) : undefined;
+
+                result.push(
+                    ...this.createLocalOrExportedOrGlobalDeclaration(
+                        tstl.isIdentifier(memberName)
+                            ? memberName
+                            : tstl.createIdentifier(member.name.getText(), member.name),
+                        valueExpression,
+                        node,
+                        undefined,
+                        exportScope
+                    )
+                );
+            } else {
+                const memberAccessor = tstl.createTableIndexExpression(enumReference, memberName);
+                result.push(tstl.createAssignmentStatement(memberAccessor, valueExpression, member));
+
+                if (!tstl.isStringLiteral(valueExpression) && !tstl.isNilLiteral(valueExpression)) {
+                    const reverseMemberAccessor = tstl.createTableIndexExpression(enumReference, memberAccessor);
+                    result.push(tstl.createAssignmentStatement(reverseMemberAccessor, memberName, member));
+                }
             }
         }
 
         return result;
-    }
-
-    protected computeEnumMembers(
-        node: ts.EnumDeclaration
-    ): Array<{ name: ts.PropertyName; value: tstl.Expression; original: ts.Node }> {
-        let numericValue = 0;
-        let hasStringInitializers = false;
-
-        const valueMap = new Map<ts.PropertyName, ExpressionVisitResult>();
-
-        return node.members.map(member => {
-            let valueExpression: ExpressionVisitResult;
-            if (member.initializer) {
-                if (ts.isNumericLiteral(member.initializer)) {
-                    numericValue = Number(member.initializer.text);
-                    valueExpression = this.transformNumericLiteral(member.initializer);
-                    numericValue++;
-                } else if (ts.isStringLiteral(member.initializer)) {
-                    hasStringInitializers = true;
-                    valueExpression = this.transformStringLiteral(member.initializer);
-                } else {
-                    if (ts.isIdentifier(member.initializer)) {
-                        const [isEnumMember, originalName] = tsHelper.isEnumMember(node, member.initializer);
-                        if (isEnumMember === true && originalName !== undefined) {
-                            if (valueMap.has(originalName)) {
-                                valueExpression = valueMap.get(originalName)!;
-                            } else {
-                                throw new Error(`Expected valueMap to contain ${originalName}`);
-                            }
-                        } else {
-                            valueExpression = this.transformExpression(member.initializer);
-                        }
-                    } else {
-                        valueExpression = this.transformExpression(member.initializer);
-                    }
-                }
-            } else if (hasStringInitializers) {
-                throw TSTLErrors.HeterogeneousEnum(node);
-            } else {
-                valueExpression = tstl.createNumericLiteral(numericValue);
-                numericValue++;
-            }
-
-            valueMap.set(member.name, valueExpression);
-
-            const enumMember = {
-                name: member.name,
-                original: member,
-                value: valueExpression,
-            };
-
-            return enumMember;
-        });
     }
 
     protected transformGeneratorFunction(
@@ -4707,7 +4669,7 @@ export class LuaTransformer {
     }
 
     private tryGetConstEnumValue(
-        node: ts.PropertyAccessExpression | ts.ElementAccessExpression
+        node: ts.EnumMember | ts.PropertyAccessExpression | ts.ElementAccessExpression
     ): tstl.Expression | undefined {
         const value = this.checker.getConstantValue(node);
         if (typeof value === "string") {

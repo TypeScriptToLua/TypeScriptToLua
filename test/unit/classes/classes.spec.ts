@@ -89,26 +89,22 @@ test("ClassConstructorAssignmentDefault", () => {
 });
 
 test("ClassConstructorPropertyInitiailizationOrder", () => {
-    const result = util.transpileAndExecute(
-        `class Test {
+    util.testFunction`
+        class Test {
             public foo = this.bar;
             constructor(public bar: string) {}
         }
-        return (new Test("baz")).foo;`
-    );
-
-    expect(result).toBe("baz");
+        return (new Test("baz")).foo;
+    `.expectToMatchJsResult();
 });
 
 test("ClassConstructorPropertyInitiailizationFalsey", () => {
-    const result = util.transpileAndExecute(
-        `class Test {
+    util.testFunction`
+        class Test {
             constructor(public foo = true) {}
         }
-        return (new Test(false)).foo;`
-    );
-
-    expect(result).toBe(false);
+        return (new Test(false)).foo;
+    `.expectToMatchJsResult();
 });
 
 test("ClassNewNoBrackets", () => {

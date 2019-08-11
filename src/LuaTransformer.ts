@@ -1237,10 +1237,7 @@ export class LuaTransformer {
             return undefined;
         }
 
-        const bodyWithFieldInitializers: tstl.Statement[] = this.transformClassInstanceFields(
-            classDeclaration,
-            instanceFields
-        );
+        const bodyWithFieldInitializers: tstl.Statement[] = [];
 
         // Check for field declarations in constructor
         const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
@@ -1274,6 +1271,8 @@ export class LuaTransformer {
                 bodyWithFieldInitializers.push(assignment);
             }
         }
+
+        bodyWithFieldInitializers.push(...this.transformClassInstanceFields(classDeclaration, instanceFields));
 
         // function className.constructor(self, params) ... end
 

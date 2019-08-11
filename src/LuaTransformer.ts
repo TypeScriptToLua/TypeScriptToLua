@@ -1253,7 +1253,8 @@ export class LuaTransformer {
 
         const classInstanceFields = this.transformClassInstanceFields(classDeclaration, instanceFields);
 
-        // If there are field initializers and the first statement is a super call, hoist the super call to the top
+        // If there are field initializers and the first statement is a super call,
+        // move super call between default assignments and initializers
         if (
             (constructorFieldsDeclarations.length > 0 || classInstanceFields.length > 0) &&
             statement.body &&

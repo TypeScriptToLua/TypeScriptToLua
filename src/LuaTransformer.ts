@@ -1237,54 +1237,28 @@ export class LuaTransformer {
             return undefined;
         }
 
-        const bodyWithFieldInitializers: tstl.Statement[] = [];
-
-        // Check for field declarations in constructor
-        const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
-
-        // Add in instance field declarations
-        for (const declaration of constructorFieldsDeclarations) {
-            const declarationName = this.transformIdentifier(declaration.name as ts.Identifier);
-            if (declaration.initializer) {
-                // self.declarationName = declarationName or initializer
-                const assignment = tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(
-                        this.createSelfIdentifier(),
-                        tstl.createStringLiteral(declarationName.text)
-                    ),
-                    tstl.createBinaryExpression(
-                        declarationName,
-                        this.transformExpression(declaration.initializer),
-                        tstl.SyntaxKind.OrOperator
-                    )
-                );
-                bodyWithFieldInitializers.push(assignment);
-            } else {
-                // self.declarationName = declarationName
-                const assignment = tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(
-                        this.createSelfIdentifier(),
-                        tstl.createStringLiteral(declarationName.text)
-                    ),
-                    declarationName
-                );
-                bodyWithFieldInitializers.push(assignment);
-            }
-        }
-
-        bodyWithFieldInitializers.push(...this.transformClassInstanceFields(classDeclaration, instanceFields));
-
-        // function className.constructor(self, params) ... end
+        // Transform body
+        const [body, scope] = this.transformFunctionBodyStatements(statement.body);
 
         const [params, dotsLiteral, restParamName] = this.transformParameters(
             statement.parameters,
             this.createSelfIdentifier()
         );
 
-        const [body] = this.transformFunctionBody(statement.parameters, statement.body, restParamName);
+        // Make sure default parameters are assigned before fields are initialized
+        const bodyWithFieldInitializers = this.transformFunctionBodyHeader(scope, statement.parameters, restParamName);
+
+        // Check for field declarations in constructor
+        const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
+
+        const classInstanceFields = this.transformClassInstanceFields(classDeclaration, instanceFields);
 
         // If there are field initializers and the first statement is a super call, hoist the super call to the top
-        if (bodyWithFieldInitializers.length > 0 && statement.body && statement.body.statements.length > 0) {
+        if (
+            (constructorFieldsDeclarations.length > 0 || classInstanceFields.length > 0) &&
+            statement.body &&
+            statement.body.statements.length > 0
+        ) {
             const firstStatement = statement.body.statements[0];
             if (
                 ts.isExpressionStatement(firstStatement) &&
@@ -1293,10 +1267,26 @@ export class LuaTransformer {
             ) {
                 const superCall = body.shift();
                 if (superCall) {
-                    bodyWithFieldInitializers.unshift(superCall);
+                    bodyWithFieldInitializers.push(superCall);
                 }
             }
         }
+
+        // Add in instance field declarations
+        for (const declaration of constructorFieldsDeclarations) {
+            const declarationName = this.transformIdentifier(declaration.name as ts.Identifier);
+            // self.declarationName = declarationName
+            const assignment = tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(
+                    this.createSelfIdentifier(),
+                    tstl.createStringLiteral(declarationName.text)
+                ),
+                declarationName
+            );
+            bodyWithFieldInitializers.push(assignment);
+        }
+
+        bodyWithFieldInitializers.push(...classInstanceFields);
 
         bodyWithFieldInitializers.push(...body);
 
@@ -1489,16 +1479,19 @@ export class LuaTransformer {
         );
     }
 
-    protected transformFunctionBody(
-        parameters: ts.NodeArray<ts.ParameterDeclaration>,
-        body: ts.Block,
-        spreadIdentifier?: tstl.Identifier
-    ): [tstl.Statement[], Scope] {
+    protected transformFunctionBodyStatements(body: ts.Block): [tstl.Statement[], Scope] {
         this.pushScope(ScopeType.Function);
         const bodyStatements = this.performHoisting(this.transformStatements(body.statements));
         const scope = this.popScope();
+        return [bodyStatements, scope];
+    }
 
-        const headerStatements = [];
+    protected transformFunctionBodyHeader(
+        bodyScope: Scope,
+        parameters: ts.NodeArray<ts.ParameterDeclaration>,
+        spreadIdentifier?: tstl.Identifier
+    ): tstl.Statement[] {
+        const headerStatements: tstl.Statement[] = [];
 
         // Add default parameters and object binding patterns
         const bindingPatternDeclarations: tstl.Statement[] = [];
@@ -1529,7 +1522,7 @@ export class LuaTransformer {
         }
 
         // Push spread operator here
-        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, scope)) {
+        if (spreadIdentifier && this.isRestParameterReferenced(spreadIdentifier, bodyScope)) {
             const spreadTable = this.wrapInTable(tstl.createDotsLiteral());
             headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
         }
@@ -1537,6 +1530,16 @@ export class LuaTransformer {
         // Binding pattern statements need to be after spread table is declared
         headerStatements.push(...bindingPatternDeclarations);
 
+        return headerStatements;
+    }
+
+    protected transformFunctionBody(
+        parameters: ts.NodeArray<ts.ParameterDeclaration>,
+        body: ts.Block,
+        spreadIdentifier?: tstl.Identifier
+    ): [tstl.Statement[], Scope] {
+        const [bodyStatements, scope] = this.transformFunctionBodyStatements(body);
+        const headerStatements = this.transformFunctionBodyHeader(scope, parameters, spreadIdentifier);
         return [headerStatements.concat(bodyStatements), scope];
     }
 

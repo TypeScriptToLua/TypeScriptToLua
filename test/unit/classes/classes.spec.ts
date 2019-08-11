@@ -100,6 +100,17 @@ test("ClassConstructorPropertyInitiailizationOrder", () => {
     expect(result).toBe("baz");
 });
 
+test("ClassConstructorPropertyInitiailizationFalsey", () => {
+    const result = util.transpileAndExecute(
+        `class Test {
+            constructor(public foo = true) {}
+        }
+        return (new Test(false)).foo;`
+    );
+
+    expect(result).toBe(false);
+});
+
 test("ClassNewNoBrackets", () => {
     const result = util.transpileAndExecute(
         `class a {

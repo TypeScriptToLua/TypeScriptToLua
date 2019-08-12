@@ -88,6 +88,25 @@ test("ClassConstructorAssignmentDefault", () => {
     expect(result).toBe(3);
 });
 
+test("ClassConstructorPropertyInitiailizationOrder", () => {
+    util.testFunction`
+        class Test {
+            public foo = this.bar;
+            constructor(public bar: string) {}
+        }
+        return (new Test("baz")).foo;
+    `.expectToMatchJsResult();
+});
+
+test("ClassConstructorPropertyInitiailizationFalsey", () => {
+    util.testFunction`
+        class Test {
+            constructor(public foo = true) {}
+        }
+        return (new Test(false)).foo;
+    `.expectToMatchJsResult();
+});
+
 test("ClassNewNoBrackets", () => {
     const result = util.transpileAndExecute(
         `class a {

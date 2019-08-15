@@ -2165,17 +2165,16 @@ export class LuaTransformer {
             );
         }
 
-        if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
-            const ownerType = this.checker.getTypeAtLocation(expression.expression.expression);
+        if (
+            ts.isExpressionStatement(statement) &&
+            ts.isCallExpression(statement.expression) &&
+            ts.isPropertyAccessExpression(statement.expression.expression)
+        ) {
+            const ownerType = this.checker.getTypeAtLocation(statement.expression.expression.expression);
             const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
             if (classDecorators.has(DecoratorKind.LuaTable)) {
-                this.validateLuaTableCall(
-                    expression as ts.CallExpression & { expression: ts.PropertyAccessExpression },
-                    true
-                );
-                return this.transformLuaTableExpressionStatement(statement as ts.ExpressionStatement & {
-                    expression: ts.CallExpression;
-                } & { expression: { expression: ts.PropertyAccessExpression } });
+                this.validateLuaTableCall(statement.expression);
+                return this.transformLuaTableExpressionAsExpressionStatement(statement.expression);
             }
         }
 
@@ -4254,10 +4253,8 @@ export class LuaTransformer {
         const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
 
         if (classDecorators.has(DecoratorKind.LuaTable)) {
-            this.validateLuaTableCall(node as ts.CallExpression & { expression: ts.PropertyAccessExpression }, false);
-            return this.transformLuaTableCallExpression(node as ts.CallExpression & {
-                expression: ts.PropertyAccessExpression;
-            });
+            this.validateLuaTableCall(node);
+            return this.transformLuaTableCallExpression(node);
         }
 
         if (tsHelper.isStringType(ownerType, this.checker, this.program)) {
@@ -4339,6 +4336,14 @@ export class LuaTransformer {
     public transformElementCall(node: ts.CallExpression): ExpressionVisitResult {
         if (!ts.isElementAccessExpression(node.expression) && !ts.isPropertyAccessExpression(node.expression)) {
             throw TSTLErrors.InvalidElementCall(node);
+        }
+
+        const ownerType = this.checker.getTypeAtLocation(node.expression.expression);
+        const ownerDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
+
+        if (ownerDecorators.has(DecoratorKind.LuaTable)) {
+            this.validateLuaTableCall(node);
+            return this.transformLuaTableCallExpression(node);
         }
 
         const signature = this.checker.getResolvedSignature(node);
@@ -4619,8 +4624,12 @@ export class LuaTransformer {
         }
     }
 
-    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
+    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.Expression {
         switch (node.name.text) {
+            case "set":
+                return this.transformExpression(node.expression);
+            case "get":
+                return this.transformExpression(node.expression);
             case "length":
                 const propertyAccessExpression = this.transformExpression(node.expression);
                 return tstl.createUnaryExpression(propertyAccessExpression, tstl.SyntaxKind.LengthOperator, node);
@@ -4656,6 +4665,14 @@ export class LuaTransformer {
 
         const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
+        const decorators = new Map();
+        if (type && type.symbol) {
+            tsHelper.collectCustomDecorators(type.symbol, this.checker, decorators);
+            if (decorators.has(DecoratorKind.LuaTable)) {
+                throw TSTLErrors.UnsupportedKind("LuaTable access expression", expression.kind, expression);
+            }
+        }
+
         if (
             tsHelper.isNumberType(argumentType, this.checker, this.program) &&
             tsHelper.isStringType(type, this.checker, this.program)
@@ -4973,11 +4990,8 @@ export class LuaTransformer {
         }
     }
 
-    protected validateLuaTableCall(
-        expression: ts.CallExpression & { expression: ts.PropertyAccessExpression },
-        isWithinExpressionStatement: boolean
-    ): void {
-        const methodName = expression.expression.name.text;
+    protected validateLuaTableCall(expression: ts.CallExpression): void {
+        const methodName = this.getLuaTablePropertyName(expression.expression);
         if (expression.arguments.some(argument => ts.isSpreadElement(argument))) {
             throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", expression);
         }
@@ -4995,57 +5009,48 @@ export class LuaTransformer {
                         expression
                     );
                 }
-                if (!isWithinExpressionStatement) {
+                if (expression.parent.kind !== ts.SyntaxKind.ExpressionStatement) {
                     throw TSTLErrors.ForbiddenLuaTableSetExpression(expression);
                 }
                 break;
         }
     }
 
-    protected transformLuaTableExpressionStatement(
-        node: ts.ExpressionStatement & { expression: ts.CallExpression } & {
-            expression: { expression: ts.PropertyAccessExpression };
-        }
-    ): tstl.VariableDeclarationStatement | tstl.AssignmentStatement {
-        const methodName = node.expression.expression.name.text;
-        const signature = this.checker.getResolvedSignature(node.expression);
-        const tableName = (node.expression.expression.expression as ts.Identifier).text;
-        const luaTable = tstl.createIdentifier(tableName);
-        const params = this.transformArguments((node.expression as ts.CallExpression).arguments, signature);
-
-        switch (methodName) {
-            case "get":
-                return tstl.createVariableDeclarationStatement(
-                    tstl.createAnonymousIdentifier(node.expression),
-                    tstl.createTableIndexExpression(luaTable, params[0], node.expression),
-                    node.expression
-                );
-            case "set":
-                return tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(luaTable, params[0], node.expression),
-                    params.splice(1),
-                    node.expression
-                );
-            default:
-                throw TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", node.expression);
-        }
-    }
-
-    protected transformLuaTableCallExpression(
-        expression: ts.CallExpression & { expression: ts.PropertyAccessExpression }
-    ): tstl.Expression {
-        const method = expression.expression;
-        const methodName = method.name.text;
+    protected transformLuaTableExpressionAsExpressionStatement(expression: ts.CallExpression): tstl.Statement {
+        const methodName = this.getLuaTablePropertyName(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const tableName = (method.expression as ts.Identifier).text;
-        const luaTable = tstl.createIdentifier(tableName);
+        const tableAccessExpression = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
             case "get":
-                return tstl.createTableIndexExpression(luaTable, params[0], expression);
+                return tstl.createVariableDeclarationStatement(
+                    tstl.createAnonymousIdentifier(expression),
+                    tstl.createTableIndexExpression(tableAccessExpression, params[0], expression),
+                    expression
+                );
+            case "set":
+                return tstl.createAssignmentStatement(
+                    tstl.createTableIndexExpression(tableAccessExpression, params[0], expression),
+                    params.splice(1),
+                    expression
+                );
             default:
-                throw TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", expression);
+                throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, expression);
+        }
+    }
+
+    protected transformLuaTableCallExpression(expression: ts.CallExpression): tstl.Expression {
+        const methodName = this.getLuaTablePropertyName(expression.expression);
+        const signature = this.checker.getResolvedSignature(expression);
+        const tableAccessExpression = this.transformExpression(expression.expression);
+        const params = this.transformArguments(expression.arguments, signature);
+
+        switch (methodName) {
+            case "get":
+                return tstl.createTableIndexExpression(tableAccessExpression, params[0], expression);
+            default:
+                throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, expression);
         }
     }
 
@@ -5442,6 +5447,21 @@ export class LuaTransformer {
         }
 
         return scope;
+    }
+
+    protected getLuaTablePropertyName(node: ts.LeftHandSideExpression): string {
+        let methodName: string;
+        switch (node.kind) {
+            case ts.SyntaxKind.PropertyAccessExpression:
+                methodName = (node as ts.PropertyAccessExpression).name.text;
+                break;
+            case ts.SyntaxKind.Identifier:
+                methodName = (node as ts.Identifier).text;
+                break;
+            default:
+                throw TSTLErrors.UnsupportedKind("LuaTable access expression", node.kind, node);
+        }
+        return methodName;
     }
 
     protected transformLuaLibFunction(

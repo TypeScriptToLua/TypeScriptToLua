@@ -5450,18 +5450,13 @@ export class LuaTransformer {
     }
 
     protected getLuaTablePropertyName(node: ts.LeftHandSideExpression): string {
-        let methodName: string;
-        switch (node.kind) {
-            case ts.SyntaxKind.PropertyAccessExpression:
-                methodName = (node as ts.PropertyAccessExpression).name.text;
-                break;
-            case ts.SyntaxKind.Identifier:
-                methodName = (node as ts.Identifier).text;
-                break;
-            default:
-                throw TSTLErrors.UnsupportedKind("LuaTable access expression", node.kind, node);
+        if (ts.isPropertyAccessExpression(node)) {
+            return node.name.text;
+        } else if (ts.isIdentifier(node)) {
+            return node.text;
+        } else {
+            throw TSTLErrors.UnsupportedKind("LuaTable access expression", node.kind, node);
         }
-        return methodName;
     }
 
     protected transformLuaLibFunction(

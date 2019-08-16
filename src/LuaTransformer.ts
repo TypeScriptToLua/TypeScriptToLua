@@ -2165,16 +2165,12 @@ export class LuaTransformer {
             );
         }
 
-        if (
-            ts.isExpressionStatement(statement) &&
-            ts.isCallExpression(statement.expression) &&
-            ts.isPropertyAccessExpression(statement.expression.expression)
-        ) {
-            const ownerType = this.checker.getTypeAtLocation(statement.expression.expression.expression);
+        if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
+            const ownerType = this.checker.getTypeAtLocation(expression.expression.expression);
             const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
             if (classDecorators.has(DecoratorKind.LuaTable)) {
-                this.validateLuaTableCall(statement.expression);
-                return this.transformLuaTableExpressionAsExpressionStatement(statement.expression);
+                this.validateLuaTableCall(expression);
+                return this.transformLuaTableExpressionAsExpressionStatement(expression);
             }
         }
 

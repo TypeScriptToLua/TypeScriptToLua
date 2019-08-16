@@ -5016,19 +5016,19 @@ export class LuaTransformer {
     protected transformLuaTableExpressionAsExpressionStatement(expression: ts.CallExpression): tstl.Statement {
         const methodName = this.getLuaTablePropertyName(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const tableAccessExpression = this.transformExpression(expression.expression);
+        const leftHandSideExpression = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
             case "get":
                 return tstl.createVariableDeclarationStatement(
                     tstl.createAnonymousIdentifier(expression),
-                    tstl.createTableIndexExpression(tableAccessExpression, params[0], expression),
+                    tstl.createTableIndexExpression(leftHandSideExpression, params[0], expression),
                     expression
                 );
             case "set":
                 return tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(tableAccessExpression, params[0], expression),
+                    tstl.createTableIndexExpression(leftHandSideExpression, params[0], expression),
                     params.splice(1),
                     expression
                 );

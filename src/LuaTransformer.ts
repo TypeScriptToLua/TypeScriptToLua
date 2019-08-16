@@ -4665,12 +4665,9 @@ export class LuaTransformer {
 
         const argumentType = this.checker.getTypeAtLocation(expression.argumentExpression);
         const type = this.checker.getTypeAtLocation(expression.expression);
-        const decorators = new Map();
-        if (type && type.symbol) {
-            tsHelper.collectCustomDecorators(type.symbol, this.checker, decorators);
-            if (decorators.has(DecoratorKind.LuaTable)) {
-                throw TSTLErrors.UnsupportedKind("LuaTable access expression", expression.kind, expression);
-            }
+        const decorators = tsHelper.getCustomDecorators(type, this.checker);
+        if (decorators.has(DecoratorKind.LuaTable)) {
+            throw TSTLErrors.UnsupportedKind("LuaTable access expression", expression.kind, expression);
         }
 
         if (

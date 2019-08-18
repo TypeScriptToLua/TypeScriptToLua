@@ -5012,19 +5012,19 @@ export class LuaTransformer {
     protected transformLuaTableExpressionAsExpressionStatement(expression: ts.CallExpression): tstl.Statement {
         const methodName = this.getLuaTablePropertyName(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const leftHandSideExpression = this.transformExpression(expression.expression);
+        const luaTable = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
             case "get":
                 return tstl.createVariableDeclarationStatement(
                     tstl.createAnonymousIdentifier(expression),
-                    tstl.createTableIndexExpression(leftHandSideExpression, params[0], expression),
+                    tstl.createTableIndexExpression(luaTable, params[0], expression),
                     expression
                 );
             case "set":
                 return tstl.createAssignmentStatement(
-                    tstl.createTableIndexExpression(leftHandSideExpression, params[0], expression),
+                    tstl.createTableIndexExpression(luaTable, params[0], expression),
                     params.splice(1),
                     expression
                 );
@@ -5036,12 +5036,12 @@ export class LuaTransformer {
     protected transformLuaTableCallExpression(expression: ts.CallExpression): tstl.Expression {
         const methodName = this.getLuaTablePropertyName(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const tableAccessExpression = this.transformExpression(expression.expression);
+        const luaTable = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
             case "get":
-                return tstl.createTableIndexExpression(tableAccessExpression, params[0], expression);
+                return tstl.createTableIndexExpression(luaTable, params[0], expression);
             default:
                 throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, expression);
         }

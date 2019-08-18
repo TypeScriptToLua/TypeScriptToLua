@@ -41,6 +41,7 @@ export enum LuaLibFeature {
     ObjectEntries = "ObjectEntries",
     ObjectFromEntries = "ObjectFromEntries",
     ObjectKeys = "ObjectKeys",
+    ObjectRest = "ObjectRest",
     ObjectValues = "ObjectValues",
     Set = "Set",
     WeakMap = "WeakMap",

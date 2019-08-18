@@ -7,9 +7,6 @@ const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ?
 export const CouldNotCast = (castName: string) =>
     new Error(`Failed to cast all elements to expected type using ${castName}.`);
 
-export const ForbiddenEllipsisDestruction = (node: ts.Node) =>
-    new TranspileError(`Ellipsis destruction is not allowed.`, node);
-
 export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 

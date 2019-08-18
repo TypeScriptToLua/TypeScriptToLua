@@ -4477,7 +4477,8 @@ export class LuaTransformer {
         }
 
         if (decorators.has(DecoratorKind.LuaTable)) {
-            return this.transformLuaTableProperty(expression);
+            const [luaTable] = this.parseLuaTableExpression(expression);
+            return luaTable;
         }
 
         // Catch math expressions
@@ -4620,17 +4621,21 @@ export class LuaTransformer {
         }
     }
 
-    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.Expression {
-        switch (node.name.text) {
+    protected parseLuaTableExpression(node: ts.PropertyAccessExpression): [tstl.Expression, string] {
+        const methodName = node.name.text;
+        switch (methodName) {
             case "set":
-                return this.transformExpression(node.expression);
-            case "get":
-                return this.transformExpression(node.expression);
-            case "length":
-                const propertyAccessExpression = this.transformExpression(node.expression);
-                return tstl.createUnaryExpression(propertyAccessExpression, tstl.SyntaxKind.LengthOperator, node);
-            default:
-                throw TSTLErrors.UnsupportedProperty("LuaTable", node.name.text, node);
+            case "get": {
+                return [this.transformExpression(node.expression), methodName];
+            }
+            case "length": {
+                const luaTable = this.transformExpression(node.expression);
+                const unaryExpression = tstl.createUnaryExpression(luaTable, tstl.SyntaxKind.LengthOperator, node);
+                return [unaryExpression, methodName];
+            }
+            default: {
+                throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, node);
+            }
         }
     }
 

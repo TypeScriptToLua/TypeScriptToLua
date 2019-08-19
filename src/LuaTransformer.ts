@@ -2169,7 +2169,6 @@ export class LuaTransformer {
             const ownerType = this.checker.getTypeAtLocation(expression.expression.expression);
             const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
             if (classDecorators.has(DecoratorKind.LuaTable)) {
-                this.validateLuaTableCall(expression);
                 return this.transformLuaTableExpressionAsExpressionStatement(expression);
             }
         }
@@ -4249,7 +4248,6 @@ export class LuaTransformer {
         const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
 
         if (classDecorators.has(DecoratorKind.LuaTable)) {
-            this.validateLuaTableCall(node);
             return this.transformLuaTableCallExpression(node);
         }
 
@@ -4338,7 +4336,6 @@ export class LuaTransformer {
         const ownerDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
 
         if (ownerDecorators.has(DecoratorKind.LuaTable)) {
-            this.validateLuaTableCall(node);
             return this.transformLuaTableCallExpression(node);
         }
 
@@ -4980,27 +4977,27 @@ export class LuaTransformer {
         }
     }
 
-    protected validateLuaTableCall(expression: ts.CallExpression): void {
-        const [, methodName] = this.parseLuaTableExpression(expression.expression);
-        if (expression.arguments.some(argument => ts.isSpreadElement(argument))) {
-            throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", expression);
+    protected validateLuaTableCall(
+        methodName: string,
+        callArguments: ts.NodeArray<ts.Expression>,
+        original: ts.Node
+    ): void {
+        if (callArguments.some(argument => ts.isSpreadElement(argument))) {
+            throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", original);
         }
 
         switch (methodName) {
             case "get":
-                if (expression.arguments.length !== 1) {
-                    throw TSTLErrors.ForbiddenLuaTableUseException("One parameter is required for get().", expression);
+                if (callArguments.length !== 1) {
+                    throw TSTLErrors.ForbiddenLuaTableUseException("One parameter is required for get().", original);
                 }
                 break;
             case "set":
-                if (expression.arguments.length !== 2) {
-                    throw TSTLErrors.ForbiddenLuaTableUseException(
-                        "Two parameters are required for set().",
-                        expression
-                    );
+                if (callArguments.length !== 2) {
+                    throw TSTLErrors.ForbiddenLuaTableUseException("Two parameters are required for set().", original);
                 }
-                if (expression.parent.kind !== ts.SyntaxKind.ExpressionStatement) {
-                    throw TSTLErrors.ForbiddenLuaTableSetExpression(expression);
+                if (original.parent.kind !== ts.SyntaxKind.ExpressionStatement) {
+                    throw TSTLErrors.ForbiddenLuaTableSetExpression(original);
                 }
                 break;
         }
@@ -5008,6 +5005,7 @@ export class LuaTransformer {
 
     protected transformLuaTableExpressionAsExpressionStatement(expression: ts.CallExpression): tstl.Statement {
         const [luaTable, methodName] = this.parseLuaTableExpression(expression.expression);
+        this.validateLuaTableCall(methodName, expression.arguments, expression);
         const signature = this.checker.getResolvedSignature(expression);
         const params = this.transformArguments(expression.arguments, signature);
 
@@ -5031,6 +5029,7 @@ export class LuaTransformer {
 
     protected transformLuaTableCallExpression(expression: ts.CallExpression): tstl.Expression {
         const [luaTable, methodName] = this.parseLuaTableExpression(expression.expression);
+        this.validateLuaTableCall(methodName, expression.arguments, expression);
         const signature = this.checker.getResolvedSignature(expression);
         const params = this.transformArguments(expression.arguments, signature);
 

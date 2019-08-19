@@ -7,6 +7,8 @@ import { standardPlugins } from "./transformers";
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
 
+export { TransformerPlugin } from "./context";
+
 const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),
     start: error.node.getStart(),

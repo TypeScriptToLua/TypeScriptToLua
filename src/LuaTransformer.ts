@@ -4617,7 +4617,7 @@ export class LuaTransformer {
         }
     }
 
-    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.Expression {
+    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.UnaryExpression {
         const [luaTable, propertyName] = this.parseLuaTableExpression(node);
         switch (propertyName) {
             case "length":
@@ -5034,7 +5034,7 @@ export class LuaTransformer {
             case "get":
                 return tstl.createTableIndexExpression(luaTable, params[0], expression);
             default:
-                throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, expression);
+                throw TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", methodName, expression);
         }
     }
 

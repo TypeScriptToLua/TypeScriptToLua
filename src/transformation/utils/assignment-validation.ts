@@ -26,7 +26,7 @@ export function validatePropertyAssignment(
 }
 
 // TODO: Clear if types are reused between compilations
-const typeValidationCache = new Map<ts.Type, Set<ts.Type>>();
+const typeValidationCache = new WeakMap<ts.Type, Set<ts.Type>>();
 
 export function validateAssignment(
     context: TransformationContext,

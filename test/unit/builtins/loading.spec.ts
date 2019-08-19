@@ -1,5 +1,5 @@
 import * as tstl from "../../../src";
-import { UnsupportedProperty } from '../../../src/transformation/utils/errors';
+import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 describe("luaLibImport", () => {

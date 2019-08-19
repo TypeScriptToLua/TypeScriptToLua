@@ -27,8 +27,8 @@ export function transformClassInstanceFields(
         statements.push(assignClassField);
     }
 
-    const getOverrides = classDeclaration.members.filter(
-        (m): m is ts.GetAccessorDeclaration => isGetAccessorOverride(context, m, classDeclaration)
+    const getOverrides = classDeclaration.members.filter((m): m is ts.GetAccessorDeclaration =>
+        isGetAccessorOverride(context, m, classDeclaration)
     );
 
     for (const getter of getOverrides) {

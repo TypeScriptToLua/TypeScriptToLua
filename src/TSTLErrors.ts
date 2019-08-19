@@ -13,12 +13,6 @@ export const ForbiddenEllipsisDestruction = (node: ts.Node) =>
 export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
-export const ForbiddenLuaTableSetExpression = (node: ts.Node) =>
-    new TranspileError(
-        `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
-        node
-    );
-
 export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
     new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
 

@@ -35,11 +35,14 @@ test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tab
     );
 });
 
-test.each([tableLibClass, tableLibInterface])("LuaTable set() cannot be used in an expression position", tableLib => {
-    expect(() => util.transpileString(tableLib + `const exp = tbl.set("value", 5)`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableSetExpression(util.nodeStub)
-    );
-});
+test.each([tableLibClass, tableLibInterface])(
+    "LuaTable set() cannot be used in a LuaTable call expression",
+    tableLib => {
+        expect(() => util.transpileString(tableLib + `const exp = tbl.set("value", 5)`)).toThrowExactError(
+            TSTLErrors.UnsupportedProperty("LuaTable", "set", util.nodeStub)
+        );
+    }
+);
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other members", tableLib => {
     expect(() => util.transpileString(tableLib + `tbl.other()`)).toThrowExactError(

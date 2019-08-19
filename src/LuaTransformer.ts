@@ -4996,9 +4996,6 @@ export class LuaTransformer {
                 if (callArguments.length !== 2) {
                     throw TSTLErrors.ForbiddenLuaTableUseException("Two parameters are required for set().", original);
                 }
-                if (original.parent.kind !== ts.SyntaxKind.ExpressionStatement) {
-                    throw TSTLErrors.ForbiddenLuaTableSetExpression(original);
-                }
                 break;
         }
     }

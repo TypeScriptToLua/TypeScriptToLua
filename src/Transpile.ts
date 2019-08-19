@@ -1,10 +1,8 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
-import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
-import { LuaTransformer } from "./LuaTransformer";
-import { TranspileError } from "./TranspileError";
+import { createVisitorMap, TransformerPlugin, transformSourceFile } from "./transformation";
 import { getCustomTransformers } from "./TSTransformers";
 
 export interface TranspiledFile {
@@ -25,9 +23,9 @@ export interface TranspileOptions {
     program: ts.Program;
     sourceFiles?: ts.SourceFile[];
     customTransformers?: ts.CustomTransformers;
-    transformer?: LuaTransformer;
-    printer?: LuaPrinter;
+    customPlugins?: TransformerPlugin[];
     emitHost?: EmitHost;
+    printer?: LuaPrinter;
 }
 
 export interface EmitHost {
@@ -38,8 +36,8 @@ export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
+    customPlugins = [],
     emitHost = ts.sys,
-    transformer = new LuaTransformer(program),
     printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
@@ -78,22 +76,17 @@ export function transpile({
         }
     }
 
+    const visitorMap = createVisitorMap(customPlugins);
     const processSourceFile = (sourceFile: ts.SourceFile) => {
-        try {
-            const [luaAst, lualibFeatureSet] = transformer.transform(sourceFile);
-            if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
-                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
-            }
-        } catch (err) {
-            if (!(err instanceof TranspileError)) throw err;
-
-            diagnostics.push(diagnosticFactories.transpileError(err));
-
-            updateTranspiledFile(sourceFile.fileName, {
-                lua: `error(${JSON.stringify(err.message)})\n`,
-                sourceMap: "",
-            });
+        const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
+            program,
+            sourceFile,
+            visitorMap
+        );
+        diagnostics.push(...transformDiagnostics);
+        if (!options.noEmit && !options.emitDeclarationOnly) {
+            const [lua, sourceMap] = printer.print(luaAst, luaLibFeatures, sourceFile.fileName);
+            updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
         }
     };
 

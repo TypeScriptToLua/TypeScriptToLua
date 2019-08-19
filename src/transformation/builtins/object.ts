@@ -1,0 +1,61 @@
+import * as tstl from "../../LuaAST";
+import { TransformationContext } from "../context";
+import { PropertyCallExpression, transformArguments } from "../transformers/call";
+import { UnsupportedProperty } from "../utils/errors";
+import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+
+export function transformObjectConstructorCall(
+    context: TransformationContext,
+    expression: PropertyCallExpression
+): tstl.Expression {
+    const method = expression.expression;
+    const parameters = transformArguments(context, expression.arguments);
+    const methodName = method.name.text;
+
+    switch (methodName) {
+        case "assign":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...parameters);
+        case "entries":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, expression, ...parameters);
+        case "fromEntries":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectFromEntries, expression, ...parameters);
+        case "keys":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, expression, ...parameters);
+        case "values":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectValues, expression, ...parameters);
+        default:
+            throw UnsupportedProperty("Object", methodName, expression);
+    }
+}
+
+export function transformObjectCall(
+    context: TransformationContext,
+    node: PropertyCallExpression
+): tstl.Expression | undefined {
+    const expression = node.expression;
+    const signature = context.checker.getResolvedSignature(node);
+
+    const name = expression.name.text;
+    switch (name) {
+        case "toString":
+            const toStringIdentifier = tstl.createIdentifier("tostring");
+            return tstl.createCallExpression(
+                toStringIdentifier,
+                [context.transformExpression(expression.expression)],
+                node
+            );
+        case "hasOwnProperty":
+            const expr = context.transformExpression(expression.expression);
+            const parameters = transformArguments(context, node.arguments, signature);
+            const rawGetIdentifier = tstl.createIdentifier("rawget");
+            const rawGetCall = tstl.createCallExpression(rawGetIdentifier, [expr, ...parameters]);
+            return tstl.createParenthesizedExpression(
+                tstl.createBinaryExpression(
+                    rawGetCall,
+                    tstl.createNilLiteral(),
+                    tstl.SyntaxKind.InequalityOperator,
+                    node
+                )
+            );
+    }
+}

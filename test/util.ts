@@ -10,11 +10,6 @@ export * from "./legacy-utils";
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
 
-// Get a mock transformer to use for testing
-export function makeTestTransformer(luaTarget = tstl.LuaTarget.Lua53): tstl.LuaTransformer {
-    return new tstl.LuaTransformer(ts.createProgram([], { luaTarget }));
-}
-
 export function parseTypeScript(
     typescript: string,
     target: tstl.LuaTarget = tstl.LuaTarget.Lua53

@@ -1,6 +1,10 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import * as TSTLErrors from "../../src/TSTLErrors";
+import {
+    ForbiddenForIn,
+    UnsupportedForTarget,
+    UnsupportedObjectDestructuringInForOf,
+} from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
@@ -239,7 +243,7 @@ test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
                 arrTest[key]++;
             }`
         )
-    ).toThrowExactError(TSTLErrors.ForbiddenForIn(util.nodeStub));
+    ).toThrowExactError(ForbiddenForIn(util.nodeStub));
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
@@ -482,7 +486,7 @@ test.each([
         for (${initializer} of arr) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message
+        UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message
     );
 });
 
@@ -588,11 +592,11 @@ test.each([
     const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
 
     expect(() => util.transpileString(loop, lua51)).toThrowExactError(
-        TSTLErrors.UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
+        UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
     );
-    expect(util.transpileString(loop, lua52).indexOf("::__continue1::") !== -1).toBe(true);
-    expect(util.transpileString(loop, lua53).indexOf("::__continue1::") !== -1).toBe(true);
-    expect(util.transpileString(loop, luajit).indexOf("::__continue1::") !== -1).toBe(true);
+    expect(util.transpileString(loop, lua52).indexOf("::__continue2::") !== -1).toBe(true);
+    expect(util.transpileString(loop, lua53).indexOf("::__continue2::") !== -1).toBe(true);
+    expect(util.transpileString(loop, luajit).indexOf("::__continue2::") !== -1).toBe(true);
 });
 
 test("do...while", () => {

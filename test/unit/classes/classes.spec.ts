@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { ForbiddenStaticClassPropertyName } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("ClassFieldInitializer", () => {
@@ -537,14 +537,6 @@ test("methodDefaultParameters", () => {
     expect(result).toBe(9);
 });
 
-test("Class without name error", () => {
-    const transformer = util.makeTestTransformer();
-
-    expect(() => transformer.transformClassDeclaration({} as ts.ClassDeclaration)).toThrowExactError(
-        TSTLErrors.MissingClassName(util.nodeStub)
-    );
-});
-
 test("CallSuperMethodNoArgs", () => {
     const result = util.transpileAndExecute(
         `class a {
@@ -846,7 +838,7 @@ test("Class cannot have static new method", () => {
             static new() {}
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
+        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -856,7 +848,7 @@ test("Class cannot have static new property", () => {
             static new = "foobar";
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
+        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -866,7 +858,7 @@ test("Class cannot have static new get accessor", () => {
             static get new() { return "foobar" }
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
+        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });
 
@@ -876,6 +868,6 @@ test("Class cannot have static new set accessor", () => {
             static set new(value: string) {}
         }`;
     expect(() => util.transpileAndExecute(code)).toThrow(
-        TSTLErrors.ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
+        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
     );
 });

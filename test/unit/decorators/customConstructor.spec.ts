@@ -1,4 +1,4 @@
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { InvalidDecoratorArgumentNumber } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("CustomCreate", () => {
@@ -36,5 +36,5 @@ test("IncorrectUsage", () => {
             }
             return new Point2D(1, 2).x;
         `);
-    }).toThrowExactError(TSTLErrors.InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
+    }).toThrowExactError(InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
 });

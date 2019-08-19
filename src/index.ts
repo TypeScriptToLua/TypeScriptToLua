@@ -7,19 +7,19 @@ import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
 export {
+    createDiagnosticReporter,
     parseCommandLine,
     ParsedCommandLine,
     updateParsedConfigFile,
-    createDiagnosticReporter,
 } from "./CommandLineParser";
 export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";
 export { LuaLibFeature } from "./LuaLib";
 export * from "./LuaPrinter";
-export * from "./LuaTransformer";
+export * from "./transformation/context";
+export { TranspileError } from "./transformation/utils/errors";
 export * from "./Transpile";
-export * from "./TranspileError";
 
 export interface TranspileFilesResult {
     diagnostics: ts.Diagnostic[];

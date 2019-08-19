@@ -1,4 +1,4 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
+import { InvalidThrowExpression } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test("throwString", () => {
@@ -10,7 +10,7 @@ test("throwString", () => {
 test("throwError", () => {
     util.testFunction`
         throw Error("Some Error")
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidThrowExpression(util.nodeStub));
+    `.expectToHaveDiagnosticOfError(InvalidThrowExpression(util.nodeStub));
 });
 
 test.skip.each([0, 1, 2])("re-throw (%p)", i => {

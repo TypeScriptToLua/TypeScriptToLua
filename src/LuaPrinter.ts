@@ -2,10 +2,76 @@ import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as tstl from "./LuaAST";
-import { luaKeywords } from "./LuaKeywords";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
+import { isValidLuaIdentifier, luaKeywords } from "./transformation/utils/safe-names";
 import { EmitHost } from "./Transpile";
-import * as tsHelper from "./TSHelper";
+
+// https://www.lua.org/pil/2.4.html
+// https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
+const escapeStringRegExp = /[\b\f\n\r\t\v\\"\0]/g;
+const escapeStringMap: Record<string, string> = {
+    "\b": "\\b",
+    "\f": "\\f",
+    "\n": "\\n",
+    "\r": "\\r",
+    "\t": "\\t",
+    "\v": "\\v",
+    "\\": "\\\\",
+    '"': '\\"',
+    "\0": "\\0",
+};
+
+const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char] || char)}"`;
+
+/**
+ * Checks that a name is valid for use in lua function declaration syntax:
+ *
+ * `foo.bar` => passes (`function foo.bar()` is valid)
+ * `getFoo().bar` => fails (`function getFoo().bar()` would be illegal)
+ */
+function isValidLuaFunctionDeclarationName(str: string): boolean {
+    const match = str.match(/[a-zA-Z0-9_\.]+/);
+    return match !== null && match[0] === str;
+}
+
+/**
+ * Returns true if expression contains no function calls.
+ */
+function isSimpleExpression(expression: tstl.Expression): boolean {
+    switch (expression.kind) {
+        case tstl.SyntaxKind.CallExpression:
+        case tstl.SyntaxKind.MethodCallExpression:
+        case tstl.SyntaxKind.FunctionExpression:
+            return false;
+
+        case tstl.SyntaxKind.TableExpression:
+            const tableExpression = expression as tstl.TableExpression;
+            return tableExpression.fields.every(e => isSimpleExpression(e));
+
+        case tstl.SyntaxKind.TableFieldExpression:
+            const fieldExpression = expression as tstl.TableFieldExpression;
+            return (
+                (!fieldExpression.key || isSimpleExpression(fieldExpression.key)) &&
+                isSimpleExpression(fieldExpression.value)
+            );
+
+        case tstl.SyntaxKind.TableIndexExpression:
+            const indexExpression = expression as tstl.TableIndexExpression;
+            return isSimpleExpression(indexExpression.table) && isSimpleExpression(indexExpression.index);
+
+        case tstl.SyntaxKind.UnaryExpression:
+            return isSimpleExpression((expression as tstl.UnaryExpression).operand);
+
+        case tstl.SyntaxKind.BinaryExpression:
+            const binaryExpression = expression as tstl.BinaryExpression;
+            return isSimpleExpression(binaryExpression.left) && isSimpleExpression(binaryExpression.right);
+
+        case tstl.SyntaxKind.ParenthesizedExpression:
+            return isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
+    }
+
+    return true;
+}
 
 type SourceChunk = string | SourceNode;
 
@@ -43,12 +109,9 @@ export class LuaPrinter {
 
     public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
-    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
+    public print(block: tstl.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
-            if (luaLibFeatures === undefined) {
-                luaLibFeatures = new Set();
-            }
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
@@ -282,7 +345,7 @@ export class LuaPrinter {
         ) {
             // Use `function foo()` instead of `foo = function()`
             const name = this.printExpression(statement.left[0]);
-            if (tsHelper.isValidLuaFunctionDeclarationName(name.toString())) {
+            if (isValidLuaFunctionDeclarationName(name.toString())) {
                 chunks.push(this.printFunctionDefinition(statement));
                 return this.createSourceNode(statement, chunks);
             }
@@ -460,7 +523,7 @@ export class LuaPrinter {
     }
 
     public printStringLiteral(expression: tstl.StringLiteral): SourceNode {
-        return this.createSourceNode(expression, `"${expression.value}"`);
+        return this.createSourceNode(expression, escapeString(expression.value));
     }
 
     public printNumericLiteral(expression: tstl.NumericLiteral): SourceNode {
@@ -548,7 +611,7 @@ export class LuaPrinter {
         if (expression.key) {
             if (
                 tstl.isStringLiteral(expression.key) &&
-                tsHelper.isValidLuaIdentifier(expression.key.value) &&
+                isValidLuaIdentifier(expression.key.value) &&
                 !luaKeywords.has(expression.key.value)
             ) {
                 chunks.push(expression.key.value, " = ", value);
@@ -652,7 +715,7 @@ export class LuaPrinter {
         chunks.push(this.printExpression(expression.table));
         if (
             tstl.isStringLiteral(expression.index) &&
-            tsHelper.isValidLuaIdentifier(expression.index.value) &&
+            isValidLuaIdentifier(expression.index.value) &&
             !luaKeywords.has(expression.index.value)
         ) {
             chunks.push(".", this.createSourceNode(expression.index, expression.index.value));
@@ -698,7 +761,7 @@ export class LuaPrinter {
     protected printExpressionList(expressions: tstl.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
-        if (expressions.every(e => tsHelper.isSimpleExpression(e))) {
+        if (expressions.every(isSimpleExpression)) {
             chunks.push(...this.joinChunks(", ", expressions.map(e => this.printExpression(e))));
         } else {
             chunks.push("\n");

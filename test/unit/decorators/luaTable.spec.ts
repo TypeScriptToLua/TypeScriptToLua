@@ -1,4 +1,10 @@
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import {
+    ForbiddenLuaTableNonDeclaration,
+    ForbiddenLuaTableSetExpression,
+    ForbiddenLuaTableUseException,
+    InvalidExtendsLuaTable,
+    InvalidInstanceOfLuaTable,
+} from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 const tableLibClass = `
@@ -27,28 +33,25 @@ declare let tbl: Table;
 
 test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tableLib => {
     expect(() => util.transpileString(tableLib + `const table = new Table(true);`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableUseException(
-            "No parameters are allowed when constructing a LuaTable object.",
-            util.nodeStub
-        )
+        ForbiddenLuaTableUseException("No parameters are allowed when constructing a LuaTable object.", util.nodeStub)
     );
 });
 
 test.each([tableLibClass, tableLibInterface])("LuaTable set() cannot be used in an expression position", tableLib => {
     expect(() => util.transpileString(tableLib + `const exp = tbl.set("value", 5)`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableSetExpression(util.nodeStub)
+        ForbiddenLuaTableSetExpression(util.nodeStub)
     );
 });
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other methods", tableLib => {
     expect(() => util.transpileString(tableLib + `tbl.other()`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", util.nodeStub)
+        ForbiddenLuaTableUseException("Unsupported method.", util.nodeStub)
     );
 });
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other methods", tableLib => {
     expect(() => util.transpileString(tableLib + `let x = tbl.other()`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableUseException("Unsupported method.", util.nodeStub)
+        ForbiddenLuaTableUseException("Unsupported method.", util.nodeStub)
     );
 });
 
@@ -65,7 +68,7 @@ test.each([tableLibClass])("LuaTable length", tableLib => {
 
 test.each([tableLibClass, tableLibInterface])("Cannot set LuaTable length", tableLib => {
     expect(() => util.transpileString(tableLib + `tbl.length = 2;`)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableUseException("A LuaTable object's length cannot be re-assigned.", util.nodeStub)
+        ForbiddenLuaTableUseException("A LuaTable object's length cannot be re-assigned.", util.nodeStub)
     );
 });
 
@@ -79,7 +82,7 @@ test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib
         [`tbl.set("field", ...[0, 1])`, "Arguments cannot be spread."],
     ])("Forbidden LuaTable use (%p)", (invalidCode, errorDescription) => {
         expect(() => util.transpileString(tableLib + invalidCode)).toThrowExactError(
-            TSTLErrors.ForbiddenLuaTableUseException(errorDescription, util.nodeStub)
+            ForbiddenLuaTableUseException(errorDescription, util.nodeStub)
         );
     });
 });
@@ -89,7 +92,7 @@ test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
         "Cannot extend LuaTable class (%p)",
         code => {
             expect(() => util.transpileString(tableLib + code)).toThrowExactError(
-                TSTLErrors.InvalidExtendsLuaTable(util.nodeStub)
+                InvalidExtendsLuaTable(util.nodeStub)
             );
         }
     );
@@ -100,16 +103,12 @@ test.each([
     `/** @luaTable */ export class Table {}`,
     `/** @luaTable */ const c = class Table {}`,
 ])("LuaTable classes must be ambient (%p)", code => {
-    expect(() => util.transpileString(code)).toThrowExactError(
-        TSTLErrors.ForbiddenLuaTableNonDeclaration(util.nodeStub)
-    );
+    expect(() => util.transpileString(code)).toThrowExactError(ForbiddenLuaTableNonDeclaration(util.nodeStub));
 });
 
 test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
     test.each([`tbl instanceof Table`])("Cannot use instanceof on a LuaTable class (%p)", code => {
-        expect(() => util.transpileString(tableLib + code)).toThrowExactError(
-            TSTLErrors.InvalidInstanceOfLuaTable(util.nodeStub)
-        );
+        expect(() => util.transpileString(tableLib + code)).toThrowExactError(InvalidInstanceOfLuaTable(util.nodeStub));
     });
 });
 

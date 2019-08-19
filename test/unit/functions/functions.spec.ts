@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import * as TSTLErrors from "../../../src/TSTLErrors";
 import * as util from "../../util";
 
 test("Arrow Function Expression", () => {
@@ -194,18 +192,6 @@ test("Function call", () => {
         const abc = function (this: { a: number }, a: string) { return this.a + a; }
         return abc.call({ a: 4 }, "b");
     `.expectToMatchJsResult();
-});
-
-test("Invalid property access call transpilation", () => {
-    const transformer = util.makeTestTransformer();
-
-    const mockObject: any = {
-        expression: ts.createLiteral("abc"),
-    };
-
-    expect(() => transformer.transformPropertyCall(mockObject as ts.CallExpression)).toThrowExactError(
-        TSTLErrors.InvalidPropertyCall(util.nodeStub)
-    );
 });
 
 test("Recursive function definition", () => {

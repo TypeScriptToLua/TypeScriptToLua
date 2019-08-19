@@ -1,11 +1,14 @@
 import * as ts from "typescript";
-import { LuaTarget } from "./CompilerOptions";
-import { TranspileError } from "./TranspileError";
+import { LuaTarget } from "../../CompilerOptions";
+
+export class TranspileError extends Error {
+    public name = "TranspileError";
+    constructor(message: string, public node: ts.Node) {
+        super(message);
+    }
+}
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
-
-export const CouldNotCast = (castName: string) =>
-    new Error(`Failed to cast all elements to expected type using ${castName}.`);
 
 export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
@@ -53,12 +56,6 @@ export const InvalidInstanceOfExtension = (node: ts.Node) =>
     new TranspileError(`Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.`, node);
 
 export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
-
-export const InvalidPropertyCall = (node: ts.Node) =>
-    new TranspileError(`Tried to transpile a non-property call as property call.`, node);
-
-export const InvalidElementCall = (node: ts.Node) =>
-    new TranspileError(`Tried to transpile a non-element call as an element call.`, node);
 
 export const InvalidThrowExpression = (node: ts.Node) =>
     new TranspileError(`Invalid throw expression, only strings can be thrown.`, node);

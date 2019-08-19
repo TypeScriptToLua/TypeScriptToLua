@@ -1,10 +1,10 @@
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("Unsupported string function", () => {
     util.testExpression`"test".testThisIsNoMember()`
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub));
+        .expectToHaveDiagnosticOfError(UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub));
 });
 
 test("Supported lua string function", () => {

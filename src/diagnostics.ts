@@ -1,15 +1,4 @@
 import * as ts from "typescript";
-import { TranspileError } from "./TranspileError";
-
-export const transpileError = (error: TranspileError): ts.Diagnostic => ({
-    file: error.node.getSourceFile(),
-    start: error.node.getStart(),
-    length: error.node.getWidth(),
-    category: ts.DiagnosticCategory.Error,
-    code: 0,
-    source: "typescript-to-lua",
-    messageText: error.message,
-});
 
 export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>): ts.Diagnostic => ({
     file: undefined,

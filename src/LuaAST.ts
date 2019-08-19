@@ -121,7 +121,7 @@ export type BinaryOperator =
 
 export type Operator = UnaryOperator | BinaryOperator;
 
-export type SymbolId = number;
+export type SymbolId = number & { __tag__: "SymbolId" };
 
 export interface TextRange {
     line?: number;
@@ -616,7 +616,7 @@ export function isStringLiteral(node: Node): node is StringLiteral {
 
 export function createStringLiteral(value: string, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
     const expression = createNode(SyntaxKind.StringLiteral, tsOriginal, parent) as StringLiteral;
-    expression.value = value as string;
+    expression.value = value;
     return expression;
 }
 

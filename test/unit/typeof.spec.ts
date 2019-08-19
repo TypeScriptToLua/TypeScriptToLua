@@ -37,8 +37,6 @@ test.each([
     { expression: "{}", operator: "!==", compareTo: "object", expectResult: false },
     { expression: "{}", operator: "==", compareTo: "object", expectResult: true },
     { expression: "{}", operator: "!=", compareTo: "object", expectResult: false },
-    { expression: "{}", operator: "<=", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "<", compareTo: "object", expectResult: false },
     { expression: "undefined", operator: "===", compareTo: "undefined", expectResult: true },
     { expression: "() => {}", operator: "===", compareTo: "function", expectResult: true },
     { expression: "1", operator: "===", compareTo: "number", expectResult: true },

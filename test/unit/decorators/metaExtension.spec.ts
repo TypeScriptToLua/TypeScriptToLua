@@ -1,4 +1,4 @@
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { InvalidNewExpressionOnExtension, MissingMetaExtension } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("MetaExtension", () => {
@@ -35,7 +35,7 @@ test("IncorrectUsage", () => {
                 }
             }
         `);
-    }).toThrowExactError(TSTLErrors.MissingMetaExtension(util.nodeStub));
+    }).toThrowExactError(MissingMetaExtension(util.nodeStub));
 });
 
 test("DontAllowInstantiation", () => {
@@ -47,5 +47,5 @@ test("DontAllowInstantiation", () => {
             }
             const e = new Ext();
         `);
-    }).toThrowExactError(TSTLErrors.InvalidNewExpressionOnExtension(util.nodeStub));
+    }).toThrowExactError(InvalidNewExpressionOnExtension(util.nodeStub));
 });

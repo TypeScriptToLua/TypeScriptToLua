@@ -1,17 +1,17 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Transformation (characterEscapeSequence) 1`] = `
-"local quoteInDoubleQuotes = \\"\\\\' \\\\' \\\\'\\"
-local quoteInTemplateString = \\"\\\\' \\\\' \\\\'\\"
+"local quoteInDoubleQuotes = \\"' ' '\\"
+local quoteInTemplateString = \\"' ' '\\"
 local doubleQuoteInQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
 local doubleQuoteInDoubleQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
 local doubleQuoteInTemplateString = \\"\\\\\\" \\\\\\" \\\\\\"\\"
 local backQuoteInQuotes = \\"\` \` \`\\"
 local backQuoteInDoubleQuotes = \\"\` \` \`\\"
 local backQuoteInTemplateString = \\"\` \` \`\\"
-local escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\' \`\\"
-local escapedCharsInDoubleQUotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\'\\"
-local escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" \\\\' \`\\"
+local escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
+local escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
+local escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 local nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. \\"Level 1: \\\\n\\\\t\\\\t \\" .. \\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\""
 `;
 

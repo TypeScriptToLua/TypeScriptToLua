@@ -4477,8 +4477,7 @@ export class LuaTransformer {
         }
 
         if (decorators.has(DecoratorKind.LuaTable)) {
-            const [luaTable] = this.parseLuaTableExpression(expression);
-            return luaTable;
+            return this.transformLuaTableProperty(expression);
         }
 
         // Catch math expressions
@@ -4621,21 +4620,14 @@ export class LuaTransformer {
         }
     }
 
-    protected parseLuaTableExpression(node: ts.PropertyAccessExpression): [tstl.Expression, string] {
-        const methodName = node.name.text;
-        switch (methodName) {
-            case "set":
-            case "get": {
-                return [this.transformExpression(node.expression), methodName];
-            }
-            case "length": {
-                const luaTable = this.transformExpression(node.expression);
+    protected transformLuaTableProperty(node: ts.PropertyAccessExpression): tstl.Expression {
+        const [luaTable, propertyName] = this.parseLuaTableExpression(node);
+        switch (propertyName) {
+            case "length":
                 const unaryExpression = tstl.createUnaryExpression(luaTable, tstl.SyntaxKind.LengthOperator, node);
-                return [unaryExpression, methodName];
-            }
-            default: {
-                throw TSTLErrors.UnsupportedProperty("LuaTable", methodName, node);
-            }
+                return unaryExpression;
+            default:
+                throw TSTLErrors.UnsupportedProperty("LuaTable", propertyName, node);
         }
     }
 
@@ -4989,7 +4981,7 @@ export class LuaTransformer {
     }
 
     protected validateLuaTableCall(expression: ts.CallExpression): void {
-        const methodName = this.getLuaTablePropertyName(expression.expression);
+        const [, methodName] = this.parseLuaTableExpression(expression.expression);
         if (expression.arguments.some(argument => ts.isSpreadElement(argument))) {
             throw TSTLErrors.ForbiddenLuaTableUseException("Arguments cannot be spread.", expression);
         }
@@ -5015,9 +5007,8 @@ export class LuaTransformer {
     }
 
     protected transformLuaTableExpressionAsExpressionStatement(expression: ts.CallExpression): tstl.Statement {
-        const methodName = this.getLuaTablePropertyName(expression.expression);
+        const [luaTable, methodName] = this.parseLuaTableExpression(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const luaTable = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
@@ -5039,9 +5030,8 @@ export class LuaTransformer {
     }
 
     protected transformLuaTableCallExpression(expression: ts.CallExpression): tstl.Expression {
-        const methodName = this.getLuaTablePropertyName(expression.expression);
+        const [luaTable, methodName] = this.parseLuaTableExpression(expression.expression);
         const signature = this.checker.getResolvedSignature(expression);
-        const luaTable = this.transformExpression(expression.expression);
         const params = this.transformArguments(expression.arguments, signature);
 
         switch (methodName) {
@@ -5447,9 +5437,9 @@ export class LuaTransformer {
         return scope;
     }
 
-    protected getLuaTablePropertyName(node: ts.LeftHandSideExpression): string {
+    protected parseLuaTableExpression(node: ts.LeftHandSideExpression): [tstl.Expression, string] {
         if (ts.isPropertyAccessExpression(node)) {
-            return node.name.text;
+            return [this.transformExpression(node.expression), node.name.text];
         } else {
             throw TSTLErrors.UnsupportedKind("LuaTable access expression", node.kind, node);
         }

@@ -129,6 +129,14 @@ test.each([tableLibClass, tableLibInterface])("Cannot use ElementAccessExpressio
     );
 });
 
+test.each([tableLibClass, tableLibInterface])("Cannot isolate LuaTable methods", tableLib => {
+    test.each([`set`, `get`])("Cannot isolate LuaTable method (%p)", propertyName => {
+        expect(() => util.transpileString(`${tableLib} let property = tbl.${propertyName}`)).toThrowExactError(
+            TSTLErrors.UnsupportedProperty("LuaTable", propertyName, util.nodeStub)
+        );
+    });
+});
+
 test.each([tableLibClass])("LuaTable functional tests", tableLib => {
     test.each<[string, any]>([
         [`const t = new Table(); t.set("field", "value"); return t.get("field");`, "value"],

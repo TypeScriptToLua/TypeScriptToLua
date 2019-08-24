@@ -6,6 +6,12 @@ Set = class Set<T> {
     private items: { [key: string]: boolean } = {};
     public size = 0;
 
+    // Key-order variables
+    private firstKey: T | undefined;
+    private lastKey: T | undefined;
+    private nextKey: { [key: string]: T | undefined } = {};
+    private previousKey: { [key: string]: T | undefined } = {};
+
     constructor(values?: Iterable<T> | T[]) {
         if (values === undefined) return;
 
@@ -30,15 +36,29 @@ Set = class Set<T> {
     }
 
     public add(value: T): Set<T> {
-        if (!this.has(value)) {
+        const isNewValue = !this.has(value);
+        if (isNewValue) {
             this.size++;
         }
         this.items[value as any] = true;
+
+        // Do order bookkeeping
+        if (this.firstKey === undefined) {
+            this.firstKey = value;
+            this.lastKey = value;
+        } else if (isNewValue) {
+            this.nextKey[this.lastKey as any] = value;
+            this.previousKey[value as any] = this.lastKey;
+            this.lastKey = value;
+        }
+
         return this;
     }
 
     public clear(): void {
         this.items = {};
+        this.nextKey = {};
+        this.previousKey = {};
         this.size = 0;
         return;
     }
@@ -47,14 +67,31 @@ Set = class Set<T> {
         const contains = this.has(value);
         if (contains) {
             this.size--;
+
+            // Do order bookkeeping
+            const next = this.nextKey[value as any];
+            const previous = this.previousKey[value as any];
+            if (next && previous) {
+                this.nextKey[previous as any] = next;
+                this.previousKey[next as any] = previous;
+            } else if (next) {
+                this.firstKey = next;
+                this.previousKey[next as any] = undefined;
+            } else if (previous) {
+                this.lastKey = previous;
+                this.nextKey[previous as any] = undefined;
+            }
+
+            this.nextKey[value as any] = undefined;
+            this.previousKey[value as any] = undefined;
         }
         this.items[value as any] = undefined;
         return contains;
     }
 
     public forEach(callback: (value: T, key: T, set: Set<T>) => any): void {
-        for (const key in this.items) {
-            callback(key as any, key as any, this);
+        for (const key of this.keys()) {
+            callback(key, key, this);
         }
     }
 

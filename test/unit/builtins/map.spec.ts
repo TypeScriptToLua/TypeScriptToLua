@@ -136,15 +136,21 @@ test("map size", () => {
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.delete(3); return m.size;`)).toBe(1);
 });
 
+const testMapConstructionCode = `
+    const mymap = new Map();
+            
+    mymap.set("x", 1);
+    mymap.set("a", 2);
+    mymap.set(4, 3);
+    mymap.set("b", 6);
+    mymap.set(1, 4);
+    mymap.set("a", 5);
+    
+    mymap.delete("b")`;
+
 test("map.entries() preserves insertion order", () => {
     util.testFunction`
-        const mymap = new Map();
-        
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        mymap.set(1, 4);
-        mymap.set("a", 5);
+        ${testMapConstructionCode}
 
         return [...mymap.entries()];
     `
@@ -154,13 +160,7 @@ test("map.entries() preserves insertion order", () => {
 
 test("map.keys() preserves insertion order", () => {
     util.testFunction`
-        const mymap = new Map();
-        
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        mymap.set(1, 4);
-        mymap.set("a", 5);
+        ${testMapConstructionCode}
 
         return [...mymap.keys()];
     `
@@ -170,13 +170,7 @@ test("map.keys() preserves insertion order", () => {
 
 test("map.values() preserves insertion order", () => {
     util.testFunction`
-        const mymap = new Map();
-
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        mymap.set(1, 4);
-        mymap.set("a", 5);
+        ${testMapConstructionCode}
 
         return [...mymap.values()];
     `

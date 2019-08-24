@@ -120,3 +120,45 @@ test.each([
 ])("set size (%p)", code => {
     util.testFunction`${code}; return m.size`.expectToMatchJsResult();
 });
+
+test("set.entries() preserves insertion order", () => {
+    util.testFunction`
+        const myset = new Set();
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        myset.add(1);
+
+        return [...myset.entries()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual([["x", "x"], ["a", "a"], [4, 4], [1, 1]]);
+});
+
+test("set.keys() preserves insertion order", () => {
+    util.testFunction`
+        const myset = new Set();
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        myset.add(1);
+
+        return [...myset.keys()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual(["x", "a", 4, 1]);
+});
+
+test("set.values() preserves insertion order", () => {
+    util.testFunction`
+        const myset = new Set();
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        myset.add(1);
+
+        return [...myset.values()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual(["x", "a", 4, 1]);
+});

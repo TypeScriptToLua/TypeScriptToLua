@@ -135,3 +135,51 @@ test("map size", () => {
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.clear(); return m.size;`)).toBe(0);
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.delete(3); return m.size;`)).toBe(1);
 });
+
+test("map.entries() preserves insertion order", () => {
+    util.testFunction`
+        const mymap = new Map();
+        
+        mymap.set("x", 1);
+        mymap.set("a", 2);
+        mymap.set(4, 3);
+        mymap.set(1, 4);
+        mymap.set("a", 5);
+
+        return [...mymap.entries()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual([["x", 1], ["a", 5], [4, 3], [1, 4]]);
+});
+
+test("map.keys() preserves insertion order", () => {
+    util.testFunction`
+        const mymap = new Map();
+        
+        mymap.set("x", 1);
+        mymap.set("a", 2);
+        mymap.set(4, 3);
+        mymap.set(1, 4);
+        mymap.set("a", 5);
+
+        return [...mymap.keys()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual(["x", "a", 4, 1]);
+});
+
+test("map.values() preserves insertion order", () => {
+    util.testFunction`
+        const mymap = new Map();
+
+        mymap.set("x", 1);
+        mymap.set("a", 2);
+        mymap.set(4, 3);
+        mymap.set(1, 4);
+        mymap.set("a", 5);
+
+        return [...mymap.values()];
+    `
+        .expectToMatchJsResult()
+        .expectToEqual([1, 5, 3, 4]);
+});

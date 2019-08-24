@@ -28,9 +28,8 @@ Set = class Set<T> {
             }
         } else {
             const array = values as T[];
-            this.size = array.length;
             for (const value of array) {
-                this.items[value as any] = true;
+                this.add(value);
             }
         }
     }

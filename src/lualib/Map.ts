@@ -86,7 +86,7 @@ Map = class Map<K, V> {
     }
 
     public has(key: K): boolean {
-        return this.items.get(key) !== undefined;
+        return this.nextKey.get(key) !== undefined || this.lastKey === key;
     }
 
     public set(key: K, value: V): this {

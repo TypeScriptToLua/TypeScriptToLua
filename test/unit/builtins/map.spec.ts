@@ -92,9 +92,28 @@ test("map has false", () => {
     expect(contains).toBe(false);
 });
 
-test("map has null", () => {
-    const contains = util.transpileAndExecute(`let mymap = new Map([["a", "c"]]); return mymap.has(null);`);
-    expect(contains).toBe(false);
+test.each([
+    `[["a", null]]`,
+    `[["b", "c"], ["a", null]]`,
+    `[["a", null], ["b", "c"]]`,
+    `[["b", "c"], ["a", null], ["x", "y"]]`,
+])("map (%p) has null", entries => {
+    util.testFunction`
+        let mymap = new Map(${entries});
+        return mymap.has("a");
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    `[["a", undefined]]`,
+    `[["b", "c"], ["a", undefined]]`,
+    `[["a", undefined], ["b", "c"]]`,
+    `[["b", "c"], ["a", undefined], ["x", "y"]]`,
+])("map (%p) has undefined", entries => {
+    util.testFunction`
+        let mymap = new Map(${entries});
+        return mymap.has("a");
+    `.expectToMatchJsResult();
 });
 
 test("map keys", () => {

@@ -6,8 +6,8 @@ Set = class Set<T> {
 
     private firstKey: T | undefined;
     private lastKey: T | undefined;
-    private nextKey: LuaTable<T, T> = new LuaTable();
-    private previousKey: LuaTable<T, T> = new LuaTable();
+    private nextKey = new LuaTable<T, T>();
+    private previousKey = new LuaTable<T, T>();
 
     constructor(values?: Iterable<T> | T[]) {
         if (values === undefined) return;

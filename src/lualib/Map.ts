@@ -2,14 +2,14 @@ Map = class Map<K, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
-    private items: LuaTable<K, V> = new LuaTable();
+    private items = new LuaTable<K, V>();
     public size = 0;
 
     // Key-order variables
     private firstKey: K | undefined;
     private lastKey: K | undefined;
-    private nextKey: LuaTable<K, K> = new LuaTable();
-    private previousKey: LuaTable<K, K> = new LuaTable();
+    private nextKey = new LuaTable<K, K>();
+    private previousKey = new LuaTable<K, K>();
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
         if (entries === undefined) return;

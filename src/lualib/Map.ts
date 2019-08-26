@@ -2,15 +2,14 @@ Map = class Map<K, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
-    // Type of key is actually K
-    private items: { [key: string]: V } = {};
+    private items: LuaTable<K, V> = new LuaTable();
     public size = 0;
 
     // Key-order variables
     private firstKey: K | undefined;
     private lastKey: K | undefined;
-    private nextKey: { [key: string]: K | undefined } = {};
-    private previousKey: { [key: string]: K | undefined } = {};
+    private nextKey: LuaTable<K, K> = new LuaTable();
+    private previousKey: LuaTable<K, K> = new LuaTable();
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
         if (entries === undefined) return;
@@ -36,9 +35,9 @@ Map = class Map<K, V> {
     }
 
     public clear(): void {
-        this.items = {};
-        this.nextKey = {};
-        this.previousKey = {};
+        this.items = new LuaTable();
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
         this.firstKey = undefined;
         this.lastKey = undefined;
         this.size = 0;
@@ -51,43 +50,43 @@ Map = class Map<K, V> {
             this.size--;
 
             // Do order bookkeeping
-            const next = this.nextKey[key as any];
-            const previous = this.previousKey[key as any];
+            const next = this.nextKey.get(key);
+            const previous = this.previousKey.get(key);
             if (next && previous) {
-                this.nextKey[previous as any] = next;
-                this.previousKey[next as any] = previous;
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
             } else if (next) {
                 this.firstKey = next;
-                this.previousKey[next as any] = undefined;
+                this.previousKey.set(next, undefined);
             } else if (previous) {
                 this.lastKey = previous;
-                this.nextKey[previous as any] = undefined;
+                this.nextKey.set(previous, undefined);
             } else {
                 this.firstKey = undefined;
                 this.lastKey = undefined;
             }
 
-            this.nextKey[key as any] = undefined;
-            this.previousKey[key as any] = undefined;
+            this.nextKey.set(key, undefined);
+            this.previousKey.set(key, undefined);
         }
-        this.items[key as any] = undefined;
+        this.items.set(key, undefined);
 
         return contains;
     }
 
     public forEach(callback: (value: V, key: K, map: Map<K, V>) => any): void {
         for (const key of this.keys()) {
-            callback(this.items[key as any], key, this);
+            callback(this.items.get(key), key, this);
         }
         return;
     }
 
     public get(key: K): V | undefined {
-        return this.items[key as any];
+        return this.items.get(key);
     }
 
     public has(key: K): boolean {
-        return this.items[key as any] !== undefined;
+        return this.items.get(key) !== undefined;
     }
 
     public set(key: K, value: V): this {
@@ -95,15 +94,15 @@ Map = class Map<K, V> {
         if (isNewValue) {
             this.size++;
         }
-        this.items[key as any] = value;
+        this.items.set(key, value);
 
         // Do order bookkeeping
         if (this.firstKey === undefined) {
             this.firstKey = key;
             this.lastKey = key;
         } else if (isNewValue) {
-            this.nextKey[this.lastKey as any] = key;
-            this.previousKey[key as any] = this.lastKey;
+            this.nextKey.set(this.lastKey, key);
+            this.previousKey.set(key, this.lastKey);
             this.lastKey = key;
         }
 
@@ -123,8 +122,8 @@ Map = class Map<K, V> {
                 return this;
             },
             next(): IteratorResult<[K, V]> {
-                const result = { done: !key, value: [key, items[key as any]] as [K, V] };
-                key = nextKey[key as any];
+                const result = { done: !key, value: [key, items.get(key)] as [K, V] };
+                key = nextKey.get(key);
                 return result;
             },
         };
@@ -139,7 +138,7 @@ Map = class Map<K, V> {
             },
             next(): IteratorResult<K> {
                 const result = { done: !key, value: key };
-                key = nextKey[key as any];
+                key = nextKey.get(key);
                 return result;
             },
         };
@@ -154,8 +153,8 @@ Map = class Map<K, V> {
                 return this;
             },
             next(): IteratorResult<V> {
-                const result = { done: !key, value: items[key as any] };
-                key = nextKey[key as any];
+                const result = { done: !key, value: items.get(key) };
+                key = nextKey.get(key);
                 return result;
             },
         };

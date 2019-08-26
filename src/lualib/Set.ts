@@ -4,11 +4,10 @@ Set = class Set<T> {
 
     public size = 0;
 
-    // Key-order variables
     private firstKey: T | undefined;
     private lastKey: T | undefined;
-    private nextKey: { [key: string]: T | undefined } = {};
-    private previousKey: { [key: string]: T | undefined } = {};
+    private nextKey: LuaTable<T, T> = new LuaTable();
+    private previousKey: LuaTable<T, T> = new LuaTable();
 
     constructor(values?: Iterable<T> | T[]) {
         if (values === undefined) return;
@@ -43,8 +42,8 @@ Set = class Set<T> {
             this.firstKey = value;
             this.lastKey = value;
         } else if (isNewValue) {
-            this.nextKey[this.lastKey as any] = value;
-            this.previousKey[value as any] = this.lastKey;
+            this.nextKey.set(this.lastKey, value);
+            this.previousKey.set(value, this.lastKey);
             this.lastKey = value;
         }
 
@@ -52,8 +51,8 @@ Set = class Set<T> {
     }
 
     public clear(): void {
-        this.nextKey = {};
-        this.previousKey = {};
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
         this.firstKey = undefined;
         this.lastKey = undefined;
         this.size = 0;
@@ -66,24 +65,24 @@ Set = class Set<T> {
             this.size--;
 
             // Do order bookkeeping
-            const next = this.nextKey[value as any];
-            const previous = this.previousKey[value as any];
+            const next = this.nextKey.get(value);
+            const previous = this.previousKey.get(value);
             if (next && previous) {
-                this.nextKey[previous as any] = next;
-                this.previousKey[next as any] = previous;
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
             } else if (next) {
                 this.firstKey = next;
-                this.previousKey[next as any] = undefined;
+                this.previousKey.set(next, undefined);
             } else if (previous) {
                 this.lastKey = previous;
-                this.nextKey[previous as any] = undefined;
+                this.nextKey.set(previous, undefined);
             } else {
                 this.firstKey = undefined;
                 this.lastKey = undefined;
             }
 
-            this.nextKey[value as any] = undefined;
-            this.previousKey[value as any] = undefined;
+            this.nextKey.set(value, undefined);
+            this.previousKey.set(value, undefined);
         }
 
         return contains;
@@ -96,7 +95,7 @@ Set = class Set<T> {
     }
 
     public has(value: T): boolean {
-        return this.nextKey[value as any] !== undefined || this.lastKey === value;
+        return this.nextKey.get(value) !== undefined || this.lastKey === value;
     }
 
     public [Symbol.iterator](): IterableIterator<T> {
@@ -112,7 +111,7 @@ Set = class Set<T> {
             },
             next(): IteratorResult<[T, T]> {
                 const result = { done: !key, value: [key, key] as [T, T] };
-                key = nextKey[key as any];
+                key = nextKey.get(key);
                 return result;
             },
         };
@@ -127,7 +126,7 @@ Set = class Set<T> {
             },
             next(): IteratorResult<T> {
                 const result = { done: !key, value: key };
-                key = nextKey[key as any];
+                key = nextKey.get(key);
                 return result;
             },
         };
@@ -142,7 +141,7 @@ Set = class Set<T> {
             },
             next(): IteratorResult<T> {
                 const result = { done: !key, value: key };
-                key = nextKey[key as any];
+                key = nextKey.get(key);
                 return result;
             },
         };

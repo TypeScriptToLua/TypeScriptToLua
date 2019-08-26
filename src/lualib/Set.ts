@@ -2,8 +2,6 @@ Set = class Set<T> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
 
-    // Key type is actually T
-    private items: { [key: string]: boolean } = {};
     public size = 0;
 
     // Key-order variables
@@ -39,7 +37,6 @@ Set = class Set<T> {
         if (isNewValue) {
             this.size++;
         }
-        this.items[value as any] = true;
 
         // Do order bookkeeping
         if (this.firstKey === undefined) {
@@ -55,9 +52,10 @@ Set = class Set<T> {
     }
 
     public clear(): void {
-        this.items = {};
         this.nextKey = {};
         this.previousKey = {};
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
         return;
     }
@@ -79,12 +77,15 @@ Set = class Set<T> {
             } else if (previous) {
                 this.lastKey = previous;
                 this.nextKey[previous as any] = undefined;
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
             }
 
             this.nextKey[value as any] = undefined;
             this.previousKey[value as any] = undefined;
         }
-        this.items[value as any] = undefined;
+
         return contains;
     }
 
@@ -95,7 +96,7 @@ Set = class Set<T> {
     }
 
     public has(value: T): boolean {
-        return this.items[value as any] === true;
+        return this.nextKey[value as any] !== undefined || this.lastKey === value;
     }
 
     public [Symbol.iterator](): IterableIterator<T> {
@@ -103,43 +104,46 @@ Set = class Set<T> {
     }
 
     public entries(): IterableIterator<[T, T]> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
                 return this;
             },
             next(): IteratorResult<[T, T]> {
-                [key] = next(items, key);
-                return { done: !key, value: [key, key] };
+                const result = { done: !key, value: [key, key] as [T, T] };
+                key = nextKey[key as any];
+                return result;
             },
         };
     }
 
     public keys(): IterableIterator<T> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
+                const result = { done: !key, value: key };
+                key = nextKey[key as any];
+                return result;
             },
         };
     }
 
     public values(): IterableIterator<T> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
+                const result = { done: !key, value: key };
+                key = nextKey[key as any];
+                return result;
             },
         };
     }

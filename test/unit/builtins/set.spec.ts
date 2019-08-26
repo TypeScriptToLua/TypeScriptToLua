@@ -79,6 +79,18 @@ test("set has", () => {
     `.expectToMatchJsResult();
 });
 
+test("set has after deleting keys", () => {
+    util.testFunction`
+        let myset = new Set(["a", "c"]);
+        const results = [myset.has("c")];
+        myset.delete("c");
+        results.push(myset.has("c"));
+        myset.delete("a");
+        results.push(myset.has("a"))
+        return results;
+    `.expectToMatchJsResult();
+});
+
 test("set has false", () => {
     util.testFunction`
         let myset = new Set();
@@ -121,43 +133,63 @@ test.each([
     util.testFunction`${code}; return m.size`.expectToMatchJsResult();
 });
 
-const testSetConstructionCode = `
-    const myset = new Set();
+const iterationMethods = ["entries", "keys", "values"];
 
-    myset.add("x");
-    myset.add("a");
-    myset.add(4);
-    myset.add("b");
-    myset.add(1);
-
-    myset.delete("b");`;
-
-test("set.entries() preserves insertion order", () => {
+test.each(iterationMethods)("set.%s() preserves insertion order", iterationMethod => {
     util.testFunction`
-        ${testSetConstructionCode}
+        const myset = new Set();
+            
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        myset.add("b");
+        myset.add(1);
+        myset.add("a");
+        
+        myset.delete("b");
 
-        return [...myset.entries()];
-    `
-        .expectToMatchJsResult()
-        .expectToEqual([["x", "x"], ["a", "a"], [4, 4], [1, 1]]);
+        return [...myset.${iterationMethod}()];
+    `.expectToMatchJsResult();
 });
 
-test("set.keys() preserves insertion order", () => {
+test.each(iterationMethods)("set.%s() preserves insertion order after removing last", iterationMethod => {
     util.testFunction`
-        ${testSetConstructionCode}
+        const myset = new Set();
+            
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        
+        myset.delete(4);
 
-        return [...myset.keys()];
-    `
-        .expectToMatchJsResult()
-        .expectToEqual(["x", "a", 4, 1]);
+        return [...myset.${iterationMethod}()];
+    `.expectToMatchJsResult();
 });
 
-test("set.values() preserves insertion order", () => {
+test.each(iterationMethods)("set.%s() preserves insertion order after removing first", iterationMethod => {
     util.testFunction`
-        ${testSetConstructionCode}
+        const myset = new Set();
+            
+        myset.add("x");
+        myset.add("a");
+        myset.add(4);
+        
+        myset.delete("x");
 
-        return [...myset.values()];
-    `
-        .expectToMatchJsResult()
-        .expectToEqual(["x", "a", 4, 1]);
+        return [...myset.${iterationMethod}()];
+    `.expectToMatchJsResult();
+});
+
+test.each(iterationMethods)("set.%s() preserves insertion order after removing all", iterationMethod => {
+    util.testFunction`
+        const myset = new Set();
+            
+        myset.add("x");
+        myset.add("a");
+        
+        myset.delete("a");
+        myset.delete("x");
+
+        return [...myset.${iterationMethod}()];
+    `.expectToMatchJsResult();
 });

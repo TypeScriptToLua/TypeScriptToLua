@@ -39,6 +39,8 @@ Map = class Map<K, V> {
         this.items = {};
         this.nextKey = {};
         this.previousKey = {};
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
         return;
     }
@@ -60,6 +62,9 @@ Map = class Map<K, V> {
             } else if (previous) {
                 this.lastKey = previous;
                 this.nextKey[previous as any] = undefined;
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
             }
 
             this.nextKey[key as any] = undefined;

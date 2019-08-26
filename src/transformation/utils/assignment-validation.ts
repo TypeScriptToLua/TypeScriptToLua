@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { setIfMissing } from "../../utils";
+import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
 import { DecoratorKind, getCustomDecorators } from "./decorators";
 import {
@@ -45,7 +45,7 @@ export function validateAssignment(
     }
 
     // Use cache to avoid repeating check for same types (protects against infinite loop in recursive types)
-    const fromTypeCache = setIfMissing(typeValidationCache, fromType, () => new Set());
+    const fromTypeCache = getOrUpdate(typeValidationCache, fromType, () => new Set());
     if (fromTypeCache.has(toType)) return;
     fromTypeCache.add(toType);
 

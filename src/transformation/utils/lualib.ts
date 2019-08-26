@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { LuaLibFeature } from "../../LuaLib";
-import { setIfMissing } from "../../utils";
+import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
 
 const luaLibFeatures = new WeakMap<TransformationContext, Set<LuaLibFeature>>();
@@ -9,7 +9,7 @@ const luaLibFeatures = new WeakMap<TransformationContext, Set<LuaLibFeature>>();
 export { LuaLibFeature };
 
 export function getUsedLuaLibFeatures(context: TransformationContext): Set<LuaLibFeature> {
-    return setIfMissing(luaLibFeatures, context, () => new Set());
+    return getOrUpdate(luaLibFeatures, context, () => new Set());
 }
 
 export function importLuaLibFeature(context: TransformationContext, feature: LuaLibFeature): void {

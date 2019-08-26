@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { isNonNull, setIfMissing } from "../../../utils";
+import { getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
 import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
 import {
@@ -70,7 +70,7 @@ function transformClassDeclaration(
     context: TransformationContext,
     nameOverride?: tstl.Identifier
 ): OneToManyVisitorResult<tstl.Statement> {
-    const classStack = setIfMissing(classStacks, context, () => []);
+    const classStack = getOrUpdate(classStacks, context, () => []);
     classStack.push(classDeclaration);
 
     let className: tstl.Identifier;
@@ -329,7 +329,7 @@ function transformClassDeclaration(
 }
 
 const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
-    const classStack = setIfMissing(classStacks, context, () => []);
+    const classStack = getOrUpdate(classStacks, context, () => []);
     const classDeclaration = classStack[classStack.length - 1];
     const typeNode = getExtendedTypeNode(context, classDeclaration);
     if (typeNode === undefined) {

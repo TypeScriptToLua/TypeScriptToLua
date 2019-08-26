@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { setIfMissing } from "../../utils";
+import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
 import { ReferencedBeforeDeclaration } from "./errors";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
@@ -22,11 +22,11 @@ const symbolInfoMap = new WeakMap<TransformationContext, Map<tstl.SymbolId, Symb
 const symbolIdMaps = new WeakMap<TransformationContext, Map<ts.Symbol, tstl.SymbolId>>();
 
 export function getSymbolInfo(context: TransformationContext, symbolId: tstl.SymbolId): SymbolInfo | undefined {
-    return setIfMissing(symbolInfoMap, context, () => new Map()).get(symbolId);
+    return getOrUpdate(symbolInfoMap, context, () => new Map()).get(symbolId);
 }
 
 export function getSymbolIdOfSymbol(context: TransformationContext, symbol: ts.Symbol): tstl.SymbolId | undefined {
-    return setIfMissing(symbolIdMaps, context, () => new Map()).get(symbol);
+    return getOrUpdate(symbolIdMaps, context, () => new Map()).get(symbol);
 }
 
 export function trackSymbolReference(
@@ -34,7 +34,7 @@ export function trackSymbolReference(
     symbol: ts.Symbol,
     identifier: ts.Identifier
 ): tstl.SymbolId | undefined {
-    const symbolIds = setIfMissing(symbolIdMaps, context, () => new Map());
+    const symbolIds = getOrUpdate(symbolIdMaps, context, () => new Map());
 
     // Track first time symbols are seen
     let symbolId = symbolIds.get(symbol);
@@ -42,7 +42,7 @@ export function trackSymbolReference(
         symbolId = nextSymbolId(context);
 
         symbolIds.set(symbol, symbolId);
-        const symbolInfo = setIfMissing(symbolInfoMap, context, () => new Map());
+        const symbolInfo = getOrUpdate(symbolInfoMap, context, () => new Map());
         symbolInfo.set(symbolId, { symbol, firstSeenAtPos: identifier.pos });
     }
 

@@ -15,7 +15,7 @@ export function flatMap<T, U>(array: readonly T[], callback: (value: T, index: n
 
 type NoInfer<T> = [T][T extends any ? 0 : never];
 
-export function setIfMissing<K, V>(
+export function getOrUpdate<K, V>(
     map: Map<K, V> | (K extends object ? WeakMap<K, V> : never),
     key: K,
     getDefaultValue: () => NoInfer<V>

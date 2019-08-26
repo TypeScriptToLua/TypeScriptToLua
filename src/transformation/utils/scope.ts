@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { setIfMissing, isNonNull } from "../../utils";
+import { getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
 import { replaceStatementInParent } from "./lua-ast";
@@ -36,7 +36,7 @@ export interface Scope {
 
 const scopeStacks = new WeakMap<TransformationContext, Scope[]>();
 function getScopeStack(context: TransformationContext): Scope[] {
-    return setIfMissing(scopeStacks, context, () => []);
+    return getOrUpdate(scopeStacks, context, () => []);
 }
 
 export function* walkScopesUp(context: TransformationContext): IterableIterator<Scope> {
@@ -57,7 +57,7 @@ export function markSymbolAsReferencedInCurrentScopes(
             scope.referencedSymbols = new Map();
         }
 
-        const references = setIfMissing(scope.referencedSymbols, symbolId, () => []);
+        const references = getOrUpdate(scope.referencedSymbols, symbolId, () => []);
         references.push(identifier);
     }
 }

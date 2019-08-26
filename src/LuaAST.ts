@@ -121,7 +121,7 @@ export type BinaryOperator =
 
 export type Operator = UnaryOperator | BinaryOperator;
 
-export type SymbolId = number & { __tag__: "SymbolId" };
+export type SymbolId = number & { _symbolIdBrand: any };
 
 export interface TextRange {
     line?: number;

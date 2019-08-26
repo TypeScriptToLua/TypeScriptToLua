@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
-import { TransformationContext, TransformerPlugin, VisitorMap } from "./context";
+import { ObjectVisitor, TransformationContext, TransformerPlugin, VisitorMap } from "./context";
 import { standardPlugins } from "./transformers";
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
@@ -27,7 +27,9 @@ export function createVisitorMap(customPlugins: TransformerPlugin[]): VisitorMap
 
             const syntaxKind = Number(syntaxKindKey) as ts.SyntaxKind;
             const visitors = getOrUpdate(visitorMap, syntaxKind, () => []);
-            visitors.push((typeof visitor === "function" ? { transform: visitor } : visitor) as any);
+
+            const objectVisitor: ObjectVisitor<any> = typeof visitor === "function" ? { transform: visitor } : visitor;
+            visitors.push(objectVisitor);
         }
     }
 

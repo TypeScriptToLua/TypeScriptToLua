@@ -2,8 +2,11 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformerPlugin } from "../context";
 import { UnsupportedKind } from "../utils/errors";
-import { transformUnaryBitOperation } from "./binary/bit";
-import { transformCompoundAssignmentExpression, transformCompoundAssignmentStatement } from "./binary/compound";
+import { transformUnaryBitOperation } from "./binary-expression/bit";
+import {
+    transformCompoundAssignmentExpression,
+    transformCompoundAssignmentStatement,
+} from "./binary-expression/compound";
 
 const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
@@ -117,7 +120,7 @@ const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpression> 
     }
 };
 
-export const unaryPlugin: TransformerPlugin = {
+export const unaryExpressionPlugin: TransformerPlugin = {
     visitors: {
         [ts.SyntaxKind.ExpressionStatement]: { transform: transformExpressionStatement, priority: 1 },
         [ts.SyntaxKind.PostfixUnaryExpression]: transformPostfixUnaryExpression,

@@ -3,7 +3,7 @@ import * as tstl from "../../LuaAST";
 import { LuaLibFeature } from "../../LuaLib";
 import { FunctionVisitor, TransformerPlugin } from "../context";
 import { transformLuaLibFunction } from "../utils/lualib";
-import { transformBinaryOperation } from "./binary";
+import { transformBinaryOperation } from "./binary-expression";
 
 const transformTypeOfExpression: FunctionVisitor<ts.TypeOfExpression> = (node, context) => {
     const innerExpression = context.transformExpression(node.expression);

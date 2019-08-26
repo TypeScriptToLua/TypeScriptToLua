@@ -1,6 +1,6 @@
 import { TransformerPlugin } from "../context";
 import { accessPlugin } from "./access";
-import { binaryPlugin } from "./binary";
+import { binaryExpressionPlugin } from "./binary-expression";
 import { blockPlugin } from "./block";
 import { callPlugin } from "./call";
 import { classPlugin } from "./class";
@@ -28,12 +28,12 @@ import { switchPlugin } from "./switch";
 import { templatePlugin } from "./template";
 import { todoMoveSomewherePlugin } from "./todo-move-somewhere";
 import { typeofPlugin } from "./typeof";
-import { unaryPlugin } from "./unary";
+import { unaryExpressionPlugin } from "./unary-expression";
 import { variablePlugin } from "./variable";
 
 export const standardPlugins: TransformerPlugin[] = [
     accessPlugin,
-    binaryPlugin,
+    binaryExpressionPlugin,
     blockPlugin,
     callPlugin,
     classPlugin,
@@ -61,6 +61,6 @@ export const standardPlugins: TransformerPlugin[] = [
     templatePlugin,
     todoMoveSomewherePlugin,
     typeofPlugin,
-    unaryPlugin,
+    unaryExpressionPlugin,
     variablePlugin,
 ];

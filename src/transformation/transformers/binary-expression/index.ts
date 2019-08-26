@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { TransformationContext, TransformerPlugin, FunctionVisitor } from "../../context";
+import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
 import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
 import { InvalidInstanceOfExtension, InvalidInstanceOfLuaTable, UnsupportedKind } from "../../utils/errors";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
@@ -9,10 +9,10 @@ import { isStandardLibraryType, isStringType } from "../../utils/typescript";
 import { transformAssignmentExpression, transformAssignmentStatement } from "./assignments";
 import { transformBinaryBitOperation } from "./bit";
 import {
+    isCompoundAssignmentToken,
     transformCompoundAssignmentExpression,
     transformCompoundAssignmentStatement,
     unwrapCompoundAssignmentToken,
-    isCompoundAssignmentToken,
 } from "./compound";
 
 export function transformBinaryOperator(
@@ -233,7 +233,7 @@ const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (n
     return context.superTransformStatements(node);
 };
 
-export const binaryPlugin: TransformerPlugin = {
+export const binaryExpressionPlugin: TransformerPlugin = {
     visitors: {
         [ts.SyntaxKind.BinaryExpression]: transformBinaryExpression,
         [ts.SyntaxKind.ExpressionStatement]: { priority: 1, transform: transformExpressionStatement },

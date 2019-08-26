@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    # TODO: tags: '*' triggers on any commit
+    branches: refs/tags/*
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Use Node.js 8.5.0
+        uses: actions/setup-node@v1
+        with:
+          version: 8.5.0
+      - run: npm install --global npm@6
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

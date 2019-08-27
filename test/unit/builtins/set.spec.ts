@@ -134,62 +134,63 @@ test.each([
 });
 
 const iterationMethods = ["entries", "keys", "values"];
-
-test.each(iterationMethods)("set.%s() preserves insertion order", iterationMethod => {
-    util.testFunction`
-        const myset = new Set();
+describe.each(iterationMethods)("set.%s() preserves insertion order", iterationMethod => {
+    test("basic", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
+            myset.add("b");
+            myset.add(1);
+            myset.add("a");
             
-        myset.add("x");
-        myset.add("a");
-        myset.add(4);
-        myset.add("b");
-        myset.add(1);
-        myset.add("a");
-        
-        myset.delete("b");
+            myset.delete("b");
 
-        return [...myset.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("set.%s() preserves insertion order after removing last", iterationMethod => {
-    util.testFunction`
-        const myset = new Set();
+    test("after removing last", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
             
-        myset.add("x");
-        myset.add("a");
-        myset.add(4);
-        
-        myset.delete(4);
+            myset.delete(4);
 
-        return [...myset.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("set.%s() preserves insertion order after removing first", iterationMethod => {
-    util.testFunction`
-        const myset = new Set();
+    test("after removing first", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
             
-        myset.add("x");
-        myset.add("a");
-        myset.add(4);
-        
-        myset.delete("x");
+            myset.delete("x");
 
-        return [...myset.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("set.%s() preserves insertion order after removing all", iterationMethod => {
-    util.testFunction`
-        const myset = new Set();
+    test("after removing all", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
             
-        myset.add("x");
-        myset.add("a");
-        
-        myset.delete("a");
-        myset.delete("x");
+            myset.delete("a");
+            myset.delete("x");
 
-        return [...myset.${iterationMethod}()];
-    `.expectToMatchJsResult();
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 });

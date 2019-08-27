@@ -156,62 +156,63 @@ test("map size", () => {
 });
 
 const iterationMethods = ["entries", "keys", "values"];
-
-test.each(iterationMethods)("map.%s() preserves insertion order", iterationMethod => {
-    util.testFunction`
-        const mymap = new Map();
+describe.each(iterationMethods)("map.%s() preserves insertion order", iterationMethod => {
+    test("basic", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
+            mymap.set("b", 6);
+            mymap.set(1, 4);
+            mymap.set("a", 5);
             
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        mymap.set("b", 6);
-        mymap.set(1, 4);
-        mymap.set("a", 5);
-        
-        mymap.delete("b");
+            mymap.delete("b");
 
-        return [...mymap.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("map.%s() preserves insertion order after removing last", iterationMethod => {
-    util.testFunction`
-        const mymap = new Map();
+    test("after removing last", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
             
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        
-        mymap.delete(4);
+            mymap.delete(4);
 
-        return [...mymap.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("map.%s() preserves insertion order after removing first", iterationMethod => {
-    util.testFunction`
-        const mymap = new Map();
+    test("after removing first", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
             
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        mymap.set(4, 3);
-        
-        mymap.delete("x");
+            mymap.delete("x");
 
-        return [...mymap.${iterationMethod}()];
-    `.expectToMatchJsResult();
-});
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 
-test.each(iterationMethods)("map.%s() preserves insertion order after removing all", iterationMethod => {
-    util.testFunction`
-        const mymap = new Map();
+    test("after removing all", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
             
-        mymap.set("x", 1);
-        mymap.set("a", 2);
-        
-        mymap.delete("a");
-        mymap.delete("x");
+            mymap.delete("a");
+            mymap.delete("x");
 
-        return [...mymap.${iterationMethod}()];
-    `.expectToMatchJsResult();
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 });

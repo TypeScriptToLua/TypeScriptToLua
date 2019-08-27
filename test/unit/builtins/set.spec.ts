@@ -79,6 +79,18 @@ test("set has", () => {
     `.expectToMatchJsResult();
 });
 
+test("set has after deleting keys", () => {
+    util.testFunction`
+        let myset = new Set(["a", "c"]);
+        const results = [myset.has("c")];
+        myset.delete("c");
+        results.push(myset.has("c"));
+        myset.delete("a");
+        results.push(myset.has("a"))
+        return results;
+    `.expectToMatchJsResult();
+});
+
 test("set has false", () => {
     util.testFunction`
         let myset = new Set();
@@ -119,4 +131,66 @@ test.each([
     `let m = new Set([1, 2]); m.delete(2)`,
 ])("set size (%p)", code => {
     util.testFunction`${code}; return m.size`.expectToMatchJsResult();
+});
+
+const iterationMethods = ["entries", "keys", "values"];
+describe.each(iterationMethods)("set.%s() preserves insertion order", iterationMethod => {
+    test("basic", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
+            myset.add("b");
+            myset.add(1);
+            myset.add("a");
+            
+            myset.delete("b");
+
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing last", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
+            
+            myset.delete(4);
+
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing first", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            myset.add(4);
+            
+            myset.delete("x");
+
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing all", () => {
+        util.testFunction`
+            const myset = new Set();
+                
+            myset.add("x");
+            myset.add("a");
+            
+            myset.delete("a");
+            myset.delete("x");
+
+            return [...myset.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 });

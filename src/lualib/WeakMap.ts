@@ -2,8 +2,7 @@ WeakMap = class WeakMap<K extends object, V> {
     public static [Symbol.species] = WeakMap;
     public [Symbol.toStringTag] = "WeakMap";
 
-    // Type of key is actually K
-    private items: { [key: string]: V } = {};
+    private items = new LuaTable<K, V>();
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
         setmetatable(this.items, { __mode: "k" });
@@ -19,31 +18,31 @@ WeakMap = class WeakMap<K extends object, V> {
                     break;
                 }
                 const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
-                this.set(value[0], value[1]);
+                this.items.set(value[0], value[1]);
             }
         } else {
             for (const kvp of entries as Array<[K, V]>) {
-                this.items[kvp[0] as any] = kvp[1];
+                this.items.set(kvp[0], kvp[1]);
             }
         }
     }
 
     public delete(key: K): boolean {
         const contains = this.has(key);
-        this.items[key as any] = undefined;
+        this.items.set(key, undefined);
         return contains;
     }
 
     public get(key: K): V | undefined {
-        return this.items[key as any];
+        return this.items.get(key);
     }
 
     public has(key: K): boolean {
-        return this.items[key as any] !== undefined;
+        return this.items.get(key) !== undefined;
     }
 
     public set(key: K, value: V): this {
-        this.items[key as any] = value;
+        this.items.set(key, value);
         return this;
     }
 };

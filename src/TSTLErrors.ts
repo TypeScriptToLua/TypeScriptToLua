@@ -77,6 +77,9 @@ export const NonFlattenableDestructure = (node: ts.Node) =>
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 
+export const UnsupportedForInVariable = (initializer: ts.Node) =>
+    new TranspileError(`Unsuppored for-in variable kind.`, initializer);
+
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
 export const UndefinedTypeNode = (node: ts.Node) => new TranspileError("Failed to resolve required type node.", node);

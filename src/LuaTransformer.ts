@@ -2628,9 +2628,20 @@ export class LuaTransformer {
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
-        // Get variable identifier
-        const variable = (statement.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
+        // Transform iteration variable
+        let iterationVariable: tstl.Identifier;
+        if (
+            ts.isVariableDeclarationList(statement.initializer) &&
+            !ts.isArrayBindingPattern(statement.initializer.declarations[0].name) &&
+            !ts.isObjectBindingPattern(statement.initializer.declarations[0].name)
+        ) {
+            iterationVariable = this.transformIdentifier(statement.initializer.declarations[0].name);
+        } else if (ts.isIdentifier(statement.initializer)) {
+            iterationVariable = this.transformIdentifier(statement.initializer);
+        } else {
+            // This should never occur
+            throw TSTLErrors.UnsupportedForInVariable(statement.initializer);
+        }
 
         // Transpile expression
         const pairsIdentifier = tstl.createIdentifier("pairs");
@@ -2643,7 +2654,7 @@ export class LuaTransformer {
 
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        return tstl.createForInStatement(body, [this.transformIdentifier(identifier)], [pairsCall], statement);
+        return tstl.createForInStatement(body, [iterationVariable], [pairsCall], statement);
     }
 
     public transformSwitchStatement(statement: ts.SwitchStatement): StatementVisitResult {

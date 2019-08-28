@@ -630,3 +630,16 @@ test("do...while double-negation", () => {
     expect(util.transpileString(code)).not.toMatch("not");
     expect(util.transpileAndExecute(code)).toBe(2);
 });
+
+test("for...in with pre-defined variable", () => {
+    util.testFunction`
+        const obj = { x: "y", foo: "bar" };
+
+        let x = "";
+        let result = [];
+        for (x in obj) {
+            result.push(x);
+        }
+        return result;
+    `.expectToMatchJsResult();
+});

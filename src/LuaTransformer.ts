@@ -2656,7 +2656,7 @@ export class LuaTransformer {
                 this.transformIdentifier(statement.initializer),
                 iterationVariable
             );
-            body.statements.splice(0, 0, initializer);
+            body.statements.unshift(initializer);
         } else {
             // This should never occur
             throw TSTLErrors.UnsupportedForInVariable(statement.initializer);

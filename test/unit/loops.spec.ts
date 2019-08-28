@@ -643,3 +643,14 @@ test("for...in with pre-defined variable", () => {
         return result;
     `.expectToMatchJsResult();
 });
+
+test("for...in with pre-defined variable keeps last value", () => {
+    util.testFunction`
+        const obj = { x: "y", foo: "bar" };
+
+        let x = "";
+        for (x in obj) {
+        }
+        return x;
+    `.expectToMatchJsResult();
+});

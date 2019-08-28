@@ -2628,21 +2628,6 @@ export class LuaTransformer {
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
-        // Transform iteration variable
-        let iterationVariable: tstl.Identifier;
-        if (
-            ts.isVariableDeclarationList(statement.initializer) &&
-            !ts.isArrayBindingPattern(statement.initializer.declarations[0].name) &&
-            !ts.isObjectBindingPattern(statement.initializer.declarations[0].name)
-        ) {
-            iterationVariable = this.transformIdentifier(statement.initializer.declarations[0].name);
-        } else if (ts.isIdentifier(statement.initializer)) {
-            iterationVariable = this.transformIdentifier(statement.initializer);
-        } else {
-            // This should never occur
-            throw TSTLErrors.UnsupportedForInVariable(statement.initializer);
-        }
-
         // Transpile expression
         const pairsIdentifier = tstl.createIdentifier("pairs");
         const expression = this.transformExpression(statement.expression);
@@ -2653,6 +2638,29 @@ export class LuaTransformer {
         }
 
         const body = tstl.createBlock(this.transformLoopBody(statement));
+
+        // Transform iteration variable
+        // TODO: After the transformation pipeline refactor we should look at refactoring this together with the
+        // for-of initializer transformation.
+        let iterationVariable: tstl.Identifier;
+        if (
+            ts.isVariableDeclarationList(statement.initializer) &&
+            ts.isIdentifier(statement.initializer.declarations[0].name)
+        ) {
+            iterationVariable = this.transformIdentifier(statement.initializer.declarations[0].name);
+        } else if (ts.isIdentifier(statement.initializer)) {
+            // Iteration variable becomes ____key
+            iterationVariable = tstl.createIdentifier("____key");
+            // Push variable = ____key to the start of the loop body to match TS scoping
+            const initializer = tstl.createAssignmentStatement(
+                this.transformIdentifier(statement.initializer),
+                iterationVariable
+            );
+            body.statements.splice(0, 0, initializer);
+        } else {
+            // This should never occur
+            throw TSTLErrors.UnsupportedForInVariable(statement.initializer);
+        }
 
         return tstl.createForInStatement(body, [iterationVariable], [pairsCall], statement);
     }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.27.0
+
+- Added support for [Spread Assignment](https://basarat.gitbooks.io/typescript/content/docs/spread-operator.html) statements.
+- Changed Map and Set implementations to they preserve insertion order when iterated over, as specified by ECMAScript.
+
+- Fixed an issue with [/** @luaTable */](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#luaTable) variable names disappearing.
+- Fixed for-in loops throwing an error when using a pre-defined variable.
+- Fixed issue with initialization order of class properties.
+
+- Simplified enum transformation code.
+
 ## 0.26.0
 
 - Added support for [default exports and export equals statements](https://github.com/Microsoft/TypeScript/issues/7185#issuecomment-421632656).

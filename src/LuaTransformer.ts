@@ -2628,10 +2628,6 @@ export class LuaTransformer {
     }
 
     public transformForInStatement(statement: ts.ForInStatement): StatementVisitResult {
-        // Get variable identifier
-        const variable = (statement.initializer as ts.VariableDeclarationList).declarations[0];
-        const identifier = variable.name as ts.Identifier;
-
         // Transpile expression
         const pairsIdentifier = tstl.createIdentifier("pairs");
         const expression = this.transformExpression(statement.expression);
@@ -2643,7 +2639,30 @@ export class LuaTransformer {
 
         const body = tstl.createBlock(this.transformLoopBody(statement));
 
-        return tstl.createForInStatement(body, [this.transformIdentifier(identifier)], [pairsCall], statement);
+        // Transform iteration variable
+        // TODO: After the transformation pipeline refactor we should look at refactoring this together with the
+        // for-of initializer transformation.
+        let iterationVariable: tstl.Identifier;
+        if (
+            ts.isVariableDeclarationList(statement.initializer) &&
+            ts.isIdentifier(statement.initializer.declarations[0].name)
+        ) {
+            iterationVariable = this.transformIdentifier(statement.initializer.declarations[0].name);
+        } else if (ts.isIdentifier(statement.initializer)) {
+            // Iteration variable becomes ____key
+            iterationVariable = tstl.createIdentifier("____key");
+            // Push variable = ____key to the start of the loop body to match TS scoping
+            const initializer = tstl.createAssignmentStatement(
+                this.transformIdentifier(statement.initializer),
+                iterationVariable
+            );
+            body.statements.unshift(initializer);
+        } else {
+            // This should never occur
+            throw TSTLErrors.UnsupportedForInVariable(statement.initializer);
+        }
+
+        return tstl.createForInStatement(body, [iterationVariable], [pairsCall], statement);
     }
 
     public transformSwitchStatement(statement: ts.SwitchStatement): StatementVisitResult {

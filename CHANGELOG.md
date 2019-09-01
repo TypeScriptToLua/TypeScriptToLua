@@ -2,7 +2,7 @@
 
 ## 0.27.0
 
-- Added support for [Array Spread assignment and Object Spread assignment](https://basarat.gitbooks.io/typescript/content/docs/spread-operator.html) statements.
+- Added support for [array and object destructuring with rest](https://basarat.gitbooks.io/typescript/content/docs/destructuring.html#object-destructuring-with-rest).
 - Changed Map and Set implementations to they preserve insertion order when iterated over, as specified by ECMAScript.
 
 - Fixed an issue with [`/** @luaTable */`](https://github.com/TypeScriptToLua/TypeScriptToLua/wiki/Compiler-Directives#luaTable) variable names disappearing.

@@ -119,8 +119,10 @@ test("forof lua iterator destructuring with existing variables", () => {
 test("forof lua iterator tuple-return", () => {
     const code = `
         const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
+        /**
+         * @luaIterator
+         * @tupleReturn
+         */
         interface Iter extends Iterable<[string, string]> {}
         function luaIter(): Iter {
             let i = 0;
@@ -144,8 +146,10 @@ test("forof lua iterator tuple-return", () => {
 test("forof lua iterator tuple-return with existing variables", () => {
     const code = `
         const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
+        /**
+         * @luaIterator
+         * @tupleReturn
+         */
         interface Iter extends Iterable<[string, string]> {}
         function luaIter(): Iter {
             let i = 0;
@@ -170,8 +174,10 @@ test("forof lua iterator tuple-return with existing variables", () => {
 
 test("forof lua iterator tuple-return single variable", () => {
     const code = `
-        /** @luaIterator */
-        /** @tupleReturn */
+        /**
+         * @luaIterator
+         * @tupleReturn
+         */
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
         for (let x of luaIter()) {}
@@ -188,8 +194,10 @@ test("forof lua iterator tuple-return single variable", () => {
 
 test("forof lua iterator tuple-return single existing variable", () => {
     const code = `
-        /** @luaIterator */
-        /** @tupleReturn */
+        /**
+         * @luaIterator
+         * @tupleReturn
+         */
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
         let x: [string, string];
@@ -235,8 +243,10 @@ test("forof forwarded lua iterator", () => {
 test("forof forwarded lua iterator with tupleReturn", () => {
     const code = `
         const arr = ["a", "b", "c"];
-        /** @luaIterator */
-        /** @tupleReturn */
+        /**
+         * @luaIterator
+         * @tupleReturn
+         */
         interface Iter extends Iterable<[string, string]> {}
         function luaIter(): Iter {
             let i = 0;

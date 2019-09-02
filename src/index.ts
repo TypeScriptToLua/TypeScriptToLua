@@ -7,10 +7,10 @@ import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
 export {
+    createDiagnosticReporter,
     parseCommandLine,
     ParsedCommandLine,
     updateParsedConfigFile,
-    createDiagnosticReporter,
 } from "./CommandLineParser";
 export * from "./CompilerOptions";
 export * from "./Emit";
@@ -20,6 +20,8 @@ export * from "./LuaPrinter";
 export * from "./LuaTransformer";
 export * from "./Transpile";
 export * from "./TranspileError";
+
+/// <reference path="./typescript-internal" />
 
 export interface TranspileFilesResult {
     diagnostics: ts.Diagnostic[];

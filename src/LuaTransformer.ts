@@ -3829,7 +3829,7 @@ export class LuaTransformer {
     }
 
     protected transformProtectedConditionalExpression(expression: ts.ConditionalExpression): tstl.CallExpression {
-        const condition = this.transformExpression(expression.condition);
+        const condition = tstl.createParenthesizedExpression(this.transformExpression(expression.condition));
         const val1 = this.transformExpression(expression.whenTrue);
         const val2 = this.transformExpression(expression.whenFalse);
 
@@ -3847,7 +3847,7 @@ export class LuaTransformer {
         if (tsHelper.isFalsible(this.checker.getTypeAtLocation(expression.whenTrue), isStrict)) {
             return this.transformProtectedConditionalExpression(expression);
         }
-        const condition = this.transformExpression(expression.condition);
+        const condition = tstl.createParenthesizedExpression(this.transformExpression(expression.condition));
         const val1 = this.transformExpression(expression.whenTrue);
         const val2 = this.transformExpression(expression.whenFalse);
 

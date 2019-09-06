@@ -5,11 +5,8 @@ export function noSelfTransformerFactory<T extends ts.Node>(_context: ts.Transfo
         if (ts.isSourceFile(node)) {
             const empty = ts.createEmptyStatement();
             ts.addSyntheticLeadingComment(empty, ts.SyntaxKind.MultiLineCommentTrivia, "* @noSelfInFile ", true);
-            return ts.updateSourceFileNode(node, [
-                empty,
-                ...node.statements
-            ]) as unknown as T;
+            return (ts.updateSourceFileNode(node, [empty, ...node.statements]) as unknown) as T;
         }
         return node;
-    }
+    };
 }

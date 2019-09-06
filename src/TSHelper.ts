@@ -682,10 +682,7 @@ export function getDeclarationContextType(
 ): ContextType {
     const checker = program.getTypeChecker();
     const options = program.getCompilerOptions() as CompilerOptions;
-    if (
-        options.noSelf &&
-        program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)
-    ) {
+    if (options.noSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
         return ContextType.Void;
     }
 

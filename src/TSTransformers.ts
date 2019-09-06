@@ -3,7 +3,7 @@ import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
-import { noSelfTransformerFactory } from "./NoSelfTransformer"
+import { noSelfTransformerFactory } from "./NoSelfTransformer";
 
 export function getCustomTransformers(
     program: ts.Program,

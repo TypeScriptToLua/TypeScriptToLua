@@ -19,6 +19,7 @@ export interface TransformerImport {
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     noHeader?: boolean;
+    noSelf?: boolean;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
     noHoisting?: boolean;

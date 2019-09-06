@@ -44,6 +44,11 @@ const optionDeclarations: CommandLineOption[] = [
         type: "boolean",
     },
     {
+        name: "noSelf",
+        description: "Implicitly enable @noSelfInFile for all target files.",
+        type: "boolean",
+    },
+    {
         name: "noHoisting",
         description: "Disables hoisting.",
         type: "boolean",

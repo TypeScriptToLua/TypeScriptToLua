@@ -1393,7 +1393,7 @@ export class LuaTransformer {
 
         const type = this.checker.getTypeAtLocation(node);
         const context =
-            tsHelper.getFunctionContextType(type, this.checker) !== tsHelper.ContextType.Void
+            tsHelper.getFunctionContextType(type, this.program) !== tsHelper.ContextType.Void
                 ? this.createSelfIdentifier()
                 : undefined;
         const [paramNames, dots, restParamName] = this.transformParameters(node.parameters, context);
@@ -1942,7 +1942,7 @@ export class LuaTransformer {
 
         const type = this.checker.getTypeAtLocation(functionDeclaration);
         const context =
-            tsHelper.getFunctionContextType(type, this.checker) !== tsHelper.ContextType.Void
+            tsHelper.getFunctionContextType(type, this.program) !== tsHelper.ContextType.Void
                 ? this.createSelfIdentifier()
                 : undefined;
         const [params, dotsLiteral, restParamName] = this.transformParameters(functionDeclaration.parameters, context);
@@ -4017,7 +4017,7 @@ export class LuaTransformer {
         const type = this.checker.getTypeAtLocation(node);
 
         let context: tstl.Identifier | undefined;
-        if (tsHelper.getFunctionContextType(type, this.checker) !== tsHelper.ContextType.Void) {
+        if (tsHelper.getFunctionContextType(type, this.program) !== tsHelper.ContextType.Void) {
             if (ts.isArrowFunction(node)) {
                 // dummy context for arrow functions with parameters
                 if (node.parameters.length > 0) {
@@ -4215,7 +4215,7 @@ export class LuaTransformer {
         const signatureDeclaration = signature && signature.getDeclaration();
         if (
             signatureDeclaration &&
-            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) === tsHelper.ContextType.Void
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.program) === tsHelper.ContextType.Void
         ) {
             parameters = this.transformArguments(expression.arguments, signature);
         } else {
@@ -4353,7 +4353,7 @@ export class LuaTransformer {
                 const signatureDeclaration = signature && signature.getDeclaration();
                 if (
                     !signatureDeclaration ||
-                    tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void
+                    tsHelper.getDeclarationContextType(signatureDeclaration, this.program) !== tsHelper.ContextType.Void
                 ) {
                     // table:name()
                     return this.transformContextualCallExpression(node, parameters);
@@ -4392,7 +4392,7 @@ export class LuaTransformer {
         const parameters = this.transformArguments(node.arguments, signature);
         if (
             !signatureDeclaration ||
-            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.program) !== tsHelper.ContextType.Void
         ) {
             // A contextual parameter must be given to this call expression
             return this.transformContextualCallExpression(node, parameters);
@@ -5152,7 +5152,7 @@ export class LuaTransformer {
     protected transformFunctionCallExpression(node: ts.CallExpression): tstl.CallExpression {
         const expression = node.expression as ts.PropertyAccessExpression;
         const callerType = this.checker.getTypeAtLocation(expression.expression);
-        if (tsHelper.getFunctionContextType(callerType, this.checker) === tsHelper.ContextType.Void) {
+        if (tsHelper.getFunctionContextType(callerType, this.program) === tsHelper.ContextType.Void) {
             throw TSTLErrors.UnsupportedSelfFunctionConversion(node);
         }
         const signature = this.checker.getResolvedSignature(node);
@@ -5278,7 +5278,7 @@ export class LuaTransformer {
         const signatureDeclaration = signature && signature.getDeclaration();
         const useSelfParameter =
             signatureDeclaration &&
-            tsHelper.getDeclarationContextType(signatureDeclaration, this.checker) !== tsHelper.ContextType.Void;
+            tsHelper.getDeclarationContextType(signatureDeclaration, this.program) !== tsHelper.ContextType.Void;
 
         // Argument evaluation.
         const callArguments = this.transformArguments(expressions, signature);
@@ -5690,8 +5690,8 @@ export class LuaTransformer {
         fromTypeCache.add(toType);
 
         // Check function assignments
-        const fromContext = tsHelper.getFunctionContextType(fromType, this.checker);
-        const toContext = tsHelper.getFunctionContextType(toType, this.checker);
+        const fromContext = tsHelper.getFunctionContextType(fromType, this.program);
+        const toContext = tsHelper.getFunctionContextType(toType, this.program);
 
         if (fromContext === tsHelper.ContextType.Mixed || toContext === tsHelper.ContextType.Mixed) {
             throw TSTLErrors.UnsupportedOverloadAssignment(node, toName);
@@ -6172,7 +6172,7 @@ export class LuaTransformer {
         const decoratorExpressions = decorators.map(decorator => {
             const expression = decorator.expression;
             const type = this.checker.getTypeAtLocation(expression);
-            const context = tsHelper.getFunctionContextType(type, this.checker);
+            const context = tsHelper.getFunctionContextType(type, this.program);
             if (context === tsHelper.ContextType.Void) {
                 throw TSTLErrors.InvalidDecoratorContext(decorator);
             }

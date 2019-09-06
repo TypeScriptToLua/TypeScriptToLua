@@ -681,10 +681,6 @@ export function getDeclarationContextType(
     program: ts.Program
 ): ContextType {
     const checker = program.getTypeChecker();
-    const options = program.getCompilerOptions() as CompilerOptions;
-    if (options.noSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
-        return ContextType.Void;
-    }
 
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
     if (thisParameter) {
@@ -719,7 +715,13 @@ export function getDeclarationContextType(
         return ContextType.NonVoid;
     }
 
-    // Walk up to find @noSelf or @noSelfOnFile
+    // If using --noSelf @noSelfInFile should be implicitly enabled
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (options.noSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
+        return ContextType.Void;
+    }
+
+    // Walk up to find @noSelf or @noSelfInFile
     if (hasNoSelfAncestor(signatureDeclaration, checker)) {
         return ContextType.Void;
     }

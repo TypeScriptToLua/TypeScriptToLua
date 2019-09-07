@@ -1,10 +1,10 @@
-import * as util from "../util";
+import * as util from "../../util";
 
 test.each([
     ["foo: string, bar: string", `"foo", "bar"`, "foobar"],
     ["this: any, foo: string, bar: string", `"foo", "bar"`, "barnil"],
 ])(
-    "noSelf option enables noSelfInFile behaviour for functions (%s)",
+    "enables noSelfInFile behaviour for functions (%s)",
     (expectedParameters, suppliedParameters, result) => {
         const transpiledCode = util.transpileString(
             `function fooBar(${expectedParameters}) {
@@ -29,7 +29,7 @@ test.each([
     ["this: void, foo: string, bar: string", `"foo", "bar"`, "foobar"],
     ["foo: string, bar: string", `fooBar, "foo", "bar"`, "foobar"],
 ])(
-    "noSelf option enables noSelfInFile behaviour for methods (%s)",
+    "enables noSelfInFile behaviour for methods (%s)",
     (expectedParameters, suppliedParameters, result) => {
         const transpiledCode = util.transpileString(
             `class FooBar {
@@ -67,9 +67,7 @@ test("noSelf option generates declaration files with @noSelfInFile", () => {
 
     const declarationFile = result.transpiledFiles.find(transpiledFile => transpiledFile.declaration);
 
-    expect(declarationFile).not.toBeUndefined();
-
-    if (declarationFile && declarationFile.declaration) {
+    if (util.expectToBeDefined(declarationFile) && util.expectToBeDefined(declarationFile.declaration)) {
         expect(declarationFile.declaration).toMatch(/^\/\*\* \@noSelfInFile \*\//);
     }
 });

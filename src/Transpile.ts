@@ -104,8 +104,7 @@ export function transpile({
             const isDeclaration = fileName.endsWith(".d.ts");
             const isDeclarationMap = fileName.endsWith(".d.ts.map");
             if (isDeclaration) {
-                const dataWithoutEmptyStatements = data.replace(/^;/gm, "");
-                updateTranspiledFile(sourceFile.fileName, { declaration: dataWithoutEmptyStatements });
+                updateTranspiledFile(sourceFile.fileName, { declaration: data });
             } else if (isDeclarationMap) {
                 updateTranspiledFile(sourceFile.fileName, { declarationMap: data });
             }

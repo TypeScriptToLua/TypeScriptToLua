@@ -13,5 +13,6 @@
         "noEmit": true,
         "module": "commonjs"
     },
+    "include": [".", "../src"],
     "exclude": ["translation/transformation", "cli/errors", "cli/watch", "transpile/directories", "transpile/outFile"]
 }

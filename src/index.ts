@@ -21,8 +21,6 @@ export * from "./LuaTransformer";
 export * from "./Transpile";
 export * from "./TranspileError";
 
-/// <reference path="./typescript-internal" />
-
 export interface TranspileFilesResult {
     diagnostics: ts.Diagnostic[];
     emitResult: OutputFile[];

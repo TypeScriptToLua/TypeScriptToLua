@@ -14,5 +14,12 @@
         "module": "commonjs"
     },
     "include": [".", "../src"],
-    "exclude": ["translation/transformation", "cli/errors", "cli/watch", "transpile/directories", "transpile/outFile"]
+    "exclude": [
+        "translation/transformation",
+        "cli/errors",
+        "cli/watch",
+        "transpile/directories",
+        "transpile/outFile",
+        "../src/lualib"
+    ]
 }

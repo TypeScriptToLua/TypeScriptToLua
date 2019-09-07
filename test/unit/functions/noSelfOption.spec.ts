@@ -4,10 +4,10 @@ test.each([["foo: string, bar: string", `this: void, foo: string, bar: string`]]
     'enables noSelfInFile behaviour for functions ("%s" equivalent to "%s")',
     (expectedParameters, assignmentParameters) => {
         util.testFunction`
-        function fooBar(${expectedParameters}) {}
-        
-        const test: (${assignmentParameters}) => void = fooBar;
-    `
+            function fooBar(${expectedParameters}) {}
+
+            const test: (${assignmentParameters}) => void = fooBar;
+        `
             .setOptions({ noSelf: true })
             .expectToHaveNoDiagnostics();
     }
@@ -17,15 +17,15 @@ test.each([["foo: string, bar: string", `this: any, foo: string, bar: string`]])
     'enables noSelfInFile behaviour for methods ("%s" equivalent to "%s")',
     (expectedParameters, assignmentParameters) => {
         util.testFunction`
-        class FooBar {
-            fooBar(${expectedParameters}) {
-                return foo + bar;
+            class FooBar {
+                fooBar(${expectedParameters}) {
+                    return foo + bar;
+                }
             }
-        }
-        const fooBar = new FooBar();
+            const fooBar = new FooBar();
 
-        const test: (${assignmentParameters}) => void = fooBar.fooBar;
-    `
+            const test: (${assignmentParameters}) => void = fooBar.fooBar;
+        `
             .setOptions({ noSelf: true })
             .expectToHaveNoDiagnostics();
     }

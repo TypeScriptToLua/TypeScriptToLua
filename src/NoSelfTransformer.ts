@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 
 const transformSourceFile: ts.Transformer<ts.SourceFile> = node => {
-    const empty = ts.createEmptyStatement();
+    const empty = ts.createNotEmittedStatement(undefined!);
     ts.addSyntheticLeadingComment(empty, ts.SyntaxKind.MultiLineCommentTrivia, "* @noSelfInFile ", true);
     return ts.updateSourceFileNode(node, [empty, ...node.statements], node.isDeclarationFile);
 };

@@ -16,6 +16,17 @@ test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", no
     expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
 });
 
+test("noSelfInFile works when first statement has other annotations", () => {
+    util.testModule`
+        /** @noSelfInFile */
+
+        /** @internal */
+        function foo() {}
+
+        const test: (this: void) => void = foo;
+    `.expectToHaveNoDiagnostics();
+});
+
 test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(
     "Function expression type inference in binary operator (%p)",
     funcType => {

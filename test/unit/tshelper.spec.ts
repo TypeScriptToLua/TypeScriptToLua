@@ -114,9 +114,10 @@ test("GetCustomDecorators multiple jsdoc", () => {
 test("GetCustomDecorators multiple default jsdoc", () => {
     const source = `
         /**
-        * @description abc
-        * @phantom
-        * @compileMembersOnly */
+         * @description abc
+         * @phantom
+         * @compileMembersOnly
+         */
         enum TestEnum {
             val1 = 0,
             val2 = 2,

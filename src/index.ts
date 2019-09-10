@@ -7,10 +7,10 @@ import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
 export {
+    createDiagnosticReporter,
     parseCommandLine,
     ParsedCommandLine,
     updateParsedConfigFile,
-    createDiagnosticReporter,
 } from "./CommandLineParser";
 export * from "./CompilerOptions";
 export * from "./Emit";

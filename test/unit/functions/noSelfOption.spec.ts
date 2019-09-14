@@ -1,52 +1,40 @@
 import * as util from "../../util";
 
-test.each([["foo: string, bar: string", `this: void, foo: string, bar: string`]])(
-    'enables noSelfInFile behaviour for functions ("%s" equivalent to "%s")',
-    (expectedParameters, assignmentParameters) => {
-        util.testFunction`
-            function fooBar(${expectedParameters}) {}
+test("enables noSelfInFile behaviour for functions", () => {
+    util.testFunction`
+        function fooBar() {}
+        const test: (this: void) => void = fooBar;
+    `
+        .setOptions({ noSelf: true })
+        .expectToHaveNoDiagnostics();
+});
 
-            const test: (${assignmentParameters}) => void = fooBar;
-        `
-            .setOptions({ noSelf: true })
-            .expectToHaveNoDiagnostics();
-    }
-);
-
-test.each([["foo: string, bar: string", `this: any, foo: string, bar: string`]])(
-    'enables noSelfInFile behaviour for methods ("%s" equivalent to "%s")',
-    (expectedParameters, assignmentParameters) => {
-        util.testFunction`
-            class FooBar {
-                fooBar(${expectedParameters}) {
-                    return foo + bar;
-                }
-            }
-            const fooBar = new FooBar();
-
-            const test: (${assignmentParameters}) => void = fooBar.fooBar;
-        `
-            .setOptions({ noSelf: true })
-            .expectToHaveNoDiagnostics();
-    }
-);
+test("enables noSelfInFile behaviour for methods", () => {
+    util.testFunction`
+        class FooBar {
+            fooBar() {}
+        }
+        const fooBar = new FooBar();
+        const test: (this: any) => void = fooBar.fooBar;
+    `
+        .setOptions({ noSelf: true })
+        .expectToHaveNoDiagnostics();
+});
 
 test("generates declaration files with @noSelfInFile", () => {
-    const result = util.transpileStringsAsProject(
-        {
-            "main.ts": `function fooBar(foo: string, bar: string) {
-                return foo + bar;
-            }`,
-        },
-        {
-            noSelf: true,
-            declaration: true,
-        }
-    );
+    const builder = util.testModule`
+        export function bar() {}
+    `
+        .setOptions({ declaration: true, noSelf: true })
+        .expectToHaveNoDiagnostics();
 
-    const declarationFile = result.transpiledFiles.find(transpiledFile => transpiledFile.declaration);
+    const declarationFile = builder.getLuaResult().transpiledFiles.find(f => f.declaration);
+    if (!util.expectToBeDefined(declarationFile) || !util.expectToBeDefined(declarationFile.declaration)) return;
 
-    if (util.expectToBeDefined(declarationFile) && util.expectToBeDefined(declarationFile.declaration)) {
-        expect(declarationFile.declaration).toMatch(/^\/\*\* \@noSelfInFile \*\//);
-    }
+    util.testModule`
+        import { bar } from "./foo.d";
+        const test: (this: void) => void = bar;
+    `
+        .addExtraFile("foo.d.ts", declarationFile.declaration)
+        .expectToHaveNoDiagnostics();
 });

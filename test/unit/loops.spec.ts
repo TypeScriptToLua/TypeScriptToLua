@@ -547,8 +547,10 @@ describe("for...of empty destructuring", () => {
         test("luaIterator+tupleReturn", () => {
             const code = `
                 const arr = [["a", "b"], ["c", "d"], ["e", "f"]];
-                /** @luaIterator */
-                /** @tupleReturn */
+                /**
+                 * @luaIterator
+                 * @tupleReturn
+                 */
                 interface Iter extends Iterable<[string, string]> {}
                 function luaIter(): Iter {
                     let it = 0;

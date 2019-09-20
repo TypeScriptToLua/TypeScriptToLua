@@ -405,7 +405,7 @@ export function getCustomDecorators(type: ts.Type, checker: ts.TypeChecker): Map
     return decMap;
 }
 
-export function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decorator> {
+function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decorator> {
     const directivesMap = new Map<DecoratorKind, Decorator>();
 
     ts.getJSDocTags(node).forEach(tag => {
@@ -420,10 +420,25 @@ export function getCustomNodeDirectives(node: ts.Node): Map<DecoratorKind, Decor
 }
 
 export function getCustomFileDirectives(file: ts.SourceFile): Map<DecoratorKind, Decorator> {
+    const directivesMap = new Map<DecoratorKind, Decorator>();
+
     if (file.statements.length > 0) {
-        return getCustomNodeDirectives(file.statements[0]);
+        // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
+        const jsDoc = file.statements[0].jsDoc;
+        if (jsDoc) {
+            // TODO(refactor): flatMap
+            const tags = jsDoc.reduce<ts.JSDocTag[]>((acc, x) => [...acc, ...(x.tags || [])], []);
+            tags.forEach(tag => {
+                const tagName = tag.tagName.text;
+                if (Decorator.isValid(tagName)) {
+                    const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+                    directivesMap.set(dec.kind, dec);
+                }
+            });
+        }
     }
-    return new Map();
+
+    return directivesMap;
 }
 
 export function getCustomSignatureDirectives(

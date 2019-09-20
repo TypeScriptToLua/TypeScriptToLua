@@ -4458,7 +4458,7 @@ export class LuaTransformer {
     }
 
     protected transformArguments<T extends ts.Expression>(
-        params: ts.NodeArray<ts.Expression> | ts.Expression[],
+        params: readonly ts.Expression[],
         sig?: ts.Signature,
         context?: T
     ): tstl.Expression[] {

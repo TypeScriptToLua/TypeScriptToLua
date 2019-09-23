@@ -48,8 +48,7 @@ function transformExportAllFrom(
         return undefined;
     }
 
-    // TODO:
-    const moduleRequire = createModuleRequire(context, node.moduleSpecifier as ts.StringLiteral, true);
+    const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
     const tempModuleIdentifier = tstl.createIdentifier("____export");
 
     const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);

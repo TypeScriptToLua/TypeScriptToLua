@@ -55,21 +55,24 @@ function shouldResolveModulePath(context: TransformationContext, moduleSpecifier
 
 export function createModuleRequire(
     context: TransformationContext,
-    moduleSpecifier: ts.StringLiteral,
-    resolve: boolean,
-    tsOriginal?: ts.Node
+    moduleSpecifier: ts.Expression,
+    tsOriginal: ts.Node = moduleSpecifier
 ): tstl.CallExpression {
-    const modulePathString = resolve
-        ? getImportPath(
-              context.sourceFile.fileName,
-              moduleSpecifier.text.replace(new RegExp('"', "g"), ""),
-              moduleSpecifier,
-              context.options
-          )
-        : moduleSpecifier.text;
+    const params: tstl.Expression[] = [];
+    if (ts.isStringLiteral(moduleSpecifier)) {
+        const modulePath = shouldResolveModulePath(context, moduleSpecifier)
+            ? getImportPath(
+                  context.sourceFile.fileName,
+                  moduleSpecifier.text.replace(/"/g, ""),
+                  moduleSpecifier,
+                  context.options
+              )
+            : moduleSpecifier.text;
 
-    const modulePath = tstl.createStringLiteral(modulePathString);
-    return tstl.createCallExpression(tstl.createIdentifier("require"), [modulePath], tsOriginal || moduleSpecifier);
+        params.push(tstl.createStringLiteral(modulePath));
+    }
+
+    return tstl.createCallExpression(tstl.createIdentifier("require"), params, tsOriginal);
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
@@ -107,12 +110,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         scope.importStatements = [];
     }
 
-    const moduleSpecifier = statement.moduleSpecifier as ts.StringLiteral;
-    const importPath = moduleSpecifier.text.replace(new RegExp('"', "g"), "");
-    const shouldResolve = shouldResolveModulePath(context, statement.moduleSpecifier);
-    const requireCall = createModuleRequire(context, moduleSpecifier, shouldResolve);
-
     const result: tstl.Statement[] = [];
+    const requireCall = createModuleRequire(context, statement.moduleSpecifier);
 
     // import "./module";
     // require("module")
@@ -126,6 +125,10 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
             return result;
         }
     }
+
+    const importPath = ts.isStringLiteral(statement.moduleSpecifier)
+        ? statement.moduleSpecifier.text.replace(/"/g, "")
+        : "module";
 
     // Create the require statement to extract values.
     // local ____module = require("module")
@@ -184,13 +187,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     }
 
     if (usingRequireStatement) {
-        const requireStatement = tstl.createVariableDeclarationStatement(
-            tstl.createIdentifier(createSafeName(path.basename(importPath))),
-            requireCall,
-            statement
-        );
-
-        result.unshift(requireStatement);
+        result.unshift(tstl.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
     }
 
     if (scope.importStatements) {
@@ -202,13 +199,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
 };
 
 const transformExternalModuleReference: FunctionVisitor<ts.ExternalModuleReference> = (node, context) =>
-    createModuleRequire(
-        context,
-        node.expression as ts.StringLiteral,
-        // TODO:
-        true,
-        node
-    );
+    createModuleRequire(context, node.expression, node);
 
 const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDeclaration> = (node, context) => {
     if (

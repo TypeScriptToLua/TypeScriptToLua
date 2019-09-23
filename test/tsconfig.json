@@ -13,5 +13,13 @@
         "noEmit": true,
         "module": "commonjs"
     },
-    "exclude": ["translation/transformation", "cli/errors", "cli/watch", "transpile/directories", "transpile/outFile"]
+    "include": [".", "../src"],
+    "exclude": [
+        "translation/transformation",
+        "cli/errors",
+        "cli/watch",
+        "transpile/directories",
+        "transpile/outFile",
+        "../src/lualib"
+    ]
 }

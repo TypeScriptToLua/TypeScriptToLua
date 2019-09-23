@@ -2,8 +2,7 @@ WeakSet = class WeakSet<T extends object> {
     public static [Symbol.species] = WeakSet;
     public [Symbol.toStringTag] = "WeakSet";
 
-    // Key type is actually T
-    private items: { [key: string]: boolean } = {};
+    private items = new LuaTable<T, boolean>();
 
     constructor(values?: Iterable<T> | T[]) {
         setmetatable(this.items, { __mode: "k" });
@@ -18,27 +17,27 @@ WeakSet = class WeakSet<T extends object> {
                 if (result.done) {
                     break;
                 }
-                this.add(result.value);
+                this.items.set(result.value, true);
             }
         } else {
             for (const value of values as T[]) {
-                this.items[value as any] = true;
+                this.items.set(value, true);
             }
         }
     }
 
     public add(value: T): this {
-        this.items[value as any] = true;
+        this.items.set(value, true);
         return this;
     }
 
     public delete(value: T): boolean {
         const contains = this.has(value);
-        this.items[value as any] = undefined;
+        this.items.set(value, undefined);
         return contains;
     }
 
     public has(value: T): boolean {
-        return this.items[value as any] === true;
+        return this.items.get(value) === true;
     }
 };

@@ -92,9 +92,28 @@ test("map has false", () => {
     expect(contains).toBe(false);
 });
 
-test("map has null", () => {
-    const contains = util.transpileAndExecute(`let mymap = new Map([["a", "c"]]); return mymap.has(null);`);
-    expect(contains).toBe(false);
+test.each([
+    `[["a", null]]`,
+    `[["b", "c"], ["a", null]]`,
+    `[["a", null], ["b", "c"]]`,
+    `[["b", "c"], ["a", null], ["x", "y"]]`,
+])("map (%p) has null", entries => {
+    util.testFunction`
+        let mymap = new Map(${entries});
+        return mymap.has("a");
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    `[["a", undefined]]`,
+    `[["b", "c"], ["a", undefined]]`,
+    `[["a", undefined], ["b", "c"]]`,
+    `[["b", "c"], ["a", undefined], ["x", "y"]]`,
+])("map (%p) has undefined", entries => {
+    util.testFunction`
+        let mymap = new Map(${entries});
+        return mymap.has("a");
+    `.expectToMatchJsResult();
 });
 
 test("map keys", () => {
@@ -134,4 +153,66 @@ test("map size", () => {
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); return m.size;`)).toBe(2);
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.clear(); return m.size;`)).toBe(0);
     expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.delete(3); return m.size;`)).toBe(1);
+});
+
+const iterationMethods = ["entries", "keys", "values"];
+describe.each(iterationMethods)("map.%s() preserves insertion order", iterationMethod => {
+    test("basic", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
+            mymap.set("b", 6);
+            mymap.set(1, 4);
+            mymap.set("a", 5);
+            
+            mymap.delete("b");
+
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing last", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
+            
+            mymap.delete(4);
+
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing first", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            mymap.set(4, 3);
+            
+            mymap.delete("x");
+
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
+
+    test("after removing all", () => {
+        util.testFunction`
+            const mymap = new Map();
+                
+            mymap.set("x", 1);
+            mymap.set("a", 2);
+            
+            mymap.delete("a");
+            mymap.delete("x");
+
+            return [...mymap.${iterationMethod}()];
+        `.expectToMatchJsResult();
+    });
 });

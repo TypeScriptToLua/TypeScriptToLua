@@ -43,7 +43,7 @@ function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
 ): tstl.CallExpression {
-    const condition = context.transformExpression(expression.condition);
+    const condition = tstl.createParenthesizedExpression(context.transformExpression(expression.condition));
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 
@@ -61,7 +61,7 @@ const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> 
         return transformProtectedConditionalExpression(context, expression);
     }
 
-    const condition = context.transformExpression(expression.condition);
+    const condition = tstl.createParenthesizedExpression(context.transformExpression(expression.condition));
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 

@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { flatMap } from "../../../utils";
 import { TransformationContext } from "../../context";
 
 export enum DecoratorKind {
@@ -101,8 +102,25 @@ export function getCustomNodeDecorators(node: ts.Node): DecoratorMap {
     return directivesMap;
 }
 
-export const getCustomFileDecorators = (sourceFile: ts.SourceFile): DecoratorMap =>
-    sourceFile.statements.length > 0 ? getCustomNodeDecorators(sourceFile.statements[0]) : new Map();
+export function getCustomFileDecorators(sourceFile: ts.SourceFile): Map<DecoratorKind, Decorator> {
+    const directivesMap = new Map<DecoratorKind, Decorator>();
+
+    if (sourceFile.statements.length > 0) {
+        // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
+        const jsDoc = sourceFile.statements[0].jsDoc;
+        if (jsDoc) {
+            for (const tag of flatMap(jsDoc, x => x.tags || [])) {
+                const tagName = tag.tagName.text;
+                if (isValidDecorator(tagName)) {
+                    const dec = new Decorator(tagName, tag.comment ? tag.comment.split(" ") : []);
+                    directivesMap.set(dec.kind, dec);
+                }
+            }
+        }
+    }
+
+    return directivesMap;
+}
 
 export function getCustomSignatureDecorators(context: TransformationContext, signature: ts.Signature): DecoratorMap {
     const directivesMap: DecoratorMap = new Map();

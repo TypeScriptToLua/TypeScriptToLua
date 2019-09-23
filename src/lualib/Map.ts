@@ -2,9 +2,14 @@ Map = class Map<K, V> {
     public static [Symbol.species] = Map;
     public [Symbol.toStringTag] = "Map";
 
-    // Type of key is actually K
-    private items: { [key: string]: V } = {};
+    private items = new LuaTable<K, V>();
     public size = 0;
+
+    // Key-order variables
+    private firstKey: K | undefined;
+    private lastKey: K | undefined;
+    private nextKey = new LuaTable<K, K>();
+    private previousKey = new LuaTable<K, K>();
 
     constructor(entries?: Iterable<readonly [K, V]> | Array<readonly [K, V]>) {
         if (entries === undefined) return;
@@ -23,15 +28,18 @@ Map = class Map<K, V> {
             }
         } else {
             const array = entries as Array<[K, V]>;
-            this.size = array.length;
             for (const kvp of array) {
-                this.items[kvp[0] as any] = kvp[1];
+                this.set(kvp[0], kvp[1]);
             }
         }
     }
 
     public clear(): void {
-        this.items = {};
+        this.items = new LuaTable();
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
         return;
     }
@@ -40,31 +48,64 @@ Map = class Map<K, V> {
         const contains = this.has(key);
         if (contains) {
             this.size--;
+
+            // Do order bookkeeping
+            const next = this.nextKey.get(key);
+            const previous = this.previousKey.get(key);
+            if (next && previous) {
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
+            } else if (next) {
+                this.firstKey = next;
+                this.previousKey.set(next, undefined);
+            } else if (previous) {
+                this.lastKey = previous;
+                this.nextKey.set(previous, undefined);
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
+            }
+
+            this.nextKey.set(key, undefined);
+            this.previousKey.set(key, undefined);
         }
-        this.items[key as any] = undefined;
+        this.items.set(key, undefined);
+
         return contains;
     }
 
     public forEach(callback: (value: V, key: K, map: Map<K, V>) => any): void {
-        for (const key in this.items) {
-            callback(this.items[key], key as any, this);
+        for (const key of this.keys()) {
+            callback(this.items.get(key), key, this);
         }
         return;
     }
 
     public get(key: K): V | undefined {
-        return this.items[key as any];
+        return this.items.get(key);
     }
 
     public has(key: K): boolean {
-        return this.items[key as any] !== undefined;
+        return this.nextKey.get(key) !== undefined || this.lastKey === key;
     }
 
     public set(key: K, value: V): this {
-        if (!this.has(key)) {
+        const isNewValue = !this.has(key);
+        if (isNewValue) {
             this.size++;
         }
-        this.items[key as any] = value;
+        this.items.set(key, value);
+
+        // Do order bookkeeping
+        if (this.firstKey === undefined) {
+            this.firstKey = key;
+            this.lastKey = key;
+        } else if (isNewValue) {
+            this.nextKey.set(this.lastKey, key);
+            this.previousKey.set(key, this.lastKey);
+            this.lastKey = key;
+        }
+
         return this;
     }
 
@@ -74,44 +115,47 @@ Map = class Map<K, V> {
 
     public entries(): IterableIterator<[K, V]> {
         const items = this.items;
-        let key: K;
-        let value: V;
+        const nextKey = this.nextKey;
+        let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[K, V]> {
                 return this;
             },
             next(): IteratorResult<[K, V]> {
-                [key, value] = next(items, key);
-                return { done: !key, value: [key, value] };
+                const result = { done: !key, value: [key, items.get(key)] as [K, V] };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
     public keys(): IterableIterator<K> {
-        const items = this.items;
-        let key: K;
+        const nextKey = this.nextKey;
+        let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<K> {
                 return this;
             },
             next(): IteratorResult<K> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
     public values(): IterableIterator<V> {
         const items = this.items;
-        let key: K;
-        let value: V;
+        const nextKey = this.nextKey;
+        let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<V> {
                 return this;
             },
             next(): IteratorResult<V> {
-                [key, value] = next(items, key);
-                return { done: !key, value };
+                const result = { done: !key, value: items.get(key) };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }

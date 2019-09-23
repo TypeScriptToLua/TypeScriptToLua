@@ -2,9 +2,12 @@ Set = class Set<T> {
     public static [Symbol.species] = Set;
     public [Symbol.toStringTag] = "Set";
 
-    // Key type is actually T
-    private items: { [key: string]: boolean } = {};
     public size = 0;
+
+    private firstKey: T | undefined;
+    private lastKey: T | undefined;
+    private nextKey = new LuaTable<T, T>();
+    private previousKey = new LuaTable<T, T>();
 
     constructor(values?: Iterable<T> | T[]) {
         if (values === undefined) return;
@@ -22,23 +25,36 @@ Set = class Set<T> {
             }
         } else {
             const array = values as T[];
-            this.size = array.length;
             for (const value of array) {
-                this.items[value as any] = true;
+                this.add(value);
             }
         }
     }
 
     public add(value: T): Set<T> {
-        if (!this.has(value)) {
+        const isNewValue = !this.has(value);
+        if (isNewValue) {
             this.size++;
         }
-        this.items[value as any] = true;
+
+        // Do order bookkeeping
+        if (this.firstKey === undefined) {
+            this.firstKey = value;
+            this.lastKey = value;
+        } else if (isNewValue) {
+            this.nextKey.set(this.lastKey, value);
+            this.previousKey.set(value, this.lastKey);
+            this.lastKey = value;
+        }
+
         return this;
     }
 
     public clear(): void {
-        this.items = {};
+        this.nextKey = new LuaTable();
+        this.previousKey = new LuaTable();
+        this.firstKey = undefined;
+        this.lastKey = undefined;
         this.size = 0;
         return;
     }
@@ -47,19 +63,39 @@ Set = class Set<T> {
         const contains = this.has(value);
         if (contains) {
             this.size--;
+
+            // Do order bookkeeping
+            const next = this.nextKey.get(value);
+            const previous = this.previousKey.get(value);
+            if (next && previous) {
+                this.nextKey.set(previous, next);
+                this.previousKey.set(next, previous);
+            } else if (next) {
+                this.firstKey = next;
+                this.previousKey.set(next, undefined);
+            } else if (previous) {
+                this.lastKey = previous;
+                this.nextKey.set(previous, undefined);
+            } else {
+                this.firstKey = undefined;
+                this.lastKey = undefined;
+            }
+
+            this.nextKey.set(value, undefined);
+            this.previousKey.set(value, undefined);
         }
-        this.items[value as any] = undefined;
+
         return contains;
     }
 
     public forEach(callback: (value: T, key: T, set: Set<T>) => any): void {
-        for (const key in this.items) {
-            callback(key as any, key as any, this);
+        for (const key of this.keys()) {
+            callback(key, key, this);
         }
     }
 
     public has(value: T): boolean {
-        return this.items[value as any] === true;
+        return this.nextKey.get(value) !== undefined || this.lastKey === value;
     }
 
     public [Symbol.iterator](): IterableIterator<T> {
@@ -67,43 +103,46 @@ Set = class Set<T> {
     }
 
     public entries(): IterableIterator<[T, T]> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
                 return this;
             },
             next(): IteratorResult<[T, T]> {
-                [key] = next(items, key);
-                return { done: !key, value: [key, key] };
+                const result = { done: !key, value: [key, key] as [T, T] };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
     public keys(): IterableIterator<T> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }
 
     public values(): IterableIterator<T> {
-        const items = this.items;
-        let key: T;
+        const nextKey = this.nextKey;
+        let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {
                 return this;
             },
             next(): IteratorResult<T> {
-                [key] = next(items, key);
-                return { done: !key, value: key };
+                const result = { done: !key, value: key };
+                key = nextKey.get(key);
+                return result;
             },
         };
     }

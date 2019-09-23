@@ -13,12 +13,6 @@ const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ?
 export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
-export const ForbiddenLuaTableSetExpression = (node: ts.Node) =>
-    new TranspileError(
-        `A '@luaTable' object's 'set()' method can only be used as a Statement, not an Expression.`,
-        node
-    );
-
 export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
     new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
 
@@ -79,6 +73,9 @@ export const NonFlattenableDestructure = (node: ts.Node) =>
 
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
+
+export const UnsupportedForInVariable = (node: ts.Node) =>
+    new TranspileError(`Unsupported for-in variable kind.`, node);
 
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 

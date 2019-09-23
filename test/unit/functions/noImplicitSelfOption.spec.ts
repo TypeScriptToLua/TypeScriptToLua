@@ -5,7 +5,7 @@ test("enables noSelfInFile behaviour for functions", () => {
         function fooBar() {}
         const test: (this: void) => void = fooBar;
     `
-        .setOptions({ noSelf: true })
+        .setOptions({ noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
 });
 
@@ -17,7 +17,7 @@ test("enables noSelfInFile behaviour for methods", () => {
         const fooBar = new FooBar();
         const test: (this: any) => void = fooBar.fooBar;
     `
-        .setOptions({ noSelf: true })
+        .setOptions({ noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
 });
 
@@ -25,7 +25,7 @@ test("generates declaration files with @noSelfInFile", () => {
     const builder = util.testModule`
         export function bar() {}
     `
-        .setOptions({ declaration: true, noSelf: true })
+        .setOptions({ declaration: true, noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
 
     const declarationFile = builder.getLuaResult().transpiledFiles.find(f => f.declaration);

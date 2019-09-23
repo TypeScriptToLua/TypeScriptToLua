@@ -3,7 +3,7 @@ import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
-import { noSelfTransformer } from "./NoSelfTransformer";
+import { noImplicitSelfTransformer } from "./NoImplicitSelfTransformer";
 
 export function getCustomTransformers(
     program: ts.Program,
@@ -24,8 +24,8 @@ export function getCustomTransformers(
     ];
 
     const options = program.getCompilerOptions() as CompilerOptions;
-    if (options.noSelf) {
-        afterDeclarations.unshift(noSelfTransformer);
+    if (options.noImplicitSelf) {
+        afterDeclarations.unshift(noImplicitSelfTransformer);
     }
 
     return {

@@ -39,13 +39,13 @@ const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaTarget),
     },
     {
-        name: "noHeader",
-        description: "Specify if a header will be added to compiled files.",
+        name: "noImplicitSelf",
+        description: "Implicitly enable @noSelfInFile for all target files.",
         type: "boolean",
     },
     {
-        name: "noSelf",
-        description: "Implicitly enable @noSelfInFile for all target files.",
+        name: "noHeader",
+        description: "Specify if a header will be added to compiled files.",
         type: "boolean",
     },
     {

@@ -6,5 +6,5 @@ const transformSourceFile: ts.Transformer<ts.SourceFile> = node => {
     return ts.updateSourceFileNode(node, [empty, ...node.statements], node.isDeclarationFile);
 };
 
-export const noSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => node =>
+export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => node =>
     ts.isBundle(node) ? ts.updateBundle(node, node.sourceFiles.map(transformSourceFile)) : transformSourceFile(node);

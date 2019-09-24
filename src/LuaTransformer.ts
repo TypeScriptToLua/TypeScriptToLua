@@ -3679,7 +3679,10 @@ export class LuaTransformer {
             className = tstl.createAnonymousIdentifier();
         }
 
+        this.pushScope(ScopeType.Function);
         const classDeclaration = this.transformClassDeclaration(expression, className);
+        this.popScope();
+
         return this.createImmediatelyInvokedFunctionExpression(
             this.statementVisitResultToArray(classDeclaration),
             className,

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
+import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
 import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { transformArguments } from "../call";
@@ -37,7 +37,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
     checkForLuaLibType(context, type);
 
-    const annotations = getCustomTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(context, type);
 
     if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
         throw InvalidNewExpressionOnExtension(node);

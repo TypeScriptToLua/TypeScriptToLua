@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { AnnotationKind, getCustomTypeAnnotations } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 
@@ -50,7 +50,7 @@ const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpres
     const property = expression.name.text;
     const type = context.checker.getTypeAtLocation(expression.expression);
 
-    const annotations = getCustomTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(context, type);
     // Do not output path for member only enums
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(expression.expression)) {

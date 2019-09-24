@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
+import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
     ForbiddenLuaTableNonDeclaration,
     ForbiddenStaticClassPropertyName,
@@ -91,7 +91,7 @@ function transformClassDeclaration(
         }
     }
 
-    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
+    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
 
     // Find out if this class is extension of existing class
     const extensionDirective = annotations.get(AnnotationKind.Extension);
@@ -112,7 +112,7 @@ function transformClassDeclaration(
 
     if (!(isExtension || isMetaExtension) && extendsType) {
         // Non-extensions cannot extend extension classes
-        const extendsAnnotations = getCustomTypeAnnotations(context, extendsType);
+        const extendsAnnotations = getTypeAnnotations(context, extendsType);
         if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
             throw InvalidExtendsExtension(classDeclaration);
         }
@@ -120,7 +120,7 @@ function transformClassDeclaration(
 
     // You cannot extend LuaTable classes
     if (extendsType) {
-        const annotations = getCustomTypeAnnotations(context, extendsType);
+        const annotations = getTypeAnnotations(context, extendsType);
         if (annotations.has(AnnotationKind.LuaTable)) {
             throw InvalidExtendsLuaTable(classDeclaration);
         }

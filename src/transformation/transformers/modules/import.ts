@@ -2,7 +2,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { AnnotationKind, getCustomSymbolAnnotations, getCustomTypeAnnotations } from "../../utils/annotations";
+import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
 import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
@@ -49,7 +49,7 @@ function shouldResolveModulePath(context: TransformationContext, moduleSpecifier
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
     if (!moduleOwnerSymbol) return true;
 
-    const annotations = getCustomSymbolAnnotations(context, moduleOwnerSymbol);
+    const annotations = getSymbolAnnotations(context, moduleOwnerSymbol);
     return !annotations.has(AnnotationKind.NoResolution);
 }
 
@@ -76,7 +76,7 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
+    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
 
     return (
         context.resolver.isReferencedAliasDeclaration(importNode) &&

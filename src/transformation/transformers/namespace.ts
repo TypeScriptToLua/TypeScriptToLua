@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { AnnotationKind, getCustomTypeAnnotations } from "../utils/annotations";
+import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import {
     createHoistableVariableDeclarationStatement,
@@ -50,7 +50,7 @@ const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaratio
 export const getCurrentNamespace = (context: TransformationContext) => currentNamespaces.get(context);
 
 const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
-    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(node));
+    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node));
     // If phantom namespace elide the declaration and return the body
     if (annotations.has(AnnotationKind.Phantom) && node.body && ts.isModuleBlock(node.body)) {
         return context.transformStatements(node.body.statements);

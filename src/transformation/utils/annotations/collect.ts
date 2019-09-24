@@ -40,7 +40,7 @@ export class Annotation {
 
 export type AnnotationsMap = Map<AnnotationKind, Annotation>;
 
-function collectCustomAnnotations(
+function collectAnnotations(
     context: TransformationContext,
     source: ts.Symbol | ts.Signature,
     annotationsMap: AnnotationsMap
@@ -72,22 +72,22 @@ function collectCustomAnnotations(
     }
 }
 
-export function getCustomSymbolAnnotations(context: TransformationContext, symbol: ts.Symbol): AnnotationsMap {
+export function getSymbolAnnotations(context: TransformationContext, symbol: ts.Symbol): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
-    collectCustomAnnotations(context, symbol, annotationsMap);
+    collectAnnotations(context, symbol, annotationsMap);
     return annotationsMap;
 }
 
-export function getCustomTypeAnnotations(context: TransformationContext, type: ts.Type): AnnotationsMap {
+export function getTypeAnnotations(context: TransformationContext, type: ts.Type): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
 
-    if (type.symbol) collectCustomAnnotations(context, type.symbol, annotationsMap);
-    if (type.aliasSymbol) collectCustomAnnotations(context, type.aliasSymbol, annotationsMap);
+    if (type.symbol) collectAnnotations(context, type.symbol, annotationsMap);
+    if (type.aliasSymbol) collectAnnotations(context, type.aliasSymbol, annotationsMap);
 
     return annotationsMap;
 }
 
-export function getCustomNodeAnnotations(node: ts.Node): AnnotationsMap {
+export function getNodeAnnotations(node: ts.Node): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
 
     for (const tag of ts.getJSDocTags(node)) {
@@ -101,7 +101,7 @@ export function getCustomNodeAnnotations(node: ts.Node): AnnotationsMap {
     return annotationsMap;
 }
 
-export function getCustomFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
+export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
 
     if (sourceFile.statements.length > 0) {
@@ -121,16 +121,16 @@ export function getCustomFileAnnotations(sourceFile: ts.SourceFile): Annotations
     return annotationsMap;
 }
 
-export function getCustomSignatureAnnotations(context: TransformationContext, signature: ts.Signature): AnnotationsMap {
+export function getSignatureAnnotations(context: TransformationContext, signature: ts.Signature): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
-    collectCustomAnnotations(context, signature, annotationsMap);
+    collectAnnotations(context, signature, annotationsMap);
 
     // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
     const declaration = signature.getDeclaration();
     if (declaration && declaration.parent && ts.isPropertySignature(declaration.parent)) {
         const symbol = context.checker.getSymbolAtLocation(declaration.parent.name);
         if (symbol) {
-            collectCustomAnnotations(context, symbol, annotationsMap);
+            collectAnnotations(context, symbol, annotationsMap);
         }
     }
 

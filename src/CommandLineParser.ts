@@ -40,7 +40,7 @@ const optionDeclarations: CommandLineOption[] = [
     },
     {
         name: "noImplicitSelf",
-        description: "Implicitly enable @noSelfInFile for all target files.",
+        description: 'If "this" is implicitly considered an any type, do not generate a self parameter.',
         type: "boolean",
     },
     {

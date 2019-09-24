@@ -289,7 +289,7 @@ test("return from nested finally", () => {
 test("throw and catch custom error object", () => {
     const code = `
       try {
-          throw {x: "Hello error object!"};
+          throw { x: "Hello error object!" };
       } catch (error) {
           return error.x;
       }

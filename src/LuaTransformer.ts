@@ -613,6 +613,10 @@ export class LuaTransformer {
         // Get type that is extended
         const extendsType = tsHelper.getExtendedType(statement, this.checker);
 
+        if (extendsType) {
+            this.checkForLuaLibType(extendsType);
+        }
+
         if (!(isExtension || isMetaExtension) && extendsType) {
             // Non-extensions cannot extend extension classes
             const extendsDecorators = tsHelper.getCustomDecorators(extendsType, this.checker);

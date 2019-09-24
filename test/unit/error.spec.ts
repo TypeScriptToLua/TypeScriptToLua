@@ -345,3 +345,16 @@ test("get stack from builtin error object", () => {
     expect(stack).toMatch("innerFunctionThatThrows");
     expect(stack).toMatch("outerFunctionThatThrows");
 });
+
+test("subclass Error", () => {
+    const code = `
+        class MyError extends Error { }
+        
+        try {
+            throw new MyError();
+        } catch (error) {
+            return error instanceof Error;
+        }
+    `;
+    expect(util.transpileAndExecute(code)).toBe(true);
+});

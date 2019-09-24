@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { DecoratorKind, getCustomDecorators } from "../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "../utils/annotations";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 
@@ -50,9 +50,9 @@ const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpres
     const property = expression.name.text;
     const type = context.checker.getTypeAtLocation(expression.expression);
 
-    const decorators = getCustomDecorators(context, type);
+    const annotations = getCustomTypeAnnotations(context, type);
     // Do not output path for member only enums
-    if (decorators.has(DecoratorKind.CompileMembersOnly)) {
+    if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(expression.expression)) {
             // in case of ...x.enum.y transform to ...x.y
             return tstl.createTableIndexExpression(

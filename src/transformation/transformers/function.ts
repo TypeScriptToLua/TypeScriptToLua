@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { isVarArgType } from "../utils/decorators";
+import { isVarArgType } from "../utils/annotations";
 import { MissingFunctionName, UnsupportedFunctionWithoutBody } from "../utils/errors";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";

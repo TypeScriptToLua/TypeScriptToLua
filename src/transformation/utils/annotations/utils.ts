@@ -1,6 +1,6 @@
 import * as ts from "typescript";
+import { AnnotationKind, getCustomSignatureAnnotations, getCustomTypeAnnotations } from ".";
 import { TransformationContext } from "../../context";
-import { DecoratorKind, getCustomDecorators, getCustomSignatureDecorators } from "../decorators";
 import { findFirstNodeAbove, inferAssignedType } from "../typescript";
 
 export function isTupleReturnCall(context: TransformationContext, node: ts.Node): boolean {
@@ -10,7 +10,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
 
     const signature = context.checker.getResolvedSignature(node);
     if (signature) {
-        if (getCustomSignatureDecorators(context, signature).has(DecoratorKind.TupleReturn)) {
+        if (getCustomSignatureAnnotations(context, signature).has(AnnotationKind.TupleReturn)) {
             return true;
         }
 
@@ -27,7 +27,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const type = context.checker.getTypeAtLocation(node.expression);
-    return getCustomDecorators(context, type).has(DecoratorKind.TupleReturn);
+    return getCustomTypeAnnotations(context, type).has(AnnotationKind.TupleReturn);
 }
 
 export function isInTupleReturnFunction(context: TransformationContext, node: ts.Node): boolean {
@@ -54,25 +54,24 @@ export function isInTupleReturnFunction(context: TransformationContext, node: ts
 
     // Check all overloads for directive
     const signatures = functionType.getCallSignatures();
-    if (signatures && signatures.some(s => getCustomSignatureDecorators(context, s).has(DecoratorKind.TupleReturn))) {
+    if (signatures && signatures.some(s => getCustomSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
         return true;
     }
 
-    const decorators = getCustomDecorators(context, functionType);
-    return decorators.has(DecoratorKind.TupleReturn);
+    return getCustomTypeAnnotations(context, functionType).has(AnnotationKind.TupleReturn);
 }
 
 export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getCustomDecorators(context, type).has(DecoratorKind.LuaIterator);
+    return getCustomTypeAnnotations(context, type).has(AnnotationKind.LuaIterator);
 }
 
 export function isVarArgType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getCustomDecorators(context, type).has(DecoratorKind.Vararg);
+    return getCustomTypeAnnotations(context, type).has(AnnotationKind.Vararg);
 }
 
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getCustomDecorators(context, type).has(DecoratorKind.ForRange);
+    return getCustomTypeAnnotations(context, type).has(AnnotationKind.ForRange);
 }

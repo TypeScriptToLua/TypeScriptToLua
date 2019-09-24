@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { cast, castEach } from "../../../utils";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { DecoratorKind, getCustomDecorators, isForRangeType, isLuaIteratorType } from "../../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
 import {
     InvalidForRangeCall,
     MissingForOfVariables,
@@ -115,7 +115,7 @@ function transformForOfLuaIteratorStatement(
 ): tstl.Statement {
     const luaIterator = context.transformExpression(statement.expression);
     const type = context.checker.getTypeAtLocation(statement.expression);
-    const tupleReturn = getCustomDecorators(context, type).has(DecoratorKind.TupleReturn);
+    const tupleReturn = getCustomTypeAnnotations(context, type).has(AnnotationKind.TupleReturn);
     if (tupleReturn) {
         // LuaIterator + TupleReturn
         if (ts.isVariableDeclarationList(statement.initializer)) {

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
-import { DecoratorKind, getCustomDecorators } from "./decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "./annotations";
 import {
     ForbiddenLuaTableUseException,
     UnsupportedNoSelfFunctionConversion,
@@ -19,8 +19,8 @@ export function validatePropertyAssignment(
     if (!ts.isPropertyAccessExpression(node.left)) return;
 
     const leftType = context.checker.getTypeAtLocation(node.left.expression);
-    const decorators = getCustomDecorators(context, leftType);
-    if (decorators.has(DecoratorKind.LuaTable) && node.left.name.text === "length") {
+    const annotations = getCustomTypeAnnotations(context, leftType);
+    if (annotations.has(AnnotationKind.LuaTable) && node.left.name.text === "length") {
         throw ForbiddenLuaTableUseException(`A LuaTable object's length cannot be re-assigned.`, node);
     }
 }

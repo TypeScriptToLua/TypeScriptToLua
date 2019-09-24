@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { isForRangeType } from "../utils/decorators";
+import { isForRangeType } from "../utils/annotations";
 import { InvalidForRangeCall } from "../utils/errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";

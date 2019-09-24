@@ -14,10 +14,10 @@ export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
 export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
-    new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
+    new TranspileError(`Classes with the '@luaTable' annotation must be declared.`, node);
 
 export const InvalidExtendsLuaTable = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with the decorator '@luaTable'.`, node);
+    new TranspileError(`Cannot extend classes with the '@luaTable' annotation.`, node);
 
 export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
     new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
@@ -25,29 +25,29 @@ export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
 export const ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
     new TranspileError(`Invalid @luaTable usage: ${description}`, node);
 
-export const InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
-    new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
+export const InvalidAnnotationArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
+    new TranspileError(`'${name}' expects ${expected} argument(s) but got ${got}.`, node);
 
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
 
 export const InvalidExtensionMetaExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use both '@extension' and '@metaExtension' decorators on the same class.`, node);
+    new TranspileError(`Cannot use both '@extension' and '@metaExtension' annotations on the same class.`, node);
 
 export const InvalidNewExpressionOnExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot construct classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot construct classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidExportDeclaration = (declaration: ts.ExportDeclaration) =>
     new TranspileError("Encountered invalid export declaration without exports and without module.", declaration);
 
 export const InvalidExtendsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot extend classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidExportsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot export classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot export classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidInstanceOfExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 
@@ -66,7 +66,7 @@ export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
     new TranspileError("Unsupported function declaration without name.", declaration);
 
 export const MissingMetaExtension = (node: ts.Node) =>
-    new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
+    new TranspileError(`'@metaExtension' annotation requires the extension of the metatable class.`, node);
 
 export const NonFlattenableDestructure = (node: ts.Node) =>
     new TranspileError(`This node cannot be destructured using a standard Lua assignment statement.`, node);
@@ -148,9 +148,9 @@ export const UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
 
 export const UnsupportedNonDestructuringLuaIterator = (node: ts.Node) => {
     return new TranspileError(
-        "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
+        "Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. " +
             "You must use a destructuring statement to catch results from a lua iterator with " +
-            "the TupleReturn decorator.",
+            "the '@tupleReturn' annotation.",
         node
     );
 };

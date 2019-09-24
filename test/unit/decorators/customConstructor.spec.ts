@@ -1,4 +1,4 @@
-import { InvalidDecoratorArgumentNumber } from "../../../src/transformation/utils/errors";
+import { InvalidAnnotationArgumentNumber } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("CustomCreate", () => {
@@ -36,5 +36,5 @@ test("IncorrectUsage", () => {
             }
             return new Point2D(1, 2).x;
         `);
-    }).toThrowExactError(InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
+    }).toThrowExactError(InvalidAnnotationArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
 });

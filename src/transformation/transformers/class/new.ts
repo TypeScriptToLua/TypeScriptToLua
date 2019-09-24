@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
-import { InvalidDecoratorArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
+import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
+import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
 import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { transformArguments } from "../call";
 
@@ -37,20 +37,20 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
     checkForLuaLibType(context, type);
 
-    const classDecorators = getCustomDecorators(context, type);
+    const annotations = getCustomTypeAnnotations(context, type);
 
-    if (classDecorators.has(DecoratorKind.Extension) || classDecorators.has(DecoratorKind.MetaExtension)) {
+    if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
         throw InvalidNewExpressionOnExtension(node);
     }
 
-    if (classDecorators.has(DecoratorKind.CustomConstructor)) {
-        const customDecorator = classDecorators.get(DecoratorKind.CustomConstructor);
-        if (customDecorator === undefined || customDecorator.args[0] === undefined) {
-            throw InvalidDecoratorArgumentNumber("@customConstructor", 0, 1, node);
+    const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
+    if (customConstructorAnnotation) {
+        if (customConstructorAnnotation.args[0] === undefined) {
+            throw InvalidAnnotationArgumentNumber("@customConstructor", 0, 1, node);
         }
 
         return tstl.createCallExpression(
-            tstl.createIdentifier(customDecorator.args[0]),
+            tstl.createIdentifier(customConstructorAnnotation.args[0]),
             transformArguments(context, node.arguments || []),
             node
         );

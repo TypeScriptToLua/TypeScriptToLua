@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/decorators";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { findFirstNodeAbove, isArrayType } from "../utils/typescript";

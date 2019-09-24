@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformerPlugin } from "../context";
-import { isInTupleReturnFunction } from "../utils/decorators";
+import { isInTupleReturnFunction } from "../utils/annotations";
 import { InvalidThrowExpression } from "../utils/errors";
 import { createUnpackCall } from "../utils/lua-ast";
 import { findScope, ScopeType } from "../utils/scope";

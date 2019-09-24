@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { DecoratorKind, getCustomDecorators } from "../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "../utils/annotations";
+import { getSymbolExportScope } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
-import { getSymbolExportScope } from "../utils/export";
 
 function tryGetConstEnumValue(
     context: TransformationContext,
@@ -25,7 +25,7 @@ const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (node, con
     }
 
     const type = context.checker.getTypeAtLocation(node);
-    const membersOnly = getCustomDecorators(context, type).has(DecoratorKind.CompileMembersOnly);
+    const membersOnly = getCustomTypeAnnotations(context, type).has(AnnotationKind.CompileMembersOnly);
     const result: tstl.Statement[] = [];
 
     if (!membersOnly) {

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
 import {
     ForbiddenLuaTableNonDeclaration,
     ForbiddenStaticClassPropertyName,
@@ -91,12 +91,12 @@ function transformClassDeclaration(
         }
     }
 
-    const decorators = getCustomDecorators(context, context.checker.getTypeAtLocation(classDeclaration));
+    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
 
     // Find out if this class is extension of existing class
-    const extensionDirective = decorators.get(DecoratorKind.Extension);
+    const extensionDirective = annotations.get(AnnotationKind.Extension);
     const isExtension = extensionDirective !== undefined;
-    const isMetaExtension = decorators.has(DecoratorKind.MetaExtension);
+    const isMetaExtension = annotations.has(AnnotationKind.MetaExtension);
 
     if (isExtension && isMetaExtension) {
         throw InvalidExtensionMetaExtension(classDeclaration);
@@ -112,22 +112,22 @@ function transformClassDeclaration(
 
     if (!(isExtension || isMetaExtension) && extendsType) {
         // Non-extensions cannot extend extension classes
-        const extendsDecorators = getCustomDecorators(context, extendsType);
-        if (extendsDecorators.has(DecoratorKind.Extension) || extendsDecorators.has(DecoratorKind.MetaExtension)) {
+        const extendsAnnotations = getCustomTypeAnnotations(context, extendsType);
+        if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
             throw InvalidExtendsExtension(classDeclaration);
         }
     }
 
     // You cannot extend LuaTable classes
     if (extendsType) {
-        const decorators = getCustomDecorators(context, extendsType);
-        if (decorators.has(DecoratorKind.LuaTable)) {
+        const annotations = getCustomTypeAnnotations(context, extendsType);
+        if (annotations.has(AnnotationKind.LuaTable)) {
             throw InvalidExtendsLuaTable(classDeclaration);
         }
     }
 
     // LuaTable classes must be ambient
-    if (decorators.has(DecoratorKind.LuaTable) && !isAmbientNode(classDeclaration)) {
+    if (annotations.has(AnnotationKind.LuaTable) && !isAmbientNode(classDeclaration)) {
         throw ForbiddenLuaTableNonDeclaration(classDeclaration);
     }
 

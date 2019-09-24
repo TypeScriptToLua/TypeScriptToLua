@@ -2,7 +2,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { DecoratorKind, getCustomDecorators, getCustomSymbolDecorators } from "../../utils/decorators";
+import { AnnotationKind, getCustomSymbolAnnotations, getCustomTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
 import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
@@ -49,8 +49,8 @@ function shouldResolveModulePath(context: TransformationContext, moduleSpecifier
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
     if (!moduleOwnerSymbol) return true;
 
-    const decorators = getCustomSymbolDecorators(context, moduleOwnerSymbol);
-    return !decorators.has(DecoratorKind.NoResolution);
+    const annotations = getCustomSymbolAnnotations(context, moduleOwnerSymbol);
+    return !annotations.has(AnnotationKind.NoResolution);
 }
 
 export function createModuleRequire(
@@ -76,12 +76,12 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    const decorators = getCustomDecorators(context, context.checker.getTypeAtLocation(importNode));
+    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
 
     return (
         context.resolver.isReferencedAliasDeclaration(importNode) &&
-        !decorators.has(DecoratorKind.Extension) &&
-        !decorators.has(DecoratorKind.MetaExtension)
+        !annotations.has(AnnotationKind.Extension) &&
+        !annotations.has(AnnotationKind.MetaExtension)
     );
 }
 

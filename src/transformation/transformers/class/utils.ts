@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
 import { TransformationContext } from "../../context";
+import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
 
 export function isStaticNode(node: ts.Node): boolean {
     return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
@@ -14,8 +14,8 @@ export function getExtendedTypeNode(
         for (const clause of node.heritageClauses) {
             if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                 const superType = context.checker.getTypeAtLocation(clause.types[0]);
-                const decorators = getCustomDecorators(context, superType);
-                if (!decorators.has(DecoratorKind.PureAbstract)) {
+                const annotations = getCustomTypeAnnotations(context, superType);
+                if (!annotations.has(AnnotationKind.PureAbstract)) {
                     return clause.types[0];
                 }
             }

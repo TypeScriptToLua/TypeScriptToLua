@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { flatMap } from "../../utils";
 import { TransformationContext } from "../context";
-import { DecoratorKind, getCustomFileDecorators, getCustomNodeDecorators } from "./decorators";
+import { AnnotationKind, getCustomFileAnnotations, getCustomNodeAnnotations } from "./annotations";
 import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./typescript";
 
 export enum ContextType {
@@ -20,8 +20,8 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
     if (!scopeDeclaration) {
         return false;
     } else if (ts.isSourceFile(scopeDeclaration)) {
-        return getCustomFileDecorators(scopeDeclaration).has(DecoratorKind.NoSelfInFile);
-    } else if (getCustomNodeDecorators(scopeDeclaration).has(DecoratorKind.NoSelf)) {
+        return getCustomFileAnnotations(scopeDeclaration).has(AnnotationKind.NoSelfInFile);
+    } else if (getCustomNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
         return true;
     } else {
         return hasNoSelfAncestor(scopeDeclaration);
@@ -62,7 +62,7 @@ export function getDeclarationContextType(signatureDeclaration: ts.SignatureDecl
             return ContextType.NonVoid;
         }
 
-        if (getCustomNodeDecorators(scopeDeclaration).has(DecoratorKind.NoSelf)) {
+        if (getCustomNodeAnnotations(scopeDeclaration).has(AnnotationKind.NoSelf)) {
             return ContextType.Void;
         }
 

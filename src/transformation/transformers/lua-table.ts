@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
-import { DecoratorKind, getCustomDecorators } from "../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "../utils/annotations";
 import { ForbiddenLuaTableUseException, UnsupportedKind, UnsupportedProperty } from "../utils/errors";
 import { transformArguments } from "./call";
 
@@ -68,8 +68,8 @@ const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (n
 
     if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
         const ownerType = context.checker.getTypeAtLocation(expression.expression.expression);
-        const decorators = getCustomDecorators(context, ownerType);
-        if (decorators.has(DecoratorKind.LuaTable)) {
+        const annotations = getCustomTypeAnnotations(context, ownerType);
+        if (annotations.has(AnnotationKind.LuaTable)) {
             return transformLuaTableExpressionAsExpressionStatement(context, expression);
         }
     }
@@ -97,9 +97,9 @@ function transformLuaTableCallExpression(
 const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
     if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
         const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
-        const classDecorators = getCustomDecorators(context, ownerType);
+        const annotations = getCustomTypeAnnotations(context, ownerType);
 
-        if (classDecorators.has(DecoratorKind.LuaTable)) {
+        if (annotations.has(AnnotationKind.LuaTable)) {
             return transformLuaTableCallExpression(context, node);
         }
     }
@@ -109,8 +109,8 @@ const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, conte
 
 const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {
     const type = context.checker.getTypeAtLocation(node.expression);
-    const decorators = getCustomDecorators(context, type);
-    if (decorators.has(DecoratorKind.LuaTable)) {
+    const annotations = getCustomTypeAnnotations(context, type);
+    if (annotations.has(AnnotationKind.LuaTable)) {
         const [luaTable, propertyName] = parseLuaTableExpression(context, node);
         switch (node.name.text) {
             case "length":
@@ -124,8 +124,8 @@ const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpres
 };
 
 const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
-    const decorators = getCustomDecorators(context, context.checker.getTypeAtLocation(node.expression));
-    if (decorators.has(DecoratorKind.LuaTable)) {
+    const annotations = getCustomTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
+    if (annotations.has(AnnotationKind.LuaTable)) {
         throw UnsupportedKind("LuaTable access expression", node.kind, node);
     }
 
@@ -134,8 +134,8 @@ const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpressi
 
 const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context) => {
     const type = context.checker.getTypeAtLocation(node);
-    const decorators = getCustomDecorators(context, type);
-    if (decorators.has(DecoratorKind.LuaTable)) {
+    const annotations = getCustomTypeAnnotations(context, type);
+    if (annotations.has(AnnotationKind.LuaTable)) {
         if (node.arguments && node.arguments.length > 0) {
             throw ForbiddenLuaTableUseException("No parameters are allowed when constructing a LuaTable object.", node);
         } else {

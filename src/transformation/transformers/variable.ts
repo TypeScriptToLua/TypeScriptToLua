@@ -2,8 +2,8 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { assertNever, castEach, flatMap } from "../../utils";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { isTupleReturnCall } from "../utils/decorators";
 import { UnsupportedKind } from "../utils/errors";
 import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
@@ -173,7 +173,7 @@ export function transformVariableDeclaration(
 
         if (statement.initializer) {
             if (isTupleReturnCall(context, statement.initializer)) {
-                // Don't unpack TupleReturn decorated functions
+                // Don't unpack @tupleReturn annotated functions
                 statements.push(
                     ...createLocalOrExportedOrGlobalDeclaration(
                         context,

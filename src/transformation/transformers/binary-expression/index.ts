@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
-import { DecoratorKind, getCustomDecorators } from "../../utils/decorators";
+import { AnnotationKind, getCustomTypeAnnotations } from "../../utils/annotations";
 import { InvalidInstanceOfExtension, InvalidInstanceOfLuaTable, UnsupportedKind } from "../../utils/errors";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
@@ -172,14 +172,14 @@ const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, c
             const lhs = context.transformExpression(node.left);
             const rhs = context.transformExpression(node.right);
             const rhsType = context.checker.getTypeAtLocation(node.right);
-            const decorators = getCustomDecorators(context, rhsType);
+            const annotations = getCustomTypeAnnotations(context, rhsType);
 
-            if (decorators.has(DecoratorKind.Extension) || decorators.has(DecoratorKind.MetaExtension)) {
+            if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
                 // Cannot use instanceof on extension classes
                 throw InvalidInstanceOfExtension(node);
             }
 
-            if (decorators.has(DecoratorKind.LuaTable)) {
+            if (annotations.has(AnnotationKind.LuaTable)) {
                 throw InvalidInstanceOfLuaTable(node);
             }
 

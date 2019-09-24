@@ -2,6 +2,7 @@ import { TransformerPlugin } from "../context";
 import { accessPlugin } from "./access";
 import { binaryExpressionPlugin } from "./binary-expression";
 import { blockPlugin } from "./block";
+import { breakContinuePlugin } from "./break-continue";
 import { callPlugin } from "./call";
 import { classPlugin } from "./class";
 import { conditionalPlugin } from "./conditional";
@@ -12,7 +13,6 @@ import { expressionStatementPlugin } from "./expression-statement";
 import { functionPlugin } from "./function";
 import { generatorPlugin } from "./generator";
 import { identifierPlugin } from "./identifier";
-import { jumpPlugin } from "./jump";
 import { literalPlugin } from "./literal";
 import { doWhilePlugin } from "./loops/do-while";
 import { forPlugin } from "./loops/for";
@@ -35,6 +35,7 @@ export const standardPlugins: TransformerPlugin[] = [
     accessPlugin,
     binaryExpressionPlugin,
     blockPlugin,
+    breakContinuePlugin,
     callPlugin,
     classPlugin,
     conditionalPlugin,
@@ -45,7 +46,6 @@ export const standardPlugins: TransformerPlugin[] = [
     functionPlugin,
     generatorPlugin,
     identifierPlugin,
-    jumpPlugin,
     literalPlugin,
     doWhilePlugin,
     forPlugin,

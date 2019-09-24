@@ -12,7 +12,7 @@ import { isArrayLength, transformDestructuringAssignment } from "./destructuring
 
 export function transformAssignment(
     context: TransformationContext,
-    // TODO: Unsafe?
+    // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
     right: tstl.Expression,
     parent?: ts.Expression

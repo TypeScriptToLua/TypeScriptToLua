@@ -37,7 +37,7 @@ function isWithinLiteralAssignmentStatement(node: ts.Node): boolean {
     }
 }
 
-// TODO:
+// TODO: Consider handling without a visitor since it depends on context too much
 const transformOmittedExpression: FunctionVisitor<ts.OmittedExpression> = node => {
     const isWithinBindingAssignmentStatement = isWithinLiteralAssignmentStatement(node);
     return isWithinBindingAssignmentStatement ? tstl.createAnonymousIdentifier() : tstl.createNilLiteral(node);

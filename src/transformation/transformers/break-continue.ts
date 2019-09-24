@@ -5,8 +5,6 @@ import { FunctionVisitor, TransformerPlugin } from "../context";
 import { UndefinedScope, UnsupportedForTarget } from "../utils/errors";
 import { findScope, ScopeType } from "../utils/scope";
 
-// TODO: File name?
-
 const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
     const breakableScope = findScope(context, ScopeType.Loop | ScopeType.Switch);
     if (breakableScope === undefined) {
@@ -34,7 +32,7 @@ const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (state
     return tstl.createGotoStatement(`__continue${scope.id}`, statement);
 };
 
-export const jumpPlugin: TransformerPlugin = {
+export const breakContinuePlugin: TransformerPlugin = {
     visitors: {
         [ts.SyntaxKind.BreakStatement]: transformBreakStatement,
         [ts.SyntaxKind.ContinueStatement]: transformContinueStatement,

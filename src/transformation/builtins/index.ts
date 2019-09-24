@@ -57,7 +57,7 @@ export function transformBuiltinCallExpression(
         return;
     }
 
-    // TODO: block-level cast
+    // TODO(TypeScript 3.7): assume
     const propertyCall = node as PropertyCallExpression;
 
     // If the function being called is of type owner.func, get the type of owner

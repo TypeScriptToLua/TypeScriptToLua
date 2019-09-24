@@ -79,7 +79,6 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             const identifier = createShorthandIdentifier(context, valueSymbol, element.name);
             properties.push(tstl.createTableFieldExpression(identifier, name, element));
         } else if (ts.isMethodDeclaration(element)) {
-            // TODO:
             const expression = transformFunctionLikeDeclaration(element, context);
             properties.push(tstl.createTableFieldExpression(expression, name, element));
         } else if (ts.isSpreadAssignment(element)) {

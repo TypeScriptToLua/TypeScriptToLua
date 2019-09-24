@@ -11,7 +11,6 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
 
-// TODO: Visitor?
 export function transformArrayBindingElement(
     context: TransformationContext,
     name: ts.ArrayBindingElement | ts.Expression

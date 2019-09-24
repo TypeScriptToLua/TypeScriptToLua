@@ -16,7 +16,6 @@ export function createModuleLocalNameIdentifier(
     context: TransformationContext,
     declaration: ts.ModuleDeclaration
 ): tstl.Identifier {
-    // TODO:
     const moduleSymbol = context.checker.getSymbolAtLocation(declaration.name);
     if (moduleSymbol !== undefined && isUnsafeName(moduleSymbol.name)) {
         return tstl.createIdentifier(
@@ -27,6 +26,7 @@ export function createModuleLocalNameIdentifier(
         );
     }
 
+    // TODO: Should synthetic name nodes be escaped as well?
     return transformIdentifier(context, declaration.name as ts.Identifier);
 }
 

@@ -157,7 +157,6 @@ function transformObjectLiteralAssignmentPattern(
                 result.push(...transformSpreadAssignment(context, property, root, node.properties));
                 break;
             default:
-                // TODO:
                 throw UnsupportedKind("Object Destructure Property", property.kind, property);
         }
     }

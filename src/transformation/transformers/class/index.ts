@@ -40,13 +40,11 @@ import { transformMethodDeclaration } from "./members/method";
 import { transformNewExpression } from "./new";
 import { getExtendedType, getExtendedTypeNode, isStaticNode } from "./utils";
 
-function transformClassExpression(
+function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
-    context: TransformationContext
+    context: TransformationContext,
+    isDefaultExport = false
 ): tstl.Expression {
-    // TODO: Does it really work?
-    const isDefaultExport = hasDefaultExportModifier(expression);
-
     let className: tstl.Identifier;
     if (expression.name) {
         className = transformIdentifier(context, expression.name);
@@ -85,7 +83,7 @@ function transformClassDeclaration(
         const isDefaultExport = hasDefaultExportModifier(classDeclaration);
         if (isDefaultExport) {
             const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
-            const right = transformClassExpression(classDeclaration, context);
+            const right = transformClassAsExpression(classDeclaration, context, true);
 
             return tstl.createAssignmentStatement(left, right, classDeclaration);
         } else {
@@ -367,7 +365,7 @@ const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => crea
 
 export const classPlugin: TransformerPlugin = {
     visitors: {
-        [ts.SyntaxKind.ClassExpression]: transformClassExpression,
+        [ts.SyntaxKind.ClassExpression]: transformClassAsExpression,
         [ts.SyntaxKind.ClassDeclaration]: transformClassDeclaration,
         [ts.SyntaxKind.SuperKeyword]: transformSuperExpression,
         [ts.SyntaxKind.ThisKeyword]: transformThisExpression,

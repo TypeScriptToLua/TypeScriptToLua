@@ -7,7 +7,6 @@ import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast"
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformAssignment } from "./assignments";
 
-// TODO:
 // If expression is property/element access with possible effects from being evaluated, returns separated object and index expressions.
 export function parseAccessExpressionWithEvaluationEffects(
     context: TransformationContext,
@@ -58,12 +57,13 @@ export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperat
 export function transformCompoundAssignmentExpression(
     context: TransformationContext,
     expression: ts.Expression,
+    // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
     rhs: ts.Expression,
     replacementOperator: ts.BinaryOperator,
     isPostfix: boolean
 ): tstl.CallExpression {
-    const left = context.transformExpression(lhs) as tstl.AssignmentLeftHandSideExpression;
+    const left = cast(context.transformExpression(lhs), tstl.isAssignmentLeftHandSideExpression);
     let right = context.transformExpression(rhs);
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);

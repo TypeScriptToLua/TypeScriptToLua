@@ -92,7 +92,7 @@ const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpression> 
             );
 
         case ts.SyntaxKind.PlusToken:
-            // TODO:
+            // TODO: Wrap with `Number`
             return context.transformExpression(expression.operand);
 
         case ts.SyntaxKind.MinusToken:

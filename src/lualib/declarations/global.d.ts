@@ -10,6 +10,7 @@ declare function type(
     value: any
 ): "nil" | "number" | "string" | "boolean" | "table" | "function" | "thread" | "userdata";
 declare function setmetatable<T extends object>(table: T, metatable: any): T;
+declare function getmetatable<T extends object>(table: T): any;
 declare function rawget<T, K extends keyof T>(table: T, key: K): T[K];
 declare function rawset<T, K extends keyof T>(table: T, key: K, val: T[K]): void;
 /** @tupleReturn */

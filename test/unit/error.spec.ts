@@ -1,16 +1,9 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("throwString", () => {
     util.testFunction`
         throw "Some Error"
     `.expectToEqual(new util.ExecutionError("Some Error"));
-});
-
-test("throwError", () => {
-    util.testFunction`
-        throw Error("Some Error")
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidThrowExpression(util.nodeStub));
 });
 
 test.skip.each([0, 1, 2])("re-throw (%p)", i => {
@@ -291,4 +284,64 @@ test("return from nested finally", () => {
         return foobar() + " " + x;
     `;
     expect(util.transpileAndExecute(code)).toBe("finally AB");
+});
+
+test("throw and catch custom error object", () => {
+    const code = `
+      try {
+          throw {x: "Hello error object!"};
+      } catch (error) {
+          return error.x;
+      }
+`;
+    expect(util.transpileAndExecute(code)).toBe("Hello error object!");
+});
+
+test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
+    "throw builtin Errors as classes",
+    errorType => {
+        const code = `
+            try {
+                throw new ${errorType}("message")
+            } catch (error) {
+                if (error instanceof Error) {
+                    return \`\${error}\`;
+                }
+            }
+        `;
+        expect(util.transpileAndExecute(code)).toBe(`${errorType}: message`);
+    }
+);
+
+test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
+    "throw builtin Errors as functions",
+    errorType => {
+        const code = `
+            try {
+                throw ${errorType}("message")
+            } catch (error) {
+                if (error instanceof Error) {
+                    return \`\${error}\`;
+                }
+            }
+        `;
+        expect(util.transpileAndExecute(code)).toBe(`${errorType}: message`);
+    }
+);
+
+test("get stack from builtin error object", () => {
+    const code = `
+        function innerFunctionThatThrows() { throw RangeError(); }
+        function outerFunctionThatThrows() { innerFunctionThatThrows(); }
+        try {
+            outerFunctionThatThrows();
+        } catch (error) {
+            if (error instanceof Error) {
+                return error.stack;
+            }
+        }
+    `;
+    const stack = util.transpileAndExecute(code);
+    expect(stack).toMatch("innerFunctionThatThrows");
+    expect(stack).toMatch("outerFunctionThatThrows");
 });

@@ -2843,19 +2843,14 @@ export class LuaTransformer {
     }
 
     public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
+        const error = tstl.createIdentifier("error");
         if (statement.expression === undefined) {
-            throw TSTLErrors.InvalidThrowExpression(statement);
-        }
-
-        const type = this.checker.getTypeAtLocation(statement.expression);
-        if (tsHelper.isStringType(type, this.checker, this.program)) {
-            const error = tstl.createIdentifier("error");
+            return tstl.createExpressionStatement(tstl.createCallExpression(error, []), statement);
+        } else {
             return tstl.createExpressionStatement(
                 tstl.createCallExpression(error, [this.transformExpression(statement.expression)]),
                 statement
             );
-        } else {
-            throw TSTLErrors.InvalidThrowExpression(statement.expression);
         }
     }
 
@@ -4208,6 +4203,7 @@ export class LuaTransformer {
 
         const expressionType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isStandardLibraryType(expressionType, undefined, this.program)) {
+            this.checkForLuaLibType(expressionType);
             const result = this.transformGlobalFunctionCall(expression);
             if (result) {
                 return result;
@@ -5516,6 +5512,42 @@ export class LuaTransformer {
                     return;
                 case "WeakSet":
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
+                    return;
+                case "Error":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "ErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "RangeError":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "RangeErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "ReferenceError":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "ReferenceErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "SyntaxError":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "SyntaxErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "TypeError":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "TypeErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "URIError":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
+                    return;
+                case "URIErrorConstructor":
+                    this.importLuaLibFeature(LuaLibFeature.Error);
                     return;
             }
         }

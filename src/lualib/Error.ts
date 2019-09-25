@@ -1,93 +1,76 @@
-Error = class {
-    public static captureStackTrace(targetObject: {}, depth: number): void {
-        targetObject["stack"] = debug.traceback(undefined, depth);
-    }
+type TSTLCapturedErrorStack = Array<{
+    namewhat: string;
+    name?: string;
+    source: string;
+    short_src: string;
+    currentline: number;
+    func: Function;
+}>;
 
-    public message: string;
-    public name: string;
-    public stack?: string;
+function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
+    const functionFrames = [];
+    let level = 1;
+    while (true) {
+        const info = debug.getinfo(level, "f");
+        level += 1;
+        if (!info || info.func === constructor) {
+            break;
+        }
+    }
+    while (true) {
+        const info = debug.getinfo(level, "Snl");
+        if (!info) break;
+        if (info.currentline !== -1) {
+            functionFrames.push(info);
+        }
+        level += 1;
+    }
+    return functionFrames;
+}
 
-    constructor(message?: string, name?: string) {
-        this.message = message || "";
-        this.name = name || "Error";
-        Error["captureStackTrace"](this, name ? 5 : 4);
-    }
+function __TS__ConvertErrorStack(stack: TSTLCapturedErrorStack): string {
+    const info = stack
+        .map(v => {
+            if (v.namewhat === "") {
+                return `${v.short_src}:${v.currentline}`;
+            } else {
+                return `${v.short_src}:${v.currentline} in ${v.namewhat} ${v.name}`;
+            }
+        })
+        .join("\n");
+    const transform = (globalThis as any).__TS__SourceMapTransform;
+    return transform ? transform(info) : info;
+}
 
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
+function __TS__GetErrorString(this: void, error: Error): string {
+    return error.message !== "" ? `${error.name}: ${error.message}` : error.name;
+}
 
-setmetatable(Error, { __call: (_self: any, message: string) => new Error(message) });
+function __TS__InitErrorClass(Type: any): any {
+    Type.prototype.__tostring = __TS__GetErrorString;
+    return setmetatable(Type, {
+        __index: getmetatable(Type),
+        __call: (_self: any, message: string) => new Type(message),
+    });
+}
 
-/** Standard error types */
+Error = __TS__InitErrorClass(
+    class {
+        public message: string;
+        public name = "Error";
+        public stack: string;
 
-RangeError = class extends Error {
-    constructor(message?: string) {
-        // @ts-ignore
-        super(message, "RangeError");
+        constructor(message = "") {
+            this.message = message;
+            this.stack = __TS__ConvertErrorStack(__TS__GetErrorStack((this.constructor as any).new));
+        }
     }
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
-setmetatable(RangeError, {
-    __call: (_self: any, message: string) => new RangeError(message),
-    __index: getmetatable(RangeError),
-});
+);
 
-ReferenceError = class extends Error {
-    constructor(message?: string) {
-        // @ts-ignore
-        super(message, "ReferenceError");
-    }
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
-setmetatable(ReferenceError, {
-    __call: (_self: any, message: string) => new ReferenceError(message),
-    __index: getmetatable(ReferenceError),
-});
-
-SyntaxError = class extends Error {
-    constructor(message?: string) {
-        // @ts-ignore
-        super(message, "SyntaxError");
-    }
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
-setmetatable(SyntaxError, {
-    __call: (_self: any, message: string) => new SyntaxError(message),
-    __index: getmetatable(SyntaxError),
-});
-
-TypeError = class extends Error {
-    constructor(message?: string) {
-        // @ts-ignore
-        super(message, "TypeError");
-    }
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
-setmetatable(TypeError, {
-    __call: (_self: any, message: string) => new TypeError(message),
-    __index: getmetatable(TypeError),
-});
-
-URIError = class extends Error {
-    constructor(message?: string) {
-        // @ts-ignore
-        super(message, "URIError");
-    }
-    public __tostring(): string {
-        return `${this.name}: ${this.message}`;
-    }
-} as any;
-setmetatable(URIError, {
-    __call: (_self: any, message: string) => new URIError(message),
-    __index: getmetatable(URIError),
-});
+for (const errorName of ["RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"]) {
+    globalThis[errorName] = __TS__InitErrorClass(
+        class extends Error {
+            public name = errorName;
+        }
+    );
+}

@@ -287,50 +287,55 @@ test("return from nested finally", () => {
 });
 
 test("throw and catch custom error object", () => {
-    const code = `
+    util.testFunction`
       try {
           throw { x: "Hello error object!" };
       } catch (error) {
           return error.x;
       }
-`;
-    expect(util.transpileAndExecute(code)).toBe("Hello error object!");
+    `.expectToMatchJsResult();
 });
 
 test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
     "throw builtin Errors as classes",
     errorType => {
-        const code = `
+        util.testFunction`
             try {
                 throw new ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
                     return \`\${error}\`;
+                } else {
+                    throw TypeError();
                 }
             }
-        `;
-        expect(util.transpileAndExecute(code)).toBe(`${errorType}: message`);
+        `
+            .expectNoExecutionError()
+            .expectToMatchJsResult();
     }
 );
 
 test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
     "throw builtin Errors as functions",
     errorType => {
-        const code = `
+        util.testFunction`
             try {
                 throw ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
                     return \`\${error}\`;
+                } else {
+                    throw TypeError();
                 }
             }
-        `;
-        expect(util.transpileAndExecute(code)).toBe(`${errorType}: message`);
+        `
+            .expectNoExecutionError()
+            .expectToMatchJsResult();
     }
 );
 
 test("get stack from builtin error object", () => {
-    const code = `
+    const stack = util.testFunction`
         function innerFunctionThatThrows() { throw RangeError(); }
         function outerFunctionThatThrows() { innerFunctionThatThrows(); }
         try {
@@ -338,23 +343,34 @@ test("get stack from builtin error object", () => {
         } catch (error) {
             if (error instanceof Error) {
                 return error.stack;
+            } else {
+                throw TypeError();
             }
         }
-    `;
-    const stack = util.transpileAndExecute(code);
+    `
+        .expectNoExecutionError()
+        .getLuaExecutionResult();
+
     expect(stack).toMatch("innerFunctionThatThrows");
     expect(stack).toMatch("outerFunctionThatThrows");
 });
 
 test("subclass Error", () => {
-    const code = `
-        class MyError extends Error { }
+    util.testFunction`
+        class MyError extends Error {
+            name: "MyError"
+        }
         
         try {
             throw new MyError();
         } catch (error) {
-            return error instanceof Error;
+            if (error instanceof Error) {
+                return error.name;
+            } else {
+                throw TypeError();
+            }
         }
-    `;
-    expect(util.transpileAndExecute(code)).toBe(true);
+    `
+        .expectNoExecutionError()
+        .expectToMatchJsResult();
 });

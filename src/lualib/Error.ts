@@ -13,7 +13,11 @@ function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
     while (true) {
         const info = debug.getinfo(level, "f");
         level += 1;
-        if (!info || info.func === constructor) {
+        if (info.func === constructor) {
+            break;
+        } else if (!info) {
+            // constructor not in call stack
+            level = 1;
             break;
         }
     }

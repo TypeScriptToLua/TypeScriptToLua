@@ -4,7 +4,6 @@ type TSTLCapturedErrorStack = Array<{
     source: string;
     short_src: string;
     currentline: number;
-    func: Function;
 }>;
 
 function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
@@ -13,11 +12,11 @@ function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
     while (true) {
         const info = debug.getinfo(level, "f");
         level += 1;
-        if (info.func === constructor) {
-            break;
-        } else if (!info) {
+        if (!info) {
             // constructor not in call stack
             level = 1;
+            break;
+        } else if (info.func === constructor) {
             break;
         }
     }
@@ -42,7 +41,7 @@ function __TS__ConvertErrorStack(stack: TSTLCapturedErrorStack): string {
             }
         })
         .join("\n");
-    const transform = (globalThis as any).__TS__SourceMapTransform;
+    const transform = globalThis.__TS__SourceMapTransform;
     return transform ? transform(info) : info;
 }
 
@@ -53,7 +52,6 @@ function __TS__GetErrorString(this: void, error: Error): string {
 function __TS__InitErrorClass(Type: any): any {
     Type.prototype.__tostring = __TS__GetErrorString;
     return setmetatable(Type, {
-        __index: getmetatable(Type),
         __call: (_self: any, message: string) => new Type(message),
     });
 }

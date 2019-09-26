@@ -296,10 +296,14 @@ test("throw and catch custom error object", () => {
     `.expectToMatchJsResult();
 });
 
-test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
+test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError", "MyError"])(
     "throw builtin Errors as classes",
     errorType => {
         util.testFunction`
+            class MyError extends Error {
+                name: "MyError"
+            }
+
             try {
                 throw new ${errorType}("message")
             } catch (error) {
@@ -315,16 +319,12 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
     }
 );
 
-test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError", "MyError"])(
+test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
     "throw builtin Errors as functions",
     errorType => {
         util.testFunction`
-            class MyError extends Error {
-                name: "MyError"
-            }
-
             try {
-                throw new ${errorType}("message")
+                throw ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
                     return \`\${error}\`;

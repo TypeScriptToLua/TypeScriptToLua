@@ -315,12 +315,16 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
     }
 );
 
-test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
+test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError", "MyError"])(
     "throw builtin Errors as functions",
     errorType => {
         util.testFunction`
+            class MyError extends Error {
+                name: "MyError"
+            }
+
             try {
-                throw ${errorType}("message")
+                throw new ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
                     return \`\${error}\`;

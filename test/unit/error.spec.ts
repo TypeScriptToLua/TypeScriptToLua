@@ -1,4 +1,5 @@
 import * as util from "../util";
+import * as tstl from "../../src";
 
 test("throwString", () => {
     util.testFunction`
@@ -354,8 +355,10 @@ test("subclass Error", () => {
         .expectToMatchJsResult();
 });
 
-test.each(["Error", "RangeError", "MyError"])("get stack from error", errorType => {
-    const stack = util.testFunction`
+test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError", false]] as Array<[string, boolean]>)(
+    "get stack from error",
+    (errorType, sourceMapTraceback) => {
+        const stack = util.testFunction`
         class MyError extends Error {
             name: "MyError"
         }
@@ -373,9 +376,11 @@ test.each(["Error", "RangeError", "MyError"])("get stack from error", errorType 
             }
         }
     `
-        .expectNoExecutionError()
-        .getLuaExecutionResult();
+            .setOptions({ sourceMapTraceback, luaLibImport: tstl.LuaLibImportKind.Inline })
+            .expectNoExecutionError()
+            .getLuaExecutionResult();
 
-    expect(stack).toMatch("innerFunctionThatThrows");
-    expect(stack).toMatch("outerFunctionThatThrows");
-});
+        expect(stack).toMatch("innerFunctionThatThrows");
+        expect(stack).toMatch("outerFunctionThatThrows");
+    }
+);

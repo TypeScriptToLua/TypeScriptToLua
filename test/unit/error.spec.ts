@@ -307,7 +307,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                 if (error instanceof Error) {
                     return \`\${error}\`;
                 } else {
-                    throw TypeError();
+                    throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
             }
         `
@@ -326,7 +326,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                 if (error instanceof Error) {
                     return \`\${error}\`;
                 } else {
-                    throw TypeError();
+                    throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
             }
         `
@@ -347,7 +347,7 @@ test("subclass Error", () => {
             if (error instanceof Error) {
                 return \'\$error\';
             } else {
-                throw TypeError();
+                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
             }
         }
     `
@@ -362,7 +362,6 @@ test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError",
         class MyError extends Error {
             name: "MyError"
         }
-
         function innerFunctionThatThrows() { throw new ${errorType}(); }
         function outerFunctionThatThrows() { innerFunctionThatThrows(); }
 
@@ -372,7 +371,7 @@ test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError",
             if (error instanceof Error) {
                 return error.stack;
             } else {
-                throw TypeError();
+                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
             }
         }
     `

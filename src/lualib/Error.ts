@@ -24,7 +24,7 @@ function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
         const info = debug.getinfo(level, "Snl");
         if (!info) break;
         if (info.currentline !== -1) {
-            functionFrames.push(info);
+            functionFrames[functionFrames.length] = info;
         }
         level += 1;
     }
@@ -49,22 +49,25 @@ function __TS__GetErrorString(this: void, error: Error): string {
     return error.message !== "" ? `${error.name}: ${error.message}` : error.name;
 }
 
-function __TS__InitErrorClass(Type: any): any {
-    Type.prototype.__tostring = __TS__GetErrorString;
+function __TS__InitErrorClass(Type: any, name?: string): any {
+    if (name) {
+        Type.name = name;
+    }
     return setmetatable(Type, {
         __call: (_self: any, message: string) => new Type(message),
     });
 }
 
 Error = __TS__InitErrorClass(
-    class {
-        public message: string;
+    class Error {
         public name = "Error";
+        public message: string;
         public stack: string;
 
         constructor(message = "") {
             this.message = message;
             this.stack = __TS__ConvertErrorStack(__TS__GetErrorStack((this.constructor as any).new));
+            getmetatable(this).__tostring = __TS__GetErrorString;
         }
     }
 );
@@ -73,6 +76,7 @@ for (const errorName of ["RangeError", "ReferenceError", "SyntaxError", "TypeErr
     globalThis[errorName] = __TS__InitErrorClass(
         class extends Error {
             public name = errorName;
-        }
+        },
+        errorName
     );
 }

@@ -5518,6 +5518,7 @@ export class LuaTransformer {
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
                     return;
             }
+
             if (tsHelper.isBuiltinErrorTypeName(name)) {
                 this.importLuaLibFeature(LuaLibFeature.Error);
             }

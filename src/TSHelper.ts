@@ -33,6 +33,21 @@ const defaultArrayCallMethodNames = new Set<string>([
     "flatMap",
 ]);
 
+const builtinErrorTypeNames = new Set([
+    "Error",
+    "ErrorConstructor",
+    "RangeError",
+    "RangeErrorConstructor",
+    "ReferenceError",
+    "ReferenceErrorConstructor",
+    "SyntaxError",
+    "SyntaxErrorConstructor",
+    "TypeError",
+    "TypeErrorConstructor",
+    "URIError",
+    "URIErrorConstructor",
+]);
+
 export function getExtendedTypeNode(
     node: ts.ClassLikeDeclarationBase,
     checker: ts.TypeChecker
@@ -1040,4 +1055,8 @@ export function formatPathToLuaPath(filePath: string): string {
         filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
     }
     return filePath.replace(/\.\//g, "").replace(/\//g, ".");
+}
+
+export function isBuiltinErrorTypeName(name: string): boolean {
+    return builtinErrorTypeNames.has(name);
 }

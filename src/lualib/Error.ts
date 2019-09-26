@@ -6,6 +6,11 @@ type TSTLCapturedErrorStack = Array<{
     currentline: number;
 }>;
 
+interface ErrorType<T> extends Function {
+    name: string;
+    new (...args: any[]): T;
+}
+
 function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
     const functionFrames = [];
     let level = 1;
@@ -49,7 +54,7 @@ function __TS__GetErrorString(this: void, error: Error): string {
     return error.message !== "" ? `${error.name}: ${error.message}` : error.name;
 }
 
-function __TS__InitErrorClass(Type: any, name?: string): any {
+function __TS__InitErrorClass<T>(Type: ErrorType<T>, name?: string): any {
     if (name) {
         Type.name = name;
     }

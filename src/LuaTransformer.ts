@@ -5503,7 +5503,8 @@ export class LuaTransformer {
 
     protected checkForLuaLibType(type: ts.Type): void {
         if (type.symbol) {
-            switch (this.checker.getFullyQualifiedName(type.symbol)) {
+            const name = this.checker.getFullyQualifiedName(type.symbol);
+            switch (name) {
                 case "Map":
                     this.importLuaLibFeature(LuaLibFeature.Map);
                     return;
@@ -5516,42 +5517,9 @@ export class LuaTransformer {
                 case "WeakSet":
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
                     return;
-                case "Error":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "ErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "RangeError":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "RangeErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "ReferenceError":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "ReferenceErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "SyntaxError":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "SyntaxErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "TypeError":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "TypeErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "URIError":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
-                case "URIErrorConstructor":
-                    this.importLuaLibFeature(LuaLibFeature.Error);
-                    return;
+            }
+            if (tsHelper.isBuiltinErrorTypeName(name)) {
+                this.importLuaLibFeature(LuaLibFeature.Error);
             }
         }
     }

@@ -360,7 +360,7 @@ test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError",
     (errorType, sourceMapTraceback) => {
         const stack = util.testFunction`
         class MyError extends Error {
-            name: "MyError"
+            public name = "MyError";
         }
         function innerFunctionThatThrows() { throw new ${errorType}(); }
         function outerFunctionThatThrows() { innerFunctionThatThrows(); }

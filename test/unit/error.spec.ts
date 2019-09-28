@@ -1,5 +1,4 @@
 import * as util from "../util";
-import * as tstl from "../../src";
 
 test("throwString", () => {
     util.testFunction`
@@ -289,11 +288,11 @@ test("return from nested finally", () => {
 
 test("throw and catch custom error object", () => {
     util.testFunction`
-      try {
-          throw { x: "Hello error object!" };
-      } catch (error) {
-          return error.x;
-      }
+        try {
+            throw { x: "Hello error object!" };
+        } catch (error) {
+            return error.x;
+        }
     `.expectToMatchJsResult();
 });
 
@@ -310,9 +309,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                     throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
             }
-        `
-            .expectNoExecutionError()
-            .expectToMatchJsResult();
+        `.expectToMatchJsResult();
     }
 );
 
@@ -329,9 +326,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                     throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
             }
-        `
-            .expectNoExecutionError()
-            .expectToMatchJsResult();
+        `.expectToMatchJsResult();
     }
 );
 
@@ -350,15 +345,11 @@ test("subclass Error", () => {
                 throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
             }
         }
-    `
-        .expectNoExecutionError()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
-test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError", false]] as Array<[string, boolean]>)(
-    "get stack from error",
-    (errorType, sourceMapTraceback) => {
-        const stack = util.testFunction`
+test.each(["Error", "RangeError", "MyError"])("get stack from error", errorType => {
+    const stack = util.testFunction`
         class MyError extends Error {
             public name = "MyError";
         }
@@ -374,12 +365,8 @@ test.each([["Error", false], ["Error", true], ["RangeError", false], ["MyError",
                 throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
             }
         }
-    `
-            .setOptions({ sourceMapTraceback, luaLibImport: tstl.LuaLibImportKind.Inline })
-            .expectNoExecutionError()
-            .getLuaExecutionResult();
+    `.getLuaExecutionResult();
 
-        expect(stack).toMatch("innerFunctionThatThrows");
-        expect(stack).toMatch("outerFunctionThatThrows");
-    }
-);
+    expect(stack).toMatch("innerFunctionThatThrows");
+    expect(stack).toMatch("outerFunctionThatThrows");
+});

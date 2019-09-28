@@ -64,7 +64,6 @@ export enum LuaLibFeature {
 const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
-    Error: [LuaLibFeature.ArrayMap],
     InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
     ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],

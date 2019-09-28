@@ -33,6 +33,7 @@ const defaultArrayCallMethodNames = new Set<string>([
     "flatMap",
 ]);
 
+// TODO [2019-09-27/Perry]: Refactor lualib detection to consistent map
 const builtinErrorTypeNames = new Set([
     "Error",
     "ErrorConstructor",

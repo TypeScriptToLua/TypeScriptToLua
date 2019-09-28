@@ -2848,9 +2848,11 @@ export class LuaTransformer {
 
     public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
         const parameters: tstl.Expression[] = [];
+
         if (statement.expression) {
             parameters.push(this.transformExpression(statement.expression));
         }
+
         return tstl.createExpressionStatement(
             tstl.createCallExpression(tstl.createIdentifier("error"), parameters),
             statement

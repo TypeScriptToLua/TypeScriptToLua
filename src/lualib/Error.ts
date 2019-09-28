@@ -1,53 +1,22 @@
-type TSTLCapturedErrorStack = Array<{
-    namewhat: string;
-    name?: string;
-    source: string;
-    short_src: string;
-    currentline: number;
-}>;
-
 interface ErrorType<T> extends Function {
     name: string;
     new (...args: any[]): T;
 }
 
-function __TS__GetErrorStack(constructor: Function): TSTLCapturedErrorStack {
-    const functionFrames = [];
+function __TS__GetErrorStack(constructor: Function): string {
     let level = 1;
     while (true) {
         const info = debug.getinfo(level, "f");
         level += 1;
         if (!info) {
-            // constructor not in call stack
+            // constructor is not in call stack
             level = 1;
             break;
         } else if (info.func === constructor) {
             break;
         }
     }
-    while (true) {
-        const info = debug.getinfo(level, "Snl");
-        if (!info) break;
-        if (info.currentline !== -1) {
-            functionFrames[functionFrames.length] = info;
-        }
-        level += 1;
-    }
-    return functionFrames;
-}
-
-function __TS__ConvertErrorStack(stack: TSTLCapturedErrorStack): string {
-    const info = stack
-        .map(v => {
-            if (v.namewhat === "") {
-                return `${v.short_src}:${v.currentline}`;
-            } else {
-                return `${v.short_src}:${v.currentline} in ${v.namewhat} ${v.name}`;
-            }
-        })
-        .join("\n");
-    const transform = globalThis.__TS__SourceMapTransform;
-    return transform ? transform(info) : info;
+    return debug.traceback(undefined, level);
 }
 
 function __TS__GetErrorString(this: void, error: Error): string {
@@ -71,7 +40,7 @@ Error = __TS__InitErrorClass(
 
         constructor(message = "") {
             this.message = message;
-            this.stack = __TS__ConvertErrorStack(__TS__GetErrorStack((this.constructor as any).new));
+            this.stack = __TS__GetErrorStack((this.constructor as any).new);
             getmetatable(this).__tostring = __TS__GetErrorString;
         }
     }

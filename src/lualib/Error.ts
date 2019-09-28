@@ -16,6 +16,7 @@ function __TS__GetErrorStack(constructor: Function): string {
             break;
         }
     }
+
     return debug.traceback(undefined, level);
 }
 

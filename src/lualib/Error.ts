@@ -24,7 +24,7 @@ function __TS__GetErrorString(this: void, error: Error): string {
     return error.message !== "" ? `${error.name}: ${error.message}` : error.name;
 }
 
-function __TS__InitErrorClass<T>(Type: ErrorType<T>, name?: string): any {
+function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {
     if (name) {
         Type.name = name;
     }
@@ -34,7 +34,7 @@ function __TS__InitErrorClass<T>(Type: ErrorType<T>, name?: string): any {
 }
 
 Error = __TS__InitErrorClass(
-    class Error {
+    class {
         public name = "Error";
         public message: string;
         public stack: string;
@@ -42,9 +42,11 @@ Error = __TS__InitErrorClass(
         constructor(message = "") {
             this.message = message;
             this.stack = __TS__GetErrorStack((this.constructor as any).new);
-            getmetatable(this).__tostring = __TS__GetErrorString;
+            const mt = getmetatable(this);
+            mt.__tostring = mt.__tostring || __TS__GetErrorString;
         }
-    }
+    },
+    "Error"
 );
 
 for (const errorName of ["RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"]) {

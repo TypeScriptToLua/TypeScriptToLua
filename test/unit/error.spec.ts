@@ -286,15 +286,18 @@ test("return from nested finally", () => {
     expect(util.transpileAndExecute(code)).toBe("finally AB");
 });
 
-test("throw and catch custom error object", () => {
-    util.testFunction`
+test.each([`"Hello error string!"`, `42`, `true`, `false`, `undefined`, `{ x: "Hello error object!" }`])(
+    "throw and catch custom error object",
+    error => {
+        util.testFunction`
         try {
-            throw { x: "Hello error object!" };
+            throw ${error};
         } catch (error) {
-            return error.x;
+            return error;
         }
     `.expectToMatchJsResult();
-});
+    }
+);
 
 test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
     "throw builtin Errors as classes",
@@ -304,7 +307,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                 throw new ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
-                    return \`\${error}\`;
+                    return error.toString();
                 } else {
                     throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
@@ -321,7 +324,7 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
                 throw ${errorType}("message")
             } catch (error) {
                 if (error instanceof Error) {
-                    return \`\${error}\`;
+                    return error.toString();
                 } else {
                     throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
                 }
@@ -333,14 +336,14 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
 test("subclass Error", () => {
     util.testFunction`
         class MyError extends Error {
-            name: "MyError"
+            public name = "MyError";
         }
         
         try {
             throw new MyError();
         } catch (error) {
             if (error instanceof Error) {
-                return \'\$error\';
+                return error.toString();
             } else {
                 throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
             }

@@ -2851,6 +2851,7 @@ export class LuaTransformer {
 
         if (statement.expression) {
             parameters.push(this.transformExpression(statement.expression));
+            parameters.push(tstl.createNumericLiteral(0));
         }
 
         return tstl.createExpressionStatement(

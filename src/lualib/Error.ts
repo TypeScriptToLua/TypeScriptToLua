@@ -36,11 +36,9 @@ function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {
 Error = __TS__InitErrorClass(
     class {
         public name = "Error";
-        public message: string;
         public stack: string;
 
         constructor(public message = "") {
-            this.message = message;
             this.stack = __TS__GetErrorStack((this.constructor as any).new);
             const mt = getmetatable(this);
             mt.__tostring = mt.__tostring || __TS__GetErrorString;

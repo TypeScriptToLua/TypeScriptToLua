@@ -290,12 +290,12 @@ test.each([`"Hello error string!"`, `42`, `true`, `false`, `undefined`, `{ x: "H
     "throw and catch custom error object",
     error => {
         util.testFunction`
-        try {
-            throw ${error};
-        } catch (error) {
-            return error;
-        }
-    `.expectToMatchJsResult();
+            try {
+                throw ${error};
+            } catch (error) {
+                return error;
+            }
+        `.expectToMatchJsResult();
     }
 );
 
@@ -333,10 +333,28 @@ test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", 
     }
 );
 
-test("subclass Error", () => {
+test("extending from Error", () => {
     util.testFunction`
         class MyError extends Error {
             public name = "MyError";
+        }
+        
+        try {
+            throw new MyError();
+        } catch (error) {
+            if (error instanceof Error) {
+                return error.toString();
+            } else {
+                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
+            }
+        }
+    `.expectToMatchJsResult();
+});
+
+test("extending from Error with custom toString()", () => {
+    util.testFunction`
+        class MyError extends Error {
+            toString(){ return "Custom error message";  }
         }
         
         try {

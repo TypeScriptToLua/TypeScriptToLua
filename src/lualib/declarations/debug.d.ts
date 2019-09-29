@@ -1,5 +1,8 @@
 /** @noSelfInFile */
 
+declare const _VERSION: string;
+declare function error(...args: any[]): never;
+
 declare namespace debug {
     function traceback(...args: any[]): string;
 

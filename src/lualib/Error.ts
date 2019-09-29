@@ -20,8 +20,14 @@ function __TS__GetErrorStack(constructor: Function): string {
     return debug.traceback(undefined, level);
 }
 
-function __TS__GetErrorString(this: void, error: Error): string {
-    return error.message !== "" ? `${error.name}: ${error.message}` : error.name;
+function __TS__GetErrorString(this: void, errorObj: Error): string {
+    const description = errorObj.message !== "" ? `${errorObj.name}: ${errorObj.message}` : errorObj.name;
+    const caller = debug.getinfo(3, "f");
+    if (_VERSION === "Lua 5.1" || (caller && caller.func !== error)) {
+        return description;
+    } else {
+        return `${description}\n${errorObj.stack}`;
+    }
 }
 
 function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {

@@ -39,7 +39,7 @@ Error = __TS__InitErrorClass(
         public message: string;
         public stack: string;
 
-        constructor(message = "") {
+        constructor(public message = "") {
             this.message = message;
             this.stack = __TS__GetErrorStack((this.constructor as any).new);
             const mt = getmetatable(this);

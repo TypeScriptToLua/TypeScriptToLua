@@ -9,10 +9,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js 8.5.0
-        uses: actions/setup-node@v1
-        with:
-          version: 8.5.0
+      - uses: actions/setup-node@v1
       - run: npm install --global npm@6
       - run: npm ci
       - run: npm run lint

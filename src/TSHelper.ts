@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as path from "path";
+import { CompilerOptions } from "./CompilerOptions";
 import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import * as TSTLErrors from "./TSTLErrors";
@@ -692,8 +693,10 @@ export function hasNoSelfAncestor(declaration: ts.Declaration, checker: ts.TypeC
 
 export function getDeclarationContextType(
     signatureDeclaration: ts.SignatureDeclaration,
-    checker: ts.TypeChecker
+    program: ts.Program
 ): ContextType {
+    const checker = program.getTypeChecker();
+
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
     if (thisParameter) {
         // Explicit 'this'
@@ -727,7 +730,13 @@ export function getDeclarationContextType(
         return ContextType.NonVoid;
     }
 
-    // Walk up to find @noSelf or @noSelfOnFile
+    // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (options.noImplicitSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
+        return ContextType.Void;
+    }
+
+    // Walk up to find @noSelf or @noSelfInFile
     if (hasNoSelfAncestor(signatureDeclaration, checker)) {
         return ContextType.Void;
     }
@@ -750,13 +759,15 @@ export function reduceContextTypes(contexts: ContextType[]): ContextType {
     return contexts.reduce(reducer, ContextType.None);
 }
 
-export function getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): ContextType {
+export function getFunctionContextType(type: ts.Type, program: ts.Program): ContextType {
+    const checker = program.getTypeChecker();
+
     if (type.isTypeParameter()) {
         type = type.getConstraint() || type;
     }
 
     if (type.isUnion()) {
-        return reduceContextTypes(type.types.map(t => getFunctionContextType(t, checker)));
+        return reduceContextTypes(type.types.map(t => getFunctionContextType(t, program)));
     }
 
     const signatures = checker.getSignaturesOfType(type, ts.SignatureKind.Call);
@@ -764,7 +775,7 @@ export function getFunctionContextType(type: ts.Type, checker: ts.TypeChecker): 
         return ContextType.None;
     }
     const signatureDeclarations = getSignatureDeclarations(signatures, checker);
-    return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(s, checker)));
+    return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(s, program)));
 }
 
 export function escapeString(text: string): string {

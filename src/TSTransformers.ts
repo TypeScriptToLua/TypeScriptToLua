@@ -3,6 +3,7 @@ import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
+import { noImplicitSelfTransformer } from "./NoImplicitSelfTransformer";
 
 export function getCustomTransformers(
     program: ts.Program,
@@ -16,11 +17,19 @@ export function getCustomTransformers(
     };
 
     const transformersFromOptions = loadTransformersFromOptions(program, diagnostics);
+
+    const afterDeclarations = [
+        ...(transformersFromOptions.afterDeclarations || []),
+        ...(customTransformers.afterDeclarations || []),
+    ];
+
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (options.noImplicitSelf) {
+        afterDeclarations.unshift(noImplicitSelfTransformer);
+    }
+
     return {
-        afterDeclarations: [
-            ...(transformersFromOptions.afterDeclarations || []),
-            ...(customTransformers.afterDeclarations || []),
-        ],
+        afterDeclarations,
         before: [
             ...(customTransformers.before || []),
             ...(transformersFromOptions.before || []),

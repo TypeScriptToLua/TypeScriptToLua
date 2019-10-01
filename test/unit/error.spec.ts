@@ -326,17 +326,17 @@ test.each([
     util.testFunction`
         const error = ${errorType}();
         return error.name;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 
     util.testFunction`
         const error = ${errorType}();
         return error.message;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 
     util.testFunction`
-            const error = ${errorType}();
-            return error.toString();
-        `.expectToMatchJsResult();
+        const error = ${errorType}();
+        return error.toString();
+    `.expectToMatchJsResult();
 });
 
 test.each([

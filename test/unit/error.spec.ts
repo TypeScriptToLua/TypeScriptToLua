@@ -371,7 +371,7 @@ test("extending from Error with custom toString()", () => {
     `.expectToMatchJsResult();
 });
 
-test.each(["Error", "RangeError", "MyError"])("get stack from error", errorType => {
+test.each(["Error", "RangeError", "MyError"])("get stack from %s", errorType => {
     const stack = util.testFunction`
         class MyError extends Error {
             public name = "MyError";

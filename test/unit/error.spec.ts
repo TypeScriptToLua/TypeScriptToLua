@@ -286,94 +286,62 @@ test("return from nested finally", () => {
     expect(util.transpileAndExecute(code)).toBe("finally AB");
 });
 
-test.each([`"Hello error string!"`, `42`, `true`, `false`, `undefined`, `{ x: "Hello error object!" }`])(
-    "throw and catch custom error object",
-    error => {
-        util.testFunction`
+test.each([
+    `"error string"`,
+    `42`,
+    `3.141`,
+    `true`,
+    `false`,
+    `undefined`,
+    `{ x: "error object" }`,
+    `() => "error function"`,
+])("throw and catch arbitrary types", error => {
+    util.testFunction`
             try {
                 throw ${error};
             } catch (error) {
-                return error;
-            }
-        `.expectToMatchJsResult();
-    }
-);
-
-test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
-    "throw builtin Errors as classes",
-    errorType => {
-        util.testFunction`
-            try {
-                throw new ${errorType}("message")
-            } catch (error) {
-                if (error instanceof Error) {
-                    return error.toString();
+                if (typeof error == 'function') {
+                    return error();
                 } else {
-                    throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
+                    return error;
                 }
             }
         `.expectToMatchJsResult();
-    }
-);
+});
 
-test.each(["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"])(
-    "throw builtin Errors as functions",
-    errorType => {
-        util.testFunction`
-            try {
-                throw ${errorType}("message")
-            } catch (error) {
-                if (error instanceof Error) {
-                    return error.toString();
-                } else {
-                    throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
-                }
-            }
+test.each([
+    "Error",
+    "RangeError",
+    "ReferenceError",
+    "SyntaxError",
+    "TypeError",
+    "URIError",
+    "new Error",
+    "new RangeError",
+    "new ReferenceError",
+    "new SyntaxError",
+    "new TypeError",
+    "new URIError",
+])("test builtin error properties", errorType => {
+    util.testFunction`
+        const error = ${errorType}();
+        return error.name;
         `.expectToMatchJsResult();
-    }
-);
 
-test("extending from Error", () => {
     util.testFunction`
-        class MyError extends Error {
-            public name = "MyError";
-        }
-        
-        try {
-            throw new MyError();
-        } catch (error) {
-            if (error instanceof Error) {
-                return error.toString();
-            } else {
-                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
-            }
-        }
-    `.expectToMatchJsResult();
+        const error = ${errorType}();
+        return error.message;
+        `.expectToMatchJsResult();
+
+    util.testFunction`
+            const error = ${errorType}();
+            return error.toString();
+        `.expectToMatchJsResult();
 });
 
-test("extending from Error with custom toString()", () => {
-    util.testFunction`
-        class MyError extends Error {
-            toString() {
-            	return "Custom error message";
-            }
-        }
-        
-        try {
-            throw new MyError();
-        } catch (error) {
-            if (error instanceof Error) {
-                return error.toString();
-            } else {
-                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
-            }
-        }
-    `.expectToMatchJsResult();
-});
-
-test.each(["Error", "RangeError", "MyError"])("get stack from %s", errorType => {
+test.each(["Error", "RangeError", "CustomError"])("get stack from %s", errorType => {
     const stack = util.testFunction`
-        class MyError extends Error {
+        class CustomError extends Error {
             public name = "MyError";
         }
         function innerFunctionThatThrows() { throw new ${errorType}(); }
@@ -385,7 +353,7 @@ test.each(["Error", "RangeError", "MyError"])("get stack from %s", errorType => 
             if (error instanceof Error) {
                 return error.stack;
             } else {
-                throw Error("This error serves to prevent false positives from .expectNoExecutionError()");
+                throw Error("This error serves to prevent false positives");
             }
         }
     `.getLuaExecutionResult();

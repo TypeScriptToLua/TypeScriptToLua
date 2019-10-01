@@ -354,7 +354,9 @@ test("extending from Error", () => {
 test("extending from Error with custom toString()", () => {
     util.testFunction`
         class MyError extends Error {
-            toString(){ return "Custom error message";  }
+            toString() {
+            	return "Custom error message";
+            }
         }
         
         try {

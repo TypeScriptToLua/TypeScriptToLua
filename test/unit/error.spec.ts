@@ -339,12 +339,27 @@ test.each([
         `.expectToMatchJsResult();
 });
 
-test.each(["Error", "RangeError", "CustomError"])("get stack from %s", errorType => {
+test.each([
+    "Error",
+    "RangeError",
+    "ReferenceError",
+    "SyntaxError",
+    "TypeError",
+    "URIError",
+    "new Error",
+    "new RangeError",
+    "new ReferenceError",
+    "new SyntaxError",
+    "new TypeError",
+    "new URIError",
+    "new CustomError",
+])("get stack from %s", errorType => {
     const stack = util.testFunction`
         class CustomError extends Error {
-            public name = "MyError";
+            public name = "CustomError";
         }
-        function innerFunctionThatThrows() { throw new ${errorType}(); }
+
+        function innerFunctionThatThrows() { throw ${errorType}(); }
         function outerFunctionThatThrows() { innerFunctionThatThrows(); }
 
         try {

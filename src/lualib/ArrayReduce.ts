@@ -1,5 +1,3 @@
-declare function select<T>(this: void, index: number, ...args: T[]): T;
-declare function select<T>(this: void, index: "#", ...args: T[]): number;
 /** @vararg */
 interface VarArg<T> extends Array<T> {}
 

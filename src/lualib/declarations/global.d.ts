@@ -16,3 +16,6 @@ declare function rawset<T, K extends keyof T>(table: T, key: K, val: T[K]): void
 declare function next<K, V>(table: Record<any, V>, index?: K): [K, V];
 declare function pcall(func: () => any): any;
 declare function unpack<T>(list: T[], i?: number, j?: number): T[];
+
+declare function select<T>(index: number, ...args: T[]): T;
+declare function select<T>(index: "#", ...args: T[]): number;

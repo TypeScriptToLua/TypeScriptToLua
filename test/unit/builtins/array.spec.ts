@@ -247,8 +247,24 @@ test("array.forEach (%p)", () => {
 });
 
 test.each([
+    { array: [], predicate: "elem > 3" },
+    { array: [0, 2, 4, 8], predicate: "elem > 10" },
+    { array: [0, 2, 4, 8], predicate: "elem > 7" },
+    { array: [0, 2, 4, 8], predicate: "elem == 0" },
+    { array: [0, 2, 4, 8], predicate: "elem > 7" },
+    { array: [0, 2, 4, 8], predicate: "true" },
+    { array: [0, 2, 4, 8], predicate: "false" },
+])("array.find (%p)", ({ array, predicate }) => {
+    util.testFunction`
+        const array = ${util.valueToString(array)};
+        return array.find((elem, index, arr) => ${predicate} && arr[index] === elem);
+    `.expectToMatchJsResult();
+});
+
+test.each([
     { array: [], searchElement: 3 },
     { array: [0, 2, 4, 8], searchElement: 10 },
+    { array: [0, 2, 4, 8], searchElement: 0 },
     { array: [0, 2, 4, 8], searchElement: 8 },
 ])("array.findIndex (%p)", ({ array, searchElement }) => {
     util.testFunction`
@@ -502,6 +518,22 @@ describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
             return calls;
         `.expectToMatchJsResult();
     });
+});
+
+test("array.reduce empty undefined initial", () => {
+    util.testExpression`[].reduce(() => {}, undefined)`.expectToMatchJsResult();
+});
+
+test("array.reduce empty no initial", () => {
+    util.testExpression`[].reduce(() => {})`.expectToMatchJsResult(true);
+});
+
+test("array.reduce undefined returning callback", () => {
+    util.testFunction`
+        const calls: Array<{ a: void, b: string }> = [];
+        ["a", "b"].reduce<void>((a, b) => { calls.push({ a, b }) }, undefined);
+        return calls;
+    `.expectToMatchJsResult();
 });
 
 const genericChecks = [

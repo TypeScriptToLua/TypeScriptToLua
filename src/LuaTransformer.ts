@@ -5132,8 +5132,11 @@ export class LuaTransformer {
             case "splice":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, node, caller, ...params);
             case "join":
+                const colonString = tstl.createStringLiteral(",");
                 const parameters =
-                    node.arguments.length === 0 ? [caller, tstl.createStringLiteral(",")] : [caller].concat(params);
+                    node.arguments.length === 0
+                        ? [caller, colonString]
+                        : [caller, tstl.createBinaryExpression(params[0], colonString, tstl.SyntaxKind.OrOperator)];
 
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("concat")),

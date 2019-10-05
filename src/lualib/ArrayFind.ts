@@ -1,10 +1,14 @@
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-array.prototype.find
-function __TS__ArrayFind<T>(this: void, arr: T[], callbackFn: (element: T, index?: number, array?: T[]) => boolean): T {
+function __TS__ArrayFind<T>(
+    this: void,
+    arr: T[],
+    predicate: (value: T, index: number, obj: T[]) => unknown
+): T | undefined {
     const len = arr.length;
     let k = 0;
     while (k < len) {
         const elem = arr[k];
-        if (callbackFn(elem, k, arr)) {
+        if (predicate(elem, k, arr)) {
             return elem;
         }
         k = k + 1;

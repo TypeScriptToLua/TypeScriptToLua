@@ -1,5 +1,7 @@
 /** @vararg */
 interface Vararg<T> extends Array<T> {}
+/** @forRange */
+declare function forRange(start: number, limit: number, step?: number): number[];
 
 // https://www.ecma-international.org/ecma-262/9.0/index.html#sec-array.prototype.reduce
 function __TS__ArrayReduce<T>(
@@ -26,9 +28,8 @@ function __TS__ArrayReduce<T>(
         k = 1;
     }
 
-    while (k < len) {
-        accumulator = callbackFn(accumulator, arr[k], k, arr);
-        k = k + 1;
+    for (const i of forRange(k, len - 1)) {
+        accumulator = callbackFn(accumulator, arr[i], i, arr);
     }
 
     return accumulator;

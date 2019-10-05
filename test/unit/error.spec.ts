@@ -325,17 +325,7 @@ test.each([
 ])("test builtin error properties", errorType => {
     util.testFunction`
         const error = ${errorType}();
-        return error.name;
-    `.expectToMatchJsResult();
-
-    util.testFunction`
-        const error = ${errorType}();
-        return error.message;
-    `.expectToMatchJsResult();
-
-    util.testFunction`
-        const error = ${errorType}();
-        return error.toString();
+        return { name: error.name, message: error.message, string: error.toString() };
     `.expectToMatchJsResult();
 });
 

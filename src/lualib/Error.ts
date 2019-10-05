@@ -20,14 +20,16 @@ function __TS__GetErrorStack(constructor: Function): string {
     return debug.traceback(undefined, level);
 }
 
-function __TS__GetErrorString(this: void, errorObj: Error): string {
-    const description = errorObj.message !== "" ? `${errorObj.name}: ${errorObj.message}` : errorObj.name;
-    const caller = debug.getinfo(3, "f");
-    if (_VERSION === "Lua 5.1" || (caller && caller.func !== error)) {
-        return description;
-    } else {
-        return `${description}\n${errorObj.stack}`;
-    }
+function __TS__WrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
+    return function(this: Error): string {
+        const description = getDescription.call(this);
+        const caller = debug.getinfo(3, "f");
+        if (_VERSION === "Lua 5.1" || (caller && caller.func !== error)) {
+            return description;
+        } else {
+            return `${description}\n${this.stack}`;
+        }
+    };
 }
 
 function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {
@@ -44,10 +46,15 @@ Error = __TS__InitErrorClass(
 
         constructor(public message = "") {
             this.stack = __TS__GetErrorStack((this.constructor as any).new);
+            const metatable = getmetatable(this);
+            if (!metatable.__errorToStringPatched) {
+                metatable.__errorToStringPatched = true;
+                metatable.__tostring = __TS__WrapErrorToString(metatable.__tostring);
+            }
         }
 
         public toString(): string {
-            return __TS__GetErrorString(this);
+            return this.message !== "" ? `${this.name}: ${this.message}` : this.name;
         }
     },
     "Error"
@@ -57,10 +64,6 @@ for (const errorName of ["RangeError", "ReferenceError", "SyntaxError", "TypeErr
     globalThis[errorName] = __TS__InitErrorClass(
         class extends Error {
             public name = errorName;
-
-            public toString(): string {
-                return __TS__GetErrorString(this);
-            }
         },
         errorName
     );

@@ -475,58 +475,33 @@ test.each([
     util.testExpressionTemplate`${array}.flatMap(${map})`.expectToEqual(expected);
 });
 
-test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
-    [[(total, currentItem) => total + currentItem]],
-    [[(total, currentItem) => total * currentItem]],
-    [[(total, currentItem) => total + currentItem, 10]],
-    [[(total, currentItem) => total * currentItem, 10]],
-    [[(total, _, index, array) => total + array[index]]],
-    [[(a, b) => a + b]],
-])("array.reduce (%p)", args => {
-    util.testExpression`[1, 3, 5, 7].reduce(${util.valuesToString(args)})`.expectToMatchJsResult();
-});
+describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
+    test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
+        [[(total, currentItem) => total + currentItem]],
+        [[(total, currentItem) => total * currentItem]],
+        [[(total, currentItem) => total + currentItem, 10]],
+        [[(total, currentItem) => total * currentItem, 10]],
+        [[(total, _, index, array) => total + array[index]]],
+        [[(a, b) => a + b]],
+    ])("usage (%p)", args => {
+        util.testExpression`[1, 3, 5, 7].${reduce}(${util.valuesToString(args)})`.expectToMatchJsResult();
+    });
 
-test("array.reduce empty undefined initial", () => {
-    util.testExpression`[].reduce(() => {}, undefined)`.expectToMatchJsResult();
-});
+    test("empty undefined initial", () => {
+        util.testExpression`[].${reduce}(() => {}, undefined)`.expectToMatchJsResult();
+    });
 
-test("array.reduce empty no initial", () => {
-    util.testExpression`[].reduce(() => {})`.expectToMatchJsResult(true);
-});
+    test("empty no initial", () => {
+        util.testExpression`[].${reduce}(() => {})`.expectToMatchJsResult(true);
+    });
 
-test("array.reduce undefined returning callback", () => {
-    util.testFunction`
-        const calls: Array<{ a: void, b: string }> = [];
-        ["a", "b"].reduce<void>((a, b) => { calls.push({ a, b }) }, undefined);
-        return calls;
-    `.expectToMatchJsResult();
-});
-
-test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
-    [[(total, currentItem) => total + currentItem]],
-    [[(total, currentItem) => total * currentItem]],
-    [[(total, currentItem) => total + currentItem, 10]],
-    [[(total, currentItem) => total * currentItem, 10]],
-    [[(total, _, index, array) => total + array[index]]],
-    [[(a, b) => a + b]],
-])("array.reduceRight (%p)", args => {
-    util.testExpression`[1, 3, 5, 7].reduceRight(${util.valuesToString(args)})`.expectToMatchJsResult();
-});
-
-test("array.reduceRight empty undefined initial", () => {
-    util.testExpression`[].reduceRight(() => {}, undefined)`.expectToMatchJsResult();
-});
-
-test("array.reduceRight empty no initial", () => {
-    util.testExpression`[].reduceRight(() => {})`.expectToMatchJsResult(true);
-});
-
-test("array.reduceRight undefined returning callback", () => {
-    util.testFunction`
-        const calls: Array<{a: void, b: string}> = [];
-        ['a', 'b'].reduceRight<void>((a, b) => { calls.push({ a, b }) }, undefined);
-        return calls;
-    `.expectToMatchJsResult();
+    test("undefined returning callback", () => {
+        util.testFunction`
+            const calls: Array<{ a: void, b: string }> = [];
+            ["a", "b"].${reduce}<void>((a, b) => { calls.push({ a, b }) }, undefined);
+            return calls;
+        `.expectToMatchJsResult();
+    });
 });
 
 const genericChecks = [

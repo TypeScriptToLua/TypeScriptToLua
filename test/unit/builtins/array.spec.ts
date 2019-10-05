@@ -486,6 +486,22 @@ test.each<[[(total: number, currentItem: number, index: number, array: number[])
     util.testExpression`[1, 3, 5, 7].reduce(${util.valuesToString(args)})`.expectToMatchJsResult();
 });
 
+test("array.reduce empty undefined initial", () => {
+    util.testExpression`[].reduce(() => {}, undefined)`.expectToMatchJsResult();
+});
+
+test("array.reduce empty no initial", () => {
+    util.testExpression`[].reduce(() => {})`.expectToMatchJsResult(true);
+});
+
+test("array.reduce undefined returning callback", () => {
+    util.testFunction`
+        const calls: Array<{ a: void, b: string }> = [];
+        ["a", "b"].reduce<void>((a, b) => { calls.push({ a, b }) }, undefined);
+        return calls;
+    `.expectToMatchJsResult();
+});
+
 const genericChecks = [
     "function generic<T extends number[]>(array: T)",
     "function generic<T extends [...number[]]>(array: T)",

@@ -496,8 +496,8 @@ test("array.reduce empty no initial", () => {
 
 test("array.reduce undefined returning callback", () => {
     util.testFunction`
-        const calls: Array<{a: void, b: string}> = [];
-        ['a', 'b'].reduce<void>((a, b) => { calls.push({ a, b }) }, undefined);
+        const calls: Array<{ a: void, b: string }> = [];
+        ["a", "b"].reduce<void>((a, b) => { calls.push({ a, b }) }, undefined);
         return calls;
     `.expectToMatchJsResult();
 });

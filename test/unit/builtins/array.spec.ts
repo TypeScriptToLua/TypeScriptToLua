@@ -337,7 +337,9 @@ test.each([
 ])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
     util.testFunction`
         const array = ${util.valueToString(array)};
-        array.splice(${util.valuesToString([start, deleteCount, ...newElements])});
+        array.splice(${util.valuesToString(
+            deleteCount ? [start, deleteCount, ...newElements] : [start, ...newElements]
+        )});
         return array;
     `.expectToMatchJsResult();
 });

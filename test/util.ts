@@ -49,10 +49,15 @@ export function expectToBeDefined<T>(subject: T | null | undefined): subject is 
     return true; // If this was false the expect would have thrown an error
 }
 
-export const valueToString = (value: unknown) =>
-    (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) || typeof value === "function"
-        ? String(value)
-        : JSON.stringify(value);
+export function valueToString(value: unknown): string {
+    if (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) {
+        return String(value);
+    } else if (typeof value === "function" || value === undefined) {
+        return String(value);
+    } else {
+        return JSON.stringify(value);
+    }
+}
 
 export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");
 

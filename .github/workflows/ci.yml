@@ -28,7 +28,7 @@ jobs:
       - name: Use Node.js 8.5.0
         uses: actions/setup-node@v1
         with:
-          version: 8.5.0
+          node-version: 8.5.0
       - run: npm install --global npm@6
       - run: npm ci
       - run: npm run build

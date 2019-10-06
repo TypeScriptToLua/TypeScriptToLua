@@ -2,8 +2,7 @@ name: Release
 
 on:
   push:
-    # TODO: tags: '*' triggers on any commit
-    branches: refs/tags/*
+    tags: "*"
 
 jobs:
   release:

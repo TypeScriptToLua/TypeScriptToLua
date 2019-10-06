@@ -49,6 +49,7 @@
         "@types/node": "^11.13.14",
         "@types/resolve": "0.0.8",
         "fengari": "^0.1.4",
+        "javascript-stringify": "^2.0.0",
         "jest": "^24.8.0",
         "jest-circus": "^24.8.0",
         "prettier": "^1.18.2",

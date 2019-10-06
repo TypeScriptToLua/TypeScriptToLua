@@ -3,10 +3,9 @@
     <h1>
         TypeScriptToLua
         <p></p>
-        <a href="https://travis-ci.org/TypeScriptToLua/TypeScriptToLua"><img alt="Build status" src="https://img.shields.io/travis/TypeScriptToLua/TypeScriptToLua/master.svg?style=for-the-badge" /></a>
-        <a href="https://ci.appveyor.com/project/Perryvw/typescripttolua-pa0ym"><img alt="Build status" src="https://img.shields.io/appveyor/ci/Perryvw/typescripttolua-pa0ym/master.svg?logo=appveyor&style=for-the-badge" /></a>
-        <a href="https://codecov.io/gh/TypeScriptToLua/typescripttolua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/TypeScriptToLua/typescripttolua.svg?logo=codecov&style=for-the-badge" /></a>
-        <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?style=for-the-badge&colorB=7581dc&logo=discord&logoColor=white"></a>
+        <a href="https://github.com/TypeScriptToLua/TypeScriptToLua/actions"><img alt="Continuous Integration status" src="https://github.com/TypeScriptToLua/TypeScriptToLua/workflows/Continuous%20Integration/badge.svg" /></a>
+        <a href="https://codecov.io/gh/TypeScriptToLua/TypeScriptToLua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/TypeScriptToLua/TypeScriptToLua.svg?logo=codecov" /></a>
+        <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?colorB=7581dc&logo=discord&logoColor=white"></a>
     </h1>
 </div>
 

@@ -3,7 +3,7 @@
     <h1>
         TypeScriptToLua
         <p></p>
-        <a href="https://github.com/TypeScriptToLua/TypeScriptToLua/actions"><img alt="Continuous Integration status" src="https://github.com/TypeScriptToLua/TypeScriptToLua/workflows/Continuous%20Integration/badge.svg" /></a>
+        <a href="https://github.com/TypeScriptToLua/TypeScriptToLua/actions"><img alt="Continuous Integration status" src="https://github.com/TypeScriptToLua/TypeScriptToLua/workflows/CI/badge.svg" /></a>
         <a href="https://codecov.io/gh/TypeScriptToLua/TypeScriptToLua"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/TypeScriptToLua/TypeScriptToLua.svg?logo=codecov" /></a>
         <a href="https://discord.gg/BWAq58Y"><img alt="Chat with us!" src="https://img.shields.io/discord/515854149821267971.svg?colorB=7581dc&logo=discord&logoColor=white"></a>
     </h1>

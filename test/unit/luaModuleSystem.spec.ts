@@ -4,7 +4,7 @@ import { LuaModuleSystemKind } from "../../src";
 
 test.each<[string, Record<string, string>]>([
     [
-        "Import module -> main",
+        "Import module without package or require",
         {
             "main.ts": `
                 import { value } from "./module";

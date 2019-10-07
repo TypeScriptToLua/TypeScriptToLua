@@ -6,5 +6,5 @@ module.exports = {
     tabWidth: 4,
     trailingComma: "es5",
     endOfLine: isCI ? "lf" : "auto",
-    overrides: [{ files: ["**/*.md", "**/*.yml", "**/.*.yml"], options: { tabWidth: 2 } }],
+    overrides: [{ files: ["**/*.md", "**/*.yml"], options: { tabWidth: 2 } }],
 };

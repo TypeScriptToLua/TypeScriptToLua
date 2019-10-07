@@ -104,21 +104,43 @@ export class LuaTransformer {
 
     protected currentSourceFile!: ts.SourceFile;
     protected isModule!: boolean;
+    protected isWithinBundle!: boolean;
     protected resolver!: EmitResolver;
 
     /** @internal */
-    public transform(sourceFile: ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
+    public transform(node: ts.Bundle | ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
-        this.currentSourceFile = sourceFile;
-        this.isModule = tsHelper.isFileModule(sourceFile);
+        if (ts.isSourceFile(node)) {
+            this.currentSourceFile = node;
+            this.isModule = tsHelper.isFileModule(node);
 
-        // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
-        // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
-        // and would try to re-analyze the file, which would fail because of replaced nodes.
-        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
-        this.resolver = this.checker.getEmitResolver(originalSourceFile);
+            // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
+            // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
+            // and would try to re-analyze the file, which would fail because of replaced nodes.
+            const originalSourceFile = ts.getParseTreeNode(node, ts.isSourceFile) || node;
+            this.resolver = this.checker.getEmitResolver(originalSourceFile);
 
-        return [this.transformSourceFile(sourceFile), this.luaLibFeatureSet];
+            return [this.transformSourceFile(node), this.luaLibFeatureSet];
+        } else {
+            return [this.transformBundle(node), this.luaLibFeatureSet];
+        }
+    }
+
+    public transformBundle(bundle: ts.Bundle): tstl.Block {
+        this.isWithinBundle = true;
+        const combinedStatements = bundle.sourceFiles.reduce(
+            (statements: tstl.Statement[], sourceFile: ts.SourceFile) => {
+                this.currentSourceFile = sourceFile;
+                this.isModule = tsHelper.isFileModule(sourceFile);
+                const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
+                this.resolver = this.checker.getEmitResolver(originalSourceFile);
+                const transformResult = this.transformSourceFile(sourceFile);
+                return [...statements, ...transformResult.statements];
+            },
+            []
+        );
+
+        return tstl.createBlock(combinedStatements, bundle);
     }
 
     public transformSourceFile(sourceFile: ts.SourceFile): tstl.Block {
@@ -149,6 +171,19 @@ export class LuaTransformer {
 
                 // return exports
                 statements.push(tstl.createReturnStatement([this.createExportsIdentifier()]));
+
+                if (this.isWithinBundle) {
+                    const packagePreload = tstl.createTableIndexExpression(
+                        tstl.createIdentifier("package"),
+                        tstl.createStringLiteral("preload")
+                    );
+                    const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
+                    const packagePreloadDeclaration = tstl.createAssignmentStatement(
+                        tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
+                        tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile))
+                    );
+                    return tstl.createBlock([packagePreloadDeclaration], sourceFile);
+                }
             }
         }
 

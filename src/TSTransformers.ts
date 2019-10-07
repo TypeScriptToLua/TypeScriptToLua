@@ -9,12 +9,18 @@ export function getCustomTransformers(
     program: ts.Program,
     diagnostics: ts.Diagnostic[],
     customTransformers: ts.CustomTransformers,
-    onSourceFile: (sourceFile: ts.SourceFile) => void
+    onRootNode: (node: ts.Bundle | ts.SourceFile) => void
 ): ts.CustomTransformers {
-    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => sourceFile => {
-        onSourceFile(sourceFile);
-        return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
-    };
+    const luaTransformer: ts.CustomTransformerFactory = () => ({
+        transformBundle: node => {
+            onRootNode(node);
+            return ts.createBundle([]);
+        },
+        transformSourceFile: node => {
+            onRootNode(node);
+            return ts.createSourceFile(node.fileName, "", ts.ScriptTarget.ESNext);
+        },
+    });
 
     const transformersFromOptions = loadTransformersFromOptions(program, diagnostics);
 

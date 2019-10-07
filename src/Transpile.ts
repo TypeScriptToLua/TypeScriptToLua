@@ -78,26 +78,32 @@ export function transpile({
         }
     }
 
-    const processSourceFile = (sourceFile: ts.SourceFile) => {
+    const processRootNode = (node: ts.Bundle | ts.SourceFile) => {
+        if (ts.isBundle(node) && !options.outFile) {
+            throw new Error("The option outFile must be specified when transforming a bundle.");
+        }
+
+        const fileName = ts.isBundle(node) ? options.outFile! : node.fileName;
+
         try {
-            const [luaAst, lualibFeatureSet] = transformer.transform(sourceFile);
+            const [luaAst, lualibFeatureSet] = transformer.transform(node);
             if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
-                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
+                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, fileName);
+                updateTranspiledFile(fileName, { luaAst, lua, sourceMap });
             }
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
 
             diagnostics.push(diagnosticFactories.transpileError(err));
 
-            updateTranspiledFile(sourceFile.fileName, {
+            updateTranspiledFile(fileName, {
                 lua: `error(${JSON.stringify(err.message)})\n`,
                 sourceMap: "",
             });
         }
     };
 
-    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processSourceFile);
+    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processRootNode);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {
@@ -123,7 +129,7 @@ export function transpile({
     if (targetSourceFiles) {
         for (const file of targetSourceFiles) {
             if (isEmittableJsonFile(file)) {
-                processSourceFile(file);
+                processRootNode(file);
             } else {
                 diagnostics.push(...program.emit(file, writeFile, undefined, false, transformers).diagnostics);
             }
@@ -135,7 +141,7 @@ export function transpile({
         program
             .getSourceFiles()
             .filter(isEmittableJsonFile)
-            .forEach(processSourceFile);
+            .forEach(processRootNode);
     }
 
     options.noEmit = oldNoEmit;

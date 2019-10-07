@@ -223,7 +223,8 @@ export abstract class TestBuilder {
     @memoize
     public getMainLuaFileResult(): ExecutableTranspiledFile {
         const { transpiledFiles } = this.getLuaResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
+        const mainFileName = this.options.outFile ? this.options.outFile : this.mainFileName;
+        const mainFile = transpiledFiles.find(x => x.fileName === mainFileName);
         expect(mainFile).toMatchObject({ lua: expect.any(String), sourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -418,6 +419,8 @@ class AccessorTestBuilder extends TestBuilder {
     }
 }
 
+class BundleTestBuilder extends AccessorTestBuilder {}
+
 class ModuleTestBuilder extends AccessorTestBuilder {
     public setReturnExport(name: string): this {
         expect(this.hasProgram).toBe(false);
@@ -462,6 +465,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     return new builder(tsCode);
 };
 
+export const testBundle = createTestBuilderFactory(BundleTestBuilder, false);
 export const testModule = createTestBuilderFactory(ModuleTestBuilder, false);
 export const testModuleTemplate = createTestBuilderFactory(ModuleTestBuilder, true);
 export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false);

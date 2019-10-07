@@ -20,6 +20,7 @@ export interface TransformerImport {
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     noImplicitSelf?: boolean;
     noHeader?: boolean;
+    luaModuleSystem?: LuaModuleSystemKind;
     luaTarget?: LuaTarget;
     luaLibImport?: LuaLibImportKind;
     noHoisting?: boolean;
@@ -27,6 +28,11 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     plugins?: Array<ts.PluginImport | TransformerImport>;
     [option: string]: ts.CompilerOptions[string] | Array<ts.PluginImport | TransformerImport>;
 };
+
+export enum LuaModuleSystemKind {
+    Require = "require",
+    None = "none",
+}
 
 export enum LuaLibImportKind {
     None = "none",

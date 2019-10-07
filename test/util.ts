@@ -419,7 +419,23 @@ class AccessorTestBuilder extends TestBuilder {
     }
 }
 
-class BundleTestBuilder extends AccessorTestBuilder {}
+class BundleTestBuilder extends AccessorTestBuilder {
+    protected moduleSystemKind: "none" | "require" = "require";
+    public setModuleSystem(kind: "none" | "require"): this {
+        this.moduleSystemKind = kind;
+        return this;
+    }
+    public getLuaCodeWithWrapper(): string {
+        if (this.moduleSystemKind === "require") {
+            return super.getLuaCodeWithWrapper();
+        }
+
+        const noRequire = "_G.require = nil";
+        const noPackage = "_G.package = nil";
+        const luaCode = super.getLuaCodeWithWrapper();
+        return `${noRequire}\n${noPackage}\n${luaCode}`;
+    }
+}
 
 class ModuleTestBuilder extends AccessorTestBuilder {
     public setReturnExport(name: string): this {

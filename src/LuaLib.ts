@@ -33,6 +33,7 @@ export enum LuaLibFeature {
     InstanceOf = "InstanceOf",
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
+    LuaRequire = "LuaRequire",
     Map = "Map",
     NewIndex = "NewIndex",
     Number = "Number",

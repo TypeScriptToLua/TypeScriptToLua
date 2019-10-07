@@ -138,7 +138,9 @@ test.each<[string, Record<string, string>]>([
 ])("outFile tests (%s)", (_, files) => {
     const testBuilder = util.testBundle`
         ${files["main.ts"]}
-    `.setOptions({ outFile: "main.lua", module: ts.ModuleKind.AMD });
+    `
+        .setOptions({ outFile: "main.lua", module: ts.ModuleKind.AMD })
+        .setModuleSystem("require");
 
     const extraFiles = Object.keys(files)
         .map(file => ({ fileName: file, code: files[file] }))

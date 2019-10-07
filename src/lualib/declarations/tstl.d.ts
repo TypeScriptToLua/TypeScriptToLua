@@ -1,5 +1,11 @@
 /** @noSelfInFile */
 
+/** @vararg */
+interface Vararg<T> extends Array<T> {}
+
+/** @forRange */
+declare function forRange(start: number, limit: number, step?: number): number[];
+
 interface LuaClass {
     prototype: LuaObject;
     ____super?: LuaClass;

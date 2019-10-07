@@ -5148,6 +5148,8 @@ export class LuaTransformer {
                 );
             case "forEach":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayForEach, node, caller, ...params);
+            case "find":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayFind, node, caller, ...params);
             case "findIndex":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFindIndex, node, caller, ...params);
             case "indexOf":

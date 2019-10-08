@@ -1,6 +1,9 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: master
+  pull_request:
 
 jobs:
   lint:
@@ -32,7 +35,7 @@ jobs:
       - run: npm install --global npm@6
       - run: npm ci
       - run: npm run build
-      - run: npx jest --coverage
+      - run: npx jest --maxWorkers 2 --coverage
         env:
           CI: true
       - if: matrix.os == 'ubuntu-latest'

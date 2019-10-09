@@ -5132,7 +5132,7 @@ export class LuaTransformer {
             case "splice":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, node, caller, ...params);
             case "join":
-                const colonString = tstl.createStringLiteral(",");
+                const commaLiteral = tstl.createStringLiteral(",");
                 const parameters =
                     node.arguments.length === 0
                         ? [caller, colonString]

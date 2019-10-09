@@ -1,16 +1,9 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
 import * as util from "../util";
 
 test("throwString", () => {
     util.testFunction`
         throw "Some Error"
     `.expectToEqual(new util.ExecutionError("Some Error"));
-});
-
-test("throwError", () => {
-    util.testFunction`
-        throw Error("Some Error")
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidThrowExpression(util.nodeStub));
 });
 
 test.skip.each([0, 1, 2])("re-throw (%p)", i => {
@@ -291,4 +284,55 @@ test("return from nested finally", () => {
         return foobar() + " " + x;
     `;
     expect(util.transpileAndExecute(code)).toBe("finally AB");
+});
+
+test.each([
+    `"error string"`,
+    `42`,
+    `3.141`,
+    `true`,
+    `false`,
+    `undefined`,
+    `{ x: "error object" }`,
+    `() => "error function"`,
+])("throw and catch %s", error => {
+    util.testFunction`
+        try {
+            throw ${error};
+        } catch (error) {
+            if (typeof error == 'function') {
+                return error();
+            } else {
+                return error;
+            }
+        }
+    `.expectToMatchJsResult();
+});
+
+const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
+
+test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])("%s properties", errorType => {
+    util.testFunction`
+        const error = ${errorType}();
+        return { name: error.name, message: error.message, string: error.toString() };
+    `.expectToMatchJsResult();
+});
+
+test.each([...builtinErrors, "CustomError"])("get stack from %s", errorType => {
+    const stack = util.testFunction`
+        class CustomError extends Error {
+            public name = "CustomError";
+        }
+
+        let stack: string | undefined;
+
+        function innerFunction() { stack = new ${errorType}().stack; }
+        function outerFunction() { innerFunction(); }
+        outerFunction();
+        
+        return stack;
+    `.getLuaExecutionResult();
+
+    expect(stack).toMatch("innerFunction");
+    expect(stack).toMatch("outerFunction");
 });

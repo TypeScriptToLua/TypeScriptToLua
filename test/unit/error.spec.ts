@@ -297,31 +297,28 @@ test.each([
     `() => "error function"`,
 ])("throw and catch %s", error => {
     util.testFunction`
-            try {
-                throw ${error};
-            } catch (error) {
-                if (typeof error == 'function') {
-                    return error();
-                } else {
-                    return error;
-                }
+        try {
+            throw ${error};
+        } catch (error) {
+            if (typeof error == 'function') {
+                return error();
+            } else {
+                return error;
             }
+        }
         `.expectToMatchJsResult();
 });
 
 const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
 
-test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])(
-    "test builtin error %s",
-    errorType => {
-        util.testFunction`
-        const error = ${errorType}();
-        return { name: error.name, message: error.message, string: error.toString() };
-    `.expectToMatchJsResult();
-    }
-);
+test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])("test builtin error %s", errorType => {
+    util.testFunction`
+            const error = ${errorType}();
+            return { name: error.name, message: error.message, string: error.toString() };
+        `.expectToMatchJsResult();
+});
 
-test.each([...builtinErrors, `CustomError`])("get stack from %s", errorType => {
+test.each([...builtinErrors, "CustomError"])("get stack from %s", errorType => {
     const stack = util.testFunction`
         class CustomError extends Error {
             public name = "CustomError";
@@ -334,7 +331,7 @@ test.each([...builtinErrors, `CustomError`])("get stack from %s", errorType => {
         outerFunction();
         
         return stack;
-    `.getLuaExecutionResult();
+        `.getLuaExecutionResult();
 
     expect(stack).toMatch("innerFunction");
     expect(stack).toMatch("outerFunction");

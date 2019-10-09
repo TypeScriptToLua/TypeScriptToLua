@@ -50,9 +50,11 @@ export function expectToBeDefined<T>(subject: T | null | undefined): subject is 
 }
 
 export function valueToString(value: unknown): string {
-    if (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) {
-        return String(value);
-    } else if (typeof value === "function" || value === undefined) {
+    if (
+        (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) ||
+        typeof value === "function" ||
+        value === undefined
+    ) {
         return String(value);
     } else {
         return JSON.stringify(value);

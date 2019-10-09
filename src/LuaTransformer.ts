@@ -5135,8 +5135,8 @@ export class LuaTransformer {
                 const commaLiteral = tstl.createStringLiteral(",");
                 const parameters =
                     node.arguments.length === 0
-                        ? [caller, colonString]
-                        : [caller, tstl.createBinaryExpression(params[0], colonString, tstl.SyntaxKind.OrOperator)];
+                        ? [caller, commaLiteral]
+                        : [caller, tstl.createBinaryExpression(params[0], commaLiteral, tstl.SyntaxKind.OrOperator)];
 
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("concat")),

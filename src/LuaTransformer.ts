@@ -5130,6 +5130,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
             case "reduce":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayReduce, node, caller, ...params);
+            case "reduceRight":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReduceRight, node, caller, ...params);
             case "some":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":

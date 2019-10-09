@@ -1,6 +1,6 @@
-interface ErrorType<T> extends Function {
+interface ErrorType {
     name: string;
-    new (...args: any[]): T;
+    new (...args: any[]): Error;
 }
 
 function __TS__GetErrorStack(constructor: Function): string {
@@ -32,7 +32,7 @@ function __TS__WrapErrorToString<T extends Error>(getDescription: (this: T) => s
     };
 }
 
-function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {
+function __TS__InitErrorClass(Type: ErrorType, name: string): any {
     Type.name = name;
     return setmetatable(Type, {
         __call: (_self: any, message: string) => new Type(message),
@@ -40,7 +40,7 @@ function __TS__InitErrorClass<T>(Type: ErrorType<T>, name: string): any {
 }
 
 Error = __TS__InitErrorClass(
-    class {
+    class implements Error {
         public name = "Error";
         public stack: string;
 

@@ -309,60 +309,33 @@ test.each([
         `.expectToMatchJsResult();
 });
 
-test.each([
-    "Error",
-    "RangeError",
-    "ReferenceError",
-    "SyntaxError",
-    "TypeError",
-    "URIError",
-    "new Error",
-    "new RangeError",
-    "new ReferenceError",
-    "new SyntaxError",
-    "new TypeError",
-    "new URIError",
-])("test builtin error properties", errorType => {
-    util.testFunction`
+const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
+
+test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])(
+    "test builtin error properties",
+    errorType => {
+        util.testFunction`
         const error = ${errorType}();
         return { name: error.name, message: error.message, string: error.toString() };
     `.expectToMatchJsResult();
-});
+    }
+);
 
-test.each([
-    "Error",
-    "RangeError",
-    "ReferenceError",
-    "SyntaxError",
-    "TypeError",
-    "URIError",
-    "new Error",
-    "new RangeError",
-    "new ReferenceError",
-    "new SyntaxError",
-    "new TypeError",
-    "new URIError",
-    "new CustomError",
-])("get stack from %s", errorType => {
+test.each([...builtinErrors, `CustomError`])("get stack from %s", errorType => {
     const stack = util.testFunction`
         class CustomError extends Error {
             public name = "CustomError";
         }
 
-        function innerFunctionThatThrows() { throw ${errorType}(); }
-        function outerFunctionThatThrows() { innerFunctionThatThrows(); }
+        let stack: string | undefined;
 
-        try {
-            outerFunctionThatThrows();
-        } catch (error) {
-            if (error instanceof Error) {
-                return error.stack;
-            } else {
-                throw Error("This error serves to prevent false positives");
-            }
-        }
+        function innerFunction() { stack = new ${errorType}().stack; }
+        function outerFunction() { innerFunction(); }
+        outerFunction();
+        
+        return stack;
     `.getLuaExecutionResult();
 
-    expect(stack).toMatch("innerFunctionThatThrows");
-    expect(stack).toMatch("outerFunctionThatThrows");
+    expect(stack).toMatch("innerFunction");
+    expect(stack).toMatch("outerFunction");
 });

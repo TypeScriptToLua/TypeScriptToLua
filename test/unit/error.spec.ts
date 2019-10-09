@@ -295,7 +295,7 @@ test.each([
     `undefined`,
     `{ x: "error object" }`,
     `() => "error function"`,
-])("throw and catch arbitrary types", error => {
+])("throw and catch %s", error => {
     util.testFunction`
             try {
                 throw ${error};
@@ -312,7 +312,7 @@ test.each([
 const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
 
 test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])(
-    "test builtin error properties",
+    "test builtin error %s",
     errorType => {
         util.testFunction`
         const error = ${errorType}();

@@ -6,9 +6,8 @@ test.each([
     { initial: { a: 3 }, args: [{ a: 5 }] },
     { initial: { a: 3 }, args: [{ b: 5 }, { c: 7 }] },
 ])("Object.assign (%p)", ({ initial, args }) => {
-    util.testExpression`Object.assign(${util.valueToString(initial)}, ${util.valuesToString(
-        args
-    )})`.expectToMatchJsResult();
+    const argsString = util.formatCode(...args);
+    util.testExpression`Object.assign(${util.formatCode(initial)}, ${argsString})`.expectToMatchJsResult();
 });
 
 test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.entries (%p)", obj => {

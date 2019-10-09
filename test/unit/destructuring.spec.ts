@@ -24,7 +24,7 @@ const testCases = [
     { binding: "{ y: [z = true] }", value: { y: [false] } },
     { binding: "{ x: [x, y] }", value: { x: ["x", "y"] } },
     { binding: "{ x: [{ y }] }", value: { x: [{ y: "y" }] } },
-].map(({ binding, value }) => ({ binding, value: util.valueToString(value) }));
+].map(({ binding, value }) => ({ binding, value: util.formatCode(value) }));
 
 test.each([
     ...testCases,
@@ -70,7 +70,7 @@ const assignmentTestCases = [
         { binding: "[{ x: obj.prop }]", value: [{ x: true }] },
         { binding: "{ obj: { prop: obj.prop } }", value: { obj: { prop: true } } },
         { binding: "{ x = true }", value: {} },
-    ].map(({ binding, value }) => ({ binding, value: util.valueToString(value) })),
+    ].map(({ binding, value }) => ({ binding, value: util.formatCode(value) })),
     { binding: "{ x: { [(3).toString()]: y } }", value: "{ x: { [(3).toString()]: true } }" },
 ];
 

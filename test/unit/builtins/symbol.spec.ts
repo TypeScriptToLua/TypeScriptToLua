@@ -1,12 +1,12 @@
 import * as util from "../../util";
 
 test.each([undefined, 1, "name"])("symbol.toString() (%p)", description => {
-    util.testExpression`Symbol(${util.valueToString(description)}).toString()`.expectToMatchJsResult();
+    util.testExpression`Symbol(${util.formatCode(description)}).toString()`.expectToMatchJsResult();
 });
 
 test.each([undefined, 1, "name"])("symbol.description (%p)", description => {
     // TODO: Supported since node 11
-    util.testExpression`Symbol(${util.valueToString(description)}).description`.expectToEqual(description);
+    util.testExpression`Symbol(${util.formatCode(description)}).description`.expectToEqual(description);
 });
 
 test("symbol uniqueness", () => {

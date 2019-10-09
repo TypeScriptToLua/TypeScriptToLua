@@ -27,6 +27,7 @@ export enum LuaLibFeature {
     ClassIndex = "ClassIndex",
     ClassNewIndex = "ClassNewIndex",
     Decorate = "Decorate",
+    Error = "Error",
     FunctionApply = "FunctionApply",
     FunctionBind = "FunctionBind",
     FunctionCall = "FunctionCall",
@@ -65,6 +66,7 @@ export enum LuaLibFeature {
 const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
+    Error: [LuaLibFeature.FunctionCall],
     InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
     ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],

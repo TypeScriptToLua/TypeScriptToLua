@@ -54,9 +54,6 @@ export const InvalidPropertyCall = (node: ts.Node) =>
 export const InvalidElementCall = (node: ts.Node) =>
     new TranspileError(`Tried to transpile a non-element call as an element call.`, node);
 
-export const InvalidThrowExpression = (node: ts.Node) =>
-    new TranspileError(`Invalid throw expression, only strings can be thrown.`, node);
-
 export const ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
     new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
 

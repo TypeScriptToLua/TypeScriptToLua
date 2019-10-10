@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { flatMap } from "../../../utils";
-import { FunctionVisitor, TransformerPlugin } from "../../context";
+import { FunctionVisitor } from "../../context";
 import { transformVariableDeclaration } from "../variable";
 import { transformLoopBody } from "./body";
 
-const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
+export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
     const result: tstl.Statement[] = [];
 
     if (statement.initializer) {
@@ -32,10 +32,4 @@ const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, cont
     result.push(tstl.createWhileStatement(tstl.createBlock(body), condition));
 
     return tstl.createDoStatement(result, statement);
-};
-
-export const forPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ForStatement]: transformForStatement,
-    },
 };

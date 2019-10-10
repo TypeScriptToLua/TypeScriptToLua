@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { UnsupportedKind } from "../utils/errors";
 import { transformUnaryBitOperation } from "./binary-expression/bit";
 import {
@@ -8,7 +8,10 @@ import {
     transformCompoundAssignmentStatement,
 } from "./binary-expression/compound";
 
-const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
+export function transformUnaryExpressionStatement(
+    context: TransformationContext,
+    node: ts.ExpressionStatement
+): tstl.Statement | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
     if (
         ts.isPrefixUnaryExpression(expression) &&
@@ -38,11 +41,9 @@ const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (n
             replacementOperator
         );
     }
+}
 
-    return context.superTransformStatements(node);
-};
-
-const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExpression> = (expression, context) => {
+export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExpression> = (expression, context) => {
     switch (expression.operator) {
         case ts.SyntaxKind.PlusPlusToken:
             return transformCompoundAssignmentExpression(
@@ -69,7 +70,7 @@ const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExpression
     }
 };
 
-const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpression> = (expression, context) => {
+export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpression> = (expression, context) => {
     switch (expression.operator) {
         case ts.SyntaxKind.PlusPlusToken:
             return transformCompoundAssignmentExpression(
@@ -118,12 +119,4 @@ const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpression> 
         default:
             throw UnsupportedKind("unary prefix operator", expression.operator, expression);
     }
-};
-
-export const unaryExpressionPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ExpressionStatement]: { transform: transformExpressionStatement, priority: 1 },
-        [ts.SyntaxKind.PostfixUnaryExpression]: transformPostfixUnaryExpression,
-        [ts.SyntaxKind.PrefixUnaryExpression]: transformPrefixUnaryExpression,
-    },
 };

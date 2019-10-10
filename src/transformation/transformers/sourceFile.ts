@@ -1,12 +1,12 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor } from "../context";
 import { InvalidJsonFileContent } from "../utils/errors";
 import { createExportsIdentifier } from "../utils/lua-ast";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { hasExportEquals } from "../utils/typescript";
 
-const transformSourceFile: FunctionVisitor<ts.SourceFile> = (node, context) => {
+export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
     let statements: tstl.Statement[] = [];
     if (node.flags & ts.NodeFlags.JsonFile) {
         const [statement] = node.statements;
@@ -35,10 +35,4 @@ const transformSourceFile: FunctionVisitor<ts.SourceFile> = (node, context) => {
     }
 
     return tstl.createBlock(statements, node);
-};
-
-export const sourceFilePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.SourceFile]: transformSourceFile,
-    },
 };

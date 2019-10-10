@@ -1,12 +1,12 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../../context";
+import { FunctionVisitor } from "../../context";
 import { ForbiddenForIn, UnsupportedForInVariable } from "../../utils/errors";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformLoopBody } from "./body";
 
-const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
+export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
     if (isArrayType(context, context.checker.getTypeAtLocation(statement.expression))) {
         throw ForbiddenForIn(statement);
     }
@@ -42,10 +42,4 @@ const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, 
     }
 
     return tstl.createForInStatement(body, [iterationVariable], [pairsCall], statement);
-};
-
-export const forInPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ForInStatement]: transformForInStatement,
-    },
 };

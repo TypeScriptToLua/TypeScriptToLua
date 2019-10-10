@@ -1,11 +1,12 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
+import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { InvalidInstanceOfExtension, InvalidInstanceOfLuaTable, UnsupportedKind } from "../../utils/errors";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType } from "../../utils/typescript";
+import { transformTypeOfBinaryExpression } from "../typeof";
 import { transformAssignmentExpression, transformAssignmentStatement } from "./assignments";
 import { transformBinaryBitOperation } from "./bit";
 import {
@@ -105,7 +106,12 @@ export function transformBinaryOperation(
     }
 }
 
-const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, context) => {
+export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, context) => {
+    const typeOfResult = transformTypeOfBinaryExpression(context, node);
+    if (typeOfResult) {
+        return typeOfResult;
+    }
+
     const operator = node.operatorToken.kind;
 
     // Check if this is an assignment token, then handle accordingly
@@ -204,7 +210,10 @@ const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, c
     }
 };
 
-const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
+export function transformBinaryExpressionStatement(
+    context: TransformationContext,
+    node: ts.ExpressionStatement
+): tstl.Statement[] | tstl.Statement | undefined {
     const { expression } = node;
     if (ts.isBinaryExpression(expression)) {
         const operator = expression.operatorToken.kind;
@@ -229,13 +238,4 @@ const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (n
             return tstl.createDoStatement(statements, expression);
         }
     }
-
-    return context.superTransformStatements(node);
-};
-
-export const binaryExpressionPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.BinaryExpression]: transformBinaryExpression,
-        [ts.SyntaxKind.ExpressionStatement]: { priority: 1, transform: transformExpressionStatement },
-    },
-};
+}

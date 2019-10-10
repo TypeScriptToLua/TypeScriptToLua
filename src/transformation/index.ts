@@ -3,9 +3,9 @@ import * as tstl from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, TransformerPlugin, VisitorMap } from "./context";
-import { standardPlugins } from "./transformers";
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
+import { standardPlugin } from "./transformers";
 
 export { TransformerPlugin } from "./context";
 
@@ -21,7 +21,7 @@ const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
 
 export function createVisitorMap(customPlugins: TransformerPlugin[]): VisitorMap {
     const visitorMap: VisitorMap = new Map();
-    for (const plugin of [...standardPlugins, ...customPlugins]) {
+    for (const plugin of [standardPlugin, ...customPlugins]) {
         for (const [syntaxKindKey, visitor] of Object.entries(plugin.visitors)) {
             if (!visitor) continue;
 

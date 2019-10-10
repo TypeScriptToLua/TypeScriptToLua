@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { isVarArgType } from "../utils/annotations";
 import { MissingFunctionName, UnsupportedFunctionWithoutBody } from "../utils/errors";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
@@ -233,7 +233,7 @@ export function transformFunctionLikeDeclaration(
     return functionExpression;
 }
 
-const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {
+export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {
     // Don't transform functions without body (overload declarations)
     if (!node.body) {
         return undefined;
@@ -281,12 +281,4 @@ const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (n
     }
 
     return createLocalOrExportedOrGlobalDeclaration(context, name, functionExpression, node);
-};
-
-export const functionPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.FunctionDeclaration]: transformFunctionDeclaration,
-        [ts.SyntaxKind.FunctionExpression]: transformFunctionLikeDeclaration,
-        [ts.SyntaxKind.ArrowFunction]: transformFunctionLikeDeclaration,
-    },
 };

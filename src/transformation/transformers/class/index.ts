@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../../utils";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
+import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
     ForbiddenLuaTableNonDeclaration,
@@ -38,10 +38,10 @@ import { isGetAccessorOverride, transformAccessorDeclaration } from "./members/a
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
-import { checkForLuaLibType, transformNewExpression } from "./new";
+import { checkForLuaLibType } from "./new";
 import { getExtendedType, getExtendedTypeNode, isStaticNode } from "./utils";
 
-function transformClassAsExpression(
+export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
     context: TransformationContext,
     isDefaultExport = false
@@ -64,7 +64,7 @@ function transformClassAsExpression(
 
 const classStacks = new WeakMap<TransformationContext, ts.ClassLikeDeclaration[]>();
 
-function transformClassDeclaration(
+export function transformClassDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
     nameOverride?: tstl.Identifier
@@ -331,7 +331,7 @@ function transformClassDeclaration(
     return result;
 }
 
-const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
+export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
     const classStack = getOrUpdate(classStacks, context, () => []);
     const classDeclaration = classStack[classStack.length - 1];
     const typeNode = getExtendedTypeNode(context, classDeclaration);
@@ -366,14 +366,4 @@ const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expressio
     return tstl.createTableIndexExpression(baseClassName, tstl.createStringLiteral("prototype"));
 };
 
-const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
-
-export const classPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ClassExpression]: transformClassAsExpression,
-        [ts.SyntaxKind.ClassDeclaration]: transformClassDeclaration,
-        [ts.SyntaxKind.SuperKeyword]: transformSuperExpression,
-        [ts.SyntaxKind.ThisKeyword]: transformThisExpression,
-        [ts.SyntaxKind.NewExpression]: transformNewExpression,
-    },
-};
+export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);

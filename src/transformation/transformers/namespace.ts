@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import {
@@ -49,7 +49,7 @@ function moduleHasEmittedBody(
 const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaration | undefined>();
 export const getCurrentNamespace = (context: TransformationContext) => currentNamespaces.get(context);
 
-const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
+export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node));
     // If phantom namespace elide the declaration and return the body
     if (annotations.has(AnnotationKind.Phantom) && node.body && ts.isModuleBlock(node.body)) {
@@ -130,10 +130,4 @@ const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node,
     currentNamespaces.set(context, currentNamespace);
 
     return result;
-};
-
-export const namespacePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ModuleDeclaration]: transformModuleDeclaration,
-    },
 };

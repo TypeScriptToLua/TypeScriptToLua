@@ -1,66 +1,95 @@
+import * as ts from "typescript";
 import { TransformerPlugin } from "../context";
-import { accessPlugin } from "./access";
-import { binaryExpressionPlugin } from "./binary-expression";
-import { blockPlugin } from "./block";
-import { breakContinuePlugin } from "./break-continue";
-import { callPlugin } from "./call";
-import { classPlugin } from "./class";
-import { conditionalPlugin } from "./conditional";
-import { deletePlugin } from "./delete";
-import { enumPlugin } from "./enum";
-import { errorsPlugin } from "./errors";
-import { expressionStatementPlugin } from "./expression-statement";
-import { functionPlugin } from "./function";
-import { generatorPlugin } from "./generator";
-import { identifierPlugin } from "./identifier";
-import { literalPlugin } from "./literal";
-import { doWhilePlugin } from "./loops/do-while";
-import { forPlugin } from "./loops/for";
-import { forInPlugin } from "./loops/for-in";
-import { forOfPlugin } from "./loops/for-of";
-import { luaTablePlugin } from "./lua-table";
-import { exportPlugin } from "./modules/export";
-import { importPlugin } from "./modules/import";
-import { namespacePlugin } from "./namespace";
-import { returnPlugin } from "./return";
-import { sourceFilePlugin } from "./sourceFile";
-import { switchPlugin } from "./switch";
-import { templatePlugin } from "./template";
-import { todoMoveSomewherePlugin } from "./todo-move-somewhere";
-import { typeofPlugin } from "./typeof";
-import { unaryExpressionPlugin } from "./unary-expression";
-import { variablePlugin } from "./variable";
+import { transformElementAccessExpression, transformPropertyAccessExpression, transformQualifiedName } from "./access";
+import { transformBinaryExpression } from "./binary-expression";
+import { transformBlock } from "./block";
+import { transformBreakStatement, transformContinueStatement } from "./break-continue";
+import { transformCallExpression, transformSpreadElement } from "./call";
+import {
+    transformClassAsExpression,
+    transformClassDeclaration,
+    transformSuperExpression,
+    transformThisExpression,
+} from "./class";
+import { transformNewExpression } from "./class/new";
+import { transformConditionalExpression, transformIfStatement } from "./conditional";
+import { transformDeleteExpression } from "./delete";
+import { transformEnumDeclaration } from "./enum";
+import { transformThrowStatement, transformTryStatement } from "./errors";
+import { transformExpressionStatement } from "./expression-statement";
+import { transformFunctionDeclaration, transformFunctionLikeDeclaration } from "./function";
+import { transformYieldExpression } from "./generator";
+import { transformIdentifierExpression } from "./identifier";
+import { literalVisitors } from "./literal";
+import { transformDoStatement, transformWhileStatement } from "./loops/do-while";
+import { transformForStatement } from "./loops/for";
+import { transformForInStatement } from "./loops/for-in";
+import { transformForOfStatement } from "./loops/for-of";
+import { transformExportAssignment, transformExportDeclaration } from "./modules/export";
+import {
+    transformExternalModuleReference,
+    transformImportDeclaration,
+    transformImportEqualsDeclaration,
+} from "./modules/import";
+import { transformModuleDeclaration } from "./namespace";
+import { transformReturnStatement } from "./return";
+import { transformSourceFileNode } from "./sourceFile";
+import { transformSwitchStatement } from "./switch";
+import { transformTaggedTemplateExpression, transformTemplateExpression } from "./template";
+import { todoMoveSomewhereVisitors } from "./todo-move-somewhere";
+import { transformTypeOfExpression } from "./typeof";
+import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
+import { transformVariableStatement } from "./variable";
 
-export const standardPlugins: TransformerPlugin[] = [
-    accessPlugin,
-    binaryExpressionPlugin,
-    blockPlugin,
-    breakContinuePlugin,
-    callPlugin,
-    classPlugin,
-    conditionalPlugin,
-    deletePlugin,
-    enumPlugin,
-    errorsPlugin,
-    expressionStatementPlugin,
-    functionPlugin,
-    generatorPlugin,
-    identifierPlugin,
-    literalPlugin,
-    doWhilePlugin,
-    forPlugin,
-    forInPlugin,
-    forOfPlugin,
-    luaTablePlugin,
-    exportPlugin,
-    importPlugin,
-    namespacePlugin,
-    returnPlugin,
-    sourceFilePlugin,
-    switchPlugin,
-    templatePlugin,
-    todoMoveSomewherePlugin,
-    typeofPlugin,
-    unaryExpressionPlugin,
-    variablePlugin,
-];
+export const standardPlugin: TransformerPlugin = {
+    visitors: {
+        ...literalVisitors,
+        ...todoMoveSomewhereVisitors,
+        [ts.SyntaxKind.ArrowFunction]: transformFunctionLikeDeclaration,
+        [ts.SyntaxKind.BinaryExpression]: transformBinaryExpression,
+        [ts.SyntaxKind.Block]: transformBlock,
+        [ts.SyntaxKind.BreakStatement]: transformBreakStatement,
+        [ts.SyntaxKind.CallExpression]: transformCallExpression,
+        [ts.SyntaxKind.ClassDeclaration]: transformClassDeclaration,
+        [ts.SyntaxKind.ClassExpression]: transformClassAsExpression,
+        [ts.SyntaxKind.ConditionalExpression]: transformConditionalExpression,
+        [ts.SyntaxKind.ContinueStatement]: transformContinueStatement,
+        [ts.SyntaxKind.DeleteExpression]: transformDeleteExpression,
+        [ts.SyntaxKind.DoStatement]: transformDoStatement,
+        [ts.SyntaxKind.ElementAccessExpression]: transformElementAccessExpression,
+        [ts.SyntaxKind.EnumDeclaration]: transformEnumDeclaration,
+        [ts.SyntaxKind.ExportAssignment]: transformExportAssignment,
+        [ts.SyntaxKind.ExportDeclaration]: transformExportDeclaration,
+        [ts.SyntaxKind.ExpressionStatement]: transformExpressionStatement,
+        [ts.SyntaxKind.ExternalModuleReference]: transformExternalModuleReference,
+        [ts.SyntaxKind.ForInStatement]: transformForInStatement,
+        [ts.SyntaxKind.ForOfStatement]: transformForOfStatement,
+        [ts.SyntaxKind.ForStatement]: transformForStatement,
+        [ts.SyntaxKind.FunctionDeclaration]: transformFunctionDeclaration,
+        [ts.SyntaxKind.FunctionExpression]: transformFunctionLikeDeclaration,
+        [ts.SyntaxKind.Identifier]: transformIdentifierExpression,
+        [ts.SyntaxKind.IfStatement]: transformIfStatement,
+        [ts.SyntaxKind.ImportDeclaration]: transformImportDeclaration,
+        [ts.SyntaxKind.ImportEqualsDeclaration]: transformImportEqualsDeclaration,
+        [ts.SyntaxKind.ModuleDeclaration]: transformModuleDeclaration,
+        [ts.SyntaxKind.NewExpression]: transformNewExpression,
+        [ts.SyntaxKind.PostfixUnaryExpression]: transformPostfixUnaryExpression,
+        [ts.SyntaxKind.PrefixUnaryExpression]: transformPrefixUnaryExpression,
+        [ts.SyntaxKind.PropertyAccessExpression]: transformPropertyAccessExpression,
+        [ts.SyntaxKind.QualifiedName]: transformQualifiedName,
+        [ts.SyntaxKind.ReturnStatement]: transformReturnStatement,
+        [ts.SyntaxKind.SourceFile]: transformSourceFileNode,
+        [ts.SyntaxKind.SpreadElement]: transformSpreadElement,
+        [ts.SyntaxKind.SuperKeyword]: transformSuperExpression,
+        [ts.SyntaxKind.SwitchStatement]: transformSwitchStatement,
+        [ts.SyntaxKind.TaggedTemplateExpression]: transformTaggedTemplateExpression,
+        [ts.SyntaxKind.TemplateExpression]: transformTemplateExpression,
+        [ts.SyntaxKind.ThisKeyword]: transformThisExpression,
+        [ts.SyntaxKind.ThrowStatement]: transformThrowStatement,
+        [ts.SyntaxKind.TryStatement]: transformTryStatement,
+        [ts.SyntaxKind.TypeOfExpression]: transformTypeOfExpression,
+        [ts.SyntaxKind.VariableStatement]: transformVariableStatement,
+        [ts.SyntaxKind.WhileStatement]: transformWhileStatement,
+        [ts.SyntaxKind.YieldExpression]: transformYieldExpression,
+    },
+};

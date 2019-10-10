@@ -1,13 +1,13 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { getSymbolExportScope } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
 
-function tryGetConstEnumValue(
+export function tryGetConstEnumValue(
     context: TransformationContext,
     node: ts.EnumMember | ts.PropertyAccessExpression | ts.ElementAccessExpression
 ): tstl.Expression | undefined {
@@ -19,7 +19,7 @@ function tryGetConstEnumValue(
     }
 }
 
-const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (node, context) => {
+export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (node, context) => {
     if (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Const && !context.options.preserveConstEnums) {
         return undefined;
     }
@@ -91,24 +91,4 @@ const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (node, con
     }
 
     return result;
-};
-
-const transformAccessExpression: FunctionVisitor<ts.PropertyAccessExpression | ts.ElementAccessExpression> = (
-    node,
-    context
-) => {
-    const constEnumValue = tryGetConstEnumValue(context, node);
-    if (constEnumValue) {
-        return constEnumValue;
-    }
-
-    return context.superTransformExpression(node);
-};
-
-export const enumPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.EnumDeclaration]: transformEnumDeclaration,
-        [ts.SyntaxKind.ElementAccessExpression]: { transform: transformAccessExpression, priority: 1 },
-        [ts.SyntaxKind.PropertyAccessExpression]: { transform: transformAccessExpression, priority: 1 },
-    },
 };

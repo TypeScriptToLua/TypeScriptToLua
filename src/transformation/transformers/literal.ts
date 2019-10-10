@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext, Visitors } from "../context";
 import { InvalidAmbientIdentifierName, UnsupportedKind } from "../utils/errors";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -134,15 +134,13 @@ const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression
     return tstl.createTableExpression(values, expression);
 };
 
-export const literalPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.NullKeyword]: node => tstl.createNilLiteral(node),
-        [ts.SyntaxKind.TrueKeyword]: node => tstl.createBooleanLiteral(true, node),
-        [ts.SyntaxKind.FalseKeyword]: node => tstl.createBooleanLiteral(false, node),
-        [ts.SyntaxKind.NumericLiteral]: node => tstl.createNumericLiteral(Number(node.text), node),
-        [ts.SyntaxKind.StringLiteral]: node => tstl.createStringLiteral(node.text, node),
-        [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => tstl.createStringLiteral(node.text, node),
-        [ts.SyntaxKind.ObjectLiteralExpression]: transformObjectLiteralExpression,
-        [ts.SyntaxKind.ArrayLiteralExpression]: transformArrayLiteralExpression,
-    },
+export const literalVisitors: Visitors = {
+    [ts.SyntaxKind.NullKeyword]: node => tstl.createNilLiteral(node),
+    [ts.SyntaxKind.TrueKeyword]: node => tstl.createBooleanLiteral(true, node),
+    [ts.SyntaxKind.FalseKeyword]: node => tstl.createBooleanLiteral(false, node),
+    [ts.SyntaxKind.NumericLiteral]: node => tstl.createNumericLiteral(Number(node.text), node),
+    [ts.SyntaxKind.StringLiteral]: node => tstl.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => tstl.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.ObjectLiteralExpression]: transformObjectLiteralExpression,
+    [ts.SyntaxKind.ArrayLiteralExpression]: transformArrayLiteralExpression,
 };

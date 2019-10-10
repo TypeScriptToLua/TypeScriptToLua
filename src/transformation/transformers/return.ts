@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -17,7 +17,7 @@ function getContainingFunctionReturnType(context: TransformationContext, node: t
     }
 }
 
-const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
+export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
     // Bubble up explicit return flag and check if we're inside a try/catch block
     let insideTryCatch = false;
     for (const scope of walkScopesUp(context)) {
@@ -70,10 +70,4 @@ const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement
     }
 
     return tstl.createReturnStatement(results, statement);
-};
-
-export const returnPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ReturnStatement]: transformReturnStatement,
-    },
 };

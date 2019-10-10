@@ -1,13 +1,13 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor } from "../context";
 import { isInTupleReturnFunction } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
 import { findScope, ScopeType } from "../utils/scope";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 
-const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
+export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
     const tryResultIdentifier = tstl.createIdentifier("____try");
@@ -105,7 +105,7 @@ const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, cont
     return tstl.createDoStatement(result, statement);
 };
 
-const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (statement, context) => {
+export const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (statement, context) => {
     const parameters: tstl.Expression[] = [];
 
     if (statement.expression) {
@@ -117,11 +117,4 @@ const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (statement, 
         tstl.createCallExpression(tstl.createIdentifier("error"), parameters),
         statement
     );
-};
-
-export const errorsPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.TryStatement]: transformTryStatement,
-        [ts.SyntaxKind.ThrowStatement]: transformThrowStatement,
-    },
 };

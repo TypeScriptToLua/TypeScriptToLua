@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall, isVarArgType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { UnsupportedKind } from "../utils/errors";
@@ -12,6 +12,7 @@ import { isValidLuaIdentifier, luaKeywords } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformIdentifier } from "./identifier";
+import { transformLuaTableCallExpression } from "./lua-table";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -138,7 +139,12 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
     }
 }
 
-const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
+export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
+    const luaTableResult = transformLuaTableCallExpression(context, node);
+    if (luaTableResult) {
+        return luaTableResult;
+    }
+
     const isTupleReturn = isTupleReturnCall(context, node);
     const isTupleReturnForward =
         node.parent && ts.isReturnStatement(node.parent) && isInTupleReturnFunction(context, node);
@@ -193,7 +199,7 @@ const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, conte
 };
 
 // TODO: Currently it's also used as an array member
-const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
+export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     const innerExpression = context.transformExpression(node.expression);
     if (isTupleReturnCall(context, node.expression)) {
         return innerExpression;
@@ -209,11 +215,4 @@ const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context
     }
 
     return transformLuaLibFunction(context, LuaLibFeature.Spread, node, innerExpression);
-};
-
-export const callPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.CallExpression]: transformCallExpression,
-        [ts.SyntaxKind.SpreadElement]: transformSpreadElement,
-    },
 };

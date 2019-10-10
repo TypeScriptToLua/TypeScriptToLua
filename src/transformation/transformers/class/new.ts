@@ -5,6 +5,7 @@ import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
 import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { transformArguments } from "../call";
+import { transformLuaTableNewExpression } from "../lua-table";
 
 const builtinErrorTypeNames = new Set([
     "Error",
@@ -47,6 +48,11 @@ export function checkForLuaLibType(context: TransformationContext, type: ts.Type
 }
 
 export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context) => {
+    const luaTableResult = transformLuaTableNewExpression(context, node);
+    if (luaTableResult) {
+        return luaTableResult;
+    }
+
     const name = context.transformExpression(node.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = node.arguments

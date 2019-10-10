@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { ForbiddenLuaTableUseException, UnsupportedKind, UnsupportedProperty } from "../utils/errors";
 import { transformArguments } from "./call";
@@ -63,7 +63,10 @@ function transformLuaTableExpressionAsExpressionStatement(
     }
 }
 
-const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
+export function transformLuaTableExpressionStatement(
+    context: TransformationContext,
+    node: ts.ExpressionStatement
+): tstl.Statement | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
 
     if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
@@ -73,41 +76,36 @@ const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (n
             return transformLuaTableExpressionAsExpressionStatement(context, expression);
         }
     }
-
-    return context.superTransformStatements(node);
-};
-
-function transformLuaTableCallExpression(
-    context: TransformationContext,
-    expression: ts.CallExpression
-): tstl.Expression {
-    const [luaTable, methodName] = parseLuaTableExpression(context, expression.expression);
-    validateLuaTableCall(methodName, expression.arguments, expression);
-    const signature = context.checker.getResolvedSignature(expression);
-    const params = transformArguments(context, expression.arguments, signature);
-
-    switch (methodName) {
-        case "get":
-            return tstl.createTableIndexExpression(luaTable, params[0], expression);
-        default:
-            throw UnsupportedProperty("LuaTable", methodName, expression);
-    }
 }
 
-const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, context) => {
+export function transformLuaTableCallExpression(
+    context: TransformationContext,
+    node: ts.CallExpression
+): tstl.Expression | undefined {
     if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
         const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
         const annotations = getTypeAnnotations(context, ownerType);
 
         if (annotations.has(AnnotationKind.LuaTable)) {
-            return transformLuaTableCallExpression(context, node);
+            const [luaTable, methodName] = parseLuaTableExpression(context, node.expression);
+            validateLuaTableCall(methodName, node.arguments, node);
+            const signature = context.checker.getResolvedSignature(node);
+            const params = transformArguments(context, node.arguments, signature);
+
+            switch (methodName) {
+                case "get":
+                    return tstl.createTableIndexExpression(luaTable, params[0], node);
+                default:
+                    throw UnsupportedProperty("LuaTable", methodName, node);
+            }
         }
     }
+}
 
-    return context.superTransformExpression(node);
-};
-
-const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (node, context) => {
+export function transformLuaTablePropertyAccessExpression(
+    context: TransformationContext,
+    node: ts.PropertyAccessExpression
+): tstl.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node.expression);
     const annotations = getTypeAnnotations(context, type);
     if (annotations.has(AnnotationKind.LuaTable)) {
@@ -119,20 +117,22 @@ const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpres
                 throw UnsupportedProperty("LuaTable", propertyName, node);
         }
     }
+}
 
-    return context.superTransformExpression(node);
-};
-
-const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
+export function transformLuaTableElementAccessExpression(
+    context: TransformationContext,
+    node: ts.ElementAccessExpression
+): void {
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
     if (annotations.has(AnnotationKind.LuaTable)) {
         throw UnsupportedKind("LuaTable access expression", node.kind, node);
     }
+}
 
-    return context.superTransformExpression(node);
-};
-
-const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context) => {
+export function transformLuaTableNewExpression(
+    context: TransformationContext,
+    node: ts.NewExpression
+): tstl.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node);
     const annotations = getTypeAnnotations(context, type);
     if (annotations.has(AnnotationKind.LuaTable)) {
@@ -142,16 +142,4 @@ const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, context
             return tstl.createTableExpression();
         }
     }
-
-    return context.superTransformExpression(node);
-};
-
-export const luaTablePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ExpressionStatement]: { transform: transformExpressionStatement, priority: 1 },
-        [ts.SyntaxKind.CallExpression]: { transform: transformCallExpression, priority: 1 },
-        [ts.SyntaxKind.PropertyAccessExpression]: { transform: transformPropertyAccessExpression, priority: 1 },
-        [ts.SyntaxKind.ElementAccessExpression]: { transform: transformElementAccessExpression, priority: 1 },
-        [ts.SyntaxKind.NewExpression]: { transform: transformNewExpression, priority: 1 },
-    },
-};
+}

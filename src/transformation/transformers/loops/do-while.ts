@@ -1,9 +1,9 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../../context";
+import { FunctionVisitor } from "../../context";
 import { transformLoopBody } from "./body";
 
-const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
+export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
     return tstl.createWhileStatement(
         tstl.createBlock(transformLoopBody(context, statement)),
         context.transformExpression(statement.expression),
@@ -11,7 +11,7 @@ const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, 
     );
 };
 
-const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
+export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
     const body = tstl.createDoStatement(transformLoopBody(context, statement));
     let condition = context.transformExpression(statement.expression);
     if (tstl.isUnaryExpression(condition) && condition.operator === tstl.SyntaxKind.NotOperator) {
@@ -24,11 +24,4 @@ const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, contex
     }
 
     return tstl.createRepeatStatement(tstl.createBlock([body]), condition, statement);
-};
-
-export const doWhilePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.WhileStatement]: transformWhileStatement,
-        [ts.SyntaxKind.DoStatement]: transformDoStatement,
-    },
 };

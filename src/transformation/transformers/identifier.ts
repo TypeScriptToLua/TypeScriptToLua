@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
 import { InvalidForRangeCall } from "../utils/errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
@@ -26,7 +26,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     return tstl.createIdentifier(text, identifier, symbolId, identifier.text);
 }
 
-const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
+export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
     // TODO: Move below to avoid extra transforms?
     const identifier = transformIdentifier(context, node);
 
@@ -45,10 +45,4 @@ const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, con
     }
 
     return identifier;
-};
-
-export const identifierPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.Identifier]: transformIdentifierExpression,
-    },
 };

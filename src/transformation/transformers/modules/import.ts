@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
+import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
 import { createDefaultExportStringLiteral } from "../../utils/export";
@@ -198,10 +198,10 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     }
 };
 
-const transformExternalModuleReference: FunctionVisitor<ts.ExternalModuleReference> = (node, context) =>
+export const transformExternalModuleReference: FunctionVisitor<ts.ExternalModuleReference> = (node, context) =>
     createModuleRequire(context, node.expression, node);
 
-const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDeclaration> = (node, context) => {
+export const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDeclaration> = (node, context) => {
     if (
         !context.resolver.isReferencedAliasDeclaration(node) &&
         (ts.isExternalModuleReference(node.moduleReference) ||
@@ -214,12 +214,4 @@ const transformImportEqualsDeclaration: FunctionVisitor<ts.ImportEqualsDeclarati
     const name = transformIdentifier(context, node.name);
     const expression = context.transformExpression(node.moduleReference);
     return createHoistableVariableDeclarationStatement(context, name, expression, node);
-};
-
-export const importPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ImportDeclaration]: transformImportDeclaration,
-        [ts.SyntaxKind.ExternalModuleReference]: transformExternalModuleReference,
-        [ts.SyntaxKind.ImportEqualsDeclaration]: transformImportEqualsDeclaration,
-    },
 };

@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor } from "../context";
 import { UnsupportedForTarget } from "../utils/errors";
 import { peekScope, performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
-const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
+export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
     if (context.luaTarget === LuaTarget.Lua51) {
         throw UnsupportedForTarget("Switch statements", LuaTarget.Lua51, statement);
     }
@@ -58,10 +58,4 @@ const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement
     popScope(context);
 
     return statements;
-};
-
-export const switchPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.SwitchStatement]: transformSwitchStatement,
-    },
 };

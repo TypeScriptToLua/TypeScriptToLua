@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
 import { cast, castEach } from "../../../utils";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
+import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
 import {
     InvalidForRangeCall,
@@ -255,7 +255,7 @@ function transformForOfIteratorStatement(
     }
 }
 
-const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {
+export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {
     const body = tstl.createBlock(transformLoopBody(context, node));
 
     if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
@@ -267,10 +267,4 @@ const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, conte
     } else {
         return transformForOfIteratorStatement(context, node, body);
     }
-};
-
-export const forOfPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ForOfStatement]: transformForOfStatement,
-    },
 };

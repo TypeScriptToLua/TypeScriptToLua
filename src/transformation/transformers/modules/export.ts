@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../../context";
+import { FunctionVisitor, TransformationContext } from "../../context";
 import { InvalidExportDeclaration } from "../../utils/errors";
 import {
     createDefaultExportIdentifier,
@@ -14,7 +14,7 @@ import { transformIdentifier } from "../identifier";
 import { createShorthandIdentifier } from "../literal";
 import { createModuleRequire } from "./import";
 
-const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (node, context) => {
+export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (node, context) => {
     if (!context.resolver.isValueAliasDeclaration(node)) {
         return undefined;
     }
@@ -129,7 +129,7 @@ function transformExportSpecifiersFrom(
 export const getExported = (context: TransformationContext, exportSpecifiers: ts.NamedExports) =>
     exportSpecifiers.elements.filter(exportSpecifier => context.resolver.isValueAliasDeclaration(exportSpecifier));
 
-const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
+export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
     if (!node.exportClause) {
         // export * from "...";
         return transformExportAllFrom(context, node);
@@ -148,11 +148,4 @@ const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node,
 
     // export { ... } from "...";
     return transformExportSpecifiersFrom(context, node, node.moduleSpecifier, exportSpecifiers);
-};
-
-export const exportPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ExportAssignment]: transformExportAssignment,
-        [ts.SyntaxKind.ExportDeclaration]: transformExportDeclaration,
-    },
 };

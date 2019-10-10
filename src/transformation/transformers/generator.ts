@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { wrapInTable } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { Scope } from "../utils/scope";
@@ -108,16 +108,10 @@ export function transformGeneratorFunctionBody(
     return [block, functionScope];
 }
 
-const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
+export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
     return tstl.createCallExpression(
         tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("yield")),
         expression.expression ? [context.transformExpression(expression.expression)] : [],
         expression
     );
-};
-
-export const generatorPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.YieldExpression]: transformYieldExpression,
-    },
 };

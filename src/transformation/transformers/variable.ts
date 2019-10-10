@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { assertNever, castEach, flatMap } from "../../utils";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { UnsupportedKind } from "../utils/errors";
@@ -232,11 +232,5 @@ export function transformVariableDeclaration(
     }
 }
 
-const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) =>
+export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) =>
     flatMap(node.declarationList.declarations, declaration => transformVariableDeclaration(context, declaration));
-
-export const variablePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.VariableStatement]: transformVariableStatement,
-    },
-};

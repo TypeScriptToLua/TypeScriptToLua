@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
 
 export function transformBlockOrStatement(context: TransformationContext, statement: ts.Statement): tstl.Statement[] {
@@ -18,15 +18,9 @@ export function transformScopeBlock(
     return [tstl.createBlock(statements, node), scope];
 }
 
-const transformBlock: FunctionVisitor<ts.Block> = (node, context) => {
+export const transformBlock: FunctionVisitor<ts.Block> = (node, context) => {
     pushScope(context, ScopeType.Block);
     const statements = performHoisting(context, context.transformStatements(node.statements));
     popScope(context);
     return tstl.createDoStatement(statements, node);
-};
-
-export const blockPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.Block]: transformBlock,
-    },
 };

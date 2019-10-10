@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor } from "../context";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInToStringForConcat } from "../utils/lua-ast";
 import { transformArguments, transformContextualCallExpression } from "./call";
@@ -15,7 +15,7 @@ function getRawLiteral(node: ts.LiteralLikeNode): string {
     return text;
 }
 
-const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression> = (node, context) => {
+export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression> = (node, context) => {
     const parts: tstl.Expression[] = [];
 
     const head = node.head.text;
@@ -36,7 +36,10 @@ const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression> = (nod
     return parts.reduce((prev, current) => tstl.createBinaryExpression(prev, current, tstl.SyntaxKind.ConcatOperator));
 };
 
-const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpression> = (expression, context) => {
+export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpression> = (
+    expression,
+    context
+) => {
     const strings: string[] = [];
     const rawStrings: string[] = [];
     const expressions: ts.Expression[] = [];
@@ -81,11 +84,4 @@ const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpres
 
     const leftHandSideExpression = context.transformExpression(expression.tag);
     return tstl.createCallExpression(leftHandSideExpression, callArguments);
-};
-
-export const templatePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.TemplateExpression]: transformTemplateExpression,
-        [ts.SyntaxKind.TaggedTemplateExpression]: transformTaggedTemplateExpression,
-    },
 };

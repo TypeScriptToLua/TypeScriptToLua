@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformerPlugin } from "../context";
+import { FunctionVisitor } from "../context";
 import { UndefinedScope, UnsupportedForTarget } from "../utils/errors";
 import { findScope, ScopeType } from "../utils/scope";
 
-const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
+export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
     const breakableScope = findScope(context, ScopeType.Loop | ScopeType.Switch);
     if (breakableScope === undefined) {
         throw UndefinedScope();
@@ -18,7 +18,7 @@ const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatem
     }
 };
 
-const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (statement, context) => {
+export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (statement, context) => {
     if (context.luaTarget === LuaTarget.Lua51) {
         throw UnsupportedForTarget("Continue statement", LuaTarget.Lua51, statement);
     }
@@ -30,11 +30,4 @@ const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> = (state
 
     scope.loopContinued = true;
     return tstl.createGotoStatement(`__continue${scope.id}`, statement);
-};
-
-export const breakContinuePlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.BreakStatement]: transformBreakStatement,
-        [ts.SyntaxKind.ContinueStatement]: transformContinueStatement,
-    },
 };

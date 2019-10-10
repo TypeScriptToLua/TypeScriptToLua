@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
-import { FunctionVisitor, TransformationContext, TransformerPlugin } from "../context";
+import { FunctionVisitor, TransformationContext } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
 
@@ -56,7 +56,7 @@ function transformProtectedConditionalExpression(
     return tstl.createCallExpression(tstl.createParenthesizedExpression(orExpression), [], expression);
 }
 
-const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
+export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
     if (canBeFalsy(context, context.checker.getTypeAtLocation(expression.whenTrue))) {
         return transformProtectedConditionalExpression(context, expression);
     }
@@ -70,7 +70,7 @@ const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> 
     return tstl.createBinaryExpression(conditionAnd, val2, tstl.SyntaxKind.OrOperator, expression);
 };
 
-function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): tstl.IfStatement {
+export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): tstl.IfStatement {
     pushScope(context, ScopeType.Conditional);
     const condition = context.transformExpression(statement.expression);
     const statements = performHoisting(context, transformBlockOrStatement(context, statement.thenStatement));
@@ -95,10 +95,3 @@ function transformIfStatement(statement: ts.IfStatement, context: Transformation
 
     return tstl.createIfStatement(condition, ifBlock);
 }
-
-export const conditionalPlugin: TransformerPlugin = {
-    visitors: {
-        [ts.SyntaxKind.ConditionalExpression]: transformConditionalExpression,
-        [ts.SyntaxKind.IfStatement]: transformIfStatement,
-    },
-};

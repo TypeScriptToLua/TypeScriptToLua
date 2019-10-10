@@ -6,23 +6,43 @@ import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from
 import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
 import { transformArguments } from "../call";
 
+const builtinErrorTypeNames = new Set([
+    "Error",
+    "ErrorConstructor",
+    "RangeError",
+    "RangeErrorConstructor",
+    "ReferenceError",
+    "ReferenceErrorConstructor",
+    "SyntaxError",
+    "SyntaxErrorConstructor",
+    "TypeError",
+    "TypeErrorConstructor",
+    "URIError",
+    "URIErrorConstructor",
+]);
+
 // TODO: Do it in identifier?
-function checkForLuaLibType(context: TransformationContext, type: ts.Type): void {
-    if (type.symbol) {
-        switch (context.checker.getFullyQualifiedName(type.symbol)) {
-            case "Map":
-                importLuaLibFeature(context, LuaLibFeature.Map);
-                return;
-            case "Set":
-                importLuaLibFeature(context, LuaLibFeature.Set);
-                return;
-            case "WeakMap":
-                importLuaLibFeature(context, LuaLibFeature.WeakMap);
-                return;
-            case "WeakSet":
-                importLuaLibFeature(context, LuaLibFeature.WeakSet);
-                return;
-        }
+export function checkForLuaLibType(context: TransformationContext, type: ts.Type): void {
+    if (!type.symbol) return;
+
+    const name = context.checker.getFullyQualifiedName(type.symbol);
+    switch (name) {
+        case "Map":
+            importLuaLibFeature(context, LuaLibFeature.Map);
+            return;
+        case "Set":
+            importLuaLibFeature(context, LuaLibFeature.Set);
+            return;
+        case "WeakMap":
+            importLuaLibFeature(context, LuaLibFeature.WeakMap);
+            return;
+        case "WeakSet":
+            importLuaLibFeature(context, LuaLibFeature.WeakSet);
+            return;
+    }
+
+    if (builtinErrorTypeNames.has(name)) {
+        importLuaLibFeature(context, LuaLibFeature.Error);
     }
 }
 

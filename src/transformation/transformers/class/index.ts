@@ -28,6 +28,7 @@ import {
     unwrapVisitorResult,
 } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
+import { popScope, pushScope, ScopeType } from "../../utils/scope";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
@@ -37,7 +38,7 @@ import { isGetAccessorOverride, transformAccessorDeclaration } from "./members/a
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
-import { transformNewExpression } from "./new";
+import { checkForLuaLibType, transformNewExpression } from "./new";
 import { getExtendedType, getExtendedTypeNode, isStaticNode } from "./utils";
 
 function transformClassAsExpression(
@@ -54,11 +55,11 @@ function transformClassAsExpression(
         className = tstl.createAnonymousIdentifier();
     }
 
-    return createImmediatelyInvokedFunctionExpression(
-        unwrapVisitorResult(transformClassDeclaration(expression, context, className)),
-        className,
-        expression
-    );
+    pushScope(context, ScopeType.Function);
+    const classDeclaration = unwrapVisitorResult(transformClassDeclaration(expression, context, className));
+    popScope(context);
+
+    return createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
 }
 
 const classStacks = new WeakMap<TransformationContext, ts.ClassLikeDeclaration[]>();
@@ -109,6 +110,10 @@ function transformClassDeclaration(
 
     // Get type that is extended
     const extendsType = getExtendedType(context, classDeclaration);
+
+    if (extendsType) {
+        checkForLuaLibType(context, extendsType);
+    }
 
     if (!(isExtension || isMetaExtension) && extendsType) {
         // Non-extensions cannot extend extension classes

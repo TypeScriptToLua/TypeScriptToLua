@@ -356,7 +356,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             const error = "foobar";
             throw error;`;
 
-        expect(() => util.transpileAndExecute(code)).toThrow(/^LUA ERROR: .+ foobar$/);
+        expect(() => util.transpileAndExecute(code)).toThrow(/^LUA ERROR: foobar$/);
     });
 
     test("variable (assert)", () => {

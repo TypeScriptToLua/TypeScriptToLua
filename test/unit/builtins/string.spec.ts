@@ -20,7 +20,7 @@ test("Supported lua string function", () => {
 });
 
 test.each([[], [65], [65, 66], [65, 66, 67]])("String.fromCharCode (%p)", (...args) => {
-    util.testExpression`String.fromCharCode(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`String.fromCharCode(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -61,13 +61,13 @@ test.each([
     { inp: "hello test", searchValue: "test", replaceValue: (): string => "%a" },
     { inp: "aaa", searchValue: "a", replaceValue: "b" },
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
-    util.testExpression`"${inp}".replace(${util.valuesToString([searchValue, replaceValue])})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();
 });
 
 test.each([["", ""], ["hello", "test"], ["hello", "test", "bye"], ["hello", 42], [42, "hello"]])(
     "string.concat[+] (%p)",
     (...elements) => {
-        util.testExpression(elements.map(e => util.valueToString(e)).join(" + ")).expectToMatchJsResult();
+        util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
     }
 );
 
@@ -77,7 +77,7 @@ test.each([
     { str: "hello", args: [] },
     { str: "hello", args: ["test", "bye"] },
 ])("string.concatFct (%p)", ({ str, args }) => {
-    util.testExpression`"${str}".concat(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${str}".concat(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -113,7 +113,7 @@ test.each([
     { inp: "hello test", args: [1, 2] },
     { inp: "hello test", args: [1, 5] },
 ])("string.slice (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".slice(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -122,7 +122,7 @@ test.each([
     { inp: "hello test", args: [1, 2] },
     { inp: "hello test", args: [1, 5] },
 ])("string.substring (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".substring(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".substring(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 5 }])(
@@ -139,7 +139,7 @@ test.each([
     { inp: "hello test", args: [1, 2] },
     { inp: "hello test", args: [1, 5] },
 ])("string.substr (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".substr(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".substr(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 2 }])(
@@ -207,7 +207,7 @@ test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
     { inp: "hello test", args: ["test"] },
     { inp: "hello test", args: ["test", 6] },
 ])("string.startsWith (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".startsWith(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".startsWith(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
@@ -216,8 +216,7 @@ test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
     { inp: "hello test", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
 ])("string.endsWith (%p)", ({ inp, args }) => {
-    const argsString = util.valuesToString(args);
-    util.testExpression`"${inp}".endsWith(${argsString})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".endsWith(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -243,11 +242,11 @@ const padCases = [
 ];
 
 test.each(padCases)("string.padStart (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".padStart(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".padStart(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each(padCases)("string.padEnd (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".padEnd(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`"${inp}".padEnd(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([

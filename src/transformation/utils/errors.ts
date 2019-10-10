@@ -51,9 +51,6 @@ export const InvalidInstanceOfExtension = (node: ts.Node) =>
 
 export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 
-export const InvalidThrowExpression = (node: ts.Node) =>
-    new TranspileError(`Invalid throw expression, only strings can be thrown.`, node);
-
 export const ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
     new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
 

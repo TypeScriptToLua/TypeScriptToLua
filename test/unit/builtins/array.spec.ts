@@ -247,12 +247,28 @@ test("array.forEach (%p)", () => {
 });
 
 test.each([
+    { array: [], predicate: "elem > 3" },
+    { array: [0, 2, 4, 8], predicate: "elem > 10" },
+    { array: [0, 2, 4, 8], predicate: "elem > 7" },
+    { array: [0, 2, 4, 8], predicate: "elem == 0" },
+    { array: [0, 2, 4, 8], predicate: "elem > 7" },
+    { array: [0, 2, 4, 8], predicate: "true" },
+    { array: [0, 2, 4, 8], predicate: "false" },
+])("array.find (%p)", ({ array, predicate }) => {
+    util.testFunction`
+        const array = ${util.formatCode(array)};
+        return array.find((elem, index, arr) => ${predicate} && arr[index] === elem);
+    `.expectToMatchJsResult();
+});
+
+test.each([
     { array: [], searchElement: 3 },
     { array: [0, 2, 4, 8], searchElement: 10 },
+    { array: [0, 2, 4, 8], searchElement: 0 },
     { array: [0, 2, 4, 8], searchElement: 8 },
 ])("array.findIndex (%p)", ({ array, searchElement }) => {
     util.testFunction`
-        const array = ${util.valueToString(array)};
+        const array = ${util.formatCode(array)};
         return array.findIndex((elem, index, arr) => elem === ${searchElement} && arr[index] === elem);
     `.expectToMatchJsResult();
 });
@@ -265,7 +281,7 @@ test.each([
     { array: [0, 1, 2, 3], func: "x => x+2" },
     { array: [0, 1, 2, 3], func: "x => x%2 == 0 ? x + 1 : x - 1" },
 ])("array.map (%p)", ({ array, func }) => {
-    util.testExpression`${util.valueToString(array)}.map(${func})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.map(${func})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -277,7 +293,7 @@ test.each([
     { array: [0, 1, 2, 3], func: "() => true" },
     { array: [0, 1, 2, 3], func: "() => false" },
 ])("array.filter (%p)", ({ array, func }) => {
-    util.testExpression`${util.valueToString(array)}.filter(${func})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.filter(${func})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -286,7 +302,7 @@ test.each([
     { array: [false, true, false], func: "x => x" },
     { array: [true, true, true], func: "x => x" },
 ])("array.every (%p)", ({ array, func }) => {
-    util.testExpression`${util.valueToString(array)}.every(${func})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.every(${func})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -295,7 +311,7 @@ test.each([
     { array: [false, true, false], func: "x => x" },
     { array: [true, true, true], func: "x => x" },
 ])("array.some (%p)", ({ array, func }) => {
-    util.testExpression`${util.valueToString(array)}.some(${func})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.some(${func})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -308,7 +324,8 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], args: [1, 3] },
     { array: [0, 1, 2, 3, 4, 5], args: [3] },
 ])("array.slice (%p)", ({ array, args }) => {
-    util.testExpression`${util.valueToString(array)}.slice(${util.valuesToString(args)})`.expectToMatchJsResult();
+    const argumentString = util.formatCode(...args);
+    util.testExpression`${util.formatCode(array)}.slice(${argumentString})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -322,24 +339,35 @@ test.each([
     { array: [0, 1, 2, 3], start: -3, deleteCount: 0, newElements: [8, 9] },
     { array: [0, 1, 2, 3, 4, 5], start: 5, deleteCount: 9, newElements: [10, 11] },
     { array: [0, 1, 2, 3, 4, 5], start: 3, deleteCount: 2, newElements: [3, 4, 5] },
+    { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: 9, newElements: [10, 11] },
+    { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: undefined, newElements: [10, 11] },
+    // tslint:disable-next-line:no-null-keyword
+    { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: null, newElements: [10, 11] },
 
     // Remove
     { array: [], start: 1, deleteCount: 1 },
     { array: [0, 1, 2, 3], start: 1, deleteCount: 1 },
     { array: [0, 1, 2, 3], start: 10, deleteCount: 1 },
+    { array: [0, 1, 2, 3, 4, 5], start: 2, deleteCount: 2 },
+    { array: [0, 1, 2, 3, 4, 5], start: -3, deleteCount: 2 },
     { array: [0, 1, 2, 3], start: 1, deleteCount: undefined },
+    // tslint:disable-next-line:no-null-keyword
+    { array: [0, 1, 2, 3], start: 1, deleteCount: null },
+])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
+    util.testFunction`
+        const array = ${util.formatCode(array)};
+        array.splice(${util.formatCode(start, deleteCount, ...newElements)});
+        return array;
+    `.expectToMatchJsResult();
+});
+
+test.each([
     { array: [0, 1, 2, 3], start: 4 },
     { array: [0, 1, 2, 3, 4, 5], start: 3 },
     { array: [0, 1, 2, 3, 4, 5], start: -3 },
     { array: [0, 1, 2, 3, 4, 5], start: -2 },
-    { array: [0, 1, 2, 3, 4, 5], start: 2, deleteCount: 2 },
-    { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: 9, newElements: [10, 11] },
-])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
-    util.testFunction`
-        const array = ${util.valueToString(array)};
-        array.splice(${util.valuesToString([start, deleteCount, ...newElements])});
-        return array;
-    `.expectToMatchJsResult();
+])("array.splice no delete argument", ({ array, start }) => {
+    util.testExpression`${util.formatCode(array)}.splice(${start})`.expectToMatchJsResult();
 });
 
 test.each([
@@ -355,8 +383,8 @@ test.each([
     { array: [1, 2, "test"], args: ["test", ["test1", "test2"]] },
 ])("array.concat (%p)", ({ array, args }) => {
     util.testFunction`
-        const array: any[] = ${util.valueToString(array)};
-        return array.concat(${util.valuesToString(args)});
+        const array: any[] = ${util.formatCode(array)};
+        return array.concat(${util.formatCode(...args)});
     `.expectToMatchJsResult();
 });
 
@@ -367,7 +395,11 @@ test.each([
     { array: ["test1", "test2"], separator: ";" },
     { array: ["test1", "test2"], separator: "" },
 ])("array.join (%p)", ({ array, separator }) => {
-    util.testExpression`${util.valueToString(array)}.join(${util.valueToString(separator)})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.join(${util.formatCode(separator)})`.expectToMatchJsResult();
+});
+
+test("array.join without separator argument", () => {
+    util.testExpression`["test1", "test2"].join()`.expectToMatchJsResult();
 });
 
 test.each([
@@ -379,13 +411,13 @@ test.each([
     { array: ["test1", "test2", "test3"], args: ["test1", -2] },
     { array: ["test1", "test2", "test3"], args: ["test1", 12] },
 ])("array.indexOf (%p)", ({ array, args }) => {
-    util.testExpression`${util.valueToString(array)}.indexOf(${util.valuesToString(args)})`.expectToMatchJsResult();
+    util.testExpression`${util.formatCode(array)}.indexOf(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) => {
     util.testFunction`
         const array = [0];
-        const value = array.push(${util.valuesToString(args)});
+        const value = array.push(${util.formatCode(...args)});
         return { array, value };
     `.expectToMatchJsResult();
 });
@@ -395,7 +427,7 @@ test.each([{ array: [1, 2, 3], expected: [3, 2] }, { array: [1, 2, 3, null], exp
     "array.pop (%p)",
     ({ array, expected }) => {
         util.testFunction`
-            const array = ${util.valueToString(array)};
+            const array = ${util.formatCode(array)};
             const value = array.pop();
             return [value, array.length];
         `.expectToEqual(expected);
@@ -406,7 +438,7 @@ test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { arra
     "array.reverse (%p)",
     ({ array }) => {
         util.testFunction`
-            const array = ${util.valueToString(array)};
+            const array = ${util.formatCode(array)};
             array.reverse();
             return array;
         `.expectToMatchJsResult();
@@ -415,7 +447,7 @@ test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { arra
 
 test.each([{ array: [1, 2, 3] }, { array: [1] }, { array: [] }])("array.shift (%p)", ({ array }) => {
     util.testFunction`
-        const array = ${util.valueToString(array)};
+        const array = ${util.formatCode(array)};
         const value = array.shift();
         return { array, value };
     `.expectToMatchJsResult();
@@ -428,8 +460,8 @@ test.each([
     { array: [], args: [1] },
 ])("array.unshift (%p)", ({ array, args }) => {
     util.testFunction`
-        const array = ${util.valueToString(array)};
-        const value = array.unshift(${util.valuesToString(args)});
+        const array = ${util.formatCode(array)};
+        const value = array.unshift(${util.formatCode(...args)});
         return { array, value };
     `.expectToMatchJsResult();
 });
@@ -475,15 +507,33 @@ test.each([
     util.testExpressionTemplate`${array}.flatMap(${map})`.expectToEqual(expected);
 });
 
-test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
-    [[(total, currentItem) => total + currentItem]],
-    [[(total, currentItem) => total * currentItem]],
-    [[(total, currentItem) => total + currentItem, 10]],
-    [[(total, currentItem) => total * currentItem, 10]],
-    [[(total, _, index, array) => total + array[index]]],
-    [[(a, b) => a + b]],
-])("array.reduce (%p)", args => {
-    util.testExpression`[1, 3, 5, 7].reduce(${util.valuesToString(args)})`.expectToMatchJsResult();
+describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
+    test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
+        [[(total, currentItem) => total + currentItem]],
+        [[(total, currentItem) => total * currentItem]],
+        [[(total, currentItem) => total + currentItem, 10]],
+        [[(total, currentItem) => total * currentItem, 10]],
+        [[(total, _, index, array) => total + array[index]]],
+        [[(a, b) => a + b]],
+    ])("usage (%p)", args => {
+        util.testExpression`[1, 3, 5, 7].${reduce}(${util.formatCode(...args)})`.expectToMatchJsResult();
+    });
+
+    test("empty undefined initial", () => {
+        util.testExpression`[].${reduce}(() => {}, undefined)`.expectToMatchJsResult();
+    });
+
+    test("empty no initial", () => {
+        util.testExpression`[].${reduce}(() => {})`.expectToMatchJsResult(true);
+    });
+
+    test("undefined returning callback", () => {
+        util.testFunction`
+            const calls: Array<{ a: void, b: string }> = [];
+            ["a", "b"].${reduce}<void>((a, b) => { calls.push({ a, b }) }, undefined);
+            return calls;
+        `.expectToMatchJsResult();
+    });
 });
 
 const genericChecks = [

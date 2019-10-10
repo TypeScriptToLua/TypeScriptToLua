@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression } from "../transformers/call";
+import { checkForLuaLibType } from "../transformers/class/new";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { isArrayType, isFunctionType, isStandardLibraryType, isStringType } from "../utils/typescript";
@@ -47,6 +48,8 @@ export function transformBuiltinCallExpression(
 ): tstl.Expression | undefined {
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
+        // TODO:
+        checkForLuaLibType(context, expressionType);
         const result = transformGlobalFunctionCall(context, node);
         if (result) {
             return result;

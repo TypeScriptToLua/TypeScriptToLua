@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { CompilerOptions } from "../../CompilerOptions";
 import { flatMap } from "../../utils";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getFileAnnotations, getNodeAnnotations } from "./annotations";
@@ -34,7 +35,10 @@ function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration)
     );
 }
 
-export function getDeclarationContextType(signatureDeclaration: ts.SignatureDeclaration): ContextType {
+export function getDeclarationContextType(
+    { program }: TransformationContext,
+    signatureDeclaration: ts.SignatureDeclaration
+): ContextType {
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
     if (thisParameter) {
         // Explicit 'this'
@@ -69,7 +73,13 @@ export function getDeclarationContextType(signatureDeclaration: ts.SignatureDecl
         return ContextType.NonVoid;
     }
 
-    // Walk up to find @noSelf or @noSelfOnFile
+    // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
+    const options = program.getCompilerOptions() as CompilerOptions;
+    if (options.noImplicitSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
+        return ContextType.Void;
+    }
+
+    // Walk up to find @noSelf or @noSelfInFile
     if (hasNoSelfAncestor(signatureDeclaration)) {
         return ContextType.Void;
     }
@@ -132,5 +142,5 @@ export function getFunctionContextType(context: TransformationContext, type: ts.
     }
 
     const signatureDeclarations = getSignatureDeclarations(context, signatures);
-    return reduceContextTypes(signatureDeclarations.map(getDeclarationContextType));
+    return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(context, s)));
 }

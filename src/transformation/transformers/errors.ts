@@ -2,10 +2,8 @@ import * as ts from "typescript";
 import * as tstl from "../../LuaAST";
 import { FunctionVisitor, TransformerPlugin } from "../context";
 import { isInTupleReturnFunction } from "../utils/annotations";
-import { InvalidThrowExpression } from "../utils/errors";
 import { createUnpackCall } from "../utils/lua-ast";
 import { findScope, ScopeType } from "../utils/scope";
-import { isStringType } from "../utils/typescript";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
 
@@ -108,18 +106,15 @@ const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, cont
 };
 
 const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (statement, context) => {
-    if (statement.expression === undefined) {
-        throw InvalidThrowExpression(statement);
+    const parameters: tstl.Expression[] = [];
+
+    if (statement.expression) {
+        parameters.push(context.transformExpression(statement.expression));
+        parameters.push(tstl.createNumericLiteral(0));
     }
 
-    const type = context.checker.getTypeAtLocation(statement.expression);
-    if (!isStringType(context, type)) {
-        throw InvalidThrowExpression(statement.expression);
-    }
-
-    const error = tstl.createIdentifier("error");
     return tstl.createExpressionStatement(
-        tstl.createCallExpression(error, [context.transformExpression(statement.expression)]),
+        tstl.createCallExpression(tstl.createIdentifier("error"), parameters),
         statement
     );
 };

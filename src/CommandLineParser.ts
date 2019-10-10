@@ -39,6 +39,11 @@ const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaTarget),
     },
     {
+        name: "noImplicitSelf",
+        description: 'If "this" is implicitly considered an any type, do not generate a self parameter.',
+        type: "boolean",
+    },
+    {
         name: "noHeader",
         description: "Specify if a header will be added to compiled files.",
         type: "boolean",

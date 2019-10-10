@@ -253,7 +253,7 @@ test.each([{ args: ["bar"], expected: "foobar" }, { args: ["baz", "bar"], expect
                 }
             };
             const o = new O();
-            return o.method(${util.valuesToString(args)});
+            return o.method(${util.formatCode(...args)});
         `.expectToEqual(expected);
     }
 );

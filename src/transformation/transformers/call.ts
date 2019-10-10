@@ -104,7 +104,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
 
     const parameters = transformArguments(context, node.arguments, signature);
     const signatureDeclaration = signature && signature.getDeclaration();
-    if (!signatureDeclaration || getDeclarationContextType(signatureDeclaration) !== ContextType.Void) {
+    if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
         return transformContextualCallExpression(context, node, parameters);
     } else {
@@ -124,7 +124,7 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
     const signature = context.checker.getResolvedSignature(node);
     const signatureDeclaration = signature && signature.getDeclaration();
     const parameters = transformArguments(context, node.arguments, signature);
-    if (!signatureDeclaration || getDeclarationContextType(signatureDeclaration) !== ContextType.Void) {
+    if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
         return transformContextualCallExpression(context, node, parameters);
     } else {
@@ -181,7 +181,7 @@ const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node, conte
     const signatureDeclaration = signature && signature.getDeclaration();
 
     let parameters: tstl.Expression[] = [];
-    if (signatureDeclaration && getDeclarationContextType(signatureDeclaration) === ContextType.Void) {
+    if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {
         parameters = transformArguments(context, node.arguments, signature);
     } else {
         const callContext = context.isStrict ? ts.createNull() : ts.createIdentifier("_G");

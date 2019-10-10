@@ -69,7 +69,7 @@ const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpres
     const signature = context.checker.getResolvedSignature(expression);
     const signatureDeclaration = signature && signature.getDeclaration();
     const useSelfParameter =
-        signatureDeclaration && getDeclarationContextType(signatureDeclaration) !== ContextType.Void;
+        signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
 
     // Argument evaluation.
     const callArguments = transformArguments(context, expressions, signature);

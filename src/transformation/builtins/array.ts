@@ -38,6 +38,8 @@ export function transformArrayCall(
             );
         case "forEach":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayForEach, node, caller, ...params);
+        case "find":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayFind, node, caller, ...params);
         case "findIndex":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFindIndex, node, caller, ...params);
         case "indexOf":
@@ -48,6 +50,8 @@ export function transformArrayCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFilter, node, caller, ...params);
         case "reduce":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayReduce, node, caller, ...params);
+        case "reduceRight":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayReduceRight, node, caller, ...params);
         case "some":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySome, node, caller, ...params);
         case "every":
@@ -57,8 +61,13 @@ export function transformArrayCall(
         case "splice":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySplice, node, caller, ...params);
         case "join":
-            const parameters =
-                node.arguments.length === 0 ? [caller, tstl.createStringLiteral(",")] : [caller].concat(params);
+            const defaultSeparatorLiteral = tstl.createStringLiteral(",");
+            const parameters = [
+                caller,
+                node.arguments.length === 0
+                    ? defaultSeparatorLiteral
+                    : tstl.createBinaryExpression(params[0], defaultSeparatorLiteral, tstl.SyntaxKind.OrOperator),
+            ];
 
             return tstl.createCallExpression(
                 tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("concat")),

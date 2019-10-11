@@ -140,6 +140,16 @@ export class LuaTransformer {
             []
         );
 
+        if (this.options.luaEntry) {
+            const requireCalls = this.options.luaEntry.map(entry => {
+                const formattedEntryName = tsHelper.formatPathToLuaPath(entry.replace(/.ts$/, ""));
+                return tstl.createExpressionStatement(
+                    this.createModuleRequire(ts.createStringLiteral(formattedEntryName), false)
+                );
+            });
+            combinedStatements.push(...requireCalls);
+        }
+
         return tstl.createBlock(combinedStatements, bundle);
     }
 
@@ -171,20 +181,20 @@ export class LuaTransformer {
 
                 // return exports
                 statements.push(tstl.createReturnStatement([this.createExportsIdentifier()]));
-
-                if (this.isWithinBundle) {
-                    const packagePreload = tstl.createTableIndexExpression(
-                        tstl.createIdentifier("package"),
-                        tstl.createStringLiteral("preload")
-                    );
-                    const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
-                    const packagePreloadDeclaration = tstl.createAssignmentStatement(
-                        tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
-                        tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile))
-                    );
-                    return tstl.createBlock([packagePreloadDeclaration], sourceFile);
-                }
             }
+        }
+
+        if (this.isWithinBundle) {
+            const packagePreload = tstl.createTableIndexExpression(
+                tstl.createIdentifier("tstlpackage"),
+                tstl.createStringLiteral("preload")
+            );
+            const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
+            const packagePreloadDeclaration = tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
+                tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile))
+            );
+            return tstl.createBlock([packagePreloadDeclaration], sourceFile);
         }
 
         return tstl.createBlock(statements, sourceFile);

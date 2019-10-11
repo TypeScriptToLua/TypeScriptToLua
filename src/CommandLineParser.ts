@@ -22,9 +22,18 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+interface CommandLineOptionOfStringArray extends CommandLineOptionBase {
+    type: "string[]";
+}
+
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfStringArray;
 
 const optionDeclarations: CommandLineOption[] = [
+    {
+        name: "luaEntry",
+        description: "Specifies a series of entry points to execute in the resulting output file.",
+        type: "string[]",
+    },
     {
         name: "luaLibImport",
         description: "Specifies how js standard features missing in lua are imported.",
@@ -185,6 +194,14 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         };
     }
 
+    if (option.type === 'string[]') {
+        return {
+            error: diagnosticFactories.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
+            value: undefined,
+            increment: 0
+        };
+    }
+
     return { ...readValue(option, value), increment: 1 };
 }
 
@@ -226,6 +243,24 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             }
 
             return { value: enumValue };
+        }
+
+        case "string[]": {
+            if (Array.isArray(value)) {
+                if (value.some(str => typeof str !== "string")) {
+                    return {
+                        value: undefined,
+                        error: diagnosticFactories.invalidStringArrayForOption(option.name),
+                    };
+                }
+
+                return { value };
+            }
+
+            return {
+                value: undefined,
+                error: diagnosticFactories.invalidStringArrayForOption(option.name),
+            };
         }
     }
 }

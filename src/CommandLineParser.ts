@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind, LuaTarget, LuaModuleSystemKind } from "./CompilerOptions";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
@@ -30,12 +30,6 @@ const optionDeclarations: CommandLineOption[] = [
         description: "Specifies how js standard features missing in lua are imported.",
         type: "enum",
         choices: Object.values(LuaLibImportKind),
-    },
-    {
-        name: "luaModuleSystem",
-        description: "Specify the way modules are resolved on the target Lua environment.",
-        type: "enum",
-        choices: Object.values(LuaModuleSystemKind),
     },
     {
         name: "luaTarget",

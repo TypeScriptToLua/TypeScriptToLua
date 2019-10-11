@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, LuaTarget, LuaModuleSystemKind } from "./CompilerOptions";
+import { CompilerOptions, LuaTarget } from "./CompilerOptions";
 import { DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import { LuaLibFeature } from "./LuaLib";
@@ -546,9 +546,8 @@ export class LuaTransformer {
               )
             : moduleSpecifier.text;
         const modulePath = tstl.createStringLiteral(modulePathString);
-        const requireCallString =
-            this.options.luaModuleSystem === LuaModuleSystemKind.None ? "__TS__LuaRequire" : "require";
-        if (this.options.luaModuleSystem === LuaModuleSystemKind.None) {
+        const requireCallString = this.options.outFile ? "__TS__LuaRequire" : "require";
+        if (this.options.outFile) {
             this.importLuaLibFeature(LuaLibFeature.LuaRequire);
         }
         return tstl.createCallExpression(tstl.createIdentifier(requireCallString), [modulePath], moduleSpecifier);

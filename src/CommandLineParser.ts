@@ -194,14 +194,6 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         };
     }
 
-    if (option.type === 'string[]') {
-        return {
-            error: diagnosticFactories.optionCanOnlyBeSpecifiedInTsconfigJsonFile(option.name),
-            value: undefined,
-            increment: 0
-        };
-    }
-
     return { ...readValue(option, value), increment: 1 };
 }
 
@@ -257,10 +249,14 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 return { value };
             }
 
-            return {
-                value: undefined,
-                error: diagnosticFactories.invalidStringArrayForOption(option.name),
-            };
+            if (typeof value !== "string") {
+                return {
+                    value: undefined,
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
+                };
+            }
+
+            return { value: [value] };
         }
     }
 }

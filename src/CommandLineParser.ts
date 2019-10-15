@@ -22,17 +22,17 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-interface CommandLineOptionOfStringArray extends CommandLineOptionBase {
-    type: "string[]";
+interface CommandLineOptionOfString extends CommandLineOptionBase {
+    type: "string";
 }
 
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfStringArray;
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfString;
 
 const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaEntry",
-        description: "Specifies a series of entry points to execute in the resulting output file.",
-        type: "string[]",
+        description: "Specifies an entry point that will be executed in the resulting output file.",
+        type: "string",
     },
     {
         name: "luaLibImport",
@@ -237,18 +237,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             return { value: enumValue };
         }
 
-        case "string[]": {
-            if (Array.isArray(value)) {
-                if (value.some(str => typeof str !== "string")) {
-                    return {
-                        value: undefined,
-                        error: diagnosticFactories.invalidStringArrayForOption(option.name),
-                    };
-                }
-
-                return { value };
-            }
-
+        case "string": {
             if (typeof value !== "string") {
                 return {
                     value: undefined,

@@ -7,8 +7,8 @@ const exportValueSource = "export const value = true;";
 const reexportValueSource = 'export { value } from "./export";';
 const validateValueSource = 'if (value !== true) { throw "Failed to import value" }';
 
-function outFileOptionsWithEntry(entry: string): CompilerOptions {
-    return { outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry: [entry] };
+function outFileOptionsWithEntry(luaEntry: string): CompilerOptions {
+    return { outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry };
 }
 
 describe("outFile", () => {

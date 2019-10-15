@@ -130,8 +130,3 @@ export const optionBuildMustBeFirstCommandLineArgument = createCommandLineError(
     6369,
     () => "Option '--build' must be the first command line argument."
 );
-
-export const invalidStringArrayForOption = createCommandLineError(
-    6370,
-    (name: string) => `Option '${name}' received an invalid array of strings.`
-);

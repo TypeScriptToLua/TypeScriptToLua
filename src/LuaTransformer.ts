@@ -141,18 +141,15 @@ export class LuaTransformer {
         );
 
         if (this.options.luaEntry) {
-            const requireCalls = this.options.luaEntry.map(entry => {
-                const sourceFile = this.program.getSourceFile(entry);
-                if (sourceFile) {
-                    const formattedEntryName = tsHelper.getExportPath(sourceFile.fileName, this.options);
-                    return tstl.createExpressionStatement(
-                        this.createModuleRequire(ts.createStringLiteral(formattedEntryName), false)
-                    );
-                } else {
-                    throw TSTLErrors.LuaEntryNotFound(entry);
-                }
-            });
-            combinedStatements.push(...requireCalls);
+            const sourceFile = this.program.getSourceFile(this.options.luaEntry);
+            if (sourceFile) {
+                const formattedEntryName = tsHelper.getExportPath(sourceFile.fileName, this.options);
+                const requireCall = this.createModuleRequire(ts.createStringLiteral(formattedEntryName), false);
+                const returnStatement = tstl.createReturnStatement([requireCall]);
+                combinedStatements.push(returnStatement);
+            } else {
+                throw TSTLErrors.LuaEntryNotFound(this.options.luaEntry);
+            }
         }
 
         return tstl.createBlock(combinedStatements, bundle);

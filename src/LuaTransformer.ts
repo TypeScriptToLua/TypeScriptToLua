@@ -142,10 +142,15 @@ export class LuaTransformer {
 
         if (this.options.luaEntry) {
             const requireCalls = this.options.luaEntry.map(entry => {
-                const formattedEntryName = tsHelper.formatPathToLuaPath(entry.replace(/.ts$/, ""));
-                return tstl.createExpressionStatement(
-                    this.createModuleRequire(ts.createStringLiteral(formattedEntryName), false)
-                );
+                const sourceFile = this.program.getSourceFile(entry);
+                if (sourceFile) {
+                    const formattedEntryName = tsHelper.getExportPath(sourceFile.fileName, this.options);
+                    return tstl.createExpressionStatement(
+                        this.createModuleRequire(ts.createStringLiteral(formattedEntryName), false)
+                    );
+                } else {
+                    throw TSTLErrors.LuaEntryNotFound(entry);
+                }
             });
             combinedStatements.push(...requireCalls);
         }

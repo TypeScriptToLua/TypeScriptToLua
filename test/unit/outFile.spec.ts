@@ -1,5 +1,6 @@
 import * as util from "../util";
 import * as ts from "typescript";
+import * as TSTLErrors from "../../src/TSTLErrors";
 import { CompilerOptions } from "../../src/CompilerOptions";
 
 const exportValueSource = "export const value = true;";
@@ -114,5 +115,19 @@ describe("outFile", () => {
             )
             .setOptions(outFileOptionsWithEntry("main.ts"))
             .expectNoExecutionError();
+    });
+
+    test("luaEntry doesn't exist", () => {
+        util.testBundle``
+            .setOptions(outFileOptionsWithEntry("entry.ts"))
+            .expectToHaveDiagnosticOfError(TSTLErrors.LuaEntryNotFound("entry.ts"));
+    });
+
+    test("luaEntry resolved from path specified in tsconfig", () => {
+        util.testBundle``
+            .addExtraFile("src/main.ts", "")
+            .addExtraFile("src/module.ts", "")
+            .setOptions({ rootDir: "src", ...outFileOptionsWithEntry("src/main.ts") })
+            .expectToHaveNoDiagnostics();
     });
 });

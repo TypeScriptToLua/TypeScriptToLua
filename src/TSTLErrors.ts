@@ -60,6 +60,9 @@ export const InvalidThrowExpression = (node: ts.Node) =>
 export const ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
     new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
 
+export const LuaEntryNotFound = (entryName: string) =>
+    new TranspileError(`Could not find luaEntry file '${entryName}'.`, ts.createNode(ts.SyntaxKind.Unknown));
+
 export const MissingClassName = (node: ts.Node) => new TranspileError(`Class declarations must have a name.`, node);
 
 export const MissingForOfVariables = (node: ts.Node) =>

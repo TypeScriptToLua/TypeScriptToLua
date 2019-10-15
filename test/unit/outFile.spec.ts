@@ -1,171 +1,118 @@
 import * as util from "../util";
 import * as ts from "typescript";
+import { CompilerOptions } from "../../src/CompilerOptions";
 
-const exportValueSource = `
-    export const value = true;
-`;
+const exportValueSource = "export const value = true;";
+const reexportValueSource = 'export { value } from "./export";';
+const validateValueSource = 'if (value !== true) { throw "Failed to import value" }';
 
-const reexportValueSource = `
-    export { value } from "./export";
-`;
+function outFileOptionsWithEntry(entry: string): CompilerOptions {
+    return { outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry: [entry] };
+}
 
-test.each<[string, Record<string, string>]>([
-    [
-        "Import module -> main",
-        {
-            "main.ts": `
-                import { value } from "./module";
-                if (value !== true) {
-                    throw "Failed to import x";
-                }
-            `,
-            "module.ts": exportValueSource,
-        },
-    ],
-    [
-        "Import chain export -> reexport -> main",
-        {
-            "main.ts": `
-                import { value } from "./reexport";
-                if (value !== true) {
-                    throw "Failed to import value";
-                }
-            `,
-            "reexport.ts": reexportValueSource,
-            "export.ts": exportValueSource,
-        },
-    ],
-    [
-        "Import chain with a different order",
-        {
-            "main.ts": `
-                import { value } from "./reexport";
-                if (value !== true) {
-                    throw "Failed to import value";
-                }
-            `,
-            "export.ts": exportValueSource,
-            "reexport.ts": reexportValueSource,
-        },
-    ],
-    [
-        "Import diamond export -> reexport1 & reexport2 -> main",
-        {
-            "main.ts": `
-                import { value as a } from "./reexport1";
-                import { value as b } from "./reexport2";
-                if (a !== true || b !== true) {
-                    throw "Failed to import a or b";
-                }
-            `,
-            "export.ts": exportValueSource,
-            "reexport1.ts": reexportValueSource,
-            "reexport2.ts": reexportValueSource,
-        },
-    ],
-    [
-        "Import diamond different order",
-        {
-            "reexport1.ts": reexportValueSource,
-            "reexport2.ts": reexportValueSource,
-            "export.ts": exportValueSource,
-            "main.ts": `
-                import { value as a } from "./reexport1";
-                import { value as b } from "./reexport2";
-                if (a !== true || b !== true) {
-                    throw "Failed to import a or b";
-                }
-            `,
-        },
-    ],
-    [
-        "Modules in directories",
-        {
-            "main.ts": `
-                import { value } from "./module/module";
-                if (value !== true) {
-                    throw "Failed to import value";
-                }
-            `,
-            "module/module.ts": `
-                export const value = true;
-            `,
-        },
-    ],
-    [
-        "Modules aren't ordered by name",
-        {
-            "main.ts": `
-                import { value } from "./a";
-                if (value !== true) {
-                    throw "Failed to import value";
-                }
-            `,
-            "a.ts": `
-                export const value = true;
-            `,
-        },
-    ],
-    [
-        "Modules in directories",
-        {
-            "main/main.ts": `
-                import { value } from "../module";
-                if (value !== true) {
-                    throw "Failed to import value";
-                }
-            `,
-            "module.ts": `
-                export const value = true;
-            `,
-        },
-    ],
-    [
-        "LuaLibs are usable",
-        {
-            "module.ts": `
-                export const array = [1, 2];
-                array.push(3);
-            `,
-            "main.ts": `
-                import { array } from "./module";
-                if (array[2] !== 3) {
-                    throw "Array's third item is not three";
-                }            
-            `,
-        },
-    ],
-])("outFile tests (%s)", (_, files) => {
-    const testBuilder = util.testBundle`
-        ${files["main.ts"]}
-    `.setOptions({ outFile: "main.lua", module: ts.ModuleKind.AMD, luaEntry: ["main.ts"] });
-
-    const extraFiles = Object.keys(files)
-        .map(file => ({ fileName: file, code: files[file] }))
-        .filter(file => file.fileName !== "main.ts");
-
-    extraFiles.forEach(extraFile => {
-        testBuilder.addExtraFile(extraFile.fileName, extraFile.code);
+describe("outFile", () => {
+    test("import module -> main", () => {
+        util.testBundle`
+            import { value } from "./module";
+            ${validateValueSource}
+        `
+            .addExtraFile("module.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
     });
 
-    testBuilder.expectNoExecutionError();
-});
+    test("import chain export -> reexport -> main", () => {
+        util.testBundle`
+            import { value } from "./reexport";
+            ${validateValueSource}
+        `
+            .addExtraFile("reexport.ts", reexportValueSource)
+            .addExtraFile("export.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
 
-test("outFile cyclic imports", () => {
-    util.testBundle`
-        export const a = true;
-        import { b } from "./b";
-        if (b !== true) {
-            throw "Did not receive true from module b";
-        }
-    `
-        .addExtraFile(
-            "b.ts",
-            `
-                import { a } from "./main";
-                export const b = a;
-            `
-        )
-        .setOptions({ outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry: ["main.ts"] })
-        .expectNoExecutionError();
+    test("diamond imports/exports -> reexport1 & reexport2 -> main", () => {
+        util.testBundle`
+            import { value as a } from "./reexport1";
+            import { value as b } from "./reexport2";
+            if (a !== true || b !== true) {
+                throw "Failed to import a or b";
+            }
+        `
+            .addExtraFile("reexport1.ts", reexportValueSource)
+            .addExtraFile("reexport2.ts", reexportValueSource)
+            .addExtraFile("export.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
+
+    test("module in directory", () => {
+        util.testBundle`
+            import { value } from "./module/module";
+            ${validateValueSource}
+        `
+            .addExtraFile("module/module.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
+
+    test("modules aren't ordered by name", () => {
+        util.testBundle`
+            import { value } from "./a";
+            ${validateValueSource}
+        `
+            .addExtraFile("a.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
+
+    test("entry point in directory", () => {
+        util.testBundle``
+            .addExtraFile(
+                "main/main.ts",
+                `
+                    import { value } from "../module";
+                    ${validateValueSource}
+                `
+            )
+            .addExtraFile("module.ts", exportValueSource)
+            .setOptions(outFileOptionsWithEntry("main/main.ts"))
+            .expectNoExecutionError();
+    });
+
+    test("LuaLibs", () => {
+        util.testBundle`
+            import { array } from "./module";
+            if (array[2] !== 3) {
+                throw "Array's third item is not three";
+            }
+        `
+            .addExtraFile(
+                "module.ts",
+                `
+                    export const array = [1, 2];
+                    array.push(3);
+                `
+            )
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
+
+    test("cyclic imports", () => {
+        util.testBundle`
+            export const a = true;
+            import { value } from "./b";
+            ${validateValueSource}
+        `
+            .addExtraFile(
+                "b.ts",
+                `
+                    import { a } from "./main";
+                    export const value = a;
+                `
+            )
+            .setOptions(outFileOptionsWithEntry("main.ts"))
+            .expectNoExecutionError();
+    });
 });

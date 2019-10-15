@@ -150,3 +150,22 @@ test.each<[string, Record<string, string>]>([
 
     testBuilder.expectNoExecutionError();
 });
+
+test("outFile cyclic imports", () => {
+    util.testBundle`
+        export const a = true;
+        import { b } from "./b";
+        if (b !== true) {
+            throw "Did not receive true from module b";
+        }
+    `
+        .addExtraFile(
+            "b.ts",
+            `
+                import { a } from "./main";
+                export const b = a;
+            `
+        )
+        .setOptions({ outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry: ["main.ts"] })
+        .expectNoExecutionError();
+});

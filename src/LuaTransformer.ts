@@ -167,7 +167,7 @@ export class LuaTransformer {
             statements = this.performHoisting(this.transformStatements(sourceFile.statements));
             this.popScope();
 
-            if (this.isModule) {
+            if (this.isModule && !this.isWithinBundle) {
                 // If export equals was not used. Create the exports table.
                 // local exports = {}
                 if (!this.visitedExportEquals) {
@@ -192,7 +192,9 @@ export class LuaTransformer {
             const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
             const packagePreloadDeclaration = tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
-                tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile))
+                tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile), [
+                    this.createExportsIdentifier(),
+                ])
             );
             return tstl.createBlock([packagePreloadDeclaration], sourceFile);
         }

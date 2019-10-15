@@ -5,7 +5,7 @@ import { CompilerOptions } from "../../src/CompilerOptions";
 
 const exportValueSource = "export const value = true;";
 const reexportValueSource = 'export { value } from "./export";';
-const validateValueSource = 'if (value !== true) { throw "Failed to import value" }';
+const exportResultSource = "export const result = value;";
 
 function outFileOptionsWithEntry(luaEntry: string): CompilerOptions {
     return { outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry };
@@ -15,22 +15,22 @@ describe("outFile", () => {
     test("import module -> main", () => {
         util.testBundle`
             import { value } from "./module";
-            ${validateValueSource}
+            ${exportResultSource}
         `
             .addExtraFile("module.ts", exportValueSource)
             .setOptions(outFileOptionsWithEntry("main.ts"))
-            .expectNoExecutionError();
+            .expectToEqual({ result: true });
     });
 
     test("import chain export -> reexport -> main", () => {
         util.testBundle`
             import { value } from "./reexport";
-            ${validateValueSource}
+            ${exportResultSource}
         `
             .addExtraFile("reexport.ts", reexportValueSource)
             .addExtraFile("export.ts", exportValueSource)
             .setOptions(outFileOptionsWithEntry("main.ts"))
-            .expectNoExecutionError();
+            .expectToEqual({ result: true });
     });
 
     test("diamond imports/exports -> reexport1 & reexport2 -> main", () => {
@@ -51,7 +51,7 @@ describe("outFile", () => {
     test("module in directory", () => {
         util.testBundle`
             import { value } from "./module/module";
-            ${validateValueSource}
+            ${exportValueSource}
         `
             .addExtraFile("module/module.ts", exportValueSource)
             .setOptions(outFileOptionsWithEntry("main.ts"))
@@ -61,11 +61,11 @@ describe("outFile", () => {
     test("modules aren't ordered by name", () => {
         util.testBundle`
             import { value } from "./a";
-            ${validateValueSource}
+            ${exportResultSource}
         `
             .addExtraFile("a.ts", exportValueSource)
             .setOptions(outFileOptionsWithEntry("main.ts"))
-            .expectNoExecutionError();
+            .expectToEqual({ result: true });
     });
 
     test("entry point in directory", () => {
@@ -74,12 +74,12 @@ describe("outFile", () => {
                 "main/main.ts",
                 `
                     import { value } from "../module";
-                    ${validateValueSource}
+                    ${exportResultSource}
                 `
             )
             .addExtraFile("module.ts", exportValueSource)
             .setOptions(outFileOptionsWithEntry("main/main.ts"))
-            .expectNoExecutionError();
+            .expectToEqual({ result: true });
     });
 
     test("LuaLibs", () => {
@@ -104,7 +104,7 @@ describe("outFile", () => {
         util.testBundle`
             export const a = true;
             import { value } from "./b";
-            ${validateValueSource}
+            ${exportResultSource}
         `
             .addExtraFile(
                 "b.ts",
@@ -114,7 +114,7 @@ describe("outFile", () => {
                 `
             )
             .setOptions(outFileOptionsWithEntry("main.ts"))
-            .expectNoExecutionError();
+            .expectToEqual({ a: true, result: true });
     });
 
     test("luaEntry doesn't exist", () => {

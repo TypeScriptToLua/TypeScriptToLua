@@ -245,7 +245,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            return { value: [value] };
+            return { value };
         }
     }
 }

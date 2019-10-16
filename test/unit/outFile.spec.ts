@@ -8,7 +8,7 @@ const reexportValueSource = 'export { value } from "./export";';
 const exportResultSource = "export const result = value;";
 
 function outFileOptionsWithEntry(luaEntry: string): CompilerOptions {
-    return { outFile: "main.lua", noHoisting: true, module: ts.ModuleKind.AMD, luaEntry };
+    return { outFile: "main.lua", module: ts.ModuleKind.AMD, luaEntry };
 }
 
 test("import module -> main", () => {
@@ -112,7 +112,7 @@ test("cyclic imports", () => {
                 export const value = a;
             `
         )
-        .setOptions(outFileOptionsWithEntry("main.ts"))
+        .setOptions({ noHoisting: true, ...outFileOptionsWithEntry("main.ts") })
         .expectToEqual({ a: true, result: true });
 });
 
@@ -128,4 +128,8 @@ test("luaEntry resolved from path specified in tsconfig", () => {
         .addExtraFile("src/module.ts", "")
         .setOptions({ rootDir: "src", ...outFileOptionsWithEntry("src/main.ts") })
         .expectToHaveNoDiagnostics();
+});
+
+test("export equals", () => {
+    util.testBundle`export = "result"`.setOptions(outFileOptionsWithEntry("main.ts")).expectToEqual("result");
 });

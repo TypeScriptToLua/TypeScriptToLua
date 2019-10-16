@@ -1,5 +1,5 @@
 const tstlpackage: {
-    preload: Record<string, (this: void, exports: object) => void>;
+    preload: Record<string, (this: void, exports: object) => object>;
     loaded: Record<string, object>;
 } = { preload: {}, loaded: {} };
 
@@ -14,6 +14,6 @@ function __TS__LuaRequire(this: void, moduleName: string): any {
     }
     const moduleExports = {};
     tstlpackage.loaded[moduleName] = moduleExports;
-    loadScript(moduleExports);
-    return moduleExports;
+    tstlpackage.loaded[moduleName] = loadScript(moduleExports);
+    return tstlpackage.loaded[moduleName];
 }

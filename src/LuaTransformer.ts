@@ -131,6 +131,7 @@ export class LuaTransformer {
         const combinedStatements = bundle.sourceFiles.reduce(
             (statements: tstl.Statement[], sourceFile: ts.SourceFile) => {
                 this.currentSourceFile = sourceFile;
+                this.visitedExportEquals = false;
                 this.isModule = tsHelper.isFileModule(sourceFile);
                 const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
                 this.resolver = this.checker.getEmitResolver(originalSourceFile);
@@ -169,16 +170,18 @@ export class LuaTransformer {
             statements = this.performHoisting(this.transformStatements(sourceFile.statements));
             this.popScope();
 
-            if (this.isModule && !this.isWithinBundle) {
-                // If export equals was not used. Create the exports table.
-                // local exports = {}
-                if (!this.visitedExportEquals) {
-                    statements.unshift(
-                        tstl.createVariableDeclarationStatement(
-                            this.createExportsIdentifier(),
-                            tstl.createTableExpression()
-                        )
-                    );
+            if (this.isModule) {
+                if (!this.isWithinBundle) {
+                    // If export equals was not used. Create the exports table.
+                    // local exports = {}
+                    if (!this.visitedExportEquals) {
+                        statements.unshift(
+                            tstl.createVariableDeclarationStatement(
+                                this.createExportsIdentifier(),
+                                tstl.createTableExpression()
+                            )
+                        );
+                    }
                 }
 
                 // return exports
@@ -192,11 +195,10 @@ export class LuaTransformer {
                 tstl.createStringLiteral("preload")
             );
             const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
+            const moduleParameters = this.visitedExportEquals ? undefined : [this.createExportsIdentifier()];
             const packagePreloadDeclaration = tstl.createAssignmentStatement(
                 tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
-                tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile), [
-                    this.createExportsIdentifier(),
-                ])
+                tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile), moduleParameters)
             );
             return tstl.createBlock([packagePreloadDeclaration], sourceFile);
         }

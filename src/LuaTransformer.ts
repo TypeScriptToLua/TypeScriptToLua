@@ -190,17 +190,14 @@ export class LuaTransformer {
         }
 
         if (this.isWithinBundle) {
-            const packagePreload = tstl.createTableIndexExpression(
-                tstl.createIdentifier("tstlpackage"),
-                tstl.createStringLiteral("preload")
-            );
+            const moduleTableIdentifier = tstl.createIdentifier("__TS__MODULES");
             const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
             const moduleParameters = this.visitedExportEquals ? undefined : [this.createExportsIdentifier()];
-            const packagePreloadDeclaration = tstl.createAssignmentStatement(
-                tstl.createTableIndexExpression(packagePreload, tstl.createStringLiteral(exportPath)),
+            const moduleDeclaration = tstl.createAssignmentStatement(
+                tstl.createTableIndexExpression(moduleTableIdentifier, tstl.createStringLiteral(exportPath)),
                 tstl.createFunctionExpression(tstl.createBlock(statements, sourceFile), moduleParameters)
             );
-            return tstl.createBlock([packagePreloadDeclaration], sourceFile);
+            return tstl.createBlock([moduleDeclaration], sourceFile);
         }
 
         return tstl.createBlock(statements, sourceFile);

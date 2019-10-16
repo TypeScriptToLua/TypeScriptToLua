@@ -1,19 +1,17 @@
-const tstlpackage: {
-    preload: Record<string, (this: void, exports: object) => object>;
-    loaded: Record<string, object>;
-} = { preload: {}, loaded: {} };
+const __TS__MODULES: Record<string, (this: void, exports: object) => any> = {};
+const __TS__MODULECACHE: Record<string, any> = {};
 
 function __TS__LuaRequire(this: void, moduleName: string): any {
-    if (tstlpackage.loaded[moduleName]) {
-        return tstlpackage.loaded[moduleName];
+    if (__TS__MODULECACHE[moduleName]) {
+        return __TS__MODULECACHE[moduleName];
     }
-    const loadScript = tstlpackage.preload[moduleName];
+    const loadScript = __TS__MODULES[moduleName];
     if (!loadScript) {
         // tslint:disable-next-line: no-string-throw
         throw `module '${moduleName}' not found`;
     }
     const moduleExports = {};
-    tstlpackage.loaded[moduleName] = moduleExports;
-    tstlpackage.loaded[moduleName] = loadScript(moduleExports);
-    return tstlpackage.loaded[moduleName];
+    __TS__MODULECACHE[moduleName] = moduleExports;
+    __TS__MODULECACHE[moduleName] = loadScript(moduleExports);
+    return __TS__MODULECACHE[moduleName];
 }

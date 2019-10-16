@@ -92,8 +92,6 @@ export class LuaTransformer {
         this.genVarCounter = 0;
         this.luaLibFeatureSet = new Set<LuaLibFeature>();
 
-        this.visitedExportEquals = false;
-
         this.scopeStack = [];
         this.classStack = [];
 
@@ -111,16 +109,7 @@ export class LuaTransformer {
     public transform(node: ts.Bundle | ts.SourceFile): [tstl.Block, Set<LuaLibFeature>] {
         this.setupState();
         if (ts.isSourceFile(node)) {
-            this.currentSourceFile = node;
-            this.isModule = tsHelper.isFileModule(node);
-
-            // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
-            // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
-            // and would try to re-analyze the file, which would fail because of replaced nodes.
-            const originalSourceFile = ts.getParseTreeNode(node, ts.isSourceFile) || node;
-            this.resolver = this.checker.getEmitResolver(originalSourceFile);
-
-            return [this.transformSourceFile(node), this.luaLibFeatureSet];
+            return [this.transformSourceFileWithState(node), this.luaLibFeatureSet];
         } else {
             return [this.transformBundle(node), this.luaLibFeatureSet];
         }
@@ -130,12 +119,7 @@ export class LuaTransformer {
         this.isWithinBundle = true;
         const combinedStatements = bundle.sourceFiles.reduce(
             (statements: tstl.Statement[], sourceFile: ts.SourceFile) => {
-                this.currentSourceFile = sourceFile;
-                this.visitedExportEquals = false;
-                this.isModule = tsHelper.isFileModule(sourceFile);
-                const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
-                this.resolver = this.checker.getEmitResolver(originalSourceFile);
-                const transformResult = this.transformSourceFile(sourceFile);
+                const transformResult = this.transformSourceFileWithState(sourceFile);
                 return [...statements, ...transformResult.statements];
             },
             []
@@ -157,6 +141,7 @@ export class LuaTransformer {
     }
 
     public transformSourceFile(sourceFile: ts.SourceFile): tstl.Block {
+        this.visitedExportEquals = false;
         let statements: tstl.Statement[] = [];
         if (sourceFile.flags & ts.NodeFlags.JsonFile) {
             const statement = sourceFile.statements[0];
@@ -201,6 +186,19 @@ export class LuaTransformer {
         }
 
         return tstl.createBlock(statements, sourceFile);
+    }
+
+    private transformSourceFileWithState(node: ts.SourceFile): tstl.Block {
+        this.currentSourceFile = node;
+        this.isModule = tsHelper.isFileModule(node);
+
+        // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
+        // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
+        // and would try to re-analyze the file, which would fail because of replaced nodes.
+        const originalSourceFile = ts.getParseTreeNode(node, ts.isSourceFile) || node;
+        this.resolver = this.checker.getEmitResolver(originalSourceFile);
+
+        return this.transformSourceFile(node);
     }
 
     public transformStatement(node: ts.Statement): StatementVisitResult {

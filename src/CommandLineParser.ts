@@ -18,15 +18,11 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
     choices: string[];
 }
 
-interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
-    type: "boolean";
+interface CommandLineOptionOfPrimitiveType extends CommandLineOptionBase {
+    type: "string" | "boolean";
 }
 
-interface CommandLineOptionOfString extends CommandLineOptionBase {
-    type: "string";
-}
-
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfString;
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitiveType;
 
 const optionDeclarations: CommandLineOption[] = [
     {
@@ -206,11 +202,12 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
+        case "string":
         case "boolean": {
-            if (typeof value !== "boolean") {
+            if (typeof value !== option.type) {
                 return {
                     value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "boolean"),
+                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, option.type),
                 };
             }
 
@@ -235,17 +232,6 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             }
 
             return { value: enumValue };
-        }
-
-        case "string": {
-            if (typeof value !== "string") {
-                return {
-                    value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
-                };
-            }
-
-            return { value };
         }
     }
 }

@@ -115,7 +115,7 @@ export class LuaTransformer {
         }
     }
 
-    public transformBundle(bundle: ts.Bundle): tstl.Block {
+    private transformBundle(bundle: ts.Bundle): tstl.Block {
         this.isWithinBundle = true;
         const combinedStatements = bundle.sourceFiles.reduce(
             (statements: tstl.Statement[], sourceFile: ts.SourceFile) => {

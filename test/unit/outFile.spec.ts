@@ -72,19 +72,9 @@ test("entry point in directory", () => {
 
 test("LuaLibs", () => {
     util.testBundle`
-        import { array } from "./module";
-        if (array[2] !== 3) {
-            throw "Array's third item is not three";
-        }
-    `
-        .addExtraFile(
-            "module.ts",
-            `
-                export const array = [1, 2];
-                array.push(3);
-            `
-        )
-        .expectNoExecutionError();
+        export const result = [1, 2];
+        result.push(3);
+    `.expectToEqual({ result: [1, 2, 3] });
 });
 
 test("cyclic imports", () => {

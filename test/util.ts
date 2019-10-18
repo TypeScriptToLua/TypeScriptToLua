@@ -420,6 +420,13 @@ class AccessorTestBuilder extends TestBuilder {
 }
 
 class BundleTestBuilder extends AccessorTestBuilder {
+    protected mainFileName = "main.ts";
+
+    public constructor(_tsCode: string) {
+        super(_tsCode);
+        this.setOptions({ outFile: "main.lua", module: ts.ModuleKind.AMD, luaEntry: this.mainFileName });
+    }
+
     public getLuaCodeWithWrapper(): string {
         const noRequire = "_G.require = nil";
         const noPackage = "_G.package = nil";

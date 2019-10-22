@@ -487,6 +487,8 @@ test.each([
 });
 
 test.each([
+    { array: [[]], expected: [] },
+    { array: [{ a: 1 }, { a: 2 }, { a: 3 }], expected: [{ a: 1 }, { a: 2 }, { a: 3 }] },
     { array: [1, [2, 3], 4], expected: [1, 2, 3, 4] },
     { array: [1, [2, 3], 4], depth: 0, expected: [1, [2, 3], 4] },
     { array: [1, [[2], [3]], 4], expected: [1, [2], [3], 4] },
@@ -497,6 +499,8 @@ test.each([
 });
 
 test.each([
+    { array: [[]], map: <T>(v: T) => v, expected: [] },
+    { array: [1, 2, 3], map: (v: number) => ({ a: v * 2 }), expected: [{ a: 2 }, { a: 4 }, { a: 6 }] },
     { array: [1, [2, 3], [4]], map: <T>(value: T) => value, expected: [1, 2, 3, 4] },
     { array: [1, 2, 3], map: (v: number) => v * 2, expected: [2, 4, 6] },
     { array: [1, 2, 3], map: (v: number) => [v, v * 2], expected: [1, 2, 2, 4, 3, 6] },

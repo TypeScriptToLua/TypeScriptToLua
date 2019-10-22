@@ -5,6 +5,9 @@ declare var __TS__originalTraceback:
     | ((this: void, thread?: any, message?: string, level?: number) => string)
     | undefined;
 
+// Override next declaration so we can omit extra return values
+declare type NextEmptyCheck = (this: void, table: any, index: undefined) => unknown | undefined;
+
 declare function tonumber(value: any, base?: number): number | undefined;
 declare function type(
     value: any

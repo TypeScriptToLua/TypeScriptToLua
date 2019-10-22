@@ -1,59 +1,48 @@
 import * as util from "../util";
 import * as TSTLErrors from "../../src/TSTLErrors";
 
-const exportValueSource = "export const value = true;";
-const reexportValueSource = 'export { value } from "./export";';
-const exportResultSource = "export const result = value;";
-
 test("import module -> main", () => {
     util.testBundle`
-        import { value } from "./module";
-        ${exportResultSource}
+        export { value } from "./module";
     `
-        .addExtraFile("module.ts", exportValueSource)
-        .expectToEqual({ result: true });
+        .addExtraFile("module.ts", "export const value = true")
+        .expectToEqual({ value: true });
 });
 
 test("import chain export -> reexport -> main", () => {
     util.testBundle`
-        import { value } from "./reexport";
-        ${exportResultSource}
+        export { value } from "./reexport";
     `
-        .addExtraFile("reexport.ts", reexportValueSource)
-        .addExtraFile("export.ts", exportValueSource)
-        .expectToEqual({ result: true });
+        .addExtraFile("reexport.ts", "export { value } from './export'")
+        .addExtraFile("export.ts", "export const value = true")
+        .expectToEqual({ value: true });
 });
 
 test("diamond imports/exports -> reexport1 & reexport2 -> main", () => {
     util.testBundle`
-        import { value as a } from "./reexport1";
-        import { value as b } from "./reexport2";
-        if (a !== true || b !== true) {
-            throw "Failed to import a or b";
-        }
+        export { value as a } from "./reexport1";
+        export { value as b } from "./reexport2";
     `
-        .addExtraFile("reexport1.ts", reexportValueSource)
-        .addExtraFile("reexport2.ts", reexportValueSource)
-        .addExtraFile("export.ts", exportValueSource)
-        .expectNoExecutionError();
+        .addExtraFile("reexport1.ts", "export { value } from './export'")
+        .addExtraFile("reexport2.ts", "export { value } from './export'")
+        .addExtraFile("export.ts", "export const value = true")
+        .expectToEqual({ a: true, b: true });
 });
 
 test("module in directory", () => {
     util.testBundle`
-        import { value } from "./module/module";
-        ${exportValueSource}
+        export { value } from "./module/module";
     `
-        .addExtraFile("module/module.ts", exportValueSource)
-        .expectNoExecutionError();
+        .addExtraFile("module/module.ts", "export const value = true")
+        .expectToEqual({ value: true });
 });
 
 test("modules aren't ordered by name", () => {
     util.testBundle`
-        import { value } from "./a";
-        ${exportResultSource}
+        export { value } from "./a";
     `
-        .addExtraFile("a.ts", exportValueSource)
-        .expectToEqual({ result: true });
+        .addExtraFile("a.ts", "export const value = true")
+        .expectToEqual({ value: true });
 });
 
 test("entry point in directory", () => {
@@ -61,13 +50,12 @@ test("entry point in directory", () => {
         .addExtraFile(
             "main/main.ts",
             `
-                import { value } from "../module";
-                ${exportResultSource}
+                export { value } from "../module";
             `
         )
-        .addExtraFile("module.ts", exportValueSource)
+        .addExtraFile("module.ts", "export const value = true")
         .setOptions({ luaEntry: "main/main.ts" })
-        .expectToEqual({ result: true });
+        .expectToEqual({ value: true });
 });
 
 test("LuaLibs", () => {
@@ -79,19 +67,20 @@ test("LuaLibs", () => {
 
 test("cyclic imports", () => {
     util.testBundle`
+        import * as b from "./b";
         export const a = true;
-        import { value } from "./b";
-        ${exportResultSource}
+        export const valueResult = b.value;
+        export const lazyValueResult = b.lazyValue();
     `
         .addExtraFile(
             "b.ts",
             `
                 import { a } from "./main";
                 export const value = a;
+                export const lazyValue = () => a;
             `
         )
-        .setOptions({ noHoisting: true })
-        .expectToEqual({ a: true, result: true });
+        .expectToEqual({ a: true, valueResult: true, lazyValueResult: true });
 });
 
 test("luaEntry doesn't exist", () => {

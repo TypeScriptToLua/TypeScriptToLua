@@ -130,8 +130,7 @@ export class LuaTransformer {
             let luaEntryPath = this.options.luaEntry;
             if (this.options.configFilePath) {
                 // If specified via project. Figure out the full path to the file based off the project's path
-                const configFileName = this.options.configFilePath as string | undefined;
-                const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
+                const basedir = path.dirname(this.options.configFilePath as string);
                 luaEntryPath = path.resolve(basedir, this.options.luaEntry);
             }
 

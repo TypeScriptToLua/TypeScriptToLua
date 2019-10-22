@@ -1,17 +1,17 @@
-const __TS__MODULES: Record<string, (this: void, exports: object) => any> = {};
-const __TS__MODULECACHE: Record<string, any> = {};
+const ____modules: Record<string, (this: void, exports: object) => any> = {};
+const ____modulecache: Record<string, any> = {};
 
 function __TS__LuaRequire(this: void, moduleName: string): any {
-    if (__TS__MODULECACHE[moduleName]) {
-        return __TS__MODULECACHE[moduleName];
+    if (____modulecache[moduleName]) {
+        return ____modulecache[moduleName];
     }
-    const loadScript = __TS__MODULES[moduleName];
+    const loadScript = ____modules[moduleName];
     if (!loadScript) {
         // tslint:disable-next-line: no-string-throw
         throw `module '${moduleName}' not found`;
     }
     const moduleExports = {};
-    __TS__MODULECACHE[moduleName] = moduleExports;
-    __TS__MODULECACHE[moduleName] = loadScript(moduleExports);
-    return __TS__MODULECACHE[moduleName];
+    ____modulecache[moduleName] = moduleExports;
+    ____modulecache[moduleName] = loadScript(moduleExports);
+    return ____modulecache[moduleName];
 }

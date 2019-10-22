@@ -2,9 +2,9 @@ import * as ts from "typescript";
 import { TranspileError } from "./TranspileError";
 
 export const transpileError = (error: TranspileError): ts.Diagnostic => ({
-    file: error.node.kind === ts.SyntaxKind.Unknown ? undefined : error.node.getSourceFile(),
-    start: error.node.kind === ts.SyntaxKind.Unknown ? undefined : error.node.getStart(),
-    length: error.node.kind === ts.SyntaxKind.Unknown ? undefined : error.node.getWidth(),
+    file: error.node ? error.node.getSourceFile() : undefined,
+    start: error.node ? error.node.getStart() : undefined,
+    length: error.node ? error.node.getWidth() : undefined,
     category: ts.DiagnosticCategory.Error,
     code: 0,
     source: "typescript-to-lua",

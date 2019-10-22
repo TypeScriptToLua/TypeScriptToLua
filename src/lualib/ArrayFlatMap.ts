@@ -8,6 +8,8 @@ function __TS__ArrayFlatMap<T, U>(
         const value = callback(array[i], i, array);
         if (
             type(value) === "table" &&
+            // Workaround to determine if value is an array or not (fails in case of objects without keys)
+            // See discussion in: https://github.com/TypeScriptToLua/TypeScriptToLua/pull/737
             (1 in value || (next as NextEmptyCheck)(value as any, undefined) === undefined)
         ) {
             result = result.concat(value);

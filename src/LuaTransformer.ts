@@ -565,12 +565,12 @@ export class LuaTransformer {
               )
             : moduleSpecifier.text;
         const modulePath = tstl.createStringLiteral(modulePathString);
-        const requireCallString = this.options.outFile ? "__TS__LuaRequire" : "require";
+        const requireFunctionName = this.options.outFile ? "__TS__LuaRequire" : "require";
         if (this.options.outFile) {
             this.importLuaLibFeature(LuaLibFeature.LuaRequire);
         }
 
-        return tstl.createCallExpression(tstl.createIdentifier(requireCallString), [modulePath], moduleSpecifier);
+        return tstl.createCallExpression(tstl.createIdentifier(requireFunctionName), [modulePath], moduleSpecifier);
     }
 
     protected validateClassElement(element: ts.ClassElement): void {

@@ -6,7 +6,8 @@ function __TS__ArrayFlatMap<T, U>(
     let result: U[] = [];
     for (let i = 0; i < array.length; i++) {
         const value = callback(array[i], i, array);
-        if (type(value) === "table") {
+        // A hack to concat only true "arrays" and empty tables.
+        if (type(value) === "table" && (1 in value || next(value as any, undefined) === undefined)) {
             result = result.concat(value);
         } else {
             result[result.length] = value as U;

@@ -134,6 +134,7 @@ export class LuaTransformer {
                 const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
                 luaEntryPath = path.resolve(basedir, this.options.luaEntry);
             }
+
             const sourceFile = this.program.getSourceFile(luaEntryPath);
             if (sourceFile) {
                 const formattedEntryName = tsHelper.getExportPath(sourceFile.fileName, this.options);

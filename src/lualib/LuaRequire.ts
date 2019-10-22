@@ -1,3 +1,4 @@
+// tslint:disable: variable-name
 const ____modules: Record<string, (this: void, exports: object) => any> = {};
 const ____modulecache: Record<string, any> = {};
 

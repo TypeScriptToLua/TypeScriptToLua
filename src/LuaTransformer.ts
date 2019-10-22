@@ -183,7 +183,7 @@ export class LuaTransformer {
         }
 
         if (this.isWithinBundle) {
-            const moduleTableIdentifier = tstl.createIdentifier("__TS__MODULES");
+            const moduleTableIdentifier = tstl.createIdentifier("____modules");
             const exportPath = tsHelper.getExportPath(sourceFile.fileName, this.options);
             const moduleParameters = this.visitedExportEquals ? undefined : [this.createExportsIdentifier()];
             const moduleDeclaration = tstl.createAssignmentStatement(

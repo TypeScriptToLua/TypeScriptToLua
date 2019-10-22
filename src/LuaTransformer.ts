@@ -570,6 +570,7 @@ export class LuaTransformer {
         if (this.options.outFile) {
             this.importLuaLibFeature(LuaLibFeature.LuaRequire);
         }
+
         return tstl.createCallExpression(tstl.createIdentifier(requireCallString), [modulePath], moduleSpecifier);
     }
 

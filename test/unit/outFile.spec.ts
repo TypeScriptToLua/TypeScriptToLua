@@ -75,12 +75,12 @@ test("cyclic imports", () => {
         .addExtraFile(
             "b.ts",
             `
-                import { a } from "./main";
-                export const value = a;
-                export const lazyValue = () => a;
+                import * as a from "./main";
+                export const value = a.a;
+                export const lazyValue = () => a.a;
             `
         )
-        .expectToEqual({ a: true, valueResult: true, lazyValueResult: true });
+        .expectToEqual({ a: true, lazyValueResult: true });
 });
 
 test("luaEntry doesn't exist", () => {

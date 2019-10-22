@@ -1,10 +1,10 @@
 // tslint:disable: variable-name
 const ____modules: Record<string, (this: void, exports: object) => any> = {};
-const ____modulecache: Record<string, any> = {};
+const ____moduleCache: Record<string, any> = {};
 
 function __TS__LuaRequire(this: void, moduleName: string): any {
-    if (____modulecache[moduleName]) {
-        return ____modulecache[moduleName];
+    if (____moduleCache[moduleName]) {
+        return ____moduleCache[moduleName];
     }
     const loadScript = ____modules[moduleName];
     if (!loadScript) {
@@ -12,7 +12,7 @@ function __TS__LuaRequire(this: void, moduleName: string): any {
         throw `module '${moduleName}' not found`;
     }
     const moduleExports = {};
-    ____modulecache[moduleName] = moduleExports;
-    ____modulecache[moduleName] = loadScript(moduleExports);
-    return ____modulecache[moduleName];
+    ____moduleCache[moduleName] = moduleExports;
+    ____moduleCache[moduleName] = loadScript(moduleExports);
+    return ____moduleCache[moduleName];
 }

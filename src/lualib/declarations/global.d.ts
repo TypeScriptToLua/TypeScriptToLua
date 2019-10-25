@@ -2,7 +2,7 @@
 
 declare var __TS__sourcemap: Record<number, number> | undefined;
 declare var __TS__originalTraceback:
-    | ((this: void, threadOrMessage?: any, messageOrLevel?: string | number, level?: number) => any)
+    | ((this: void, thread?: any, message?: string, level?: number) => string)
     | undefined;
 
 // Override next declaration so we can omit extra return values

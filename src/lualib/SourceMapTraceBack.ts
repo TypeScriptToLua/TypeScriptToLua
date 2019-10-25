@@ -7,7 +7,10 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: { [li
     if (globalThis.__TS__originalTraceback === undefined) {
         globalThis.__TS__originalTraceback = debug.traceback;
         debug.traceback = (thread, message, level) => {
-            const trace = globalThis.__TS__originalTraceback(thread, message, level);
+            let trace = globalThis.__TS__originalTraceback(thread, message, level);
+            if (typeof trace !== "string") {
+                trace = globalThis.__TS__originalTraceback(trace.toString(), 3);
+            }
             const [result] = string.gsub(trace, "(%S+).lua:(%d+)", (file, line) => {
                 const fileSourceMap = globalThis.__TS__sourcemap[file + ".lua"];
                 if (fileSourceMap && fileSourceMap[line]) {
@@ -15,7 +18,6 @@ function __TS__SourceMapTraceBack(this: void, fileName: string, sourceMap: { [li
                 }
                 return `${file}.lua:${line}`;
             });
-
             return result;
         };
     }

@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.28.0
+
+- We now have a `noImplicitSelf` option you can add to your tstl tsconfig.json. Default behavior is `false`. Setting this option to `true` will cause no 'self' arguments to be considered/generated in the project. Declarations will behave as if they have a `/** @noSelfInFile */` directive. This option is new and might cause correctness issues, use at your own risk and create an issue if you experience any issues.
+- Regular `Error` objects can now be thrown, `throw` is no longer limited to only strings. Take care: printing/toString'ing the LuaLib error class might have different results for different Lua versions.
+- Added LuaLib support for `array.reduceRight`.
+- Added LuaLib support for `array.find`.
+
+- Fixed an issue in test code causing some inconsistent behavior between JS <-> Lua to go unnoticed. Also fixed `array.splice` and `array.join` whose Lua versions behaved differently from the ECMAScript specification.
+- Fixed array.reduce not behaving according to ECMAScript specification.
+- Fixed order of operations issue with ternary conditional.
+
+- Updated to TS 3.6.
+- Moved from Travis+Appveyor to GitHub Actions!
+
 ## 0.27.0
 
 - Added support for [array and object destructuring with rest](https://basarat.gitbooks.io/typescript/content/docs/destructuring.html#object-destructuring-with-rest).

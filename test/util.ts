@@ -5,6 +5,7 @@ import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
+import { stringify } from "javascript-stringify";
 
 export * from "./legacy-utils";
 
@@ -49,12 +50,7 @@ export function expectToBeDefined<T>(subject: T | null | undefined): subject is 
     return true; // If this was false the expect would have thrown an error
 }
 
-export const valueToString = (value: unknown) =>
-    (typeof value === "number" && (!Number.isFinite(value) || Number.isNaN(value))) || typeof value === "function"
-        ? String(value)
-        : JSON.stringify(value);
-
-export const valuesToString = (values: unknown[]) => values.map(valueToString).join(", ");
+export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");
 
 export function testEachVersion<T extends TestBuilder>(
     name: string | undefined,
@@ -468,7 +464,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     } else {
         let [template, ...substitutions] = args;
         if (serializeSubstitutions) {
-            substitutions = substitutions.map(valueToString);
+            substitutions = substitutions.map(s => formatCode(s));
         }
 
         tsCode = template

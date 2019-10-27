@@ -668,6 +668,10 @@ export class LuaTransformer {
         // Get type that is extended
         const extendsType = tsHelper.getExtendedType(statement, this.checker);
 
+        if (extendsType) {
+            this.checkForLuaLibType(extendsType);
+        }
+
         if (!(isExtension || isMetaExtension) && extendsType) {
             // Non-extensions cannot extend extension classes
             const extendsDecorators = tsHelper.getCustomDecorators(extendsType, this.checker);
@@ -2898,20 +2902,17 @@ export class LuaTransformer {
     }
 
     public transformThrowStatement(statement: ts.ThrowStatement): StatementVisitResult {
-        if (statement.expression === undefined) {
-            throw TSTLErrors.InvalidThrowExpression(statement);
+        const parameters: tstl.Expression[] = [];
+
+        if (statement.expression) {
+            parameters.push(this.transformExpression(statement.expression));
+            parameters.push(tstl.createNumericLiteral(0));
         }
 
-        const type = this.checker.getTypeAtLocation(statement.expression);
-        if (tsHelper.isStringType(type, this.checker, this.program)) {
-            const error = tstl.createIdentifier("error");
-            return tstl.createExpressionStatement(
-                tstl.createCallExpression(error, [this.transformExpression(statement.expression)]),
-                statement
-            );
-        } else {
-            throw TSTLErrors.InvalidThrowExpression(statement.expression);
-        }
+        return tstl.createExpressionStatement(
+            tstl.createCallExpression(tstl.createIdentifier("error"), parameters),
+            statement
+        );
     }
 
     public transformContinueStatement(statement: ts.ContinueStatement): StatementVisitResult {
@@ -3734,7 +3735,10 @@ export class LuaTransformer {
             className = tstl.createAnonymousIdentifier();
         }
 
+        this.pushScope(ScopeType.Function);
         const classDeclaration = this.transformClassDeclaration(expression, className);
+        this.popScope();
+
         return this.createImmediatelyInvokedFunctionExpression(
             this.statementVisitResultToArray(classDeclaration),
             className,
@@ -4260,6 +4264,7 @@ export class LuaTransformer {
 
         const expressionType = this.checker.getTypeAtLocation(expression.expression);
         if (tsHelper.isStandardLibraryType(expressionType, undefined, this.program)) {
+            this.checkForLuaLibType(expressionType);
             const result = this.transformGlobalFunctionCall(expression);
             if (result) {
                 return result;
@@ -5180,6 +5185,8 @@ export class LuaTransformer {
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayFilter, node, caller, ...params);
             case "reduce":
                 return this.transformLuaLibFunction(LuaLibFeature.ArrayReduce, node, caller, ...params);
+            case "reduceRight":
+                return this.transformLuaLibFunction(LuaLibFeature.ArrayReduceRight, node, caller, ...params);
             case "some":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySome, node, caller, ...params);
             case "every":
@@ -5189,8 +5196,13 @@ export class LuaTransformer {
             case "splice":
                 return this.transformLuaLibFunction(LuaLibFeature.ArraySplice, node, caller, ...params);
             case "join":
-                const parameters =
-                    node.arguments.length === 0 ? [caller, tstl.createStringLiteral(",")] : [caller].concat(params);
+                const defaultSeparatorLiteral = tstl.createStringLiteral(",");
+                const parameters = [
+                    caller,
+                    node.arguments.length === 0
+                        ? defaultSeparatorLiteral
+                        : tstl.createBinaryExpression(params[0], defaultSeparatorLiteral, tstl.SyntaxKind.OrOperator),
+                ];
 
                 return tstl.createCallExpression(
                     tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("concat")),
@@ -5558,7 +5570,8 @@ export class LuaTransformer {
 
     protected checkForLuaLibType(type: ts.Type): void {
         if (type.symbol) {
-            switch (this.checker.getFullyQualifiedName(type.symbol)) {
+            const name = this.checker.getFullyQualifiedName(type.symbol);
+            switch (name) {
                 case "Map":
                     this.importLuaLibFeature(LuaLibFeature.Map);
                     return;
@@ -5571,6 +5584,10 @@ export class LuaTransformer {
                 case "WeakSet":
                     this.importLuaLibFeature(LuaLibFeature.WeakSet);
                     return;
+            }
+
+            if (tsHelper.isBuiltinErrorTypeName(name)) {
+                this.importLuaLibFeature(LuaLibFeature.Error);
             }
         }
     }

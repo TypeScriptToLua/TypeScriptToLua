@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-import * as path from "path";
 import * as ts from "typescript";
-import * as tstl from ".";
-import * as CommandLineParser from "./CommandLineParser";
-import * as diagnosticFactories from "./diagnostics";
-
-function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
-    return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
-}
+import * as tstl from "..";
+import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./config";
+import * as cliDiagnostics from "./diagnostics";
+import { getHelpString, versionString } from "./information";
+import { parseCommandLine } from "./parse";
+import { createDiagnosticReporter } from "./report";
 
 function shouldBePretty(options?: ts.CompilerOptions): boolean {
     return !options || options.pretty === undefined
@@ -15,9 +13,13 @@ function shouldBePretty(options?: ts.CompilerOptions): boolean {
         : Boolean(options.pretty);
 }
 
-let reportDiagnostic = tstl.createDiagnosticReporter(false);
+let reportDiagnostic = createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
-    reportDiagnostic = tstl.createDiagnosticReporter(shouldBePretty(options));
+    reportDiagnostic = createDiagnosticReporter(shouldBePretty(options));
+}
+
+function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
+    return ts.createWatchStatusReporter(ts.sys, shouldBePretty(options));
 }
 
 function executeCommandLine(args: string[]): void {
@@ -28,10 +30,10 @@ function executeCommandLine(args: string[]): void {
         }
     }
 
-    const commandLine = CommandLineParser.parseCommandLine(args);
+    const commandLine = parseCommandLine(args);
 
     if (commandLine.options.build) {
-        reportDiagnostic(diagnosticFactories.optionBuildMustBeFirstCommandLineArgument());
+        reportDiagnostic(cliDiagnostics.optionBuildMustBeFirstCommandLineArgument());
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }
 
@@ -43,17 +45,17 @@ function executeCommandLine(args: string[]): void {
     }
 
     if (commandLine.options.version) {
-        console.log(CommandLineParser.version);
+        console.log(versionString);
         return ts.sys.exit(ts.ExitStatus.Success);
     }
 
     if (commandLine.options.help) {
-        console.log(CommandLineParser.version);
-        console.log(CommandLineParser.getHelpString());
+        console.log(versionString);
+        console.log(getHelpString());
         return ts.sys.exit(ts.ExitStatus.Success);
     }
 
-    const configFileName = CommandLineParser.locateConfigFile(commandLine);
+    const configFileName = locateConfigFile(commandLine);
     if (typeof configFileName === "object") {
         reportDiagnostic(configFileName);
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
@@ -61,7 +63,7 @@ function executeCommandLine(args: string[]): void {
 
     const commandLineOptions = commandLine.options;
     if (configFileName) {
-        const configParseResult = CommandLineParser.parseConfigFileWithSystem(configFileName, commandLineOptions);
+        const configParseResult = parseConfigFileWithSystem(configFileName, commandLineOptions);
 
         updateReportDiagnostic(configParseResult.options);
         if (configParseResult.options.watch) {
@@ -156,34 +158,12 @@ function updateWatchCompilationHost(
     optionsToExtend: tstl.CompilerOptions
 ): void {
     let fullRecompile = true;
-    const configFileMap = new WeakMap<ts.TsConfigSourceFile, ts.ParsedCommandLine>();
+    const updateConfigFile = createConfigFileUpdater(optionsToExtend);
 
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
         const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
-
-        let configFileParsingDiagnostics: ts.Diagnostic[] = [];
-        const configFile = options.configFile as ts.TsConfigSourceFile | undefined;
-        const configFilePath = options.configFilePath as string | undefined;
-        if (configFile && configFilePath) {
-            if (!configFileMap.has(configFile)) {
-                const parsedConfigFile = CommandLineParser.updateParsedConfigFile(
-                    ts.parseJsonSourceFileConfigFileContent(
-                        configFile,
-                        ts.sys,
-                        path.dirname(configFilePath),
-                        optionsToExtend,
-                        configFilePath
-                    )
-                );
-
-                configFileMap.set(configFile, parsedConfigFile);
-            }
-
-            const parsedConfigFile = configFileMap.get(configFile)!;
-            Object.assign(options, parsedConfigFile.options);
-            configFileParsingDiagnostics = parsedConfigFile.errors;
-        }
+        const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
 
         let sourceFiles: ts.SourceFile[] | undefined;
         if (!fullRecompile) {
@@ -220,10 +200,12 @@ function updateWatchCompilationHost(
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 
-        host.onWatchStatusChange!(diagnosticFactories.watchErrorSummary(errors.length), host.getNewLine(), options);
+        host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
     };
 }
 
-if ((ts.sys as any).setBlocking) (ts.sys as any).setBlocking();
+if (ts.sys.setBlocking) {
+    ts.sys.setBlocking();
+}
 
 executeCommandLine(ts.sys.args);

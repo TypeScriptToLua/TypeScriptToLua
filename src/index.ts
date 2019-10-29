@@ -1,17 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import { parseConfigFileWithSystem } from "./CommandLineParser";
+import { parseConfigFileWithSystem } from "./cli/config";
 import { CompilerOptions } from "./CompilerOptions";
 import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
-export {
-    createDiagnosticReporter,
-    parseCommandLine,
-    ParsedCommandLine,
-    updateParsedConfigFile,
-} from "./CommandLineParser";
+export * from "./cli/config";
+export { version } from "./cli/information";
+export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./cli/parse";
+export * from "./cli/report";
 export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";

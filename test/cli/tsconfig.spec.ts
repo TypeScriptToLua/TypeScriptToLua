@@ -10,7 +10,9 @@ beforeEach(async () => {
     process.chdir(temp);
 });
 
+const originalWorkingDirectory = process.cwd();
 afterEach(async () => {
+    process.chdir(originalWorkingDirectory);
     // TODO [node@12]: `rmdir` has `recursive` option
     await fs.remove(temp);
 });

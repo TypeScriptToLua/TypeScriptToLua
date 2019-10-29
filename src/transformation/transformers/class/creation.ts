@@ -14,7 +14,7 @@ import {
     createSelfIdentifier,
 } from "../../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
-import { hasGetAccessorInClassOrAncestor, hasSetAccessorInClassOrAncestor } from "./members/accessors";
+import { hasMemberInClassOrAncestor } from "./members/accessors";
 import { getExtendedTypeNode, isStaticNode } from "./utils";
 
 export function createClassCreationMethods(
@@ -136,7 +136,7 @@ export function createClassCreationMethods(
         createClassPrototype(),
         tstl.createStringLiteral("__index")
     );
-    if (hasGetAccessorInClassOrAncestor(context, statement, false)) {
+    if (hasMemberInClassOrAncestor(context, statement, m => ts.isGetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__index = __TS__Index(localClassName.prototype)
         const assignClassPrototypeIndex = tstl.createAssignmentStatement(
             classPrototypeIndex,
@@ -168,7 +168,7 @@ export function createClassCreationMethods(
         result.push(assignClassPrototypeSetters);
     }
 
-    if (hasSetAccessorInClassOrAncestor(context, statement, false)) {
+    if (hasMemberInClassOrAncestor(context, statement, m => ts.isSetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__newindex = __TS__NewIndex(localClassName.prototype)
         const classPrototypeNewIndex = tstl.createTableIndexExpression(
             createClassPrototype(),
@@ -194,8 +194,16 @@ export function createClassCreationMethods(
     );
     result.push(assignClassPrototypeConstructor);
 
-    const hasStaticGetters = hasGetAccessorInClassOrAncestor(context, statement, true);
-    const hasStaticSetters = hasSetAccessorInClassOrAncestor(context, statement, true);
+    const hasStaticGetters = hasMemberInClassOrAncestor(
+        context,
+        statement,
+        m => ts.isGetAccessor(m) && isStaticNode(m)
+    );
+    const hasStaticSetters = hasMemberInClassOrAncestor(
+        context,
+        statement,
+        m => ts.isSetAccessor(m) && isStaticNode(m)
+    );
 
     if (extendsType) {
         const extendedTypeNode = getExtendedTypeNode(context, statement);

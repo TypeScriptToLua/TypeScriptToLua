@@ -4,31 +4,43 @@ import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformFunctionBody, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
-import { findInClassOrAncestor, isStaticNode } from "../utils";
+import { getExtendedType, isStaticNode } from "../utils";
 
-export function hasSetAccessorInClassOrAncestor(
+// TODO: Inline to `hasMemberInClassOrAncestor`?
+function* classWithAncestors(
     context: TransformationContext,
-    classDeclaration: ts.ClassLikeDeclarationBase,
-    isStatic: boolean
-): boolean {
-    return (
-        findInClassOrAncestor(context, classDeclaration, c =>
-            c.members.some(m => ts.isSetAccessor(m) && isStaticNode(m) === isStatic)
-        ) !== undefined
-    );
+    classDeclaration: ts.ClassLikeDeclarationBase
+): Generator<ts.ClassLikeDeclarationBase> {
+    yield classDeclaration;
+
+    const extendsType = getExtendedType(context, classDeclaration);
+    if (!extendsType) {
+        return false;
+    }
+
+    const symbol = extendsType.getSymbol();
+    if (symbol === undefined) {
+        return false;
+    }
+
+    const symbolDeclarations = symbol.getDeclarations();
+    if (symbolDeclarations === undefined) {
+        return false;
+    }
+
+    const declaration = symbolDeclarations.find(ts.isClassLike);
+    if (!declaration) {
+        return false;
+    }
+
+    yield* classWithAncestors(context, declaration);
 }
 
-export function hasGetAccessorInClassOrAncestor(
+export const hasMemberInClassOrAncestor = (
     context: TransformationContext,
     classDeclaration: ts.ClassLikeDeclarationBase,
-    isStatic: boolean
-): boolean {
-    return (
-        findInClassOrAncestor(context, classDeclaration, c =>
-            c.members.some(m => ts.isGetAccessor(m) && isStaticNode(m) === isStatic)
-        ) !== undefined
-    );
-}
+    callback: (m: ts.ClassElement) => boolean
+) => [...classWithAncestors(context, classDeclaration)].some(c => c.members.some(callback));
 
 function getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
     if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName) || ts.isNumericLiteral(propertyName)) {
@@ -53,10 +65,11 @@ export function isGetAccessorOverride(
         return false;
     }
 
-    const hasInitializedField = (e: ts.ClassElement) =>
-        ts.isPropertyDeclaration(e) && e.initializer !== undefined && isSamePropertyName(e.name, element.name);
-
-    return findInClassOrAncestor(context, classDeclaration, c => c.members.some(hasInitializedField)) !== undefined;
+    return hasMemberInClassOrAncestor(
+        context,
+        classDeclaration,
+        m => ts.isPropertyDeclaration(m) && m.initializer !== undefined && isSamePropertyName(m.name, element.name)
+    );
 }
 
 export function transformAccessorDeclaration(

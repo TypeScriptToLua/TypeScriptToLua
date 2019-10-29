@@ -30,35 +30,3 @@ export function getExtendedType(
     const extendedTypeNode = getExtendedTypeNode(context, node);
     return extendedTypeNode && context.checker.getTypeAtLocation(extendedTypeNode);
 }
-
-export function findInClassOrAncestor(
-    context: TransformationContext,
-    classDeclaration: ts.ClassLikeDeclarationBase,
-    callback: (classDeclaration: ts.ClassLikeDeclarationBase) => boolean
-): ts.ClassLikeDeclarationBase | undefined {
-    if (callback(classDeclaration)) {
-        return classDeclaration;
-    }
-
-    const extendsType = getExtendedType(context, classDeclaration);
-    if (!extendsType) {
-        return undefined;
-    }
-
-    const symbol = extendsType.getSymbol();
-    if (symbol === undefined) {
-        return undefined;
-    }
-
-    const symbolDeclarations = symbol.getDeclarations();
-    if (symbolDeclarations === undefined) {
-        return undefined;
-    }
-
-    const declaration = symbolDeclarations.find(ts.isClassLike);
-    if (!declaration) {
-        return undefined;
-    }
-
-    return findInClassOrAncestor(context, declaration, callback);
-}

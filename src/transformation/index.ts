@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../LuaAST";
+import * as lua from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, TransformerPlugin, VisitorMap } from "./context";
@@ -41,7 +41,7 @@ export function createVisitorMap(customPlugins: TransformerPlugin[]): VisitorMap
 }
 
 export interface TransformSourceFileResult {
-    luaAst: tstl.Block;
+    luaAst: lua.Block;
     luaLibFeatures: Set<LuaLibFeature>;
     diagnostics: ts.Diagnostic[];
 }
@@ -54,7 +54,7 @@ export function transformSourceFile(
     const context = new TransformationContext(program, sourceFile, visitorMap);
 
     try {
-        const [luaAst] = context.transformNode(sourceFile) as [tstl.Block];
+        const [luaAst] = context.transformNode(sourceFile) as [lua.Block];
         const luaLibFeatures = getUsedLuaLibFeatures(context);
 
         return { luaAst, luaLibFeatures, diagnostics: [] };
@@ -62,9 +62,9 @@ export function transformSourceFile(
         if (!(error instanceof TranspileError)) throw error;
 
         return {
-            luaAst: tstl.createBlock([
-                tstl.createExpressionStatement(
-                    tstl.createCallExpression(tstl.createIdentifier("error"), [tstl.createStringLiteral(error.message)])
+            luaAst: lua.createBlock([
+                lua.createExpressionStatement(
+                    lua.createCallExpression(lua.createIdentifier("error"), [lua.createStringLiteral(error.message)])
                 ),
             ]),
             luaLibFeatures: new Set(),

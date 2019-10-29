@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { wrapInTable } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
@@ -10,107 +10,107 @@ export function transformGeneratorFunctionBody(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     body: ts.Block,
-    spreadIdentifier?: tstl.Identifier
-): [tstl.Statement[], Scope] {
+    spreadIdentifier?: lua.Identifier
+): [lua.Statement[], Scope] {
     importLuaLibFeature(context, LuaLibFeature.Symbol);
     const [functionBody, functionScope] = transformFunctionBody(context, parameters, body);
 
-    const coroutineIdentifier = tstl.createIdentifier("____co");
-    const valueIdentifier = tstl.createIdentifier("____value");
-    const errIdentifier = tstl.createIdentifier("____err");
-    const itIdentifier = tstl.createIdentifier("____it");
+    const coroutineIdentifier = lua.createIdentifier("____co");
+    const valueIdentifier = lua.createIdentifier("____value");
+    const errIdentifier = lua.createIdentifier("____err");
+    const itIdentifier = lua.createIdentifier("____it");
 
     // local ____co = coroutine.create(originalFunction)
-    const coroutine = tstl.createVariableDeclarationStatement(
+    const coroutine = lua.createVariableDeclarationStatement(
         coroutineIdentifier,
-        tstl.createCallExpression(
-            tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("create")),
-            [tstl.createFunctionExpression(tstl.createBlock(functionBody))]
+        lua.createCallExpression(
+            lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("create")),
+            [lua.createFunctionExpression(lua.createBlock(functionBody))]
         )
     );
 
     const nextBody = [];
     // coroutine.resume(__co, ...)
-    const resumeCall = tstl.createCallExpression(
-        tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("resume")),
-        [coroutineIdentifier, tstl.createDotsLiteral()]
+    const resumeCall = lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("resume")),
+        [coroutineIdentifier, lua.createDotsLiteral()]
     );
 
     // ____err, ____value = coroutine.resume(____co, ...)
-    nextBody.push(tstl.createVariableDeclarationStatement([errIdentifier, valueIdentifier], resumeCall));
+    nextBody.push(lua.createVariableDeclarationStatement([errIdentifier, valueIdentifier], resumeCall));
 
     // if(not ____err){error(____value)}
-    const errorCheck = tstl.createIfStatement(
-        tstl.createUnaryExpression(errIdentifier, tstl.SyntaxKind.NotOperator),
-        tstl.createBlock([
-            tstl.createExpressionStatement(
-                tstl.createCallExpression(tstl.createIdentifier("error"), [valueIdentifier])
+    const errorCheck = lua.createIfStatement(
+        lua.createUnaryExpression(errIdentifier, lua.SyntaxKind.NotOperator),
+        lua.createBlock([
+            lua.createExpressionStatement(
+                lua.createCallExpression(lua.createIdentifier("error"), [valueIdentifier])
             ),
         ])
     );
     nextBody.push(errorCheck);
 
     // coroutine.status(____co) == "dead";
-    const coStatus = tstl.createCallExpression(
-        tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("status")),
+    const coStatus = lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("status")),
         [coroutineIdentifier]
     );
-    const status = tstl.createBinaryExpression(
+    const status = lua.createBinaryExpression(
         coStatus,
-        tstl.createStringLiteral("dead"),
-        tstl.SyntaxKind.EqualityOperator
+        lua.createStringLiteral("dead"),
+        lua.SyntaxKind.EqualityOperator
     );
 
     // {done = coroutine.status(____co) == "dead"; value = ____value}
-    const iteratorResult = tstl.createTableExpression([
-        tstl.createTableFieldExpression(status, tstl.createStringLiteral("done")),
-        tstl.createTableFieldExpression(valueIdentifier, tstl.createStringLiteral("value")),
+    const iteratorResult = lua.createTableExpression([
+        lua.createTableFieldExpression(status, lua.createStringLiteral("done")),
+        lua.createTableFieldExpression(valueIdentifier, lua.createStringLiteral("value")),
     ]);
-    nextBody.push(tstl.createReturnStatement([iteratorResult]));
+    nextBody.push(lua.createReturnStatement([iteratorResult]));
 
     // function(____, ...)
-    const nextFunctionDeclaration = tstl.createFunctionExpression(
-        tstl.createBlock(nextBody),
-        [tstl.createAnonymousIdentifier()],
-        tstl.createDotsLiteral()
+    const nextFunctionDeclaration = lua.createFunctionExpression(
+        lua.createBlock(nextBody),
+        [lua.createAnonymousIdentifier()],
+        lua.createDotsLiteral()
     );
 
     // ____it = {next = function(____, ...)}
-    const iterator = tstl.createVariableDeclarationStatement(
+    const iterator = lua.createVariableDeclarationStatement(
         itIdentifier,
-        tstl.createTableExpression([
-            tstl.createTableFieldExpression(nextFunctionDeclaration, tstl.createStringLiteral("next")),
+        lua.createTableExpression([
+            lua.createTableFieldExpression(nextFunctionDeclaration, lua.createStringLiteral("next")),
         ])
     );
 
-    const symbolIterator = tstl.createTableIndexExpression(
-        tstl.createIdentifier("Symbol"),
-        tstl.createStringLiteral("iterator")
+    const symbolIterator = lua.createTableIndexExpression(
+        lua.createIdentifier("Symbol"),
+        lua.createStringLiteral("iterator")
     );
 
     const block = [
         coroutine,
         iterator,
         //____it[Symbol.iterator] = {return ____it}
-        tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(itIdentifier, symbolIterator),
-            tstl.createFunctionExpression(tstl.createBlock([tstl.createReturnStatement([itIdentifier])]))
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(itIdentifier, symbolIterator),
+            lua.createFunctionExpression(lua.createBlock([lua.createReturnStatement([itIdentifier])]))
         ),
         //return ____it
-        tstl.createReturnStatement([itIdentifier]),
+        lua.createReturnStatement([itIdentifier]),
     ];
 
     if (spreadIdentifier) {
-        const spreadTable = wrapInTable(tstl.createDotsLiteral());
-        block.unshift(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
+        const spreadTable = wrapInTable(lua.createDotsLiteral());
+        block.unshift(lua.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
     }
 
     return [block, functionScope];
 }
 
 export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
-    return tstl.createCallExpression(
-        tstl.createTableIndexExpression(tstl.createIdentifier("coroutine"), tstl.createStringLiteral("yield")),
+    return lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
         expression.expression ? [context.transformExpression(expression.expression)] : [],
         expression
     );

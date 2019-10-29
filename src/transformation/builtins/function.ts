@@ -1,4 +1,4 @@
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty, UnsupportedSelfFunctionConversion } from "../utils/errors";
@@ -8,7 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 export function transformFunctionCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): tstl.CallExpression {
+): lua.CallExpression {
     const expression = node.expression;
     const callerType = context.checker.getTypeAtLocation(expression.expression);
     if (getFunctionContextType(context, callerType) === ContextType.Void) {

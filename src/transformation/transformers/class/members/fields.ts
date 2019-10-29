@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../../LuaAST";
+import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformPropertyName } from "../../literal";
@@ -9,8 +9,8 @@ export function transformClassInstanceFields(
     context: TransformationContext,
     classDeclaration: ts.ClassLikeDeclaration,
     instanceFields: ts.PropertyDeclaration[]
-): tstl.Statement[] {
-    const statements: tstl.Statement[] = [];
+): lua.Statement[] {
+    const statements: lua.Statement[] = [];
 
     for (const f of instanceFields) {
         // Get identifier
@@ -19,10 +19,10 @@ export function transformClassInstanceFields(
         const value = f.initializer ? context.transformExpression(f.initializer) : undefined;
 
         // self[fieldName]
-        const selfIndex = tstl.createTableIndexExpression(createSelfIdentifier(), fieldName);
+        const selfIndex = lua.createTableIndexExpression(createSelfIdentifier(), fieldName);
 
         // self[fieldName] = value
-        const assignClassField = tstl.createAssignmentStatement(selfIndex, value, f);
+        const assignClassField = lua.createAssignmentStatement(selfIndex, value, f);
 
         statements.push(assignClassField);
     }
@@ -34,11 +34,11 @@ export function transformClassInstanceFields(
     for (const getter of getOverrides) {
         const getterName = transformPropertyName(context, getter.name);
 
-        const resetGetter = tstl.createExpressionStatement(
-            tstl.createCallExpression(tstl.createIdentifier("rawset"), [
+        const resetGetter = lua.createExpressionStatement(
+            lua.createCallExpression(lua.createIdentifier("rawset"), [
                 createSelfIdentifier(),
                 getterName,
-                tstl.createNilLiteral(),
+                lua.createNilLiteral(),
             ]),
             classDeclaration.members.find(ts.isConstructorDeclaration) || classDeclaration
         );

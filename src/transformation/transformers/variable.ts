@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { assertNever, castEach, flatMap } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
@@ -14,7 +14,7 @@ import { transformPropertyName } from "./literal";
 export function transformArrayBindingElement(
     context: TransformationContext,
     name: ts.ArrayBindingElement | ts.Expression
-): tstl.Expression {
+): lua.Expression {
     if (ts.isOmittedExpression(name)) {
         return context.transformExpression(name);
     } else if (ts.isIdentifier(name)) {
@@ -29,10 +29,10 @@ export function transformArrayBindingElement(
 export function transformBindingPattern(
     context: TransformationContext,
     pattern: ts.BindingPattern,
-    table: tstl.Identifier,
+    table: lua.Identifier,
     propertyAccessStack: ts.PropertyName[] = []
-): tstl.Statement[] {
-    const result: tstl.Statement[] = [];
+): lua.Statement[] {
+    const result: lua.Statement[] = [];
     const isObjectBindingPattern = ts.isObjectBindingPattern(pattern);
 
     for (const [index, element] of pattern.elements.entries()) {
@@ -53,8 +53,8 @@ export function transformBindingPattern(
         }
 
         // Build the path to the table
-        const tableExpression = propertyAccessStack.reduce<tstl.Expression>(
-            (path, property) => tstl.createTableIndexExpression(path, transformPropertyName(context, property)),
+        const tableExpression = propertyAccessStack.reduce<lua.Expression>(
+            (path, property) => lua.createTableIndexExpression(path, transformPropertyName(context, property)),
             table
         );
 
@@ -63,16 +63,16 @@ export function transformBindingPattern(
         // The field to extract
         const propertyName = transformPropertyName(context, element.propertyName || element.name);
 
-        let expression: tstl.Expression;
+        let expression: lua.Expression;
         if (element.dotDotDotToken) {
             if (index !== pattern.elements.length - 1) continue;
 
             if (isObjectBindingPattern) {
                 const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;
                 const usedProperties = elements.map(e =>
-                    tstl.createTableFieldExpression(
-                        tstl.createBooleanLiteral(true),
-                        tstl.createStringLiteral(
+                    lua.createTableFieldExpression(
+                        lua.createBooleanLiteral(true),
+                        lua.createStringLiteral(
                             ((e.propertyName || e.name) as ts.Identifier).text,
                             e.propertyName || e.name
                         )
@@ -84,7 +84,7 @@ export function transformBindingPattern(
                     LuaLibFeature.ObjectRest,
                     undefined,
                     tableExpression,
-                    tstl.createTableExpression(usedProperties)
+                    lua.createTableExpression(usedProperties)
                 );
             } else {
                 expression = transformLuaLibFunction(
@@ -92,13 +92,13 @@ export function transformBindingPattern(
                     LuaLibFeature.ArraySlice,
                     undefined,
                     tableExpression,
-                    tstl.createNumericLiteral(index)
+                    lua.createNumericLiteral(index)
                 );
             }
         } else {
-            expression = tstl.createTableIndexExpression(
+            expression = lua.createTableIndexExpression(
                 tableExpression,
-                isObjectBindingPattern ? propertyName : tstl.createNumericLiteral(index + 1)
+                isObjectBindingPattern ? propertyName : lua.createNumericLiteral(index + 1)
             );
         }
 
@@ -106,10 +106,10 @@ export function transformBindingPattern(
         if (element.initializer) {
             const identifier = addExportToIdentifier(context, variableName);
             result.push(
-                tstl.createIfStatement(
-                    tstl.createBinaryExpression(identifier, tstl.createNilLiteral(), tstl.SyntaxKind.EqualityOperator),
-                    tstl.createBlock([
-                        tstl.createAssignmentStatement(identifier, context.transformExpression(element.initializer)),
+                lua.createIfStatement(
+                    lua.createBinaryExpression(identifier, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
+                    lua.createBlock([
+                        lua.createAssignmentStatement(identifier, context.transformExpression(element.initializer)),
                     ])
                 )
             );
@@ -124,7 +124,7 @@ export function transformBindingPattern(
 export function transformVariableDeclaration(
     context: TransformationContext,
     statement: ts.VariableDeclaration
-): tstl.Statement[] {
+): lua.Statement[] {
     if (statement.initializer && statement.type) {
         const initializerType = context.checker.getTypeAtLocation(statement.initializer);
         const varType = context.checker.getTypeFromTypeNode(statement.type);
@@ -137,22 +137,22 @@ export function transformVariableDeclaration(
         const value = statement.initializer && context.transformExpression(statement.initializer);
         return createLocalOrExportedOrGlobalDeclaration(context, identifierName, value, statement);
     } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
-        const statements: tstl.Statement[] = [];
+        const statements: lua.Statement[] = [];
 
         // For object, nested or rest bindings fall back to transformBindingPattern
         if (
             ts.isObjectBindingPattern(statement.name) ||
             statement.name.elements.some(e => ts.isBindingElement(e) && (!ts.isIdentifier(e.name) || e.dotDotDotToken))
         ) {
-            let table: tstl.Identifier;
+            let table: lua.Identifier;
             if (statement.initializer !== undefined && ts.isIdentifier(statement.initializer)) {
                 table = transformIdentifier(context, statement.initializer);
             } else {
                 // Contain the expression in a temporary variable
-                table = tstl.createAnonymousIdentifier();
+                table = lua.createAnonymousIdentifier();
                 if (statement.initializer) {
                     statements.push(
-                        tstl.createVariableDeclarationStatement(
+                        lua.createVariableDeclarationStatement(
                             table,
                             context.transformExpression(statement.initializer)
                         )
@@ -167,9 +167,9 @@ export function transformVariableDeclaration(
             statement.name.elements.length > 0
                 ? castEach(
                       statement.name.elements.map(e => transformArrayBindingElement(context, e)),
-                      tstl.isIdentifier
+                      lua.isIdentifier
                   )
-                : tstl.createAnonymousIdentifier(statement.name);
+                : lua.createAnonymousIdentifier(statement.name);
 
         if (statement.initializer) {
             if (isTupleReturnCall(context, statement.initializer)) {
@@ -187,7 +187,7 @@ export function transformVariableDeclaration(
                 const values =
                     statement.initializer.elements.length > 0
                         ? statement.initializer.elements.map(e => context.transformExpression(e))
-                        : tstl.createNilLiteral();
+                        : lua.createNilLiteral();
                 statements.push(...createLocalOrExportedOrGlobalDeclaration(context, vars, values, statement));
             } else {
                 // local vars = this.transpileDestructingAssignmentValue(node.initializer);
@@ -200,7 +200,7 @@ export function transformVariableDeclaration(
             }
         } else {
             statements.push(
-                ...createLocalOrExportedOrGlobalDeclaration(context, vars, tstl.createNilLiteral(), statement)
+                ...createLocalOrExportedOrGlobalDeclaration(context, vars, lua.createNilLiteral(), statement)
             );
         }
 
@@ -209,14 +209,14 @@ export function transformVariableDeclaration(
                 const variableName = transformIdentifier(context, element.name as ts.Identifier);
                 const identifier = addExportToIdentifier(context, variableName);
                 statements.push(
-                    tstl.createIfStatement(
-                        tstl.createBinaryExpression(
+                    lua.createIfStatement(
+                        lua.createBinaryExpression(
                             identifier,
-                            tstl.createNilLiteral(),
-                            tstl.SyntaxKind.EqualityOperator
+                            lua.createNilLiteral(),
+                            lua.SyntaxKind.EqualityOperator
                         ),
-                        tstl.createBlock([
-                            tstl.createAssignmentStatement(
+                        lua.createBlock([
+                            lua.createAssignmentStatement(
                                 identifier,
                                 context.transformExpression(element.initializer)
                             ),

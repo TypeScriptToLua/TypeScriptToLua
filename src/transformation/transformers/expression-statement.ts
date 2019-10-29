@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformDeleteExpressionStatement } from "./delete";
@@ -29,8 +29,8 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
 
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
     const result = context.transformExpression(expression);
-    return tstl.isCallExpression(result) || tstl.isMethodCallExpression(result)
-        ? tstl.createExpressionStatement(result)
+    return lua.isCallExpression(result) || lua.isMethodCallExpression(result)
+        ? lua.createExpressionStatement(result)
         : // Assign expression statements to dummy to make sure they're legal Lua
-          tstl.createVariableDeclarationStatement(tstl.createAnonymousIdentifier(), result);
+          lua.createVariableDeclarationStatement(lua.createAnonymousIdentifier(), result);
 };

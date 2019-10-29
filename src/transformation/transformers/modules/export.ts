@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { InvalidExportDeclaration } from "../../utils/errors";
 import {
@@ -24,12 +24,12 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
     // export = [expression];
     // ____exports = [expression];
     if (node.isExportEquals) {
-        return tstl.createVariableDeclarationStatement(createExportsIdentifier(), exportedValue, node);
+        return lua.createVariableDeclarationStatement(createExportsIdentifier(), exportedValue, node);
     } else {
         // export default [expression];
         // ____exports.default = [expression];
-        return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
+        return lua.createAssignmentStatement(
+            lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
             exportedValue,
             node
         );
@@ -39,7 +39,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
 function transformExportAllFrom(
     context: TransformationContext,
     node: ts.ExportDeclaration
-): tstl.Statement | undefined {
+): lua.Statement | undefined {
     if (node.moduleSpecifier === undefined) {
         throw InvalidExportDeclaration(node);
     }
@@ -49,33 +49,33 @@ function transformExportAllFrom(
     }
 
     const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
-    const tempModuleIdentifier = tstl.createIdentifier("____export");
+    const tempModuleIdentifier = lua.createIdentifier("____export");
 
-    const declaration = tstl.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+    const declaration = lua.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
 
-    const forKey = tstl.createIdentifier("____exportKey");
-    const forValue = tstl.createIdentifier("____exportValue");
+    const forKey = lua.createIdentifier("____exportKey");
+    const forValue = lua.createIdentifier("____exportValue");
 
-    const body = tstl.createBlock([
-        tstl.createAssignmentStatement(tstl.createTableIndexExpression(createExportsIdentifier(), forKey), forValue),
+    const body = lua.createBlock([
+        lua.createAssignmentStatement(lua.createTableIndexExpression(createExportsIdentifier(), forKey), forValue),
     ]);
 
-    const pairsIdentifier = tstl.createIdentifier("pairs");
-    const forIn = tstl.createForInStatement(
+    const pairsIdentifier = lua.createIdentifier("pairs");
+    const forIn = lua.createForInStatement(
         body,
-        [tstl.cloneIdentifier(forKey), tstl.cloneIdentifier(forValue)],
-        [tstl.createCallExpression(pairsIdentifier, [tstl.cloneIdentifier(tempModuleIdentifier)])]
+        [lua.cloneIdentifier(forKey), lua.cloneIdentifier(forValue)],
+        [lua.createCallExpression(pairsIdentifier, [lua.cloneIdentifier(tempModuleIdentifier)])]
     );
 
     // Wrap this in a DoStatement to prevent polluting the scope.
-    return tstl.createDoStatement([declaration, forIn], node);
+    return lua.createDoStatement([declaration, forIn], node);
 }
 
 const isDefaultExportSpecifier = (node: ts.ExportSpecifier) =>
     (node.name && node.name.originalKeywordKind === ts.SyntaxKind.DefaultKeyword) ||
     (node.propertyName && node.propertyName.originalKeywordKind === ts.SyntaxKind.DefaultKeyword);
 
-function transformExportSpecifier(context: TransformationContext, node: ts.ExportSpecifier): tstl.AssignmentStatement {
+function transformExportSpecifier(context: TransformationContext, node: ts.ExportSpecifier): lua.AssignmentStatement {
     const exportedSymbol = context.checker.getExportSpecifierLocalTargetSymbol(node);
     const exportedIdentifier = node.propertyName ? node.propertyName : node.name;
     const exportedExpression = createShorthandIdentifier(context, exportedSymbol, exportedIdentifier);
@@ -86,7 +86,7 @@ function transformExportSpecifier(context: TransformationContext, node: ts.Expor
         : transformIdentifier(context, node.name);
     const exportAssignmentLeftHandSide = createExportedIdentifier(context, identifierToExport);
 
-    return tstl.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
+    return lua.createAssignmentStatement(exportAssignmentLeftHandSide, exportedExpression, node);
 }
 
 function transformExportSpecifiersFrom(
@@ -94,7 +94,7 @@ function transformExportSpecifiersFrom(
     statement: ts.ExportDeclaration,
     moduleSpecifier: ts.Expression,
     exportSpecifiers: ts.ExportSpecifier[]
-): tstl.Statement {
+): lua.Statement {
     // First transpile as import clause
     const importClause = ts.createImportClause(
         undefined,
@@ -115,7 +115,7 @@ function transformExportSpecifiersFrom(
     // Now the module is imported, add the imports to the export table
     for (const specifier of exportSpecifiers) {
         result.push(
-            tstl.createAssignmentStatement(
+            lua.createAssignmentStatement(
                 createExportedIdentifier(context, transformIdentifier(context, specifier.name)),
                 transformIdentifier(context, specifier.name)
             )
@@ -123,7 +123,7 @@ function transformExportSpecifiersFrom(
     }
 
     // Wrap this in a DoStatement to prevent polluting the scope.
-    return tstl.createDoStatement(result, statement);
+    return lua.createDoStatement(result, statement);
 }
 
 export const getExported = (context: TransformationContext, exportSpecifiers: ts.NamedExports) =>

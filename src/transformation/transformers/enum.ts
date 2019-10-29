@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { getSymbolExportScope } from "../utils/export";
@@ -10,12 +10,12 @@ import { transformPropertyName } from "./literal";
 export function tryGetConstEnumValue(
     context: TransformationContext,
     node: ts.EnumMember | ts.PropertyAccessExpression | ts.ElementAccessExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const value = context.checker.getConstantValue(node);
     if (typeof value === "string") {
-        return tstl.createStringLiteral(value, node);
+        return lua.createStringLiteral(value, node);
     } else if (typeof value === "number") {
-        return tstl.createNumericLiteral(value, node);
+        return lua.createNumericLiteral(value, node);
     }
 }
 
@@ -26,11 +26,11 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
 
     const type = context.checker.getTypeAtLocation(node);
     const membersOnly = getTypeAnnotations(context, type).has(AnnotationKind.CompileMembersOnly);
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
 
     if (!membersOnly) {
         const name = transformIdentifier(context, node.name);
-        const table = tstl.createTableExpression();
+        const table = lua.createTableExpression();
         result.push(...createLocalOrExportedOrGlobalDeclaration(context, name, table, node));
     }
 
@@ -38,7 +38,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
     for (const member of node.members) {
         const memberName = transformPropertyName(context, member.name);
 
-        let valueExpression: tstl.Expression | undefined;
+        let valueExpression: lua.Expression | undefined;
         const constEnumValue = tryGetConstEnumValue(context, member);
         if (constEnumValue) {
             valueExpression = constEnumValue;
@@ -52,7 +52,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                     symbol.valueDeclaration.parent === node
                 ) {
                     const otherMemberName = transformPropertyName(context, symbol.valueDeclaration.name);
-                    valueExpression = tstl.createTableIndexExpression(enumReference, otherMemberName);
+                    valueExpression = lua.createTableIndexExpression(enumReference, otherMemberName);
                 }
             }
 
@@ -60,7 +60,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                 valueExpression = context.transformExpression(member.initializer);
             }
         } else {
-            valueExpression = tstl.createNilLiteral();
+            valueExpression = lua.createNilLiteral();
         }
 
         if (membersOnly) {
@@ -70,9 +70,9 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
             result.push(
                 ...createLocalOrExportedOrGlobalDeclaration(
                     context,
-                    tstl.isIdentifier(memberName)
+                    lua.isIdentifier(memberName)
                         ? memberName
-                        : tstl.createIdentifier(member.name.getText(), member.name),
+                        : lua.createIdentifier(member.name.getText(), member.name),
                     valueExpression,
                     node,
                     undefined,
@@ -80,12 +80,12 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                 )
             );
         } else {
-            const memberAccessor = tstl.createTableIndexExpression(enumReference, memberName);
-            result.push(tstl.createAssignmentStatement(memberAccessor, valueExpression, member));
+            const memberAccessor = lua.createTableIndexExpression(enumReference, memberName);
+            result.push(lua.createAssignmentStatement(memberAccessor, valueExpression, member));
 
-            if (!tstl.isStringLiteral(valueExpression) && !tstl.isNilLiteral(valueExpression)) {
-                const reverseMemberAccessor = tstl.createTableIndexExpression(enumReference, memberAccessor);
-                result.push(tstl.createAssignmentStatement(reverseMemberAccessor, memberName, member));
+            if (!lua.isStringLiteral(valueExpression) && !lua.isNilLiteral(valueExpression)) {
+                const reverseMemberAccessor = lua.createTableIndexExpression(enumReference, memberAccessor);
+                result.push(lua.createAssignmentStatement(reverseMemberAccessor, memberName, member));
             }
         }
     }

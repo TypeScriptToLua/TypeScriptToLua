@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { InvalidJsonFileContent } from "../utils/errors";
 import { createExportsIdentifier } from "../utils/lua-ast";
@@ -7,14 +7,14 @@ import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope"
 import { hasExportEquals } from "../utils/typescript";
 
 export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, context) => {
-    let statements: tstl.Statement[] = [];
+    let statements: lua.Statement[] = [];
     if (node.flags & ts.NodeFlags.JsonFile) {
         const [statement] = node.statements;
         if (!statement || !ts.isExpressionStatement(statement)) {
             throw InvalidJsonFileContent(node);
         }
 
-        statements.push(tstl.createReturnStatement([context.transformExpression(statement.expression)]));
+        statements.push(lua.createReturnStatement([context.transformExpression(statement.expression)]));
     } else {
         pushScope(context, ScopeType.File);
         statements = performHoisting(context, context.transformStatements(node.statements));
@@ -25,14 +25,14 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
             // local ____exports = {}
             if (!hasExportEquals(node)) {
                 statements.unshift(
-                    tstl.createVariableDeclarationStatement(createExportsIdentifier(), tstl.createTableExpression())
+                    lua.createVariableDeclarationStatement(createExportsIdentifier(), lua.createTableExpression())
                 );
             }
 
             // return ____exports
-            statements.push(tstl.createReturnStatement([createExportsIdentifier()]));
+            statements.push(lua.createReturnStatement([createExportsIdentifier()]));
         }
     }
 
-    return tstl.createBlock(statements, node);
+    return lua.createBlock(statements, node);
 };

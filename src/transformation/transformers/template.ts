@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInToStringForConcat } from "../utils/lua-ast";
@@ -16,11 +16,11 @@ function getRawLiteral(node: ts.LiteralLikeNode): string {
 }
 
 export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression> = (node, context) => {
-    const parts: tstl.Expression[] = [];
+    const parts: lua.Expression[] = [];
 
     const head = node.head.text;
     if (head.length > 0) {
-        parts.push(tstl.createStringLiteral(head, node.head));
+        parts.push(lua.createStringLiteral(head, node.head));
     }
 
     for (const span of node.templateSpans) {
@@ -29,11 +29,11 @@ export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression>
 
         const text = span.literal.text;
         if (text.length > 0) {
-            parts.push(tstl.createStringLiteral(text, span.literal));
+            parts.push(lua.createStringLiteral(text, span.literal));
         }
     }
 
-    return parts.reduce((prev, current) => tstl.createBinaryExpression(prev, current, tstl.SyntaxKind.ConcatOperator));
+    return parts.reduce((prev, current) => lua.createBinaryExpression(prev, current, lua.SyntaxKind.ConcatOperator));
 };
 
 export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplateExpression> = (
@@ -59,13 +59,13 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
 
     // Construct table with strings and literal strings
 
-    const rawStringsTable = tstl.createTableExpression(
-        rawStrings.map(text => tstl.createTableFieldExpression(tstl.createStringLiteral(text)))
+    const rawStringsTable = lua.createTableExpression(
+        rawStrings.map(text => lua.createTableFieldExpression(lua.createStringLiteral(text)))
     );
 
-    const stringTableLiteral = tstl.createTableExpression([
-        ...strings.map(partialString => tstl.createTableFieldExpression(tstl.createStringLiteral(partialString))),
-        tstl.createTableFieldExpression(rawStringsTable, tstl.createStringLiteral("raw")),
+    const stringTableLiteral = lua.createTableExpression([
+        ...strings.map(partialString => lua.createTableFieldExpression(lua.createStringLiteral(partialString))),
+        lua.createTableFieldExpression(rawStringsTable, lua.createStringLiteral("raw")),
     ]);
 
     // Evaluate if there is a self parameter to be used.
@@ -83,5 +83,5 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
     }
 
     const leftHandSideExpression = context.transformExpression(expression.tag);
-    return tstl.createCallExpression(leftHandSideExpression, callArguments);
+    return lua.createCallExpression(leftHandSideExpression, callArguments);
 };

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../../LuaAST";
+import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformFunctionBody, transformParameters } from "../../function";
@@ -75,8 +75,8 @@ export function isGetAccessorOverride(
 export function transformAccessorDeclaration(
     context: TransformationContext,
     node: ts.AccessorDeclaration,
-    className: tstl.Identifier
-): tstl.Statement | undefined {
+    className: lua.Identifier
+): lua.Statement | undefined {
     if (node.body === undefined) {
         return undefined;
     }
@@ -85,20 +85,20 @@ export function transformAccessorDeclaration(
 
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
     const [body] = transformFunctionBody(context, node.parameters, node.body, restParam);
-    const accessorFunction = tstl.createFunctionExpression(
-        tstl.createBlock(body),
+    const accessorFunction = lua.createFunctionExpression(
+        lua.createBlock(body),
         params,
         dot,
         restParam,
-        tstl.FunctionExpressionFlags.Declaration
+        lua.FunctionExpressionFlags.Declaration
     );
 
     const methodTable = isStaticNode(node)
-        ? tstl.cloneIdentifier(className)
-        : tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("prototype"));
+        ? lua.cloneIdentifier(className)
+        : lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype"));
 
     const classAccessorsName = ts.isGetAccessorDeclaration(node) ? "____getters" : "____setters";
-    const classAccessors = tstl.createTableIndexExpression(methodTable, tstl.createStringLiteral(classAccessorsName));
-    const accessorPath = tstl.createTableIndexExpression(classAccessors, tstl.createStringLiteral(name.text));
-    return tstl.createAssignmentStatement(accessorPath, accessorFunction, node);
+    const classAccessors = lua.createTableIndexExpression(methodTable, lua.createStringLiteral(classAccessorsName));
+    const accessorPath = lua.createTableIndexExpression(classAccessors, lua.createStringLiteral(name.text));
+    return lua.createAssignmentStatement(accessorPath, accessorFunction, node);
 }

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { UnsupportedKind } from "../utils/errors";
 import { transformUnaryBitOperation } from "./binary-expression/bit";
@@ -11,7 +11,7 @@ import {
 export function transformUnaryExpressionStatement(
     context: TransformationContext,
     node: ts.ExpressionStatement
-): tstl.Statement | undefined {
+): lua.Statement | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
     if (
         ts.isPrefixUnaryExpression(expression) &&
@@ -97,15 +97,15 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
             return context.transformExpression(expression.operand);
 
         case ts.SyntaxKind.MinusToken:
-            return tstl.createUnaryExpression(
+            return lua.createUnaryExpression(
                 context.transformExpression(expression.operand),
-                tstl.SyntaxKind.NegationOperator
+                lua.SyntaxKind.NegationOperator
             );
 
         case ts.SyntaxKind.ExclamationToken:
-            return tstl.createUnaryExpression(
+            return lua.createUnaryExpression(
                 context.transformExpression(expression.operand),
-                tstl.SyntaxKind.NotOperator
+                lua.SyntaxKind.NotOperator
             );
 
         case ts.SyntaxKind.TildeToken:
@@ -113,7 +113,7 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
                 context,
                 expression,
                 context.transformExpression(expression.operand),
-                tstl.SyntaxKind.BitwiseNotOperator
+                lua.SyntaxKind.BitwiseNotOperator
             );
 
         default:

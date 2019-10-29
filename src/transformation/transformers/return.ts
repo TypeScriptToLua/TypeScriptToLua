@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
@@ -30,7 +30,7 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
     }
 
-    let results: tstl.Expression[];
+    let results: lua.Expression[];
 
     if (statement.expression) {
         const expressionType = context.checker.getTypeAtLocation(statement.expression);
@@ -66,8 +66,8 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
     }
 
     if (insideTryCatch) {
-        results.unshift(tstl.createBooleanLiteral(true));
+        results.unshift(lua.createBooleanLiteral(true));
     }
 
-    return tstl.createReturnStatement(results, statement);
+    return lua.createReturnStatement(results, statement);
 };

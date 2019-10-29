@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
@@ -11,7 +11,7 @@ import { transformLuaTableElementAccessExpression, transformLuaTablePropertyAcce
 export function transformElementAccessArgument(
     context: TransformationContext,
     node: ts.ElementAccessExpression
-): tstl.Expression {
+): lua.Expression {
     const index = context.transformExpression(node.argumentExpression);
 
     const type = context.checker.getTypeAtLocation(node.expression);
@@ -32,22 +32,22 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
     }
 
     let table = context.transformExpression(expression.expression);
-    if (tstl.isTableExpression(table)) {
-        table = tstl.createParenthesizedExpression(table);
+    if (lua.isTableExpression(table)) {
+        table = lua.createParenthesizedExpression(table);
     }
 
     const argumentType = context.checker.getTypeAtLocation(expression.argumentExpression);
     const type = context.checker.getTypeAtLocation(expression.expression);
     if (isNumberType(context, argumentType) && isStringType(context, type)) {
         const index = context.transformExpression(expression.argumentExpression);
-        return tstl.createCallExpression(
-            tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("sub")),
+        return lua.createCallExpression(
+            lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("sub")),
             [table, createExpressionPlusOne(index), createExpressionPlusOne(index)],
             expression
         );
     }
 
-    return tstl.createTableIndexExpression(table, transformElementAccessArgument(context, expression), expression);
+    return lua.createTableIndexExpression(table, transformElementAccessArgument(context, expression), expression);
 };
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (
@@ -77,27 +77,27 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(expression.expression)) {
             // in case of ...x.enum.y transform to ...x.y
-            return tstl.createTableIndexExpression(
+            return lua.createTableIndexExpression(
                 context.transformExpression(expression.expression.expression),
-                tstl.createStringLiteral(property),
+                lua.createStringLiteral(property),
                 expression
             );
         } else {
-            return tstl.createIdentifier(property, expression);
+            return lua.createIdentifier(property, expression);
         }
     }
 
     let callPath = context.transformExpression(expression.expression);
-    if (tstl.isTableExpression(callPath)) {
-        callPath = tstl.createParenthesizedExpression(callPath);
+    if (lua.isTableExpression(callPath)) {
+        callPath = lua.createParenthesizedExpression(callPath);
     }
 
-    return tstl.createTableIndexExpression(callPath, tstl.createStringLiteral(property), expression);
+    return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), expression);
 };
 
 export const transformQualifiedName: FunctionVisitor<ts.QualifiedName> = (node, context) => {
-    const right = tstl.createStringLiteral(node.right.text, node.right);
+    const right = lua.createStringLiteral(node.right.text, node.right);
     const left = context.transformExpression(node.left);
 
-    return tstl.createTableIndexExpression(left, right, node);
+    return lua.createTableIndexExpression(left, right, node);
 };

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, Visitors } from "../context";
 import { validateAssignment } from "../utils/assignment-validation";
 import { isInDestructingAssignment } from "../utils/typescript";
@@ -40,7 +40,7 @@ function isWithinLiteralAssignmentStatement(node: ts.Node): boolean {
 // TODO: Consider handling without a visitor since it depends on context too much
 const transformOmittedExpression: FunctionVisitor<ts.OmittedExpression> = node => {
     const isWithinBindingAssignmentStatement = isWithinLiteralAssignmentStatement(node);
-    return isWithinBindingAssignmentStatement ? tstl.createAnonymousIdentifier() : tstl.createNilLiteral(node);
+    return isWithinBindingAssignmentStatement ? lua.createAnonymousIdentifier() : lua.createNilLiteral(node);
 };
 
 export const todoMoveSomewhereVisitors: Visitors = {
@@ -55,5 +55,5 @@ export const todoMoveSomewhereVisitors: Visitors = {
     [ts.SyntaxKind.TypeAssertionExpression]: transformAssertionExpression,
 
     [ts.SyntaxKind.ParenthesizedExpression]: (node, context) =>
-        tstl.createParenthesizedExpression(context.transformExpression(node.expression), node),
+        lua.createParenthesizedExpression(context.transformExpression(node.expression), node),
 };

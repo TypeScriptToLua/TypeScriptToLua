@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { UndefinedScope, UnsupportedForTarget } from "../utils/errors";
 import { findScope, ScopeType } from "../utils/scope";
@@ -12,9 +12,9 @@ export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (brea
     }
 
     if (breakableScope.type === ScopeType.Switch) {
-        return tstl.createGotoStatement(`____switch${breakableScope.id}_end`);
+        return lua.createGotoStatement(`____switch${breakableScope.id}_end`);
     } else {
-        return tstl.createBreakStatement(breakStatement);
+        return lua.createBreakStatement(breakStatement);
     }
 };
 
@@ -29,5 +29,5 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
     }
 
     scope.loopContinued = true;
-    return tstl.createGotoStatement(`__continue${scope.id}`, statement);
+    return lua.createGotoStatement(`__continue${scope.id}`, statement);
 };

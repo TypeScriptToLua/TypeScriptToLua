@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
 import { ForbiddenForIn, UnsupportedForInVariable } from "../../utils/errors";
 import { isArrayType } from "../../utils/typescript";
@@ -12,16 +12,16 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
     }
 
     // Transpile expression
-    const pairsIdentifier = tstl.createIdentifier("pairs");
+    const pairsIdentifier = lua.createIdentifier("pairs");
     const expression = context.transformExpression(statement.expression);
-    const pairsCall = tstl.createCallExpression(pairsIdentifier, [expression]);
+    const pairsCall = lua.createCallExpression(pairsIdentifier, [expression]);
 
-    const body = tstl.createBlock(transformLoopBody(context, statement));
+    const body = lua.createBlock(transformLoopBody(context, statement));
 
     // Transform iteration variable
     // TODO: After the transformation pipeline refactor we should look at refactoring this together with the
     // for-of initializer transformation.
-    let iterationVariable: tstl.Identifier;
+    let iterationVariable: lua.Identifier;
     if (
         ts.isVariableDeclarationList(statement.initializer) &&
         ts.isIdentifier(statement.initializer.declarations[0].name)
@@ -29,9 +29,9 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
         iterationVariable = transformIdentifier(context, statement.initializer.declarations[0].name);
     } else if (ts.isIdentifier(statement.initializer)) {
         // Iteration variable becomes ____key
-        iterationVariable = tstl.createIdentifier("____key");
+        iterationVariable = lua.createIdentifier("____key");
         // Push variable = ____key to the start of the loop body to match TS scoping
-        const initializer = tstl.createAssignmentStatement(
+        const initializer = lua.createAssignmentStatement(
             transformIdentifier(context, statement.initializer),
             iterationVariable
         );
@@ -41,5 +41,5 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
         throw UnsupportedForInVariable(statement.initializer);
     }
 
-    return tstl.createForInStatement(body, [iterationVariable], [pairsCall], statement);
+    return lua.createForInStatement(body, [iterationVariable], [pairsCall], statement);
 };

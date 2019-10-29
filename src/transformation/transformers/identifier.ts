@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
@@ -9,7 +9,7 @@ import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
 
-export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): tstl.Identifier {
+export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isForRangeType(context, identifier)) {
         const callExpression = findFirstNodeAbove(identifier, ts.isCallExpression);
         if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
@@ -23,7 +23,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;
 
     const symbolId = getIdentifierSymbolId(context, identifier);
-    return tstl.createIdentifier(text, identifier, symbolId, identifier.text);
+    return lua.createIdentifier(text, identifier, symbolId, identifier.text);
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
@@ -36,7 +36,7 @@ export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (no
     }
 
     if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
-        return tstl.createNilLiteral();
+        return lua.createNilLiteral();
     }
 
     const builtinResult = transformBuiltinIdentifierExpression(context, node);

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { addExportToIdentifier, createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
@@ -15,10 +15,10 @@ import { transformIdentifier } from "./identifier";
 export function createModuleLocalNameIdentifier(
     context: TransformationContext,
     declaration: ts.ModuleDeclaration
-): tstl.Identifier {
+): lua.Identifier {
     const moduleSymbol = context.checker.getSymbolAtLocation(declaration.name);
     if (moduleSymbol !== undefined && isUnsafeName(moduleSymbol.name)) {
-        return tstl.createIdentifier(
+        return lua.createIdentifier(
             createSafeName(declaration.name.text),
             declaration.name,
             moduleSymbol && getSymbolIdOfSymbol(context, moduleSymbol),
@@ -57,7 +57,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
     }
 
     const currentNamespace = currentNamespaces.get(context);
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
 
     const symbol = context.checker.getSymbolAtLocation(node.name);
     const hasExports = symbol !== undefined && context.checker.getExportsOfModule(symbol).length > 0;
@@ -82,10 +82,10 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
         const localDeclaration = createLocalOrExportedOrGlobalDeclaration(
             context,
             nameIdentifier,
-            tstl.createBinaryExpression(
+            lua.createBinaryExpression(
                 addExportToIdentifier(context, nameIdentifier),
-                tstl.createTableExpression(),
-                tstl.SyntaxKind.OrOperator
+                lua.createTableExpression(),
+                lua.SyntaxKind.OrOperator
             )
         );
 
@@ -95,7 +95,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
         const localDeclaration = createLocalOrExportedOrGlobalDeclaration(
             context,
             nameIdentifier,
-            tstl.createTableExpression()
+            lua.createTableExpression()
         );
 
         result.push(...localDeclaration);
@@ -124,7 +124,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
             context.transformStatements(ts.isModuleBlock(node.body) ? node.body.statements : node.body)
         );
         popScope(context);
-        result.push(tstl.createDoStatement(statements));
+        result.push(lua.createDoStatement(statements));
     }
 
     currentNamespaces.set(context, currentNamespace);

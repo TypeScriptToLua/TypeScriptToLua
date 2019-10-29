@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../../utils/scope";
 import { transformBlockOrStatement } from "../block";
@@ -7,7 +7,7 @@ import { transformBlockOrStatement } from "../block";
 export function transformLoopBody(
     context: TransformationContext,
     loop: ts.WhileStatement | ts.DoStatement | ts.ForStatement | ts.ForOfStatement | ts.ForInOrOfStatement
-): tstl.Statement[] {
+): lua.Statement[] {
     pushScope(context, ScopeType.Loop);
     const body = performHoisting(context, transformBlockOrStatement(context, loop.statement));
     const scope = popScope(context);
@@ -17,8 +17,8 @@ export function transformLoopBody(
         return body;
     }
 
-    const baseResult: tstl.Statement[] = [tstl.createDoStatement(body)];
-    const continueLabel = tstl.createLabelStatement(`__continue${scopeId}`);
+    const baseResult: lua.Statement[] = [lua.createDoStatement(body)];
+    const continueLabel = lua.createLabelStatement(`__continue${scopeId}`);
     baseResult.push(continueLabel);
 
     return baseResult;

@@ -1,12 +1,12 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { flatMap } from "../../../utils";
 import { FunctionVisitor } from "../../context";
 import { transformVariableDeclaration } from "../variable";
 import { transformLoopBody } from "./body";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
 
     if (statement.initializer) {
         if (ts.isVariableDeclarationList(statement.initializer)) {
@@ -19,17 +19,17 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
 
     const condition = statement.condition
         ? context.transformExpression(statement.condition)
-        : tstl.createBooleanLiteral(true);
+        : lua.createBooleanLiteral(true);
 
     // Add body
-    const body: tstl.Statement[] = transformLoopBody(context, statement);
+    const body: lua.Statement[] = transformLoopBody(context, statement);
 
     if (statement.incrementor) {
         body.push(...context.transformStatements(ts.createExpressionStatement(statement.incrementor)));
     }
 
     // while (condition) do ... end
-    result.push(tstl.createWhileStatement(tstl.createBlock(body), condition));
+    result.push(lua.createWhileStatement(lua.createBlock(body), condition));
 
-    return tstl.createDoStatement(result, statement);
+    return lua.createDoStatement(result, statement);
 };

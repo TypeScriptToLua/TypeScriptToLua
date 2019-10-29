@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
 import { InvalidAmbientIdentifierName, UnsupportedKind } from "../utils/errors";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
@@ -16,11 +16,11 @@ import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 
 // TODO: Move to object-literal.ts?
-export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): tstl.Expression {
+export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
     if (ts.isComputedPropertyName(node)) {
         return context.transformExpression(node.expression);
     } else if (ts.isIdentifier(node)) {
-        return tstl.createStringLiteral(node.text);
+        return lua.createStringLiteral(node.text);
     } else {
         return context.transformExpression(node);
     }
@@ -30,7 +30,7 @@ export function createShorthandIdentifier(
     context: TransformationContext,
     valueSymbol: ts.Symbol | undefined,
     propertyIdentifier: ts.Identifier
-): tstl.Expression {
+): lua.Expression {
     let name: string;
     if (valueSymbol !== undefined) {
         name = hasUnsafeSymbolName(context, valueSymbol, propertyIdentifier)
@@ -47,8 +47,8 @@ export function createShorthandIdentifier(
     }
 
     let identifier = context.transformExpression(ts.createIdentifier(name));
-    tstl.setNodeOriginal(identifier, propertyIdentifier);
-    if (valueSymbol !== undefined && tstl.isIdentifier(identifier)) {
+    lua.setNodeOriginal(identifier, propertyIdentifier);
+    if (valueSymbol !== undefined && lua.isIdentifier(identifier)) {
         identifier.symbolId = getSymbolIdOfSymbol(context, valueSymbol);
 
         const exportScope = getSymbolExportScope(context, valueSymbol);
@@ -61,15 +61,15 @@ export function createShorthandIdentifier(
 }
 
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
-    let properties: tstl.TableFieldExpression[] = [];
-    const tableExpressions: tstl.Expression[] = [];
+    let properties: lua.TableFieldExpression[] = [];
+    const tableExpressions: lua.Expression[] = [];
 
     for (const element of expression.properties) {
         const name = element.name ? transformPropertyName(context, element.name) : undefined;
 
         if (ts.isPropertyAssignment(element)) {
             const expression = context.transformExpression(element.initializer);
-            properties.push(tstl.createTableFieldExpression(expression, name, element));
+            properties.push(lua.createTableFieldExpression(expression, name, element));
         } else if (ts.isShorthandPropertyAssignment(element)) {
             const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
             if (valueSymbol) {
@@ -77,21 +77,21 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             }
 
             const identifier = createShorthandIdentifier(context, valueSymbol, element.name);
-            properties.push(tstl.createTableFieldExpression(identifier, name, element));
+            properties.push(lua.createTableFieldExpression(identifier, name, element));
         } else if (ts.isMethodDeclaration(element)) {
             const expression = transformFunctionLikeDeclaration(element, context);
-            properties.push(tstl.createTableFieldExpression(expression, name, element));
+            properties.push(lua.createTableFieldExpression(expression, name, element));
         } else if (ts.isSpreadAssignment(element)) {
             // Create a table for preceding properties to preserve property order
             // { x: 0, ...{ y: 2 }, y: 1, z: 2 } --> __TS__ObjectAssign({x = 0}, {y = 2}, {y = 1, z = 2})
             if (properties.length > 0) {
-                const tableExpression = tstl.createTableExpression(properties, expression);
+                const tableExpression = lua.createTableExpression(properties, expression);
                 tableExpressions.push(tableExpression);
                 properties = [];
             }
 
             const type = context.checker.getTypeAtLocation(element.expression);
-            let tableExpression: tstl.Expression;
+            let tableExpression: lua.Expression;
             if (isArrayType(context, type)) {
                 tableExpression = transformLuaLibFunction(
                     context,
@@ -111,15 +111,15 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
     }
 
     if (tableExpressions.length === 0) {
-        return tstl.createTableExpression(properties, expression);
+        return lua.createTableExpression(properties, expression);
     } else {
         if (properties.length > 0) {
-            const tableExpression = tstl.createTableExpression(properties, expression);
+            const tableExpression = lua.createTableExpression(properties, expression);
             tableExpressions.push(tableExpression);
         }
 
-        if (tableExpressions[0].kind !== tstl.SyntaxKind.TableExpression) {
-            tableExpressions.unshift(tstl.createTableExpression(undefined, expression));
+        if (tableExpressions[0].kind !== lua.SyntaxKind.TableExpression) {
+            tableExpressions.unshift(lua.createTableExpression(undefined, expression));
         }
 
         return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...tableExpressions);
@@ -128,19 +128,19 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
     const values = expression.elements.map(element =>
-        tstl.createTableFieldExpression(context.transformExpression(element), undefined, element)
+        lua.createTableFieldExpression(context.transformExpression(element), undefined, element)
     );
 
-    return tstl.createTableExpression(values, expression);
+    return lua.createTableExpression(values, expression);
 };
 
 export const literalVisitors: Visitors = {
-    [ts.SyntaxKind.NullKeyword]: node => tstl.createNilLiteral(node),
-    [ts.SyntaxKind.TrueKeyword]: node => tstl.createBooleanLiteral(true, node),
-    [ts.SyntaxKind.FalseKeyword]: node => tstl.createBooleanLiteral(false, node),
-    [ts.SyntaxKind.NumericLiteral]: node => tstl.createNumericLiteral(Number(node.text), node),
-    [ts.SyntaxKind.StringLiteral]: node => tstl.createStringLiteral(node.text, node),
-    [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => tstl.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.NullKeyword]: node => lua.createNilLiteral(node),
+    [ts.SyntaxKind.TrueKeyword]: node => lua.createBooleanLiteral(true, node),
+    [ts.SyntaxKind.FalseKeyword]: node => lua.createBooleanLiteral(false, node),
+    [ts.SyntaxKind.NumericLiteral]: node => lua.createNumericLiteral(Number(node.text), node),
+    [ts.SyntaxKind.StringLiteral]: node => lua.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => lua.createStringLiteral(node.text, node),
     [ts.SyntaxKind.ObjectLiteralExpression]: transformObjectLiteralExpression,
     [ts.SyntaxKind.ArrayLiteralExpression]: transformArrayLiteralExpression,
 };

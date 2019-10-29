@@ -1,25 +1,25 @@
 import * as ts from "typescript";
-import * as tstl from "../../../../LuaAST";
+import * as lua from "../../../../LuaAST";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformParameters, transformFunctionBodyStatements, transformFunctionBodyHeader } from "../../function";
 import { TransformationContext } from "../../../context";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
 
-export function createConstructorName(className: tstl.Identifier): tstl.TableIndexExpression {
-    return tstl.createTableIndexExpression(
-        tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("prototype")),
-        tstl.createStringLiteral("____constructor")
+export function createConstructorName(className: lua.Identifier): lua.TableIndexExpression {
+    return lua.createTableIndexExpression(
+        lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
+        lua.createStringLiteral("____constructor")
     );
 }
 
 export function transformConstructorDeclaration(
     context: TransformationContext,
     statement: ts.ConstructorDeclaration,
-    className: tstl.Identifier,
+    className: lua.Identifier,
     instanceFields: ts.PropertyDeclaration[],
     classDeclaration: ts.ClassLikeDeclaration
-): tstl.Statement | undefined {
+): lua.Statement | undefined {
     // Don't transform methods without body (overload declarations)
     if (!statement.body) {
         return undefined;
@@ -66,8 +66,8 @@ export function transformConstructorDeclaration(
     for (const declaration of constructorFieldsDeclarations) {
         const declarationName = transformIdentifier(context, declaration.name as ts.Identifier);
         // self.declarationName = declarationName
-        const assignment = tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(createSelfIdentifier(), tstl.createStringLiteral(declarationName.text)),
+        const assignment = lua.createAssignmentStatement(
+            lua.createTableIndexExpression(createSelfIdentifier(), lua.createStringLiteral(declarationName.text)),
             declarationName
         );
         bodyWithFieldInitializers.push(assignment);
@@ -77,18 +77,18 @@ export function transformConstructorDeclaration(
 
     bodyWithFieldInitializers.push(...body);
 
-    const block = tstl.createBlock(bodyWithFieldInitializers);
+    const block = lua.createBlock(bodyWithFieldInitializers);
 
     const constructorWasGenerated = statement.pos === -1;
 
-    return tstl.createAssignmentStatement(
+    return lua.createAssignmentStatement(
         createConstructorName(className),
-        tstl.createFunctionExpression(
+        lua.createFunctionExpression(
             block,
             params,
             dotsLiteral,
             restParamName,
-            tstl.FunctionExpressionFlags.Declaration
+            lua.FunctionExpressionFlags.Declaration
         ),
         constructorWasGenerated ? classDeclaration : statement
     );

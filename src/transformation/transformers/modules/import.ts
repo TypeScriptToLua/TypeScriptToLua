@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
@@ -57,8 +57,8 @@ export function createModuleRequire(
     context: TransformationContext,
     moduleSpecifier: ts.Expression,
     tsOriginal: ts.Node = moduleSpecifier
-): tstl.CallExpression {
-    const params: tstl.Expression[] = [];
+): lua.CallExpression {
+    const params: lua.Expression[] = [];
     if (ts.isStringLiteral(moduleSpecifier)) {
         const modulePath = shouldResolveModulePath(context, moduleSpecifier)
             ? getImportPath(
@@ -69,10 +69,10 @@ export function createModuleRequire(
               )
             : moduleSpecifier.text;
 
-        params.push(tstl.createStringLiteral(modulePath));
+        params.push(lua.createStringLiteral(modulePath));
     }
 
-    return tstl.createCallExpression(tstl.createIdentifier("require"), params, tsOriginal);
+    return lua.createCallExpression(lua.createIdentifier("require"), params, tsOriginal);
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
@@ -88,17 +88,17 @@ function shouldBeImported(context: TransformationContext, importNode: ts.ImportC
 function transformImportSpecifier(
     context: TransformationContext,
     importSpecifier: ts.ImportSpecifier,
-    moduleTableName: tstl.Identifier
-): tstl.VariableDeclarationStatement {
+    moduleTableName: lua.Identifier
+): lua.VariableDeclarationStatement {
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
     const propertyName = transformPropertyName(
         context,
         importSpecifier.propertyName ? importSpecifier.propertyName : importSpecifier.name
     );
 
-    return tstl.createVariableDeclarationStatement(
+    return lua.createVariableDeclarationStatement(
         leftIdentifier,
-        tstl.createTableIndexExpression(moduleTableName, propertyName),
+        lua.createTableIndexExpression(moduleTableName, propertyName),
         importSpecifier
     );
 }
@@ -110,13 +110,13 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         scope.importStatements = [];
     }
 
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
     const requireCall = createModuleRequire(context, statement.moduleSpecifier);
 
     // import "./module";
     // require("module")
     if (statement.importClause === undefined) {
-        result.push(tstl.createExpressionStatement(requireCall));
+        result.push(lua.createExpressionStatement(requireCall));
 
         if (scope.importStatements) {
             scope.importStatements.push(...result);
@@ -132,7 +132,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
 
     // Create the require statement to extract values.
     // local ____module = require("module")
-    const importUniqueName = tstl.createIdentifier(createSafeName(path.basename(importPath)));
+    const importUniqueName = lua.createIdentifier(createSafeName(path.basename(importPath)));
 
     let usingRequireStatement = false;
 
@@ -141,9 +141,9 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause.name) {
         if (shouldBeImported(context, statement.importClause)) {
             const propertyName = createDefaultExportStringLiteral(statement.importClause.name);
-            const defaultImportAssignmentStatement = tstl.createVariableDeclarationStatement(
+            const defaultImportAssignmentStatement = lua.createVariableDeclarationStatement(
                 transformIdentifier(context, statement.importClause.name),
-                tstl.createTableIndexExpression(importUniqueName, propertyName),
+                lua.createTableIndexExpression(importUniqueName, propertyName),
                 statement.importClause.name
             );
 
@@ -156,7 +156,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     // local module = require("module")
     if (statement.importClause.namedBindings && ts.isNamespaceImport(statement.importClause.namedBindings)) {
         if (context.resolver.isReferencedAliasDeclaration(statement.importClause.namedBindings)) {
-            const requireStatement = tstl.createVariableDeclarationStatement(
+            const requireStatement = lua.createVariableDeclarationStatement(
                 transformIdentifier(context, statement.importClause.namedBindings.name),
                 requireCall,
                 statement
@@ -187,7 +187,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     }
 
     if (usingRequireStatement) {
-        result.unshift(tstl.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
+        result.unshift(lua.createVariableDeclarationStatement(importUniqueName, requireCall, statement));
     }
 
     if (scope.importStatements) {

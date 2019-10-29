@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { transformIdentifier } from "../transformers/identifier";
@@ -7,16 +7,16 @@ import { UnsupportedProperty } from "../utils/errors";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 
-function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: tstl.Expression[]): tstl.CallExpression {
-    const stringIdentifier = tstl.createIdentifier("string");
-    return tstl.createCallExpression(
-        tstl.createTableIndexExpression(stringIdentifier, tstl.createStringLiteral(methodName)),
+function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lua.Expression[]): lua.CallExpression {
+    const stringIdentifier = lua.createIdentifier("string");
+    return lua.createCallExpression(
+        lua.createTableIndexExpression(stringIdentifier, lua.createStringLiteral(methodName)),
         params,
         tsOriginal
     );
 }
 
-export function transformStringCall(context: TransformationContext, node: PropertyCallExpression): tstl.Expression {
+export function transformStringCall(context: TransformationContext, node: PropertyCallExpression): lua.Expression {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -34,21 +34,21 @@ export function transformStringCall(context: TransformationContext, node: Proper
                 node,
                 caller,
                 params[0],
-                params[1] ? createExpressionPlusOne(params[1]) : tstl.createNilLiteral(),
-                tstl.createBooleanLiteral(true)
+                params[1] ? createExpressionPlusOne(params[1]) : lua.createNilLiteral(),
+                lua.createBooleanLiteral(true)
             );
 
-            return tstl.createParenthesizedExpression(
-                tstl.createBinaryExpression(
-                    tstl.createParenthesizedExpression(
-                        tstl.createBinaryExpression(
+            return lua.createParenthesizedExpression(
+                lua.createBinaryExpression(
+                    lua.createParenthesizedExpression(
+                        lua.createBinaryExpression(
                             stringExpression,
-                            tstl.createNumericLiteral(0),
-                            tstl.SyntaxKind.OrOperator
+                            lua.createNumericLiteral(0),
+                            lua.SyntaxKind.OrOperator
                         )
                     ),
-                    tstl.createNumericLiteral(1),
-                    tstl.SyntaxKind.SubtractionOperator,
+                    lua.createNumericLiteral(1),
+                    lua.SyntaxKind.SubtractionOperator,
                     node
                 )
             );
@@ -60,10 +60,10 @@ export function transformStringCall(context: TransformationContext, node: Proper
             } else {
                 const arg1 = params[0];
                 const arg2 = params[1];
-                const sumArg = tstl.createBinaryExpression(
-                    tstl.createParenthesizedExpression(arg1),
-                    tstl.createParenthesizedExpression(arg2),
-                    tstl.SyntaxKind.AdditionOperator
+                const sumArg = lua.createBinaryExpression(
+                    lua.createParenthesizedExpression(arg1),
+                    lua.createParenthesizedExpression(arg2),
+                    lua.SyntaxKind.AdditionOperator
                 );
                 return createStringCall("sub", node, caller, createExpressionPlusOne(arg1), sumArg);
             }
@@ -105,9 +105,9 @@ export function transformStringCall(context: TransformationContext, node: Proper
         case "endsWith":
             return transformLuaLibFunction(context, LuaLibFeature.StringEndsWith, node, caller, ...params);
         case "repeat":
-            const math = tstl.createIdentifier("math");
-            const floor = tstl.createStringLiteral("floor");
-            const parameter = tstl.createCallExpression(tstl.createTableIndexExpression(math, floor), [params[0]]);
+            const math = lua.createIdentifier("math");
+            const floor = lua.createStringLiteral("floor");
+            const parameter = lua.createCallExpression(lua.createTableIndexExpression(math, floor), [params[0]]);
             return createStringCall("rep", node, caller, parameter);
         case "padStart":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadStart, node, caller, ...params);
@@ -135,10 +135,10 @@ export function transformStringCall(context: TransformationContext, node: Proper
             let stringVariable = context.transformExpression(expression.expression);
             if (ts.isStringLiteralLike(expression.expression)) {
                 // "foo":method() needs to be ("foo"):method()
-                stringVariable = tstl.createParenthesizedExpression(stringVariable);
+                stringVariable = lua.createParenthesizedExpression(stringVariable);
             }
 
-            return tstl.createMethodCallExpression(
+            return lua.createMethodCallExpression(
                 stringVariable,
                 transformIdentifier(context, expression.name),
                 params,
@@ -152,7 +152,7 @@ export function transformStringCall(context: TransformationContext, node: Proper
 export function transformStringConstructorCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): tstl.Expression {
+): lua.Expression {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -160,8 +160,8 @@ export function transformStringConstructorCall(
     const expressionName = expression.name.text;
     switch (expressionName) {
         case "fromCharCode":
-            return tstl.createCallExpression(
-                tstl.createTableIndexExpression(tstl.createIdentifier("string"), tstl.createStringLiteral("char")),
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("char")),
                 params,
                 node
             );
@@ -174,14 +174,14 @@ export function transformStringConstructorCall(
 export function transformStringProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): tstl.UnaryExpression {
+): lua.UnaryExpression {
     switch (node.name.text) {
         case "length":
             let expression = context.transformExpression(node.expression);
             if (ts.isTemplateExpression(node.expression)) {
-                expression = tstl.createParenthesizedExpression(expression);
+                expression = lua.createParenthesizedExpression(expression);
             }
-            return tstl.createUnaryExpression(expression, tstl.SyntaxKind.LengthOperator, node);
+            return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             throw UnsupportedProperty("string", node.name.text, node);
     }

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { LuaLibFeature } from "../../LuaLib";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { transformLuaLibFunction } from "../utils/lualib";
@@ -13,12 +13,12 @@ export const transformTypeOfExpression: FunctionVisitor<ts.TypeOfExpression> = (
 export function transformTypeOfBinaryExpression(
     context: TransformationContext,
     node: ts.BinaryExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const operator = node.operatorToken.kind;
     function transformTypeOfLiteralComparison(
         typeOfExpression: ts.TypeOfExpression,
-        comparedExpression: tstl.StringLiteral
-    ): tstl.Expression {
+        comparedExpression: lua.StringLiteral
+    ): lua.Expression {
         if (comparedExpression.value === "object") {
             comparedExpression.value = "table";
         } else if (comparedExpression.value === "undefined") {
@@ -26,7 +26,7 @@ export function transformTypeOfBinaryExpression(
         }
 
         const innerExpression = context.transformExpression(typeOfExpression.expression);
-        const typeCall = tstl.createCallExpression(tstl.createIdentifier("type"), [innerExpression], typeOfExpression);
+        const typeCall = lua.createCallExpression(lua.createIdentifier("type"), [innerExpression], typeOfExpression);
         return transformBinaryOperation(context, typeCall, comparedExpression, operator, node);
     }
 
@@ -38,12 +38,12 @@ export function transformTypeOfBinaryExpression(
     ) {
         if (ts.isTypeOfExpression(node.left)) {
             const right = context.transformExpression(node.right);
-            if (tstl.isStringLiteral(right)) {
+            if (lua.isStringLiteral(right)) {
                 return transformTypeOfLiteralComparison(node.left, right);
             }
         } else if (ts.isTypeOfExpression(node.right)) {
             const left = context.transformExpression(node.left);
-            if (tstl.isStringLiteral(left)) {
+            if (lua.isStringLiteral(left)) {
                 return transformTypeOfLiteralComparison(node.right, left);
             }
         }

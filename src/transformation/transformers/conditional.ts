@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { transformBlockOrStatement } from "./block";
@@ -27,23 +27,23 @@ function canBeFalsy(context: TransformationContext, type: ts.Type): boolean {
     }
 }
 
-function wrapInFunctionCall(expression: tstl.Expression): tstl.FunctionExpression {
-    const returnStatement = tstl.createReturnStatement([expression]);
+function wrapInFunctionCall(expression: lua.Expression): lua.FunctionExpression {
+    const returnStatement = lua.createReturnStatement([expression]);
 
-    return tstl.createFunctionExpression(
-        tstl.createBlock([returnStatement]),
+    return lua.createFunctionExpression(
+        lua.createBlock([returnStatement]),
         undefined,
         undefined,
         undefined,
-        tstl.FunctionExpressionFlags.Inline
+        lua.FunctionExpressionFlags.Inline
     );
 }
 
 function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
-): tstl.CallExpression {
-    const condition = tstl.createParenthesizedExpression(context.transformExpression(expression.condition));
+): lua.CallExpression {
+    const condition = lua.createParenthesizedExpression(context.transformExpression(expression.condition));
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 
@@ -51,9 +51,9 @@ function transformProtectedConditionalExpression(
     const val2Function = wrapInFunctionCall(val2);
 
     // (condition and (() => v1) or (() => v2))()
-    const conditionAnd = tstl.createBinaryExpression(condition, val1Function, tstl.SyntaxKind.AndOperator);
-    const orExpression = tstl.createBinaryExpression(conditionAnd, val2Function, tstl.SyntaxKind.OrOperator);
-    return tstl.createCallExpression(tstl.createParenthesizedExpression(orExpression), [], expression);
+    const conditionAnd = lua.createBinaryExpression(condition, val1Function, lua.SyntaxKind.AndOperator);
+    const orExpression = lua.createBinaryExpression(conditionAnd, val2Function, lua.SyntaxKind.OrOperator);
+    return lua.createCallExpression(lua.createParenthesizedExpression(orExpression), [], expression);
 }
 
 export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
@@ -61,26 +61,26 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
         return transformProtectedConditionalExpression(context, expression);
     }
 
-    const condition = tstl.createParenthesizedExpression(context.transformExpression(expression.condition));
+    const condition = lua.createParenthesizedExpression(context.transformExpression(expression.condition));
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 
     // condition and v1 or v2
-    const conditionAnd = tstl.createBinaryExpression(condition, val1, tstl.SyntaxKind.AndOperator);
-    return tstl.createBinaryExpression(conditionAnd, val2, tstl.SyntaxKind.OrOperator, expression);
+    const conditionAnd = lua.createBinaryExpression(condition, val1, lua.SyntaxKind.AndOperator);
+    return lua.createBinaryExpression(conditionAnd, val2, lua.SyntaxKind.OrOperator, expression);
 };
 
-export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): tstl.IfStatement {
+export function transformIfStatement(statement: ts.IfStatement, context: TransformationContext): lua.IfStatement {
     pushScope(context, ScopeType.Conditional);
     const condition = context.transformExpression(statement.expression);
     const statements = performHoisting(context, transformBlockOrStatement(context, statement.thenStatement));
     popScope(context);
-    const ifBlock = tstl.createBlock(statements);
+    const ifBlock = lua.createBlock(statements);
 
     if (statement.elseStatement) {
         if (ts.isIfStatement(statement.elseStatement)) {
             const elseStatement = transformIfStatement(statement.elseStatement, context);
-            return tstl.createIfStatement(condition, ifBlock, elseStatement);
+            return lua.createIfStatement(condition, ifBlock, elseStatement);
         } else {
             pushScope(context, ScopeType.Conditional);
             const elseStatements = performHoisting(
@@ -88,10 +88,10 @@ export function transformIfStatement(statement: ts.IfStatement, context: Transfo
                 transformBlockOrStatement(context, statement.elseStatement)
             );
             popScope(context);
-            const elseBlock = tstl.createBlock(elseStatements);
-            return tstl.createIfStatement(condition, ifBlock, elseBlock);
+            const elseBlock = lua.createBlock(elseStatements);
+            return lua.createIfStatement(condition, ifBlock, elseBlock);
         }
     }
 
-    return tstl.createIfStatement(condition, ifBlock);
+    return lua.createIfStatement(condition, ifBlock);
 }

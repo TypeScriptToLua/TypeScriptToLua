@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../../LuaAST";
+import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { ContextType, getFunctionContextType } from "../../../utils/function-context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
@@ -10,17 +10,17 @@ import { isStaticNode } from "../utils";
 export function transformMethodDeclaration(
     context: TransformationContext,
     node: ts.MethodDeclaration,
-    className: tstl.Identifier,
+    className: lua.Identifier,
     noPrototype: boolean
-): tstl.Statement | undefined {
+): lua.Statement | undefined {
     // Don't transform methods without body (overload declarations)
     if (!node.body) {
         return undefined;
     }
 
     let methodName = transformPropertyName(context, node.name);
-    if (tstl.isStringLiteral(methodName) && methodName.value === "toString") {
-        methodName = tstl.createStringLiteral("__tostring", node.name);
+    if (lua.isStringLiteral(methodName) && methodName.value === "toString") {
+        methodName = lua.createStringLiteral("__tostring", node.name);
     }
 
     const type = context.checker.getTypeAtLocation(node);
@@ -29,22 +29,22 @@ export function transformMethodDeclaration(
     const [paramNames, dots, restParamName] = transformParameters(context, node.parameters, functionContext);
 
     const [body] = transformFunctionBody(context, node.parameters, node.body, restParamName);
-    const functionExpression = tstl.createFunctionExpression(
-        tstl.createBlock(body),
+    const functionExpression = lua.createFunctionExpression(
+        lua.createBlock(body),
         paramNames,
         dots,
         restParamName,
-        tstl.FunctionExpressionFlags.Declaration,
+        lua.FunctionExpressionFlags.Declaration,
         node.body
     );
 
     const methodTable =
         isStaticNode(node) || noPrototype
-            ? tstl.cloneIdentifier(className)
-            : tstl.createTableIndexExpression(tstl.cloneIdentifier(className), tstl.createStringLiteral("prototype"));
+            ? lua.cloneIdentifier(className)
+            : lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype"));
 
-    return tstl.createAssignmentStatement(
-        tstl.createTableIndexExpression(methodTable, methodName),
+    return lua.createAssignmentStatement(
+        lua.createTableIndexExpression(methodTable, methodName),
         functionExpression,
         node
     );

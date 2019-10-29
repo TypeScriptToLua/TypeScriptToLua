@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
@@ -45,14 +45,14 @@ export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
     context: TransformationContext,
     isDefaultExport = false
-): tstl.Expression {
-    let className: tstl.Identifier;
+): lua.Expression {
+    let className: lua.Identifier;
     if (expression.name) {
         className = transformIdentifier(context, expression.name);
     } else if (isDefaultExport) {
         className = createDefaultExportIdentifier(expression);
     } else {
-        className = tstl.createAnonymousIdentifier();
+        className = lua.createAnonymousIdentifier();
     }
 
     pushScope(context, ScopeType.Function);
@@ -67,12 +67,12 @@ const classStacks = new WeakMap<TransformationContext, ts.ClassLikeDeclaration[]
 export function transformClassDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
-    nameOverride?: tstl.Identifier
-): OneToManyVisitorResult<tstl.Statement> {
+    nameOverride?: lua.Identifier
+): OneToManyVisitorResult<lua.Statement> {
     const classStack = getOrUpdate(classStacks, context, () => []);
     classStack.push(classDeclaration);
 
-    let className: tstl.Identifier;
+    let className: lua.Identifier;
     let classNameText: string;
     if (nameOverride !== undefined) {
         className = nameOverride;
@@ -86,7 +86,7 @@ export function transformClassDeclaration(
             const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
             const right = transformClassAsExpression(classDeclaration, context, true);
 
-            return tstl.createAssignmentStatement(left, right, classDeclaration);
+            return lua.createAssignmentStatement(left, right, classDeclaration);
         } else {
             throw MissingClassName(classDeclaration);
         }
@@ -151,7 +151,7 @@ export function transformClassDeclaration(
     const staticFields = properties.filter(isStaticNode);
     const instanceFields = properties.filter(prop => !isStaticNode(prop));
 
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
 
     // Overwrite the original className with the class we are overriding for extensions
     if (isMetaExtension) {
@@ -159,17 +159,17 @@ export function transformClassDeclaration(
             throw MissingMetaExtension(classDeclaration);
         }
 
-        const extendsName = tstl.createStringLiteral(extendsType.symbol.name as string);
-        className = tstl.createIdentifier("__meta__" + extendsName.value);
+        const extendsName = lua.createStringLiteral(extendsType.symbol.name as string);
+        className = lua.createIdentifier("__meta__" + extendsName.value);
 
         // local className = debug.getregistry()["extendsName"]
-        const assignDebugCallIndex = tstl.createVariableDeclarationStatement(
+        const assignDebugCallIndex = lua.createVariableDeclarationStatement(
             className,
-            tstl.createTableIndexExpression(
-                tstl.createCallExpression(
-                    tstl.createTableIndexExpression(
-                        tstl.createIdentifier("debug"),
-                        tstl.createStringLiteral("getregistry")
+            lua.createTableIndexExpression(
+                lua.createCallExpression(
+                    lua.createTableIndexExpression(
+                        lua.createIdentifier("debug"),
+                        lua.createStringLiteral("getregistry")
                     ),
                     []
                 ),
@@ -184,21 +184,21 @@ export function transformClassDeclaration(
     if (extensionDirective !== undefined) {
         const [extensionName] = extensionDirective.args;
         if (extensionName) {
-            className = tstl.createIdentifier(extensionName);
+            className = lua.createIdentifier(extensionName);
         } else if (extendsType) {
-            className = tstl.createIdentifier(extendsType.symbol.name);
+            className = lua.createIdentifier(extendsType.symbol.name);
         }
     }
 
-    let localClassName: tstl.Identifier;
+    let localClassName: lua.Identifier;
     if (isUnsafeName(className.text)) {
-        localClassName = tstl.createIdentifier(
+        localClassName = lua.createIdentifier(
             createSafeName(className.text),
             undefined,
             className.symbolId,
             className.text
         );
-        tstl.setNodePosition(localClassName, className);
+        lua.setNodePosition(localClassName, className);
     } else {
         localClassName = className;
     }
@@ -220,10 +220,10 @@ export function transformClassDeclaration(
             const value = f.initializer !== undefined ? context.transformExpression(f.initializer) : undefined;
 
             // className["fieldName"]
-            const classField = tstl.createTableIndexExpression(tstl.cloneIdentifier(className), fieldName);
+            const classField = lua.createTableIndexExpression(lua.cloneIdentifier(className), fieldName);
 
             // className["fieldName"] = value;
-            const assignClassField = tstl.createAssignmentStatement(classField, value);
+            const assignClassField = lua.createAssignmentStatement(classField, value);
 
             result.push(assignClassField);
         }
@@ -266,25 +266,25 @@ export function transformClassDeclaration(
             //     baseClassName.prototype.____constructor(self, ...)
             //     ...
             const constructorBody = transformClassInstanceFields(context, classDeclaration, instanceFields);
-            const superCall = tstl.createExpressionStatement(
-                tstl.createCallExpression(
-                    tstl.createTableIndexExpression(
+            const superCall = lua.createExpressionStatement(
+                lua.createCallExpression(
+                    lua.createTableIndexExpression(
                         context.transformExpression(ts.createSuper()),
-                        tstl.createStringLiteral("____constructor")
+                        lua.createStringLiteral("____constructor")
                     ),
-                    [createSelfIdentifier(), tstl.createDotsLiteral()]
+                    [createSelfIdentifier(), lua.createDotsLiteral()]
                 )
             );
             constructorBody.unshift(superCall);
-            const constructorFunction = tstl.createFunctionExpression(
-                tstl.createBlock(constructorBody),
+            const constructorFunction = lua.createFunctionExpression(
+                lua.createBlock(constructorBody),
                 [createSelfIdentifier()],
-                tstl.createDotsLiteral(),
+                lua.createDotsLiteral(),
                 undefined,
-                tstl.FunctionExpressionFlags.Declaration
+                lua.FunctionExpressionFlags.Declaration
             );
             result.push(
-                tstl.createAssignmentStatement(
+                lua.createAssignmentStatement(
                     createConstructorName(localClassName),
                     constructorFunction,
                     classDeclaration
@@ -314,9 +314,9 @@ export function transformClassDeclaration(
         const fieldName = transformPropertyName(context, field.name);
         const value = field.initializer ? context.transformExpression(field.initializer) : undefined;
 
-        const classField = tstl.createTableIndexExpression(tstl.cloneIdentifier(localClassName), fieldName);
+        const classField = lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), fieldName);
 
-        const fieldAssign = tstl.createAssignmentStatement(classField, value);
+        const fieldAssign = lua.createAssignmentStatement(classField, value);
 
         result.push(fieldAssign);
     }
@@ -340,7 +340,7 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
     }
 
     const extendsExpression = typeNode.expression;
-    let baseClassName: tstl.AssignmentLeftHandSideExpression | undefined;
+    let baseClassName: lua.AssignmentLeftHandSideExpression | undefined;
 
     if (ts.isIdentifier(extendsExpression)) {
         const symbol = context.checker.getSymbolAtLocation(extendsExpression);
@@ -356,14 +356,14 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
         }
 
         // Use "className.____super" if the base is not a simple identifier
-        baseClassName = tstl.createTableIndexExpression(
+        baseClassName = lua.createTableIndexExpression(
             transformIdentifier(context, classDeclaration.name),
-            tstl.createStringLiteral("____super"),
+            lua.createStringLiteral("____super"),
             expression
         );
     }
 
-    return tstl.createTableIndexExpression(baseClassName, tstl.createStringLiteral("prototype"));
+    return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
 };
 
 export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);

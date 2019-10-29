@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { OneToManyVisitorResult } from "../utils/lua-ast";
 import { TransformationContext } from "./context";
 
@@ -138,12 +138,12 @@ type NodesBySyntaxKind = {
 export type ExpressionLikeNode = ts.Expression | ts.QualifiedName | ts.ExternalModuleReference;
 export type StatementLikeNode = ts.Statement;
 export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
-    ? tstl.Expression
+    ? lua.Expression
     : T extends StatementLikeNode
-    ? OneToManyVisitorResult<tstl.Statement>
+    ? OneToManyVisitorResult<lua.Statement>
     : T extends ts.SourceFile
-    ? tstl.Block
-    : OneToManyVisitorResult<tstl.Node>;
+    ? lua.Block
+    : OneToManyVisitorResult<lua.Node>;
 
 export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;
 export type ObjectVisitor<T extends ts.Node> = { transform: FunctionVisitor<T>; priority?: number };

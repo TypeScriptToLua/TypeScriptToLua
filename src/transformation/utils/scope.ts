@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
@@ -19,17 +19,17 @@ export enum ScopeType {
 }
 
 interface FunctionDefinitionInfo {
-    referencedSymbols: Map<tstl.SymbolId, ts.Node[]>;
-    definition?: tstl.VariableDeclarationStatement | tstl.AssignmentStatement;
+    referencedSymbols: Map<lua.SymbolId, ts.Node[]>;
+    definition?: lua.VariableDeclarationStatement | lua.AssignmentStatement;
 }
 
 export interface Scope {
     type: ScopeType;
     id: number;
-    referencedSymbols?: Map<tstl.SymbolId, ts.Node[]>;
-    variableDeclarations?: tstl.VariableDeclarationStatement[];
-    functionDefinitions?: Map<tstl.SymbolId, FunctionDefinitionInfo>;
-    importStatements?: tstl.Statement[];
+    referencedSymbols?: Map<lua.SymbolId, ts.Node[]>;
+    variableDeclarations?: lua.VariableDeclarationStatement[];
+    functionDefinitions?: Map<lua.SymbolId, FunctionDefinitionInfo>;
+    importStatements?: lua.Statement[];
     loopContinued?: boolean;
     functionReturned?: boolean;
 }
@@ -49,7 +49,7 @@ export function* walkScopesUp(context: TransformationContext): IterableIterator<
 
 export function markSymbolAsReferencedInCurrentScopes(
     context: TransformationContext,
-    symbolId: tstl.SymbolId,
+    symbolId: lua.SymbolId,
     identifier: ts.Identifier
 ): void {
     for (const scope of getScopeStack(context)) {
@@ -95,7 +95,7 @@ export function popScope(context: TransformationContext): Scope {
     return scope;
 }
 
-export function performHoisting(context: TransformationContext, statements: tstl.Statement[]): tstl.Statement[] {
+export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
     if (context.options.noHoisting) {
         return statements;
     }
@@ -108,7 +108,7 @@ export function performHoisting(context: TransformationContext, statements: tstl
     return result;
 }
 
-function shouldHoistSymbol(context: TransformationContext, symbolId: tstl.SymbolId, scope: Scope): boolean {
+function shouldHoistSymbol(context: TransformationContext, symbolId: lua.SymbolId, scope: Scope): boolean {
     const symbolInfo = getSymbolInfo(context, symbolId);
     if (!symbolInfo) {
         return false;
@@ -129,7 +129,7 @@ function shouldHoistSymbol(context: TransformationContext, symbolId: tstl.Symbol
                 throw UndefinedFunctionDefinition(functionSymbolId);
             }
 
-            const { line, column } = tstl.getOriginalPos(functionDefinition.definition);
+            const { line, column } = lua.getOriginalPos(functionDefinition.definition);
             if (line !== undefined && column !== undefined) {
                 const definitionPos = ts.getPositionOfLineAndCharacter(context.sourceFile, line, column);
                 if (
@@ -150,21 +150,21 @@ function shouldHoistSymbol(context: TransformationContext, symbolId: tstl.Symbol
 function hoistVariableDeclarations(
     context: TransformationContext,
     scope: Scope,
-    statements: tstl.Statement[]
-): tstl.Statement[] {
+    statements: lua.Statement[]
+): lua.Statement[] {
     if (!scope.variableDeclarations) {
         return statements;
     }
 
     const result = [...statements];
-    const hoistedLocals: tstl.Identifier[] = [];
+    const hoistedLocals: lua.Identifier[] = [];
     for (const declaration of scope.variableDeclarations) {
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
         if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
-            let assignment: tstl.AssignmentStatement | undefined;
+            let assignment: lua.AssignmentStatement | undefined;
             if (declaration.right) {
-                assignment = tstl.createAssignmentStatement(declaration.left, declaration.right);
-                tstl.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
+                assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
+                lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
             }
 
             const index = result.indexOf(declaration);
@@ -184,7 +184,7 @@ function hoistVariableDeclarations(
     }
 
     if (hoistedLocals.length > 0) {
-        result.unshift(tstl.createVariableDeclarationStatement(hoistedLocals));
+        result.unshift(lua.createVariableDeclarationStatement(hoistedLocals));
     }
 
     return result;
@@ -193,14 +193,14 @@ function hoistVariableDeclarations(
 function hoistFunctionDefinitions(
     context: TransformationContext,
     scope: Scope,
-    statements: tstl.Statement[]
-): tstl.Statement[] {
+    statements: lua.Statement[]
+): lua.Statement[] {
     if (!scope.functionDefinitions) {
         return statements;
     }
 
     const result = [...statements];
-    const hoistedFunctions: Array<tstl.VariableDeclarationStatement | tstl.AssignmentStatement> = [];
+    const hoistedFunctions: Array<lua.VariableDeclarationStatement | lua.AssignmentStatement> = [];
     for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
         if (functionDefinition.definition === undefined) {
             throw UndefinedFunctionDefinition(functionSymbolId);
@@ -216,6 +216,6 @@ function hoistFunctionDefinitions(
     return [...hoistedFunctions, ...result];
 }
 
-function hoistImportStatements(scope: Scope, statements: tstl.Statement[]): tstl.Statement[] {
+function hoistImportStatements(scope: Scope, statements: lua.Statement[]): lua.Statement[] {
     return scope.importStatements ? [...scope.importStatements, ...statements] : statements;
 }

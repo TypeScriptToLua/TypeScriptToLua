@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { transformArguments } from "../transformers/call";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -8,7 +8,7 @@ import { isNumberType } from "../utils/typescript";
 export function transformGlobalFunctionCall(
     context: TransformationContext,
     node: ts.CallExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const signature = context.checker.getResolvedSignature(node);
     const parameters = transformArguments(context, node.arguments, signature);
     const expressionType = context.checker.getTypeAtLocation(node.expression);

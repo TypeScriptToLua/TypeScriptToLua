@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression } from "../transformers/call";
 import { checkForLuaLibType } from "../transformers/class/new";
@@ -19,7 +19,7 @@ import { transformSymbolConstructorCall } from "./symbol";
 export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node.expression);
     if (isStringType(context, type)) {
         return transformStringProperty(context, node);
@@ -45,7 +45,7 @@ export function transformBuiltinPropertyAccessExpression(
 export function transformBuiltinCallExpression(
     context: TransformationContext,
     node: ts.CallExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const expressionType = context.checker.getTypeAtLocation(node.expression);
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         // TODO:
@@ -109,24 +109,24 @@ export function transformBuiltinCallExpression(
 export function transformBuiltinIdentifierExpression(
     context: TransformationContext,
     node: ts.Identifier
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
-            return tstl.createParenthesizedExpression(
-                tstl.createBinaryExpression(
-                    tstl.createNumericLiteral(0),
-                    tstl.createNumericLiteral(0),
-                    tstl.SyntaxKind.DivisionOperator,
+            return lua.createParenthesizedExpression(
+                lua.createBinaryExpression(
+                    lua.createNumericLiteral(0),
+                    lua.createNumericLiteral(0),
+                    lua.SyntaxKind.DivisionOperator,
                     node
                 )
             );
 
         case "Infinity":
-            const math = tstl.createIdentifier("math");
-            const huge = tstl.createStringLiteral("huge");
-            return tstl.createTableIndexExpression(math, huge, node);
+            const math = lua.createIdentifier("math");
+            const huge = lua.createStringLiteral("huge");
+            return lua.createTableIndexExpression(math, huge, node);
 
         case "globalThis":
-            return tstl.createIdentifier("_G", node, getIdentifierSymbolId(context, node), "globalThis");
+            return lua.createIdentifier("_G", node, getIdentifierSymbolId(context, node), "globalThis");
     }
 }

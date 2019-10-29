@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { isInTupleReturnFunction } from "../utils/annotations";
 import { createUnpackCall } from "../utils/lua-ast";
@@ -10,16 +10,16 @@ import { transformIdentifier } from "./identifier";
 export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
 
-    const tryResultIdentifier = tstl.createIdentifier("____try");
-    const returnValueIdentifier = tstl.createIdentifier("____returnValue");
+    const tryResultIdentifier = lua.createIdentifier("____try");
+    const returnValueIdentifier = lua.createIdentifier("____returnValue");
 
-    const result: tstl.Statement[] = [];
+    const result: lua.Statement[] = [];
 
-    let returnedIdentifier: tstl.Identifier | undefined;
-    let returnCondition: tstl.Expression | undefined;
+    let returnedIdentifier: lua.Identifier | undefined;
+    let returnCondition: lua.Expression | undefined;
 
-    const pCall = tstl.createIdentifier("pcall");
-    const tryCall = tstl.createCallExpression(pCall, [tstl.createFunctionExpression(tryBlock)]);
+    const pCall = lua.createIdentifier("pcall");
+    const tryCall = lua.createCallExpression(pCall, [lua.createFunctionExpression(tryBlock)]);
 
     if (statement.catchClause && statement.catchClause.block.statements.length > 0) {
         // try with catch
@@ -29,7 +29,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             returnedIdentifier = transformIdentifier(context, statement.catchClause.variableDeclaration
                 .name as ts.Identifier);
         } else if (tryScope.functionReturned || catchScope.functionReturned) {
-            returnedIdentifier = tstl.createIdentifier("____returned");
+            returnedIdentifier = lua.createIdentifier("____returned");
         }
 
         const tryReturnIdentifiers = [tryResultIdentifier]; // ____try
@@ -37,42 +37,42 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             tryReturnIdentifiers.push(returnedIdentifier); // ____returned or catch variable
             if (tryScope.functionReturned || catchScope.functionReturned) {
                 tryReturnIdentifiers.push(returnValueIdentifier); // ____returnValue
-                returnCondition = tstl.cloneIdentifier(returnedIdentifier);
+                returnCondition = lua.cloneIdentifier(returnedIdentifier);
             }
         }
-        result.push(tstl.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall));
+        result.push(lua.createVariableDeclarationStatement(tryReturnIdentifiers, tryCall));
 
         if ((tryScope.functionReturned || catchScope.functionReturned) && returnedIdentifier) {
             // Wrap catch in function if try or catch has return
-            const catchCall = tstl.createCallExpression(
-                tstl.createParenthesizedExpression(tstl.createFunctionExpression(catchBlock))
+            const catchCall = lua.createCallExpression(
+                lua.createParenthesizedExpression(lua.createFunctionExpression(catchBlock))
             );
-            const catchAssign = tstl.createAssignmentStatement(
-                [tstl.cloneIdentifier(returnedIdentifier), tstl.cloneIdentifier(returnValueIdentifier)],
+            const catchAssign = lua.createAssignmentStatement(
+                [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
                 catchCall
             );
-            catchBlock = tstl.createBlock([catchAssign]);
+            catchBlock = lua.createBlock([catchAssign]);
         }
-        const notTryCondition = tstl.createUnaryExpression(
-            tstl.createParenthesizedExpression(tryResultIdentifier),
-            tstl.SyntaxKind.NotOperator
+        const notTryCondition = lua.createUnaryExpression(
+            lua.createParenthesizedExpression(tryResultIdentifier),
+            lua.SyntaxKind.NotOperator
         );
-        result.push(tstl.createIfStatement(notTryCondition, catchBlock));
+        result.push(lua.createIfStatement(notTryCondition, catchBlock));
     } else if (tryScope.functionReturned) {
         // try with return, but no catch
-        returnedIdentifier = tstl.createIdentifier("____returned");
+        returnedIdentifier = lua.createIdentifier("____returned");
         const returnedVariables = [tryResultIdentifier, returnedIdentifier, returnValueIdentifier];
-        result.push(tstl.createVariableDeclarationStatement(returnedVariables, tryCall));
+        result.push(lua.createVariableDeclarationStatement(returnedVariables, tryCall));
 
         // change return condition from '____returned' to '____try and ____returned'
-        returnCondition = tstl.createBinaryExpression(
-            tstl.cloneIdentifier(tryResultIdentifier),
+        returnCondition = lua.createBinaryExpression(
+            lua.cloneIdentifier(tryResultIdentifier),
             returnedIdentifier,
-            tstl.SyntaxKind.AndOperator
+            lua.SyntaxKind.AndOperator
         );
     } else {
         // try without return or catch
-        result.push(tstl.createExpressionStatement(tryCall));
+        result.push(lua.createExpressionStatement(tryCall));
     }
 
     if (statement.finallyBlock && statement.finallyBlock.statements.length > 0) {
@@ -84,37 +84,37 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         //     if ____returned then return ____returnValue end
         // No catch clause:
         //     if ____try and ____returned then return ____returnValue end
-        const returnValues: tstl.Expression[] = [];
+        const returnValues: lua.Expression[] = [];
         const parentTryCatch = findScope(context, ScopeType.Function | ScopeType.Try | ScopeType.Catch);
         if (parentTryCatch && parentTryCatch.type !== ScopeType.Function) {
             // Nested try/catch needs to prefix a 'true' return value
-            returnValues.push(tstl.createBooleanLiteral(true));
+            returnValues.push(lua.createBooleanLiteral(true));
         }
 
         if (isInTupleReturnFunction(context, statement)) {
-            returnValues.push(createUnpackCall(context, tstl.cloneIdentifier(returnValueIdentifier)));
+            returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));
         } else {
-            returnValues.push(tstl.cloneIdentifier(returnValueIdentifier));
+            returnValues.push(lua.cloneIdentifier(returnValueIdentifier));
         }
 
-        const returnStatement = tstl.createReturnStatement(returnValues);
-        const ifReturnedStatement = tstl.createIfStatement(returnCondition, tstl.createBlock([returnStatement]));
+        const returnStatement = lua.createReturnStatement(returnValues);
+        const ifReturnedStatement = lua.createIfStatement(returnCondition, lua.createBlock([returnStatement]));
         result.push(ifReturnedStatement);
     }
 
-    return tstl.createDoStatement(result, statement);
+    return lua.createDoStatement(result, statement);
 };
 
 export const transformThrowStatement: FunctionVisitor<ts.ThrowStatement> = (statement, context) => {
-    const parameters: tstl.Expression[] = [];
+    const parameters: lua.Expression[] = [];
 
     if (statement.expression) {
         parameters.push(context.transformExpression(statement.expression));
-        parameters.push(tstl.createNumericLiteral(0));
+        parameters.push(lua.createNumericLiteral(0));
     }
 
-    return tstl.createExpressionStatement(
-        tstl.createCallExpression(tstl.createIdentifier("error"), parameters),
+    return lua.createExpressionStatement(
+        lua.createCallExpression(lua.createIdentifier("error"), parameters),
         statement
     );
 };

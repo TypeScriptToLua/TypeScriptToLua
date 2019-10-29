@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { transformBinaryOperation } from ".";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast";
@@ -62,32 +62,32 @@ export function transformCompoundAssignmentExpression(
     rhs: ts.Expression,
     replacementOperator: ts.BinaryOperator,
     isPostfix: boolean
-): tstl.CallExpression {
-    const left = cast(context.transformExpression(lhs), tstl.isAssignmentLeftHandSideExpression);
+): lua.CallExpression {
+    const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
     let right = context.transformExpression(rhs);
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
     if (objExpression && indexExpression) {
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
-        const obj = tstl.createIdentifier("____obj");
-        const index = tstl.createIdentifier("____index");
-        const objAndIndexDeclaration = tstl.createVariableDeclarationStatement(
+        const obj = lua.createIdentifier("____obj");
+        const index = lua.createIdentifier("____index");
+        const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
             [obj, index],
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
-        const accessExpression = tstl.createTableIndexExpression(obj, index);
+        const accessExpression = lua.createTableIndexExpression(obj, index);
 
-        const tmp = tstl.createIdentifier("____tmp");
-        right = tstl.createParenthesizedExpression(right);
-        let tmpDeclaration: tstl.VariableDeclarationStatement;
-        let assignStatement: tstl.AssignmentStatement;
+        const tmp = lua.createIdentifier("____tmp");
+        right = lua.createParenthesizedExpression(right);
+        let tmpDeclaration: lua.VariableDeclarationStatement;
+        let assignStatement: lua.AssignmentStatement;
         if (isPostfix) {
             // local ____tmp = ____obj[____index];
             // ____obj[____index] = ____tmp ${replacementOperator} ${right};
-            tmpDeclaration = tstl.createVariableDeclarationStatement(tmp, accessExpression);
+            tmpDeclaration = lua.createVariableDeclarationStatement(tmp, accessExpression);
             const operatorExpression = transformBinaryOperation(context, tmp, right, replacementOperator, expression);
-            assignStatement = tstl.createAssignmentStatement(accessExpression, operatorExpression);
+            assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         } else {
             // local ____tmp = ____obj[____index] ${replacementOperator} ${right};
             // ____obj[____index] = ____tmp;
@@ -98,8 +98,8 @@ export function transformCompoundAssignmentExpression(
                 replacementOperator,
                 expression
             );
-            tmpDeclaration = tstl.createVariableDeclarationStatement(tmp, operatorExpression);
-            assignStatement = tstl.createAssignmentStatement(accessExpression, tmp);
+            tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
+            assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
         }
         // return ____tmp
         return createImmediatelyInvokedFunctionExpression(
@@ -112,8 +112,8 @@ export function transformCompoundAssignmentExpression(
         // local ____tmp = ${left};
         // ${left} = ____tmp ${replacementOperator} ${right};
         // return ____tmp
-        const tmpIdentifier = tstl.createIdentifier("____tmp");
-        const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, left);
+        const tmpIdentifier = lua.createIdentifier("____tmp");
+        const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
         const operatorExpression = transformBinaryOperation(
             context,
             tmpIdentifier,
@@ -128,9 +128,9 @@ export function transformCompoundAssignmentExpression(
         // local ____tmp = ${left} ${replacementOperator} ${right};
         // ${left} = ____tmp;
         // return ____tmp
-        const tmpIdentifier = tstl.createIdentifier("____tmp");
+        const tmpIdentifier = lua.createIdentifier("____tmp");
         const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, expression);
-        const tmpDeclaration = tstl.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
+        const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
         const assignStatement = transformAssignment(context, lhs, tmpIdentifier);
         return createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, expression);
     } else {
@@ -148,8 +148,8 @@ export function transformCompoundAssignmentStatement(
     lhs: ts.Expression,
     rhs: ts.Expression,
     replacementOperator: ts.BinaryOperator
-): tstl.Statement {
-    const left = cast(context.transformExpression(lhs), tstl.isAssignmentLeftHandSideExpression);
+): lua.Statement {
+    const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
     const right = context.transformExpression(rhs);
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
@@ -157,22 +157,22 @@ export function transformCompoundAssignmentStatement(
         // Complex property/element accesses need to cache object/index expressions to avoid repeating side-effects
         // local __obj, __index = ${objExpression}, ${indexExpression};
         // ____obj[____index] = ____obj[____index] ${replacementOperator} ${right};
-        const obj = tstl.createIdentifier("____obj");
-        const index = tstl.createIdentifier("____index");
-        const objAndIndexDeclaration = tstl.createVariableDeclarationStatement(
+        const obj = lua.createIdentifier("____obj");
+        const index = lua.createIdentifier("____index");
+        const objAndIndexDeclaration = lua.createVariableDeclarationStatement(
             [obj, index],
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
-        const accessExpression = tstl.createTableIndexExpression(obj, index);
+        const accessExpression = lua.createTableIndexExpression(obj, index);
         const operatorExpression = transformBinaryOperation(
             context,
             accessExpression,
-            tstl.createParenthesizedExpression(right),
+            lua.createParenthesizedExpression(right),
             replacementOperator,
             node
         );
-        const assignStatement = tstl.createAssignmentStatement(accessExpression, operatorExpression);
-        return tstl.createDoStatement([objAndIndexDeclaration, assignStatement]);
+        const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
+        return lua.createDoStatement([objAndIndexDeclaration, assignStatement]);
     } else {
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { UndefinedTypeNode } from "../../utils/errors";
 import {
@@ -20,39 +20,39 @@ import { getExtendedTypeNode, isStaticNode } from "./utils";
 export function createClassCreationMethods(
     context: TransformationContext,
     statement: ts.ClassLikeDeclarationBase,
-    className: tstl.Identifier,
-    localClassName: tstl.Identifier,
+    className: lua.Identifier,
+    localClassName: lua.Identifier,
     classNameText: string,
     extendsType?: ts.Type
-): tstl.Statement[] {
-    const result: tstl.Statement[] = [];
+): lua.Statement[] {
+    const result: lua.Statement[] = [];
 
     // [____exports.]className = {}
-    const classTable: tstl.Expression = tstl.createTableExpression();
+    const classTable: lua.Expression = lua.createTableExpression();
 
     const isDefaultExport = hasDefaultExportModifier(statement);
 
     const defaultExportLeftHandSide = isDefaultExport
-        ? tstl.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(statement))
+        ? lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(statement))
         : undefined;
 
     const classVar = defaultExportLeftHandSide
-        ? [tstl.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
+        ? [lua.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
         : createLocalOrExportedOrGlobalDeclaration(context, className, classTable, statement);
 
     result.push(...classVar);
 
     if (defaultExportLeftHandSide) {
         // local localClassName = ____exports.default
-        result.push(tstl.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
+        result.push(lua.createVariableDeclarationStatement(localClassName, defaultExportLeftHandSide));
     } else {
         const exportScope = getIdentifierExportScope(context, className);
         if (exportScope) {
             // local localClassName = ____exports.className
             result.push(
-                tstl.createVariableDeclarationStatement(
+                lua.createVariableDeclarationStatement(
                     localClassName,
-                    createExportedIdentifier(context, tstl.cloneIdentifier(className), exportScope)
+                    createExportedIdentifier(context, lua.cloneIdentifier(className), exportScope)
                 )
             );
         }
@@ -60,52 +60,40 @@ export function createClassCreationMethods(
 
     // localClassName.name = className
     result.push(
-        tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(tstl.cloneIdentifier(localClassName), tstl.createStringLiteral("name")),
-            tstl.createStringLiteral(classNameText),
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("name")),
+            lua.createStringLiteral(classNameText),
             statement
         )
     );
 
     // localClassName.____getters = {}
     if (statement.members.some(m => ts.isGetAccessor(m) && isStaticNode(m))) {
-        const classGetters = tstl.createTableIndexExpression(
-            tstl.cloneIdentifier(localClassName),
-            tstl.createStringLiteral("____getters")
+        const classGetters = lua.createTableIndexExpression(
+            lua.cloneIdentifier(localClassName),
+            lua.createStringLiteral("____getters")
         );
-        const assignClassGetters = tstl.createAssignmentStatement(
-            classGetters,
-            tstl.createTableExpression(),
-            statement
-        );
+        const assignClassGetters = lua.createAssignmentStatement(classGetters, lua.createTableExpression(), statement);
         result.push(assignClassGetters);
 
         importLuaLibFeature(context, LuaLibFeature.ClassIndex);
     }
 
     // localClassName.__index = localClassName
-    const classIndex = tstl.createTableIndexExpression(
-        tstl.cloneIdentifier(localClassName),
-        tstl.createStringLiteral("__index")
+    const classIndex = lua.createTableIndexExpression(
+        lua.cloneIdentifier(localClassName),
+        lua.createStringLiteral("__index")
     );
-    const assignClassIndex = tstl.createAssignmentStatement(
-        classIndex,
-        tstl.cloneIdentifier(localClassName),
-        statement
-    );
+    const assignClassIndex = lua.createAssignmentStatement(classIndex, lua.cloneIdentifier(localClassName), statement);
     result.push(assignClassIndex);
 
     // localClassName.____setters = {}
     if (statement.members.some(m => ts.isSetAccessor(m) && isStaticNode(m))) {
-        const classSetters = tstl.createTableIndexExpression(
-            tstl.cloneIdentifier(localClassName),
-            tstl.createStringLiteral("____setters")
+        const classSetters = lua.createTableIndexExpression(
+            lua.cloneIdentifier(localClassName),
+            lua.createStringLiteral("____setters")
         );
-        const assignClassSetters = tstl.createAssignmentStatement(
-            classSetters,
-            tstl.createTableExpression(),
-            statement
-        );
+        const assignClassSetters = lua.createAssignmentStatement(classSetters, lua.createTableExpression(), statement);
         result.push(assignClassSetters);
 
         importLuaLibFeature(context, LuaLibFeature.ClassNewIndex);
@@ -113,32 +101,32 @@ export function createClassCreationMethods(
 
     // localClassName.prototype = {}
     const createClassPrototype = () =>
-        tstl.createTableIndexExpression(tstl.cloneIdentifier(localClassName), tstl.createStringLiteral("prototype"));
-    const classPrototypeTable = tstl.createTableExpression();
-    const assignClassPrototype = tstl.createAssignmentStatement(createClassPrototype(), classPrototypeTable, statement);
+        lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("prototype"));
+    const classPrototypeTable = lua.createTableExpression();
+    const assignClassPrototype = lua.createAssignmentStatement(createClassPrototype(), classPrototypeTable, statement);
     result.push(assignClassPrototype);
 
     // localClassName.prototype.____getters = {}
     if (statement.members.some(m => ts.isGetAccessor(m) && !isStaticNode(m))) {
-        const classPrototypeGetters = tstl.createTableIndexExpression(
+        const classPrototypeGetters = lua.createTableIndexExpression(
             createClassPrototype(),
-            tstl.createStringLiteral("____getters")
+            lua.createStringLiteral("____getters")
         );
-        const assignClassPrototypeGetters = tstl.createAssignmentStatement(
+        const assignClassPrototypeGetters = lua.createAssignmentStatement(
             classPrototypeGetters,
-            tstl.createTableExpression(),
+            lua.createTableExpression(),
             statement
         );
         result.push(assignClassPrototypeGetters);
     }
 
-    const classPrototypeIndex = tstl.createTableIndexExpression(
+    const classPrototypeIndex = lua.createTableIndexExpression(
         createClassPrototype(),
-        tstl.createStringLiteral("__index")
+        lua.createStringLiteral("__index")
     );
     if (hasMemberInClassOrAncestor(context, statement, m => ts.isGetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__index = __TS__Index(localClassName.prototype)
-        const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+        const assignClassPrototypeIndex = lua.createAssignmentStatement(
             classPrototypeIndex,
             transformLuaLibFunction(context, LuaLibFeature.Index, undefined, createClassPrototype()),
             statement
@@ -146,7 +134,7 @@ export function createClassCreationMethods(
         result.push(assignClassPrototypeIndex);
     } else {
         // localClassName.prototype.__index = localClassName.prototype
-        const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+        const assignClassPrototypeIndex = lua.createAssignmentStatement(
             classPrototypeIndex,
             createClassPrototype(),
             statement
@@ -156,13 +144,13 @@ export function createClassCreationMethods(
 
     if (statement.members.some(m => ts.isSetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.____setters = {}
-        const classPrototypeSetters = tstl.createTableIndexExpression(
+        const classPrototypeSetters = lua.createTableIndexExpression(
             createClassPrototype(),
-            tstl.createStringLiteral("____setters")
+            lua.createStringLiteral("____setters")
         );
-        const assignClassPrototypeSetters = tstl.createAssignmentStatement(
+        const assignClassPrototypeSetters = lua.createAssignmentStatement(
             classPrototypeSetters,
-            tstl.createTableExpression(),
+            lua.createTableExpression(),
             statement
         );
         result.push(assignClassPrototypeSetters);
@@ -170,11 +158,11 @@ export function createClassCreationMethods(
 
     if (hasMemberInClassOrAncestor(context, statement, m => ts.isSetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__newindex = __TS__NewIndex(localClassName.prototype)
-        const classPrototypeNewIndex = tstl.createTableIndexExpression(
+        const classPrototypeNewIndex = lua.createTableIndexExpression(
             createClassPrototype(),
-            tstl.createStringLiteral("__newindex")
+            lua.createStringLiteral("__newindex")
         );
-        const assignClassPrototypeIndex = tstl.createAssignmentStatement(
+        const assignClassPrototypeIndex = lua.createAssignmentStatement(
             classPrototypeNewIndex,
             transformLuaLibFunction(context, LuaLibFeature.NewIndex, undefined, createClassPrototype()),
             statement
@@ -183,13 +171,13 @@ export function createClassCreationMethods(
     }
 
     // localClassName.prototype.constructor = localClassName
-    const classPrototypeConstructor = tstl.createTableIndexExpression(
+    const classPrototypeConstructor = lua.createTableIndexExpression(
         createClassPrototype(),
-        tstl.createStringLiteral("constructor")
+        lua.createStringLiteral("constructor")
     );
-    const assignClassPrototypeConstructor = tstl.createAssignmentStatement(
+    const assignClassPrototypeConstructor = lua.createAssignmentStatement(
         classPrototypeConstructor,
-        tstl.cloneIdentifier(localClassName),
+        lua.cloneIdentifier(localClassName),
         statement
     );
     result.push(assignClassPrototypeConstructor);
@@ -213,11 +201,8 @@ export function createClassCreationMethods(
 
         // localClassName.____super = extendsExpression
         const createClassBase = () =>
-            tstl.createTableIndexExpression(
-                tstl.cloneIdentifier(localClassName),
-                tstl.createStringLiteral("____super")
-            );
-        const assignClassBase = tstl.createAssignmentStatement(
+            lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("____super"));
+        const assignClassBase = lua.createAssignmentStatement(
             createClassBase(),
             context.transformExpression(extendedTypeNode.expression),
             extendedTypeNode.expression
@@ -225,22 +210,22 @@ export function createClassCreationMethods(
         result.push(assignClassBase);
 
         if (hasStaticGetters || hasStaticSetters) {
-            const metatableFields: tstl.TableFieldExpression[] = [];
+            const metatableFields: lua.TableFieldExpression[] = [];
             if (hasStaticGetters) {
                 // __index = __TS__ClassIndex
                 metatableFields.push(
-                    tstl.createTableFieldExpression(
-                        tstl.createIdentifier("__TS__ClassIndex"),
-                        tstl.createStringLiteral("__index"),
+                    lua.createTableFieldExpression(
+                        lua.createIdentifier("__TS__ClassIndex"),
+                        lua.createStringLiteral("__index"),
                         extendedTypeNode.expression
                     )
                 );
             } else {
                 // __index = localClassName.____super
                 metatableFields.push(
-                    tstl.createTableFieldExpression(
+                    lua.createTableFieldExpression(
                         createClassBase(),
-                        tstl.createStringLiteral("__index"),
+                        lua.createStringLiteral("__index"),
                         extendedTypeNode.expression
                     )
                 );
@@ -249,28 +234,28 @@ export function createClassCreationMethods(
             if (hasStaticSetters) {
                 // __newindex = __TS__ClassNewIndex
                 metatableFields.push(
-                    tstl.createTableFieldExpression(
-                        tstl.createIdentifier("__TS__ClassNewIndex"),
-                        tstl.createStringLiteral("__newindex"),
+                    lua.createTableFieldExpression(
+                        lua.createIdentifier("__TS__ClassNewIndex"),
+                        lua.createStringLiteral("__newindex"),
                         extendedTypeNode.expression
                     )
                 );
             }
 
-            const setClassMetatable = tstl.createExpressionStatement(
-                tstl.createCallExpression(
-                    tstl.createIdentifier("setmetatable"),
-                    [tstl.cloneIdentifier(localClassName), tstl.createTableExpression(metatableFields)],
+            const setClassMetatable = lua.createExpressionStatement(
+                lua.createCallExpression(
+                    lua.createIdentifier("setmetatable"),
+                    [lua.cloneIdentifier(localClassName), lua.createTableExpression(metatableFields)],
                     extendedTypeNode.expression
                 )
             );
             result.push(setClassMetatable);
         } else {
             // setmetatable(localClassName, localClassName.____super)
-            const setClassMetatable = tstl.createExpressionStatement(
-                tstl.createCallExpression(
-                    tstl.createIdentifier("setmetatable"),
-                    [tstl.cloneIdentifier(localClassName), createClassBase()],
+            const setClassMetatable = lua.createExpressionStatement(
+                lua.createCallExpression(
+                    lua.createIdentifier("setmetatable"),
+                    [lua.cloneIdentifier(localClassName), createClassBase()],
                     extendedTypeNode.expression
                 )
             );
@@ -278,20 +263,20 @@ export function createClassCreationMethods(
         }
 
         // setmetatable(localClassName.prototype, localClassName.____super.prototype)
-        const basePrototype = tstl.createTableIndexExpression(createClassBase(), tstl.createStringLiteral("prototype"));
-        const setClassPrototypeMetatable = tstl.createExpressionStatement(
-            tstl.createCallExpression(tstl.createIdentifier("setmetatable"), [createClassPrototype(), basePrototype]),
+        const basePrototype = lua.createTableIndexExpression(createClassBase(), lua.createStringLiteral("prototype"));
+        const setClassPrototypeMetatable = lua.createExpressionStatement(
+            lua.createCallExpression(lua.createIdentifier("setmetatable"), [createClassPrototype(), basePrototype]),
             extendedTypeNode.expression
         );
         result.push(setClassPrototypeMetatable);
     } else if (hasStaticGetters || hasStaticSetters) {
-        const metatableFields: tstl.TableFieldExpression[] = [];
+        const metatableFields: lua.TableFieldExpression[] = [];
         if (hasStaticGetters) {
             // __index = __TS__ClassIndex
             metatableFields.push(
-                tstl.createTableFieldExpression(
-                    tstl.createIdentifier("__TS__ClassIndex"),
-                    tstl.createStringLiteral("__index"),
+                lua.createTableFieldExpression(
+                    lua.createIdentifier("__TS__ClassIndex"),
+                    lua.createStringLiteral("__index"),
                     statement
                 )
             );
@@ -300,31 +285,31 @@ export function createClassCreationMethods(
         if (hasStaticSetters) {
             // __newindex = __TS__ClassNewIndex
             metatableFields.push(
-                tstl.createTableFieldExpression(
-                    tstl.createIdentifier("__TS__ClassNewIndex"),
-                    tstl.createStringLiteral("__newindex"),
+                lua.createTableFieldExpression(
+                    lua.createIdentifier("__TS__ClassNewIndex"),
+                    lua.createStringLiteral("__newindex"),
                     statement
                 )
             );
         }
 
-        const setClassMetatable = tstl.createExpressionStatement(
-            tstl.createCallExpression(tstl.createIdentifier("setmetatable"), [
-                tstl.cloneIdentifier(localClassName),
-                tstl.createTableExpression(metatableFields),
+        const setClassMetatable = lua.createExpressionStatement(
+            lua.createCallExpression(lua.createIdentifier("setmetatable"), [
+                lua.cloneIdentifier(localClassName),
+                lua.createTableExpression(metatableFields),
             ]),
             statement
         );
         result.push(setClassMetatable);
     }
 
-    const newFuncStatements: tstl.Statement[] = [];
+    const newFuncStatements: lua.Statement[] = [];
 
     // local self = setmetatable({}, localClassName.prototype)
-    const assignSelf = tstl.createVariableDeclarationStatement(
+    const assignSelf = lua.createVariableDeclarationStatement(
         createSelfIdentifier(),
-        tstl.createCallExpression(tstl.createIdentifier("setmetatable"), [
-            tstl.createTableExpression(),
+        lua.createCallExpression(lua.createIdentifier("setmetatable"), [
+            lua.createTableExpression(),
             createClassPrototype(),
         ]),
         statement
@@ -332,28 +317,28 @@ export function createClassCreationMethods(
     newFuncStatements.push(assignSelf);
 
     // self:____constructor(...)
-    const callConstructor = tstl.createExpressionStatement(
-        tstl.createMethodCallExpression(createSelfIdentifier(), tstl.createIdentifier("____constructor"), [
-            tstl.createDotsLiteral(),
+    const callConstructor = lua.createExpressionStatement(
+        lua.createMethodCallExpression(createSelfIdentifier(), lua.createIdentifier("____constructor"), [
+            lua.createDotsLiteral(),
         ]),
         statement
     );
     newFuncStatements.push(callConstructor);
 
     // return self
-    const returnSelf = tstl.createReturnStatement([createSelfIdentifier()], statement);
+    const returnSelf = lua.createReturnStatement([createSelfIdentifier()], statement);
     newFuncStatements.push(returnSelf);
 
     // function localClassName.new(construct, ...) ... end
     // or function export.localClassName.new(construct, ...) ... end
-    const newFunc = tstl.createAssignmentStatement(
-        tstl.createTableIndexExpression(tstl.cloneIdentifier(localClassName), tstl.createStringLiteral("new")),
-        tstl.createFunctionExpression(
-            tstl.createBlock(newFuncStatements),
+    const newFunc = lua.createAssignmentStatement(
+        lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("new")),
+        lua.createFunctionExpression(
+            lua.createBlock(newFuncStatements),
             undefined,
-            tstl.createDotsLiteral(),
+            lua.createDotsLiteral(),
             undefined,
-            tstl.FunctionExpressionFlags.Declaration
+            lua.FunctionExpressionFlags.Declaration
         ),
         statement
     );

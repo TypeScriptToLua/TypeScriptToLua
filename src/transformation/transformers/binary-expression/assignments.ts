@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { cast, castEach } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
@@ -14,11 +14,11 @@ export function transformAssignment(
     context: TransformationContext,
     // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
-    right: tstl.Expression,
+    right: lua.Expression,
     parent?: ts.Expression
-): tstl.Statement {
+): lua.Statement {
     if (isArrayLength(context, lhs)) {
-        return tstl.createExpressionStatement(
+        return lua.createExpressionStatement(
             transformLuaLibFunction(
                 context,
                 LuaLibFeature.ArraySetLength,
@@ -29,8 +29,8 @@ export function transformAssignment(
         );
     }
 
-    return tstl.createAssignmentStatement(
-        cast(context.transformExpression(lhs), tstl.isAssignmentLeftHandSideExpression),
+    return lua.createAssignmentStatement(
+        cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression),
         right,
         lhs.parent
     );
@@ -39,7 +39,7 @@ export function transformAssignment(
 export function transformAssignmentExpression(
     context: TransformationContext,
     expression: ts.AssignmentExpression<ts.EqualsToken>
-): tstl.CallExpression | tstl.MethodCallExpression {
+): lua.CallExpression | lua.MethodCallExpression {
     // Validate assignment
     const rightType = context.checker.getTypeAtLocation(expression.right);
     const leftType = context.checker.getTypeAtLocation(expression.left);
@@ -57,7 +57,7 @@ export function transformAssignmentExpression(
     }
 
     if (isDestructuringAssignment(expression)) {
-        const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
+        const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
 
         let right = context.transformExpression(expression.right);
         if (isTupleReturnCall(context, expression.right)) {
@@ -65,7 +65,7 @@ export function transformAssignmentExpression(
         }
 
         const statements = [
-            tstl.createVariableDeclarationStatement(rootIdentifier, right),
+            lua.createVariableDeclarationStatement(rootIdentifier, right),
             ...transformDestructuringAssignment(context, expression, rootIdentifier),
         ];
 
@@ -75,31 +75,31 @@ export function transformAssignmentExpression(
     if (ts.isPropertyAccessExpression(expression.left) || ts.isElementAccessExpression(expression.left)) {
         // Left is property/element access: cache result while maintaining order of evaluation
         // (function(o, i, v) o[i] = v; return v end)(${objExpression}, ${indexExpression}, ${right})
-        const objParameter = tstl.createIdentifier("o");
-        const indexParameter = tstl.createIdentifier("i");
-        const valueParameter = tstl.createIdentifier("v");
-        const indexStatement = tstl.createTableIndexExpression(objParameter, indexParameter);
-        const statements: tstl.Statement[] = [
-            tstl.createAssignmentStatement(indexStatement, valueParameter),
-            tstl.createReturnStatement([valueParameter]),
+        const objParameter = lua.createIdentifier("o");
+        const indexParameter = lua.createIdentifier("i");
+        const valueParameter = lua.createIdentifier("v");
+        const indexStatement = lua.createTableIndexExpression(objParameter, indexParameter);
+        const statements: lua.Statement[] = [
+            lua.createAssignmentStatement(indexStatement, valueParameter),
+            lua.createReturnStatement([valueParameter]),
         ];
-        const iife = tstl.createFunctionExpression(tstl.createBlock(statements), [
+        const iife = lua.createFunctionExpression(lua.createBlock(statements), [
             objParameter,
             indexParameter,
             valueParameter,
         ]);
         const objExpression = context.transformExpression(expression.left.expression);
-        let indexExpression: tstl.Expression;
+        let indexExpression: lua.Expression;
         if (ts.isPropertyAccessExpression(expression.left)) {
             // Property access
-            indexExpression = tstl.createStringLiteral(expression.left.name.text);
+            indexExpression = lua.createStringLiteral(expression.left.name.text);
         } else {
             // Element access
             indexExpression = transformElementAccessArgument(context, expression.left);
         }
 
         const args = [objExpression, indexExpression, context.transformExpression(expression.right)];
-        return tstl.createCallExpression(tstl.createParenthesizedExpression(iife), args, expression);
+        return lua.createCallExpression(lua.createParenthesizedExpression(iife), args, expression);
     } else {
         // Simple assignment
         // (function() ${left} = ${right}; return ${left} end)()
@@ -116,7 +116,7 @@ export function transformAssignmentExpression(
 export function transformAssignmentStatement(
     context: TransformationContext,
     expression: ts.AssignmentExpression<ts.EqualsToken>
-): tstl.Statement[] {
+): lua.Statement[] {
     // Validate assignment
     const rightType = context.checker.getTypeAtLocation(expression.right);
     const leftType = context.checker.getTypeAtLocation(expression.left);
@@ -141,10 +141,10 @@ export function transformAssignmentStatement(
 
             const left = castEach(
                 expression.left.elements.map(e => context.transformExpression(e)),
-                tstl.isAssignmentLeftHandSideExpression
+                lua.isAssignmentLeftHandSideExpression
             );
 
-            return [tstl.createAssignmentStatement(left, right, expression)];
+            return [lua.createAssignmentStatement(left, right, expression)];
         }
 
         let right = context.transformExpression(expression.right);
@@ -152,9 +152,9 @@ export function transformAssignmentStatement(
             right = wrapInTable(right);
         }
 
-        const rootIdentifier = tstl.createAnonymousIdentifier(expression.left);
+        const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
         return [
-            tstl.createVariableDeclarationStatement(rootIdentifier, right),
+            lua.createVariableDeclarationStatement(rootIdentifier, right),
             ...transformDestructuringAssignment(context, expression, rootIdentifier),
         ];
     } else {

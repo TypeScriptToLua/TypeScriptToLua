@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { createModuleLocalNameIdentifier } from "../transformers/namespace";
 import { createExportsIdentifier } from "./lua-ast";
@@ -10,11 +10,11 @@ export function hasDefaultExportModifier({ modifiers }: ts.Node): boolean {
     return modifiers !== undefined && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
 }
 
-export const createDefaultExportIdentifier = (original: ts.Node): tstl.Identifier =>
-    tstl.createIdentifier("default", original);
+export const createDefaultExportIdentifier = (original: ts.Node): lua.Identifier =>
+    lua.createIdentifier("default", original);
 
-export const createDefaultExportStringLiteral = (original: ts.Node): tstl.StringLiteral =>
-    tstl.createStringLiteral("default", original);
+export const createDefaultExportStringLiteral = (original: ts.Node): lua.StringLiteral =>
+    lua.createStringLiteral("default", original);
 
 export function getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
     const declarations = symbol.getDeclarations();
@@ -25,7 +25,7 @@ export function getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration 
 
 export function getSymbolFromIdentifier(
     context: TransformationContext,
-    identifier: tstl.Identifier
+    identifier: lua.Identifier
 ): ts.Symbol | undefined {
     if (identifier.symbolId !== undefined) {
         const symbolInfo = getSymbolInfo(context, identifier.symbolId);
@@ -37,7 +37,7 @@ export function getSymbolFromIdentifier(
 
 export function getIdentifierExportScope(
     context: TransformationContext,
-    identifier: tstl.Identifier
+    identifier: lua.Identifier
 ): ts.SourceFile | ts.ModuleDeclaration | undefined {
     const symbol = getSymbolFromIdentifier(context, identifier);
     if (!symbol) {
@@ -105,21 +105,21 @@ export function isSymbolExportedFromScope(
 
 export function addExportToIdentifier(
     context: TransformationContext,
-    identifier: tstl.Identifier
-): tstl.AssignmentLeftHandSideExpression {
+    identifier: lua.Identifier
+): lua.AssignmentLeftHandSideExpression {
     const exportScope = getIdentifierExportScope(context, identifier);
     return exportScope ? createExportedIdentifier(context, identifier, exportScope) : identifier;
 }
 
 export function createExportedIdentifier(
     context: TransformationContext,
-    identifier: tstl.Identifier,
+    identifier: lua.Identifier,
     exportScope?: ts.SourceFile | ts.ModuleDeclaration
-): tstl.AssignmentLeftHandSideExpression {
+): lua.AssignmentLeftHandSideExpression {
     const exportTable =
         exportScope && ts.isModuleDeclaration(exportScope)
             ? createModuleLocalNameIdentifier(context, exportScope)
             : createExportsIdentifier();
 
-    return tstl.createTableIndexExpression(exportTable, tstl.createStringLiteral(identifier.text));
+    return lua.createTableIndexExpression(exportTable, lua.createStringLiteral(identifier.text));
 }

@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { flatMap } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { isFileModule } from "../utils/typescript";
@@ -39,7 +39,7 @@ export class TransformationContext {
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
-    public transformNode(node: ts.Node): tstl.Node[] {
+    public transformNode(node: ts.Node): lua.Node[] {
         // TODO: Move to visitors?
         if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
@@ -61,7 +61,7 @@ export class TransformationContext {
         return result;
     }
 
-    public superTransformNode(node: ts.Node): tstl.Node[] {
+    public superTransformNode(node: ts.Node): lua.Node[] {
         if (this.currentNodeVisitors.length === 0) {
             throw new Error(`There is no super transform for ${ts.SyntaxKind[node.kind]} visitor`);
         }
@@ -70,27 +70,27 @@ export class TransformationContext {
         return unwrapVisitorResult(visitor.transform(node, this));
     }
 
-    public transformExpression(node: ExpressionLikeNode): tstl.Expression {
+    public transformExpression(node: ExpressionLikeNode): lua.Expression {
         const [result] = this.transformNode(node);
-        return result as tstl.Expression;
+        return result as lua.Expression;
     }
 
-    public superTransformExpression(node: ExpressionLikeNode): tstl.Expression {
+    public superTransformExpression(node: ExpressionLikeNode): lua.Expression {
         const [result] = this.superTransformNode(node);
-        return result as tstl.Expression;
+        return result as lua.Expression;
     }
 
-    public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): tstl.Statement[] {
+    public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
             ? flatMap(node, n => this.transformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.transformNode(node as StatementLikeNode) as tstl.Statement[]);
+              (this.transformNode(node as StatementLikeNode) as lua.Statement[]);
     }
 
-    public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): tstl.Statement[] {
+    public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
             ? flatMap(node, n => this.superTransformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.superTransformNode(node as StatementLikeNode) as tstl.Statement[]);
+              (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
     }
 }

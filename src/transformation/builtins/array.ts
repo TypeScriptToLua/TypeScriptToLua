@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
@@ -9,7 +9,7 @@ import { isExplicitArrayType } from "../utils/typescript";
 export function transformArrayCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): tstl.CallExpression | undefined {
+): lua.CallExpression | undefined {
     const expression = node.expression;
     const ownerType = context.checker.getTypeAtLocation(expression.expression);
     const signature = context.checker.getResolvedSignature(node);
@@ -31,8 +31,8 @@ export function transformArrayCall(
         case "sort":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySort, node, caller, ...params);
         case "pop":
-            return tstl.createCallExpression(
-                tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("remove")),
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("remove")),
                 [caller],
                 node
             );
@@ -61,16 +61,16 @@ export function transformArrayCall(
         case "splice":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySplice, node, caller, ...params);
         case "join":
-            const defaultSeparatorLiteral = tstl.createStringLiteral(",");
+            const defaultSeparatorLiteral = lua.createStringLiteral(",");
             const parameters = [
                 caller,
                 node.arguments.length === 0
                     ? defaultSeparatorLiteral
-                    : tstl.createBinaryExpression(params[0], defaultSeparatorLiteral, tstl.SyntaxKind.OrOperator),
+                    : lua.createBinaryExpression(params[0], defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
             ];
 
-            return tstl.createCallExpression(
-                tstl.createTableIndexExpression(tstl.createIdentifier("table"), tstl.createStringLiteral("concat")),
+            return lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
                 parameters,
                 node
             );
@@ -88,14 +88,14 @@ export function transformArrayCall(
 export function transformArrayProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): tstl.UnaryExpression | undefined {
+): lua.UnaryExpression | undefined {
     switch (node.name.text) {
         case "length":
             let expression = context.transformExpression(node.expression);
-            if (tstl.isTableExpression(expression)) {
-                expression = tstl.createParenthesizedExpression(expression);
+            if (lua.isTableExpression(expression)) {
+                expression = lua.createParenthesizedExpression(expression);
             }
-            return tstl.createUnaryExpression(expression, tstl.SyntaxKind.LengthOperator, node);
+            return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             return undefined;
     }

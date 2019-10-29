@@ -1,7 +1,7 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import * as tstl from "./LuaAST";
+import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier, luaKeywords } from "./transformation/utils/safe-names";
 import { EmitHost } from "./Transpile";
@@ -37,37 +37,37 @@ function isValidLuaFunctionDeclarationName(str: string): boolean {
 /**
  * Returns true if expression contains no function calls.
  */
-function isSimpleExpression(expression: tstl.Expression): boolean {
+function isSimpleExpression(expression: lua.Expression): boolean {
     switch (expression.kind) {
-        case tstl.SyntaxKind.CallExpression:
-        case tstl.SyntaxKind.MethodCallExpression:
-        case tstl.SyntaxKind.FunctionExpression:
+        case lua.SyntaxKind.CallExpression:
+        case lua.SyntaxKind.MethodCallExpression:
+        case lua.SyntaxKind.FunctionExpression:
             return false;
 
-        case tstl.SyntaxKind.TableExpression:
-            const tableExpression = expression as tstl.TableExpression;
+        case lua.SyntaxKind.TableExpression:
+            const tableExpression = expression as lua.TableExpression;
             return tableExpression.fields.every(e => isSimpleExpression(e));
 
-        case tstl.SyntaxKind.TableFieldExpression:
-            const fieldExpression = expression as tstl.TableFieldExpression;
+        case lua.SyntaxKind.TableFieldExpression:
+            const fieldExpression = expression as lua.TableFieldExpression;
             return (
                 (!fieldExpression.key || isSimpleExpression(fieldExpression.key)) &&
                 isSimpleExpression(fieldExpression.value)
             );
 
-        case tstl.SyntaxKind.TableIndexExpression:
-            const indexExpression = expression as tstl.TableIndexExpression;
+        case lua.SyntaxKind.TableIndexExpression:
+            const indexExpression = expression as lua.TableIndexExpression;
             return isSimpleExpression(indexExpression.table) && isSimpleExpression(indexExpression.index);
 
-        case tstl.SyntaxKind.UnaryExpression:
-            return isSimpleExpression((expression as tstl.UnaryExpression).operand);
+        case lua.SyntaxKind.UnaryExpression:
+            return isSimpleExpression((expression as lua.UnaryExpression).operand);
 
-        case tstl.SyntaxKind.BinaryExpression:
-            const binaryExpression = expression as tstl.BinaryExpression;
+        case lua.SyntaxKind.BinaryExpression:
+            const binaryExpression = expression as lua.BinaryExpression;
             return isSimpleExpression(binaryExpression.left) && isSimpleExpression(binaryExpression.right);
 
-        case tstl.SyntaxKind.ParenthesizedExpression:
-            return isSimpleExpression((expression as tstl.ParenthesizedExpression).innerExpression);
+        case lua.SyntaxKind.ParenthesizedExpression:
+            return isSimpleExpression((expression as lua.ParenthesizedExpression).innerExpression);
     }
 
     return true;
@@ -76,32 +76,32 @@ function isSimpleExpression(expression: tstl.Expression): boolean {
 type SourceChunk = string | SourceNode;
 
 export class LuaPrinter {
-    private static operatorMap: { [key in tstl.Operator]: string } = {
-        [tstl.SyntaxKind.AdditionOperator]: "+",
-        [tstl.SyntaxKind.SubtractionOperator]: "-",
-        [tstl.SyntaxKind.MultiplicationOperator]: "*",
-        [tstl.SyntaxKind.DivisionOperator]: "/",
-        [tstl.SyntaxKind.FloorDivisionOperator]: "//",
-        [tstl.SyntaxKind.ModuloOperator]: "%",
-        [tstl.SyntaxKind.PowerOperator]: "^",
-        [tstl.SyntaxKind.NegationOperator]: "-",
-        [tstl.SyntaxKind.ConcatOperator]: "..",
-        [tstl.SyntaxKind.LengthOperator]: "#",
-        [tstl.SyntaxKind.EqualityOperator]: "==",
-        [tstl.SyntaxKind.InequalityOperator]: "~=",
-        [tstl.SyntaxKind.LessThanOperator]: "<",
-        [tstl.SyntaxKind.LessEqualOperator]: "<=",
-        [tstl.SyntaxKind.GreaterThanOperator]: ">",
-        [tstl.SyntaxKind.GreaterEqualOperator]: ">=",
-        [tstl.SyntaxKind.AndOperator]: "and",
-        [tstl.SyntaxKind.OrOperator]: "or",
-        [tstl.SyntaxKind.NotOperator]: "not ",
-        [tstl.SyntaxKind.BitwiseAndOperator]: "&",
-        [tstl.SyntaxKind.BitwiseOrOperator]: "|",
-        [tstl.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
-        [tstl.SyntaxKind.BitwiseRightShiftOperator]: ">>",
-        [tstl.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
-        [tstl.SyntaxKind.BitwiseNotOperator]: "~",
+    private static operatorMap: { [key in lua.Operator]: string } = {
+        [lua.SyntaxKind.AdditionOperator]: "+",
+        [lua.SyntaxKind.SubtractionOperator]: "-",
+        [lua.SyntaxKind.MultiplicationOperator]: "*",
+        [lua.SyntaxKind.DivisionOperator]: "/",
+        [lua.SyntaxKind.FloorDivisionOperator]: "//",
+        [lua.SyntaxKind.ModuloOperator]: "%",
+        [lua.SyntaxKind.PowerOperator]: "^",
+        [lua.SyntaxKind.NegationOperator]: "-",
+        [lua.SyntaxKind.ConcatOperator]: "..",
+        [lua.SyntaxKind.LengthOperator]: "#",
+        [lua.SyntaxKind.EqualityOperator]: "==",
+        [lua.SyntaxKind.InequalityOperator]: "~=",
+        [lua.SyntaxKind.LessThanOperator]: "<",
+        [lua.SyntaxKind.LessEqualOperator]: "<=",
+        [lua.SyntaxKind.GreaterThanOperator]: ">",
+        [lua.SyntaxKind.GreaterEqualOperator]: ">=",
+        [lua.SyntaxKind.AndOperator]: "and",
+        [lua.SyntaxKind.OrOperator]: "or",
+        [lua.SyntaxKind.NotOperator]: "not ",
+        [lua.SyntaxKind.BitwiseAndOperator]: "&",
+        [lua.SyntaxKind.BitwiseOrOperator]: "|",
+        [lua.SyntaxKind.BitwiseExclusiveOrOperator]: "~",
+        [lua.SyntaxKind.BitwiseRightShiftOperator]: ">>",
+        [lua.SyntaxKind.BitwiseLeftShiftOperator]: "<<",
+        [lua.SyntaxKind.BitwiseNotOperator]: "~",
     };
 
     private currentIndent = "";
@@ -109,7 +109,7 @@ export class LuaPrinter {
 
     public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
-    public print(block: tstl.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
+    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
@@ -168,7 +168,7 @@ export class LuaPrinter {
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
-    private printImplementation(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): SourceNode {
+    private printImplementation(block: lua.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): SourceNode {
         let header = "";
 
         if (!this.options.noHeader) {
@@ -214,8 +214,8 @@ export class LuaPrinter {
         return this.concatNodes(this.currentIndent, input);
     }
 
-    protected createSourceNode(node: tstl.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
-        const originalPos = tstl.getOriginalPos(node);
+    protected createSourceNode(node: lua.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
+        const originalPos = lua.getOriginalPos(node);
 
         return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
             ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks, name)
@@ -227,16 +227,16 @@ export class LuaPrinter {
         return new SourceNode(null, null, this.sourceFile, chunks);
     }
 
-    protected printBlock(block: tstl.Block): SourceNode {
+    protected printBlock(block: lua.Block): SourceNode {
         return this.concatNodes(...this.printStatementArray(block.statements));
     }
 
-    private statementMayRequireSemiColon(statement: tstl.Statement): boolean {
+    private statementMayRequireSemiColon(statement: lua.Statement): boolean {
         // Types of statements that could create ambiguous syntax if followed by parenthesis
         return (
-            tstl.isVariableDeclarationStatement(statement) ||
-            tstl.isAssignmentStatement(statement) ||
-            tstl.isExpressionStatement(statement)
+            lua.isVariableDeclarationStatement(statement) ||
+            lua.isAssignmentStatement(statement) ||
+            lua.isExpressionStatement(statement)
         );
     }
 
@@ -254,7 +254,7 @@ export class LuaPrinter {
         return result || false;
     }
 
-    protected printStatementArray(statements: tstl.Statement[]): SourceChunk[] {
+    protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {
         const statementNodes: SourceNode[] = [];
         statements = this.removeDeadAndEmptyStatements(statements);
         statements.forEach((s, i) => {
@@ -269,40 +269,40 @@ export class LuaPrinter {
         return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];
     }
 
-    public printStatement(statement: tstl.Statement): SourceNode {
+    public printStatement(statement: lua.Statement): SourceNode {
         switch (statement.kind) {
-            case tstl.SyntaxKind.DoStatement:
-                return this.printDoStatement(statement as tstl.DoStatement);
-            case tstl.SyntaxKind.VariableDeclarationStatement:
-                return this.printVariableDeclarationStatement(statement as tstl.VariableDeclarationStatement);
-            case tstl.SyntaxKind.AssignmentStatement:
-                return this.printVariableAssignmentStatement(statement as tstl.AssignmentStatement);
-            case tstl.SyntaxKind.IfStatement:
-                return this.printIfStatement(statement as tstl.IfStatement);
-            case tstl.SyntaxKind.WhileStatement:
-                return this.printWhileStatement(statement as tstl.WhileStatement);
-            case tstl.SyntaxKind.RepeatStatement:
-                return this.printRepeatStatement(statement as tstl.RepeatStatement);
-            case tstl.SyntaxKind.ForStatement:
-                return this.printForStatement(statement as tstl.ForStatement);
-            case tstl.SyntaxKind.ForInStatement:
-                return this.printForInStatement(statement as tstl.ForInStatement);
-            case tstl.SyntaxKind.GotoStatement:
-                return this.printGotoStatement(statement as tstl.GotoStatement);
-            case tstl.SyntaxKind.LabelStatement:
-                return this.printLabelStatement(statement as tstl.LabelStatement);
-            case tstl.SyntaxKind.ReturnStatement:
-                return this.printReturnStatement(statement as tstl.ReturnStatement);
-            case tstl.SyntaxKind.BreakStatement:
-                return this.printBreakStatement(statement as tstl.BreakStatement);
-            case tstl.SyntaxKind.ExpressionStatement:
-                return this.printExpressionStatement(statement as tstl.ExpressionStatement);
+            case lua.SyntaxKind.DoStatement:
+                return this.printDoStatement(statement as lua.DoStatement);
+            case lua.SyntaxKind.VariableDeclarationStatement:
+                return this.printVariableDeclarationStatement(statement as lua.VariableDeclarationStatement);
+            case lua.SyntaxKind.AssignmentStatement:
+                return this.printVariableAssignmentStatement(statement as lua.AssignmentStatement);
+            case lua.SyntaxKind.IfStatement:
+                return this.printIfStatement(statement as lua.IfStatement);
+            case lua.SyntaxKind.WhileStatement:
+                return this.printWhileStatement(statement as lua.WhileStatement);
+            case lua.SyntaxKind.RepeatStatement:
+                return this.printRepeatStatement(statement as lua.RepeatStatement);
+            case lua.SyntaxKind.ForStatement:
+                return this.printForStatement(statement as lua.ForStatement);
+            case lua.SyntaxKind.ForInStatement:
+                return this.printForInStatement(statement as lua.ForInStatement);
+            case lua.SyntaxKind.GotoStatement:
+                return this.printGotoStatement(statement as lua.GotoStatement);
+            case lua.SyntaxKind.LabelStatement:
+                return this.printLabelStatement(statement as lua.LabelStatement);
+            case lua.SyntaxKind.ReturnStatement:
+                return this.printReturnStatement(statement as lua.ReturnStatement);
+            case lua.SyntaxKind.BreakStatement:
+                return this.printBreakStatement(statement as lua.BreakStatement);
+            case lua.SyntaxKind.ExpressionStatement:
+                return this.printExpressionStatement(statement as lua.ExpressionStatement);
             default:
-                throw new Error(`Tried to print unknown statement kind: ${tstl.SyntaxKind[statement.kind]}`);
+                throw new Error(`Tried to print unknown statement kind: ${lua.SyntaxKind[statement.kind]}`);
         }
     }
 
-    public printDoStatement(statement: tstl.DoStatement): SourceNode {
+    public printDoStatement(statement: lua.DoStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent("do\n"));
@@ -314,12 +314,12 @@ export class LuaPrinter {
         return this.concatNodes(...chunks);
     }
 
-    public printVariableDeclarationStatement(statement: tstl.VariableDeclarationStatement): SourceNode {
+    public printVariableDeclarationStatement(statement: lua.VariableDeclarationStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent("local "));
 
-        if (tstl.isFunctionDefinition(statement)) {
+        if (lua.isFunctionDefinition(statement)) {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
             chunks.push(this.printFunctionDefinition(statement));
         } else {
@@ -334,14 +334,14 @@ export class LuaPrinter {
         return this.createSourceNode(statement, chunks);
     }
 
-    public printVariableAssignmentStatement(statement: tstl.AssignmentStatement): SourceNode {
+    public printVariableAssignmentStatement(statement: lua.AssignmentStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent());
 
         if (
-            tstl.isFunctionDefinition(statement) &&
-            (statement.right[0].flags & tstl.FunctionExpressionFlags.Declaration) !== 0
+            lua.isFunctionDefinition(statement) &&
+            (statement.right[0].flags & lua.FunctionExpressionFlags.Declaration) !== 0
         ) {
             // Use `function foo()` instead of `foo = function()`
             const name = this.printExpression(statement.left[0]);
@@ -358,10 +358,10 @@ export class LuaPrinter {
         return this.createSourceNode(statement, chunks);
     }
 
-    public printIfStatement(statement: tstl.IfStatement): SourceNode {
+    public printIfStatement(statement: lua.IfStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        const isElseIf = statement.parent !== undefined && tstl.isIfStatement(statement.parent);
+        const isElseIf = statement.parent !== undefined && lua.isIfStatement(statement.parent);
 
         const prefix = isElseIf ? "elseif" : "if";
 
@@ -372,7 +372,7 @@ export class LuaPrinter {
         this.popIndent();
 
         if (statement.elseBlock) {
-            if (tstl.isIfStatement(statement.elseBlock)) {
+            if (lua.isIfStatement(statement.elseBlock)) {
                 chunks.push(this.printIfStatement(statement.elseBlock));
             } else {
                 chunks.push(this.indent("else\n"));
@@ -388,7 +388,7 @@ export class LuaPrinter {
         return this.concatNodes(...chunks);
     }
 
-    public printWhileStatement(statement: tstl.WhileStatement): SourceNode {
+    public printWhileStatement(statement: lua.WhileStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent("while "), this.printExpression(statement.condition), " do\n");
@@ -402,7 +402,7 @@ export class LuaPrinter {
         return this.concatNodes(...chunks);
     }
 
-    public printRepeatStatement(statement: tstl.RepeatStatement): SourceNode {
+    public printRepeatStatement(statement: lua.RepeatStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.indent(`repeat\n`));
@@ -416,7 +416,7 @@ export class LuaPrinter {
         return this.concatNodes(...chunks);
     }
 
-    public printForStatement(statement: tstl.ForStatement): SourceNode {
+    public printForStatement(statement: lua.ForStatement): SourceNode {
         const ctrlVar = this.printExpression(statement.controlVariable);
         const ctrlVarInit = this.printExpression(statement.controlVariableInitializer);
         const limit = this.printExpression(statement.limitExpression);
@@ -439,7 +439,7 @@ export class LuaPrinter {
         return this.concatNodes(...chunks);
     }
 
-    public printForInStatement(statement: tstl.ForInStatement): SourceNode {
+    public printForInStatement(statement: lua.ForInStatement): SourceNode {
         const names = this.joinChunks(", ", statement.names.map(i => this.printIdentifier(i)));
         const expressions = this.joinChunks(", ", statement.expressions.map(e => this.printExpression(e)));
 
@@ -455,15 +455,15 @@ export class LuaPrinter {
         return this.createSourceNode(statement, chunks);
     }
 
-    public printGotoStatement(statement: tstl.GotoStatement): SourceNode {
+    public printGotoStatement(statement: lua.GotoStatement): SourceNode {
         return this.createSourceNode(statement, [this.indent("goto "), statement.label]);
     }
 
-    public printLabelStatement(statement: tstl.LabelStatement): SourceNode {
+    public printLabelStatement(statement: lua.LabelStatement): SourceNode {
         return this.createSourceNode(statement, [this.indent("::"), statement.name, "::"]);
     }
 
-    public printReturnStatement(statement: tstl.ReturnStatement): SourceNode {
+    public printReturnStatement(statement: lua.ReturnStatement): SourceNode {
         if (!statement.expressions || statement.expressions.length === 0) {
             return this.createSourceNode(statement, this.indent("return"));
         }
@@ -475,78 +475,78 @@ export class LuaPrinter {
         return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
     }
 
-    public printBreakStatement(statement: tstl.BreakStatement): SourceNode {
+    public printBreakStatement(statement: lua.BreakStatement): SourceNode {
         return this.createSourceNode(statement, this.indent("break"));
     }
 
-    public printExpressionStatement(statement: tstl.ExpressionStatement): SourceNode {
+    public printExpressionStatement(statement: lua.ExpressionStatement): SourceNode {
         return this.createSourceNode(statement, [this.indent(), this.printExpression(statement.expression)]);
     }
 
     // Expressions
-    public printExpression(expression: tstl.Expression): SourceNode {
+    public printExpression(expression: lua.Expression): SourceNode {
         switch (expression.kind) {
-            case tstl.SyntaxKind.StringLiteral:
-                return this.printStringLiteral(expression as tstl.StringLiteral);
-            case tstl.SyntaxKind.NumericLiteral:
-                return this.printNumericLiteral(expression as tstl.NumericLiteral);
-            case tstl.SyntaxKind.NilKeyword:
-                return this.printNilLiteral(expression as tstl.NilLiteral);
-            case tstl.SyntaxKind.DotsKeyword:
-                return this.printDotsLiteral(expression as tstl.DotsLiteral);
-            case tstl.SyntaxKind.TrueKeyword:
-            case tstl.SyntaxKind.FalseKeyword:
-                return this.printBooleanLiteral(expression as tstl.BooleanLiteral);
-            case tstl.SyntaxKind.FunctionExpression:
-                return this.printFunctionExpression(expression as tstl.FunctionExpression);
-            case tstl.SyntaxKind.TableFieldExpression:
-                return this.printTableFieldExpression(expression as tstl.TableFieldExpression);
-            case tstl.SyntaxKind.TableExpression:
-                return this.printTableExpression(expression as tstl.TableExpression);
-            case tstl.SyntaxKind.UnaryExpression:
-                return this.printUnaryExpression(expression as tstl.UnaryExpression);
-            case tstl.SyntaxKind.BinaryExpression:
-                return this.printBinaryExpression(expression as tstl.BinaryExpression);
-            case tstl.SyntaxKind.ParenthesizedExpression:
-                return this.printParenthesizedExpression(expression as tstl.ParenthesizedExpression);
-            case tstl.SyntaxKind.CallExpression:
-                return this.printCallExpression(expression as tstl.CallExpression);
-            case tstl.SyntaxKind.MethodCallExpression:
-                return this.printMethodCallExpression(expression as tstl.MethodCallExpression);
-            case tstl.SyntaxKind.Identifier:
-                return this.printIdentifier(expression as tstl.Identifier);
-            case tstl.SyntaxKind.TableIndexExpression:
-                return this.printTableIndexExpression(expression as tstl.TableIndexExpression);
+            case lua.SyntaxKind.StringLiteral:
+                return this.printStringLiteral(expression as lua.StringLiteral);
+            case lua.SyntaxKind.NumericLiteral:
+                return this.printNumericLiteral(expression as lua.NumericLiteral);
+            case lua.SyntaxKind.NilKeyword:
+                return this.printNilLiteral(expression as lua.NilLiteral);
+            case lua.SyntaxKind.DotsKeyword:
+                return this.printDotsLiteral(expression as lua.DotsLiteral);
+            case lua.SyntaxKind.TrueKeyword:
+            case lua.SyntaxKind.FalseKeyword:
+                return this.printBooleanLiteral(expression as lua.BooleanLiteral);
+            case lua.SyntaxKind.FunctionExpression:
+                return this.printFunctionExpression(expression as lua.FunctionExpression);
+            case lua.SyntaxKind.TableFieldExpression:
+                return this.printTableFieldExpression(expression as lua.TableFieldExpression);
+            case lua.SyntaxKind.TableExpression:
+                return this.printTableExpression(expression as lua.TableExpression);
+            case lua.SyntaxKind.UnaryExpression:
+                return this.printUnaryExpression(expression as lua.UnaryExpression);
+            case lua.SyntaxKind.BinaryExpression:
+                return this.printBinaryExpression(expression as lua.BinaryExpression);
+            case lua.SyntaxKind.ParenthesizedExpression:
+                return this.printParenthesizedExpression(expression as lua.ParenthesizedExpression);
+            case lua.SyntaxKind.CallExpression:
+                return this.printCallExpression(expression as lua.CallExpression);
+            case lua.SyntaxKind.MethodCallExpression:
+                return this.printMethodCallExpression(expression as lua.MethodCallExpression);
+            case lua.SyntaxKind.Identifier:
+                return this.printIdentifier(expression as lua.Identifier);
+            case lua.SyntaxKind.TableIndexExpression:
+                return this.printTableIndexExpression(expression as lua.TableIndexExpression);
             default:
-                throw new Error(`Tried to print unknown statement kind: ${tstl.SyntaxKind[expression.kind]}`);
+                throw new Error(`Tried to print unknown statement kind: ${lua.SyntaxKind[expression.kind]}`);
         }
     }
 
-    public printStringLiteral(expression: tstl.StringLiteral): SourceNode {
+    public printStringLiteral(expression: lua.StringLiteral): SourceNode {
         return this.createSourceNode(expression, escapeString(expression.value));
     }
 
-    public printNumericLiteral(expression: tstl.NumericLiteral): SourceNode {
+    public printNumericLiteral(expression: lua.NumericLiteral): SourceNode {
         return this.createSourceNode(expression, String(expression.value));
     }
 
-    public printNilLiteral(expression: tstl.NilLiteral): SourceNode {
+    public printNilLiteral(expression: lua.NilLiteral): SourceNode {
         return this.createSourceNode(expression, "nil");
     }
 
-    public printDotsLiteral(expression: tstl.DotsLiteral): SourceNode {
+    public printDotsLiteral(expression: lua.DotsLiteral): SourceNode {
         return this.createSourceNode(expression, "...");
     }
 
-    public printBooleanLiteral(expression: tstl.BooleanLiteral): SourceNode {
-        if (expression.kind === tstl.SyntaxKind.TrueKeyword) {
+    public printBooleanLiteral(expression: lua.BooleanLiteral): SourceNode {
+        if (expression.kind === lua.SyntaxKind.TrueKeyword) {
             return this.createSourceNode(expression, "true");
         } else {
             return this.createSourceNode(expression, "false");
         }
     }
 
-    private printFunctionParameters(expression: tstl.FunctionExpression): SourceChunk[] {
+    private printFunctionParameters(expression: lua.FunctionExpression): SourceChunk[] {
         const parameterChunks: SourceNode[] = expression.params
             ? expression.params.map(i => this.printIdentifier(i))
             : [];
@@ -558,14 +558,14 @@ export class LuaPrinter {
         return this.joinChunks(", ", parameterChunks);
     }
 
-    public printFunctionExpression(expression: tstl.FunctionExpression): SourceNode {
+    public printFunctionExpression(expression: lua.FunctionExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push("function(");
         chunks.push(...this.printFunctionParameters(expression));
         chunks.push(")");
 
-        if (tstl.isInlineFunctionExpression(expression)) {
+        if (lua.isInlineFunctionExpression(expression)) {
             const returnStatement = expression.body.statements[0];
             chunks.push(" ");
             const returnNode: SourceChunk[] = [
@@ -585,7 +585,7 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printFunctionDefinition(statement: tstl.FunctionDefinition): SourceNode {
+    public printFunctionDefinition(statement: lua.FunctionDefinition): SourceNode {
         const expression = statement.right[0];
         const chunks: SourceChunk[] = [];
 
@@ -603,14 +603,14 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printTableFieldExpression(expression: tstl.TableFieldExpression): SourceNode {
+    public printTableFieldExpression(expression: lua.TableFieldExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         const value = this.printExpression(expression.value);
 
         if (expression.key) {
             if (
-                tstl.isStringLiteral(expression.key) &&
+                lua.isStringLiteral(expression.key) &&
                 isValidLuaIdentifier(expression.key.value) &&
                 !luaKeywords.has(expression.key.value)
             ) {
@@ -625,11 +625,11 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printTableExpression(expression: tstl.TableExpression): SourceNode {
+    public printTableExpression(expression: lua.TableExpression): SourceNode {
         return this.createSourceNode(expression, ["{", ...this.printExpressionList(expression.fields), "}"]);
     }
 
-    public printUnaryExpression(expression: tstl.UnaryExpression): SourceNode {
+    public printUnaryExpression(expression: lua.UnaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printOperator(expression.operator));
@@ -638,7 +638,7 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printBinaryExpression(expression: tstl.BinaryExpression): SourceNode {
+    public printBinaryExpression(expression: lua.BinaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printExpression(expression.left));
@@ -648,20 +648,20 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    private canStripParenthesis(expression: tstl.Expression): boolean {
+    private canStripParenthesis(expression: lua.Expression): boolean {
         return (
-            tstl.isParenthesizedExpression(expression) ||
-            tstl.isTableIndexExpression(expression) ||
-            tstl.isCallExpression(expression) ||
-            tstl.isMethodCallExpression(expression) ||
-            tstl.isIdentifier(expression) ||
-            tstl.isNilLiteral(expression) ||
-            tstl.isNumericLiteral(expression) ||
-            tstl.isBooleanLiteral(expression)
+            lua.isParenthesizedExpression(expression) ||
+            lua.isTableIndexExpression(expression) ||
+            lua.isCallExpression(expression) ||
+            lua.isMethodCallExpression(expression) ||
+            lua.isIdentifier(expression) ||
+            lua.isNilLiteral(expression) ||
+            lua.isNumericLiteral(expression) ||
+            lua.isBooleanLiteral(expression)
         );
     }
 
-    public printParenthesizedExpression(expression: tstl.ParenthesizedExpression): SourceNode {
+    public printParenthesizedExpression(expression: lua.ParenthesizedExpression): SourceNode {
         const innerExpression = this.printExpression(expression.innerExpression);
         if (this.canStripParenthesis(expression.innerExpression)) {
             return this.createSourceNode(expression, innerExpression);
@@ -669,7 +669,7 @@ export class LuaPrinter {
         return this.createSourceNode(expression, ["(", innerExpression, ")"]);
     }
 
-    public printCallExpression(expression: tstl.CallExpression): SourceNode {
+    public printCallExpression(expression: lua.CallExpression): SourceNode {
         const chunks = [];
 
         chunks.push(this.printExpression(expression.expression), "(");
@@ -683,7 +683,7 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printMethodCallExpression(expression: tstl.MethodCallExpression): SourceNode {
+    public printMethodCallExpression(expression: lua.MethodCallExpression): SourceNode {
         const chunks = [];
 
         const prefix = this.printExpression(expression.prefixExpression);
@@ -701,7 +701,7 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printIdentifier(expression: tstl.Identifier): SourceNode {
+    public printIdentifier(expression: lua.Identifier): SourceNode {
         return this.createSourceNode(
             expression,
             expression.text,
@@ -709,12 +709,12 @@ export class LuaPrinter {
         );
     }
 
-    public printTableIndexExpression(expression: tstl.TableIndexExpression): SourceNode {
+    public printTableIndexExpression(expression: lua.TableIndexExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printExpression(expression.table));
         if (
-            tstl.isStringLiteral(expression.index) &&
+            lua.isStringLiteral(expression.index) &&
             isValidLuaIdentifier(expression.index.value) &&
             !luaKeywords.has(expression.index.value)
         ) {
@@ -725,26 +725,26 @@ export class LuaPrinter {
         return this.createSourceNode(expression, chunks);
     }
 
-    public printOperator(kind: tstl.Operator): SourceNode {
+    public printOperator(kind: lua.Operator): SourceNode {
         // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
     }
 
-    protected removeDeadAndEmptyStatements(statements: tstl.Statement[]): tstl.Statement[] {
+    protected removeDeadAndEmptyStatements(statements: lua.Statement[]): lua.Statement[] {
         const aliveStatements = [];
         for (const statement of statements) {
             if (!this.isStatementEmpty(statement)) {
                 aliveStatements.push(statement);
             }
-            if (tstl.isReturnStatement(statement)) {
+            if (lua.isReturnStatement(statement)) {
                 break;
             }
         }
         return aliveStatements;
     }
 
-    protected isStatementEmpty(statement: tstl.Statement): boolean {
-        return tstl.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
+    protected isStatementEmpty(statement: lua.Statement): boolean {
+        return lua.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
     }
 
     protected joinChunks(separator: string, chunks: SourceChunk[]): SourceChunk[] {
@@ -758,7 +758,7 @@ export class LuaPrinter {
         return result;
     }
 
-    protected printExpressionList(expressions: tstl.Expression[]): SourceChunk[] {
+    protected printExpressionList(expressions: lua.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
         if (expressions.every(isSimpleExpression)) {

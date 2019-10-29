@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { LuaLibFeature } from "../../LuaLib";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
@@ -20,9 +20,9 @@ export function transformLuaLibFunction(
     context: TransformationContext,
     feature: LuaLibFeature,
     tsParent?: ts.Expression,
-    ...params: tstl.Expression[]
-): tstl.CallExpression {
+    ...params: lua.Expression[]
+): lua.CallExpression {
     importLuaLibFeature(context, feature);
-    const functionIdentifier = tstl.createIdentifier(`__TS__${feature}`);
-    return tstl.createCallExpression(functionIdentifier, params, tsParent);
+    const functionIdentifier = lua.createIdentifier(`__TS__${feature}`);
+    return lua.createCallExpression(functionIdentifier, params, tsParent);
 }

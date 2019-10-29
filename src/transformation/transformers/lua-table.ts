@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { ForbiddenLuaTableUseException, UnsupportedKind, UnsupportedProperty } from "../utils/errors";
@@ -8,7 +8,7 @@ import { transformArguments } from "./call";
 function parseLuaTableExpression(
     context: TransformationContext,
     node: ts.LeftHandSideExpression
-): [tstl.Expression, string] {
+): [lua.Expression, string] {
     if (ts.isPropertyAccessExpression(node)) {
         return [context.transformExpression(node.expression), node.name.text];
     } else {
@@ -39,7 +39,7 @@ function validateLuaTableCall(methodName: string, callArguments: ts.NodeArray<ts
 function transformLuaTableExpressionAsExpressionStatement(
     context: TransformationContext,
     expression: ts.CallExpression
-): tstl.Statement {
+): lua.Statement {
     const [luaTable, methodName] = parseLuaTableExpression(context, expression.expression);
     validateLuaTableCall(methodName, expression.arguments, expression);
     const signature = context.checker.getResolvedSignature(expression);
@@ -47,14 +47,14 @@ function transformLuaTableExpressionAsExpressionStatement(
 
     switch (methodName) {
         case "get":
-            return tstl.createVariableDeclarationStatement(
-                tstl.createAnonymousIdentifier(expression),
-                tstl.createTableIndexExpression(luaTable, params[0], expression),
+            return lua.createVariableDeclarationStatement(
+                lua.createAnonymousIdentifier(expression),
+                lua.createTableIndexExpression(luaTable, params[0], expression),
                 expression
             );
         case "set":
-            return tstl.createAssignmentStatement(
-                tstl.createTableIndexExpression(luaTable, params[0], expression),
+            return lua.createAssignmentStatement(
+                lua.createTableIndexExpression(luaTable, params[0], expression),
                 params.splice(1),
                 expression
             );
@@ -66,7 +66,7 @@ function transformLuaTableExpressionAsExpressionStatement(
 export function transformLuaTableExpressionStatement(
     context: TransformationContext,
     node: ts.ExpressionStatement
-): tstl.Statement | undefined {
+): lua.Statement | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
 
     if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
@@ -81,7 +81,7 @@ export function transformLuaTableExpressionStatement(
 export function transformLuaTableCallExpression(
     context: TransformationContext,
     node: ts.CallExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
         const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
         const annotations = getTypeAnnotations(context, ownerType);
@@ -94,7 +94,7 @@ export function transformLuaTableCallExpression(
 
             switch (methodName) {
                 case "get":
-                    return tstl.createTableIndexExpression(luaTable, params[0], node);
+                    return lua.createTableIndexExpression(luaTable, params[0], node);
                 default:
                     throw UnsupportedProperty("LuaTable", methodName, node);
             }
@@ -105,14 +105,14 @@ export function transformLuaTableCallExpression(
 export function transformLuaTablePropertyAccessExpression(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node.expression);
     const annotations = getTypeAnnotations(context, type);
     if (annotations.has(AnnotationKind.LuaTable)) {
         const [luaTable, propertyName] = parseLuaTableExpression(context, node);
         switch (node.name.text) {
             case "length":
-                return tstl.createUnaryExpression(luaTable, tstl.SyntaxKind.LengthOperator, node);
+                return lua.createUnaryExpression(luaTable, lua.SyntaxKind.LengthOperator, node);
             default:
                 throw UnsupportedProperty("LuaTable", propertyName, node);
         }
@@ -132,14 +132,14 @@ export function transformLuaTableElementAccessExpression(
 export function transformLuaTableNewExpression(
     context: TransformationContext,
     node: ts.NewExpression
-): tstl.Expression | undefined {
+): lua.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node);
     const annotations = getTypeAnnotations(context, type);
     if (annotations.has(AnnotationKind.LuaTable)) {
         if (node.arguments && node.arguments.length > 0) {
             throw ForbiddenLuaTableUseException("No parameters are allowed when constructing a LuaTable object.", node);
         } else {
-            return tstl.createTableExpression();
+            return lua.createTableExpression();
         }
     }
 }

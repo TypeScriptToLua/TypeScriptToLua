@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isVarArgType } from "../utils/annotations";
 import { MissingFunctionName, UnsupportedFunctionWithoutBody } from "../utils/errors";
@@ -20,25 +20,25 @@ import { transformBindingPattern } from "./variable";
 
 function transformParameterDefaultValueDeclaration(
     context: TransformationContext,
-    parameterName: tstl.Identifier,
+    parameterName: lua.Identifier,
     value?: ts.Expression,
     tsOriginal?: ts.Node
-): tstl.Statement {
+): lua.Statement {
     const parameterValue = value ? context.transformExpression(value) : undefined;
-    const assignment = tstl.createAssignmentStatement(parameterName, parameterValue);
+    const assignment = lua.createAssignmentStatement(parameterName, parameterValue);
 
-    const nilCondition = tstl.createBinaryExpression(
+    const nilCondition = lua.createBinaryExpression(
         parameterName,
-        tstl.createNilLiteral(),
-        tstl.SyntaxKind.EqualityOperator
+        lua.createNilLiteral(),
+        lua.SyntaxKind.EqualityOperator
     );
 
-    const ifBlock = tstl.createBlock([assignment]);
+    const ifBlock = lua.createBlock([assignment]);
 
-    return tstl.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
+    return lua.createIfStatement(nilCondition, ifBlock, undefined, tsOriginal);
 }
 
-function isRestParameterReferenced(context: TransformationContext, identifier: tstl.Identifier, scope: Scope): boolean {
+function isRestParameterReferenced(context: TransformationContext, identifier: lua.Identifier, scope: Scope): boolean {
     if (!identifier.symbolId) {
         return true;
     }
@@ -56,7 +56,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: t
 export function transformFunctionBodyStatements(
     context: TransformationContext,
     body: ts.Block
-): [tstl.Statement[], Scope] {
+): [lua.Statement[], Scope] {
     pushScope(context, ScopeType.Function);
     const bodyStatements = performHoisting(context, context.transformStatements(body.statements));
     const scope = popScope(context);
@@ -67,16 +67,16 @@ export function transformFunctionBodyHeader(
     context: TransformationContext,
     bodyScope: Scope,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
-    spreadIdentifier?: tstl.Identifier
-): tstl.Statement[] {
+    spreadIdentifier?: lua.Identifier
+): lua.Statement[] {
     const headerStatements = [];
 
     // Add default parameters and object binding patterns
-    const bindingPatternDeclarations: tstl.Statement[] = [];
+    const bindingPatternDeclarations: lua.Statement[] = [];
     let bindPatternIndex = 0;
     for (const declaration of parameters) {
         if (ts.isObjectBindingPattern(declaration.name) || ts.isArrayBindingPattern(declaration.name)) {
-            const identifier = tstl.createIdentifier(`____bindingPattern${bindPatternIndex++}`);
+            const identifier = lua.createIdentifier(`____bindingPattern${bindPatternIndex++}`);
             if (declaration.initializer !== undefined) {
                 // Default binding parameter
                 headerStatements.push(
@@ -100,8 +100,8 @@ export function transformFunctionBodyHeader(
 
     // Push spread operator here
     if (spreadIdentifier && isRestParameterReferenced(context, spreadIdentifier, bodyScope)) {
-        const spreadTable = wrapInTable(tstl.createDotsLiteral());
-        headerStatements.push(tstl.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
+        const spreadTable = wrapInTable(lua.createDotsLiteral());
+        headerStatements.push(lua.createVariableDeclarationStatement(spreadIdentifier, spreadTable));
     }
 
     // Binding pattern statements need to be after spread table is declared
@@ -114,8 +114,8 @@ export function transformFunctionBody(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
     body: ts.Block,
-    spreadIdentifier?: tstl.Identifier
-): [tstl.Statement[], Scope] {
+    spreadIdentifier?: lua.Identifier
+): [lua.Statement[], Scope] {
     const [bodyStatements, scope] = transformFunctionBodyStatements(context, body);
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
     return [[...headerStatements, ...bodyStatements], scope];
@@ -124,16 +124,16 @@ export function transformFunctionBody(
 export function transformParameters(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
-    functionContext?: tstl.Identifier
-): [tstl.Identifier[], tstl.DotsLiteral | undefined, tstl.Identifier | undefined] {
+    functionContext?: lua.Identifier
+): [lua.Identifier[], lua.DotsLiteral | undefined, lua.Identifier | undefined] {
     // Build parameter string
-    const paramNames: tstl.Identifier[] = [];
+    const paramNames: lua.Identifier[] = [];
     if (functionContext) {
         paramNames.push(functionContext);
     }
 
-    let restParamName: tstl.Identifier | undefined;
-    let dotsLiteral: tstl.DotsLiteral | undefined;
+    let restParamName: lua.Identifier | undefined;
+    let dotsLiteral: lua.DotsLiteral | undefined;
     let identifierIndex = 0;
 
     // Only push parameter name to paramName array if it isn't a spread parameter
@@ -146,7 +146,7 @@ export function transformParameters(
         // See transformFunctionBody for how these values are destructured
         const paramName =
             ts.isObjectBindingPattern(param.name) || ts.isArrayBindingPattern(param.name)
-                ? tstl.createIdentifier(`____bindingPattern${identifierIndex++}`)
+                ? lua.createIdentifier(`____bindingPattern${identifierIndex++}`)
                 : transformIdentifier(context, param.name as ts.Identifier);
 
         // This parameter is a spread parameter (...param)
@@ -155,7 +155,7 @@ export function transformParameters(
         } else {
             restParamName = paramName;
             // Push the spread operator into the paramNames array
-            dotsLiteral = tstl.createDotsLiteral();
+            dotsLiteral = lua.createDotsLiteral();
         }
     }
 
@@ -165,15 +165,15 @@ export function transformParameters(
 export function transformFunctionLikeDeclaration(
     node: ts.FunctionLikeDeclaration,
     context: TransformationContext
-): tstl.Expression {
+): lua.Expression {
     const type = context.checker.getTypeAtLocation(node);
 
-    let functionContext: tstl.Identifier | undefined;
+    let functionContext: lua.Identifier | undefined;
     if (getFunctionContextType(context, type) !== ContextType.Void) {
         if (ts.isArrowFunction(node)) {
             // dummy context for arrow functions with parameters
             if (node.parameters.length > 0) {
-                functionContext = tstl.createAnonymousIdentifier();
+                functionContext = lua.createAnonymousIdentifier();
             }
         } else {
             // self context
@@ -184,7 +184,7 @@ export function transformFunctionLikeDeclaration(
     // Build parameter string
     const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);
 
-    let flags = tstl.FunctionExpressionFlags.None;
+    let flags = lua.FunctionExpressionFlags.None;
 
     if (node.body === undefined) {
         throw UnsupportedFunctionWithoutBody(node);
@@ -200,13 +200,13 @@ export function transformFunctionLikeDeclaration(
         if (node.body) {
             body.parent = node.body.parent;
         }
-        flags |= tstl.FunctionExpressionFlags.Inline;
+        flags |= lua.FunctionExpressionFlags.Inline;
     }
 
     const [transformedBody, scope] = transformFunctionBody(context, node.parameters, body, spreadIdentifier);
 
-    const functionExpression = tstl.createFunctionExpression(
-        tstl.createBlock(transformedBody),
+    const functionExpression = lua.createFunctionExpression(
+        lua.createBlock(transformedBody),
         paramNames,
         dotsLiteral,
         spreadIdentifier,
@@ -223,8 +223,8 @@ export function transformFunctionLikeDeclaration(
             if (symbolId !== undefined && scope.referencedSymbols.has(symbolId)) {
                 const nameIdentifier = transformIdentifier(context, node.name);
                 return createImmediatelyInvokedFunctionExpression(
-                    [tstl.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
-                    tstl.cloneIdentifier(nameIdentifier)
+                    [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
+                    lua.cloneIdentifier(nameIdentifier)
                 );
             }
         }
@@ -248,21 +248,21 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
         ? transformGeneratorFunctionBody(context, node.parameters, node.body, restParamName)
         : transformFunctionBody(context, node.parameters, node.body, restParamName);
 
-    const block = tstl.createBlock(body);
-    const functionExpression = tstl.createFunctionExpression(
+    const block = lua.createBlock(body);
+    const functionExpression = lua.createFunctionExpression(
         block,
         params,
         dotsLiteral,
         restParamName,
-        tstl.FunctionExpressionFlags.Declaration
+        lua.FunctionExpressionFlags.Declaration
     );
 
     const name = node.name ? transformIdentifier(context, node.name) : undefined;
 
     const isDefaultExport = hasDefaultExportModifier(node);
     if (isDefaultExport) {
-        return tstl.createAssignmentStatement(
-            tstl.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
+        return lua.createAssignmentStatement(
+            lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
             transformFunctionLikeDeclaration(node, context)
         );
     } else if (!name) {

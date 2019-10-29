@@ -1,4 +1,4 @@
-import * as tstl from "../../LuaAST";
+import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
@@ -8,7 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 export function transformNumberConstructorCall(
     context: TransformationContext,
     expression: PropertyCallExpression
-): tstl.CallExpression {
+): lua.CallExpression {
     const method = expression.expression;
     const parameters = transformArguments(context, expression.arguments);
     const methodName = method.name.text;

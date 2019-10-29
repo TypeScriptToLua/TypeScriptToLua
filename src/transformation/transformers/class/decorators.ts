@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { InvalidDecoratorContext } from "../../utils/errors";
 import { addExportToIdentifier } from "../../utils/export";
@@ -10,11 +10,11 @@ import { transformIdentifier } from "../identifier";
 export function createConstructorDecorationStatement(
     context: TransformationContext,
     declaration: ts.ClassLikeDeclaration
-): tstl.AssignmentStatement | undefined {
+): lua.AssignmentStatement | undefined {
     const className =
         declaration.name !== undefined
             ? addExportToIdentifier(context, transformIdentifier(context, declaration.name))
-            : tstl.createAnonymousIdentifier();
+            : lua.createAnonymousIdentifier();
 
     const decorators = declaration.decorators;
     if (!decorators) {
@@ -32,11 +32,11 @@ export function createConstructorDecorationStatement(
         return context.transformExpression(expression);
     });
 
-    const decoratorTable = tstl.createTableExpression(
-        decoratorExpressions.map(expression => tstl.createTableFieldExpression(expression))
+    const decoratorTable = lua.createTableExpression(
+        decoratorExpressions.map(expression => lua.createTableFieldExpression(expression))
     );
 
-    return tstl.createAssignmentStatement(
+    return lua.createAssignmentStatement(
         className,
         transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, decoratorTable, className)
     );

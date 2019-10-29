@@ -1,18 +1,18 @@
 import * as ts from "typescript";
 import { transformBinaryOperator } from ".";
 import { LuaTarget } from "../../../CompilerOptions";
-import * as tstl from "../../../LuaAST";
+import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { UnsupportedForTarget, UnsupportedKind } from "../../utils/errors";
 
 type BitOperator = ts.ShiftOperator | ts.BitwiseOperator;
 function transformBinaryBitLibOperation(
     node: ts.Node,
-    left: tstl.Expression,
-    right: tstl.Expression,
+    left: lua.Expression,
+    right: lua.Expression,
     operator: BitOperator,
     lib: string
-): tstl.Expression {
+): lua.Expression {
     let bitFunction: string;
     switch (operator) {
         case ts.SyntaxKind.AmpersandToken:
@@ -37,8 +37,8 @@ function transformBinaryBitLibOperation(
             throw UnsupportedKind("binary bitwise operator", operator, node);
     }
 
-    return tstl.createCallExpression(
-        tstl.createTableIndexExpression(tstl.createIdentifier(lib), tstl.createStringLiteral(bitFunction)),
+    return lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier(lib), lua.createStringLiteral(bitFunction)),
         [left, right],
         node
     );
@@ -47,10 +47,10 @@ function transformBinaryBitLibOperation(
 export function transformBinaryBitOperation(
     context: TransformationContext,
     node: ts.Node,
-    left: tstl.Expression,
-    right: tstl.Expression,
+    left: lua.Expression,
+    right: lua.Expression,
     operator: BitOperator
-): tstl.Expression {
+): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Lua51:
             throw UnsupportedForTarget("Bitwise operations", LuaTarget.Lua51, node);
@@ -63,27 +63,27 @@ export function transformBinaryBitOperation(
 
         default:
             const luaOperator = transformBinaryOperator(context, node, operator);
-            return tstl.createBinaryExpression(left, right, luaOperator, node);
+            return lua.createBinaryExpression(left, right, luaOperator, node);
     }
 }
 
 function transformUnaryBitLibOperation(
     node: ts.Node,
-    expression: tstl.Expression,
-    operator: tstl.UnaryBitwiseOperator,
+    expression: lua.Expression,
+    operator: lua.UnaryBitwiseOperator,
     lib: string
-): tstl.Expression {
+): lua.Expression {
     let bitFunction: string;
     switch (operator) {
-        case tstl.SyntaxKind.BitwiseNotOperator:
+        case lua.SyntaxKind.BitwiseNotOperator:
             bitFunction = "bnot";
             break;
         default:
             throw UnsupportedKind("unary bitwise operator", operator, node);
     }
 
-    return tstl.createCallExpression(
-        tstl.createTableIndexExpression(tstl.createIdentifier(lib), tstl.createStringLiteral(bitFunction)),
+    return lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier(lib), lua.createStringLiteral(bitFunction)),
         [expression],
         node
     );
@@ -92,9 +92,9 @@ function transformUnaryBitLibOperation(
 export function transformUnaryBitOperation(
     context: TransformationContext,
     node: ts.Node,
-    expression: tstl.Expression,
-    operator: tstl.UnaryBitwiseOperator
-): tstl.Expression {
+    expression: lua.Expression,
+    operator: lua.UnaryBitwiseOperator
+): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Lua51:
             throw UnsupportedForTarget("Bitwise operations", LuaTarget.Lua51, node);
@@ -106,6 +106,6 @@ export function transformUnaryBitOperation(
             return transformUnaryBitLibOperation(node, expression, operator, "bit");
 
         default:
-            return tstl.createUnaryExpression(expression, operator, node);
+            return lua.createUnaryExpression(expression, operator, node);
     }
 }

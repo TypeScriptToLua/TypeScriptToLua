@@ -4,6 +4,7 @@ import * as ts from "typescript";
 import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
 import * as diagnosticFactories from "./diagnostics";
+import { normalizeSlashes } from "./utils";
 
 function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
     return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
@@ -24,7 +25,7 @@ function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefin
     const { project } = commandLine.options;
     if (!project) {
         if (commandLine.fileNames.length === 0) {
-            const searchPath = path.posix.normalize(ts.sys.getCurrentDirectory());
+            const searchPath = normalizeSlashes(ts.sys.getCurrentDirectory());
             return ts.findConfigFile(searchPath, ts.sys.fileExists);
         }
         return;
@@ -36,18 +37,13 @@ function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefin
         return;
     }
 
-    let fileOrDirectory = path.posix.normalize(project);
-    if (!path.isAbsolute(fileOrDirectory)) {
-        fileOrDirectory = path.posix.join(ts.sys.getCurrentDirectory(), fileOrDirectory);
-    }
-
+    const fileOrDirectory = normalizeSlashes(path.resolve(ts.sys.getCurrentDirectory(), project));
     if (!fileOrDirectory || ts.sys.directoryExists(fileOrDirectory)) {
         const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
         if (ts.sys.fileExists(configFileName)) {
             return configFileName;
         } else {
             reportDiagnostic(diagnosticFactories.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project));
-
             ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
         }
     } else {

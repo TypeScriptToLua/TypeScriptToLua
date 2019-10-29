@@ -149,9 +149,4 @@ export type FunctionVisitor<T extends ts.Node> = (node: T, context: Transformati
 export type ObjectVisitor<T extends ts.Node> = { transform: FunctionVisitor<T>; priority?: number };
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;
 export type Visitors = { [P in keyof NodesBySyntaxKind]?: Visitor<NodesBySyntaxKind[P]> };
-
-export interface TransformerPlugin {
-    visitors: Visitors;
-}
-
 export type VisitorMap = Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>>;

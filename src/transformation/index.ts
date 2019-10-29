@@ -2,12 +2,10 @@ import * as ts from "typescript";
 import * as lua from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
-import { ObjectVisitor, TransformationContext, TransformerPlugin, VisitorMap } from "./context";
+import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./context";
+import { standardVisitors } from "./transformers";
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
-import { standardPlugin } from "./transformers";
-
-export { TransformerPlugin } from "./context";
 
 const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),
@@ -19,22 +17,22 @@ const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     messageText: error.message,
 });
 
-export function createVisitorMap(customPlugins: TransformerPlugin[]): VisitorMap {
+export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     const visitorMap: VisitorMap = new Map();
-    for (const plugin of [standardPlugin, ...customPlugins]) {
-        for (const [syntaxKindKey, visitor] of Object.entries(plugin.visitors)) {
+    for (const visitors of [standardVisitors, ...customVisitors]) {
+        for (const [syntaxKindKey, visitor] of Object.entries(visitors)) {
             if (!visitor) continue;
 
             const syntaxKind = Number(syntaxKindKey) as ts.SyntaxKind;
-            const visitors = getOrUpdate(visitorMap, syntaxKind, () => []);
+            const nodeVisitors = getOrUpdate(visitorMap, syntaxKind, () => []);
 
             const objectVisitor: ObjectVisitor<any> = typeof visitor === "function" ? { transform: visitor } : visitor;
-            visitors.push(objectVisitor);
+            nodeVisitors.push(objectVisitor);
         }
     }
 
-    for (const visitors of visitorMap.values()) {
-        visitors.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    for (const nodeVisitors of visitorMap.values()) {
+        nodeVisitors.sort((a, b) => (a.priority || 0) - (b.priority || 0));
     }
 
     return visitorMap;

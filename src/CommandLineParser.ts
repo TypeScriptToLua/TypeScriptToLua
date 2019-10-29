@@ -273,19 +273,18 @@ export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic 
         return diagnosticFactories.optionProjectCannotBeMixedWithSourceFilesOnACommandLine();
     }
 
+    // TODO: Unlike tsc, this resolves `.` to absolute path
     const fileOrDirectory = normalizeSlashes(path.resolve(ts.sys.getCurrentDirectory(), project));
-    if (!fileOrDirectory || ts.sys.directoryExists(fileOrDirectory)) {
+    if (ts.sys.directoryExists(fileOrDirectory)) {
         const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
         if (ts.sys.fileExists(configFileName)) {
             return configFileName;
         } else {
             return diagnosticFactories.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project);
         }
+    } else if (ts.sys.fileExists(fileOrDirectory)) {
+        return fileOrDirectory;
     } else {
-        if (ts.sys.fileExists(fileOrDirectory)) {
-            return fileOrDirectory;
-        } else {
-            return diagnosticFactories.theSpecifiedPathDoesNotExist(project);
-        }
+        return diagnosticFactories.theSpecifiedPathDoesNotExist(project);
     }
 }

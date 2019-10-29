@@ -82,9 +82,5 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
         );
     }
 
-    return lua.createCallExpression(
-        lua.createTableIndexExpression(name, lua.createStringLiteral("new")),
-        params,
-        node
-    );
+    return lua.createCallExpression(lua.createTableIndexExpression(name, lua.createStringLiteral("new")), params, node);
 };

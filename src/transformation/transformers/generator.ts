@@ -43,9 +43,7 @@ export function transformGeneratorFunctionBody(
     const errorCheck = lua.createIfStatement(
         lua.createUnaryExpression(errIdentifier, lua.SyntaxKind.NotOperator),
         lua.createBlock([
-            lua.createExpressionStatement(
-                lua.createCallExpression(lua.createIdentifier("error"), [valueIdentifier])
-            ),
+            lua.createExpressionStatement(lua.createCallExpression(lua.createIdentifier("error"), [valueIdentifier])),
         ])
     );
     nextBody.push(errorCheck);

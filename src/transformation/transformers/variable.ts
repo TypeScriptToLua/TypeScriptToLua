@@ -165,10 +165,7 @@ export function transformVariableDeclaration(
 
         const vars =
             statement.name.elements.length > 0
-                ? castEach(
-                      statement.name.elements.map(e => transformArrayBindingElement(context, e)),
-                      lua.isIdentifier
-                  )
+                ? castEach(statement.name.elements.map(e => transformArrayBindingElement(context, e)), lua.isIdentifier)
                 : lua.createAnonymousIdentifier(statement.name);
 
         if (statement.initializer) {
@@ -210,16 +207,9 @@ export function transformVariableDeclaration(
                 const identifier = addExportToIdentifier(context, variableName);
                 statements.push(
                     lua.createIfStatement(
-                        lua.createBinaryExpression(
-                            identifier,
-                            lua.createNilLiteral(),
-                            lua.SyntaxKind.EqualityOperator
-                        ),
+                        lua.createBinaryExpression(identifier, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
                         lua.createBlock([
-                            lua.createAssignmentStatement(
-                                identifier,
-                                context.transformExpression(element.initializer)
-                            ),
+                            lua.createAssignmentStatement(identifier, context.transformExpression(element.initializer)),
                         ])
                     )
                 );

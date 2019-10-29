@@ -50,12 +50,7 @@ export function transformObjectCall(
             const rawGetIdentifier = lua.createIdentifier("rawget");
             const rawGetCall = lua.createCallExpression(rawGetIdentifier, [expr, ...parameters]);
             return lua.createParenthesizedExpression(
-                lua.createBinaryExpression(
-                    rawGetCall,
-                    lua.createNilLiteral(),
-                    lua.SyntaxKind.InequalityOperator,
-                    node
-                )
+                lua.createBinaryExpression(rawGetCall, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator, node)
             );
     }
 }

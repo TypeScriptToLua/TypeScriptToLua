@@ -21,10 +21,7 @@ export function transformConsoleCall(
             if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
                 // print(string.format([arguments]))
                 const stringFormatCall = lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        lua.createIdentifier("string"),
-                        lua.createStringLiteral("format")
-                    ),
+                    lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
                     parameters
                 );
                 return lua.createCallExpression(lua.createIdentifier("print"), [stringFormatCall]);
@@ -35,10 +32,7 @@ export function transformConsoleCall(
             if (expression.arguments.length > 1 && isStringFormatTemplate(expression.arguments[1])) {
                 // assert([condition], string.format([arguments]))
                 const stringFormatCall = lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        lua.createIdentifier("string"),
-                        lua.createStringLiteral("format")
-                    ),
+                    lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
                     parameters.slice(1)
                 );
                 return lua.createCallExpression(lua.createIdentifier("assert"), [parameters[0], stringFormatCall]);
@@ -49,17 +43,11 @@ export function transformConsoleCall(
             if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
                 // print(debug.traceback(string.format([arguments])))
                 const stringFormatCall = lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        lua.createIdentifier("string"),
-                        lua.createStringLiteral("format")
-                    ),
+                    lua.createTableIndexExpression(lua.createIdentifier("string"), lua.createStringLiteral("format")),
                     parameters
                 );
                 const debugTracebackCall = lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        lua.createIdentifier("debug"),
-                        lua.createStringLiteral("traceback")
-                    ),
+                    lua.createTableIndexExpression(lua.createIdentifier("debug"), lua.createStringLiteral("traceback")),
                     [stringFormatCall]
                 );
                 return lua.createCallExpression(lua.createIdentifier("print"), [debugTracebackCall]);

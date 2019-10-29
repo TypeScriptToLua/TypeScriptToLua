@@ -4,7 +4,6 @@ import * as ts from "typescript";
 import * as tstl from ".";
 import * as CommandLineParser from "./CommandLineParser";
 import * as diagnosticFactories from "./diagnostics";
-import { normalizeSlashes } from "./utils";
 
 function createWatchStatusReporter(options?: ts.CompilerOptions): ts.WatchStatusReporter {
     return (ts as any).createWatchStatusReporter(ts.sys, shouldBePretty(options));
@@ -19,41 +18,6 @@ function shouldBePretty(options?: ts.CompilerOptions): boolean {
 let reportDiagnostic = tstl.createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
     reportDiagnostic = tstl.createDiagnosticReporter(shouldBePretty(options));
-}
-
-function locateConfigFile(commandLine: tstl.ParsedCommandLine): string | undefined {
-    const { project } = commandLine.options;
-    if (!project) {
-        if (commandLine.fileNames.length === 0) {
-            const searchPath = normalizeSlashes(ts.sys.getCurrentDirectory());
-            return ts.findConfigFile(searchPath, ts.sys.fileExists);
-        }
-        return;
-    }
-
-    if (commandLine.fileNames.length !== 0) {
-        reportDiagnostic(diagnosticFactories.optionProjectCannotBeMixedWithSourceFilesOnACommandLine());
-        ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
-        return;
-    }
-
-    const fileOrDirectory = normalizeSlashes(path.resolve(ts.sys.getCurrentDirectory(), project));
-    if (!fileOrDirectory || ts.sys.directoryExists(fileOrDirectory)) {
-        const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
-        if (ts.sys.fileExists(configFileName)) {
-            return configFileName;
-        } else {
-            reportDiagnostic(diagnosticFactories.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project));
-            ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
-        }
-    } else {
-        if (ts.sys.fileExists(fileOrDirectory)) {
-            return fileOrDirectory;
-        } else {
-            reportDiagnostic(diagnosticFactories.theSpecifiedPathDoesNotExist(project));
-            ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
-        }
-    }
 }
 
 function executeCommandLine(args: string[]): void {
@@ -89,7 +53,12 @@ function executeCommandLine(args: string[]): void {
         return ts.sys.exit(ts.ExitStatus.Success);
     }
 
-    const configFileName = locateConfigFile(commandLine);
+    const configFileName = CommandLineParser.locateConfigFile(commandLine);
+    if (typeof configFileName === "object") {
+        reportDiagnostic(configFileName);
+        return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
+    }
+
     const commandLineOptions = commandLine.options;
     if (configFileName) {
         const configParseResult = CommandLineParser.parseConfigFileWithSystem(configFileName, commandLineOptions);

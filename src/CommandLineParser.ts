@@ -2,6 +2,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
+import { normalizeSlashes } from "./utils";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -255,4 +256,36 @@ export function createDiagnosticReporter(pretty: boolean, system = ts.sys): ts.D
 
         reporter(diagnostic);
     };
+}
+
+export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic | string | undefined {
+    const { project } = commandLine.options;
+    if (!project) {
+        if (commandLine.fileNames.length > 0) {
+            return undefined;
+        }
+
+        const searchPath = normalizeSlashes(ts.sys.getCurrentDirectory());
+        return ts.findConfigFile(searchPath, ts.sys.fileExists);
+    }
+
+    if (commandLine.fileNames.length !== 0) {
+        return diagnosticFactories.optionProjectCannotBeMixedWithSourceFilesOnACommandLine();
+    }
+
+    const fileOrDirectory = normalizeSlashes(path.resolve(ts.sys.getCurrentDirectory(), project));
+    if (!fileOrDirectory || ts.sys.directoryExists(fileOrDirectory)) {
+        const configFileName = path.posix.join(fileOrDirectory, "tsconfig.json");
+        if (ts.sys.fileExists(configFileName)) {
+            return configFileName;
+        } else {
+            return diagnosticFactories.cannotFindATsconfigJsonAtTheSpecifiedDirectory(project);
+        }
+    } else {
+        if (ts.sys.fileExists(fileOrDirectory)) {
+            return fileOrDirectory;
+        } else {
+            return diagnosticFactories.theSpecifiedPathDoesNotExist(project);
+        }
+    }
 }

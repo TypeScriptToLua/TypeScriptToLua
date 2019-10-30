@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { Block } from "./LuaAST";
-import { LuaPrinter } from "./LuaPrinter";
+import { createPrinter } from "./LuaPrinter";
 import { Plugin } from "./plugins";
 import { createVisitorMap, transformSourceFile } from "./transformation";
 import { getCustomTransformers } from "./TSTransformers";
@@ -27,7 +27,6 @@ export interface TranspileOptions {
     customTransformers?: ts.CustomTransformers;
     plugins?: Plugin[];
     emitHost?: EmitHost;
-    printer?: LuaPrinter;
 }
 
 export interface EmitHost {
@@ -40,7 +39,6 @@ export function transpile({
     customTransformers = {},
     plugins = [],
     emitHost = ts.sys,
-    printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -79,6 +77,7 @@ export function transpile({
     }
 
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
+    const print = createPrinter(program, emitHost, plugins.map(p => p.createPrinter).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
             program,
@@ -87,8 +86,8 @@ export function transpile({
         );
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const [lua, sourceMap] = printer.print(luaAst, luaLibFeatures, sourceFile.fileName);
-            updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
+            const { code, sourceMap } = print(luaAst, luaLibFeatures, sourceFile.fileName);
+            updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap });
         }
     };
 

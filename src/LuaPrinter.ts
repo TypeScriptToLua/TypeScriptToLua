@@ -1,5 +1,6 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
+import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
@@ -75,6 +76,25 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
 type SourceChunk = string | SourceNode;
 
+export interface PrintResult {
+    code: string;
+    sourceMap: string;
+}
+
+export type PrinterFactory = (program: ts.Program, emitHost: EmitHost) => Printer;
+export type Printer = LuaPrinter["print"];
+
+export function createPrinter(program: ts.Program, emitHost: EmitHost, factories: PrinterFactory[]): Printer {
+    if (factories.length === 0) {
+        const printer = new LuaPrinter(program.getCompilerOptions(), emitHost);
+        return (...args) => printer.print(...args);
+    } else if (factories.length === 1) {
+        return factories[0](program, emitHost);
+    } else {
+        throw new Error("Only one plugin can specify 'createPrinter'");
+    }
+}
+
 export class LuaPrinter {
     private static operatorMap: { [key in lua.Operator]: string } = {
         [lua.SyntaxKind.AdditionOperator]: "+",
@@ -105,36 +125,35 @@ export class LuaPrinter {
     };
 
     private currentIndent = "";
-    private sourceFile = "";
+    private sourceFile!: string;
 
     public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
-    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
+    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, fileName: string): PrintResult {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
-        const rootSourceNode = this.printImplementation(block, luaLibFeatures, sourceFile);
-
         const sourceRoot =
             this.options.sourceRoot ||
             (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
 
-        const sourceMap = this.buildSourceMap(sourceFile, sourceRoot, rootSourceNode);
+        const rootSourceNode = this.printImplementation(block, luaLibFeatures, fileName);
+        const sourceMap = this.buildSourceMap(fileName, sourceRoot, rootSourceNode);
 
-        let codeResult = rootSourceNode.toString();
+        let code = rootSourceNode.toString();
 
         if (this.options.inlineSourceMap) {
-            codeResult += "\n" + this.printInlineSourceMap(sourceMap);
+            code += "\n" + this.printInlineSourceMap(sourceMap);
         }
 
         if (this.options.sourceMapTraceback) {
             const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
-            codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
+            code = code.replace("{#SourceMapTraceback}", stackTraceOverride);
         }
 
-        return [codeResult, sourceMap.toString()];
+        return { code, sourceMap: sourceMap.toString() };
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
@@ -168,27 +187,25 @@ export class LuaPrinter {
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
-    private printImplementation(block: lua.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): SourceNode {
+    private printImplementation(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile: string): SourceNode {
         let header = "";
 
         if (!this.options.noHeader) {
             header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
         }
 
-        if (luaLibFeatures) {
-            const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
-            // Require lualib bundle
-            if (
-                (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0) ||
-                luaLibImport === LuaLibImportKind.Always
-            ) {
-                header += `require("lualib_bundle");\n`;
-            }
-            // Inline lualib features
-            else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
-                header += "-- Lua Library inline imports\n";
-                header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
-            }
+        const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
+        // Require lualib bundle
+        if (
+            (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0) ||
+            luaLibImport === LuaLibImportKind.Always
+        ) {
+            header += `require("lualib_bundle");\n`;
+        }
+        // Inline lualib features
+        else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
+            header += "-- Lua Library inline imports\n";
+            header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
         }
 
         this.sourceFile = path.basename(sourceFile);

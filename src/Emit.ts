@@ -1,10 +1,10 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import { TranspiledFile, EmitHost } from "./Transpile";
+import { EmitHost, TranspiledFile } from "./Transpile";
+import { normalizeSlashes } from "./utils";
 
 const trimExt = (filePath: string) => filePath.slice(0, -path.extname(filePath).length);
-const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
 
 export interface OutputFile {
     name: string;

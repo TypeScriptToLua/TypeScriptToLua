@@ -1,8 +1,8 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions } from "../CompilerOptions";
-import * as cliDiagnostics from "./diagnostics";
 import { normalizeSlashes } from "../utils";
+import * as cliDiagnostics from "./diagnostics";
 import { ParsedCommandLine, updateParsedConfigFile } from "./parse";
 
 export function locateConfigFile(commandLine: ParsedCommandLine): ts.Diagnostic | string | undefined {

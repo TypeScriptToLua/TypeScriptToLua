@@ -1,15 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import { parseConfigFileWithSystem } from "./cli/config";
+import { parseConfigFileWithSystem } from "./cli/tsconfig";
 import { CompilerOptions } from "./CompilerOptions";
 import { emitTranspiledFiles, OutputFile } from "./Emit";
 import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 
-export * from "./cli/config";
 export { version } from "./cli/information";
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./cli/parse";
 export * from "./cli/report";
+export * from "./cli/tsconfig";
 export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import * as ts from "typescript";
 import * as tstl from ".";
-import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/config";
 import * as cliDiagnostics from "./cli/diagnostics";
 import { getHelpString, versionString } from "./cli/information";
 import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
+import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 
 function shouldBePretty(options?: ts.CompilerOptions): boolean {
     return !options || options.pretty === undefined

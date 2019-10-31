@@ -1,7 +1,7 @@
 import * as fs from "fs-extra";
 import * as os from "os";
 import * as path from "path";
-import { locateConfigFile } from "../../src/cli/config";
+import { locateConfigFile } from "../../src/cli/tsconfig";
 import { normalizeSlashes } from "../../src/utils";
 
 let temp: string;

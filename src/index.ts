@@ -9,7 +9,6 @@ import { transpile, TranspiledFile, TranspileResult } from "./Transpile";
 export { version } from "./cli/information";
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./cli/parse";
 export * from "./cli/report";
-export * from "./cli/tsconfig";
 export * from "./CompilerOptions";
 export * from "./Emit";
 export * from "./LuaAST";

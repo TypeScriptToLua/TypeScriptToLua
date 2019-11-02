@@ -12,6 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
+        with:
+          registry-url: "https://registry.npmjs.org"
       - run: npm install --global npm@6
       - run: npm ci
       - run: npm run build

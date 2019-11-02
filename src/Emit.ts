@@ -1,10 +1,8 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
-import { TranspiledFile, EmitHost } from "./Transpile";
-
-const trimExt = (filePath: string) => filePath.slice(0, -path.extname(filePath).length);
-const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
+import { EmitHost, TranspiledFile } from "./Transpile";
+import { normalizeSlashes, trimExtension } from "./utils";
 
 export interface OutputFile {
     name: string;
@@ -37,7 +35,7 @@ export function emitTranspiledFiles(
         if (outFile) {
             outPath = path.isAbsolute(outFile) ? outFile : path.resolve(baseDir, outFile);
         } else {
-            outPath = trimExt(outPath) + ".lua";
+            outPath = trimExtension(outPath) + ".lua";
         }
 
         outPath = normalizeSlashes(outPath);
@@ -51,11 +49,11 @@ export function emitTranspiledFiles(
         }
 
         if (declaration !== undefined) {
-            files.push({ name: trimExt(outPath) + ".d.ts", text: declaration });
+            files.push({ name: trimExtension(outPath) + ".d.ts", text: declaration });
         }
 
         if (declarationMap !== undefined) {
-            files.push({ name: trimExt(outPath) + ".d.ts.map", text: declarationMap });
+            files.push({ name: trimExtension(outPath) + ".d.ts.map", text: declarationMap });
         }
     }
 

@@ -6,6 +6,7 @@ import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier, luaKeywords } from "./transformation/utils/safe-names";
 import { EmitHost } from "./Transpile";
+import { trimExtension } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -76,27 +77,32 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
 type SourceChunk = string | SourceNode;
 
+export type Printer = (
+    program: ts.Program,
+    emitHost: EmitHost,
+    fileName: string,
+    block: lua.Block,
+    luaLibFeatures: Set<LuaLibFeature>
+) => PrintResult;
+
 export interface PrintResult {
     code: string;
     sourceMap: string;
 }
 
-export type PrinterFactory = (program: ts.Program, emitHost: EmitHost) => Printer;
-export type Printer = LuaPrinter["print"];
-
-export function createPrinter(program: ts.Program, emitHost: EmitHost, factories: PrinterFactory[]): Printer {
-    if (factories.length === 0) {
-        const printer = new LuaPrinter(program.getCompilerOptions(), emitHost);
-        return (...args) => printer.print(...args);
-    } else if (factories.length === 1) {
-        return factories[0](program, emitHost);
+export function createPrinter(printers: Printer[]): Printer {
+    if (printers.length === 0) {
+        return (program, emitHost, fileName, ...args) =>
+            new LuaPrinter(program.getCompilerOptions(), emitHost, fileName).print(...args);
+    } else if (printers.length === 1) {
+        return printers[0];
     } else {
         throw new Error("Only one plugin can specify 'createPrinter'");
     }
 }
 
 export class LuaPrinter {
-    private static operatorMap: { [key in lua.Operator]: string } = {
+    private static operatorMap: Record<lua.Operator, string> = {
         [lua.SyntaxKind.AdditionOperator]: "+",
         [lua.SyntaxKind.SubtractionOperator]: "-",
         [lua.SyntaxKind.MultiplicationOperator]: "*",
@@ -125,11 +131,13 @@ export class LuaPrinter {
     };
 
     private currentIndent = "";
-    private sourceFile!: string;
+    private sourceFile: string;
 
-    public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
+    public constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
+        this.sourceFile = path.basename(fileName);
+    }
 
-    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, fileName: string): PrintResult {
+    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): PrintResult {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
@@ -139,8 +147,8 @@ export class LuaPrinter {
             this.options.sourceRoot ||
             (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
 
-        const rootSourceNode = this.printImplementation(block, luaLibFeatures, fileName);
-        const sourceMap = this.buildSourceMap(fileName, sourceRoot, rootSourceNode);
+        const rootSourceNode = this.printImplementation(block, luaLibFeatures);
+        const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
 
         let code = rootSourceNode.toString();
 
@@ -187,7 +195,7 @@ export class LuaPrinter {
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
-    private printImplementation(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>, sourceFile: string): SourceNode {
+    private printImplementation(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): SourceNode {
         let header = "";
 
         if (!this.options.noHeader) {
@@ -207,8 +215,6 @@ export class LuaPrinter {
             header += "-- Lua Library inline imports\n";
             header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
         }
-
-        this.sourceFile = path.basename(sourceFile);
 
         if (this.options.sourceMapTraceback) {
             header += "{#SourceMapTraceback}\n";
@@ -796,9 +802,9 @@ export class LuaPrinter {
 
     // The key difference between this and SourceNode.toStringWithSourceMap() is that SourceNodes with null line/column
     // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
-    private buildSourceMap(sourceFile: string, sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
+    private buildSourceMap(sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
         const map = new SourceMapGenerator({
-            file: path.basename(sourceFile, path.extname(sourceFile)) + ".lua",
+            file: trimExtension(this.sourceFile) + ".lua",
             sourceRoot,
         });
 

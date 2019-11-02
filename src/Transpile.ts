@@ -77,7 +77,7 @@ export function transpile({
     }
 
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
-    const print = createPrinter(program, emitHost, plugins.map(p => p.createPrinter).filter(isNonNull));
+    const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
             program,
@@ -86,7 +86,7 @@ export function transpile({
         );
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const { code, sourceMap } = print(luaAst, luaLibFeatures, sourceFile.fileName);
+            const { code, sourceMap } = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
             updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap });
         }
     };

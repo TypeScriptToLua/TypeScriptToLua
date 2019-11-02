@@ -1,7 +1,7 @@
-import { PrinterFactory } from "./LuaPrinter";
+import { Printer } from "./LuaPrinter";
 import { Visitors } from "./transformation/context";
 
 export interface Plugin {
-    createPrinter?: PrinterFactory;
+    printer?: Printer;
     visitors?: Visitors;
 }

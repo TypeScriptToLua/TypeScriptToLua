@@ -1,7 +1,6 @@
-import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind, LuaTarget } from "./CompilerOptions";
-import * as diagnosticFactories from "./diagnostics";
+import { CompilerOptions, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
+import * as cliDiagnostics from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
     options: CompilerOptions;
@@ -24,7 +23,7 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
 
 type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
 
-const optionDeclarations: CommandLineOption[] = [
+export const optionDeclarations: CommandLineOption[] = [
     {
         name: "luaLibImport",
         description: "Specifies how js standard features missing in lua are imported.",
@@ -60,36 +59,6 @@ const optionDeclarations: CommandLineOption[] = [
     },
 ];
 
-export const version = `Version ${require("../package.json").version}`;
-
-const helpString = `
-Syntax:   tstl [options] [files...]
-
-Examples: tstl path/to/file.ts [...]
-          tstl -p path/to/tsconfig.json
-
-In addition to the options listed below you can also pass options
-for the typescript compiler (For a list of options use tsc -h).
-Some tsc options might have no effect.
-`.trim();
-
-export function getHelpString(): string {
-    let result = helpString + "\n\n";
-
-    result += "Options:\n";
-    for (const option of optionDeclarations) {
-        const aliasStrings = (option.aliases || []).map(a => "-" + a);
-        const optionString = aliasStrings.concat(["--" + option.name]).join("|");
-
-        const valuesHint = option.type === "enum" ? option.choices.join("|") : option.type;
-        const spacing = " ".repeat(Math.max(1, 45 - optionString.length - valuesHint.length));
-
-        result += `\n ${optionString} <${valuesHint}>${spacing}${option.description}\n`;
-    }
-
-    return result;
-}
-
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
     let hasRootLevelOptions = false;
     for (const key in parsedConfigFile.raw) {
@@ -103,15 +72,13 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
 
     if (parsedConfigFile.raw.tstl) {
         if (hasRootLevelOptions) {
-            parsedConfigFile.errors.push(
-                diagnosticFactories.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl)
-            );
+            parsedConfigFile.errors.push(cliDiagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl));
         }
 
         for (const key in parsedConfigFile.raw.tstl) {
             const option = optionDeclarations.find(option => option.name === key);
             if (!option) {
-                parsedConfigFile.errors.push(diagnosticFactories.unknownCompilerOption(key));
+                parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(key));
                 continue;
             }
 
@@ -179,7 +146,7 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
 
     if (value === undefined) {
         return {
-            error: diagnosticFactories.compilerOptionExpectsAnArgument(option.name),
+            error: cliDiagnostics.compilerOptionExpectsAnArgument(option.name),
             value: undefined,
             increment: 0,
         };
@@ -201,7 +168,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "boolean") {
                 return {
                     value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "boolean"),
+                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, "boolean"),
                 };
             }
 
@@ -212,7 +179,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
             if (typeof value !== "string") {
                 return {
                     value: undefined,
-                    error: diagnosticFactories.compilerOptionRequiresAValueOfType(option.name, "string"),
+                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, "string"),
                 };
             }
 
@@ -221,38 +188,11 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 const optionChoices = option.choices.join(", ");
                 return {
                     value: undefined,
-                    error: diagnosticFactories.argumentForOptionMustBe(`--${option.name}`, optionChoices),
+                    error: cliDiagnostics.argumentForOptionMustBe(`--${option.name}`, optionChoices),
                 };
             }
 
             return { value: enumValue };
         }
     }
-}
-
-export function parseConfigFileWithSystem(
-    configFileName: string,
-    commandLineOptions?: CompilerOptions,
-    system = ts.sys
-): ParsedCommandLine {
-    const parsedConfigFile = ts.parseJsonSourceFileConfigFileContent(
-        ts.readJsonConfigFile(configFileName, system.readFile),
-        system,
-        path.dirname(configFileName),
-        commandLineOptions,
-        configFileName
-    );
-
-    return updateParsedConfigFile(parsedConfigFile);
-}
-
-export function createDiagnosticReporter(pretty: boolean, system = ts.sys): ts.DiagnosticReporter {
-    const reporter: ts.DiagnosticReporter = (ts as any).createDiagnosticReporter(system, pretty);
-    return diagnostic => {
-        if (diagnostic.source === "typescript-to-lua") {
-            diagnostic = { ...diagnostic, code: ("TL" + diagnostic.code) as any };
-        }
-
-        reporter(diagnostic);
-    };
 }

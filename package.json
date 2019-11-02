@@ -1,6 +1,6 @@
 {
     "name": "typescript-to-lua",
-    "version": "0.28.0",
+    "version": "0.28.1",
     "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
     "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
     "license": "MIT",
@@ -44,11 +44,13 @@
         "typescript": "^3.6.2"
     },
     "devDependencies": {
+        "@types/fs-extra": "^8.0.1",
         "@types/glob": "^7.1.1",
         "@types/jest": "^24.0.15",
         "@types/node": "^11.13.14",
         "@types/resolve": "0.0.8",
         "fengari": "^0.1.4",
+        "fs-extra": "^8.1.0",
         "javascript-stringify": "^2.0.0",
         "jest": "^24.8.0",
         "jest-circus": "^24.8.0",

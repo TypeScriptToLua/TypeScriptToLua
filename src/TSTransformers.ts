@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as resolve from "resolve";
 import * as ts from "typescript";
+import * as cliDiagnostics from "./cli/diagnostics";
 import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { noImplicitSelfTransformer } from "./NoImplicitSelfTransformer";
@@ -111,7 +112,7 @@ function resolveTransformerFactory(
 ): { error?: ts.Diagnostic; factory?: TransformerFactory } {
     if (typeof transform !== "string") {
         const optionName = `${transformerOptionPath}.transform`;
-        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "string") };
+        return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "string") };
     }
 
     let resolved: string;
@@ -167,18 +168,18 @@ function loadTransformer(
             break;
         default: {
             const optionName = `--${transformerOptionPath}.type`;
-            return { error: diagnosticFactories.argumentForOptionMustBe(optionName, "program") };
+            return { error: cliDiagnostics.argumentForOptionMustBe(optionName, "program") };
         }
     }
 
     if (typeof after !== "boolean") {
         const optionName = `${transformerOptionPath}.after`;
-        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "boolean") };
+        return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "boolean") };
     }
 
     if (typeof afterDeclarations !== "boolean") {
         const optionName = `${transformerOptionPath}.afterDeclarations`;
-        return { error: diagnosticFactories.compilerOptionRequiresAValueOfType(optionName, "boolean") };
+        return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "boolean") };
     }
 
     if (typeof transformer === "function") {

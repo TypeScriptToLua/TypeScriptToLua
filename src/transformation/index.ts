@@ -20,13 +20,15 @@ const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
 export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     const visitorMap: VisitorMap = new Map();
     for (const visitors of [standardVisitors, ...customVisitors]) {
+        const priority = visitors === standardVisitors ? -Infinity : 0;
         for (const [syntaxKindKey, visitor] of Object.entries(visitors)) {
             if (!visitor) continue;
 
             const syntaxKind = Number(syntaxKindKey) as ts.SyntaxKind;
             const nodeVisitors = getOrUpdate(visitorMap, syntaxKind, () => []);
 
-            const objectVisitor: ObjectVisitor<any> = typeof visitor === "function" ? { transform: visitor } : visitor;
+            const objectVisitor: ObjectVisitor<any> =
+                typeof visitor === "function" ? { transform: visitor, priority } : visitor;
             nodeVisitors.push(objectVisitor);
         }
     }

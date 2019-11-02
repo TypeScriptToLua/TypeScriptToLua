@@ -97,7 +97,7 @@ export function createPrinter(printers: Printer[]): Printer {
     } else if (printers.length === 1) {
         return printers[0];
     } else {
-        throw new Error("Only one plugin can specify 'createPrinter'");
+        throw new Error("Only one plugin can specify 'printer'");
     }
 }
 

@@ -145,8 +145,20 @@ export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
     ? lua.Block
     : OneToManyVisitorResult<lua.Node>;
 
-export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;
-export type ObjectVisitor<T extends ts.Node> = { transform: FunctionVisitor<T>; priority?: number };
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;
+export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;
+export type ObjectVisitor<T extends ts.Node> = {
+    transform: FunctionVisitor<T>;
+
+    /**
+     * Visitors with higher priority are called first.
+     *
+     * Higher-priority visitors can call lower ones with `context.superTransformNode`.
+     *
+     * Standard visitors have the lowest (`-Infinity`) priority.
+     */
+    priority?: number;
+};
+
 export type Visitors = { [P in keyof NodesBySyntaxKind]?: Visitor<NodesBySyntaxKind[P]> };
 export type VisitorMap = Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>>;

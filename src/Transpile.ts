@@ -5,7 +5,8 @@ import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
-import { getCustomTransformers } from "./TSTransformers";
+import { getCustomTSTransformers } from "./CustomTSTransformers";
+import { getCustomLuaTransformers } from "./CustomLuaTransformers";
 
 export interface TranspiledFile {
     fileName: string;
@@ -97,7 +98,7 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processSourceFile);
+    const transformers = getCustomTSTransformers(program, diagnostics, customTransformers, processSourceFile);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {
@@ -119,6 +120,13 @@ export function transpile({
     // We always have to emit to get transformer diagnostics
     const oldNoEmit = options.noEmit;
     options.noEmit = false;
+
+    const luaTransformers = getCustomLuaTransformers(options, diagnostics);
+
+    // TODO: Make sure source files have been transformed at this point, but not printed
+    for (const luaTransformer of luaTransformers.before) {
+        transpiledFiles = luaTransformer(transpiledFiles);
+    }
 
     if (targetSourceFiles) {
         for (const file of targetSourceFiles) {
@@ -142,6 +150,11 @@ export function transpile({
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles = [];
+    }
+
+    // TODO: Make sure source files have been transformed AND printed at this point
+    for (const luaTransformer of luaTransformers.after) {
+        transpiledFiles = luaTransformer(transpiledFiles);
     }
 
     return { diagnostics, transpiledFiles };

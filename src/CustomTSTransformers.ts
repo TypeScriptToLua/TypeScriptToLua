@@ -6,7 +6,7 @@ import { CompilerOptions, TransformerImport } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { noImplicitSelfTransformer } from "./NoImplicitSelfTransformer";
 
-export function getCustomTransformers(
+export function getCustomTSTransformers(
     program: ts.Program,
     diagnostics: ts.Diagnostic[],
     customTransformers: ts.CustomTransformers,

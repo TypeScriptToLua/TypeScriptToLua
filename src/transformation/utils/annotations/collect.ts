@@ -3,20 +3,20 @@ import { flatMap } from "../../../utils";
 import { TransformationContext } from "../../context";
 
 export enum AnnotationKind {
-    Extension = "Extension",
-    MetaExtension = "MetaExtension",
-    CustomConstructor = "CustomConstructor",
-    CompileMembersOnly = "CompileMembersOnly",
-    NoResolution = "NoResolution",
-    PureAbstract = "PureAbstract",
-    Phantom = "Phantom",
-    TupleReturn = "TupleReturn",
-    LuaIterator = "LuaIterator",
-    LuaTable = "LuaTable",
-    NoSelf = "NoSelf",
-    NoSelfInFile = "NoSelfInFile",
-    Vararg = "Vararg",
-    ForRange = "ForRange",
+    Extension = "extension",
+    MetaExtension = "metaExtension",
+    CustomConstructor = "customConstructor",
+    CompileMembersOnly = "compileMembersOnly",
+    NoResolution = "noResolution",
+    PureAbstract = "pureAbstract",
+    Phantom = "phantom",
+    TupleReturn = "tupleReturn",
+    LuaIterator = "luaIterator",
+    LuaTable = "luaTable",
+    NoSelf = "noSelf",
+    NoSelfInFile = "noSelfInFile",
+    VarArg = "varArg",
+    ForRange = "forRange",
 }
 
 export interface Annotation {

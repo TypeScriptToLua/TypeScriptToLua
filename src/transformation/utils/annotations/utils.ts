@@ -68,7 +68,7 @@ export function isLuaIteratorType(context: TransformationContext, node: ts.Node)
 
 export function isVarArgType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(context, type).has(AnnotationKind.Vararg);
+    return getTypeAnnotations(context, type).has(AnnotationKind.VarArg);
 }
 
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {

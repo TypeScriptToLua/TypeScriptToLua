@@ -1,5 +1,6 @@
 import * as ts from "typescript";
-import { Visitors } from "../context";
+import * as lua from "../../LuaAST";
+import { FunctionVisitor, Visitors } from "../context";
 import { transformElementAccessExpression, transformPropertyAccessExpression, transformQualifiedName } from "./access";
 import { transformBinaryExpression } from "./binary-expression";
 import { transformBlock } from "./block";
@@ -36,14 +37,18 @@ import { transformReturnStatement } from "./return";
 import { transformSourceFileNode } from "./sourceFile";
 import { transformSwitchStatement } from "./switch";
 import { transformTaggedTemplateExpression, transformTemplateExpression } from "./template";
-import { todoMoveSomewhereVisitors } from "./todo-move-somewhere";
 import { transformTypeOfExpression } from "./typeof";
+import { typescriptVisitors } from "./typescript";
 import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
 import { transformVariableStatement } from "./variable";
 
+const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
+const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>
+    lua.createParenthesizedExpression(context.transformExpression(node.expression), node);
+
 export const standardVisitors: Visitors = {
     ...literalVisitors,
-    ...todoMoveSomewhereVisitors,
+    ...typescriptVisitors,
     [ts.SyntaxKind.ArrowFunction]: transformFunctionLikeDeclaration,
     [ts.SyntaxKind.BinaryExpression]: transformBinaryExpression,
     [ts.SyntaxKind.Block]: transformBlock,
@@ -56,6 +61,7 @@ export const standardVisitors: Visitors = {
     [ts.SyntaxKind.DeleteExpression]: transformDeleteExpression,
     [ts.SyntaxKind.DoStatement]: transformDoStatement,
     [ts.SyntaxKind.ElementAccessExpression]: transformElementAccessExpression,
+    [ts.SyntaxKind.EmptyStatement]: transformEmptyStatement,
     [ts.SyntaxKind.EnumDeclaration]: transformEnumDeclaration,
     [ts.SyntaxKind.ExportAssignment]: transformExportAssignment,
     [ts.SyntaxKind.ExportDeclaration]: transformExportDeclaration,
@@ -72,6 +78,7 @@ export const standardVisitors: Visitors = {
     [ts.SyntaxKind.ImportEqualsDeclaration]: transformImportEqualsDeclaration,
     [ts.SyntaxKind.ModuleDeclaration]: transformModuleDeclaration,
     [ts.SyntaxKind.NewExpression]: transformNewExpression,
+    [ts.SyntaxKind.ParenthesizedExpression]: transformParenthesizedExpression,
     [ts.SyntaxKind.PostfixUnaryExpression]: transformPostfixUnaryExpression,
     [ts.SyntaxKind.PrefixUnaryExpression]: transformPrefixUnaryExpression,
     [ts.SyntaxKind.PropertyAccessExpression]: transformPropertyAccessExpression,

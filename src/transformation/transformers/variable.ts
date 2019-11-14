@@ -16,7 +16,7 @@ export function transformArrayBindingElement(
     name: ts.ArrayBindingElement | ts.Expression
 ): lua.Expression {
     if (ts.isOmittedExpression(name)) {
-        return context.transformExpression(name);
+        return lua.createAnonymousIdentifier(name);
     } else if (ts.isIdentifier(name)) {
         return transformIdentifier(context, name);
     } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {

@@ -128,7 +128,11 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
     const values = expression.elements.map(element =>
-        lua.createTableFieldExpression(context.transformExpression(element), undefined, element)
+        lua.createTableFieldExpression(
+            ts.isOmittedExpression(element) ? lua.createNilLiteral(element) : context.transformExpression(element),
+            undefined,
+            element
+        )
     );
 
     return lua.createTableExpression(values, expression);

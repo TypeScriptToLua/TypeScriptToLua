@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import { flatMap } from "../../../utils";
 import { TransformationContext } from "../../context";
 
-export type AnnotationName = string & { _annotationNameBrand: any };
 export enum AnnotationKind {
     Extension = "Extension",
     MetaExtension = "MetaExtension",
@@ -20,21 +19,15 @@ export enum AnnotationKind {
     ForRange = "ForRange",
 }
 
-function getAnnotationKindByName(name: AnnotationName): AnnotationKind;
-function getAnnotationKindByName(name: string): AnnotationKind | undefined;
-function getAnnotationKindByName(name: string): AnnotationKind | undefined {
-    return Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
+export interface Annotation {
+    kind: AnnotationKind;
+    args: string[];
 }
 
-function isValidAnnotationName(name: string): name is AnnotationName {
-    return getAnnotationKindByName(name) !== undefined;
-}
-
-export class Annotation {
-    public kind: AnnotationKind;
-
-    constructor(name: AnnotationName, public args: string[]) {
-        this.kind = getAnnotationKindByName(name);
+function createAnnotation(name: string, args: string[]): Annotation | undefined {
+    const annotationKind = Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
+    if (annotationKind !== undefined) {
+        return { kind: annotationKind, args };
     }
 }
 
@@ -55,8 +48,8 @@ function collectAnnotations(
 
     for (const line of oldStyleAnnotations) {
         const [name, ...args] = line.slice(1).split(" ");
-        if (isValidAnnotationName(name)) {
-            const annotation = new Annotation(name, args);
+        const annotation = createAnnotation(name, args);
+        if (annotation) {
             annotationsMap.set(annotation.kind, annotation);
             console.warn(`[Deprecated] Annotations with ! are being deprecated, use '@${annotation.kind}' instead`);
         } else {
@@ -65,8 +58,8 @@ function collectAnnotations(
     }
 
     for (const tag of source.getJsDocTags()) {
-        if (isValidAnnotationName(tag.name)) {
-            const annotation = new Annotation(tag.name, tag.text ? tag.text.split(" ") : []);
+        const annotation = createAnnotation(tag.name, tag.text ? tag.text.split(" ") : []);
+        if (annotation) {
             annotationsMap.set(annotation.kind, annotation);
         }
     }
@@ -92,8 +85,8 @@ export function getNodeAnnotations(node: ts.Node): AnnotationsMap {
 
     for (const tag of ts.getJSDocTags(node)) {
         const tagName = tag.tagName.text;
-        if (isValidAnnotationName(tagName)) {
-            const annotation = new Annotation(tagName, tag.comment ? tag.comment.split(" ") : []);
+        const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
+        if (annotation) {
             annotationsMap.set(annotation.kind, annotation);
         }
     }
@@ -110,9 +103,9 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
         if (jsDoc) {
             for (const tag of flatMap(jsDoc, x => x.tags || [])) {
                 const tagName = tag.tagName.text;
-                if (isValidAnnotationName(tagName)) {
-                    const dec = new Annotation(tagName, tag.comment ? tag.comment.split(" ") : []);
-                    annotationsMap.set(dec.kind, dec);
+                const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
+                if (annotation) {
+                    annotationsMap.set(annotation.kind, annotation);
                 }
             }
         }

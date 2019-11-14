@@ -1,21 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { FunctionVisitor, TransformationContext } from "../context";
+import { FunctionVisitor } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
-import { findFirstNodeAbove, isArrayType } from "../utils/typescript";
-
-function getContainingFunctionReturnType(context: TransformationContext, node: ts.Node): ts.Type | undefined {
-    const declaration = findFirstNodeAbove(node, ts.isFunctionLike);
-    if (declaration) {
-        const signature = context.checker.getSignatureFromDeclaration(declaration);
-        if (signature) {
-            return context.checker.getReturnTypeOfSignature(signature);
-        }
-    }
-}
+import { isArrayType } from "../utils/typescript";
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
     // Bubble up explicit return flag and check if we're inside a try/catch block
@@ -34,7 +24,7 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
 
     if (statement.expression) {
         const expressionType = context.checker.getTypeAtLocation(statement.expression);
-        const returnType = getContainingFunctionReturnType(context, statement);
+        const returnType = context.checker.getContextualType(statement.expression);
         if (returnType) {
             validateAssignment(context, statement, expressionType, returnType);
         }

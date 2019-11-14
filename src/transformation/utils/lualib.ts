@@ -4,10 +4,9 @@ import { LuaLibFeature } from "../../LuaLib";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
 
-const luaLibFeatures = new WeakMap<TransformationContext, Set<LuaLibFeature>>();
-
 export { LuaLibFeature };
 
+const luaLibFeatures = new WeakMap<TransformationContext, Set<LuaLibFeature>>();
 export function getUsedLuaLibFeatures(context: TransformationContext): Set<LuaLibFeature> {
     return getOrUpdate(luaLibFeatures, context, () => new Set());
 }

@@ -219,7 +219,9 @@ export abstract class TestBuilder {
     @memoize
     public getMainLuaFileResult(): ExecutableTranspiledFile {
         const { transpiledFiles } = this.getLuaResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
+        const mainFile = this.options.luaBundle
+            ? transpiledFiles[0]
+            : transpiledFiles.find(x => x.fileName === this.mainFileName);
         expect(mainFile).toMatchObject({ lua: expect.any(String), sourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -335,7 +337,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveDiagnosticOfError(error: tstl.TranspileError): this {
+    public expectToHaveDiagnosticOfError(error: Error): this {
         this.expectToHaveDiagnostics();
         expect(this.getLuaDiagnostics()).toHaveLength(1);
         const firstDiagnostic = this.getLuaDiagnostics()[0];
@@ -414,6 +416,17 @@ class AccessorTestBuilder extends TestBuilder {
     }
 }
 
+class BundleTestBuilder extends AccessorTestBuilder {
+    public constructor(_tsCode: string) {
+        super(_tsCode);
+        this.setOptions({ luaBundle: "main.lua", luaBundleEntry: this.mainFileName });
+    }
+
+    public setEntryPoint(fileName: string): this {
+        return this.setOptions({ luaBundleEntry: fileName });
+    }
+}
+
 class ModuleTestBuilder extends AccessorTestBuilder {
     public setReturnExport(name: string): this {
         expect(this.hasProgram).toBe(false);
@@ -458,6 +471,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     return new builder(tsCode);
 };
 
+export const testBundle = createTestBuilderFactory(BundleTestBuilder, false);
 export const testModule = createTestBuilderFactory(ModuleTestBuilder, false);
 export const testModuleTemplate = createTestBuilderFactory(ModuleTestBuilder, true);
 export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false);

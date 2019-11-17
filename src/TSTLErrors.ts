@@ -57,6 +57,8 @@ export const InvalidElementCall = (node: ts.Node) =>
 export const ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
     new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
 
+export const LuaEntryNotFound = (entryName: string) => new Error(`Could not find luaEntry file '${entryName}'.`);
+
 export const MissingClassName = (node: ts.Node) => new TranspileError(`Class declarations must have a name.`, node);
 
 export const MissingForOfVariables = (node: ts.Node) =>

@@ -43,7 +43,11 @@ export class LuaPrinter {
 
     public constructor(private options: CompilerOptions, private emitHost: EmitHost) {}
 
-    public print(block: tstl.Block, luaLibFeatures?: Set<LuaLibFeature>, sourceFile = ""): [string, string] {
+    public print(
+        block: tstl.Block,
+        luaLibFeatures?: Set<LuaLibFeature>,
+        sourceFile = ""
+    ): [string, string, SourceNode] {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
             if (luaLibFeatures === undefined) {
@@ -71,7 +75,7 @@ export class LuaPrinter {
             codeResult = codeResult.replace("{#SourceMapTraceback}", stackTraceOverride);
         }
 
-        return [codeResult, sourceMap.toString()];
+        return [codeResult, sourceMap.toString(), rootSourceNode];
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {

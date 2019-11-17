@@ -1,11 +1,13 @@
 import * as ts from "typescript";
-import { CompilerOptions } from "./CompilerOptions";
+import { CompilerOptions, validateOptions } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
 import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 import { getCustomTransformers } from "./TSTransformers";
+import { bundleTranspiledFiles } from "./bundle";
+import { SourceNode } from "source-map";
 
 export interface TranspiledFile {
     fileName: string;
@@ -15,6 +17,8 @@ export interface TranspiledFile {
     declaration?: string;
     declarationMap?: string;
 }
+
+export type TranspiledFileWithSourceNode = TranspiledFile & { sourceMapNode?: SourceNode };
 
 export interface TranspileResult {
     diagnostics: ts.Diagnostic[];
@@ -44,10 +48,10 @@ export function transpile({
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    const diagnostics: ts.Diagnostic[] = [];
-    let transpiledFiles: TranspiledFile[] = [];
+    const diagnostics = validateOptions(options);
+    let transpiledFiles: TranspiledFileWithSourceNode[] = [];
 
-    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
+    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFileWithSourceNode, "fileName">) => {
         const file = transpiledFiles.find(f => f.fileName === fileName);
         if (file) {
             Object.assign(file, update);
@@ -57,7 +61,11 @@ export function transpile({
     };
 
     if (options.noEmitOnError) {
-        const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
+        const preEmitDiagnostics = [
+            ...diagnostics,
+            ...program.getOptionsDiagnostics(),
+            ...program.getGlobalDiagnostics(),
+        ];
 
         if (targetSourceFiles) {
             for (const sourceFile of targetSourceFiles) {
@@ -82,8 +90,8 @@ export function transpile({
         try {
             const [luaAst, lualibFeatureSet] = transformer.transform(sourceFile);
             if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
-                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap });
+                const [lua, sourceMap, sourceNode] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
+                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap, sourceMapNode: sourceNode });
             }
         } catch (err) {
             if (!(err instanceof TranspileError)) throw err;
@@ -142,6 +150,10 @@ export function transpile({
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles = [];
+    }
+
+    if (options.luaBundle && options.luaBundleEntry) {
+        transpiledFiles = [bundleTranspiledFiles(options.luaBundleEntry, options.luaBundleEntry, transpiledFiles)];
     }
 
     return { diagnostics, transpiledFiles };

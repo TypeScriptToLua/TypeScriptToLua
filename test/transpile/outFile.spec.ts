@@ -7,7 +7,7 @@ test("should support absolute outFile", () => {
         outFile: path.join(__dirname, "output.script"),
     });
 
-    expect(diagnostics).not.toHaveDiagnostics();
+    expect(diagnostics).not.toHaveErrorDiagnostics();
     expect(emittedFiles).toEqual(["output.script"]);
 });
 
@@ -17,7 +17,7 @@ test("should support relative outFile", () => {
         outFile: "output.script",
     });
 
-    expect(diagnostics).not.toHaveDiagnostics();
+    expect(diagnostics).not.toHaveErrorDiagnostics();
     expect(emittedFiles).toEqual(["output.script"]);
 });
 
@@ -27,7 +27,7 @@ test("should support outFile with declaration", () => {
         declaration: true,
     });
 
-    expect(diagnostics).not.toHaveDiagnostics();
+    expect(diagnostics).not.toHaveErrorDiagnostics();
     expect(emittedFiles).toEqual(["output.d.ts", "output.script"]);
 });
 
@@ -39,6 +39,6 @@ test("should resolve outFile relative to base directory", () => {
         declaration: true,
     });
 
-    expect(diagnostics).not.toHaveDiagnostics();
+    expect(diagnostics).not.toHaveErrorDiagnostics();
     expect(emittedFiles).toEqual(["output.d.ts", "output.script"]);
 });

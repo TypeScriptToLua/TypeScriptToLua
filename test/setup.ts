@@ -5,7 +5,7 @@ declare global {
     namespace jest {
         interface Matchers<R> {
             toThrowExactError(error: Error): R;
-            toHaveDiagnostics(): R;
+            toHaveErrorDiagnostics(): R;
         }
     }
 }
@@ -30,7 +30,7 @@ expect.extend({
 
         return { pass: true, message: () => "" };
     },
-    toHaveDiagnostics(diagnostics: ts.Diagnostic[]): jest.CustomMatcherResult {
+    toHaveErrorDiagnostics(diagnostics: ts.Diagnostic[]): jest.CustomMatcherResult {
         expect(diagnostics).toBeInstanceOf(Array);
         // @ts-ignore
         const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
@@ -42,7 +42,7 @@ expect.extend({
         });
 
         return {
-            pass: diagnostics.length > 0,
+            pass: diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error).length > 0,
             message: () => {
                 return (
                     matcherHint +

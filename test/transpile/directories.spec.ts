@@ -28,6 +28,6 @@ test.each<DirectoryTestCase>([
     );
 
     const { diagnostics, emittedFiles } = buildVirtualProject(fileNames, options);
-    expect(diagnostics).not.toHaveDiagnostics();
+    expect(diagnostics).not.toHaveErrorDiagnostics();
     expect(emittedFiles).toMatchSnapshot();
 });

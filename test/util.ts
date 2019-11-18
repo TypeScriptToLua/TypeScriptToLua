@@ -129,6 +129,7 @@ export class ExecutionError extends Error {
 
 export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
+export type DiagnosticMatcher = (diagnostic: ts.Diagnostic) => boolean;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}
 
@@ -332,21 +333,41 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveDiagnostics(): this {
-        expect(this.getLuaDiagnostics()).toHaveDiagnostics();
+    public expectToHaveDiagnostic(matcher: DiagnosticMatcher): this {
+        expect(this.getLuaDiagnostics().find(matcher)).toBeDefined();
+        return this;
+    }
+
+    public expectToHaveExactDiagnostic(diagnostic: ts.Diagnostic): this {
+        expect(this.getLuaDiagnostics()).toContainEqual(diagnostic);
+        return this;
+    }
+
+    public expectToHaveErrorDiagnostics(): this {
+        expect(this.getLuaDiagnostics()).toHaveErrorDiagnostics();
         return this;
     }
 
     public expectToHaveDiagnosticOfError(error: Error): this {
-        this.expectToHaveDiagnostics();
+        this.expectToHaveErrorDiagnostics();
         expect(this.getLuaDiagnostics()).toHaveLength(1);
         const firstDiagnostic = this.getLuaDiagnostics()[0];
         expect(firstDiagnostic).toMatchObject({ messageText: error.message });
         return this;
     }
 
-    public expectToHaveNoDiagnostics(): this {
-        expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
+    public expectToHaveNoErrorDiagnostics(): this {
+        expect(this.getLuaDiagnostics()).not.toHaveErrorDiagnostics();
+        return this;
+    }
+
+    public expectExecutionError(message: string): this {
+        const luaResult = this.getLuaExecutionResult();
+        if (!(luaResult instanceof ExecutionError)) {
+            expect(luaResult).toBeInstanceOf(ExecutionError);
+        } else {
+            expect(luaResult.message).toContain(message);
+        }
         return this;
     }
 
@@ -360,7 +381,7 @@ export abstract class TestBuilder {
     }
 
     public expectToMatchJsResult(allowErrors = false): this {
-        this.expectToHaveNoDiagnostics();
+        this.expectToHaveNoErrorDiagnostics();
         if (!allowErrors) this.expectNoExecutionError();
 
         const luaResult = this.getLuaExecutionResult();
@@ -371,20 +392,20 @@ export abstract class TestBuilder {
     }
 
     public expectToEqual(expected: any): this {
-        this.expectToHaveNoDiagnostics();
+        this.expectToHaveNoErrorDiagnostics();
         const luaResult = this.getLuaExecutionResult();
         expect(luaResult).toEqual(expected);
         return this;
     }
 
     public expectLuaToMatchSnapshot(): this {
-        this.expectToHaveNoDiagnostics();
+        this.expectToHaveNoErrorDiagnostics();
         expect(this.getMainLuaCodeChunk()).toMatchSnapshot();
         return this;
     }
 
     public expectResultToMatchSnapshot(): this {
-        this.expectToHaveNoDiagnostics();
+        this.expectToHaveNoErrorDiagnostics();
         expect(this.getLuaExecutionResult()).toMatchSnapshot();
         return this;
     }

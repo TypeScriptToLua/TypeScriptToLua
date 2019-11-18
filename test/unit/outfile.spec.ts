@@ -1,5 +1,17 @@
 import * as util from "../util";
-import * as TSTLErrors from "../../src/TSTLErrors";
+import { couldNotFindBundleEntryPoint } from "../../src/diagnostics";
+import { LuaLibImportKind } from "../../src";
+import { DiagnosticCategory } from "typescript";
+
+test("no entry point", () => {
+    util.testBundle``
+        .setOptions({ luaBundleEntry: undefined })
+        .expectToHaveDiagnostic(
+            d =>
+                d.messageText === `'luaBundleEntry' is required when 'luaBundle' is enabled.` &&
+                d.category === DiagnosticCategory.Error
+        );
+});
 
 test("import module -> main", () => {
     util.testBundle`
@@ -55,15 +67,32 @@ test("entry point in directory", () => {
         )
         .addExtraFile("module.ts", "export const value = true")
         .setEntryPoint("main/main.ts")
-        .debug()
         .expectToEqual({ value: true });
 });
 
-test("LuaLibs", () => {
+test.each([LuaLibImportKind.Inline, LuaLibImportKind.Require])("LuaLibs", lualibOption => {
     util.testBundle`
         export const result = [1, 2];
         result.push(3);
-    `.expectToEqual({ result: [1, 2, 3] });
+    `
+        .setOptions({ luaLibImport: lualibOption })
+        .expectToEqual({ result: [1, 2, 3] });
+});
+
+test("LuaBundle and LuaLibImport.Inline generate warning", () => {
+    util.testBundle`
+        export const result = [1, 2];
+        result.push(3);
+    `
+        .setOptions({ luaLibImport: LuaLibImportKind.Inline })
+        .expectToHaveDiagnostic(
+            d =>
+                d.category === DiagnosticCategory.Warning &&
+                d.messageText ===
+                    `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
+                        `It is recommended to use 'luaLibImport: "require"'`
+        )
+        .expectToEqual({ result: [1, 2, 3] }); // Result should still be the same
 });
 
 test("cyclic imports", () => {
@@ -81,13 +110,11 @@ test("cyclic imports", () => {
                 export const lazyValue = () => a.a;
             `
         )
-        .expectToEqual({ a: true, lazyValueResult: true });
+        .expectExecutionError("stack overflow");
 });
 
 test("luaEntry doesn't exist", () => {
-    util.testBundle``
-        .setOptions({ luaEntry: "entry.ts" })
-        .expectToHaveDiagnosticOfError(TSTLErrors.LuaEntryNotFound("entry.ts"));
+    util.testBundle``.setEntryPoint("entry.ts").expectToHaveExactDiagnostic(couldNotFindBundleEntryPoint("entry.ts"));
 });
 
 test("luaEntry resolved from path specified in tsconfig", () => {
@@ -95,9 +122,5 @@ test("luaEntry resolved from path specified in tsconfig", () => {
         .addExtraFile("src/main.ts", "")
         .addExtraFile("src/module.ts", "")
         .setOptions({ rootDir: "src" })
-        .expectToHaveNoDiagnostics();
-});
-
-test("export equals", () => {
-    util.testBundle`export = "result"`.expectToEqual("result");
+        .expectToHaveNoErrorDiagnostics();
 });

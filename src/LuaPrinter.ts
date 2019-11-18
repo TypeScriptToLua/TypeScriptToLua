@@ -117,7 +117,7 @@ export class LuaPrinter {
         }
 
         if (luaLibFeatures) {
-            const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
+            const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Require;
             // Require lualib bundle
             if (
                 (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0) ||

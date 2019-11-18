@@ -152,7 +152,7 @@ test.each([
 ])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
     const file = util
         .testModule(code)
-        .expectToHaveNoDiagnostics()
+        .expectToHaveNoErrorDiagnostics()
         .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
@@ -169,7 +169,7 @@ test("Source map has correct sources", async () => {
     const file = util.testModule`
         const foo = "foo"
     `
-        .expectToHaveNoDiagnostics()
+        .expectToHaveNoErrorDiagnostics()
         .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
@@ -181,7 +181,7 @@ test("Source map has correct source root", async () => {
     const file = util.testModule`
         const foo = "foo"
     `
-        .expectToHaveNoDiagnostics()
+        .expectToHaveNoErrorDiagnostics()
         .getMainLuaFileResult();
 
     const sourceMap = JSON.parse(file.sourceMap);
@@ -199,7 +199,7 @@ test.each([
 ])("Source map has correct name mappings (%p)", async ({ code, name }) => {
     const file = util
         .testModule(code)
-        .expectToHaveNoDiagnostics()
+        .expectToHaveNoErrorDiagnostics()
         .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);

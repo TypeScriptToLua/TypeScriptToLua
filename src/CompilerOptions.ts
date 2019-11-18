@@ -51,6 +51,15 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
         diagnostics.push(configErrorDiagnostic(`'luaBundleEntry' is required when 'luaBundle' is enabled.`));
     }
 
+    if (options.luaBundle && options.luaLibImport === LuaLibImportKind.Inline) {
+        diagnostics.push(
+            configWarningDiagnostic(
+                `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
+                    `It is recommended to use 'luaLibImport: "require"'`
+            )
+        );
+    }
+
     return diagnostics;
 }
 
@@ -59,6 +68,16 @@ const configErrorDiagnostic = (message: string): ts.Diagnostic => ({
     start: undefined,
     length: undefined,
     category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: message,
+});
+
+const configWarningDiagnostic = (message: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Warning,
     code: 0,
     source: "typescript-to-lua",
     messageText: message,

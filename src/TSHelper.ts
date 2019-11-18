@@ -5,6 +5,7 @@ import { Decorator, DecoratorKind } from "./Decorator";
 import * as tstl from "./LuaAST";
 import * as TSTLErrors from "./TSTLErrors";
 import { EmitResolver } from "./LuaTransformer";
+import { formatPathToLuaPath } from "./utils";
 
 export enum ContextType {
     None,
@@ -1058,15 +1059,6 @@ export function getExportPath(fileName: string, options: ts.CompilerOptions): st
     const absolutePath = path.resolve(fileName.replace(/.ts$/, ""));
     const absoluteRootDirPath = path.format(path.parse(rootDir));
     return formatPathToLuaPath(absolutePath.replace(absoluteRootDirPath, "").slice(1));
-}
-
-export function formatPathToLuaPath(filePath: string): string {
-    filePath = filePath.replace(/\.json$/, "");
-    if (process.platform === "win32") {
-        // Windows can use backslashes
-        filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
-    }
-    return filePath.replace(/\.\//g, "").replace(/\//g, ".");
 }
 
 export function isBuiltinErrorTypeName(name: string): boolean {

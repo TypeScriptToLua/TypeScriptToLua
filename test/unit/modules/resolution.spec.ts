@@ -82,7 +82,7 @@ test("doesn't resolve paths out of root dir", () => {
         .setMainFileName("src/main.ts")
         .setOptions({ rootDir: "./src" })
         .disableSemanticCheck()
-        .expectToHaveDiagnostics();
+        .expectToHaveErrorDiagnostics();
 });
 
 test.each([

@@ -153,7 +153,14 @@ export function transpile({
     }
 
     if (options.luaBundle && options.luaBundleEntry) {
-        transpiledFiles = [bundleTranspiledFiles(options.luaBundleEntry, options.luaBundleEntry, transpiledFiles)];
+        const [bundleDiagnostics, bundle] = bundleTranspiledFiles(
+            options.luaBundleEntry,
+            options.luaBundleEntry,
+            transpiledFiles,
+            emitHost
+        );
+        diagnostics.push(...bundleDiagnostics);
+        transpiledFiles = [bundle];
     }
 
     return { diagnostics, transpiledFiles };

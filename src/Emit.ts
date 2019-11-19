@@ -2,7 +2,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import { EmitHost, TranspiledFile } from "./Transpile";
-import { normalizeSlashes, trimExt } from "./utils";
+import { normalizeSlashes, trimExtension } from "./utils";
 
 export interface OutputFile {
     name: string;
@@ -15,7 +15,7 @@ export function emitTranspiledFiles(
     transpiledFiles: TranspiledFile[],
     emitHost: EmitHost = ts.sys
 ): OutputFile[] {
-    let { rootDir, outDir, outFile, luaLibImport } = options;
+    let { rootDir, outDir, luaLibImport } = options;
 
     const configFileName = options.configFilePath as string | undefined;
     // TODO: Use getCommonSourceDirectory
@@ -31,14 +31,8 @@ export function emitTranspiledFiles(
             outPath = path.resolve(outDir, path.relative(rootDir, fileName));
         }
 
-        // change extension or rename to outFile
-        if (outFile) {
-            outPath = path.isAbsolute(outFile) ? outFile : path.resolve(baseDir, outFile);
-        } else {
-            outPath = trimExt(outPath) + ".lua";
-        }
-
-        outPath = normalizeSlashes(outPath);
+        // change extension
+        outPath = normalizeSlashes(trimExtension(outPath) + ".lua");
 
         if (lua !== undefined) {
             files.push({ name: outPath, text: lua });
@@ -49,11 +43,11 @@ export function emitTranspiledFiles(
         }
 
         if (declaration !== undefined) {
-            files.push({ name: trimExt(outPath) + ".d.ts", text: declaration });
+            files.push({ name: trimExtension(outPath) + ".d.ts", text: declaration });
         }
 
         if (declarationMap !== undefined) {
-            files.push({ name: trimExt(outPath) + ".d.ts.map", text: declarationMap });
+            files.push({ name: trimExtension(outPath) + ".d.ts.map", text: declarationMap });
         }
     }
 

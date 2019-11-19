@@ -1,21 +1,21 @@
 import * as path from "path";
-import { TranspiledFileWithSourceNode, EmitHost } from "./Transpile";
+import { TranspiledFile, EmitHost } from "./Transpile";
 import { SourceNode } from "source-map";
-import { formatPathToLuaPath, trimExt } from "./utils";
+import { formatPathToLuaPath, trimExtension } from "./utils";
 import { Diagnostic } from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
 
-const formatPath = (path: string) => formatPathToLuaPath(trimExt(path));
+const formatPath = (path: string) => formatPathToLuaPath(trimExtension(path));
 
 export function bundleTranspiledFiles(
     bundleFile: string,
     entryModule: string,
-    transpiledFiles: TranspiledFileWithSourceNode[],
+    transpiledFiles: TranspiledFile[],
     emitHost: EmitHost
-): [Diagnostic[], TranspiledFileWithSourceNode] {
+): [Diagnostic[], TranspiledFile] {
     const diagnostics: Diagnostic[] = [];
 
-    if (transpiledFiles.find(f => f.fileName === entryModule) === undefined) {
+    if (!transpiledFiles.some(f => f.fileName === entryModule)) {
         return [[couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
@@ -34,8 +34,9 @@ export function bundleTranspiledFiles(
 
     // Override `require` to read from ____modules table.
     const requireOverride =
+        `local ____originalRequire = require\n` +
         `function require(file) if ____modules[file] then return ____modules[file]() ` +
-        `else error("Could not find module '"..file.."' to require.") end end\n`;
+        `else print("Could not find module '"..file.."' to require."); return ____originalRequire(file) end end\n`;
     const entryPoint = `return require("${formatPath(entryModule)}")\n`;
 
     const bundleNode = joinSourceChunks([moduleTable, requireOverride, entryPoint]);
@@ -54,7 +55,7 @@ export function bundleTranspiledFiles(
     ];
 }
 
-function moduleSourceNode(transpiledFile: TranspiledFileWithSourceNode): SourceNode {
+function moduleSourceNode(transpiledFile: TranspiledFile): SourceNode {
     const tableEntryHead = `["${formatPath(transpiledFile.fileName)}"] = function() `;
     const tableEntryTail = `end,\n`;
 
@@ -66,7 +67,7 @@ function moduleSourceNode(transpiledFile: TranspiledFileWithSourceNode): SourceN
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {
-    const tableHead = `____modules = {\n`;
+    const tableHead = `local ____modules = {\n`;
     const tableEnd = `}\n`;
 
     return joinSourceChunks([tableHead, ...fileChunks, tableEnd]);

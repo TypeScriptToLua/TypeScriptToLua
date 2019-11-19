@@ -107,6 +107,27 @@ function transpileJs(program: ts.Program): TranspileJsResult {
     return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
+export function executeLua(code: string): any {
+    const L = lauxlib.luaL_newstate();
+    lualib.luaL_openlibs(L);
+    const status = lauxlib.luaL_dostring(L, to_luastring(code));
+
+    if (status === lua.LUA_OK) {
+        if (lua.lua_isstring(L, -1)) {
+            const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
+            return result === null ? undefined : result;
+        } else {
+            const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
+            throw new Error(`Unsupported Lua return type: ${returnType}`);
+        }
+    } else {
+        // Filter out control characters appearing on some systems
+        const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
+        const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+        return new ExecutionError(message);
+    }
+}
+
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
     const originalFunction = descriptor.value as any;
     const memoized = new WeakMap<object, any>();
@@ -238,24 +259,7 @@ export abstract class TestBuilder {
     @memoize
     public getLuaExecutionResult(): any {
         const code = this.getLuaCodeWithWrapper();
-        const L = lauxlib.luaL_newstate();
-        lualib.luaL_openlibs(L);
-        const status = lauxlib.luaL_dostring(L, to_luastring(code));
-
-        if (status === lua.LUA_OK) {
-            if (lua.lua_isstring(L, -1)) {
-                const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
-                return result === null ? undefined : result;
-            } else {
-                const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
-                throw new Error(`Unsupported Lua return type: ${returnType}`);
-            }
-        } else {
-            // Filter out control characters appearing on some systems
-            const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
-            const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
-            return new ExecutionError(message);
-        }
+        return executeLua(code);
     }
 
     @memoize

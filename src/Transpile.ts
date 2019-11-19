@@ -16,9 +16,9 @@ export interface TranspiledFile {
     sourceMap?: string;
     declaration?: string;
     declarationMap?: string;
+    /** @internal */
+    sourceMapNode?: SourceNode;
 }
-
-export type TranspiledFileWithSourceNode = TranspiledFile & { sourceMapNode?: SourceNode };
 
 export interface TranspileResult {
     diagnostics: ts.Diagnostic[];
@@ -49,9 +49,9 @@ export function transpile({
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const diagnostics = validateOptions(options);
-    let transpiledFiles: TranspiledFileWithSourceNode[] = [];
+    let transpiledFiles: TranspiledFile[] = [];
 
-    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFileWithSourceNode, "fileName">) => {
+    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
         const file = transpiledFiles.find(f => f.fileName === fileName);
         if (file) {
             Object.assign(file, update);

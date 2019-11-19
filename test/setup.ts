@@ -33,7 +33,7 @@ expect.extend({
     toHaveErrorDiagnostics(diagnostics: ts.Diagnostic[]): jest.CustomMatcherResult {
         expect(diagnostics).toBeInstanceOf(Array);
         // @ts-ignore
-        const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
+        const matcherHint = this.utils.matcherHint("toHaveErrorDiagnostics", undefined, "", this);
 
         const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(diagnostics, {
             getCurrentDirectory: () => "",

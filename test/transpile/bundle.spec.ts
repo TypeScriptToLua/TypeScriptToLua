@@ -1,6 +1,6 @@
 import * as path from "path";
+import * as util from "../util";
 import { transpileProject } from "../../src";
-import { executeLua } from "../util";
 
 const inputProject = path.join(__dirname, "bundle/tsconfig.json");
 
@@ -11,6 +11,8 @@ test("should transpile into one file", () => {
     expect(transpileResult.emitResult.length).toBe(1);
 
     const { name, text } = transpileResult.emitResult[0];
+    // Verify the name is as specified in tsconfig
     expect(name).toBe("bundle.lua");
-    expect(executeLua(text)).toBe({ myNumber: 3 });
+    // Verify exported module by executing
+    expect(util.executeLuaModule(text)).toEqual({ myNumber: 3 });
 });

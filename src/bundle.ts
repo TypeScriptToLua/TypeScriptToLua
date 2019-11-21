@@ -1,9 +1,11 @@
 import * as path from "path";
 import { TranspiledFile, EmitHost } from "./Transpile";
 import { SourceNode } from "source-map";
-import { formatPathToLuaPath, trimExtension } from "./utils";
+import { formatPathToLuaPath, trimExtension, normalizeSlashes } from "./utils";
 import { Diagnostic } from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
+import { resolveBaseDir } from "./Emit";
+import { CompilerOptions } from "./CompilerOptions";
 
 const formatPath = (path: string) => formatPathToLuaPath(trimExtension(path));
 
@@ -11,16 +13,19 @@ export function bundleTranspiledFiles(
     bundleFile: string,
     entryModule: string,
     transpiledFiles: TranspiledFile[],
+    options: CompilerOptions,
     emitHost: EmitHost
 ): [Diagnostic[], TranspiledFile] {
     const diagnostics: Diagnostic[] = [];
 
-    if (!transpiledFiles.some(f => f.fileName === entryModule)) {
+    const baseDirectory = resolveBaseDir(options);
+    const resolvedEntryPoint = normalizeSlashes(path.join(baseDirectory, entryModule));
+    if (!transpiledFiles.some(f => f.fileName === resolvedEntryPoint)) {
         return [[couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
     // For each file: ["<file name>"] = function() <lua content> end,
-    const moduleTableEntries: SourceChunk[] = transpiledFiles.map(moduleSourceNode);
+    const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f => moduleSourceNode(f, baseDirectory));
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
     const lualibRequired = transpiledFiles.some(f => f.lua && f.lua.match(/require\("lualib_bundle"\)/));
@@ -55,8 +60,9 @@ export function bundleTranspiledFiles(
     ];
 }
 
-function moduleSourceNode(transpiledFile: TranspiledFile): SourceNode {
-    const tableEntryHead = `["${formatPath(transpiledFile.fileName)}"] = function() `;
+function moduleSourceNode(transpiledFile: TranspiledFile, baseDirectory: string): SourceNode {
+    const modulePath = formatPath(path.relative(baseDirectory, transpiledFile.fileName));
+    const tableEntryHead = `["${modulePath}"] = function() `;
     const tableEntryTail = `end,\n`;
 
     if (transpiledFile.lua && transpiledFile.sourceMapNode) {

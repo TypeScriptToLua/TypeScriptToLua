@@ -154,9 +154,10 @@ export function transpile({
 
     if (options.luaBundle && options.luaBundleEntry) {
         const [bundleDiagnostics, bundle] = bundleTranspiledFiles(
-            options.luaBundleEntry,
+            options.luaBundle,
             options.luaBundleEntry,
             transpiledFiles,
+            options,
             emitHost
         );
         diagnostics.push(...bundleDiagnostics);

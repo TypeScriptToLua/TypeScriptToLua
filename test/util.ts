@@ -107,7 +107,7 @@ function transpileJs(program: ts.Program): TranspileJsResult {
     return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
-export function executeLua(code: string): any {
+function executeLua(code: string): any {
     const L = lauxlib.luaL_newstate();
     lualib.luaL_openlibs(L);
     const status = lauxlib.luaL_dostring(L, to_luastring(code));
@@ -126,6 +126,10 @@ export function executeLua(code: string): any {
         const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
         return new ExecutionError(message);
     }
+}
+
+export function executeLuaModule(code: string): any {
+    return executeLua(`${minimalTestLib}return JSONStringify((function()\n${code}\nend)())`);
 }
 
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {

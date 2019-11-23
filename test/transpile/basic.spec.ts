@@ -8,5 +8,11 @@ test("should transpile", () => {
     const transpileResult = transpileProject(inputProject);
 
     expect(transpileResult.diagnostics).not.toHaveErrorDiagnostics();
-    expect(transpileResult.emitResult).toMatchSnapshot();
+
+    // Check output paths relative to projectDir
+    const relativeResult = transpileResult.emitResult.map(({ name, text }) => ({
+        name: path.relative(projectDir, name),
+        text,
+    }));
+    expect(relativeResult).toMatchSnapshot();
 });

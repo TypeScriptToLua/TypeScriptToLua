@@ -3,7 +3,7 @@
 exports[`should transpile 1`] = `
 Array [
   Object {
-    "name": "C:/Users/Perry/Code/Dota 2/TypescriptToLua/test/transpile/basic/otherFile.lua",
+    "name": "otherFile.lua",
     "text": "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
 local ____exports = {}
 function ____exports.getNumber(self)
@@ -13,7 +13,7 @@ return ____exports
 ",
   },
   Object {
-    "name": "C:/Users/Perry/Code/Dota 2/TypescriptToLua/test/transpile/basic/index.lua",
+    "name": "index.lua",
     "text": "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
 local ____otherFile = require(\\"otherFile\\")
 local getNumber = ____otherFile.getNumber

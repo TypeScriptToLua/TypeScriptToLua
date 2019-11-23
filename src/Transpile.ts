@@ -157,7 +157,7 @@ export function transpile({
             options.luaBundle,
             options.luaBundleEntry,
             transpiledFiles,
-            options,
+            program,
             emitHost
         );
         diagnostics.push(...bundleDiagnostics);

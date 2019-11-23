@@ -11,4 +11,8 @@ declare module "typescript" {
     interface Statement {
         jsDoc?: ts.JSDoc[];
     }
+
+    interface Program {
+        getCommonSourceDirectory(): string;
+    }
 }

@@ -17,7 +17,9 @@ export function emitTranspiledFiles(
 ): OutputFile[] {
     let { rootDir, outDir, luaLibImport } = options;
 
-    const baseDir = resolveBaseDir(options);
+    const configFileName = options.configFilePath as string | undefined;
+    // TODO: Use getCommonSourceDirectory
+    const baseDir = configFileName ? path.dirname(configFileName) : process.cwd();
 
     rootDir = rootDir || baseDir;
     outDir = outDir ? path.resolve(baseDir, outDir) : rootDir;
@@ -68,10 +70,4 @@ export function emitTranspiledFiles(
     }
 
     return files;
-}
-
-export function resolveBaseDir(options: CompilerOptions): string {
-    const configFileName = options.configFilePath as string | undefined;
-    // TODO: Use getCommonSourceDirectory
-    return configFileName ? path.dirname(configFileName) : process.cwd();
 }

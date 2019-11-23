@@ -21,6 +21,19 @@ test("import module -> main", () => {
         .expectToEqual({ value: true });
 });
 
+test("bundle file name", () => {
+    const { diagnostics, transpiledFiles } = util.testModule`
+    export { value } from "./module";
+`
+        .addExtraFile("module.ts", "export const value = true")
+        .setOptions({ luaBundle: "mybundle.lua", luaBundleEntry: "main.ts" })
+        .getLuaResult();
+
+    expect(diagnostics.length).toBe(0);
+    expect(transpiledFiles.length).toBe(1);
+    expect(transpiledFiles[0].fileName).toBe("mybundle.lua");
+});
+
 test("import chain export -> reexport -> main", () => {
     util.testBundle`
         export { value } from "./reexport";
@@ -115,12 +128,4 @@ test("cyclic imports", () => {
 
 test("luaEntry doesn't exist", () => {
     util.testBundle``.setEntryPoint("entry.ts").expectToHaveExactDiagnostic(couldNotFindBundleEntryPoint("entry.ts"));
-});
-
-test("luaEntry resolved from path specified in tsconfig", () => {
-    util.testBundle``
-        .addExtraFile("src/main.ts", "")
-        .addExtraFile("src/module.ts", "")
-        .setOptions({ rootDir: "src" })
-        .expectToHaveNoErrorDiagnostics();
 });

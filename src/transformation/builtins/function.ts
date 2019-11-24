@@ -5,7 +5,7 @@ import { UnsupportedProperty, UnsupportedSelfFunctionConversion } from "../utils
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 
-export function transformFunctionCall(
+export function transformFunctionPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.CallExpression {

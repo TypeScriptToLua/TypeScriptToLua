@@ -6,14 +6,14 @@ import { checkForLuaLibType } from "../transformers/class/new";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { isArrayType, isFunctionType, isStandardLibraryType, isStringType } from "../utils/typescript";
-import { transformArrayCall, transformArrayProperty } from "./array";
+import { transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
-import { transformFunctionCall } from "./function";
-import { transformGlobalFunctionCall } from "./global";
+import { transformFunctionPrototypeCall } from "./function";
+import { transformGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall } from "./number";
-import { transformObjectCall, transformObjectConstructorCall } from "./object";
-import { transformStringCall, transformStringConstructorCall, transformStringProperty } from "./string";
+import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
+import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
 
 export function transformBuiltinPropertyAccessExpression(
@@ -50,7 +50,7 @@ export function transformBuiltinCallExpression(
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, expressionType, undefined)) {
         // TODO:
         checkForLuaLibType(context, expressionType);
-        const result = transformGlobalFunctionCall(context, node);
+        const result = transformGlobalCall(context, node);
         if (result) {
             return result;
         }
@@ -86,21 +86,21 @@ export function transformBuiltinCallExpression(
     }
 
     if (isStringType(context, ownerType)) {
-        return transformStringCall(context, propertyCall);
+        return transformStringPrototypeCall(context, propertyCall);
     }
 
     if (isArrayType(context, ownerType)) {
-        const result = transformArrayCall(context, propertyCall);
+        const result = transformArrayPrototypeCall(context, propertyCall);
         if (result) {
             return result;
         }
     }
 
     if (isFunctionType(context, ownerType)) {
-        return transformFunctionCall(context, propertyCall);
+        return transformFunctionPrototypeCall(context, propertyCall);
     }
 
-    const objectResult = transformObjectCall(context, propertyCall);
+    const objectResult = transformObjectPrototypeCall(context, propertyCall);
     if (objectResult) {
         return objectResult;
     }

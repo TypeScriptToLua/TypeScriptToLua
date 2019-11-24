@@ -28,7 +28,7 @@ export function transformObjectConstructorCall(
     }
 }
 
-export function transformObjectCall(
+export function transformObjectPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.Expression | undefined {

@@ -6,7 +6,7 @@ import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isExplicitArrayType } from "../utils/typescript";
 
-export function transformArrayCall(
+export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.CallExpression | undefined {

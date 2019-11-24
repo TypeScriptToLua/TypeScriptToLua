@@ -16,7 +16,10 @@ function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lu
     );
 }
 
-export function transformStringCall(context: TransformationContext, node: PropertyCallExpression): lua.Expression {
+export function transformStringPrototypeCall(
+    context: TransformationContext,
+    node: PropertyCallExpression
+): lua.Expression {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);

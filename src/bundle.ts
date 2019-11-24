@@ -2,7 +2,7 @@ import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { getProjectRootDir, resolveFromRootDir } from "./resolve";
+import { resolveFromRootDir } from "./resolve";
 import { EmitHost, TranspiledFile } from "./Transpile";
 import { formatPathToLuaPath, trimExtension } from "./utils";
 
@@ -23,7 +23,7 @@ export function bundleTranspiledFiles(
     }
 
     // For each file: ["<file name>"] = function() <lua content> end,
-    const projectRootDir = getProjectRootDir(program);
+    const projectRootDir = program.getCommonSourceDirectory();
     const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f => moduleSourceNode(f, projectRootDir));
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
@@ -51,7 +51,7 @@ export function bundleTranspiledFiles(
     return [
         diagnostics,
         {
-            fileName: path.join(getProjectRootDir(program), bundleFile),
+            fileName: path.join(program.getCommonSourceDirectory(), bundleFile),
             lua: code,
             sourceMap: map.toString(),
             sourceMapNode: moduleTable,

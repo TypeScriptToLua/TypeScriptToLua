@@ -1,9 +1,8 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
+import { LuaLibImportKind } from "./CompilerOptions";
 import { EmitHost, TranspiledFile } from "./Transpile";
 import { normalizeSlashes, trimExtension } from "./utils";
-import { getProjectRootDir } from "./resolve";
 
 export interface OutputFile {
     name: string;
@@ -13,14 +12,14 @@ export interface OutputFile {
 let lualibContent: string;
 export function emitTranspiledFiles(
     program: ts.Program,
-    options: CompilerOptions,
     transpiledFiles: TranspiledFile[],
     emitHost: EmitHost = ts.sys
 ): OutputFile[] {
+    const options = program.getCompilerOptions();
     let { outDir, luaLibImport } = options;
 
-    const rootDir = getProjectRootDir(program);
-    outDir = outDir ? path.resolve(rootDir, outDir) : rootDir;
+    const rootDir = program.getCommonSourceDirectory();
+    outDir = outDir || rootDir;
 
     const files: OutputFile[] = [];
     for (const { fileName, lua, sourceMap, declaration, declarationMap } of transpiledFiles) {

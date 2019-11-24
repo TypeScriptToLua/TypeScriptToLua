@@ -15,8 +15,4 @@ declare module "typescript" {
     interface Program {
         getCommonSourceDirectory(): string;
     }
-
-    interface CompilerOptions {
-        configFilePath?: string;
-    }
 }

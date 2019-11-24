@@ -111,7 +111,7 @@ function performCompilation(
         ...transpileDiagnostics,
     ]);
 
-    const emitResult = tstl.emitTranspiledFiles(program, options, transpiledFiles);
+    const emitResult = tstl.emitTranspiledFiles(program, transpiledFiles);
     emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
     diagnostics.forEach(reportDiagnostic);
@@ -182,7 +182,7 @@ function updateWatchCompilationHost(
 
         const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.transpile({ program, sourceFiles });
 
-        const emitResult = tstl.emitTranspiledFiles(program, options, transpiledFiles);
+        const emitResult = tstl.emitTranspiledFiles(program, transpiledFiles);
         emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { CompilerOptions } from "./CompilerOptions";
 import { Block } from "./LuaAST";
 import { createPrinter } from "./LuaPrinter";
-import { Plugin } from "./plugins";
+import { getPlugins, Plugin } from "./plugins";
 import { createVisitorMap, transformSourceFile } from "./transformation";
 import { getCustomTransformers } from "./TSTransformers";
 import { isNonNull } from "./utils";
@@ -37,7 +37,7 @@ export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
-    plugins = [],
+    plugins: pluginsFromOptions = [],
     emitHost = ts.sys,
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
@@ -76,6 +76,7 @@ export function transpile({
         }
     }
 
+    const plugins = getPlugins(program, diagnostics, pluginsFromOptions);
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {

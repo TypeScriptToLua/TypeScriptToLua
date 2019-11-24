@@ -51,10 +51,7 @@ export const luaBuiltins: ReadonlySet<string> = new Set([
     "unpack",
 ]);
 
-export function isValidLuaIdentifier(str: string): boolean {
-    const match = str.match(/[a-zA-Z_][a-zA-Z0-9_]*/);
-    return match !== null && match[0] === str;
-}
+export const isValidLuaIdentifier = (str: string) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str);
 
 export const isUnsafeName = (name: string) =>
     luaKeywords.has(name) || luaBuiltins.has(name) || !isValidLuaIdentifier(name);

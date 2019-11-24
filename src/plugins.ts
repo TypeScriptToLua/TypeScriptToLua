@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import { Printer } from "./LuaPrinter";
 import { Visitors } from "./transformation/context";
 
@@ -15,4 +16,12 @@ export interface Plugin {
      * Only one plugin can provide `printer`.
      */
     printer?: Printer;
+}
+
+export function getPlugins(
+    _program: ts.Program,
+    _diagnostics: ts.Diagnostic[],
+    pluginsFromOptions: Plugin[]
+): Plugin[] {
+    return pluginsFromOptions;
 }

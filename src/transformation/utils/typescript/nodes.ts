@@ -13,7 +13,7 @@ export function isDestructuringAssignment(node: ts.Node): node is ts.Destructuri
 }
 
 export function isAmbientNode(node: ts.Declaration): boolean {
-    return !((ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Ambient) === 0);
+    return (ts.getCombinedModifierFlags(node) & ts.ModifierFlags.Ambient) !== 0;
 }
 
 export function isDeclaration(node: ts.Node): node is ts.Declaration {

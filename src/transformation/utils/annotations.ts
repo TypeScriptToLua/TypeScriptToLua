@@ -26,9 +26,9 @@ export interface Annotation {
 }
 
 function createAnnotation(name: string, args: string[]): Annotation | undefined {
-    const annotationKind = Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
-    if (annotationKind !== undefined) {
-        return { kind: annotationKind, args };
+    const kind = Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
+    if (kind !== undefined) {
+        return { kind, args };
     }
 }
 

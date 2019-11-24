@@ -31,10 +31,7 @@ const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, ch
  * `foo.bar` => passes (`function foo.bar()` is valid)
  * `getFoo().bar` => fails (`function getFoo().bar()` would be illegal)
  */
-function isValidLuaFunctionDeclarationName(str: string): boolean {
-    const match = str.match(/[a-zA-Z0-9_\.]+/);
-    return match !== null && match[0] === str;
-}
+const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_\.]+$/.test(str);
 
 /**
  * Returns true if expression contains no function calls.
@@ -172,24 +169,21 @@ export class LuaPrinter {
     }
 
     private printStackTraceOverride(rootNode: SourceNode): string {
-        let line = 1;
-        const map: { [line: number]: number } = {};
+        let currentLine = 1;
+        const map: Record<number, number> = {};
         rootNode.walk((chunk, mappedPosition) => {
             if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
-                if (map[line] === undefined) {
-                    map[line] = mappedPosition.line;
+                if (map[currentLine] === undefined) {
+                    map[currentLine] = mappedPosition.line;
                 } else {
-                    map[line] = Math.min(map[line], mappedPosition.line);
+                    map[currentLine] = Math.min(map[currentLine], mappedPosition.line);
                 }
             }
-            line += chunk.split("\n").length - 1;
+
+            currentLine += chunk.split("\n").length - 1;
         });
 
-        const mapItems = [];
-        for (const lineNr in map) {
-            mapItems.push(`["${lineNr}"] = ${map[lineNr]}`);
-        }
-
+        const mapItems = Object.entries(map).map(([line, original]) => `["${line}"] = ${original}`);
         const mapString = "{" + mapItems.join(",") + "}";
 
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
@@ -203,15 +197,14 @@ export class LuaPrinter {
         }
 
         const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
-        // Require lualib bundle
         if (
-            (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0) ||
-            luaLibImport === LuaLibImportKind.Always
+            luaLibImport === LuaLibImportKind.Always ||
+            (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
         ) {
+            // Require lualib bundle
             header += `require("lualib_bundle");\n`;
-        }
-        // Inline lualib features
-        else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
+        } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
+            // Inline lualib features
             header += "-- Lua Library inline imports\n";
             header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
         }

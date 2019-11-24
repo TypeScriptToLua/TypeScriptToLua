@@ -1,8 +1,8 @@
 // Simplified Lua AST based roughly on http://lua-users.org/wiki/MetaLuaAbstractSyntaxTree,
-// https://www.lua.org/manual/5.3/manual.html (9 – The Complete Syntax of Lua) and the TS AST implementation
+// https://www.lua.org/manual/5.3/manual.html#9 and the TS AST implementation
 
 // We can elide a lot of nodes especially tokens and keywords
-// because we dont create the AST from text
+// because we don't create the AST from text
 
 import * as ts from "typescript";
 

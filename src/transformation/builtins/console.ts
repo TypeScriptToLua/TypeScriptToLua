@@ -4,8 +4,7 @@ import { TransformationContext } from "../context";
 import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
 
-const isStringFormatTemplate = (expression: ts.Expression) =>
-    ts.isStringLiteral(expression) && expression.text.match(/\%/g) !== null;
+const isStringFormatTemplate = (node: ts.Expression) => ts.isStringLiteral(node) && node.text.includes("%");
 
 export function transformConsoleCall(
     context: TransformationContext,

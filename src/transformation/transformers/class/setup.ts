@@ -17,7 +17,7 @@ import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../
 import { hasMemberInClassOrAncestor } from "./members/accessors";
 import { getExtendedTypeNode, isStaticNode } from "./utils";
 
-export function createClassCreationMethods(
+export function createClassSetup(
     context: TransformationContext,
     statement: ts.ClassLikeDeclarationBase,
     className: lua.Identifier,

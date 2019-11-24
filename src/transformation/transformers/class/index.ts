@@ -32,13 +32,13 @@ import { popScope, pushScope, ScopeType } from "../../utils/scope";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { createClassCreationMethods } from "./creation";
 import { createConstructorDecorationStatement } from "./decorators";
 import { isGetAccessorOverride, transformAccessorDeclaration } from "./members/accessors";
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
+import { createClassSetup } from "./setup";
 import { getExtendedType, getExtendedTypeNode, isStaticNode } from "./utils";
 
 export function transformClassAsExpression(
@@ -204,15 +204,9 @@ export function transformClassDeclaration(
     }
 
     if (!isExtension && !isMetaExtension) {
-        const classCreationMethods = createClassCreationMethods(
-            context,
-            classDeclaration,
-            className,
-            localClassName,
-            classNameText,
-            extendsType
+        result.push(
+            ...createClassSetup(context, classDeclaration, className, localClassName, classNameText, extendsType)
         );
-        result.push(...classCreationMethods);
     } else {
         for (const f of instanceFields) {
             const fieldName = transformPropertyName(context, f.name);

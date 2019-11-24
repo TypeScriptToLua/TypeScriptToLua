@@ -4,7 +4,9 @@ import { normalizeSlashes } from "./utils";
 
 export function getProjectRootDir(program: ts.Program): string {
     const options = program.getCompilerOptions();
-    const projectDir = options.configFilePath || program.getCommonSourceDirectory();
+    const projectDir = options.configFilePath
+        ? path.dirname(options.configFilePath)
+        : program.getCommonSourceDirectory();
 
     return normalizeSlashes(options.rootDir ? path.resolve(projectDir, options.rootDir) : projectDir);
 }

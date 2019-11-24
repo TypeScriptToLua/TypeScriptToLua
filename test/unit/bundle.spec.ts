@@ -123,7 +123,7 @@ test("cyclic imports", () => {
                 export const lazyValue = () => a.a;
             `
         )
-        .expectExecutionError("stack overflow");
+        .expectToEqual(new util.ExecutionError("stack overflow"));
 });
 
 test("luaEntry doesn't exist", () => {

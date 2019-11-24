@@ -178,22 +178,12 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
+        case "string":
         case "boolean": {
-            if (typeof value !== "boolean") {
+            if (typeof value !== option.type) {
                 return {
                     value: undefined,
-                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, "boolean"),
-                };
-            }
-
-            return { value };
-        }
-
-        case "string": {
-            if (typeof value !== "string") {
-                return {
-                    value: undefined,
-                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, "string"),
+                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
                 };
             }
 

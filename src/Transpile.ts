@@ -1,4 +1,6 @@
+import { SourceNode } from "source-map";
 import * as ts from "typescript";
+import { bundleTranspiledFiles } from "./bundle";
 import { CompilerOptions, validateOptions } from "./CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
@@ -6,8 +8,6 @@ import { LuaPrinter } from "./LuaPrinter";
 import { LuaTransformer } from "./LuaTransformer";
 import { TranspileError } from "./TranspileError";
 import { getCustomTransformers } from "./TSTransformers";
-import { bundleTranspiledFiles } from "./bundle";
-import { SourceNode } from "source-map";
 
 export interface TranspiledFile {
     fileName: string;

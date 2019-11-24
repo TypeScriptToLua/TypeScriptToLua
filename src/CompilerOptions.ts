@@ -47,7 +47,7 @@ export enum LuaTarget {
 export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = [];
 
-    if (options.luaBundle && (options.luaBundleEntry === "" || !options.luaBundleEntry)) {
+    if (options.luaBundle && !options.luaBundleEntry) {
         diagnostics.push(configErrorDiagnostic(`'luaBundleEntry' is required when 'luaBundle' is enabled.`));
     }
 

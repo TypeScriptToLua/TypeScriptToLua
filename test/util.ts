@@ -1,11 +1,11 @@
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
+import { stringify } from "javascript-stringify";
 import * as path from "path";
 import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
-import { stringify } from "javascript-stringify";
 
 export * from "./legacy-utils";
 
@@ -262,8 +262,7 @@ export abstract class TestBuilder {
 
     @memoize
     public getLuaExecutionResult(): any {
-        const code = this.getLuaCodeWithWrapper();
-        return executeLua(code);
+        return executeLua(this.getLuaCodeWithWrapper());
     }
 
     @memoize
@@ -369,7 +368,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectExecutionError(message: string): this {
+    /*public expectExecutionError(message: string): this {
         const luaResult = this.getLuaExecutionResult();
         if (!(luaResult instanceof ExecutionError)) {
             expect(luaResult).toBeInstanceOf(ExecutionError);
@@ -377,7 +376,7 @@ export abstract class TestBuilder {
             expect(luaResult.message).toContain(message);
         }
         return this;
-    }
+    }*/
 
     public expectNoExecutionError(): this {
         const luaResult = this.getLuaExecutionResult();

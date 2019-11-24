@@ -1,9 +1,10 @@
 import * as path from "path";
-import { TranspiledFile, EmitHost } from "./Transpile";
 import { SourceNode } from "source-map";
-import { formatPathToLuaPath, trimExtension, normalizeSlashes } from "./utils";
-import { Diagnostic, Program } from "typescript";
+import * as ts from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
+import { getProjectRootDir, resolveFromRootDir } from "./resolve";
+import { EmitHost, TranspiledFile } from "./Transpile";
+import { formatPathToLuaPath, trimExtension } from "./utils";
 
 const formatPath = (path: string) => formatPathToLuaPath(trimExtension(path));
 
@@ -11,13 +12,13 @@ export function bundleTranspiledFiles(
     bundleFile: string,
     entryModule: string,
     transpiledFiles: TranspiledFile[],
-    program: Program,
+    program: ts.Program,
     emitHost: EmitHost
-): [Diagnostic[], TranspiledFile] {
-    const diagnostics: Diagnostic[] = [];
+): [ts.Diagnostic[], TranspiledFile] {
+    const diagnostics: ts.Diagnostic[] = [];
 
-    const resolvedEntryModule = resolveAbsolutePath(program, entryModule);
-    if (!transpiledFiles.some(f => normalizeSlashes(f.fileName) === normalizeSlashes(resolvedEntryModule))) {
+    const resolvedEntryModule = resolveFromRootDir(program, entryModule);
+    if (!transpiledFiles.some(f => resolveFromRootDir(program, f.fileName) === resolvedEntryModule)) {
         return [[couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
@@ -37,8 +38,10 @@ export function bundleTranspiledFiles(
 
     // Override `require` to read from ____modules table.
     const requireOverride =
+        `local ____moduleCache = {}\n` +
         `local ____originalRequire = require\n` +
-        `function require(file) if ____modules[file] then return ____modules[file]() ` +
+        `function require(file) if ____moduleCache[file] then return ____moduleCache[file] end\n` +
+        `if ____modules[file] then ____moduleCache[file] = ____modules[file](); return ____moduleCache[file] ` +
         `else print("Could not find module '"..file.."' to require."); return ____originalRequire(file) end end\n`;
     const entryPoint = `return require("${formatPath(entryModule)}")\n`;
 
@@ -48,7 +51,7 @@ export function bundleTranspiledFiles(
     return [
         diagnostics,
         {
-            fileName: resolveAbsolutePath(program, bundleFile),
+            fileName: path.join(getProjectRootDir(program), bundleFile),
             lua: code,
             sourceMap: map.toString(),
             sourceMapNode: moduleTable,
@@ -82,10 +85,3 @@ function joinSourceChunks(chunks: SourceChunk[]): SourceNode {
     // tslint:disable-next-line:no-null-keyword
     return new SourceNode(null, null, null, chunks);
 }
-
-const getProjectRootDir = (program: Program) => program.getCommonSourceDirectory();
-
-const resolveAbsolutePath = (program: Program, pathToResolve: string) =>
-    path.isAbsolute(pathToResolve)
-        ? pathToResolve
-        : path.normalize(path.join(getProjectRootDir(program), pathToResolve));

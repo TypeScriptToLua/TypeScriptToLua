@@ -10,17 +10,17 @@ Array [
 
 exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 1`] = `
 Array [
-  "directories/basic/lualib_bundle.lua",
   "directories/basic/src/lib/file.lua",
+  "directories/basic/src/lualib_bundle.lua",
   "directories/basic/src/main.lua",
 ]
 `;
 
 exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 2`] = `
 Array [
+  "directories/basic/out/lib/file.lua",
   "directories/basic/out/lualib_bundle.lua",
-  "directories/basic/out/src/lib/file.lua",
-  "directories/basic/out/src/main.lua",
+  "directories/basic/out/main.lua",
 ]
 `;
 

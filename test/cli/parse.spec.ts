@@ -118,7 +118,7 @@ describe("command line", () => {
 
             ["luaBundle", "foo", { luaBundle: "foo" }],
             ["luaBundleEntry", "bar", { luaBundleEntry: "bar" }],
-        ])("--%s %s", (optionName, value, expected) => {
+        ])("{ %p: %p }", (optionName, value, expected) => {
             const result = tstl.parseCommandLine([`--${optionName}`, value]);
 
             expect(result.errors).not.toHaveErrorDiagnostics();
@@ -226,7 +226,7 @@ describe("tsconfig", () => {
 
             ["luaBundle", "foo", { luaBundle: "foo" }],
             ["luaBundleEntry", "bar", { luaBundleEntry: "bar" }],
-        ])("--%s %s", (optionName, value, expected) => {
+        ])("{ %p: %p }", (optionName, value, expected) => {
             const result = parseConfigFileContent({ tstl: { [optionName]: value } });
 
             expect(result.errors).not.toHaveErrorDiagnostics();

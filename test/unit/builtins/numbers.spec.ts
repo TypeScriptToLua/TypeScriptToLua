@@ -48,6 +48,18 @@ describe("Number", () => {
     });
 });
 
+const toStringRadixes = [undefined, 10, 2, 8, 9, 16, 17, 36, 36.9];
+const toStringValues = [...numberCases, 1024, 1.2, NaN];
+// TODO: flatMap
+const toStringPairs = toStringValues.reduce<Array<readonly [number, number | undefined]>>(
+    (results, value) => [...results, ...toStringRadixes.map(radix => [value, radix] as const)],
+    []
+);
+
+test.each(toStringPairs)("(%p).toString(%p)", (value, radix) => {
+    util.testExpressionTemplate`(${value}).toString(${radix})`.expectToMatchJsResult();
+});
+
 test.each(cases)("isNaN(%p)", value => {
     util.testExpressionTemplate`isNaN(${value} as any)`.expectToMatchJsResult();
 });

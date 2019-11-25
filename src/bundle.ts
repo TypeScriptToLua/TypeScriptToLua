@@ -2,11 +2,13 @@ import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { resolveFromRootDir } from "./resolve";
 import { EmitHost, TranspiledFile } from "./Transpile";
 import { formatPathToLuaPath, trimExtension } from "./utils";
+import { escapeString } from "./TSHelper";
+import { CompilerOptions } from "./CompilerOptions";
 
-const formatPath = (path: string) => formatPathToLuaPath(trimExtension(path));
+const formatPath = (path: string) => escapeString(formatPathToLuaPath(trimExtension(path)));
+const modulePath = (baseDir: string, pathToResolve: string) => formatPath(path.relative(baseDir, pathToResolve));
 
 export function bundleTranspiledFiles(
     bundleFile: string,
@@ -17,17 +19,29 @@ export function bundleTranspiledFiles(
 ): [ts.Diagnostic[], TranspiledFile] {
     const diagnostics: ts.Diagnostic[] = [];
 
-    const resolvedEntryModule = resolveFromRootDir(program, entryModule);
-    if (!transpiledFiles.some(f => resolveFromRootDir(program, f.fileName) === resolvedEntryModule)) {
+    const options = program.getCompilerOptions() as CompilerOptions;
+
+    const projectRootDir = options.configFilePath
+        ? path.dirname(options.configFilePath)
+        : emitHost.getCurrentDirectory();
+
+    // Resolve project settings relative to project file.
+    const resolvedEntryModule = path.resolve(projectRootDir, entryModule);
+    const resolvedBundleFile = path.resolve(projectRootDir, bundleFile);
+
+    // Resolve source files relative to common source directory.
+    const sourceRootDir = program.getCommonSourceDirectory();
+    if (!transpiledFiles.some(f => path.resolve(sourceRootDir, f.fileName) === resolvedEntryModule)) {
         return [[couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
-    // For each file: ["<file name>"] = function() <lua content> end,
-    const projectRootDir = program.getCommonSourceDirectory();
-    const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f => moduleSourceNode(f, projectRootDir));
+    // For each file: ["<module path>"] = function() <lua content> end,
+    const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f =>
+        moduleSourceNode(f, modulePath(sourceRootDir, f.fileName))
+    );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
-    const lualibRequired = transpiledFiles.some(f => f.lua && f.lua.match(/require\("lualib_bundle"\)/));
+    const lualibRequired = transpiledFiles.some(f => f.lua && f.lua.includes(`require("lualib_bundle")`));
     if (lualibRequired) {
         const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
         moduleTableEntries.push(`["lualib_bundle"] = function() ${lualibBundle} end,\n`);
@@ -37,13 +51,22 @@ export function bundleTranspiledFiles(
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // Override `require` to read from ____modules table.
-    const requireOverride =
-        `local ____moduleCache = {}\n` +
-        `local ____originalRequire = require\n` +
-        `function require(file) if ____moduleCache[file] then return ____moduleCache[file] end\n` +
-        `if ____modules[file] then ____moduleCache[file] = ____modules[file](); return ____moduleCache[file] ` +
-        `else print("Could not find module '"..file.."' to require."); return ____originalRequire(file) end end\n`;
-    const entryPoint = `return require("${formatPath(entryModule)}")\n`;
+    const requireOverride = `
+local ____moduleCache = {}
+local ____originalRequire = require
+function require(file)
+    if ____moduleCache[file] then return ____moduleCache[file] end
+    if ____modules[file] then
+        ____moduleCache[file] = ____modules[file]()
+        return ____moduleCache[file]
+    else
+        print("Could not find module '"..file.."' to require.")
+        return ____originalRequire(file) 
+    end
+end\n`;
+
+    // return require("<entry module path>")
+    const entryPoint = `return require("${modulePath(sourceRootDir, resolvedEntryModule)}")\n`;
 
     const bundleNode = joinSourceChunks([moduleTable, requireOverride, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();
@@ -51,7 +74,7 @@ export function bundleTranspiledFiles(
     return [
         diagnostics,
         {
-            fileName: path.join(program.getCommonSourceDirectory(), bundleFile),
+            fileName: resolvedBundleFile,
             lua: code,
             sourceMap: map.toString(),
             sourceMapNode: moduleTable,
@@ -61,9 +84,8 @@ export function bundleTranspiledFiles(
     ];
 }
 
-function moduleSourceNode(transpiledFile: TranspiledFile, projectRootDir: string): SourceNode {
-    const resolvedProjectPath = path.relative(projectRootDir, transpiledFile.fileName);
-    const tableEntryHead = `["${formatPath(resolvedProjectPath)}"] = function() `;
+function moduleSourceNode(transpiledFile: TranspiledFile, modulePath: string): SourceNode {
+    const tableEntryHead = `["${modulePath}"] = function() `;
     const tableEntryTail = `end,\n`;
 
     if (transpiledFile.lua && transpiledFile.sourceMapNode) {

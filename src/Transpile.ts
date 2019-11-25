@@ -35,6 +35,7 @@ export interface TranspileOptions {
 }
 
 export interface EmitHost {
+    getCurrentDirectory(): string;
     readFile(path: string): string | undefined;
 }
 

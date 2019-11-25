@@ -1,7 +1,9 @@
-import * as util from "../util";
-import { couldNotFindBundleEntryPoint } from "../../src/diagnostics";
-import { LuaLibImportKind } from "../../src";
+import * as path from "path";
+import * as ts from "typescript";
 import { DiagnosticCategory } from "typescript";
+import { LuaLibImportKind } from "../../src";
+import { couldNotFindBundleEntryPoint } from "../../src/diagnostics";
+import * as util from "../util";
 
 test("no entry point", () => {
     util.testBundle``
@@ -31,7 +33,7 @@ test("bundle file name", () => {
 
     expect(diagnostics.length).toBe(0);
     expect(transpiledFiles.length).toBe(1);
-    expect(transpiledFiles[0].fileName).toBe("mybundle.lua");
+    expect(transpiledFiles[0].fileName).toBe(path.join(ts.sys.getCurrentDirectory(), "mybundle.lua"));
 });
 
 test("import chain export -> reexport -> main", () => {

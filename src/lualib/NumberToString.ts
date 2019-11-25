@@ -1,6 +1,7 @@
 // tslint:disable-next-line: variable-name
 const ____radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
+// https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring
 function __TS__NumberToString(this: number, radix?: number): string {
     if (radix === undefined || radix === 10 || this === Infinity || this === -Infinity || this !== this) {
         return this.toString();

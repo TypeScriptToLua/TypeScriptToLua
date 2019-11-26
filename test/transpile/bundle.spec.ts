@@ -13,7 +13,7 @@ test("should transpile into one file", () => {
 
     const { name, text } = transpileResult.emitResult[0];
     // Verify the name is as specified in tsconfig
-    expect(path.join(name)).toBe(path.join(projectDir, "bundle.lua"));
+    expect(name).toBe(path.join(projectDir, "bundle.lua").replace(/\\/g, "/"));
     // Verify exported module by executing
     expect(util.executeLuaModule(text)).toEqual({ myNumber: 3 });
 });

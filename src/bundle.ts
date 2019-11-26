@@ -3,12 +3,12 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
 import { EmitHost, TranspiledFile } from "./Transpile";
-import { formatPathToLuaPath, trimExtension } from "./utils";
+import { formatPathToLuaPath, trimExtension, normalizeSlashes } from "./utils";
 import { escapeString } from "./TSHelper";
 import { CompilerOptions } from "./CompilerOptions";
 
-const formatPath = (path: string) => escapeString(formatPathToLuaPath(trimExtension(path)));
-const modulePath = (baseDir: string, pathToResolve: string) => formatPath(path.relative(baseDir, pathToResolve));
+const createModulePath = (baseDir: string, pathToResolve: string) =>
+    escapeString(formatPathToLuaPath(trimExtension(path.relative(baseDir, pathToResolve))));
 
 export function bundleTranspiledFiles(
     bundleFile: string,
@@ -37,7 +37,7 @@ export function bundleTranspiledFiles(
 
     // For each file: ["<module path>"] = function() <lua content> end,
     const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f =>
-        moduleSourceNode(f, modulePath(sourceRootDir, f.fileName))
+        moduleSourceNode(f, createModulePath(sourceRootDir, f.fileName))
     );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
@@ -55,18 +55,23 @@ export function bundleTranspiledFiles(
 local ____moduleCache = {}
 local ____originalRequire = require
 function require(file)
-    if ____moduleCache[file] then return ____moduleCache[file] end
+    if ____moduleCache[file] then 
+        return ____moduleCache[file]
+    end
     if ____modules[file] then
         ____moduleCache[file] = ____modules[file]()
         return ____moduleCache[file]
     else
-        print("Could not find module '"..file.."' to require.")
-        return ____originalRequire(file) 
+        if ____originalRequire then
+            return ____originalRequire(file)
+        else
+            print("Could not find module '" .. file .. "' to require.")
+        end
     end
 end\n`;
 
     // return require("<entry module path>")
-    const entryPoint = `return require("${modulePath(sourceRootDir, resolvedEntryModule)}")\n`;
+    const entryPoint = `return require("${createModulePath(sourceRootDir, resolvedEntryModule)}")\n`;
 
     const bundleNode = joinSourceChunks([moduleTable, requireOverride, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();
@@ -74,12 +79,10 @@ end\n`;
     return [
         diagnostics,
         {
-            fileName: resolvedBundleFile,
+            fileName: normalizeSlashes(resolvedBundleFile),
             lua: code,
             sourceMap: map.toString(),
             sourceMapNode: moduleTable,
-            declaration: undefined,
-            declarationMap: undefined,
         },
     ];
 }

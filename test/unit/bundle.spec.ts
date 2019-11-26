@@ -33,7 +33,9 @@ test("bundle file name", () => {
 
     expect(diagnostics.length).toBe(0);
     expect(transpiledFiles.length).toBe(1);
-    expect(transpiledFiles[0].fileName).toBe(path.join(ts.sys.getCurrentDirectory(), "mybundle.lua"));
+    expect(transpiledFiles[0].fileName).toBe(
+        path.join(ts.sys.getCurrentDirectory(), "mybundle.lua").replace(/\\/g, "/")
+    );
 });
 
 test("import chain export -> reexport -> main", () => {

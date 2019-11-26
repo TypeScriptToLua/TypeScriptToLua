@@ -1,7 +1,7 @@
 import * as path from "path";
 import { transpileProject } from "../../src";
 
-const projectDir = path.join(__dirname, "basic");
+const projectDir = path.join(__dirname, "project");
 const inputProject = path.join(projectDir, "tsconfig.json");
 
 test("should transpile", () => {

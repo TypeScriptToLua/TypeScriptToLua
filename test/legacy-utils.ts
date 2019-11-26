@@ -14,7 +14,7 @@ export function transpileString(
     expect(file.lua).toBeDefined();
 
     const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
-    expect(errors).not.toHaveErrorDiagnostics();
+    expect(errors).not.toHaveDiagnostics();
 
     return file.lua!.trim();
 }

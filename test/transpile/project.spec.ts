@@ -7,7 +7,7 @@ const inputProject = path.join(projectDir, "tsconfig.json");
 test("should transpile", () => {
     const transpileResult = transpileProject(inputProject);
 
-    expect(transpileResult.diagnostics).not.toHaveErrorDiagnostics();
+    expect(transpileResult.diagnostics).not.toHaveDiagnostics();
 
     // Check output paths relative to projectDir
     const relativeResult = transpileResult.emitResult.map(({ name, text }) => ({

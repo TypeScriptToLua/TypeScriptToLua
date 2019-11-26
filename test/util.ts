@@ -351,7 +351,7 @@ export abstract class TestBuilder {
     }
 
     public expectToHaveErrorDiagnostics(): this {
-        expect(this.getLuaDiagnostics()).toHaveErrorDiagnostics();
+        expect(this.getLuaDiagnostics()).toHaveDiagnostics();
         return this;
     }
 
@@ -364,7 +364,7 @@ export abstract class TestBuilder {
     }
 
     public expectToHaveNoErrorDiagnostics(): this {
-        expect(this.getLuaDiagnostics()).not.toHaveErrorDiagnostics();
+        expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
         return this;
     }
 

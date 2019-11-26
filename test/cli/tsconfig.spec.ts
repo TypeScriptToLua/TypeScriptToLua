@@ -79,15 +79,15 @@ describe("inferred", () => {
 
 describe("errors", () => {
     test("specified file does not exist", () => {
-        expect([locate("tsconfig.json")]).toHaveErrorDiagnostics();
+        expect([locate("tsconfig.json")]).toHaveDiagnostics();
     });
 
     test("specified directory does not exist", () => {
-        expect([locate("project")]).toHaveErrorDiagnostics();
+        expect([locate("project")]).toHaveDiagnostics();
     });
 
     test("cannot be mixed", async () => {
         await fs.outputFile("tsconfig.json", "");
-        expect([locate("tsconfig.json", [""])]).toHaveErrorDiagnostics();
+        expect([locate("tsconfig.json", [""])]).toHaveDiagnostics();
     });
 });

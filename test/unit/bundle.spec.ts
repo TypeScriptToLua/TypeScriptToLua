@@ -87,17 +87,22 @@ test("entry point in directory", () => {
         .expectToEqual({ value: true });
 });
 
-test.each([LuaLibImportKind.Inline, LuaLibImportKind.Require])("LuaLibs", lualibOption => {
-    util.testBundle`
+test.each([LuaLibImportKind.Inline, LuaLibImportKind.Require])("LuaLib %p", lualibOption => {
+    const testBundle = util.testBundle`
         export const result = [1, 2];
         result.push(3);
-    `
-        .setOptions({ luaLibImport: lualibOption })
-        .expectToEqual({ result: [1, 2, 3] });
+    `.setOptions({ luaLibImport: lualibOption });
+
+    if (lualibOption === LuaLibImportKind.Inline) {
+        testBundle.expectToHaveDiagnostic(d => d.category === DiagnosticCategory.Warning);
+    } else {
+        expect(testBundle.getLuaResult().diagnostics).toEqual([]);
+    }
+    expect(testBundle.getLuaExecutionResult()).toEqual({ result: [1, 2, 3] });
 });
 
 test("LuaBundle and LuaLibImport.Inline generate warning", () => {
-    util.testBundle`
+    const testBundle = util.testBundle`
         export const result = [1, 2];
         result.push(3);
     `
@@ -108,8 +113,9 @@ test("LuaBundle and LuaLibImport.Inline generate warning", () => {
                 d.messageText ===
                     `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
                         `It is recommended to use 'luaLibImport: "require"'`
-        )
-        .expectToEqual({ result: [1, 2, 3] }); // Result should still be the same
+        );
+
+    expect(testBundle.getLuaExecutionResult()).toEqual({ result: [1, 2, 3] }); // Result should still be the same
 });
 
 test("cyclic imports", () => {

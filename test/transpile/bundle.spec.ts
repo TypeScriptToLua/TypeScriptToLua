@@ -8,7 +8,7 @@ const inputProject = path.join(projectDir, "tsconfig.json");
 test("should transpile into one file", () => {
     const transpileResult = transpileProject(inputProject);
 
-    expect(transpileResult.diagnostics).not.toHaveErrorDiagnostics();
+    expect(transpileResult.diagnostics).not.toHaveDiagnostics();
     expect(transpileResult.emitResult.length).toBe(1);
 
     const { name, text } = transpileResult.emitResult[0];

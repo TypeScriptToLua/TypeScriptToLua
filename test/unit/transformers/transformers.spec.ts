@@ -44,7 +44,7 @@ describe("resolution", () => {
         const transform = path.join(__dirname, "error.ts");
         const options = optionsOfTransformer({ transform });
         const { diagnostics } = util.transpileStringResult("", options);
-        expect(diagnostics).toHaveErrorDiagnostics();
+        expect(diagnostics).toHaveDiagnostics();
     });
 });
 

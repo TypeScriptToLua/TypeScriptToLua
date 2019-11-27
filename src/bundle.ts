@@ -65,7 +65,7 @@ function require(file)
         if ____originalRequire then
             return ____originalRequire(file)
         else
-            print("Could not find module '" .. file .. "' to require.")
+            error("module '" .. file .. "' not found")
         end
     end
 end\n`;

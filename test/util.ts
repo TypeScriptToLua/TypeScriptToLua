@@ -363,20 +363,10 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveNoErrorDiagnostics(): this {
+    public expectToHaveNoDiagnostics(): this {
         expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
         return this;
     }
-
-    /*public expectExecutionError(message: string): this {
-        const luaResult = this.getLuaExecutionResult();
-        if (!(luaResult instanceof ExecutionError)) {
-            expect(luaResult).toBeInstanceOf(ExecutionError);
-        } else {
-            expect(luaResult.message).toContain(message);
-        }
-        return this;
-    }*/
 
     public expectNoExecutionError(): this {
         const luaResult = this.getLuaExecutionResult();
@@ -388,7 +378,7 @@ export abstract class TestBuilder {
     }
 
     public expectToMatchJsResult(allowErrors = false): this {
-        this.expectToHaveNoErrorDiagnostics();
+        this.expectToHaveNoDiagnostics();
         if (!allowErrors) this.expectNoExecutionError();
 
         const luaResult = this.getLuaExecutionResult();
@@ -399,20 +389,20 @@ export abstract class TestBuilder {
     }
 
     public expectToEqual(expected: any): this {
-        this.expectToHaveNoErrorDiagnostics();
+        this.expectToHaveNoDiagnostics();
         const luaResult = this.getLuaExecutionResult();
         expect(luaResult).toEqual(expected);
         return this;
     }
 
     public expectLuaToMatchSnapshot(): this {
-        this.expectToHaveNoErrorDiagnostics();
+        this.expectToHaveNoDiagnostics();
         expect(this.getMainLuaCodeChunk()).toMatchSnapshot();
         return this;
     }
 
     public expectResultToMatchSnapshot(): this {
-        this.expectToHaveNoErrorDiagnostics();
+        this.expectToHaveNoDiagnostics();
         expect(this.getLuaExecutionResult()).toMatchSnapshot();
         return this;
     }

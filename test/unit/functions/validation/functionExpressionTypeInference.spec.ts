@@ -24,7 +24,7 @@ test("noSelfInFile works when first statement has other annotations", () => {
         function foo() {}
 
         const test: (this: void) => void = foo;
-    `.expectToHaveNoErrorDiagnostics();
+    `.expectToHaveNoDiagnostics();
 });
 
 test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(

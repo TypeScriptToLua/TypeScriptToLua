@@ -350,13 +350,13 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveErrorDiagnostics(): this {
+    public expectToHaveDiagnostics(): this {
         expect(this.getLuaDiagnostics()).toHaveDiagnostics();
         return this;
     }
 
     public expectToHaveDiagnosticOfError(error: Error): this {
-        this.expectToHaveErrorDiagnostics();
+        this.expectToHaveDiagnostics();
         expect(this.getLuaDiagnostics()).toHaveLength(1);
         const firstDiagnostic = this.getLuaDiagnostics()[0];
         expect(firstDiagnostic).toMatchObject({ messageText: error.message });

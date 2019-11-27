@@ -16,7 +16,7 @@ export function emitTranspiledFiles(
     emitHost: EmitHost = ts.sys
 ): OutputFile[] {
     const options = program.getCompilerOptions();
-    let { outDir, luaLibImport } = options;
+    let { outDir, luaLibImport, luaBundle } = options;
 
     const rootDir = program.getCommonSourceDirectory();
     outDir = outDir || rootDir;
@@ -48,7 +48,7 @@ export function emitTranspiledFiles(
         }
     }
 
-    if (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always) {
+    if (!luaBundle && (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always)) {
         if (lualibContent === undefined) {
             const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
             if (lualibBundle !== undefined) {

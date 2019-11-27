@@ -4,7 +4,26 @@ import { PropertyCallExpression, transformArguments } from "../transformers/call
 import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 
-// Transpile a Number._ property
+export function transformNumberPrototypeCall(
+    context: TransformationContext,
+    node: PropertyCallExpression
+): lua.Expression {
+    const expression = node.expression;
+    const signature = context.checker.getResolvedSignature(node);
+    const params = transformArguments(context, node.arguments, signature);
+    const caller = context.transformExpression(expression.expression);
+
+    const expressionName = expression.name.text;
+    switch (expressionName) {
+        case "toString":
+            return params.length === 0
+                ? lua.createCallExpression(lua.createIdentifier("tostring"), [caller], node)
+                : transformLuaLibFunction(context, LuaLibFeature.NumberToString, node, caller, ...params);
+        default:
+            throw UnsupportedProperty("number", expressionName, node);
+    }
+}
+
 export function transformNumberConstructorCall(
     context: TransformationContext,
     expression: PropertyCallExpression

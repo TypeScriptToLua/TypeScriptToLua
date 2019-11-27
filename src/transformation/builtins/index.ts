@@ -5,13 +5,13 @@ import { PropertyCallExpression } from "../transformers/call";
 import { checkForLuaLibType } from "../transformers/class/new";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { isArrayType, isFunctionType, isStandardLibraryType, isStringType } from "../utils/typescript";
+import { isArrayType, isFunctionType, isNumberType, isStandardLibraryType, isStringType } from "../utils/typescript";
 import { transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall } from "./function";
 import { transformGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
-import { transformNumberConstructorCall } from "./number";
+import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
 import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
 import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
@@ -87,6 +87,10 @@ export function transformBuiltinCallExpression(
 
     if (isStringType(context, ownerType)) {
         return transformStringPrototypeCall(context, propertyCall);
+    }
+
+    if (isNumberType(context, ownerType)) {
+        return transformNumberPrototypeCall(context, propertyCall);
     }
 
     if (isArrayType(context, ownerType)) {

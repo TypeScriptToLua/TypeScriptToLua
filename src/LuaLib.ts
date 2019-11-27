@@ -40,6 +40,7 @@ export enum LuaLibFeature {
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",
     NumberIsNaN = "NumberIsNaN",
+    NumberToString = "NumberToString",
     ObjectAssign = "ObjectAssign",
     ObjectEntries = "ObjectEntries",
     ObjectFromEntries = "ObjectFromEntries",

@@ -48,22 +48,30 @@ export function emitTranspiledFiles(
         }
     }
 
-    if (!luaBundle && (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always)) {
-        if (lualibContent === undefined) {
-            const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
-            if (lualibBundle !== undefined) {
-                lualibContent = lualibBundle;
-            } else {
-                throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+    if (
+        !luaBundle &&
+        (luaLibImport === undefined ||
+            luaLibImport === LuaLibImportKind.Require ||
+            luaLibImport === LuaLibImportKind.Always)
+    ) {
+        const lualibRequired = files.some(f => f.text && f.text.includes(`require("lualib_bundle")`));
+        if (lualibRequired) {
+            if (lualibContent === undefined) {
+                const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
+                if (lualibBundle !== undefined) {
+                    lualibContent = lualibBundle;
+                } else {
+                    throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+                }
             }
-        }
 
-        let outPath = path.resolve(rootDir, "lualib_bundle.lua");
-        if (outDir !== rootDir) {
-            outPath = path.join(outDir, path.relative(rootDir, outPath));
-        }
+            let outPath = path.resolve(rootDir, "lualib_bundle.lua");
+            if (outDir !== rootDir) {
+                outPath = path.join(outDir, path.relative(rootDir, outPath));
+            }
 
-        files.push({ name: normalizeSlashes(outPath), text: lualibContent });
+            files.push({ name: normalizeSlashes(outPath), text: lualibContent });
+        }
     }
 
     return files;

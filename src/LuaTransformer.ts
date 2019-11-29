@@ -4295,7 +4295,7 @@ export class LuaTransformer {
         }
 
         if (tsHelper.isStandardLibraryType(ownerType, "NumberConstructor", this.program)) {
-            return this.transformNumberCallExpression(node);
+            return this.transformNumberExpression(node);
         }
 
         const classDecorators = tsHelper.getCustomDecorators(ownerType, this.checker);
@@ -4306,6 +4306,10 @@ export class LuaTransformer {
 
         if (tsHelper.isStringType(ownerType, this.checker, this.program)) {
             return this.transformStringCallExpression(node);
+        }
+
+        if (tsHelper.isNumberType(ownerType, this.checker, this.program)) {
+            return this.transformNumberCallExpression(node);
         }
 
         // if ownerType is a array, use only supported functions
@@ -4883,6 +4887,23 @@ export class LuaTransformer {
         );
     }
 
+    protected transformNumberCallExpression(node: ts.CallExpression): tstl.Expression {
+        const expression = node.expression as ts.PropertyAccessExpression;
+        const signature = this.checker.getResolvedSignature(node);
+        const params = this.transformArguments(node.arguments, signature);
+        const caller = this.transformExpression(expression.expression);
+
+        const expressionName = expression.name.text;
+        switch (expressionName) {
+            case "toString":
+                return params.length === 0
+                    ? tstl.createCallExpression(tstl.createIdentifier("tostring"), [caller], node)
+                    : this.transformLuaLibFunction(LuaLibFeature.NumberToString, node, caller, ...params);
+            default:
+                throw TSTLErrors.UnsupportedProperty("number", expressionName, node);
+        }
+    }
+
     // Transpile a String._ property
     protected transformStringExpression(identifier: ts.Identifier): ExpressionVisitResult {
         const identifierString = identifier.text;
@@ -5015,7 +5036,7 @@ export class LuaTransformer {
     }
 
     // Transpile a Number._ property
-    protected transformNumberCallExpression(expression: ts.CallExpression): tstl.CallExpression {
+    protected transformNumberExpression(expression: ts.CallExpression): tstl.CallExpression {
         const method = expression.expression as ts.PropertyAccessExpression;
         const parameters = this.transformArguments(expression.arguments);
         const methodName = method.name.text;

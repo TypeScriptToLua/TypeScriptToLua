@@ -21,9 +21,23 @@ interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
     type: "boolean";
 }
 
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean;
+interface CommandLineOptionOfString extends CommandLineOptionBase {
+    type: "string";
+}
+
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfString;
 
 export const optionDeclarations: CommandLineOption[] = [
+    {
+        name: "luaBundle",
+        description: "The name of the lua file to bundle output lua to. Requires luaBundleEntry.",
+        type: "string",
+    },
+    {
+        name: "luaBundleEntry",
+        description: "The entry *.ts file that will be executed when entering the luaBundle. Requires luaBundle.",
+        type: "string",
+    },
     {
         name: "luaLibImport",
         description: "Specifies how js standard features missing in lua are imported.",
@@ -164,11 +178,12 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
+        case "string":
         case "boolean": {
-            if (typeof value !== "boolean") {
+            if (typeof value !== option.type) {
                 return {
                     value: undefined,
-                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, "boolean"),
+                    error: cliDiagnostics.compilerOptionRequiresAValueOfType(option.name, option.type),
                 };
             }
 

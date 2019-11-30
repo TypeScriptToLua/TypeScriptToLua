@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.29.0
+
+- Added bundling support using options `luaBundle` and `luaBundleEntry` (so **not** TS's outFile). This will bundle all output files into one single bundle file, with _luaBundleEntry_ as entry point. For more information on these options see https://github.com/TypeScriptToLua/TypeScriptToLua/wiki#tstl-specific-options
+- Added support for `Number.prototype.toString(radix)`.
+- Fixed `array.flat()` not flattening empty arrays.
+  **Note:** Due to language restrictions, flat will also flatten _objects_ without keys (or only undefined values) so be careful.
+  For more info on this issue see https://github.com/TypeScriptToLua/TypeScriptToLua/pull/737
+- Fixed runtime error when throwing non-string errors and `sourceMapTraceback`.
+
 ## 0.28.0
 
 - We now have a `noImplicitSelf` option you can add to your tstl tsconfig.json. Default behavior is `false`. Setting this option to `true` will cause no 'self' arguments to be considered/generated in the project. Declarations will behave as if they have a `/** @noSelfInFile */` directive. This option is new and might cause correctness issues, use at your own risk and create an issue if you experience any issues.

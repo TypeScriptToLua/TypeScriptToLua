@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
+import { LuaLibImportKind } from "./CompilerOptions";
 import { EmitHost, TranspiledFile } from "./Transpile";
 import { normalizeSlashes, trimExtension } from "./utils";
 
@@ -11,18 +11,15 @@ export interface OutputFile {
 
 let lualibContent: string;
 export function emitTranspiledFiles(
-    options: CompilerOptions,
+    program: ts.Program,
     transpiledFiles: TranspiledFile[],
     emitHost: EmitHost = ts.sys
 ): OutputFile[] {
-    let { rootDir, outDir, outFile, luaLibImport } = options;
+    const options = program.getCompilerOptions();
+    let { outDir, luaLibImport, luaBundle } = options;
 
-    const configFileName = options.configFilePath as string | undefined;
-    // TODO: Use getCommonSourceDirectory
-    const baseDir = configFileName ? path.dirname(configFileName) : process.cwd();
-
-    rootDir = rootDir || baseDir;
-    outDir = outDir ? path.resolve(baseDir, outDir) : rootDir;
+    const rootDir = program.getCommonSourceDirectory();
+    outDir = outDir || rootDir;
 
     const files: OutputFile[] = [];
     for (const { fileName, lua, sourceMap, declaration, declarationMap } of transpiledFiles) {
@@ -31,14 +28,8 @@ export function emitTranspiledFiles(
             outPath = path.resolve(outDir, path.relative(rootDir, fileName));
         }
 
-        // change extension or rename to outFile
-        if (outFile) {
-            outPath = path.isAbsolute(outFile) ? outFile : path.resolve(baseDir, outFile);
-        } else {
-            outPath = trimExtension(outPath) + ".lua";
-        }
-
-        outPath = normalizeSlashes(outPath);
+        // change extension
+        outPath = normalizeSlashes(trimExtension(outPath) + ".lua");
 
         if (lua !== undefined) {
             files.push({ name: outPath, text: lua });
@@ -57,22 +48,30 @@ export function emitTranspiledFiles(
         }
     }
 
-    if (luaLibImport === LuaLibImportKind.Require || luaLibImport === LuaLibImportKind.Always) {
-        if (lualibContent === undefined) {
-            const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
-            if (lualibBundle !== undefined) {
-                lualibContent = lualibBundle;
-            } else {
-                throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+    if (
+        !luaBundle &&
+        (luaLibImport === undefined ||
+            luaLibImport === LuaLibImportKind.Require ||
+            luaLibImport === LuaLibImportKind.Always)
+    ) {
+        const lualibRequired = files.some(f => f.text && f.text.includes(`require("lualib_bundle")`));
+        if (lualibRequired) {
+            if (lualibContent === undefined) {
+                const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
+                if (lualibBundle !== undefined) {
+                    lualibContent = lualibBundle;
+                } else {
+                    throw new Error("Could not load lualib bundle from ./dist/lualib/lualib_bundle.lua");
+                }
             }
-        }
 
-        let outPath = path.resolve(rootDir, "lualib_bundle.lua");
-        if (outDir !== rootDir) {
-            outPath = path.join(outDir, path.relative(rootDir, outPath));
-        }
+            let outPath = path.resolve(rootDir, "lualib_bundle.lua");
+            if (outDir !== rootDir) {
+                outPath = path.join(outDir, path.relative(rootDir, outPath));
+            }
 
-        files.push({ name: normalizeSlashes(outPath), text: lualibContent });
+            files.push({ name: normalizeSlashes(outPath), text: lualibContent });
+        }
     }
 
     return files;

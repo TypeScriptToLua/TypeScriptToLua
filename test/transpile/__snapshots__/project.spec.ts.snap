@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should transpile 1`] = `
+Array [
+  Object {
+    "name": "otherFile.lua",
+    "text": "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
+local ____exports = {}
+function ____exports.getNumber(self)
+    return GetAPIValue()
+end
+return ____exports
+",
+  },
+  Object {
+    "name": "index.lua",
+    "text": "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
+local ____otherFile = require(\\"otherFile\\")
+local getNumber = ____otherFile.getNumber
+local myNumber = getNumber(nil)
+SetAPIValue(myNumber * 5)
+",
+  },
+]
+`;

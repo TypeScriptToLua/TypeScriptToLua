@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { formatPathToLuaPath } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
@@ -32,17 +33,6 @@ function getImportPath(fileName: string, relativePath: string, node: ts.Node, op
             relativePath
         );
     }
-}
-
-// TODO: Exported only for legacy-utils
-export function formatPathToLuaPath(filePath: string): string {
-    filePath = filePath.replace(/\.json$/, "");
-    if (process.platform === "win32") {
-        // Windows can use backslashes
-        filePath = filePath.replace(/\.\\/g, "").replace(/\\/g, ".");
-    }
-
-    return filePath.replace(/\.\//g, "").replace(/\//g, ".");
 }
 
 function shouldResolveModulePath(context: TransformationContext, moduleSpecifier: ts.Expression): boolean {

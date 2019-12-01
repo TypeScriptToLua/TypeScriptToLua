@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../src";
-import { formatPathToLuaPath } from "../src/transformation/transformers/modules/import";
+import { formatPathToLuaPath } from "../src/utils";
 
 export function transpileString(
     str: string | { [filename: string]: string },

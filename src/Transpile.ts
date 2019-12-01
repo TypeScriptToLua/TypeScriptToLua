@@ -1,5 +1,7 @@
+import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions } from "./CompilerOptions";
+import { bundleTranspiledFiles } from "./bundle";
+import { CompilerOptions, validateOptions } from "./CompilerOptions";
 import { Block } from "./LuaAST";
 import { createPrinter } from "./LuaPrinter";
 import { getPlugins, Plugin } from "./plugins";
@@ -14,6 +16,8 @@ export interface TranspiledFile {
     sourceMap?: string;
     declaration?: string;
     declarationMap?: string;
+    /** @internal */
+    sourceMapNode?: SourceNode;
 }
 
 export interface TranspileResult {
@@ -30,6 +34,7 @@ export interface TranspileOptions {
 }
 
 export interface EmitHost {
+    getCurrentDirectory(): string;
     readFile(path: string): string | undefined;
 }
 
@@ -42,7 +47,7 @@ export function transpile({
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    const diagnostics: ts.Diagnostic[] = [];
+    const diagnostics = validateOptions(options);
     let transpiledFiles: TranspiledFile[] = [];
 
     const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
@@ -55,7 +60,11 @@ export function transpile({
     };
 
     if (options.noEmitOnError) {
-        const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
+        const preEmitDiagnostics = [
+            ...diagnostics,
+            ...program.getOptionsDiagnostics(),
+            ...program.getGlobalDiagnostics(),
+        ];
 
         if (targetSourceFiles) {
             for (const sourceFile of targetSourceFiles) {
@@ -87,8 +96,14 @@ export function transpile({
         );
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const { code, sourceMap } = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
-            updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap });
+            const { code, sourceMap, sourceMapNode } = printer(
+                program,
+                emitHost,
+                sourceFile.fileName,
+                luaAst,
+                luaLibFeatures
+            );
+            updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap, sourceMapNode });
         }
     };
 
@@ -137,6 +152,18 @@ export function transpile({
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles = [];
+    }
+
+    if (options.luaBundle && options.luaBundleEntry) {
+        const [bundleDiagnostics, bundle] = bundleTranspiledFiles(
+            options.luaBundle,
+            options.luaBundleEntry,
+            transpiledFiles,
+            program,
+            emitHost
+        );
+        diagnostics.push(...bundleDiagnostics);
+        transpiledFiles = [bundle];
     }
 
     return { diagnostics, transpiledFiles };

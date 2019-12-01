@@ -1,11 +1,11 @@
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
+import { stringify } from "javascript-stringify";
 import * as path from "path";
 import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
-import { stringify } from "javascript-stringify";
 
 export * from "./legacy-utils";
 
@@ -102,6 +102,31 @@ function transpileJs(program: ts.Program): TranspileJsResult {
     return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
+function executeLua(code: string): any {
+    const L = lauxlib.luaL_newstate();
+    lualib.luaL_openlibs(L);
+    const status = lauxlib.luaL_dostring(L, to_luastring(code));
+
+    if (status === lua.LUA_OK) {
+        if (lua.lua_isstring(L, -1)) {
+            const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
+            return result === null ? undefined : result;
+        } else {
+            const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
+            throw new Error(`Unsupported Lua return type: ${returnType}`);
+        }
+    } else {
+        // Filter out control characters appearing on some systems
+        const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
+        const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+        return new ExecutionError(message);
+    }
+}
+
+export function executeLuaModule(code: string): any {
+    return executeLua(`${minimalTestLib}return JSONStringify((function()\n${code}\nend)())`);
+}
+
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
     const originalFunction = descriptor.value as any;
     const memoized = new WeakMap<object, any>();
@@ -124,6 +149,7 @@ export class ExecutionError extends Error {
 
 export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
+export type DiagnosticMatcher = (diagnostic: ts.Diagnostic) => boolean;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}
 
@@ -214,7 +240,9 @@ export abstract class TestBuilder {
     @memoize
     public getMainLuaFileResult(): ExecutableTranspiledFile {
         const { transpiledFiles } = this.getLuaResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
+        const mainFile = this.options.luaBundle
+            ? transpiledFiles[0]
+            : transpiledFiles.find(x => x.fileName === this.mainFileName);
         expect(mainFile).toMatchObject({ lua: expect.any(String), sourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -229,25 +257,7 @@ export abstract class TestBuilder {
 
     @memoize
     public getLuaExecutionResult(): any {
-        const code = this.getLuaCodeWithWrapper();
-        const L = lauxlib.luaL_newstate();
-        lualib.luaL_openlibs(L);
-        const status = lauxlib.luaL_dostring(L, to_luastring(code));
-
-        if (status === lua.LUA_OK) {
-            if (lua.lua_isstring(L, -1)) {
-                const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
-                return result === null ? undefined : result;
-            } else {
-                const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
-                throw new Error(`Unsupported Lua return type: ${returnType}`);
-            }
-        } else {
-            // Filter out control characters appearing on some systems
-            const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
-            const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
-            return new ExecutionError(message);
-        }
+        return executeLua(this.getLuaCodeWithWrapper());
     }
 
     @memoize
@@ -325,12 +335,22 @@ export abstract class TestBuilder {
         return this;
     }
 
+    public expectToHaveDiagnostic(matcher: DiagnosticMatcher): this {
+        expect(this.getLuaDiagnostics().find(matcher)).toBeDefined();
+        return this;
+    }
+
+    public expectToHaveExactDiagnostic(diagnostic: ts.Diagnostic): this {
+        expect(this.getLuaDiagnostics()).toContainEqual(diagnostic);
+        return this;
+    }
+
     public expectToHaveDiagnostics(): this {
         expect(this.getLuaDiagnostics()).toHaveDiagnostics();
         return this;
     }
 
-    public expectToHaveDiagnosticOfError(error: tstl.TranspileError): this {
+    public expectToHaveDiagnosticOfError(error: Error): this {
         this.expectToHaveDiagnostics();
         expect(this.getLuaDiagnostics()).toHaveLength(1);
         const firstDiagnostic = this.getLuaDiagnostics()[0];
@@ -409,6 +429,17 @@ class AccessorTestBuilder extends TestBuilder {
     }
 }
 
+class BundleTestBuilder extends AccessorTestBuilder {
+    public constructor(_tsCode: string) {
+        super(_tsCode);
+        this.setOptions({ luaBundle: "main.lua", luaBundleEntry: this.mainFileName });
+    }
+
+    public setEntryPoint(fileName: string): this {
+        return this.setOptions({ luaBundleEntry: fileName });
+    }
+}
+
 class ModuleTestBuilder extends AccessorTestBuilder {
     public setReturnExport(name: string): this {
         expect(this.hasProgram).toBe(false);
@@ -453,6 +484,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     return new builder(tsCode);
 };
 
+export const testBundle = createTestBuilderFactory(BundleTestBuilder, false);
 export const testModule = createTestBuilderFactory(ModuleTestBuilder, false);
 export const testModuleTemplate = createTestBuilderFactory(ModuleTestBuilder, true);
 export const testFunction = createTestBuilderFactory(FunctionTestBuilder, false);

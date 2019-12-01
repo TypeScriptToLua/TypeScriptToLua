@@ -23,7 +23,8 @@ const escapeStringMap: Record<string, string> = {
     "\0": "\\0",
 };
 
-const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char] || char)}"`;
+export const escapeString = (value: string) =>
+    `"${value.replace(escapeStringRegExp, char => escapeStringMap[char] || char)}"`;
 
 /**
  * Checks that a name is valid for use in lua function declaration syntax:
@@ -85,6 +86,7 @@ export type Printer = (
 export interface PrintResult {
     code: string;
     sourceMap: string;
+    sourceMapNode: SourceNode;
 }
 
 export function createPrinter(printers: Printer[]): Printer {
@@ -158,7 +160,7 @@ export class LuaPrinter {
             code = code.replace("{#SourceMapTraceback}", stackTraceOverride);
         }
 
-        return { code, sourceMap: sourceMap.toString() };
+        return { code, sourceMap: sourceMap.toString(), sourceMapNode: rootSourceNode };
     }
 
     private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
@@ -196,7 +198,7 @@ export class LuaPrinter {
             header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
         }
 
-        const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Inline;
+        const luaLibImport = this.options.luaLibImport || LuaLibImportKind.Require;
         if (
             luaLibImport === LuaLibImportKind.Always ||
             (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)

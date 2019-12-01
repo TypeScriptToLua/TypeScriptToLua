@@ -39,3 +39,13 @@ export const transformerShouldBeATsTransformerFactory = (transform: string): ts.
     source: "typescript-to-lua",
     messageText: `"${transform}" transformer should be a ts.TransformerFactory or an object with ts.TransformerFactory values`,
 });
+
+export const couldNotFindBundleEntryPoint = (entryPoint: string): ts.Diagnostic => ({
+    file: undefined,
+    start: undefined,
+    length: undefined,
+    category: ts.DiagnosticCategory.Error,
+    code: 0,
+    source: "typescript-to-lua",
+    messageText: `Could not find bundle entry point '${entryPoint}'. It should be a file in the project.`,
+});

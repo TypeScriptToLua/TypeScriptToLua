@@ -279,3 +279,9 @@ exports[`Transformation (unusedDefaultWithNamespaceImport) 1`] = `
 "local x = require(\\"module\\")
 local ____ = x"
 `;
+
+exports[`Transformation (variableStatementExportAnonymous) 1`] = `
+"local ____exports = {}
+____exports.x, ____, ____exports.y = 1, 2, 3
+return ____exports"
+`;

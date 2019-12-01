@@ -5480,6 +5480,10 @@ export class LuaTransformer {
         identifier: tstl.Identifier,
         exportScope?: ts.SourceFile | ts.ModuleDeclaration
     ): tstl.AssignmentLeftHandSideExpression {
+        if (!identifier.exportable) {
+            return identifier;
+        }
+
         const exportTable =
             exportScope && ts.isModuleDeclaration(exportScope)
                 ? this.createModuleLocalNameIdentifier(exportScope)

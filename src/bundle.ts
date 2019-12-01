@@ -52,9 +52,10 @@ export function bundleTranspiledFiles(
 
     // Override `require` to read from ____modules table.
     const requireOverride = `
+local ____modules = {}
 local ____moduleCache = {}
 local ____originalRequire = require
-function require(file)
+local function require(file)
     if ____moduleCache[file] then 
         return ____moduleCache[file]
     end
@@ -73,7 +74,7 @@ end\n`;
     // return require("<entry module path>")
     const entryPoint = `return require("${createModulePath(sourceRootDir, resolvedEntryModule)}")\n`;
 
-    const bundleNode = joinSourceChunks([moduleTable, requireOverride, entryPoint]);
+    const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();
 
     return [
@@ -99,7 +100,7 @@ function moduleSourceNode(transpiledFile: TranspiledFile, modulePath: string): S
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {
-    const tableHead = `local ____modules = {\n`;
+    const tableHead = `____modules = {\n`;
     const tableEnd = `}\n`;
 
     return joinSourceChunks([tableHead, ...fileChunks, tableEnd]);

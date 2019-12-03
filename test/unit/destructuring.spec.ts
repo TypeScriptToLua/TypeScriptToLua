@@ -51,9 +51,8 @@ test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     `.expectToMatchJsResult();
 });
 
-// TODO: https://github.com/TypeScriptToLua/TypeScriptToLua/issues/695
 // TODO: https://github.com/microsoft/TypeScript/issues/32656
-test.each(testCases.filter(x => x.binding !== "[x, , y]" && x.binding !== "{ x, ...rest }"))(
+test.each(testCases.filter(x => x.binding !== "{ x, ...rest }"))(
     "in exported variable declaration (%p)",
     ({ binding, value }) => {
         util.testModule`

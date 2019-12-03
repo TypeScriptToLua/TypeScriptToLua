@@ -54,7 +54,7 @@ test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
 test.each(testCases)("in exported variable declaration (%p)", ({ binding, value }) => {
     util.testModule`
             export const ${binding} = ${value};
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 const assignmentTestCases = [

@@ -404,7 +404,7 @@ test("TupleReturn method assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local jkl = def.new()\nlocal a, b = jkl:abc()");
+    expect(lua).toBe('require("lualib_bundle");\nlocal jkl = __TS__New(def)\nlocal a, b = jkl:abc()');
 });
 
 test("TupleReturn functional", () => {
@@ -504,7 +504,7 @@ test("TupleReturn method assignment", () => {
     `;
 
     const lua = util.transpileString(code);
-    expect(lua).toBe("local jkl = def.new()\nlocal a, b = jkl:abc()");
+    expect(lua).toBe('require("lualib_bundle");\nlocal jkl = __TS__New(def)\nlocal a, b = jkl:abc()');
 });
 
 test("TupleReturn functional", () => {

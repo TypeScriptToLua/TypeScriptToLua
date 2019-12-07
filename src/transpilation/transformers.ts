@@ -1,10 +1,22 @@
 import * as path from "path";
 import * as resolve from "resolve";
 import * as ts from "typescript";
-import * as cliDiagnostics from "./cli/diagnostics";
-import { CompilerOptions, TransformerImport } from "./CompilerOptions";
+// TODO: Don't depend on CLI?
+import * as cliDiagnostics from "../cli/diagnostics";
+import { CompilerOptions, TransformerImport } from "../CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
-import { noImplicitSelfTransformer } from "./NoImplicitSelfTransformer";
+
+export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => node => {
+    const transformSourceFile: ts.Transformer<ts.SourceFile> = node => {
+        const empty = ts.createNotEmittedStatement(undefined!);
+        ts.addSyntheticLeadingComment(empty, ts.SyntaxKind.MultiLineCommentTrivia, "* @noSelfInFile ", true);
+        return ts.updateSourceFileNode(node, [empty, ...node.statements], node.isDeclarationFile);
+    };
+
+    return ts.isBundle(node)
+        ? ts.updateBundle(node, node.sourceFiles.map(transformSourceFile))
+        : transformSourceFile(node);
+};
 
 export function getCustomTransformers(
     program: ts.Program,

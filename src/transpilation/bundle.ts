@@ -1,11 +1,11 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions } from "./CompilerOptions";
+import { CompilerOptions } from "../CompilerOptions";
+import { escapeString } from "../LuaPrinter";
+import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { escapeString } from "./LuaPrinter";
-import { EmitHost, TranspiledFile } from "./Transpile";
-import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "./utils";
+import { EmitHost, TranspiledFile } from "./transpile";
 
 const createModulePath = (baseDir: string, pathToResolve: string) =>
     escapeString(formatPathToLuaPath(trimExtension(path.relative(baseDir, pathToResolve))));

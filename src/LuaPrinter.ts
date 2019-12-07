@@ -5,7 +5,7 @@ import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier, luaKeywords } from "./transformation/utils/safe-names";
-import { EmitHost } from "./Transpile";
+import { EmitHost } from "./transpilation";
 import { trimExtension } from "./utils";
 
 // https://www.lua.org/pil/2.4.html

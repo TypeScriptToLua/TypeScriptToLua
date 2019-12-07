@@ -1,8 +1,8 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { LuaLibImportKind } from "./CompilerOptions";
-import { EmitHost, TranspiledFile } from "./Transpile";
-import { normalizeSlashes, trimExtension } from "./utils";
+import { LuaLibImportKind } from "../CompilerOptions";
+import { normalizeSlashes, trimExtension } from "../utils";
+import { EmitHost, TranspiledFile } from "./transpile";
 
 export interface OutputFile {
     name: string;

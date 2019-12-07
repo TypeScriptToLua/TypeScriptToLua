@@ -1,5 +1,5 @@
 import * as path from "path";
-import { EmitHost } from "./Transpile";
+import { EmitHost } from "./transpilation";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",

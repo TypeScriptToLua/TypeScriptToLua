@@ -26,9 +26,11 @@ export class TransformationContext {
     public readonly luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
     public readonly isModule = isFileModule(this.sourceFile);
     public readonly isStrict =
-        this.options.alwaysStrict !== undefined ||
-        (this.options.strict !== undefined && this.options.alwaysStrict !== false) ||
-        (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
+        // TODO: ??
+        this.options.alwaysStrict !== undefined
+            ? this.options.alwaysStrict
+            : (this.options.strict !== undefined && this.options.alwaysStrict !== false) ||
+              (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 
     public constructor(public program: ts.Program, public sourceFile: ts.SourceFile, private visitorMap: VisitorMap) {
         // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.

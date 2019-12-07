@@ -407,14 +407,17 @@ test("Function local overriding export", () => {
 });
 
 test("Function using global as this", () => {
-    const tsHeader = `
-        var foo = "foo";
+    util.testModule`
+        (globalThis as any).foo = "foo";
         function bar(this: any) {
             return this.foo;
         }
-    `;
 
-    util.testExpression`foo`.setTsHeader(tsHeader).expectToMatchJsResult();
+        export const result = bar();
+    `
+        .setOptions({ alwaysStrict: false })
+        .setReturnExport("result")
+        .expectToEqual("foo");
 });
 
 test("Function rest binding pattern", () => {

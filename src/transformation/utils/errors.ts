@@ -151,3 +151,6 @@ export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
 
 export const InvalidForRangeCall = (node: ts.Node, message: string) =>
     new TranspileError(`Invalid @forRange call: ${message}`, node);
+
+export const UnsupportedVarDeclaration = (node: ts.Node) =>
+    new TranspileError("`var` declarations are not supported. Use `let` or `const` instead.", node);

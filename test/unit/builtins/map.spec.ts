@@ -43,7 +43,7 @@ test("map entries", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var [key, value] of mymap.entries()) { count += key + value; }
+        for (const [key, value] of mymap.entries()) { count += key + value; }
         return count;`
     );
     expect(result).toBe(27);
@@ -120,7 +120,7 @@ test("map keys", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var key of mymap.keys()) { count += key; }
+        for (const key of mymap.keys()) { count += key; }
         return count;`
     );
 
@@ -140,7 +140,7 @@ test("map values", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var value of mymap.values()) { count += value; }
+        for (const value of mymap.values()) { count += value; }
         return count;`
     );
 
@@ -160,14 +160,14 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("basic", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
             mymap.set("b", 6);
             mymap.set(1, 4);
             mymap.set("a", 5);
-            
+
             mymap.delete("b");
 
             return [...mymap.${iterationMethod}()];
@@ -177,11 +177,11 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing last", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
-            
+
             mymap.delete(4);
 
             return [...mymap.${iterationMethod}()];
@@ -191,11 +191,11 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing first", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
-            
+
             mymap.delete("x");
 
             return [...mymap.${iterationMethod}()];
@@ -205,10 +205,10 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing all", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
-            
+
             mymap.delete("a");
             mymap.delete("x");
 

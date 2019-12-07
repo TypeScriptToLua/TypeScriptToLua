@@ -123,10 +123,7 @@ function transformForOfLuaIteratorStatement(
             // for ${initializer} in ${iterable} do
             const initializerVariable = statement.initializer.declarations[0].name;
             if (ts.isArrayBindingPattern(initializerVariable)) {
-                const identifiers = castEach(
-                    initializerVariable.elements.map(e => transformArrayBindingElement(context, e)),
-                    lua.isIdentifier
-                );
+                const identifiers = initializerVariable.elements.map(e => transformArrayBindingElement(context, e));
                 if (identifiers.length === 0) {
                     identifiers.push(lua.createAnonymousIdentifier());
                 }
@@ -234,7 +231,7 @@ function transformForOfIteratorStatement(
         // for ${initializer} in __TS__iterator(${iterator}) do
         return lua.createForInStatement(
             block,
-            [transformIdentifier(context, statement.initializer.declarations[0].name as ts.Identifier)],
+            [transformIdentifier(context, statement.initializer.declarations[0].name)],
             [transformLuaLibFunction(context, LuaLibFeature.Iterator, statement.expression, iterable)]
         );
     } else {

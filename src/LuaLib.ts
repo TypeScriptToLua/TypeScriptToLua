@@ -24,6 +24,7 @@ export enum LuaLibFeature {
     ArrayFlat = "ArrayFlat",
     ArrayFlatMap = "ArrayFlatMap",
     ArraySetLength = "ArraySetLength",
+    Class = "Class",
     ClassIndex = "ClassIndex",
     ClassNewIndex = "ClassNewIndex",
     Decorate = "Decorate",

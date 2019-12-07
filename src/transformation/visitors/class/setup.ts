@@ -23,20 +23,19 @@ export function createClassSetup(
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
 
-    // [____exports.]className = {}
-    const classTable: lua.Expression = lua.createTableExpression();
+    // __TS__Class()
+    const classInitializer = transformLuaLibFunction(context, LuaLibFeature.Class, statement);
 
-    const isDefaultExport = hasDefaultExportModifier(statement);
-
-    const defaultExportLeftHandSide = isDefaultExport
+    const defaultExportLeftHandSide = hasDefaultExportModifier(statement)
         ? lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(statement))
         : undefined;
 
-    const classVar = defaultExportLeftHandSide
-        ? [lua.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
-        : createLocalOrExportedOrGlobalDeclaration(context, className, classTable, statement);
-
-    result.push(...classVar);
+    // [____exports.]className = __TS__Class()
+    if (defaultExportLeftHandSide) {
+        result.push(lua.createAssignmentStatement(defaultExportLeftHandSide, classInitializer, statement));
+    } else {
+        result.push(...createLocalOrExportedOrGlobalDeclaration(context, className, classInitializer, statement));
+    }
 
     if (defaultExportLeftHandSide) {
         // local localClassName = ____exports.default
@@ -75,14 +74,6 @@ export function createClassSetup(
         importLuaLibFeature(context, LuaLibFeature.ClassIndex);
     }
 
-    // localClassName.__index = localClassName
-    const classIndex = lua.createTableIndexExpression(
-        lua.cloneIdentifier(localClassName),
-        lua.createStringLiteral("__index")
-    );
-    const assignClassIndex = lua.createAssignmentStatement(classIndex, lua.cloneIdentifier(localClassName), statement);
-    result.push(assignClassIndex);
-
     // localClassName.____setters = {}
     if (statement.members.some(m => ts.isSetAccessor(m) && isStaticNode(m))) {
         const classSetters = lua.createTableIndexExpression(
@@ -95,12 +86,9 @@ export function createClassSetup(
         importLuaLibFeature(context, LuaLibFeature.ClassNewIndex);
     }
 
-    // localClassName.prototype = {}
+    // localClassName.prototype
     const createClassPrototype = () =>
         lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("prototype"));
-    const classPrototypeTable = lua.createTableExpression();
-    const assignClassPrototype = lua.createAssignmentStatement(createClassPrototype(), classPrototypeTable, statement);
-    result.push(assignClassPrototype);
 
     // localClassName.prototype.____getters = {}
     if (statement.members.some(m => ts.isGetAccessor(m) && !isStaticNode(m))) {
@@ -165,18 +153,6 @@ export function createClassSetup(
         );
         result.push(assignClassPrototypeIndex);
     }
-
-    // localClassName.prototype.constructor = localClassName
-    const classPrototypeConstructor = lua.createTableIndexExpression(
-        createClassPrototype(),
-        lua.createStringLiteral("constructor")
-    );
-    const assignClassPrototypeConstructor = lua.createAssignmentStatement(
-        classPrototypeConstructor,
-        lua.cloneIdentifier(localClassName),
-        statement
-    );
-    result.push(assignClassPrototypeConstructor);
 
     const hasStaticGetters = hasMemberInClassOrAncestor(
         context,

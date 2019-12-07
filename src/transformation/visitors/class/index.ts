@@ -79,16 +79,13 @@ export function transformClassDeclaration(
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
         classNameText = classDeclaration.name.text;
-    } else {
-        const isDefaultExport = hasDefaultExportModifier(classDeclaration);
-        if (isDefaultExport) {
-            const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
-            const right = transformClassAsExpression(classDeclaration, context, true);
+    } else if (hasDefaultExportModifier(classDeclaration)) {
+        const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
+        const right = transformClassAsExpression(classDeclaration, context, true);
 
-            return lua.createAssignmentStatement(left, right, classDeclaration);
-        } else {
-            throw MissingClassName(classDeclaration);
-        }
+        return lua.createAssignmentStatement(left, right, classDeclaration);
+    } else {
+        throw MissingClassName(classDeclaration);
     }
 
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));

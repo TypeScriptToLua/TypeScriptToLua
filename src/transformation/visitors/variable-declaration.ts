@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assertNever, castEach, flatMap } from "../../utils";
+import { assertNever, flatMap } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";

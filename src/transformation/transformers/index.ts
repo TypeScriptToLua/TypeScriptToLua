@@ -40,7 +40,7 @@ import { transformTaggedTemplateExpression, transformTemplateExpression } from "
 import { transformTypeOfExpression } from "./typeof";
 import { typescriptVisitors } from "./typescript";
 import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
-import { transformVariableStatement } from "./variable";
+import { transformVariableStatement } from "./variable-declaration";
 
 const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
 const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>

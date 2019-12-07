@@ -14,7 +14,7 @@ import { transformPropertyName } from "./literal";
 export function transformArrayBindingElement(
     context: TransformationContext,
     name: ts.ArrayBindingElement | ts.Expression
-): lua.Expression {
+): lua.Identifier {
     if (ts.isOmittedExpression(name)) {
         return lua.createAnonymousIdentifier(name);
     } else if (ts.isIdentifier(name)) {
@@ -165,7 +165,7 @@ export function transformVariableDeclaration(
 
         const vars =
             statement.name.elements.length > 0
-                ? castEach(statement.name.elements.map(e => transformArrayBindingElement(context, e)), lua.isIdentifier)
+                ? statement.name.elements.map(e => transformArrayBindingElement(context, e))
                 : lua.createAnonymousIdentifier(statement.name);
 
         if (statement.initializer) {

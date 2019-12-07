@@ -14,7 +14,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
-import { transformArrayBindingElement, transformVariableDeclaration } from "../variable";
+import { transformArrayBindingElement, transformVariableDeclaration } from "../variable-declaration";
 import { transformLoopBody } from "./body";
 
 function transformForOfInitializer(

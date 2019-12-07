@@ -16,7 +16,7 @@ import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } fro
 import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformGeneratorFunctionBody } from "./generator";
 import { transformIdentifier } from "./identifier";
-import { transformBindingPattern } from "./variable";
+import { transformBindingPattern } from "./variable-declaration";
 
 function transformParameterDefaultValueDeclaration(
     context: TransformationContext,

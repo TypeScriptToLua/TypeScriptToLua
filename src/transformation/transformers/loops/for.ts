@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { flatMap } from "../../../utils";
 import { FunctionVisitor } from "../../context";
-import { transformVariableDeclaration } from "../variable";
+import { transformVariableDeclaration } from "../variable-declaration";
 import { transformLoopBody } from "./body";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {

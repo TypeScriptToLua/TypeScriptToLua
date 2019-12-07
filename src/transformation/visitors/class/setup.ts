@@ -8,11 +8,7 @@ import {
     getIdentifierExportScope,
     hasDefaultExportModifier,
 } from "../../utils/export";
-import {
-    createExportsIdentifier,
-    createLocalOrExportedOrGlobalDeclaration,
-    createSelfIdentifier,
-} from "../../utils/lua-ast";
+import { createExportsIdentifier, createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { hasMemberInClassOrAncestor } from "./members/accessors";
 import { getExtendedTypeNode, isStaticNode } from "./utils";
@@ -302,47 +298,6 @@ export function createClassSetup(
         );
         result.push(setClassMetatable);
     }
-
-    const newFuncStatements: lua.Statement[] = [];
-
-    // local self = setmetatable({}, localClassName.prototype)
-    const assignSelf = lua.createVariableDeclarationStatement(
-        createSelfIdentifier(),
-        lua.createCallExpression(lua.createIdentifier("setmetatable"), [
-            lua.createTableExpression(),
-            createClassPrototype(),
-        ]),
-        statement
-    );
-    newFuncStatements.push(assignSelf);
-
-    // self:____constructor(...)
-    const callConstructor = lua.createExpressionStatement(
-        lua.createMethodCallExpression(createSelfIdentifier(), lua.createIdentifier("____constructor"), [
-            lua.createDotsLiteral(),
-        ]),
-        statement
-    );
-    newFuncStatements.push(callConstructor);
-
-    // return self
-    const returnSelf = lua.createReturnStatement([createSelfIdentifier()], statement);
-    newFuncStatements.push(returnSelf);
-
-    // function localClassName.new(construct, ...) ... end
-    // or function export.localClassName.new(construct, ...) ... end
-    const newFunc = lua.createAssignmentStatement(
-        lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("new")),
-        lua.createFunctionExpression(
-            lua.createBlock(newFuncStatements),
-            undefined,
-            lua.createDotsLiteral(),
-            undefined,
-            lua.FunctionExpressionFlags.Declaration
-        ),
-        statement
-    );
-    result.push(newFunc);
 
     return result;
 }

@@ -5,7 +5,6 @@ import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
     ForbiddenLuaTableNonDeclaration,
-    ForbiddenStaticClassPropertyName,
     InvalidExportsExtension,
     InvalidExtendsExtension,
     InvalidExtendsLuaTable,
@@ -134,14 +133,6 @@ export function transformClassDeclaration(
     // LuaTable classes must be ambient
     if (annotations.has(AnnotationKind.LuaTable) && !isAmbientNode(classDeclaration)) {
         throw ForbiddenLuaTableNonDeclaration(classDeclaration);
-    }
-
-    for (const member of classDeclaration.members) {
-        if (member.name && (ts.isStringLiteral(member.name) || ts.isIdentifier(member.name))) {
-            if (isStaticNode(member) && member.name.text === "new") {
-                throw ForbiddenStaticClassPropertyName(member, member.name.text);
-            }
-        }
     }
 
     // Get all properties with value

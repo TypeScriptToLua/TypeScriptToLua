@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression, transformArguments } from "../transformers/call";
-import { transformIdentifier } from "../transformers/identifier";
 import { UnsupportedProperty } from "../utils/errors";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { PropertyCallExpression, transformArguments } from "../visitors/call";
+import { transformIdentifier } from "../visitors/identifier";
 
 function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lua.Expression[]): lua.CallExpression {
     const stringIdentifier = lua.createIdentifier("string");

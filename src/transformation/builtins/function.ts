@@ -1,9 +1,9 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty, UnsupportedSelfFunctionConversion } from "../utils/errors";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformFunctionPrototypeCall(
     context: TransformationContext,

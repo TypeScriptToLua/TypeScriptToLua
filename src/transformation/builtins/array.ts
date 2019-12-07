@@ -1,10 +1,10 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isExplicitArrayType } from "../utils/typescript";
+import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformArrayPrototypeCall(
     context: TransformationContext,

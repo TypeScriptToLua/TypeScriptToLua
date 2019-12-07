@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression } from "../transformers/call";
-import { checkForLuaLibType } from "../transformers/class/new";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { isArrayType, isFunctionType, isNumberType, isStandardLibraryType, isStringType } from "../utils/typescript";
+import { PropertyCallExpression } from "../visitors/call";
+import { checkForLuaLibType } from "../visitors/class/new";
 import { transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
 import { transformFunctionPrototypeCall } from "./function";

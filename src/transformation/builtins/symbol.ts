@@ -1,8 +1,8 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
+import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 // Transpile a Symbol._ property
 export function transformSymbolConstructorCall(

@@ -1,8 +1,8 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { PropertyCallExpression, transformArguments } from "../transformers/call";
 import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
+import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformObjectConstructorCall(
     context: TransformationContext,

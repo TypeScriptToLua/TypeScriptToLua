@@ -3,9 +3,9 @@ import * as lua from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./context";
-import { standardVisitors } from "./transformers";
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
+import { standardVisitors } from "./visitors";
 
 const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { getCurrentNamespace } from "../transformers/namespace";
+import { getCurrentNamespace } from "../visitors/namespace";
 import { UndefinedScope } from "./errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { findScope, peekScope, ScopeType } from "./scope";

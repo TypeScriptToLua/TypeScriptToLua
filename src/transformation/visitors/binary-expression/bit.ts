@@ -1,9 +1,9 @@
 import * as ts from "typescript";
-import { transformBinaryOperator } from ".";
 import { LuaTarget } from "../../../CompilerOptions";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { UnsupportedForTarget, UnsupportedKind } from "../../utils/errors";
+import { transformBinaryOperator } from "../binary-expression";
 
 type BitOperator = ts.ShiftOperator | ts.BitwiseOperator;
 function transformBinaryBitLibOperation(

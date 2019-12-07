@@ -1,10 +1,10 @@
 import * as ts from "typescript";
-import { transformBinaryOperation } from ".";
 import * as lua from "../../../LuaAST";
 import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast";
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
+import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";
 
 // If expression is property/element access with possible effects from being evaluated, returns separated object and index expressions.

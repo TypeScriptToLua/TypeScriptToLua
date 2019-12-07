@@ -1,9 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { transformArguments } from "../transformers/call";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isNumberType } from "../utils/typescript";
+import { transformArguments } from "../visitors/call";
 
 export function transformGlobalCall(
     context: TransformationContext,

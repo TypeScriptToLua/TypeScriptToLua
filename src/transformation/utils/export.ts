@@ -1,10 +1,10 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { createModuleLocalNameIdentifier } from "../transformers/namespace";
+import { createModuleLocalNameIdentifier } from "../visitors/namespace";
 import { createExportsIdentifier } from "./lua-ast";
-import { findFirstNodeAbove, isFileModule } from "./typescript";
 import { getSymbolInfo } from "./symbols";
+import { findFirstNodeAbove, isFileModule } from "./typescript";
 
 export function hasDefaultExportModifier({ modifiers }: ts.Node): boolean {
     return modifiers !== undefined && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);

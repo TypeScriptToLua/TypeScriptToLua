@@ -93,12 +93,12 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
             dependencies.forEach(load);
         }
 
-        const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-        const luaLibFeature = emitHost.readFile(featureFile);
+        const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+        const luaLibFeature = emitHost.readFile(featurePath);
         if (luaLibFeature !== undefined) {
             result += luaLibFeature + "\n";
         } else {
-            throw new Error(`Could not read lualib feature ../dist/lualib/${feature}.lua`);
+            throw new Error(`Could not load lualib feature from '${featurePath}'`);
         }
     }
 
@@ -107,4 +107,19 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
     }
 
     return result;
+}
+
+let luaLibBundleContent: string;
+export function getLuaLibBundle(emitHost: EmitHost): string {
+    if (luaLibBundleContent === undefined) {
+        const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua");
+        const result = emitHost.readFile(lualibPath);
+        if (result !== undefined) {
+            luaLibBundleContent = result;
+        } else {
+            throw new Error(`Could not load lualib bundle from '${lualibPath}'`);
+        }
+    }
+
+    return luaLibBundleContent;
 }

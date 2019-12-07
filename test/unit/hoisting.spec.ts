@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../src/TSTLErrors";
+import { ReferencedBeforeDeclaration } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test("Var Hoisting", () => {
@@ -238,7 +238,7 @@ test.each([
     { code: `function setBar() { const bar = { foo }; } let foo = "foo";`, identifier: "foo" },
 ])("No Hoisting (%p)", ({ code, identifier }) => {
     expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
-        TSTLErrors.ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
+        ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
     );
 });
 

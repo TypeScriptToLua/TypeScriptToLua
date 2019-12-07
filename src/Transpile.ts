@@ -2,12 +2,12 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { bundleTranspiledFiles } from "./bundle";
 import { CompilerOptions, validateOptions } from "./CompilerOptions";
-import * as diagnosticFactories from "./diagnostics";
 import { Block } from "./LuaAST";
-import { LuaPrinter } from "./LuaPrinter";
-import { LuaTransformer } from "./LuaTransformer";
-import { TranspileError } from "./TranspileError";
+import { createPrinter } from "./LuaPrinter";
+import { getPlugins, Plugin } from "./plugins";
+import { createVisitorMap, transformSourceFile } from "./transformation";
 import { getCustomTransformers } from "./TSTransformers";
+import { isNonNull } from "./utils";
 
 export interface TranspiledFile {
     fileName: string;
@@ -29,8 +29,7 @@ export interface TranspileOptions {
     program: ts.Program;
     sourceFiles?: ts.SourceFile[];
     customTransformers?: ts.CustomTransformers;
-    transformer?: LuaTransformer;
-    printer?: LuaPrinter;
+    plugins?: Plugin[];
     emitHost?: EmitHost;
 }
 
@@ -43,9 +42,8 @@ export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
+    plugins: pluginsFromOptions = [],
     emitHost = ts.sys,
-    transformer = new LuaTransformer(program),
-    printer = new LuaPrinter(program.getCompilerOptions(), emitHost),
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -87,22 +85,25 @@ export function transpile({
         }
     }
 
+    const plugins = getPlugins(program, diagnostics, pluginsFromOptions);
+    const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
+    const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
-        try {
-            const [luaAst, lualibFeatureSet] = transformer.transform(sourceFile);
-            if (!options.noEmit && !options.emitDeclarationOnly) {
-                const [lua, sourceMap, sourceNode] = printer.print(luaAst, lualibFeatureSet, sourceFile.fileName);
-                updateTranspiledFile(sourceFile.fileName, { luaAst, lua, sourceMap, sourceMapNode: sourceNode });
-            }
-        } catch (err) {
-            if (!(err instanceof TranspileError)) throw err;
-
-            diagnostics.push(diagnosticFactories.transpileError(err));
-
-            updateTranspiledFile(sourceFile.fileName, {
-                lua: `error(${JSON.stringify(err.message)})\n`,
-                sourceMap: "",
-            });
+        const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
+            program,
+            sourceFile,
+            visitorMap
+        );
+        diagnostics.push(...transformDiagnostics);
+        if (!options.noEmit && !options.emitDeclarationOnly) {
+            const { code, sourceMap, sourceMapNode } = printer(
+                program,
+                emitHost,
+                sourceFile.fileName,
+                luaAst,
+                luaLibFeatures
+            );
+            updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap, sourceMapNode });
         }
     };
 

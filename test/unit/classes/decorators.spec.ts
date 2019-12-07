@@ -1,4 +1,4 @@
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { InvalidDecoratorContext } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
@@ -109,7 +109,7 @@ test("Throws error if decorator function has void context", () => {
 
         @SetBool
         class TestClass {}
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidDecoratorContext(util.nodeStub));
+    `.expectToHaveDiagnosticOfError(InvalidDecoratorContext(util.nodeStub));
 });
 
 test("Exported class decorator", () => {

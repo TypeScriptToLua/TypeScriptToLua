@@ -1,20 +1,23 @@
 import * as ts from "typescript";
-import { LuaTarget } from "./CompilerOptions";
-import { TranspileError } from "./TranspileError";
+import { LuaTarget } from "../../CompilerOptions";
+
+export class TranspileError extends Error {
+    public name = "TranspileError";
+    constructor(message: string, public node: ts.Node) {
+        super(message);
+    }
+}
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
-
-export const CouldNotCast = (castName: string) =>
-    new Error(`Failed to cast all elements to expected type using ${castName}.`);
 
 export const ForbiddenForIn = (node: ts.Node) =>
     new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
 
 export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
-    new TranspileError(`Classes with the '@luaTable' decorator must be declared.`, node);
+    new TranspileError(`Classes with the '@luaTable' annotation must be declared.`, node);
 
 export const InvalidExtendsLuaTable = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with the decorator '@luaTable'.`, node);
+    new TranspileError(`Cannot extend classes with the '@luaTable' annotation.`, node);
 
 export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
     new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
@@ -22,37 +25,31 @@ export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
 export const ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
     new TranspileError(`Invalid @luaTable usage: ${description}`, node);
 
-export const InvalidDecoratorArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
-    new TranspileError(`${name} expects ${expected} argument(s) but got ${got}.`, node);
+export const InvalidAnnotationArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
+    new TranspileError(`'${name}' expects ${expected} argument(s) but got ${got}.`, node);
 
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
 
 export const InvalidExtensionMetaExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use both '@extension' and '@metaExtension' decorators on the same class.`, node);
+    new TranspileError(`Cannot use both '@extension' and '@metaExtension' annotations on the same class.`, node);
 
 export const InvalidNewExpressionOnExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot construct classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot construct classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidExportDeclaration = (declaration: ts.ExportDeclaration) =>
     new TranspileError("Encountered invalid export declaration without exports and without module.", declaration);
 
 export const InvalidExtendsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot extend classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidExportsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot export classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot export classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidInstanceOfExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use instanceof on classes with decorator '@extension' or '@metaExtension'.`, node);
+    new TranspileError(`Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation.`, node);
 
 export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
-
-export const InvalidPropertyCall = (node: ts.Node) =>
-    new TranspileError(`Tried to transpile a non-property call as property call.`, node);
-
-export const InvalidElementCall = (node: ts.Node) =>
-    new TranspileError(`Tried to transpile a non-element call as an element call.`, node);
 
 export const ForbiddenStaticClassPropertyName = (node: ts.Node, name: string) =>
     new TranspileError(`Cannot use "${name}" as a static class property or method name.`, node);
@@ -66,7 +63,7 @@ export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
     new TranspileError("Unsupported function declaration without name.", declaration);
 
 export const MissingMetaExtension = (node: ts.Node) =>
-    new TranspileError(`@metaExtension requires the extension of the metatable class.`, node);
+    new TranspileError(`'@metaExtension' annotation requires the extension of the metatable class.`, node);
 
 export const NonFlattenableDestructure = (node: ts.Node) =>
     new TranspileError(`This node cannot be destructured using a standard Lua assignment statement.`, node);
@@ -74,8 +71,8 @@ export const NonFlattenableDestructure = (node: ts.Node) =>
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
 
-export const UnsupportedForInVariable = (initializer: ts.Node) =>
-    new TranspileError(`Unsuppored for-in variable kind.`, initializer);
+export const UnsupportedForInVariable = (node: ts.Node) =>
+    new TranspileError(`Unsupported for-in variable kind.`, node);
 
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
@@ -99,85 +96,58 @@ export const UnsupportedFunctionWithoutBody = (node: ts.FunctionLikeDeclaration)
     new TranspileError("Functions with undefined bodies are not supported.", node);
 
 export const UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {
-    if (name) {
-        return new TranspileError(
-            `Unable to convert function with a 'this' parameter to function "${name}" with no 'this'. ` +
-                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
-            node
-        );
-    } else {
-        return new TranspileError(
-            `Unable to convert function with a 'this' parameter to function with no 'this'. ` +
-                `To fix, wrap in an arrow function, or declare with 'this: void'.`,
-            node
-        );
-    }
-};
-
-export const UnsupportedSelfFunctionConversion = (node: ts.Node, name?: string) => {
-    if (name) {
-        return new TranspileError(
-            `Unable to convert function with no 'this' parameter to function "${name}" with 'this'. ` +
-                `To fix, wrap in an arrow function or declare with 'this: any'.`,
-            node
-        );
-    } else {
-        return new TranspileError(
-            `Unable to convert function with no 'this' parameter to function with 'this'. ` +
-                `To fix, wrap in an arrow function or declare with 'this: any'.`,
-            node
-        );
-    }
-};
-
-export const UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
-    if (name) {
-        return new TranspileError(
-            `Unsupported assignment of function with different overloaded types for 'this' to "${name}". ` +
-                `Overloads should all have the same type for 'this'.`,
-            node
-        );
-    } else {
-        return new TranspileError(
-            `Unsupported assignment of function with different overloaded types for 'this'. ` +
-                `Overloads should all have the same type for 'this'.`,
-            node
-        );
-    }
-};
-
-export const UnsupportedNonDestructuringLuaIterator = (node: ts.Node) => {
+    const nameReference = name ? ` '${name}'` : "";
     return new TranspileError(
-        "Unsupported use of lua iterator with TupleReturn decorator in for...of statement. " +
-            "You must use a destructuring statement to catch results from a lua iterator with " +
-            "the TupleReturn decorator.",
+        `Unable to convert function with a 'this' parameter to function${nameReference} with no 'this'. ` +
+            `To fix, wrap in an arrow function, or declare with 'this: void'.`,
         node
     );
 };
 
-export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) => {
-    return new TranspileError(`${reason}. ` + `TypeScript path: ${path}.`, node);
+export const UnsupportedSelfFunctionConversion = (node: ts.Node, name?: string) => {
+    const nameReference = name ? ` '${name}'` : "";
+    return new TranspileError(
+        `Unable to convert function with no 'this' parameter to function${nameReference} with 'this'. ` +
+            `To fix, wrap in an arrow function or declare with 'this: any'.`,
+        node
+    );
 };
 
-export const ReferencedBeforeDeclaration = (node: ts.Identifier) => {
+export const UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
+    const nameReference = name ? ` to '${name}'` : "";
     return new TranspileError(
+        `Unsupported assignment of function with different overloaded types for 'this'${nameReference}. ` +
+            "Overloads should all have the same type for 'this'.",
+        node
+    );
+};
+
+export const UnsupportedNonDestructuringLuaIterator = (node: ts.Node) =>
+    new TranspileError(
+        "Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. " +
+            "You must use a destructuring statement to catch results from a lua iterator with " +
+            "the '@tupleReturn' annotation.",
+        node
+    );
+
+export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
+    new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
+
+export const ReferencedBeforeDeclaration = (node: ts.Identifier) =>
+    new TranspileError(
         `Identifier "${node.text}" was referenced before it was declared. The declaration ` +
             "must be moved before the identifier's use, or hoisting must be enabled.",
         node
     );
-};
 
-export const UnsupportedObjectDestructuringInForOf = (node: ts.Node) => {
-    return new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
-};
+export const UnsupportedObjectDestructuringInForOf = (node: ts.Node) =>
+    new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
 
-export const InvalidAmbientIdentifierName = (node: ts.Identifier) => {
-    return new TranspileError(
+export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
+    new TranspileError(
         `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,
         node
     );
-};
 
-export const InvalidForRangeCall = (node: ts.Node, message: string) => {
-    return new TranspileError(`Invalid @forRange call: ${message}`, node);
-};
+export const InvalidForRangeCall = (node: ts.Node, message: string) =>
+    new TranspileError(`Invalid @forRange call: ${message}`, node);

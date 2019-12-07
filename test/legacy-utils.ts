@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../src";
-import * as tsHelper from "../src/TSHelper";
+import { formatPathToLuaPath } from "../src/utils";
 
 export function transpileString(
     str: string | { [filename: string]: string },
@@ -104,6 +104,14 @@ export function transpileAndExecute(
     return executeLua(lua);
 }
 
+function getExportPath(fileName: string, options: ts.CompilerOptions): string {
+    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
+
+    const absolutePath = path.resolve(fileName.replace(/.ts$/, ""));
+    const absoluteRootDirPath = path.format(path.parse(rootDir));
+    return formatPathToLuaPath(absolutePath.replace(absoluteRootDirPath, "").slice(1));
+}
+
 export function transpileAndExecuteProjectReturningMainExport(
     typeScriptFiles: Record<string, string>,
     exportName: string,
@@ -117,7 +125,7 @@ export function transpileAndExecuteProjectReturningMainExport(
     const joinedTranspiledFiles = Object.keys(typeScriptFiles)
         .filter(typeScriptFileName => typeScriptFileName !== "main.ts")
         .map(typeScriptFileName => {
-            const modulePath = tsHelper.getExportPath(typeScriptFileName, options);
+            const modulePath = getExportPath(typeScriptFileName, options);
             const tsCode = typeScriptFiles[typeScriptFileName];
             const luaCode = transpileString(tsCode, options);
             return `package.preload["${modulePath}"] = function()

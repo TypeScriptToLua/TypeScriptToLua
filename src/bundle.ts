@@ -1,11 +1,11 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { EmitHost, TranspiledFile } from "./Transpile";
-import { formatPathToLuaPath, trimExtension, normalizeSlashes } from "./utils";
-import { escapeString } from "./TSHelper";
 import { CompilerOptions } from "./CompilerOptions";
+import { couldNotFindBundleEntryPoint } from "./diagnostics";
+import { escapeString } from "./LuaPrinter";
+import { EmitHost, TranspiledFile } from "./Transpile";
+import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "./utils";
 
 const createModulePath = (baseDir: string, pathToResolve: string) =>
     escapeString(formatPathToLuaPath(trimExtension(path.relative(baseDir, pathToResolve))));
@@ -56,7 +56,7 @@ local ____modules = {}
 local ____moduleCache = {}
 local ____originalRequire = require
 local function require(file)
-    if ____moduleCache[file] then 
+    if ____moduleCache[file] then
         return ____moduleCache[file]
     end
     if ____modules[file] then
@@ -72,7 +72,7 @@ local function require(file)
 end\n`;
 
     // return require("<entry module path>")
-    const entryPoint = `return require("${createModulePath(sourceRootDir, resolvedEntryModule)}")\n`;
+    const entryPoint = `return require(${createModulePath(sourceRootDir, resolvedEntryModule)})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();
@@ -89,7 +89,7 @@ end\n`;
 }
 
 function moduleSourceNode(transpiledFile: TranspiledFile, modulePath: string): SourceNode {
-    const tableEntryHead = `["${modulePath}"] = function() `;
+    const tableEntryHead = `[${modulePath}] = function() `;
     const tableEntryTail = `end,\n`;
 
     if (transpiledFile.lua && transpiledFile.sourceMapNode) {

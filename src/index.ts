@@ -14,9 +14,9 @@ export * from "./Emit";
 export * from "./LuaAST";
 export { LuaLibFeature } from "./LuaLib";
 export * from "./LuaPrinter";
-export * from "./LuaTransformer";
+export * from "./transformation/context";
+export { TranspileError } from "./transformation/utils/errors";
 export * from "./Transpile";
-export * from "./TranspileError";
 
 export interface TranspileFilesResult {
     diagnostics: ts.Diagnostic[];

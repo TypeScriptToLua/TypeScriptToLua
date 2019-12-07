@@ -1,5 +1,5 @@
 import * as tstl from "../../src";
-import * as TSTLErrors from "../../src/TSTLErrors";
+import { UnsupportedForTarget } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each([0, 1])("if (%p)", inp => {
@@ -278,9 +278,7 @@ test("switch not allowed in 5.1", () => {
         switch ("abc") {}
     `
         .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
-        .expectToHaveDiagnosticOfError(
-            TSTLErrors.UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub)
-        );
+        .expectToHaveDiagnosticOfError(UnsupportedForTarget("Switch statements", tstl.LuaTarget.Lua51, util.nodeStub));
 });
 
 test.each([

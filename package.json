@@ -18,7 +18,7 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc -p tsconfig.json && npm run build-lualib",
+        "build": "tsc && npm run build-lualib",
         "build-lualib": "ts-node --files ./build_lualib.ts",
         "pretest": "npm run lint && ts-node --files --transpile-only ./build_lualib.ts",
         "test": "jest",

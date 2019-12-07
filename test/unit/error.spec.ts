@@ -329,7 +329,7 @@ test.each([...builtinErrors, "CustomError"])("get stack from %s", errorType => {
         function innerFunction() { stack = new ${errorType}().stack; }
         function outerFunction() { innerFunction(); }
         outerFunction();
-        
+
         return stack;
     `.getLuaExecutionResult();
 

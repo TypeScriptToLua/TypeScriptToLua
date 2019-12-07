@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import * as TSTLErrors from "../../src/TSTLErrors";
+import { UnsupportedForTarget, UnsupportedKind } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 // TODO:
@@ -67,9 +67,7 @@ test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(
-            TSTLErrors.UnsupportedForTarget("Bitwise operations", tstl.LuaTarget.Lua51, util.nodeStub)
-        );
+        .expectToHaveDiagnosticOfError(UnsupportedForTarget("Bitwise operations", tstl.LuaTarget.Lua51, util.nodeStub));
 });
 
 test.each(allBinaryOperators)("Bitop [JIT] (%p)", input => {
@@ -98,7 +96,7 @@ test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", input => {
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectToHaveDiagnosticOfError(
-            TSTLErrors.UnsupportedKind(
+            UnsupportedKind(
                 "right shift operator (use >>> instead)",
                 ts.SyntaxKind.GreaterThanGreaterThanToken,
                 util.nodeStub

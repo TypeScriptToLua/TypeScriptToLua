@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { InvalidForRangeCall } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test.each([
@@ -26,7 +26,7 @@ test("invalid non-ambient @forRange function", () => {
         for (const i of luaRange(1, 10, 2)) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
+        InvalidForRangeCall(
             ts.createEmptyStatement(),
             "@forRange function can only be used as an iterable in a for...of loop."
         ).message
@@ -39,8 +39,7 @@ test.each([[1], [1, 2, 3, 4]])("invalid @forRange argument count", args => {
         for (const i of luaRange(${args})) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.")
-            .message
+        InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.").message
     );
 });
 
@@ -51,10 +50,7 @@ test("invalid @forRange control variable", () => {
         for (i of luaRange(1, 10, 2)) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
-            ts.createEmptyStatement(),
-            "@forRange loop must declare its own control variable."
-        ).message
+        InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop must declare its own control variable.").message
     );
 });
 
@@ -64,7 +60,7 @@ test("invalid @forRange argument type", () => {
         for (const i of luaRange("foo", 2)) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange arguments must be number types.").message
+        InvalidForRangeCall(ts.createEmptyStatement(), "@forRange arguments must be number types.").message
     );
 });
 
@@ -74,7 +70,7 @@ test("invalid @forRange destructuring", () => {
         for (const [i] of luaRange(1, 10, 2)) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop cannot use destructuring.").message
+        InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop cannot use destructuring.").message
     );
 });
 
@@ -84,7 +80,7 @@ test("invalid @forRange return type", () => {
         for (const i of luaRange(1, 10)) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
+        InvalidForRangeCall(
             ts.createEmptyStatement(),
             "@forRange function must return Iterable<number> or Array<number>."
         ).message
@@ -104,7 +100,7 @@ test.each([
         ${statement}`;
 
     expect(() => util.transpileString(code)).toThrow(
-        TSTLErrors.InvalidForRangeCall(
+        InvalidForRangeCall(
             ts.createEmptyStatement(),
             "@forRange function can only be used as an iterable in a for...of loop."
         ).message

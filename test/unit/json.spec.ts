@@ -1,6 +1,6 @@
-import * as TSTLErrors from "../../src/TSTLErrors";
-import * as util from "../util";
 import * as ts from "typescript";
+import { InvalidJsonFileContent } from "../../src/transformation/utils/errors";
+import * as util from "../util";
 
 const jsonOptions = {
     resolveJsonModule: true,
@@ -19,5 +19,5 @@ test("Empty JSON", () => {
     util.testModule("")
         .setOptions(jsonOptions)
         .setMainFileName("main.json")
-        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidJsonFileContent(util.nodeStub));
+        .expectToHaveDiagnosticOfError(InvalidJsonFileContent(util.nodeStub));
 });

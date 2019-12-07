@@ -1,8 +1,8 @@
 // Simplified Lua AST based roughly on http://lua-users.org/wiki/MetaLuaAbstractSyntaxTree,
-// https://www.lua.org/manual/5.3/manual.html (9 – The Complete Syntax of Lua) and the TS AST implementation
+// https://www.lua.org/manual/5.3/manual.html#9 and the TS AST implementation
 
 // We can elide a lot of nodes especially tokens and keywords
-// because we dont create the AST from text
+// because we don't create the AST from text
 
 import * as ts from "typescript";
 
@@ -121,7 +121,7 @@ export type BinaryOperator =
 
 export type Operator = UnaryOperator | BinaryOperator;
 
-export type SymbolId = number;
+export type SymbolId = number & { _symbolIdBrand: any };
 
 export interface TextRange {
     line?: number;
@@ -616,7 +616,7 @@ export function isStringLiteral(node: Node): node is StringLiteral {
 
 export function createStringLiteral(value: string, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
     const expression = createNode(SyntaxKind.StringLiteral, tsOriginal, parent) as StringLiteral;
-    expression.value = value as string;
+    expression.value = value;
     return expression;
 }
 

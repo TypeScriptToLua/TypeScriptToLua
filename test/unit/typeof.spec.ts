@@ -16,11 +16,17 @@ test.each(["{}", "[]"])("typeof object literal (%p)", inp => {
     util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
+test("typeof class", () => {
+    util.testFunction`
+        class MyClass {}
+        return typeof MyClass;
+    `.expectToEqual("object");
+});
+
 test("typeof class instance", () => {
     util.testFunction`
-        class myClass {}
-        let inst = new myClass();
-        return typeof inst;
+        class MyClass {}
+        return typeof new MyClass();
     `.expectToMatchJsResult();
 });
 
@@ -28,49 +34,66 @@ test("typeof function", () => {
     util.testExpression`typeof (() => 3)`.expectToMatchJsResult();
 });
 
-test.each(["null", "undefined"])("typeof undefined (%p)", inp => {
+test.each(["null", "undefined"])("typeof %s", inp => {
     util.testExpression`typeof ${inp}`.expectToEqual("undefined");
 });
 
-test.each([
-    { expression: "{}", operator: "===", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "!==", compareTo: "object", expectResult: false },
-    { expression: "{}", operator: "==", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "!=", compareTo: "object", expectResult: false },
-    { expression: "{}", operator: "<=", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "<", compareTo: "object", expectResult: false },
-    { expression: "undefined", operator: "===", compareTo: "undefined", expectResult: true },
-    { expression: "() => {}", operator: "===", compareTo: "function", expectResult: true },
-    { expression: "1", operator: "===", compareTo: "number", expectResult: true },
-    { expression: "true", operator: "===", compareTo: "boolean", expectResult: true },
-    { expression: `"foo"`, operator: "===", compareTo: "string", expectResult: true },
-])("typeof literal comparison (%p)", ({ expression, operator, compareTo, expectResult }) => {
-    const code = `
-        let val = ${expression};
-        return typeof val ${operator} "${compareTo}";`;
+interface ComparisonCase {
+    expression: string;
+    operator: string;
+    compareTo: string;
+}
 
-    expect(util.transpileString(code)).not.toMatch("__TS__TypeOf");
-    expect(util.transpileAndExecute(code)).toBe(expectResult);
+const equalityComparisonCases: ComparisonCase[] = [
+    { expression: "{}", operator: "===", compareTo: "object" },
+    { expression: "{}", operator: "!==", compareTo: "object" },
+    { expression: "{}", operator: "==", compareTo: "object" },
+    { expression: "{}", operator: "!=", compareTo: "object" },
+    { expression: "undefined", operator: "===", compareTo: "undefined" },
+    { expression: "() => {}", operator: "===", compareTo: "function" },
+    { expression: "1", operator: "===", compareTo: "number" },
+    { expression: "true", operator: "===", compareTo: "boolean" },
+    { expression: `"foo"`, operator: "===", compareTo: "string" },
+];
+
+const relationalComparisonCases: ComparisonCase[] = [
+    { expression: "undefined", operator: "<=", compareTo: "object" },
+    { expression: "undefined", operator: "<", compareTo: "object" },
+    { expression: "undefined", operator: ">=", compareTo: "object" },
+    { expression: "undefined", operator: ">", compareTo: "object" },
+];
+
+const expectTypeOfHelper: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch("__TS__TypeOf");
+const expectNoTypeOfHelper: util.TapCallback = builder =>
+    expect(builder.getMainLuaCodeChunk()).not.toMatch("__TS__TypeOf");
+
+test.each(equalityComparisonCases)("typeof literal equality comparison (%p)", ({ expression, operator, compareTo }) => {
+    util.testFunction`
+        const value = ${expression};
+        return typeof value ${operator} "${compareTo}";
+    `
+        .tap(expectNoTypeOfHelper)
+        .expectToMatchJsResult();
 });
 
-test.each([
-    { expression: "{}", operator: "===", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "!==", compareTo: "object", expectResult: false },
-    { expression: "{}", operator: "==", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "!=", compareTo: "object", expectResult: false },
-    { expression: "{}", operator: "<=", compareTo: "object", expectResult: true },
-    { expression: "{}", operator: "<", compareTo: "object", expectResult: false },
-    { expression: "undefined", operator: "===", compareTo: "undefined", expectResult: true },
-    { expression: "() => {}", operator: "===", compareTo: "function", expectResult: true },
-    { expression: "1", operator: "===", compareTo: "number", expectResult: true },
-    { expression: "true", operator: "===", compareTo: "boolean", expectResult: true },
-    { expression: `"foo"`, operator: "===", compareTo: "string", expectResult: true },
-])("typeof non-literal comparison (%p)", ({ expression, operator, compareTo, expectResult }) => {
-    const code = `
-        let val = ${expression};
-        let compareTo = "${compareTo}";
-        return typeof val ${operator} compareTo;`;
-
-    expect(util.transpileString(code)).toMatch("__TS__TypeOf");
-    expect(util.transpileAndExecute(code)).toBe(expectResult);
+test.each(relationalComparisonCases)("typeof literal comparison (%p)", ({ expression, operator, compareTo }) => {
+    util.testFunction`
+        const value = ${expression};
+        return typeof value ${operator} "${compareTo}";
+    `
+        .tap(expectTypeOfHelper)
+        .expectToMatchJsResult();
 });
+
+test.each([...equalityComparisonCases, ...relationalComparisonCases])(
+    "typeof non-literal comparison (%p)",
+    ({ expression, operator, compareTo }) => {
+        util.testFunction`
+            const value = ${expression};
+            const compareTo = "${compareTo}";
+            return typeof value ${operator} compareTo;
+        `
+            .tap(expectTypeOfHelper)
+            .expectToMatchJsResult();
+    }
+);

@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../../src";
-import * as TSTLErrors from "../../../src/TSTLErrors";
+import { UnsupportedNonDestructuringLuaIterator } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("forof lua iterator", () => {
@@ -188,7 +188,7 @@ test("forof lua iterator tuple-return single variable", () => {
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
+        UnsupportedNonDestructuringLuaIterator(util.nodeStub)
     );
 });
 
@@ -209,7 +209,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
         target: ts.ScriptTarget.ES2015,
     };
     expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        TSTLErrors.UnsupportedNonDestructuringLuaIterator(util.nodeStub)
+        UnsupportedNonDestructuringLuaIterator(util.nodeStub)
     );
 });
 

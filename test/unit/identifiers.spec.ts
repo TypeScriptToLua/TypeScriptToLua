@@ -1,7 +1,7 @@
 import * as ts from "typescript";
+import { InvalidAmbientIdentifierName } from "../../src/transformation/utils/errors";
+import { luaKeywords } from "../../src/transformation/utils/safe-names";
 import * as util from "../util";
-import { luaKeywords } from "../../src/LuaKeywords";
-import * as TSTLErrors from "../../src/TSTLErrors";
 
 const invalidLuaCharNames = ["$$$", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"];
 const validTsInvalidLuaKeywordNames = [
@@ -17,7 +17,7 @@ const validTsInvalidLuaKeywordNames = [
     "then",
     "until",
 ];
-const invalidLuaNames = [...invalidLuaCharNames, ...luaKeywords.values()];
+const invalidLuaNames = [...invalidLuaCharNames, ...luaKeywords];
 const validTsInvalidLuaNames = [...invalidLuaCharNames, ...validTsInvalidLuaKeywordNames];
 
 test.each(validTsInvalidLuaNames)("invalid lua identifier name (%p)", name => {
@@ -83,7 +83,7 @@ test.each([
         local;
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("local")));
+        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("local")));
 });
 
 test.each([
@@ -100,7 +100,7 @@ test.each([
     util.testModule`
         declare ${statement}
         $$$;
-    `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier("$$$")));
+    `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("$$$")));
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -109,7 +109,7 @@ test.each(validTsInvalidLuaNames)(
         util.testModule`
             declare var ${name}: any;
             const foo = { ${name} };
-        `.expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
     }
 );
 
@@ -118,7 +118,7 @@ test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua ide
         const foo = ${name};
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -128,7 +128,7 @@ test.each(validTsInvalidLuaNames)(
             const foo = { ${name} };
         `
             .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(TSTLErrors.InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+            .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
     }
 );
 

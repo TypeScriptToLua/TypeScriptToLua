@@ -13,7 +13,7 @@ export interface Plugin {
     /**
      * A function that converts Lua AST to a string.
      *
-     * Only one plugin can provide `printer`.
+     * At most one custom printer can be provided across all plugins.
      */
     printer?: Printer;
 }

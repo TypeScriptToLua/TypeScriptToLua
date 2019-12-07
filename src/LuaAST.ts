@@ -829,6 +829,7 @@ export function createMethodCallExpression(
 
 export interface Identifier extends Expression {
     kind: SyntaxKind.Identifier;
+    exportable: boolean;
     text: string;
     originalName?: string;
     symbolId?: SymbolId;
@@ -846,6 +847,7 @@ export function createIdentifier(
     parent?: Node
 ): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+    expression.exportable = true;
     expression.text = text;
     expression.symbolId = symbolId;
     expression.originalName = originalName;
@@ -858,6 +860,7 @@ export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): I
 
 export function createAnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
     const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+    expression.exportable = false;
     expression.text = "____";
     return expression;
 }

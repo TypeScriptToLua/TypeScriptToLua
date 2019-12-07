@@ -116,6 +116,10 @@ export function createExportedIdentifier(
     identifier: lua.Identifier,
     exportScope?: ts.SourceFile | ts.ModuleDeclaration
 ): lua.AssignmentLeftHandSideExpression {
+    if (!identifier.exportable) {
+        return identifier;
+    }
+
     const exportTable =
         exportScope && ts.isModuleDeclaration(exportScope)
             ? createModuleLocalNameIdentifier(context, exportScope)

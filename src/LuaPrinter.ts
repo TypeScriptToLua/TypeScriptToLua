@@ -23,8 +23,7 @@ const escapeStringMap: Record<string, string> = {
     "\0": "\\0",
 };
 
-export const escapeString = (value: string) =>
-    `"${value.replace(escapeStringRegExp, char => escapeStringMap[char])}"`;
+export const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char])}"`;
 
 /**
  * Checks that a name is valid for use in lua function declaration syntax:

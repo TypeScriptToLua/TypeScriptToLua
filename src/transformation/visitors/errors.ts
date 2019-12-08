@@ -26,8 +26,10 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
         let [catchBlock, catchScope] = transformScopeBlock(context, statement.catchClause.block, ScopeType.Catch);
         if (statement.catchClause.variableDeclaration) {
             // Replace ____returned with catch variable
-            returnedIdentifier = transformIdentifier(context, statement.catchClause.variableDeclaration
-                .name as ts.Identifier);
+            returnedIdentifier = transformIdentifier(
+                context,
+                statement.catchClause.variableDeclaration.name as ts.Identifier
+            );
         } else if (tryScope.functionReturned || catchScope.functionReturned) {
             returnedIdentifier = lua.createIdentifier("____returned");
         }

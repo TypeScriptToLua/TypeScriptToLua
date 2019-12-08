@@ -104,23 +104,15 @@ export function createClassSetup(
         result.push(assignClassPrototypeGetters);
     }
 
-    const classPrototypeIndex = lua.createTableIndexExpression(
-        createClassPrototype(),
-        lua.createStringLiteral("__index")
-    );
     if (hasMemberInClassOrAncestor(context, statement, m => ts.isGetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__index = __TS__Index(localClassName.prototype)
+        const classPrototypeIndex = lua.createTableIndexExpression(
+            createClassPrototype(),
+            lua.createStringLiteral("__index")
+        );
         const assignClassPrototypeIndex = lua.createAssignmentStatement(
             classPrototypeIndex,
             transformLuaLibFunction(context, LuaLibFeature.Index, undefined, createClassPrototype()),
-            statement
-        );
-        result.push(assignClassPrototypeIndex);
-    } else {
-        // localClassName.prototype.__index = localClassName.prototype
-        const assignClassPrototypeIndex = lua.createAssignmentStatement(
-            classPrototypeIndex,
-            createClassPrototype(),
             statement
         );
         result.push(assignClassPrototypeIndex);

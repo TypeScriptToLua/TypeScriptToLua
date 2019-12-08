@@ -43,7 +43,6 @@ exports[`Transformation (classPureAbstract) 1`] = `
 "require(\\"lualib_bundle\\");
 ClassB = __TS__Class()
 ClassB.name = \\"ClassB\\"
-ClassB.prototype.__index = ClassB.prototype
 function ClassB.prototype.____constructor(self)
 end"
 `;
@@ -78,7 +77,6 @@ exports[`Transformation (methodRestArguments) 1`] = `
 "require(\\"lualib_bundle\\");
 MyClass = __TS__Class()
 MyClass.name = \\"MyClass\\"
-MyClass.prototype.__index = MyClass.prototype
 function MyClass.prototype.____constructor(self)
 end
 function MyClass.prototype.varargsFunction(self, a, ...)
@@ -97,7 +95,6 @@ local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
 TestClass.name = \\"TestClass\\"
-TestClass.prototype.__index = TestClass.prototype
 function TestClass.prototype.____constructor(self)
 end
 return ____exports"
@@ -109,7 +106,6 @@ local ____exports = {}
 ____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
 TestClass.name = \\"TestClass\\"
-TestClass.prototype.__index = TestClass.prototype
 function TestClass.prototype.____constructor(self)
 end
 function TestClass.prototype.memberFunc(self)

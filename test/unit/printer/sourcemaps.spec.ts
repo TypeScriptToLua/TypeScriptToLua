@@ -86,7 +86,6 @@ test.each([
         assertPatterns: [
             { luaPattern: "Bar =", typeScriptPattern: "class Bar" },
             { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
-            { luaPattern: "Bar.prototype.__index =", typeScriptPattern: "class Bar" },
             { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
             { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },

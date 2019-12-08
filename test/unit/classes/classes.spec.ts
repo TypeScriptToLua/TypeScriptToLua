@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { ForbiddenStaticClassPropertyName } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("ClassFieldInitializer", () => {
@@ -830,44 +828,4 @@ test("Class field override in subclass with constructors", () => {
         }
         return (new Foo()).field + (new Bar()).field;`;
     expect(util.transpileAndExecute(code)).toBe("foobar");
-});
-
-test("Class cannot have static new method", () => {
-    const code = `
-        class Foo {
-            static new() {}
-        }`;
-    expect(() => util.transpileAndExecute(code)).toThrow(
-        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
-    );
-});
-
-test("Class cannot have static new property", () => {
-    const code = `
-        class Foo {
-            static new = "foobar";
-        }`;
-    expect(() => util.transpileAndExecute(code)).toThrow(
-        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
-    );
-});
-
-test("Class cannot have static new get accessor", () => {
-    const code = `
-        class Foo {
-            static get new() { return "foobar" }
-        }`;
-    expect(() => util.transpileAndExecute(code)).toThrow(
-        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
-    );
-});
-
-test("Class cannot have static new set accessor", () => {
-    const code = `
-        class Foo {
-            static set new(value: string) {}
-        }`;
-    expect(() => util.transpileAndExecute(code)).toThrow(
-        ForbiddenStaticClassPropertyName(ts.createEmptyStatement(), "new").message
-    );
 });

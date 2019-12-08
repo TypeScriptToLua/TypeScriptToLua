@@ -40,17 +40,9 @@ end"
 `;
 
 exports[`Transformation (classPureAbstract) 1`] = `
-"ClassB = {}
+"require(\\"lualib_bundle\\");
+ClassB = __TS__Class()
 ClassB.name = \\"ClassB\\"
-ClassB.__index = ClassB
-ClassB.prototype = {}
-ClassB.prototype.__index = ClassB.prototype
-ClassB.prototype.constructor = ClassB
-function ClassB.new(...)
-    local self = setmetatable({}, ClassB.prototype)
-    self:____constructor(...)
-    return self
-end
 function ClassB.prototype.____constructor(self)
 end"
 `;
@@ -82,17 +74,9 @@ return ____exports"
 `;
 
 exports[`Transformation (methodRestArguments) 1`] = `
-"MyClass = {}
+"require(\\"lualib_bundle\\");
+MyClass = __TS__Class()
 MyClass.name = \\"MyClass\\"
-MyClass.__index = MyClass
-MyClass.prototype = {}
-MyClass.prototype.__index = MyClass.prototype
-MyClass.prototype.constructor = MyClass
-function MyClass.new(...)
-    local self = setmetatable({}, MyClass.prototype)
-    self:____constructor(...)
-    return self
-end
 function MyClass.prototype.____constructor(self)
 end
 function MyClass.prototype.varargsFunction(self, a, ...)
@@ -106,38 +90,22 @@ return ____exports"
 `;
 
 exports[`Transformation (modulesClassExport) 1`] = `
-"local ____exports = {}
-____exports.TestClass = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
 TestClass.name = \\"TestClass\\"
-TestClass.__index = TestClass
-TestClass.prototype = {}
-TestClass.prototype.__index = TestClass.prototype
-TestClass.prototype.constructor = TestClass
-function TestClass.new(...)
-    local self = setmetatable({}, TestClass.prototype)
-    self:____constructor(...)
-    return self
-end
 function TestClass.prototype.____constructor(self)
 end
 return ____exports"
 `;
 
 exports[`Transformation (modulesClassWithMemberExport) 1`] = `
-"local ____exports = {}
-____exports.TestClass = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+____exports.TestClass = __TS__Class()
 local TestClass = ____exports.TestClass
 TestClass.name = \\"TestClass\\"
-TestClass.__index = TestClass
-TestClass.prototype = {}
-TestClass.prototype.__index = TestClass.prototype
-TestClass.prototype.constructor = TestClass
-function TestClass.new(...)
-    local self = setmetatable({}, TestClass.prototype)
-    self:____constructor(...)
-    return self
-end
 function TestClass.prototype.____constructor(self)
 end
 function TestClass.prototype.memberFunc(self)

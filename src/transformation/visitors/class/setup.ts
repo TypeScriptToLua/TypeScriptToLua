@@ -8,11 +8,7 @@ import {
     getIdentifierExportScope,
     hasDefaultExportModifier,
 } from "../../utils/export";
-import {
-    createExportsIdentifier,
-    createLocalOrExportedOrGlobalDeclaration,
-    createSelfIdentifier,
-} from "../../utils/lua-ast";
+import { createExportsIdentifier, createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { hasMemberInClassOrAncestor } from "./members/accessors";
 import { getExtendedTypeNode, isStaticNode } from "./utils";
@@ -27,20 +23,19 @@ export function createClassSetup(
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
 
-    // [____exports.]className = {}
-    const classTable: lua.Expression = lua.createTableExpression();
+    // __TS__Class()
+    const classInitializer = transformLuaLibFunction(context, LuaLibFeature.Class, statement);
 
-    const isDefaultExport = hasDefaultExportModifier(statement);
-
-    const defaultExportLeftHandSide = isDefaultExport
+    const defaultExportLeftHandSide = hasDefaultExportModifier(statement)
         ? lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(statement))
         : undefined;
 
-    const classVar = defaultExportLeftHandSide
-        ? [lua.createAssignmentStatement(defaultExportLeftHandSide, classTable, statement)]
-        : createLocalOrExportedOrGlobalDeclaration(context, className, classTable, statement);
-
-    result.push(...classVar);
+    // [____exports.]className = __TS__Class()
+    if (defaultExportLeftHandSide) {
+        result.push(lua.createAssignmentStatement(defaultExportLeftHandSide, classInitializer, statement));
+    } else {
+        result.push(...createLocalOrExportedOrGlobalDeclaration(context, className, classInitializer, statement));
+    }
 
     if (defaultExportLeftHandSide) {
         // local localClassName = ____exports.default
@@ -79,14 +74,6 @@ export function createClassSetup(
         importLuaLibFeature(context, LuaLibFeature.ClassIndex);
     }
 
-    // localClassName.__index = localClassName
-    const classIndex = lua.createTableIndexExpression(
-        lua.cloneIdentifier(localClassName),
-        lua.createStringLiteral("__index")
-    );
-    const assignClassIndex = lua.createAssignmentStatement(classIndex, lua.cloneIdentifier(localClassName), statement);
-    result.push(assignClassIndex);
-
     // localClassName.____setters = {}
     if (statement.members.some(m => ts.isSetAccessor(m) && isStaticNode(m))) {
         const classSetters = lua.createTableIndexExpression(
@@ -99,12 +86,9 @@ export function createClassSetup(
         importLuaLibFeature(context, LuaLibFeature.ClassNewIndex);
     }
 
-    // localClassName.prototype = {}
+    // localClassName.prototype
     const createClassPrototype = () =>
         lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("prototype"));
-    const classPrototypeTable = lua.createTableExpression();
-    const assignClassPrototype = lua.createAssignmentStatement(createClassPrototype(), classPrototypeTable, statement);
-    result.push(assignClassPrototype);
 
     // localClassName.prototype.____getters = {}
     if (statement.members.some(m => ts.isGetAccessor(m) && !isStaticNode(m))) {
@@ -120,23 +104,15 @@ export function createClassSetup(
         result.push(assignClassPrototypeGetters);
     }
 
-    const classPrototypeIndex = lua.createTableIndexExpression(
-        createClassPrototype(),
-        lua.createStringLiteral("__index")
-    );
     if (hasMemberInClassOrAncestor(context, statement, m => ts.isGetAccessor(m) && !isStaticNode(m))) {
         // localClassName.prototype.__index = __TS__Index(localClassName.prototype)
+        const classPrototypeIndex = lua.createTableIndexExpression(
+            createClassPrototype(),
+            lua.createStringLiteral("__index")
+        );
         const assignClassPrototypeIndex = lua.createAssignmentStatement(
             classPrototypeIndex,
             transformLuaLibFunction(context, LuaLibFeature.Index, undefined, createClassPrototype()),
-            statement
-        );
-        result.push(assignClassPrototypeIndex);
-    } else {
-        // localClassName.prototype.__index = localClassName.prototype
-        const assignClassPrototypeIndex = lua.createAssignmentStatement(
-            classPrototypeIndex,
-            createClassPrototype(),
             statement
         );
         result.push(assignClassPrototypeIndex);
@@ -169,18 +145,6 @@ export function createClassSetup(
         );
         result.push(assignClassPrototypeIndex);
     }
-
-    // localClassName.prototype.constructor = localClassName
-    const classPrototypeConstructor = lua.createTableIndexExpression(
-        createClassPrototype(),
-        lua.createStringLiteral("constructor")
-    );
-    const assignClassPrototypeConstructor = lua.createAssignmentStatement(
-        classPrototypeConstructor,
-        lua.cloneIdentifier(localClassName),
-        statement
-    );
-    result.push(assignClassPrototypeConstructor);
 
     const hasStaticGetters = hasMemberInClassOrAncestor(
         context,
@@ -302,47 +266,6 @@ export function createClassSetup(
         );
         result.push(setClassMetatable);
     }
-
-    const newFuncStatements: lua.Statement[] = [];
-
-    // local self = setmetatable({}, localClassName.prototype)
-    const assignSelf = lua.createVariableDeclarationStatement(
-        createSelfIdentifier(),
-        lua.createCallExpression(lua.createIdentifier("setmetatable"), [
-            lua.createTableExpression(),
-            createClassPrototype(),
-        ]),
-        statement
-    );
-    newFuncStatements.push(assignSelf);
-
-    // self:____constructor(...)
-    const callConstructor = lua.createExpressionStatement(
-        lua.createMethodCallExpression(createSelfIdentifier(), lua.createIdentifier("____constructor"), [
-            lua.createDotsLiteral(),
-        ]),
-        statement
-    );
-    newFuncStatements.push(callConstructor);
-
-    // return self
-    const returnSelf = lua.createReturnStatement([createSelfIdentifier()], statement);
-    newFuncStatements.push(returnSelf);
-
-    // function localClassName.new(construct, ...) ... end
-    // or function export.localClassName.new(construct, ...) ... end
-    const newFunc = lua.createAssignmentStatement(
-        lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("new")),
-        lua.createFunctionExpression(
-            lua.createBlock(newFuncStatements),
-            undefined,
-            lua.createDotsLiteral(),
-            undefined,
-            lua.FunctionExpressionFlags.Declaration
-        ),
-        statement
-    );
-    result.push(newFunc);
 
     return result;
 }

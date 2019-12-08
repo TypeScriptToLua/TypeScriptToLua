@@ -17,7 +17,9 @@ export function transformConsoleCall(
 
     switch (methodName) {
         case "error":
+        case "info":
         case "log":
+        case "warn":
             if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
                 // print(string.format([arguments]))
                 const stringFormatCall = lua.createCallExpression(

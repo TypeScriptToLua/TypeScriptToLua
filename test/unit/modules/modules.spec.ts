@@ -209,3 +209,14 @@ test("Export Equals", () => {
 
     expect(result).toBe(true);
 });
+
+test.each(["x = true", "[x] = [true]", "[[x]] = [[true]]", "({ x } = { x: true })", "({ y: x } = { y: true })"])(
+    "export specifier with reassignment afterwards (%p)",
+    reassignment => {
+        util.testModule`
+        let x = false;
+        export { x };
+        ${reassignment};
+    `.expectToMatchJsResult();
+    }
+);

@@ -98,9 +98,7 @@ export function isSymbolExportedFromScope(
         return false;
     }
 
-    // ts.Iterator is not a ES6-compatible iterator, because TypeScript targets ES5
-    const it: Iterable<ts.Symbol> = { [Symbol.iterator]: () => scopeSymbol!.exports!.values() };
-    return [...it].includes(symbol);
+    return scopeSymbol.exports.has(symbol.escapedName);
 }
 
 export function addExportToIdentifier(

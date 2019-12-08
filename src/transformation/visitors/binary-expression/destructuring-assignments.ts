@@ -5,9 +5,12 @@ import { TransformationContext } from "../../context";
 import { UnsupportedKind } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
-import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { transformAssignment, transformAssignmentStatement } from "./assignments";
+import {
+    transformAssignment,
+    transformAssignmentLeftHandSideExpression,
+    transformAssignmentStatement,
+} from "./assignments";
 
 export function isArrayLength(
     context: TransformationContext,
@@ -170,7 +173,7 @@ function transformShorthandPropertyAssignment(
     root: lua.Expression
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
-    const assignmentVariableName = transformIdentifier(context, node.name);
+    const assignmentVariableName = transformAssignmentLeftHandSideExpression(context, node.name);
     const extractionIndex = lua.createStringLiteral(node.name.text);
     const variableExtractionAssignmentStatement = lua.createAssignmentStatement(
         assignmentVariableName,

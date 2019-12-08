@@ -1,14 +1,26 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast, castEach } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
+import { createExportedIdentifier, isSymbolExported } from "../../utils/export";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { transformElementAccessArgument } from "../access";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
+
+export function transformAssignmentLeftHandSideExpression(
+    context: TransformationContext,
+    node: ts.Expression
+): lua.AssignmentLeftHandSideExpression {
+    const symbol = context.checker.getSymbolAtLocation(node);
+    const left = context.transformExpression(node);
+
+    return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
+        ? createExportedIdentifier(context, left)
+        : (left as lua.AssignmentLeftHandSideExpression);
+}
 
 export function transformAssignment(
     context: TransformationContext,
@@ -29,11 +41,7 @@ export function transformAssignment(
         );
     }
 
-    return lua.createAssignmentStatement(
-        cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression),
-        right,
-        lhs.parent
-    );
+    return lua.createAssignmentStatement(transformAssignmentLeftHandSideExpression(context, lhs), right, lhs.parent);
 }
 
 export function transformAssignmentExpression(
@@ -139,10 +147,7 @@ export function transformAssignmentStatement(
                 right = createUnpackCall(context, right, expression.right);
             }
 
-            const left = castEach(
-                expression.left.elements.map(e => context.transformExpression(e)),
-                lua.isAssignmentLeftHandSideExpression
-            );
+            const left = expression.left.elements.map(e => transformAssignmentLeftHandSideExpression(context, e));
 
             return [lua.createAssignmentStatement(left, right, expression)];
         }

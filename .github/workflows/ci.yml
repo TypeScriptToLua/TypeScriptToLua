@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v1
-      - name: Use Node.js 8.5.0
+      - name: Use Node.js 12.13.1
         uses: actions/setup-node@v1
         with:
-          node-version: 8.5.0
+          node-version: 12.13.1
       - run: npm install --global npm@6
       - run: npm ci
       - run: npm run build

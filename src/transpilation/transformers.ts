@@ -32,8 +32,8 @@ export function getCustomTransformers(
     const transformersFromOptions = loadTransformersFromOptions(program, diagnostics);
 
     const afterDeclarations = [
-        ...(transformersFromOptions.afterDeclarations || []),
-        ...(customTransformers.afterDeclarations || []),
+        ...(transformersFromOptions.afterDeclarations ?? []),
+        ...(customTransformers.afterDeclarations ?? []),
     ];
 
     const options = program.getCompilerOptions() as CompilerOptions;
@@ -44,11 +44,11 @@ export function getCustomTransformers(
     return {
         afterDeclarations,
         before: [
-            ...(customTransformers.before || []),
-            ...(transformersFromOptions.before || []),
+            ...(customTransformers.before ?? []),
+            ...(transformersFromOptions.before ?? []),
 
-            ...(transformersFromOptions.after || []),
-            ...(customTransformers.after || []),
+            ...(transformersFromOptions.after ?? []),
+            ...(customTransformers.after ?? []),
             luaTransformer,
         ],
     };
@@ -209,7 +209,7 @@ function loadTransformer(
     } else {
         const isValidGroupTransformer =
             typeof transformer === "object" &&
-            (transformer.before || transformer.after || transformer.afterDeclarations);
+            (transformer.before ?? transformer.after ?? transformer.afterDeclarations) !== undefined;
 
         if (!isValidGroupTransformer) {
             return { error: diagnosticFactories.transformerShouldBeATsTransformerFactory(transform) };

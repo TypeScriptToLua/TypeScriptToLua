@@ -186,7 +186,7 @@ export function setParent(node: Node | Node[] | undefined, parent: Node): void {
 }
 
 function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
-    if (sourceNode !== undefined && sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
+    if (sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
         const { line, character } = ts.getLineAndCharacterOfPosition(
             sourceNode.getSourceFile(),
             sourceNode.pos + sourceNode.getLeadingTriviaWidth()
@@ -901,12 +901,7 @@ export type FunctionDefinition = (VariableDeclarationStatement | AssignmentState
 export function isFunctionDefinition(
     statement: VariableDeclarationStatement | AssignmentStatement
 ): statement is FunctionDefinition {
-    return (
-        statement.left.length === 1 &&
-        statement.right !== undefined &&
-        statement.right.length === 1 &&
-        isFunctionExpression(statement.right[0])
-    );
+    return statement.left.length === 1 && statement.right?.length === 1 && isFunctionExpression(statement.right[0]);
 }
 
 export type InlineFunctionExpression = FunctionExpression & {
@@ -915,8 +910,7 @@ export type InlineFunctionExpression = FunctionExpression & {
 
 export function isInlineFunctionExpression(expression: FunctionExpression): expression is InlineFunctionExpression {
     return (
-        expression.body.statements !== undefined &&
-        expression.body.statements.length === 1 &&
+        expression.body.statements?.length === 1 &&
         isReturnStatement(expression.body.statements[0]) &&
         (expression.body.statements[0] as ReturnStatement).expressions !== undefined &&
         (expression.flags & FunctionExpressionFlags.Inline) !== 0

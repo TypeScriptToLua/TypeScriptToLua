@@ -8,7 +8,7 @@ import { getFirstDeclarationInFile } from "./typescript";
 
 const symbolIdCounters = new WeakMap<TransformationContext, number>();
 function nextSymbolId(context: TransformationContext): lua.SymbolId {
-    const symbolId = (symbolIdCounters.get(context) || 0) + 1;
+    const symbolId = (symbolIdCounters.get(context) ?? 0) + 1;
     symbolIdCounters.set(context, symbolId);
     return symbolId as lua.SymbolId;
 }

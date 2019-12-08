@@ -730,19 +730,19 @@ test("Exported class super call", () => {
     expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("bar");
 });
 
-test.each([{ input: "(new Foo())", expectResult: "foo" }, { input: "Foo", expectResult: "bar" }])(
-    "Class method name collision (%p)",
-    ({ input, expectResult }) => {
-        const code = `
-            class Foo {
-                public method() { return "foo"; }
-                public static method() { return "bar"; }
-            }
-            return ${input}.method();
-        `;
-        expect(util.transpileAndExecute(code)).toBe(expectResult);
-    }
-);
+test.each([
+    { input: "(new Foo())", expectResult: "foo" },
+    { input: "Foo", expectResult: "bar" },
+])("Class method name collision (%p)", ({ input, expectResult }) => {
+    const code = `
+        class Foo {
+            public method() { return "foo"; }
+            public static method() { return "bar"; }
+        }
+        return ${input}.method();
+    `;
+    expect(util.transpileAndExecute(code)).toBe(expectResult);
+});
 
 test("Class static instance of self", () => {
     const code = `

@@ -301,7 +301,16 @@ test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof existing variable (%
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])("forof destructing (%p)", ({ inp, expected }) => {
+test.each([
+    {
+        inp: [
+            [1, 2],
+            [2, 3],
+            [3, 4],
+        ],
+        expected: [3, 5, 7],
+    },
+])("forof destructing (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
         `let objTest = ${JSON.stringify(inp)};
             let arrResultTest = [];
@@ -314,23 +323,29 @@ test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])("forof destr
     expect(result).toBe(JSON.stringify(expected));
 });
 
-test.each([{ inp: [[1, 2], [2, 3], [3, 4]], expected: [3, 5, 7] }])(
-    "forof destructing with existing variables (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let objTest = ${JSON.stringify(inp)};
-            let arrResultTest = [];
-            let a: number;
-            let b: number;
-            for ([a,b] of objTest) {
-                arrResultTest.push(a + b)
-            }
-            return JSONStringify(arrResultTest);`
-        );
+test.each([
+    {
+        inp: [
+            [1, 2],
+            [2, 3],
+            [3, 4],
+        ],
+        expected: [3, 5, 7],
+    },
+])("forof destructing with existing variables (%p)", ({ inp, expected }) => {
+    const result = util.transpileAndExecute(`
+        let objTest = ${JSON.stringify(inp)};
+        let arrResultTest = [];
+        let a: number;
+        let b: number;
+        for ([a,b] of objTest) {
+            arrResultTest.push(a + b)
+        }
+        return JSONStringify(arrResultTest);
+    `);
 
-        expect(result).toBe(JSON.stringify(expected));
-    }
-);
+    expect(result).toBe(JSON.stringify(expected));
+});
 
 test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])("forof with continue (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(

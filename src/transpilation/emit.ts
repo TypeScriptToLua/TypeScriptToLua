@@ -19,7 +19,7 @@ export function emitTranspiledFiles(
     let { outDir, luaLibImport, luaBundle } = options;
 
     const rootDir = program.getCommonSourceDirectory();
-    outDir = outDir || rootDir;
+    outDir = outDir ?? rootDir;
 
     const files: OutputFile[] = [];
     for (const { fileName, lua, sourceMap, declaration, declarationMap } of transpiledFiles) {
@@ -54,7 +54,7 @@ export function emitTranspiledFiles(
             luaLibImport === LuaLibImportKind.Require ||
             luaLibImport === LuaLibImportKind.Always)
     ) {
-        const lualibRequired = files.some(f => f.text && f.text.includes(`require("lualib_bundle")`));
+        const lualibRequired = files.some(f => f.text?.includes(`require("lualib_bundle")`));
         if (lualibRequired) {
             let outPath = path.resolve(rootDir, "lualib_bundle.lua");
             if (outDir !== rootDir) {

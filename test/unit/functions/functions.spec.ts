@@ -237,26 +237,26 @@ test("Object method declaration", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([{ args: ["bar"], expected: "foobar" }, { args: ["baz", "bar"], expected: "bazbar" }])(
-    "Function overload (%p)",
-    ({ args, expected }) => {
-        util.testFunction`
-            class O {
-                prop = "foo";
-                method(s: string): string;
-                method(this: void, s1: string, s2: string): string;
-                method(s1: string) {
-                    if (typeof this === "string") {
-                        return this + s1;
-                    }
-                    return this.prop + s1;
+test.each([
+    { args: ["bar"], expected: "foobar" },
+    { args: ["baz", "bar"], expected: "bazbar" },
+])("Function overload (%p)", ({ args, expected }) => {
+    util.testFunction`
+        class O {
+            prop = "foo";
+            method(s: string): string;
+            method(this: void, s1: string, s2: string): string;
+            method(s1: string) {
+                if (typeof this === "string") {
+                    return this + s1;
                 }
-            };
-            const o = new O();
-            return o.method(${util.formatCode(...args)});
-        `.expectToEqual(expected);
-    }
-);
+                return this.prop + s1;
+            }
+        };
+        const o = new O();
+        return o.method(${util.formatCode(...args)});
+    `.expectToEqual(expected);
+});
 
 test("Nested Function", () => {
     util.testFunction`
@@ -276,7 +276,10 @@ test("Nested Function", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([{ s1: "abc", s2: "abc" }, { s1: "abc", s2: "def" }])("Dot vs Colon method call (%p)", ({ s1, s2 }) => {
+test.each([
+    { s1: "abc", s2: "abc" },
+    { s1: "abc", s2: "def" },
+])("Dot vs Colon method call (%p)", ({ s1, s2 }) => {
     util.testFunction`
         class MyClass {
             dotMethod(this: void, s: string) {

@@ -65,7 +65,7 @@ function forTypeOrAnySupertype(
         type = context.checker.getDeclaredTypeOfSymbol(type.symbol);
     }
 
-    return (type.getBaseTypes() || []).some(superType => forTypeOrAnySupertype(context, superType, predicate));
+    return (type.getBaseTypes() ?? []).some(superType => forTypeOrAnySupertype(context, superType, predicate));
 }
 
 export function isArrayType(context: TransformationContext, type: ts.Type): boolean {

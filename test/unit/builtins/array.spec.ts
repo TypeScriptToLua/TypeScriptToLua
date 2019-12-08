@@ -423,9 +423,9 @@ test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) =>
     `.expectToMatchJsResult();
 });
 
-// tslint:disable-next-line: no-null-keyword
 test.each([
     { array: [1, 2, 3], expected: [3, 2] },
+    // tslint:disable-next-line: no-null-keyword
     { array: [1, 2, 3, null], expected: [3, 2] },
 ])("array.pop (%p)", ({ array, expected }) => {
     util.testFunction`

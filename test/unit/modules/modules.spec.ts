@@ -214,9 +214,9 @@ test.each(["x = true", "[x] = [true]", "[[x]] = [[true]]", "({ x } = { x: true }
     "export specifier with reassignment afterwards (%p)",
     reassignment => {
         util.testModule`
-        let x = false;
-        export { x };
-        ${reassignment};
-    `.expectToMatchJsResult();
+            let x = false;
+            export { x };
+            ${reassignment};
+        `.expectToMatchJsResult();
     }
 );

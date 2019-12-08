@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
@@ -19,7 +20,7 @@ export function transformAssignmentLeftHandSideExpression(
 
     return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
         ? createExportedIdentifier(context, left)
-        : (left as lua.AssignmentLeftHandSideExpression);
+        : cast(left, lua.isAssignmentLeftHandSideExpression);
 }
 
 export function transformAssignment(

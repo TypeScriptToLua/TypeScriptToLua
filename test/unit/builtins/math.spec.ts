@@ -25,17 +25,10 @@ test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math.%s"
     });
 });
 
-test.each<[string, LuaTarget]>([
-    ["math.atan2(4, 5)", LuaTarget.Lua51],
-    ["math.atan2(4, 5)", LuaTarget.Lua52],
-    ["math.atan(4, 5)", LuaTarget.Lua53],
-    ["math.atan2(4, 5)", LuaTarget.LuaJIT],
-])("Math.atan2 -> (%p) for (%p)", (expectedExpression, luaTarget) => {
+test.each([LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.Lua53, LuaTarget.LuaJIT])("Math.atan2 (%p)", luaTarget => {
     util.testExpression`
         Math.atan2(4, 5);
     `
         .setOptions({ luaTarget })
-        .tap(builder => {
-            expect(builder.getMainLuaCodeChunk()).toContain(expectedExpression);
-        });
+        .expectLuaToMatchSnapshot();
 });

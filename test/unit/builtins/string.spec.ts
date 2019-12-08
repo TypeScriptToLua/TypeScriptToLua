@@ -265,3 +265,21 @@ test.each([
         `;
     expect(util.transpileAndExecute(code)).toBe(6);
 });
+
+const trimTestCases = [
+    "",
+    " ",
+    "   ",
+    "foo ",
+    "foo ",
+    " foo",
+    "    foo",
+    "   foo     ",
+    "    foo     ",
+    "  foo    bar     ",
+];
+describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", trim => {
+    test.each(trimTestCases)("matches JS result (%p)", testString => {
+        util.testExpression`"${testString}".${trim}()`.expectToMatchJsResult();
+    });
+});

@@ -94,6 +94,14 @@ export function transformStringPrototypeCall(
             return createStringCall("lower", node, caller);
         case "toUpperCase":
             return createStringCall("upper", node, caller);
+        case "trim":
+            return transformLuaLibFunction(context, LuaLibFeature.StringTrim, node, caller);
+        case "trimEnd":
+        case "trimRight":
+            return transformLuaLibFunction(context, LuaLibFeature.StringTrimEnd, node, caller);
+        case "trimStart":
+        case "trimLeft":
+            return transformLuaLibFunction(context, LuaLibFeature.StringTrimStart, node, caller);
         case "split":
             return transformLuaLibFunction(context, LuaLibFeature.StringSplit, node, caller, ...params);
         case "charAt":

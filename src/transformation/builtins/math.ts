@@ -33,14 +33,6 @@ export function transformMathCall(context: TransformationContext, node: Property
 
     const expressionName = expression.name.text;
     switch (expressionName) {
-        // math.tan(x / y)
-        case "atan2": {
-            const math = lua.createIdentifier("math");
-            const atan = lua.createStringLiteral("atan");
-            const div = lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.DivisionOperator);
-            return lua.createCallExpression(lua.createTableIndexExpression(math, atan), [div], node);
-        }
-
         // (math.log(x) / Math.LNe)
         case "log10":
         case "log2": {
@@ -74,6 +66,7 @@ export function transformMathCall(context: TransformationContext, node: Property
         case "acos":
         case "asin":
         case "atan":
+        case "atan2":
         case "ceil":
         case "cos":
         case "exp":

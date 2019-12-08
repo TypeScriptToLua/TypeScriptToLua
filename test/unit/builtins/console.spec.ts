@@ -15,6 +15,18 @@ test.each([
 });
 
 test.each([
+    "console.error()",
+    'console.error("Hello")',
+    'console.error("Hello %s", "there")',
+    'console.error("Hello %%s", "there")',
+    'console.error("Hello", "There")',
+])("console.error (%p)", code => {
+    util.testFunction(code)
+        .setOptions(compilerOptions)
+        .expectLuaToMatchSnapshot();
+});
+
+test.each([
     "console.trace()",
     'console.trace("message")',
     'console.trace("Hello %s", "there")',

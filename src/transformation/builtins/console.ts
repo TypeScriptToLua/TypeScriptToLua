@@ -16,6 +16,7 @@ export function transformConsoleCall(
     const parameters = transformArguments(context, expression.arguments, signature);
 
     switch (methodName) {
+        case "error":
         case "log":
             if (expression.arguments.length > 0 && isStringFormatTemplate(expression.arguments[0])) {
                 // print(string.format([arguments]))

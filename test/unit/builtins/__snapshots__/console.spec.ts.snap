@@ -46,6 +46,50 @@ end
 return ____exports"
 `;
 
+exports[`console.error ("console.error()") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print()
+end
+return ____exports"
+`;
+
+exports[`console.error ("console.error(\\"Hello %%s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        string.format(\\"Hello %%s\\", \\"there\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.error ("console.error(\\"Hello %s\\", \\"there\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(
+        string.format(\\"Hello %s\\", \\"there\\")
+    )
+end
+return ____exports"
+`;
+
+exports[`console.error ("console.error(\\"Hello\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(\\"Hello\\")
+end
+return ____exports"
+`;
+
+exports[`console.error ("console.error(\\"Hello\\", \\"There\\")") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    print(\\"Hello\\", \\"There\\")
+end
+return ____exports"
+`;
+
 exports[`console.log ("console.log()") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

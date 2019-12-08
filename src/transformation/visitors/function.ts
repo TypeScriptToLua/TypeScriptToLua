@@ -276,7 +276,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
             scope.functionDefinitions = new Map();
         }
 
-        const functionInfo = { referencedSymbols: functionScope.referencedSymbols || new Map() };
+        const functionInfo = { referencedSymbols: functionScope.referencedSymbols ?? new Map() };
         scope.functionDefinitions.set(name.symbolId, functionInfo);
     }
 

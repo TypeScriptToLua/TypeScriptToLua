@@ -70,3 +70,5 @@ export function castEach<TOriginal, TCast extends TOriginal>(
 export function assertNever(_value: never): never {
     throw new Error("Value is expected to be never");
 }
+
+export function assume<T>(_value: any): asserts _value is T {}

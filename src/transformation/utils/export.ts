@@ -6,8 +6,8 @@ import { createExportsIdentifier } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { findFirstNodeAbove, isFileModule } from "./typescript";
 
-export function hasDefaultExportModifier({ modifiers }: ts.Node): boolean {
-    return modifiers !== undefined && modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+export function hasDefaultExportModifier(node: ts.Node): boolean {
+    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
 }
 
 export const createDefaultExportIdentifier = (original: ts.Node): lua.Identifier =>

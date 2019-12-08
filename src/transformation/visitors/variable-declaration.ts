@@ -61,7 +61,7 @@ export function transformBindingPattern(
         // The identifier of the new variable
         const variableName = transformIdentifier(context, element.name as ts.Identifier);
         // The field to extract
-        const propertyName = transformPropertyName(context, element.propertyName || element.name);
+        const propertyName = transformPropertyName(context, element.propertyName ?? element.name);
 
         let expression: lua.Expression;
         if (element.dotDotDotToken) {
@@ -73,8 +73,8 @@ export function transformBindingPattern(
                     lua.createTableFieldExpression(
                         lua.createBooleanLiteral(true),
                         lua.createStringLiteral(
-                            ((e.propertyName || e.name) as ts.Identifier).text,
-                            e.propertyName || e.name
+                            ((e.propertyName ?? e.name) as ts.Identifier).text,
+                            e.propertyName ?? e.name
                         )
                     )
                 );

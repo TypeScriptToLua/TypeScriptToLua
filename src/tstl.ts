@@ -8,7 +8,7 @@ import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 
 function shouldBePretty(options?: ts.CompilerOptions): boolean {
-    return !options || options.pretty === undefined
+    return options?.pretty === undefined
         ? ts.sys.writeOutputIsTTY !== undefined && ts.sys.writeOutputIsTTY()
         : Boolean(options.pretty);
 }

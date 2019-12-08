@@ -129,7 +129,7 @@ function getSignatureDeclarations(
 
 export function getFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {
     if (type.isTypeParameter()) {
-        type = type.getConstraint() || type;
+        type = type.getConstraint() ?? type;
     }
 
     if (type.isUnion()) {

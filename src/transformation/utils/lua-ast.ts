@@ -145,7 +145,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         return [];
     }
 
-    const exportScope = overrideExportScope || getIdentifierExportScope(context, identifiers[0]);
+    const exportScope = overrideExportScope ?? getIdentifierExportScope(context, identifiers[0]);
     if (exportScope) {
         // exported
         if (!rhs) {
@@ -218,7 +218,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         if (functionSymbolId && scope.functionDefinitions) {
             const definitions = scope.functionDefinitions.get(functionSymbolId);
             if (definitions) {
-                definitions.definition = declaration || assignment;
+                definitions.definition = declaration ?? assignment;
             }
         }
     }

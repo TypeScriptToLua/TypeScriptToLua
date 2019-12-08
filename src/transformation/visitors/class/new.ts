@@ -77,7 +77,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
         return lua.createCallExpression(
             lua.createIdentifier(customConstructorAnnotation.args[0]),
-            transformArguments(context, node.arguments || []),
+            transformArguments(context, node.arguments ?? []),
             node
         );
     }

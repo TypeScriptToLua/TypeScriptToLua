@@ -41,7 +41,7 @@ export function bundleTranspiledFiles(
     );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
-    const lualibRequired = transpiledFiles.some(f => f.lua && f.lua.includes(`require("lualib_bundle")`));
+    const lualibRequired = transpiledFiles.some(f => f.lua?.includes(`require("lualib_bundle")`));
     if (lualibRequired) {
         const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
         moduleTableEntries.push(`["lualib_bundle"] = function() ${lualibBundle} end,\n`);

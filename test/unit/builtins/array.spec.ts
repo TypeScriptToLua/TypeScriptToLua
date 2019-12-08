@@ -144,16 +144,17 @@ describe("array.length", () => {
     });
 
     describe("set", () => {
-        test.each([{ length: 0, newLength: 0 }, { length: 1, newLength: 1 }, { length: 7, newLength: 3 }])(
-            "removes extra elements",
-            ({ length, newLength }) => {
-                util.testFunction`
-                    const array = [1, 2, 3];
-                    array.length = ${length};
-                    return array.length;
-                `.expectToEqual(newLength);
-            }
-        );
+        test.each([
+            { length: 0, newLength: 0 },
+            { length: 1, newLength: 1 },
+            { length: 7, newLength: 3 },
+        ])("removes extra elements", ({ length, newLength }) => {
+            util.testFunction`
+                const array = [1, 2, 3];
+                array.length = ${length};
+                return array.length;
+            `.expectToEqual(newLength);
+        });
 
         test.each([0, 1, 7])("returns right-hand side value", length => {
             util.testExpression`[1, 2, 3].length = ${length}`.expectToEqual(length);
@@ -422,17 +423,17 @@ test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) =>
     `.expectToMatchJsResult();
 });
 
-// tslint:disable-next-line: no-null-keyword
-test.each([{ array: [1, 2, 3], expected: [3, 2] }, { array: [1, 2, 3, null], expected: [3, 2] }])(
-    "array.pop (%p)",
-    ({ array, expected }) => {
-        util.testFunction`
-            const array = ${util.formatCode(array)};
-            const value = array.pop();
-            return [value, array.length];
-        `.expectToEqual(expected);
-    }
-);
+test.each([
+    { array: [1, 2, 3], expected: [3, 2] },
+    // tslint:disable-next-line: no-null-keyword
+    { array: [1, 2, 3, null], expected: [3, 2] },
+])("array.pop (%p)", ({ array, expected }) => {
+    util.testFunction`
+        const array = ${util.formatCode(array)};
+        const value = array.pop();
+        return [value, array.length];
+    `.expectToEqual(expected);
+});
 
 test.each([{ array: [1, 2, 3] }, { array: [1, 2, 3, 4] }, { array: [1] }, { array: [] }])(
     "array.reverse (%p)",

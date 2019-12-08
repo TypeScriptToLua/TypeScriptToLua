@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { LuaTarget } from "../../CompilerOptions";
 import { TransformationContext } from "../context";
 import { UnsupportedProperty } from "../utils/errors";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
@@ -32,6 +33,13 @@ export function transformMathCall(context: TransformationContext, node: Property
     const params = transformArguments(context, node.arguments, signature);
 
     const expressionName = expression.name.text;
+
+    if (context.options.luaTarget === LuaTarget.Lua53 && expressionName === "atan2") {
+        const math = lua.createIdentifier("math");
+        const method = lua.createStringLiteral("atan");
+        return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
+    }
+
     switch (expressionName) {
         // (math.log(x) / Math.LNe)
         case "log10":

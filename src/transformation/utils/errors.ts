@@ -53,14 +53,8 @@ export const MissingClassName = (node: ts.Node) => new TranspileError(`Class dec
 export const MissingForOfVariables = (node: ts.Node) =>
     new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
 
-export const MissingFunctionName = (declaration: ts.FunctionLikeDeclaration) =>
-    new TranspileError("Unsupported function declaration without name.", declaration);
-
 export const MissingMetaExtension = (node: ts.Node) =>
     new TranspileError(`'@metaExtension' annotation requires the extension of the metatable class.`, node);
-
-export const NonFlattenableDestructure = (node: ts.Node) =>
-    new TranspileError(`This node cannot be destructured using a standard Lua assignment statement.`, node);
 
 export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
     new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
@@ -72,11 +66,6 @@ export const UndefinedScope = () => new Error("Expected to pop a scope, but foun
 
 export const UndefinedTypeNode = (node: ts.Node) => new TranspileError("Failed to resolve required type node.", node);
 
-export const UnknownSuperType = (node: ts.Node) =>
-    new TranspileError("Unable to resolve type of super expression.", node);
-
-export const UnsupportedImportType = (node: ts.Node) => new TranspileError(`Unsupported import type.`, node);
-
 export const UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) =>
     new TranspileError(`Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`, node);
 
@@ -85,9 +74,6 @@ export const UnsupportedProperty = (parentName: string, property: string, node: 
 
 export const UnsupportedForTarget = (functionality: string, version: LuaTarget, node: ts.Node) =>
     new TranspileError(`${functionality} is/are not supported for target ${getLuaTargetName(version)}.`, node);
-
-export const UnsupportedFunctionWithoutBody = (node: ts.FunctionLikeDeclaration) =>
-    new TranspileError("Functions with undefined bodies are not supported.", node);
 
 export const UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {
     const nameReference = name ? ` '${name}'` : "";

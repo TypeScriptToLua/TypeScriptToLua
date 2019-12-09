@@ -11,7 +11,6 @@ import {
     InvalidExtensionMetaExtension,
     MissingClassName,
     MissingMetaExtension,
-    UnknownSuperType,
 } from "../../utils/errors";
 import {
     createDefaultExportIdentifier,
@@ -85,7 +84,9 @@ export function transformClassDeclaration(
 
         return lua.createAssignmentStatement(left, right, classDeclaration);
     } else {
-        throw MissingClassName(classDeclaration);
+        // TypeScript error
+        className = lua.createAnonymousIdentifier();
+        classNameText = className.text;
     }
 
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
@@ -317,14 +318,11 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
     const classStack = getOrUpdate(classStacks, context, () => []);
     const classDeclaration = classStack[classStack.length - 1];
     const typeNode = getExtendedTypeNode(context, classDeclaration);
-    if (typeNode === undefined) {
-        throw UnknownSuperType(expression);
-    }
-
-    const extendsExpression = typeNode.expression;
+    // `undefined` is a TypeScript error
+    const extendsExpression = typeNode?.expression;
     let baseClassName: lua.AssignmentLeftHandSideExpression | undefined;
 
-    if (ts.isIdentifier(extendsExpression)) {
+    if (extendsExpression && ts.isIdentifier(extendsExpression)) {
         const symbol = context.checker.getSymbolAtLocation(extendsExpression);
         if (symbol && !isSymbolExported(context, symbol)) {
             // Use "baseClassName" if base is a simple identifier

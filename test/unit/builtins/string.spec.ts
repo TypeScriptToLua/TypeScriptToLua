@@ -277,9 +277,11 @@ const trimTestCases = [
     "   foo     ",
     "    foo     ",
     "  foo    bar     ",
+    "\r\nfoo\n\r\n",
+    "\r\nfoo\nbar\n\r\n",
 ];
 describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", trim => {
     test.each(trimTestCases)("matches JS result (%p)", testString => {
-        util.testExpression`"${testString}".${trim}()`.expectToMatchJsResult();
+        util.testExpression`\`${testString}\`.${trim}()`.expectToMatchJsResult();
     });
 });

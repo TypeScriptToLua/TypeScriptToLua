@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { getOrUpdate, isNonNull } from "../../utils";
+import { assert, getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
-import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
+import { UndefinedScope } from "./errors";
 import { replaceStatementInParent } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { getFirstDeclarationInFile } from "./typescript";
@@ -125,9 +125,7 @@ function shouldHoistSymbol(context: TransformationContext, symbolId: lua.SymbolI
 
     if (scope.functionDefinitions) {
         for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
-            if (functionDefinition.definition === undefined) {
-                throw UndefinedFunctionDefinition(functionSymbolId);
-            }
+            assert(functionDefinition.definition);
 
             const { line, column } = lua.getOriginalPos(functionDefinition.definition);
             if (line !== undefined && column !== undefined) {
@@ -202,9 +200,7 @@ function hoistFunctionDefinitions(
     const result = [...statements];
     const hoistedFunctions: Array<lua.VariableDeclarationStatement | lua.AssignmentStatement> = [];
     for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
-        if (functionDefinition.definition === undefined) {
-            throw UndefinedFunctionDefinition(functionSymbolId);
-        }
+        assert(functionDefinition.definition);
 
         if (shouldHoistSymbol(context, functionSymbolId, scope)) {
             const index = result.indexOf(functionDefinition.definition);

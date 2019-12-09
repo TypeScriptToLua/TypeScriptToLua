@@ -1,3 +1,4 @@
+import * as nativeAssert from "assert";
 import * as path from "path";
 
 export const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
@@ -65,6 +66,10 @@ export function castEach<TOriginal, TCast extends TOriginal>(
     } else {
         throw new Error(`Failed to cast all elements to expected type using ${cast.name}.`);
     }
+}
+
+export function assert(value: any, message?: string | Error): asserts value {
+    nativeAssert(value, message);
 }
 
 export function assertNever(_value: never): never {

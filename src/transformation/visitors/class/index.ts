@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { getOrUpdate, isNonNull } from "../../../utils";
+import { assert, getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
@@ -9,7 +9,6 @@ import {
     InvalidExtendsExtension,
     InvalidExtendsLuaTable,
     InvalidExtensionMetaExtension,
-    MissingClassName,
     MissingMetaExtension,
 } from "../../utils/errors";
 import {
@@ -331,9 +330,7 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
     }
 
     if (!baseClassName) {
-        if (classDeclaration.name === undefined) {
-            throw MissingClassName(expression);
-        }
+        assert(classDeclaration.name);
 
         // Use "className.____super" if the base is not a simple identifier
         baseClassName = lua.createTableIndexExpression(

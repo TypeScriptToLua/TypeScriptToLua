@@ -34,9 +34,6 @@ export const InvalidExtensionMetaExtension = (node: ts.Node) =>
 export const InvalidNewExpressionOnExtension = (node: ts.Node) =>
     new TranspileError(`Cannot construct classes with '@extension' or '@metaExtension' annotation.`, node);
 
-export const InvalidExportDeclaration = (declaration: ts.ExportDeclaration) =>
-    new TranspileError("Encountered invalid export declaration without exports and without module.", declaration);
-
 export const InvalidExtendsExtension = (node: ts.Node) =>
     new TranspileError(`Cannot extend classes with '@extension' or '@metaExtension' annotation.`, node);
 
@@ -48,23 +45,16 @@ export const InvalidInstanceOfExtension = (node: ts.Node) =>
 
 export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
 
-export const MissingClassName = (node: ts.Node) => new TranspileError(`Class declarations must have a name.`, node);
-
 export const MissingForOfVariables = (node: ts.Node) =>
     new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
 
 export const MissingMetaExtension = (node: ts.Node) =>
     new TranspileError(`'@metaExtension' annotation requires the extension of the metatable class.`, node);
 
-export const UndefinedFunctionDefinition = (functionSymbolId: number) =>
-    new Error(`Function definition for function symbol ${functionSymbolId} is undefined.`);
-
 export const UnsupportedForInVariable = (node: ts.Node) =>
     new TranspileError(`Unsupported for-in variable kind.`, node);
 
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
-
-export const UndefinedTypeNode = (node: ts.Node) => new TranspileError("Failed to resolve required type node.", node);
 
 export const UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) =>
     new TranspileError(`Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`, node);

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assert } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { UndefinedTypeNode } from "../../utils/errors";
 import {
     createDefaultExportStringLiteral,
     createExportedIdentifier,
@@ -159,9 +159,7 @@ export function createClassSetup(
 
     if (extendsType) {
         const extendedTypeNode = getExtendedTypeNode(context, statement);
-        if (extendedTypeNode === undefined) {
-            throw UndefinedTypeNode(statement);
-        }
+        assert(extendedTypeNode);
 
         // localClassName.____super = extendsExpression
         const createClassBase = () =>

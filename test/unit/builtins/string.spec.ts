@@ -276,6 +276,8 @@ const trimTestCases = [
     "\tfoo\t",
     "\ffoo\f",
     "\vfoo\v",
+    "\uFEFFFoo\uFEFF",
+    "\xA0Foo\xA0",
     "    foo",
     "   foo     ",
     "    foo     ",

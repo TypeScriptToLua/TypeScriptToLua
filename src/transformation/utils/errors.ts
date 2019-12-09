@@ -10,9 +10,6 @@ export class TranspileError extends Error {
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 
-export const ForbiddenForIn = (node: ts.Node) =>
-    new TranspileError(`Iterating over arrays with 'for ... in' is not allowed.`, node);
-
 export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
     new TranspileError(`Classes with the '@luaTable' annotation must be declared.`, node);
 

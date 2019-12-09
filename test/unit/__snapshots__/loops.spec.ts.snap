@@ -1,0 +1,3 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`forin[Array] 1`] = `"main.ts(3,9): error TSTL: Iterating over arrays with 'for ... in' is not allowed."`;

@@ -363,6 +363,19 @@ export abstract class TestBuilder {
         return this;
     }
 
+    public expectDiagnosticsToMatchSnapshot(): this {
+        this.expectToHaveDiagnostics();
+
+        const diagnosticMessages = ts.formatDiagnostics(
+            this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+        );
+
+        expect(diagnosticMessages.trim()).toMatchSnapshot();
+
+        return this;
+    }
+
     public expectNoExecutionError(): this {
         const luaResult = this.getLuaExecutionResult();
         if (luaResult instanceof ExecutionError) {

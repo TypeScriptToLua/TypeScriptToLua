@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import * as tstl from "../src";
 import * as util from "./util";
 
 declare global {
@@ -35,11 +36,10 @@ expect.extend({
         // @ts-ignore
         const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
 
-        const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-            getCurrentDirectory: () => "",
-            getCanonicalFileName: fileName => fileName,
-            getNewLine: () => "\n",
-        });
+        const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(
+            diagnostics.map(tstl.prepareDiagnosticForFormatting),
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+        );
 
         return {
             pass: diagnostics.length > 0,

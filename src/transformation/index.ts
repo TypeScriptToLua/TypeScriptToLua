@@ -53,11 +53,15 @@ export function transformSourceFile(
 ): TransformSourceFileResult {
     const context = new TransformationContext(program, sourceFile, visitorMap);
 
+    // TODO: Remove once we'll get rid of all `TranspileError`s
     try {
         const [luaAst] = context.transformNode(sourceFile) as [lua.Block];
-        const luaLibFeatures = getUsedLuaLibFeatures(context);
 
-        return { luaAst, luaLibFeatures, diagnostics: [] };
+        return {
+            luaAst,
+            luaLibFeatures: getUsedLuaLibFeatures(context),
+            diagnostics: context.diagnostics,
+        };
     } catch (error) {
         if (!(error instanceof TranspileError)) throw error;
 

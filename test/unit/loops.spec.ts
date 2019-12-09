@@ -1,10 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import {
-    ForbiddenForIn,
-    UnsupportedForTarget,
-    UnsupportedObjectDestructuringInForOf,
-} from "../../src/transformation/utils/errors";
+import { UnsupportedForTarget, UnsupportedObjectDestructuringInForOf } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
@@ -235,15 +231,11 @@ test.each([
     expect(JSON.parse(result)).toEqual(expected);
 });
 
-test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
-    expect(() =>
-        util.transpileString(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let key in arrTest) {
-                arrTest[key]++;
-            }`
-        )
-    ).toThrowExactError(ForbiddenForIn(util.nodeStub));
+test("forin[Array]", () => {
+    util.testFunction`
+        const array = [];
+        for (const key in array) {}
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(

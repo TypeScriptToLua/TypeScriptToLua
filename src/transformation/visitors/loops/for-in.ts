@@ -1,14 +1,15 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
-import { ForbiddenForIn, UnsupportedForInVariable } from "../../utils/errors";
+import { forbiddenForIn } from "../../utils/diagnostics";
+import { UnsupportedForInVariable } from "../../utils/errors";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformLoopBody } from "./body";
 
 export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
     if (isArrayType(context, context.checker.getTypeAtLocation(statement.expression))) {
-        throw ForbiddenForIn(statement);
+        context.diagnostics.push(forbiddenForIn(statement));
     }
 
     // Transpile expression

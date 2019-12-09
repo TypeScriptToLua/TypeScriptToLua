@@ -371,7 +371,8 @@ export abstract class TestBuilder {
             { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
         );
 
-        expect(diagnosticMessages.trim()).toMatchSnapshot();
+        expect(this.getMainLuaCodeChunk()).toMatchSnapshot('code');
+        expect(diagnosticMessages.trim()).toMatchSnapshot('diagnostics');
 
         return this;
     }

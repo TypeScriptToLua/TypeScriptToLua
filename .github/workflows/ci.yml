@@ -13,7 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
-      - run: npm install --global npm@6
       - run: npm ci
       - run: npm run lint
         env:
@@ -32,7 +31,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.13.1
-      - run: npm install --global npm@6
       - run: npm ci
       - run: npm run build
       - run: npx jest --maxWorkers 2 --coverage

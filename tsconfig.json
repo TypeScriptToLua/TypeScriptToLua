@@ -7,8 +7,8 @@
         "outDir": "./dist",
         "declaration": true,
         "sourceMap": true,
-        "target": "es2017",
-        "lib": ["es2017"],
+        "target": "es2019",
+        "lib": ["es2019"],
         "module": "commonjs",
         "stripInternal": true
     },

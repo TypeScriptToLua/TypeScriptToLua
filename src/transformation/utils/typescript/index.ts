@@ -43,7 +43,7 @@ export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (
 }
 
 export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
-    const declarations = (symbol.getDeclarations() || []).filter(
+    const declarations = (symbol.getDeclarations() ?? []).filter(
         // TODO: getSourceFile?
         declaration => findFirstNodeAbove(declaration, ts.isSourceFile) === sourceFile
     );
@@ -86,7 +86,7 @@ export function isStandardLibraryType(
 }
 
 export function inferAssignedType(context: TransformationContext, expression: ts.Expression): ts.Type {
-    return context.checker.getContextualType(expression) || context.checker.getTypeAtLocation(expression);
+    return context.checker.getContextualType(expression) ?? context.checker.getTypeAtLocation(expression);
 }
 
 export function getAllCallSignatures(type: ts.Type): readonly ts.Signature[] {

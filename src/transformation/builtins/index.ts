@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { assume } from "../../utils";
 import { TransformationContext } from "../context";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
@@ -60,8 +61,7 @@ export function transformBuiltinCallExpression(
         return;
     }
 
-    // TODO(TypeScript 3.7): assume
-    const propertyCall = node as PropertyCallExpression;
+    assume<PropertyCallExpression>(node);
 
     // If the function being called is of type owner.func, get the type of owner
     const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
@@ -71,40 +71,40 @@ export function transformBuiltinCallExpression(
         const symbolName = symbol && symbol.name;
         switch (symbolName) {
             case "Console":
-                return transformConsoleCall(context, propertyCall);
+                return transformConsoleCall(context, node);
             case "Math":
-                return transformMathCall(context, propertyCall);
+                return transformMathCall(context, node);
             case "StringConstructor":
-                return transformStringConstructorCall(context, propertyCall);
+                return transformStringConstructorCall(context, node);
             case "ObjectConstructor":
-                return transformObjectConstructorCall(context, propertyCall);
+                return transformObjectConstructorCall(context, node);
             case "SymbolConstructor":
-                return transformSymbolConstructorCall(context, propertyCall);
+                return transformSymbolConstructorCall(context, node);
             case "NumberConstructor":
-                return transformNumberConstructorCall(context, propertyCall);
+                return transformNumberConstructorCall(context, node);
         }
     }
 
     if (isStringType(context, ownerType)) {
-        return transformStringPrototypeCall(context, propertyCall);
+        return transformStringPrototypeCall(context, node);
     }
 
     if (isNumberType(context, ownerType)) {
-        return transformNumberPrototypeCall(context, propertyCall);
+        return transformNumberPrototypeCall(context, node);
     }
 
     if (isArrayType(context, ownerType)) {
-        const result = transformArrayPrototypeCall(context, propertyCall);
+        const result = transformArrayPrototypeCall(context, node);
         if (result) {
             return result;
         }
     }
 
     if (isFunctionType(context, ownerType)) {
-        return transformFunctionPrototypeCall(context, propertyCall);
+        return transformFunctionPrototypeCall(context, node);
     }
 
-    const objectResult = transformObjectPrototypeCall(context, propertyCall);
+    const objectResult = transformObjectPrototypeCall(context, node);
     if (objectResult) {
         return objectResult;
     }

@@ -2,7 +2,7 @@ import * as path from "path";
 import * as ts from "typescript";
 import { DiagnosticCategory } from "typescript";
 import { LuaLibImportKind } from "../../src";
-import { couldNotFindBundleEntryPoint } from "../../src/diagnostics";
+import { couldNotFindBundleEntryPoint } from "../../src/transpilation/diagnostics";
 import * as util from "../util";
 
 test("no entry point", () => {

@@ -78,10 +78,11 @@ test("Exported Namespace Function Hoisting", () => {
     expect(result).toBe("bar");
 });
 
-test.each([{ varType: "let", expectResult: "bar" }, { varType: "const", expectResult: "bar" }])(
-    "Hoisting in Non-Function Scope (%p)",
-    ({ varType, expectResult }) => {
-        const code = `
+test.each([
+    { varType: "let", expectResult: "bar" },
+    { varType: "const", expectResult: "bar" },
+])("Hoisting in Non-Function Scope (%p)", ({ varType, expectResult }) => {
+    const code = `
             function foo() {
                 ${varType} bar = "bar";
                 for (let i = 0; i < 1; ++i) {
@@ -91,10 +92,9 @@ test.each([{ varType: "let", expectResult: "bar" }, { varType: "const", expectRe
             }
             return foo();
         `;
-        const result = util.transpileAndExecute(code);
-        expect(result).toBe(expectResult);
-    }
-);
+    const result = util.transpileAndExecute(code);
+    expect(result).toBe(expectResult);
+});
 
 test("Hoisting due to reference from hoisted function", () => {
     const code = `

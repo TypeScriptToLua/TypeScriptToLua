@@ -23,27 +23,24 @@ export class TransformationContext {
     public readonly resolver: EmitResolver;
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
-    public readonly luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
+    public readonly luaTarget = this.options.luaTarget ?? LuaTarget.LuaJIT;
     public readonly isModule = isFileModule(this.sourceFile);
     public readonly isStrict =
-        // TODO: ??
-        this.options.alwaysStrict !== undefined
-            ? this.options.alwaysStrict
-            : (this.options.strict !== undefined && this.options.alwaysStrict !== false) ||
-              (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
+        (this.options.alwaysStrict ?? this.options.strict) ||
+        (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 
     public constructor(public program: ts.Program, public sourceFile: ts.SourceFile, private visitorMap: VisitorMap) {
         // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
         // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
         // and would try to re-analyze the file, which would fail because of replaced nodes.
-        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
+        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) ?? sourceFile;
         this.resolver = this.checker.getEmitResolver(originalSourceFile);
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
     public transformNode(node: ts.Node): lua.Node[] {
         // TODO: Move to visitors?
-        if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
         }
 

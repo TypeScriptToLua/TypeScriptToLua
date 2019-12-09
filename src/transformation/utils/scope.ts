@@ -78,7 +78,7 @@ export function findScope(context: TransformationContext, scopeTypes: ScopeType)
 
 const scopeIdCounters = new WeakMap<TransformationContext, number>();
 export function pushScope(context: TransformationContext, scopeType: ScopeType): void {
-    const nextScopeId = (scopeIdCounters.get(context) || 0) + 1;
+    const nextScopeId = (scopeIdCounters.get(context) ?? 0) + 1;
     scopeIdCounters.set(context, nextScopeId);
 
     const scopeStack = getScopeStack(context);

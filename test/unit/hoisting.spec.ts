@@ -110,17 +110,20 @@ test("Hoisting due to reference from hoisted function", () => {
 });
 
 test("Namespace Hoisting", () => {
-    const code = `
-        function bar() {
-            return NS.foo;
+    util.testModule`
+        const Inner = 0;
+        namespace Outer {
+            export function bar() {
+                return Inner.foo;
+            }
+            namespace Inner {
+                export const foo = "foo";
+            }
         }
-        namespace NS {
-            export let foo = "foo";
-        }
-        export const foo = bar();
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
+
+        export const foo = Outer.bar();
+        export { Inner };
+    `.expectToMatchJsResult();
 });
 
 test("Exported Namespace Hoisting", () => {

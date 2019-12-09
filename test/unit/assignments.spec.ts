@@ -10,14 +10,25 @@ test("let declaration", () => {
     expect(lua).toBe(`local foo = true`);
 });
 
-test("`var` declaration is disallowed", () => {
+test("var declaration is disallowed", () => {
     util.testFunction`
         var foo = true;
     `.expectToHaveDiagnostics();
 });
 
-// TODO:
-test.skip("`var` declaration in for...of loop is disallowed", () => {
+test("var declaration in for loop is disallowed", () => {
+    util.testFunction`
+        for (var foo = 0;;) {}
+    `.expectToHaveDiagnostics();
+});
+
+test("var declaration in for...in loop is disallowed", () => {
+    util.testFunction`
+        for (var foo in {}) {}
+    `.expectToHaveDiagnostics();
+});
+
+test("var declaration in for...of loop is disallowed", () => {
     util.testFunction`
         for (var foo of []) {}
     `.expectToHaveDiagnostics();

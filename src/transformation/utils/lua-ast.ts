@@ -3,7 +3,6 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { getCurrentNamespace } from "../visitors/namespace";
-import { UnsupportedVarDeclaration } from "./errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { findScope, peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
@@ -120,19 +119,12 @@ export function createLocalOrExportedOrGlobalDeclaration(
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
+    const isVariableDeclaration = tsOriginal !== undefined && ts.isVariableDeclaration(tsOriginal);
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = Array.isArray(lhs) ? lhs : [lhs];
     if (identifiers.length === 0) {
         return [];
-    }
-
-    let isVariableDeclaration = false;
-    if (tsOriginal && ts.isVariableDeclaration(tsOriginal)) {
-        isVariableDeclaration = true;
-        if (tsOriginal.parent && (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
-            throw UnsupportedVarDeclaration(tsOriginal.parent);
-        }
     }
 
     const exportScope = overrideExportScope ?? getIdentifierExportScope(context, identifiers[0]);

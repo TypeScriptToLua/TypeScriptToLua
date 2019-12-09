@@ -488,28 +488,26 @@ test.each([
 });
 
 test.each([
-    { array: [[]], expected: [] },
-    { array: [{ a: 1 }, { a: 2 }, { a: 3 }], expected: [{ a: 1 }, { a: 2 }, { a: 3 }] },
-    { array: [1, [2, 3], 4], expected: [1, 2, 3, 4] },
-    { array: [1, [2, 3], 4], depth: 0, expected: [1, [2, 3], 4] },
-    { array: [1, [[2], [3]], 4], expected: [1, [2], [3], 4] },
-    { array: [1, [[[2], [3]]], 4], depth: Infinity, expected: [1, 2, 3, 4] },
-])("array.flat (%p)", ({ array, depth, expected }) => {
-    // TODO: Node 12
-    util.testExpressionTemplate`${array}.flat(${depth})`.expectToEqual(expected);
+    { array: [[]] },
+    { array: [{ a: 1 }, { a: 2 }, { a: 3 }] },
+    { array: [1, [2, 3], 4] },
+    { array: [1, [2, 3], 4], depth: 0 },
+    { array: [1, [[2], [3]], 4] },
+    { array: [1, [[[2], [3]]], 4], depth: Infinity },
+])("array.flat (%p)", ({ array, depth }) => {
+    util.testExpressionTemplate`${array}.flat(${depth})`.expectToMatchJsResult();
 });
 
 test.each([
-    { array: [[]], map: <T>(v: T) => v, expected: [] },
-    { array: [1, 2, 3], map: (v: number) => ({ a: v * 2 }), expected: [{ a: 2 }, { a: 4 }, { a: 6 }] },
-    { array: [1, [2, 3], [4]], map: <T>(value: T) => value, expected: [1, 2, 3, 4] },
-    { array: [1, 2, 3], map: (v: number) => v * 2, expected: [2, 4, 6] },
-    { array: [1, 2, 3], map: (v: number) => [v, v * 2], expected: [1, 2, 2, 4, 3, 6] },
-    { array: [1, 2, 3], map: (v: number) => [v, [v]], expected: [1, [1], 2, [2], 3, [3]] },
-    { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i], expected: [0, 4, 12] },
-])("array.flatMap (%p)", ({ array, map, expected }) => {
-    // TODO: Node 12
-    util.testExpressionTemplate`${array}.flatMap(${map})`.expectToEqual(expected);
+    { array: [[]], map: <T>(v: T) => v },
+    { array: [1, 2, 3], map: (v: number) => ({ a: v * 2 }) },
+    { array: [1, [2, 3], [4]], map: <T>(value: T) => value },
+    { array: [1, 2, 3], map: (v: number) => v * 2 },
+    { array: [1, 2, 3], map: (v: number) => [v, v * 2] },
+    { array: [1, 2, 3], map: (v: number) => [v, [v]] },
+    { array: [1, 2, 3], map: (v: number, i: number) => [v * 2 * i] },
+])("array.flatMap (%p)", ({ array, map }) => {
+    util.testExpressionTemplate`${array}.flatMap(${map})`.expectToMatchJsResult();
 });
 
 describe.each(["reduce", "reduceRight"])("array.%s", reduce => {

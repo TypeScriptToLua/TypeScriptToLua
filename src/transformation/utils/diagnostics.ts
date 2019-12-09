@@ -14,3 +14,5 @@ const createDiagnosticFactory = <TArgs extends any[]>(
 });
 
 export const forbiddenForIn = createDiagnosticFactory(`Iterating over arrays with 'for ... in' is not allowed.`);
+
+export const invalidForRangeCall = createDiagnosticFactory((message: string) => `Invalid @forRange call: ${message}.`);

@@ -1,10 +1,10 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast, castEach } from "../../../utils";
+import { assert, cast, castEach } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
+import { invalidForRangeCall } from "../../utils/diagnostics";
 import {
-    InvalidForRangeCall,
     MissingForOfVariables,
     UnsupportedNonDestructuringLuaIterator,
     UnsupportedObjectDestructuringInForOf,
@@ -74,38 +74,50 @@ function transformForRangeStatement(
     statement: ts.ForOfStatement,
     block: lua.Block
 ): lua.Statement {
-    if (!ts.isCallExpression(statement.expression)) {
-        throw InvalidForRangeCall(statement.expression, "Expression must be a call expression.");
-    }
+    assert(ts.isCallExpression(statement.expression));
 
-    if (statement.expression.arguments.length < 2 || statement.expression.arguments.length > 3) {
-        throw InvalidForRangeCall(statement.expression, "@forRange function must take 2 or 3 arguments.");
-    }
-
-    if (statement.expression.arguments.some(a => !isNumberType(context, context.checker.getTypeAtLocation(a)))) {
-        throw InvalidForRangeCall(statement.expression, "@forRange arguments must be number types.");
-    }
-
-    if (!ts.isVariableDeclarationList(statement.initializer)) {
-        throw InvalidForRangeCall(statement.initializer, "@forRange loop must declare its own control variable.");
-    }
-
-    const controlDeclaration = statement.initializer.declarations[0];
-    if (!ts.isIdentifier(controlDeclaration.name)) {
-        throw InvalidForRangeCall(statement.initializer, "@forRange loop cannot use destructuring.");
-    }
-
-    if (!isNumberType(context, context.checker.getTypeAtLocation(controlDeclaration))) {
-        throw InvalidForRangeCall(
-            statement.expression,
-            "@forRange function must return Iterable<number> or Array<number>."
+    const callArguments = statement.expression.arguments;
+    if (callArguments.length !== 2 && callArguments.length !== 3) {
+        context.diagnostics.push(
+            invalidForRangeCall(statement.expression, `Expected 2-3 arguments, but got ${callArguments.length}`)
         );
     }
 
-    const control = transformIdentifier(context, controlDeclaration.name);
-    const signature = context.checker.getResolvedSignature(statement.expression);
-    const [start, limit, step] = transformArguments(context, statement.expression.arguments, signature);
-    return lua.createForStatement(block, control, start, limit, step, statement);
+    if (statement.expression.arguments.some(a => !isNumberType(context, context.checker.getTypeAtLocation(a)))) {
+        context.diagnostics.push(invalidForRangeCall(statement.expression, "arguments must be numbers"));
+    }
+
+    const controlVariable = getControlVariable() ?? lua.createAnonymousIdentifier();
+    function getControlVariable(): lua.Identifier | undefined {
+        if (!ts.isVariableDeclarationList(statement.initializer)) {
+            context.diagnostics.push(
+                invalidForRangeCall(statement.initializer, "loop must declare it's own control variable")
+            );
+            return;
+        }
+
+        const controlDeclaration = statement.initializer.declarations[0];
+        if (!ts.isIdentifier(controlDeclaration.name)) {
+            context.diagnostics.push(invalidForRangeCall(statement.initializer, "destructuring cannot be used"));
+            return;
+        }
+
+        if (!isNumberType(context, context.checker.getTypeAtLocation(controlDeclaration))) {
+            context.diagnostics.push(
+                invalidForRangeCall(statement.expression, "function must return Iterable<number>")
+            );
+        }
+
+        return transformIdentifier(context, controlDeclaration.name);
+    }
+
+    const [start = lua.createNumericLiteral(0), limit = lua.createNumericLiteral(0), step] = transformArguments(
+        context,
+        callArguments,
+        context.checker.getResolvedSignature(statement.expression)
+    );
+
+    return lua.createForStatement(block, controlVariable, start, limit, step, statement);
 }
 
 function transformForOfLuaIteratorStatement(

@@ -116,6 +116,3 @@ export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
         `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,
         node
     );
-
-export const InvalidForRangeCall = (node: ts.Node, message: string) =>
-    new TranspileError(`Invalid @forRange call: ${message}`, node);

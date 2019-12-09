@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { InvalidForRangeCall } from "../utils/errors";
+import { invalidForRangeCall } from "../utils/diagnostics";
 import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
@@ -13,9 +13,8 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     if (isForRangeType(context, identifier)) {
         const callExpression = findFirstNodeAbove(identifier, ts.isCallExpression);
         if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
-            throw InvalidForRangeCall(
-                identifier,
-                "@forRange function can only be used as an iterable in a for...of loop."
+            context.diagnostics.push(
+                invalidForRangeCall(identifier, "can be used only as an iterable in a for...of loop")
             );
         }
     }

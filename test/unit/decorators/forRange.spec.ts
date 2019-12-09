@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { InvalidForRangeCall } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 const createForRangeDeclaration = (args = "i: number, j: number, k?: number", returns = "number[]") => `
@@ -30,21 +28,14 @@ describe("invalid usage", () => {
         util.testModule`
             /** @forRange */
             function luaRange() {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(
-                ts.createEmptyStatement(),
-                "@forRange function can only be used as an iterable in a for...of loop."
-            )
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
-    test.each([[1], [1, 2, 3, 4]])("argument count", args => {
+    test.each<[number[]]>([[[]], [[1]], [[1, 2, 3, 4]]])("argument count (%p)", args => {
         util.testModule`
             ${createForRangeDeclaration("...args: number[]")}
             for (const i of luaRange(${args})) {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.")
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
     test("non-declared loop variable", () => {
@@ -52,39 +43,28 @@ describe("invalid usage", () => {
             ${createForRangeDeclaration()}
             let i: number;
             for (i of luaRange(1, 10, 2)) {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop must declare its own control variable.")
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
     test("argument types", () => {
         util.testModule`
             ${createForRangeDeclaration("i: string, j: number")}
             for (const i of luaRange("foo", 2)) {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(ts.createEmptyStatement(), "@forRange arguments must be number types.")
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
     test("variable destructuring", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "number[][]")}
             for (const [i] of luaRange(1, 10, 2)) {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(ts.createEmptyStatement(), "@forRange loop cannot use destructuring.")
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
     test("return type", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "string[]")}
             for (const i of luaRange(1, 10)) {}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(
-                ts.createEmptyStatement(),
-                "@forRange function must return Iterable<number> or Array<number>."
-            )
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 
     test.each([
@@ -97,11 +77,6 @@ describe("invalid usage", () => {
         util.testModule`
             ${createForRangeDeclaration()}
             ${statement}
-        `.expectToHaveDiagnosticOfError(
-            InvalidForRangeCall(
-                ts.createEmptyStatement(),
-                "@forRange function can only be used as an iterable in a for...of loop."
-            )
-        );
+        `.expectDiagnosticsToMatchSnapshot();
     });
 });

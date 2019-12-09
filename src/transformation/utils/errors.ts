@@ -43,8 +43,6 @@ export const InvalidExportsExtension = (node: ts.Node) =>
 export const InvalidInstanceOfExtension = (node: ts.Node) =>
     new TranspileError(`Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation.`, node);
 
-export const InvalidJsonFileContent = (node: ts.Node) => new TranspileError("Invalid JSON file content", node);
-
 export const MissingForOfVariables = (node: ts.Node) =>
     new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
 

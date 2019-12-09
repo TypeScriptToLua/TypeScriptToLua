@@ -190,6 +190,8 @@ export abstract class TestBuilder {
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,
         lib: ["lib.esnext.d.ts"],
+        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+        resolveJsonModule: true,
         experimentalDecorators: true,
     };
     public setOptions(options: tstl.CompilerOptions = {}): this {
@@ -371,8 +373,8 @@ export abstract class TestBuilder {
             { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
         );
 
-        expect(this.getMainLuaCodeChunk()).toMatchSnapshot('code');
-        expect(diagnosticMessages.trim()).toMatchSnapshot('diagnostics');
+        expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
+        expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
 
         return this;
     }

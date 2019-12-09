@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { flatMap } from "../../../utils";
 import { FunctionVisitor } from "../../context";
 import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
-import { transformLoopBody } from "./body";
+import { transformLoopBody } from "./utils";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
     const result: lua.Statement[] = [];

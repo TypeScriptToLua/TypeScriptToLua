@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
-import { transformLoopBody } from "./body";
+import { transformLoopBody } from "./utils";
 
 export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
     return lua.createWhileStatement(

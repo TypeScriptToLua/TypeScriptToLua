@@ -4,8 +4,7 @@ import { FunctionVisitor } from "../../context";
 import { ForbiddenForIn, UnsupportedForInVariable } from "../../utils/errors";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
-import { transformLoopBody } from "./body";
-import { getVariableDeclarationBinding } from "./utils";
+import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
     if (isArrayType(context, context.checker.getTypeAtLocation(statement.expression))) {

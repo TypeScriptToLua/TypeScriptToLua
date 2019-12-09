@@ -15,8 +15,7 @@ import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
 import { transformArrayBindingElement, transformVariableDeclaration } from "../variable-declaration";
-import { transformLoopBody } from "./body";
-import { getVariableDeclarationBinding } from "./utils";
+import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 function transformForOfInitializer(
     context: TransformationContext,

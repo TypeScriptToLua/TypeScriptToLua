@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assertNever, flatMap } from "../../utils";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
@@ -230,7 +230,5 @@ export function checkVariableDeclarationList(node: ts.VariableDeclarationList): 
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
     checkVariableDeclarationList(node.declarationList);
-    return flatMap(node.declarationList.declarations, declaration =>
-        transformVariableDeclaration(context, declaration)
-    );
+    return node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
 };

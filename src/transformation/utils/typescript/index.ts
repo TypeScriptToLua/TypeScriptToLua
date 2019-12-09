@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { flatMap } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isDeclaration } from "./nodes";
 
@@ -90,7 +89,7 @@ export function inferAssignedType(context: TransformationContext, expression: ts
 }
 
 export function getAllCallSignatures(type: ts.Type): readonly ts.Signature[] {
-    return type.isUnion() ? flatMap(type.types, getAllCallSignatures) : type.getCallSignatures();
+    return type.isUnion() ? type.types.flatMap(getAllCallSignatures) : type.getCallSignatures();
 }
 
 // Returns true for expressions that may have effects when evaluated

@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { flatMap } from "../../../utils";
 import { FunctionVisitor } from "../../context";
 import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
 import { transformLoopBody } from "./utils";
@@ -12,7 +11,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
         if (ts.isVariableDeclarationList(statement.initializer)) {
             checkVariableDeclarationList(statement.initializer);
             // local initializer = value
-            result.push(...flatMap(statement.initializer.declarations, d => transformVariableDeclaration(context, d)));
+            result.push(...statement.initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
         } else {
             result.push(...context.transformStatements(ts.createExpressionStatement(statement.initializer)));
         }

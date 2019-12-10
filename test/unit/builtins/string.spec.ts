@@ -269,24 +269,21 @@ test.each([
 const trimTestCases = [
     "",
     " ",
-    "   ",
-    "foo ",
-    "foo ",
-    " foo",
+    "\t",
+    "\t \t",
+    " foo ",
     "\tfoo\t",
     "\ffoo\f",
     "\vfoo\v",
     "\uFEFFFoo\uFEFF",
     "\xA0Foo\xA0",
-    "    foo",
-    "   foo     ",
-    "    foo     ",
-    "  foo    bar     ",
+    " \t foo \t ",
+    " foo    bar ",
     "\r\nfoo\n\r\n",
     "\r\nfoo\nbar\n\r\n",
 ];
 describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", trim => {
     test.each(trimTestCases)("matches JS result (%p)", testString => {
-        util.testExpression`\`${testString}\`.${trim}()`.expectToMatchJsResult();
+        util.testExpression`${util.formatCode(testString)}.${trim}()`.expectToMatchJsResult();
     });
 });

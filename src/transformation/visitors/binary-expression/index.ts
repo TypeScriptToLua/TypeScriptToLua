@@ -2,7 +2,8 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { InvalidInstanceOfExtension, InvalidInstanceOfLuaTable, UnsupportedKind } from "../../utils/errors";
+import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf } from "../../utils/diagnostics";
+import { UnsupportedKind } from "../../utils/errors";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType } from "../../utils/typescript";
@@ -181,12 +182,11 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             const annotations = getTypeAnnotations(context, rhsType);
 
             if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
-                // Cannot use instanceof on extension classes
-                throw InvalidInstanceOfExtension(node);
+                context.diagnostics.push(extensionInvalidInstanceOf(node));
             }
 
             if (annotations.has(AnnotationKind.LuaTable)) {
-                throw InvalidInstanceOfLuaTable(node);
+                context.diagnostics.push(luaTableInvalidInstanceOf(node));
             }
 
             if (isStandardLibraryType(context, rhsType, "ObjectConstructor")) {

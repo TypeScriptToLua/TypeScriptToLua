@@ -1,4 +1,3 @@
-import { InvalidAnnotationArgumentNumber } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("CustomCreate", () => {
@@ -25,16 +24,10 @@ test("CustomCreate", () => {
 });
 
 test("IncorrectUsage", () => {
-    expect(() => {
-        util.transpileString(`
-            /** @customConstructor */
-            class Point2D {
-                constructor(
-                    public x: number,
-                    public y: number
-                ) {}
-            }
-            return new Point2D(1, 2).x;
-        `);
-    }).toThrowExactError(InvalidAnnotationArgumentNumber("@customConstructor", 0, 1, util.nodeStub));
+    util.testFunction`
+        /** @customConstructor */
+        class Point2D {}
+
+        new Point2D();
+    `.expectDiagnosticsToMatchSnapshot();
 });

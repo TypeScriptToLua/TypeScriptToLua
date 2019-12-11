@@ -1,12 +1,5 @@
 import * as ts from "typescript";
-import {
-    ForbiddenLuaTableNonDeclaration,
-    ForbiddenLuaTableUseException,
-    InvalidExtendsLuaTable,
-    InvalidInstanceOfLuaTable,
-    UnsupportedKind,
-    UnsupportedProperty,
-} from "../../../src/transformation/utils/errors";
+import { UnsupportedKind, UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 const tableLibClass = `
@@ -15,28 +8,27 @@ declare class Table<K extends {} = {}, V = any> {
     length: number;
     constructor(notAllowed?: boolean);
     set(key?: K, value?: V): void;
-    get(key?: K): V;
+    get(key?: K, notAllowed?: K): V;
     other(): void;
 }
 declare let tbl: Table;
 `;
 
+// TODO: `constructor()` is not valid in interfaces
 const tableLibInterface = `
 /** @luaTable */
 declare interface Table<K extends {} = {}, V = any> {
     length: number;
     constructor(notAllowed?: boolean);
     set(key?: K, value?: V): void;
-    get(key?: K): V;
+    get(key?: K, notAllowed?: K): V;
     other(): void;
 }
 declare let tbl: Table;
 `;
 
 test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tableLib => {
-    expect(() => util.transpileString(tableLib + `const table = new Table(true);`)).toThrowExactError(
-        ForbiddenLuaTableUseException("No parameters are allowed when constructing a LuaTable object.", util.nodeStub)
-    );
+    util.testModule(tableLib + `const table = new Table(true);`).expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([tableLibClass, tableLibInterface])(
@@ -72,23 +64,20 @@ test.each([tableLibClass])("LuaTable length", tableLib => {
 });
 
 test.each([tableLibClass, tableLibInterface])("Cannot set LuaTable length", tableLib => {
-    expect(() => util.transpileString(tableLib + `tbl.length = 2;`)).toThrowExactError(
-        ForbiddenLuaTableUseException("A LuaTable object's length cannot be re-assigned.", util.nodeStub)
-    );
+    util.testModule(tableLib + `tbl.length = 2;`).expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib => {
     test.each([
-        [`tbl.get()`, "One parameter is required for get()."],
-        [`tbl.get("field", "field2")`, "One parameter is required for get()."],
-        [`tbl.set()`, "Two parameters are required for set()."],
-        [`tbl.set("field")`, "Two parameters are required for set()."],
-        [`tbl.set("field", 0, 1)`, "Two parameters are required for set()."],
-        [`tbl.set("field", ...[0, 1])`, "Arguments cannot be spread."],
-    ])("Forbidden LuaTable use (%p)", (invalidCode, errorDescription) => {
-        expect(() => util.transpileString(tableLib + invalidCode)).toThrowExactError(
-            ForbiddenLuaTableUseException(errorDescription, util.nodeStub)
-        );
+        "tbl.get()",
+        'tbl.get("field", "field2")',
+        "tbl.set()",
+        'tbl.set("field")',
+        'tbl.set("field", 0, 1)',
+        'tbl.set(...(["field", 0] as const))',
+        'tbl.set("field", ...([0] as const))',
+    ])("Forbidden LuaTable use (%p)", invalidCode => {
+        util.testModule(tableLib + invalidCode).expectDiagnosticsToMatchSnapshot();
     });
 });
 
@@ -96,9 +85,7 @@ test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
     test.each([`class Ext extends Table {}`, `const c = class Ext extends Table {}`])(
         "Cannot extend LuaTable class (%p)",
         code => {
-            expect(() => util.transpileString(tableLib + code)).toThrowExactError(
-                InvalidExtendsLuaTable(util.nodeStub)
-            );
+            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
         }
     );
 });
@@ -108,12 +95,12 @@ test.each([
     `/** @luaTable */ export class Table {}`,
     `/** @luaTable */ const c = class Table {}`,
 ])("LuaTable classes must be ambient (%p)", code => {
-    expect(() => util.transpileString(code)).toThrowExactError(ForbiddenLuaTableNonDeclaration(util.nodeStub));
+    util.testModule(code).expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
     test.each([`tbl instanceof Table`])("Cannot use instanceof on a LuaTable class (%p)", code => {
-        expect(() => util.transpileString(tableLib + code)).toThrowExactError(InvalidInstanceOfLuaTable(util.nodeStub));
+        util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
     });
 });
 

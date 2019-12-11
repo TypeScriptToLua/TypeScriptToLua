@@ -4,13 +4,13 @@ import { assert, getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
-    ForbiddenLuaTableNonDeclaration,
-    InvalidExportsExtension,
-    InvalidExtendsExtension,
-    InvalidExtendsLuaTable,
-    InvalidExtensionMetaExtension,
-    MissingMetaExtension,
-} from "../../utils/errors";
+    extensionAndMetaExtensionConflict,
+    extensionCannotExport,
+    extensionCannotExtend,
+    metaExtensionMissingExtends,
+    luaTableMustBeAmbient,
+    luaTableCannotBeExtended,
+} from "../../utils/diagnostics";
 import {
     createDefaultExportIdentifier,
     createExportedIdentifier,
@@ -96,15 +96,16 @@ export function transformClassDeclaration(
     const isMetaExtension = annotations.has(AnnotationKind.MetaExtension);
 
     if (isExtension && isMetaExtension) {
-        throw InvalidExtensionMetaExtension(classDeclaration);
+        context.diagnostics.push(extensionAndMetaExtensionConflict(classDeclaration));
     }
 
     if ((isExtension || isMetaExtension) && getIdentifierExportScope(context, className) !== undefined) {
         // Cannot export extension classes
-        throw InvalidExportsExtension(classDeclaration);
+        context.diagnostics.push(extensionCannotExport(classDeclaration));
     }
 
     // Get type that is extended
+    const extendsTypeNode = getExtendedTypeNode(context, classDeclaration);
     const extendsType = getExtendedType(context, classDeclaration);
 
     if (extendsType) {
@@ -115,7 +116,7 @@ export function transformClassDeclaration(
         // Non-extensions cannot extend extension classes
         const extendsAnnotations = getTypeAnnotations(context, extendsType);
         if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
-            throw InvalidExtendsExtension(classDeclaration);
+            context.diagnostics.push(extensionCannotExtend(classDeclaration));
         }
     }
 
@@ -123,13 +124,12 @@ export function transformClassDeclaration(
     if (extendsType) {
         const annotations = getTypeAnnotations(context, extendsType);
         if (annotations.has(AnnotationKind.LuaTable)) {
-            throw InvalidExtendsLuaTable(classDeclaration);
+            context.diagnostics.push(luaTableCannotBeExtended(extendsTypeNode!));
         }
     }
 
-    // LuaTable classes must be ambient
     if (annotations.has(AnnotationKind.LuaTable) && !isAmbientNode(classDeclaration)) {
-        throw ForbiddenLuaTableNonDeclaration(classDeclaration);
+        context.diagnostics.push(luaTableMustBeAmbient(classDeclaration));
     }
 
     // Get all properties with value
@@ -143,30 +143,30 @@ export function transformClassDeclaration(
 
     // Overwrite the original className with the class we are overriding for extensions
     if (isMetaExtension) {
-        if (!extendsType) {
-            throw MissingMetaExtension(classDeclaration);
-        }
+        if (extendsType) {
+            const extendsName = lua.createStringLiteral(extendsType.symbol.name);
+            className = lua.createIdentifier("__meta__" + extendsName.value);
 
-        const extendsName = lua.createStringLiteral(extendsType.symbol.name as string);
-        className = lua.createIdentifier("__meta__" + extendsName.value);
-
-        // local className = debug.getregistry()["extendsName"]
-        const assignDebugCallIndex = lua.createVariableDeclarationStatement(
-            className,
-            lua.createTableIndexExpression(
-                lua.createCallExpression(
-                    lua.createTableIndexExpression(
-                        lua.createIdentifier("debug"),
-                        lua.createStringLiteral("getregistry")
+            // local className = debug.getregistry()["extendsName"]
+            const assignDebugCallIndex = lua.createVariableDeclarationStatement(
+                className,
+                lua.createTableIndexExpression(
+                    lua.createCallExpression(
+                        lua.createTableIndexExpression(
+                            lua.createIdentifier("debug"),
+                            lua.createStringLiteral("getregistry")
+                        ),
+                        []
                     ),
-                    []
+                    extendsName
                 ),
-                extendsName
-            ),
-            classDeclaration
-        );
+                classDeclaration
+            );
 
-        result.push(assignDebugCallIndex);
+            result.push(assignDebugCallIndex);
+        } else {
+            context.diagnostics.push(metaExtensionMissingExtends(classDeclaration));
+        }
     }
 
     if (extensionDirective !== undefined) {

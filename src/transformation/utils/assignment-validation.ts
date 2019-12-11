@@ -1,29 +1,12 @@
 import * as ts from "typescript";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations } from "./annotations";
 import {
-    ForbiddenLuaTableUseException,
     UnsupportedNoSelfFunctionConversion,
     UnsupportedOverloadAssignment,
     UnsupportedSelfFunctionConversion,
 } from "./errors";
 import { ContextType, getFunctionContextType } from "./function-context";
-
-// TODO: Make validateAssignment check symbols?
-// TODO: Move to LuaTable plugin?
-export function validatePropertyAssignment(
-    context: TransformationContext,
-    node: ts.AssignmentExpression<ts.EqualsToken>
-): void {
-    if (!ts.isPropertyAccessExpression(node.left)) return;
-
-    const leftType = context.checker.getTypeAtLocation(node.left.expression);
-    const annotations = getTypeAnnotations(context, leftType);
-    if (annotations.has(AnnotationKind.LuaTable) && node.left.name.text === "length") {
-        throw ForbiddenLuaTableUseException(`A LuaTable object's length cannot be re-assigned.`, node);
-    }
-}
 
 // TODO: Clear if types are reused between compilations
 const typeValidationCache = new WeakMap<ts.Type, Set<ts.Type>>();

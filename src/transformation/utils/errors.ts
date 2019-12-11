@@ -10,44 +10,11 @@ export class TranspileError extends Error {
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 
-export const ForbiddenLuaTableNonDeclaration = (node: ts.Node) =>
-    new TranspileError(`Classes with the '@luaTable' annotation must be declared.`, node);
-
-export const InvalidExtendsLuaTable = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with the '@luaTable' annotation.`, node);
-
-export const InvalidInstanceOfLuaTable = (node: ts.Node) =>
-    new TranspileError(`The instanceof operator cannot be used with a '@luaTable' class.`, node);
-
-export const ForbiddenLuaTableUseException = (description: string, node: ts.Node) =>
-    new TranspileError(`Invalid @luaTable usage: ${description}`, node);
-
-export const InvalidAnnotationArgumentNumber = (name: string, got: number, expected: number, node: ts.Node) =>
-    new TranspileError(`'${name}' expects ${expected} argument(s) but got ${got}.`, node);
-
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
 
-export const InvalidExtensionMetaExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use both '@extension' and '@metaExtension' annotations on the same class.`, node);
-
-export const InvalidNewExpressionOnExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot construct classes with '@extension' or '@metaExtension' annotation.`, node);
-
-export const InvalidExtendsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot extend classes with '@extension' or '@metaExtension' annotation.`, node);
-
-export const InvalidExportsExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot export classes with '@extension' or '@metaExtension' annotation.`, node);
-
-export const InvalidInstanceOfExtension = (node: ts.Node) =>
-    new TranspileError(`Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation.`, node);
-
 export const MissingForOfVariables = (node: ts.Node) =>
     new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
-
-export const MissingMetaExtension = (node: ts.Node) =>
-    new TranspileError(`'@metaExtension' annotation requires the extension of the metatable class.`, node);
 
 export const UnsupportedForInVariable = (node: ts.Node) =>
     new TranspileError(`Unsupported for-in variable kind.`, node);

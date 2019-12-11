@@ -365,7 +365,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectDiagnosticsToMatchSnapshot(): this {
+    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
         this.expectToHaveDiagnostics();
 
         const diagnosticMessages = ts.formatDiagnostics(
@@ -373,8 +373,10 @@ export abstract class TestBuilder {
             { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
         );
 
-        expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
         expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
+        if (!diagnosticsOnly) {
+            expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
+        }
 
         return this;
     }

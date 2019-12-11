@@ -16,6 +16,30 @@ const createDiagnosticFactory = <TArgs extends any[]>(
 
 export const forbiddenForIn = createDiagnosticFactory(`Iterating over arrays with 'for ... in' is not allowed.`);
 
+export const unsupportedNoSelfFunctionConversion = createDiagnosticFactory((name?: string) => {
+    const nameReference = name ? ` '${name}'` : "";
+    return (
+        `Unable to convert function with a 'this' parameter to function${nameReference} with no 'this'. ` +
+        `To fix, wrap in an arrow function, or declare with 'this: void'.`
+    );
+});
+
+export const unsupportedSelfFunctionConversion = createDiagnosticFactory((name?: string) => {
+    const nameReference = name ? ` '${name}'` : "";
+    return (
+        `Unable to convert function with no 'this' parameter to function${nameReference} with 'this'. ` +
+        `To fix, wrap in an arrow function, or declare with 'this: any'.`
+    );
+});
+
+export const unsupportedOverloadAssignment = createDiagnosticFactory((name?: string) => {
+    const nameReference = name ? ` to '${name}'` : "";
+    return (
+        `Unsupported assignment of function with different overloaded types for 'this'${nameReference}. ` +
+        "Overloads should all have the same type for 'this'."
+    );
+});
+
 export const annotationInvalidArgumentCount = createDiagnosticFactory(
     (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
 );

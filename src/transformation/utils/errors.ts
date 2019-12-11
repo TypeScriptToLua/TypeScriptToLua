@@ -30,33 +30,6 @@ export const UnsupportedProperty = (parentName: string, property: string, node: 
 export const UnsupportedForTarget = (functionality: string, version: LuaTarget, node: ts.Node) =>
     new TranspileError(`${functionality} is/are not supported for target ${getLuaTargetName(version)}.`, node);
 
-export const UnsupportedNoSelfFunctionConversion = (node: ts.Node, name?: string) => {
-    const nameReference = name ? ` '${name}'` : "";
-    return new TranspileError(
-        `Unable to convert function with a 'this' parameter to function${nameReference} with no 'this'. ` +
-            `To fix, wrap in an arrow function, or declare with 'this: void'.`,
-        node
-    );
-};
-
-export const UnsupportedSelfFunctionConversion = (node: ts.Node, name?: string) => {
-    const nameReference = name ? ` '${name}'` : "";
-    return new TranspileError(
-        `Unable to convert function with no 'this' parameter to function${nameReference} with 'this'. ` +
-            `To fix, wrap in an arrow function or declare with 'this: any'.`,
-        node
-    );
-};
-
-export const UnsupportedOverloadAssignment = (node: ts.Node, name?: string) => {
-    const nameReference = name ? ` to '${name}'` : "";
-    return new TranspileError(
-        `Unsupported assignment of function with different overloaded types for 'this'${nameReference}. ` +
-            "Overloads should all have the same type for 'this'.",
-        node
-    );
-};
-
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
 

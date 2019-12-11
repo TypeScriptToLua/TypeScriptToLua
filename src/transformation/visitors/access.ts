@@ -6,7 +6,7 @@ import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
-import { transformLuaTableElementAccessExpression, transformLuaTablePropertyAccessExpression } from "./lua-table";
+import { transformLuaTablePropertyAccessExpression, validateLuaTableElementAccessExpression } from "./lua-table";
 
 export function transformElementAccessArgument(
     context: TransformationContext,
@@ -24,7 +24,7 @@ export function transformElementAccessArgument(
 }
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (expression, context) => {
-    transformLuaTableElementAccessExpression(context, expression);
+    validateLuaTableElementAccessExpression(context, expression);
 
     const constEnumValue = tryGetConstEnumValue(context, expression);
     if (constEnumValue) {

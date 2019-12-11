@@ -21,9 +21,6 @@ export const UnsupportedForInVariable = (node: ts.Node) =>
 
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
-export const UnsupportedKind = (description: string, kind: ts.SyntaxKind, node: ts.Node) =>
-    new TranspileError(`Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`, node);
-
 export const UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
     new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
 

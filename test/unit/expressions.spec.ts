@@ -1,6 +1,5 @@
-import * as ts from "typescript";
 import * as tstl from "../../src";
-import { UnsupportedForTarget, UnsupportedKind } from "../../src/transformation/utils/errors";
+import { UnsupportedForTarget } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 // TODO:
@@ -95,13 +94,7 @@ test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(
-            UnsupportedKind(
-                "right shift operator (use >>> instead)",
-                ts.SyntaxKind.GreaterThanGreaterThanToken,
-                util.nodeStub
-            )
-        );
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(

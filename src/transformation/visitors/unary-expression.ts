@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { UnsupportedKind } from "../utils/errors";
 import { transformUnaryBitOperation } from "./binary-expression/bit";
 import {
     transformCompoundAssignmentExpression,
@@ -66,7 +66,7 @@ export const transformPostfixUnaryExpression: FunctionVisitor<ts.PostfixUnaryExp
             );
 
         default:
-            throw UnsupportedKind("unary postfix operator", expression.operator, expression);
+            assertNever(expression.operator);
     }
 };
 
@@ -117,6 +117,6 @@ export const transformPrefixUnaryExpression: FunctionVisitor<ts.PrefixUnaryExpre
             );
 
         default:
-            throw UnsupportedKind("unary prefix operator", expression.operator, expression);
+            assertNever(expression.operator);
     }
 };

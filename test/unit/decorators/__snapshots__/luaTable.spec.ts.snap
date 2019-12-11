@@ -33,6 +33,30 @@ exports[`Cannot set LuaTable length: diagnostics 1`] = `"main.ts(11,1): error TS
 
 exports[`Cannot set LuaTable length: diagnostics 2`] = `"main.ts(11,1): error TSTL: Invalid @luaTable usage: A LuaTable object's length cannot be re-assigned."`;
 
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"get\\"](\\"field\\")"): code 1`] = `"tbl.get(tbl, \\"field\\")"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"get\\"](\\"field\\")"): code 2`] = `"tbl.get(tbl, \\"field\\")"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"get\\"](\\"field\\")"): diagnostics 1`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"get\\"](\\"field\\")"): diagnostics 2`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"length\\"]"): code 1`] = `"local ____ = tbl.length"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"length\\"]"): code 2`] = `"local ____ = tbl.length"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"length\\"]"): diagnostics 1`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"length\\"]"): diagnostics 2`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"set\\"](\\"field\\")"): code 1`] = `"tbl.set(tbl, \\"field\\")"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"set\\"](\\"field\\")"): code 2`] = `"tbl.set(tbl, \\"field\\")"`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"set\\"](\\"field\\")"): diagnostics 1`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
+exports[`Cannot use ElementAccessExpression on a LuaTable ("tbl[\\"set\\"](\\"field\\")"): diagnostics 2`] = `"main.ts(11,1): error TSTL: @luaTable cannot be accessed dynamically."`;
+
 exports[`Cannot use instanceof on a LuaTable class ("tbl instanceof Table"): code 1`] = `
 "require(\\"lualib_bundle\\");
 __TS__InstanceOf(tbl, Table)"

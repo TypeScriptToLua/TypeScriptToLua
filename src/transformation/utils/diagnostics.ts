@@ -82,6 +82,8 @@ export const luaTableInvalidInstanceOf = createDiagnosticFactory(
     "The instanceof operator cannot be used with a '@luaTable' class."
 );
 
+export const luaTableCannotBeAccessedDynamically = createDiagnosticFactory("@luaTable cannot be accessed dynamically.");
+
 export const luaTableForbiddenUsage = createDiagnosticFactory(
     (description: string) => `Invalid @luaTable usage: ${description}.`
 );
@@ -90,4 +92,18 @@ export const luaIteratorForbiddenUsage = createDiagnosticFactory(
     "Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. " +
         "You must use a destructuring statement to catch results from a lua iterator with " +
         "the '@tupleReturn' annotation."
+);
+
+export const unsupportedSyntaxKind = createDiagnosticFactory(
+    (description: string, kind: ts.SyntaxKind) => `Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`
+);
+
+export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
+
+export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
+    "Accessors in object literal are not supported."
+);
+
+export const unsupportedRightShiftOperator = createDiagnosticFactory(
+    "Right shift operator is not supported. Use `>>>` instead."
 );

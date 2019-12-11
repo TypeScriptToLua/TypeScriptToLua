@@ -47,7 +47,7 @@ export class TransformationContext {
 
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
-            throw new Error(`${ts.SyntaxKind[node.kind]} is not supported`);
+            throw new Error(`Unsupported node kind: ${ts.SyntaxKind[node.kind]}.`);
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;

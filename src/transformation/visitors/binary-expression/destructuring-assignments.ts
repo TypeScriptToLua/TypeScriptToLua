@@ -1,8 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { flatMap } from "../../../utils";
+import { assertNever, flatMap } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { UnsupportedKind } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
@@ -111,7 +110,10 @@ function transformArrayLiteralAssignmentPattern(
             case ts.SyntaxKind.ElementAccessExpression:
                 return transformAssignment(context, element, indexedRoot);
             case ts.SyntaxKind.SpreadElement:
-                if (index !== node.elements.length - 1) return [];
+                if (index !== node.elements.length - 1) {
+                    // TypeScript error
+                    return [];
+                }
 
                 const restElements = transformLuaLibFunction(
                     context,
@@ -125,7 +127,8 @@ function transformArrayLiteralAssignmentPattern(
             case ts.SyntaxKind.OmittedExpression:
                 return [];
             default:
-                throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
+                // TypeScript error
+                return [];
         }
     });
 }
@@ -156,8 +159,13 @@ function transformObjectLiteralAssignmentPattern(
             case ts.SyntaxKind.SpreadAssignment:
                 result.push(...transformSpreadAssignment(context, property, root, node.properties));
                 break;
+            case ts.SyntaxKind.MethodDeclaration:
+            case ts.SyntaxKind.GetAccessor:
+            case ts.SyntaxKind.SetAccessor:
+                // TypeScript error
+                break;
             default:
-                throw UnsupportedKind("Object Destructure Property", property.kind, property);
+                assertNever(property);
         }
     }
 

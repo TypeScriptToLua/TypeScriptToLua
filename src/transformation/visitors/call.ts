@@ -4,7 +4,6 @@ import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall, isVarArgType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { UnsupportedKind } from "../utils/errors";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -90,7 +89,7 @@ export function transformContextualCallExpression(
         const expression = context.transformExpression(left);
         return lua.createCallExpression(expression, transformedArguments, node);
     } else {
-        throw UnsupportedKind("Left Hand Side Call Expression", left.kind, left);
+        throw new Error(`Unsupported LeftHandSideExpression kind: ${ts.SyntaxKind[left.kind]}`);
     }
 }
 

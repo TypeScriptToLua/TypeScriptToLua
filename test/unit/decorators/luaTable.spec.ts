@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { UnsupportedKind, UnsupportedProperty } from "../../../src/transformation/utils/errors";
+import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 const tableLibClass = `
@@ -108,9 +108,7 @@ test.each([tableLibClass, tableLibInterface])("Cannot use ElementAccessExpressio
     test.each([`tbl["get"]("field")`, `tbl["set"]("field")`, `tbl["length"]`])(
         "Cannot use ElementAccessExpression on a LuaTable (%p)",
         code => {
-            expect(() => util.transpileString(tableLib + code)).toThrowExactError(
-                UnsupportedKind("LuaTable access expression", ts.SyntaxKind.ElementAccessExpression, util.nodeStub)
-            );
+            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
         }
     );
 });

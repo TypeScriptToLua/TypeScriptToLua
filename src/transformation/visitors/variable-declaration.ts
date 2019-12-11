@@ -1,10 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assertNever, flatMap } from "../../utils";
+import { assert, assertNever, flatMap } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { UnsupportedKind } from "../utils/errors";
 import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -13,16 +12,19 @@ import { transformPropertyName } from "./literal";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
-    name: ts.ArrayBindingElement | ts.Expression
+    name: ts.ArrayBindingElement
 ): lua.Identifier {
     if (ts.isOmittedExpression(name)) {
         return lua.createAnonymousIdentifier(name);
     } else if (ts.isIdentifier(name)) {
         return transformIdentifier(context, name);
-    } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
+    } else if (ts.isBindingElement(name)) {
+        // TODO: It should always be true when called from `transformVariableDeclaration`,
+        // but could be false from `transformForOfLuaIteratorStatement`.
+        assert(ts.isIdentifier(name.name));
         return transformIdentifier(context, name.name);
     } else {
-        throw UnsupportedKind("array binding expression", name.kind, name);
+        assertNever(name);
     }
 }
 
@@ -65,7 +67,10 @@ export function transformBindingPattern(
 
         let expression: lua.Expression;
         if (element.dotDotDotToken) {
-            if (index !== pattern.elements.length - 1) continue;
+            if (index !== pattern.elements.length - 1) {
+                // TypeScript error
+                continue;
+            }
 
             if (isObjectBindingPattern) {
                 const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;

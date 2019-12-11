@@ -402,3 +402,22 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
+
+exports[`Unsupported bitop 5.3 ("a>>=b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = (function()
+    a = a >> b
+    return a
+end)()
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.3 ("a>>=b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported. Use \`>>>\` instead."`;
+
+exports[`Unsupported bitop 5.3 ("a>>b"): code 1`] = `
+"local ____exports = {}
+____exports.__result = a >> b
+return ____exports"
+`;
+
+exports[`Unsupported bitop 5.3 ("a>>b"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Right shift operator is not supported. Use \`>>>\` instead."`;

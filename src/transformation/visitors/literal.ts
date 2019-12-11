@@ -1,7 +1,9 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { InvalidAmbientIdentifierName, UnsupportedKind } from "../utils/errors";
+import { unsupportedAccessorInObjectLiteral } from "../utils/diagnostics";
+import { InvalidAmbientIdentifierName } from "../utils/errors";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -104,9 +106,10 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
             }
 
             tableExpressions.push(tableExpression);
+        } else if (ts.isAccessor(element)) {
+            context.diagnostics.push(unsupportedAccessorInObjectLiteral(element));
         } else {
-            // TODO: Accessors
-            throw UnsupportedKind("object literal element", element.kind, expression);
+            assertNever(element);
         }
     }
 

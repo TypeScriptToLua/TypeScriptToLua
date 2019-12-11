@@ -3,12 +3,8 @@ import * as lua from "../../../LuaAST";
 import { assert, cast, castEach } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import { invalidForRangeCall } from "../../utils/diagnostics";
-import {
-    MissingForOfVariables,
-    UnsupportedNonDestructuringLuaIterator,
-    UnsupportedObjectDestructuringInForOf,
-} from "../../utils/errors";
+import { invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
+import { MissingForOfVariables, UnsupportedObjectDestructuringInForOf } from "../../utils/errors";
 import { createUnpackCall } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
@@ -128,47 +124,42 @@ function transformForOfLuaIteratorStatement(
     const luaIterator = context.transformExpression(statement.expression);
     const type = context.checker.getTypeAtLocation(statement.expression);
     const tupleReturn = getTypeAnnotations(context, type).has(AnnotationKind.TupleReturn);
+    let identifiers: lua.Identifier[] = [];
+
     if (tupleReturn) {
         // LuaIterator + TupleReturn
         if (ts.isVariableDeclarationList(statement.initializer)) {
             // Variables declared in for loop
             // for ${initializer} in ${iterable} do
             const initializerVariable = statement.initializer.declarations[0].name;
+
             if (ts.isArrayBindingPattern(initializerVariable)) {
-                const identifiers = castEach(
+                identifiers = castEach(
                     initializerVariable.elements.map(e => transformArrayBindingElement(context, e)),
                     lua.isIdentifier
                 );
-                if (identifiers.length === 0) {
-                    identifiers.push(lua.createAnonymousIdentifier());
-                }
-                return lua.createForInStatement(block, identifiers, [luaIterator]);
             } else {
-                // Single variable is not allowed
-                throw UnsupportedNonDestructuringLuaIterator(statement.initializer);
+                context.diagnostics.push(luaIteratorForbiddenUsage(initializerVariable));
             }
         } else {
             // Variables NOT declared in for loop - catch iterator values in temps and assign
             // for ____value0 in ${iterable} do
             //     ${initializer} = ____value0
             if (ts.isArrayLiteralExpression(statement.initializer)) {
-                const tmps = statement.initializer.elements.map((_, i) => lua.createIdentifier(`____value${i}`));
-                if (tmps.length > 0) {
-                    const assign = lua.createAssignmentStatement(
-                        castEach(
-                            statement.initializer.elements.map(e => context.transformExpression(e)),
-                            lua.isAssignmentLeftHandSideExpression
-                        ),
-                        tmps
+                identifiers = statement.initializer.elements.map((_, i) => lua.createIdentifier(`____value${i}`));
+                if (identifiers.length > 0) {
+                    block.statements.unshift(
+                        lua.createAssignmentStatement(
+                            castEach(
+                                statement.initializer.elements.map(e => context.transformExpression(e)),
+                                lua.isAssignmentLeftHandSideExpression
+                            ),
+                            identifiers
+                        )
                     );
-                    block.statements.splice(0, 0, assign);
-                } else {
-                    tmps.push(lua.createAnonymousIdentifier());
                 }
-                return lua.createForInStatement(block, tmps, [luaIterator]);
             } else {
-                // Single variable is not allowed
-                throw UnsupportedNonDestructuringLuaIterator(statement.initializer);
+                context.diagnostics.push(luaIteratorForbiddenUsage(statement.initializer));
             }
         }
     } else {
@@ -179,23 +170,25 @@ function transformForOfLuaIteratorStatement(
         ) {
             // Single variable declared in for loop
             // for ${initializer} in ${iterator} do
-            return lua.createForInStatement(
-                block,
-                [transformIdentifier(context, statement.initializer.declarations[0].name)],
-                [luaIterator]
-            );
+            identifiers.push(transformIdentifier(context, statement.initializer.declarations[0].name));
         } else {
             // Destructuring or variable NOT declared in for loop
             // for ____value in ${iterator} do
-            //     local ${initializer} = unpack(____value)
+            //     local ${initializer} = ____value
             const valueVariable = lua.createIdentifier("____value");
             const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
             if (initializer) {
-                block.statements.splice(0, 0, initializer);
+                identifiers.push(valueVariable);
+                block.statements.unshift(initializer);
             }
-            return lua.createForInStatement(block, [valueVariable], [luaIterator]);
         }
     }
+
+    if (identifiers.length === 0) {
+        identifiers.push(lua.createAnonymousIdentifier());
+    }
+
+    return lua.createForInStatement(block, identifiers, [luaIterator]);
 }
 
 function transformForOfArrayStatement(

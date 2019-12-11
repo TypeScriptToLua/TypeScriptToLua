@@ -1,6 +1,3 @@
-import * as ts from "typescript";
-import * as tstl from "../../../src";
-import { UnsupportedNonDestructuringLuaIterator } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("forof lua iterator", () => {
@@ -16,12 +13,7 @@ test("forof lua iterator", () => {
         for (let e of luaIter()) { result += e; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("abc");
 });
 
@@ -38,12 +30,7 @@ test("forof array lua iterator", () => {
         for (let e of luaIter()) { result += e; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("abc");
 });
 
@@ -61,12 +48,7 @@ test("forof lua iterator with existing variable", () => {
         for (e of luaIter()) { result += e; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("abc");
 });
 
@@ -83,12 +65,7 @@ test("forof lua iterator destructuring", () => {
         for (let [a, b] of luaIter()) { result += a + b; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("0a1b2c");
 });
 
@@ -107,12 +84,7 @@ test("forof lua iterator destructuring with existing variables", () => {
         for ([a, b] of luaIter()) { result += a + b; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("0a1b2c");
 });
 
@@ -134,12 +106,7 @@ test("forof lua iterator tuple-return", () => {
         for (let [a, b] of luaIter()) { result += a + b; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("0a1b2c");
 });
 
@@ -163,17 +130,12 @@ test("forof lua iterator tuple-return with existing variables", () => {
         for ([a, b] of luaIter()) { result += a + b; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("0a1b2c");
 });
 
 test("forof lua iterator tuple-return single variable", () => {
-    const code = `
+    util.testModule`
         /**
          * @luaIterator
          * @tupleReturn
@@ -181,19 +143,11 @@ test("forof lua iterator tuple-return single variable", () => {
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
         for (let x of luaIter()) {}
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        UnsupportedNonDestructuringLuaIterator(util.nodeStub)
-    );
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("forof lua iterator tuple-return single existing variable", () => {
-    const code = `
+    util.testModule`
         /**
          * @luaIterator
          * @tupleReturn
@@ -202,15 +156,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
         declare function luaIter(): Iter;
         let x: [string, string];
         for (x of luaIter()) {}
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    expect(() => util.transpileString(code, compilerOptions)).toThrowExactError(
-        UnsupportedNonDestructuringLuaIterator(util.nodeStub)
-    );
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("forof forwarded lua iterator", () => {
@@ -231,12 +177,7 @@ test("forof forwarded lua iterator", () => {
         for (let a of forward()) { result += a; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("abc");
 });
 
@@ -262,11 +203,6 @@ test("forof forwarded lua iterator with tupleReturn", () => {
         for (let [a, b] of forward()) { result += a + b; }
         return result;
     `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
+    const result = util.transpileAndExecute(code);
     expect(result).toBe("0a1b2c");
 });

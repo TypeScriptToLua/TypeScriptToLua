@@ -118,3 +118,7 @@ export const unsupportedForTarget = createDiagnosticFactory(
 export const unsupportedProperty = createDiagnosticFactory(
     (parentName: string, property: string) => `${parentName}.${property} is unsupported.`
 );
+
+export const forOfUnsupportedObjectDestructuring = createDiagnosticFactory(
+    `Unsupported object destructuring in for...of statement.`
+);

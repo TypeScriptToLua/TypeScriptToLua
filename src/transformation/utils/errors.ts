@@ -10,12 +10,6 @@ export class TranspileError extends Error {
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
 
-export const MissingForOfVariables = (node: ts.Node) =>
-    new TranspileError("Transpiled ForOf variable declaration list contains no declarations.", node);
-
-export const UnsupportedForInVariable = (node: ts.Node) =>
-    new TranspileError(`Unsupported for-in variable kind.`, node);
-
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
@@ -27,9 +21,6 @@ export const ReferencedBeforeDeclaration = (node: ts.Identifier) =>
             "must be moved before the identifier's use, or hoisting must be enabled.",
         node
     );
-
-export const UnsupportedObjectDestructuringInForOf = (node: ts.Node) =>
-    new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
 
 export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
     new TranspileError(

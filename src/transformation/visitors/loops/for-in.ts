@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
 import { forbiddenForIn } from "../../utils/diagnostics";
-import { UnsupportedForInVariable } from "../../utils/errors";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformLoopBody } from "./body";
@@ -38,8 +37,8 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
         );
         body.statements.unshift(initializer);
     } else {
-        // This should never occur
-        throw UnsupportedForInVariable(statement.initializer);
+        // TODO:
+        throw new Error(`Unsupported for...in variable kind: ${ts.SyntaxKind[statement.initializer.kind]}.`);
     }
 
     return lua.createForInStatement(body, [iterationVariable], [pairsCall], statement);

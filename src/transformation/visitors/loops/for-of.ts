@@ -3,8 +3,11 @@ import * as lua from "../../../LuaAST";
 import { assert, cast, castEach } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import { invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
-import { MissingForOfVariables, UnsupportedObjectDestructuringInForOf } from "../../utils/errors";
+import {
+    forOfUnsupportedObjectDestructuring,
+    invalidForRangeCall,
+    luaIteratorForbiddenUsage,
+} from "../../utils/diagnostics";
 import { createUnpackCall } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
@@ -28,19 +31,17 @@ function transformForOfInitializer(
 
             expression = createUnpackCall(context, expression, initializer);
         } else if (ts.isObjectBindingPattern(initializer.declarations[0].name)) {
-            throw UnsupportedObjectDestructuringInForOf(initializer);
+            context.diagnostics.push(forOfUnsupportedObjectDestructuring(initializer));
+            return;
         }
 
-        const variableStatements = transformVariableDeclaration(context, initializer.declarations[0]);
-        if (variableStatements[0]) {
-            // we can safely assume that for vars are not exported and therefore declarationstatenents
-            return lua.createVariableDeclarationStatement(
-                (variableStatements[0] as lua.VariableDeclarationStatement).left,
-                expression
-            );
-        } else {
-            throw MissingForOfVariables(initializer);
-        }
+        // we can safely assume that for vars are not exported and therefore VariableDeclarationStatement's
+        const assignmentStatement = cast(
+            transformVariableDeclaration(context, initializer.declarations[0])[0],
+            lua.isVariableDeclarationStatement
+        );
+
+        return lua.createVariableDeclarationStatement(assignmentStatement.left, expression);
     } else {
         // Assignment to existing variable
         let variables: lua.AssignmentLeftHandSideExpression | lua.AssignmentLeftHandSideExpression[];
@@ -56,7 +57,8 @@ function transformForOfInitializer(
                 return undefined;
             }
         } else if (ts.isObjectLiteralExpression(initializer)) {
-            throw UnsupportedObjectDestructuringInForOf(initializer);
+            context.diagnostics.push(forOfUnsupportedObjectDestructuring(initializer));
+            return;
         } else {
             variables = cast(context.transformExpression(initializer), lua.isAssignmentLeftHandSideExpression);
         }

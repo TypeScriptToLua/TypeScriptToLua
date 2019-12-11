@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { UnsupportedObjectDestructuringInForOf } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
@@ -487,14 +486,11 @@ test.each([
     { initializer: "{a, b}", vars: "let a: string, b: string;" },
     { initializer: "{a: c, b: d}", vars: "let c: string, d: string;" },
 ])("forof object destructuring (%p)", ({ initializer, vars }) => {
-    const code = `
+    util.testModule`
         declare const arr: {a: string, b: string}[];
         ${vars}
-        for (${initializer} of arr) {}`;
-
-    expect(() => util.transpileString(code)).toThrow(
-        UnsupportedObjectDestructuringInForOf(ts.createEmptyStatement()).message
-    );
+        for (${initializer} of arr) {}
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("forof with array typed as iterable", () => {

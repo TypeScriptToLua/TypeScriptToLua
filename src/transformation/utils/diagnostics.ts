@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import { AnnotationKind } from "./annotations";
 
 const createDiagnosticFactory = <TArgs extends any[]>(
@@ -106,4 +107,10 @@ export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
 
 export const unsupportedRightShiftOperator = createDiagnosticFactory(
     "Right shift operator is not supported. Use `>>>` instead."
+);
+
+const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
+export const unsupportedForTarget = createDiagnosticFactory(
+    (functionality: string, version: LuaTarget) =>
+        `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`
 );

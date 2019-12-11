@@ -50,17 +50,19 @@ export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)
 export function testEachVersion<T extends TestBuilder>(
     name: string | undefined,
     common: () => T,
-    special: Record<tstl.LuaTarget, ((builder: T) => T) | false>
+    special?: Record<tstl.LuaTarget, ((builder: T) => void) | boolean>
 ): void {
     for (const version of Object.values(tstl.LuaTarget) as tstl.LuaTarget[]) {
-        const specialBuilder = special[version];
+        const specialBuilder = special?.[version];
         if (specialBuilder === false) return;
 
         const testName = name === undefined ? version : `${name} [${version}]`;
         test(testName, () => {
             const builder = common();
             builder.setOptions({ luaTarget: version });
-            specialBuilder(builder);
+            if (typeof specialBuilder === 'function') {
+                specialBuilder(builder);
+            }
         });
     }
 }

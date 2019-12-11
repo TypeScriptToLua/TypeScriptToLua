@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { LuaTarget } from "../../CompilerOptions";
 
 export class TranspileError extends Error {
     public name = "TranspileError";
@@ -7,8 +6,6 @@ export class TranspileError extends Error {
         super(message);
     }
 }
-
-const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
@@ -23,9 +20,6 @@ export const UndefinedScope = () => new Error("Expected to pop a scope, but foun
 
 export const UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
     new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
-
-export const UnsupportedForTarget = (functionality: string, version: LuaTarget, node: ts.Node) =>
-    new TranspileError(`${functionality} is/are not supported for target ${getLuaTargetName(version)}.`, node);
 
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);

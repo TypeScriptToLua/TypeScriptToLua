@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { UnsupportedForTarget, UnsupportedObjectDestructuringInForOf } from "../../src/transformation/utils/errors";
+import { UnsupportedObjectDestructuringInForOf } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
@@ -588,25 +588,23 @@ describe("for...of empty destructuring", () => {
     describe("assignment", () => declareTests(""));
 });
 
-test.each([
-    "while (a < b) { i++; continue; }",
-    "do { i++; continue; } while (a < b)",
-    "for (let i = 0; i < 3; i++) { continue; }",
-    "for (let a in b) { continue; }",
-    "for (let a of b) { continue; }",
-])("loop continue in different lua versions (%p)", loop => {
-    const lua51 = { luaTarget: tstl.LuaTarget.Lua51 };
-    const lua52 = { luaTarget: tstl.LuaTarget.Lua52 };
-    const lua53 = { luaTarget: tstl.LuaTarget.Lua53 };
-    const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
+for (const testCase of [
+    "while (false) { continue; }",
+    "do { continue; } while (false)",
+    "for (;;) { continue; }",
+    "for (const a in {}) { continue; }",
+    "for (const a of []) { continue; }",
+]) {
+    const expectContinueGotoLabel: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
-    expect(() => util.transpileString(loop, lua51)).toThrowExactError(
-        UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
-    );
-    expect(util.transpileString(loop, lua52).indexOf("::__continue2::") !== -1).toBe(true);
-    expect(util.transpileString(loop, lua53).indexOf("::__continue2::") !== -1).toBe(true);
-    expect(util.transpileString(loop, luajit).indexOf("::__continue2::") !== -1).toBe(true);
-});
+    util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
+        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot(),
+        [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
+        [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
+        [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
+    });
+}
 
 test("do...while", () => {
     const code = `

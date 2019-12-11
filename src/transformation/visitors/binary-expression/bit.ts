@@ -3,8 +3,7 @@ import { LuaTarget } from "../../../CompilerOptions";
 import * as lua from "../../../LuaAST";
 import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { unsupportedRightShiftOperator } from "../../utils/diagnostics";
-import { UnsupportedForTarget } from "../../utils/errors";
+import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../utils/diagnostics";
 
 export type BitOperator = ts.ShiftOperator | ts.BitwiseOperator;
 export const isBitOperator = (operator: ts.BinaryOperator): operator is BitOperator =>
@@ -64,14 +63,13 @@ export function transformBinaryBitOperation(
 ): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Lua51:
-            throw UnsupportedForTarget("Bitwise operations", LuaTarget.Lua51, node);
-
-        case LuaTarget.Lua52:
-            return transformBinaryBitLibOperation(node, left, right, operator, "bit32");
+            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", LuaTarget.Lua51));
 
         case LuaTarget.LuaJIT:
             return transformBinaryBitLibOperation(node, left, right, operator, "bit");
 
+        case LuaTarget.Lua52:
+            return transformBinaryBitLibOperation(node, left, right, operator, "bit32");
         default:
             const luaOperator = transformBitOperatorToLuaOperator(context, node, operator);
             return lua.createBinaryExpression(left, right, luaOperator, node);
@@ -108,13 +106,13 @@ export function transformUnaryBitOperation(
 ): lua.Expression {
     switch (context.luaTarget) {
         case LuaTarget.Lua51:
-            throw UnsupportedForTarget("Bitwise operations", LuaTarget.Lua51, node);
-
-        case LuaTarget.Lua52:
-            return transformUnaryBitLibOperation(node, expression, operator, "bit32");
+            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", LuaTarget.Lua51));
 
         case LuaTarget.LuaJIT:
             return transformUnaryBitLibOperation(node, expression, operator, "bit");
+
+        case LuaTarget.Lua52:
+            return transformUnaryBitLibOperation(node, expression, operator, "bit32");
 
         default:
             return lua.createUnaryExpression(expression, operator, node);

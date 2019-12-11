@@ -1,5 +1,4 @@
 import * as tstl from "../../src";
-import { UnsupportedForTarget } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 // TODO:
@@ -66,7 +65,7 @@ test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(UnsupportedForTarget("Bitwise operations", tstl.LuaTarget.Lua51, util.nodeStub));
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test.each(allBinaryOperators)("Bitop [JIT] (%p)", input => {

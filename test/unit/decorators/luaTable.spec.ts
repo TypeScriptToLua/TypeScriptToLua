@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 const tableLibClass = `
@@ -34,22 +32,16 @@ test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tab
 test.each([tableLibClass, tableLibInterface])(
     "LuaTable set() cannot be used in a LuaTable call expression",
     tableLib => {
-        expect(() => util.transpileString(tableLib + `const exp = tbl.set("value", 5)`)).toThrowExactError(
-            UnsupportedProperty("LuaTable", "set", util.nodeStub)
-        );
+        util.testModule(tableLib + `const exp = tbl.set("value", 5)`).expectDiagnosticsToMatchSnapshot();
     }
 );
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other members", tableLib => {
-    expect(() => util.transpileString(tableLib + `tbl.other()`)).toThrowExactError(
-        UnsupportedProperty("LuaTable", "other", util.nodeStub)
-    );
+    util.testModule(tableLib + `tbl.other()`).expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other members", tableLib => {
-    expect(() => util.transpileString(tableLib + `let x = tbl.other()`)).toThrowExactError(
-        UnsupportedProperty("LuaTable", "other", util.nodeStub)
-    );
+    util.testModule(tableLib + `let x = tbl.other()`).expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([tableLibClass])("LuaTable new", tableLib => {
@@ -115,9 +107,7 @@ test.each([tableLibClass, tableLibInterface])("Cannot use ElementAccessExpressio
 
 test.each([tableLibClass, tableLibInterface])("Cannot isolate LuaTable methods", tableLib => {
     test.each([`set`, `get`])("Cannot isolate LuaTable method (%p)", propertyName => {
-        expect(() => util.transpileString(`${tableLib} let property = tbl.${propertyName}`)).toThrowExactError(
-            UnsupportedProperty("LuaTable", propertyName, util.nodeStub)
-        );
+        util.testModule(`${tableLib} let property = tbl.${propertyName}`).expectDiagnosticsToMatchSnapshot();
     });
 });
 

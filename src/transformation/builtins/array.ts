@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isExplicitArrayType } from "../utils/typescript";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
@@ -80,7 +80,7 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
             if (isExplicitArrayType(context, ownerType)) {
-                throw UnsupportedProperty("array", expressionName, node);
+                context.diagnostics.push(unsupportedProperty(node, "array", expressionName));
             }
     }
 }

@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
@@ -19,7 +19,7 @@ function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lu
 export function transformStringPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.Expression {
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -148,14 +148,14 @@ export function transformStringPrototypeCall(
                 node
             );
         default:
-            throw UnsupportedProperty("string", expressionName, node);
+            context.diagnostics.push(unsupportedProperty(node, "string", expressionName));
     }
 }
 
 export function transformStringConstructorCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.Expression {
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -170,14 +170,14 @@ export function transformStringConstructorCall(
             );
 
         default:
-            throw UnsupportedProperty("String", expressionName, node);
+            context.diagnostics.push(unsupportedProperty(node, "String", expressionName));
     }
 }
 
 export function transformStringProperty(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
-): lua.UnaryExpression {
+): lua.UnaryExpression | undefined {
     switch (node.name.text) {
         case "length":
             let expression = context.transformExpression(node.expression);
@@ -186,6 +186,6 @@ export function transformStringProperty(
             }
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
-            throw UnsupportedProperty("string", node.name.text, node);
+            context.diagnostics.push(unsupportedProperty(node, "string", node.name.text));
     }
 }

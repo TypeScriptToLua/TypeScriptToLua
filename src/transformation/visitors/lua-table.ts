@@ -2,8 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { luaTableCannotBeAccessedDynamically, luaTableForbiddenUsage } from "../utils/diagnostics";
-import { UnsupportedProperty } from "../utils/errors";
+import { luaTableCannotBeAccessedDynamically, luaTableForbiddenUsage, unsupportedProperty } from "../utils/diagnostics";
 import { transformArguments } from "./call";
 
 const parseLuaTableExpression = (context: TransformationContext, node: ts.PropertyAccessExpression) =>
@@ -71,7 +70,7 @@ export function transformLuaTableExpressionStatement(
                 expression
             );
         default:
-            throw UnsupportedProperty("LuaTable", methodName, expression);
+            context.diagnostics.push(unsupportedProperty(expression, "LuaTable", methodName));
     }
 }
 
@@ -94,7 +93,7 @@ export function transformLuaTableCallExpression(
         case "get":
             return lua.createTableIndexExpression(luaTable, params[0] ?? lua.createNilLiteral(), node);
         default:
-            throw UnsupportedProperty("LuaTable", methodName, node);
+            context.diagnostics.push(unsupportedProperty(node, "LuaTable", methodName));
     }
 }
 
@@ -106,11 +105,11 @@ export function transformLuaTablePropertyAccessExpression(
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, propertyName] = parseLuaTableExpression(context, node);
-    if (propertyName !== "length") {
-        throw UnsupportedProperty("LuaTable", propertyName, node);
+    if (propertyName === "length") {
+        return lua.createUnaryExpression(luaTable, lua.SyntaxKind.LengthOperator, node);
     }
 
-    return lua.createUnaryExpression(luaTable, lua.SyntaxKind.LengthOperator, node);
+    context.diagnostics.push(unsupportedProperty(node, "LuaTable", propertyName));
 }
 
 export function transformLuaTablePropertyAccessInAssignment(
@@ -123,12 +122,12 @@ export function transformLuaTablePropertyAccessInAssignment(
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, propertyName] = parseLuaTableExpression(context, node);
-    if (propertyName !== "length") {
-        throw UnsupportedProperty("LuaTable", propertyName, node);
+    if (propertyName === "length") {
+        context.diagnostics.push(luaTableForbiddenUsage(node, `A LuaTable object's length cannot be re-assigned`));
+        return lua.createTableIndexExpression(luaTable, lua.createStringLiteral(propertyName), node);
     }
 
-    context.diagnostics.push(luaTableForbiddenUsage(node, `A LuaTable object's length cannot be re-assigned`));
-    return lua.createTableIndexExpression(luaTable, lua.createStringLiteral(propertyName), node);
+    context.diagnostics.push(unsupportedProperty(node, "LuaTable", propertyName));
 }
 
 export function validateLuaTableElementAccessExpression(

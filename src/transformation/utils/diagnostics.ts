@@ -114,3 +114,7 @@ export const unsupportedForTarget = createDiagnosticFactory(
     (functionality: string, version: LuaTarget) =>
         `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`
 );
+
+export const unsupportedProperty = createDiagnosticFactory(
+    (parentName: string, property: string) => `${parentName}.${property} is unsupported.`
+);

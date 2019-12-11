@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 const isStringFormatTemplate = (node: ts.Expression) => ts.isStringLiteral(node) && node.text.includes("%");
@@ -9,7 +9,7 @@ const isStringFormatTemplate = (node: ts.Expression) => ts.isStringLiteral(node)
 export function transformConsoleCall(
     context: TransformationContext,
     expression: PropertyCallExpression
-): lua.Expression {
+): lua.Expression | undefined {
     const method = expression.expression;
     const methodName = method.name.text;
     const signature = context.checker.getResolvedSignature(expression);
@@ -61,6 +61,6 @@ export function transformConsoleCall(
             );
             return lua.createCallExpression(lua.createIdentifier("print"), [debugTracebackCall]);
         default:
-            throw UnsupportedProperty("console", methodName, expression);
+            context.diagnostics.push(unsupportedProperty(expression, "console", methodName));
     }
 }

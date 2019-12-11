@@ -1,13 +1,13 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformObjectConstructorCall(
     context: TransformationContext,
     expression: PropertyCallExpression
-): lua.Expression {
+): lua.Expression | undefined {
     const method = expression.expression;
     const parameters = transformArguments(context, expression.arguments);
     const methodName = method.name.text;
@@ -24,7 +24,7 @@ export function transformObjectConstructorCall(
         case "values":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectValues, expression, ...parameters);
         default:
-            throw UnsupportedProperty("Object", methodName, expression);
+            context.diagnostics.push(unsupportedProperty(expression, "Object", methodName));
     }
 }
 

@@ -1,7 +1,6 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { unsupportedSelfFunctionConversion } from "../utils/diagnostics";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
@@ -9,7 +8,7 @@ import { PropertyCallExpression, transformArguments } from "../visitors/call";
 export function transformFunctionPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression {
+): lua.CallExpression | undefined {
     const expression = node.expression;
     const callerType = context.checker.getTypeAtLocation(expression.expression);
     if (getFunctionContextType(context, callerType) === ContextType.Void) {
@@ -28,6 +27,6 @@ export function transformFunctionPrototypeCall(
         case "call":
             return transformLuaLibFunction(context, LuaLibFeature.FunctionCall, node, caller, ...params);
         default:
-            throw UnsupportedProperty("function", expressionName, node);
+            context.diagnostics.push(unsupportedProperty(node, "function", expressionName));
     }
 }

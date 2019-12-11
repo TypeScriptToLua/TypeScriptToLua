@@ -1,5 +1,4 @@
 import * as tstl from "../../../src";
-import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 describe("luaLibImport", () => {
@@ -40,14 +39,10 @@ test("lualib should not include tstl header", () => {
 
 describe("Unknown builtin property", () => {
     test("access", () => {
-        util.testExpression`Math.unknownProperty`
-            .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(UnsupportedProperty("Math", "unknownProperty", util.nodeStub));
+        util.testExpression`Math.unknownProperty`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
     });
 
     test("function call", () => {
-        util.testExpression`[].unknownFunction()`
-            .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(UnsupportedProperty("array", "unknownFunction", util.nodeStub));
+        util.testExpression`[].unknownFunction()`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
     });
 });

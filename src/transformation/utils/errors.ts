@@ -18,9 +18,6 @@ export const UnsupportedForInVariable = (node: ts.Node) =>
 
 export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
 
-export const UnsupportedProperty = (parentName: string, property: string, node: ts.Node) =>
-    new TranspileError(`Unsupported property on ${parentName}: ${property}`, node);
-
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
 

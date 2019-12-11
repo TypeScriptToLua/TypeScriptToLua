@@ -25,6 +25,34 @@ end)()"
 
 exports[`Cannot extend LuaTable class ("const c = class Ext extends Table {}"): diagnostics 1`] = `"main.ts(11,29): error TSTL: Cannot extend classes with the '@luaTable' annotation."`;
 
+exports[`Cannot isolate LuaTable method ("get"): code 1`] = `
+"local property
+property = tbl.get"
+`;
+
+exports[`Cannot isolate LuaTable method ("get"): code 2`] = `
+"local property
+property = tbl.get"
+`;
+
+exports[`Cannot isolate LuaTable method ("get"): diagnostics 1`] = `"main.ts(11,17): error TSTL: LuaTable.get is unsupported."`;
+
+exports[`Cannot isolate LuaTable method ("get"): diagnostics 2`] = `"main.ts(11,17): error TSTL: LuaTable.get is unsupported."`;
+
+exports[`Cannot isolate LuaTable method ("set"): code 1`] = `
+"local property
+property = tbl.set"
+`;
+
+exports[`Cannot isolate LuaTable method ("set"): code 2`] = `
+"local property
+property = tbl.set"
+`;
+
+exports[`Cannot isolate LuaTable method ("set"): diagnostics 1`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
+
+exports[`Cannot isolate LuaTable method ("set"): diagnostics 2`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
+
 exports[`Cannot set LuaTable length: code 1`] = `"tbl.length = 2"`;
 
 exports[`Cannot set LuaTable length: code 2`] = `"tbl.length = 2"`;
@@ -168,6 +196,30 @@ return ____exports"
 
 exports[`LuaTable classes must be ambient ("/** @luaTable */ export class Table {}"): diagnostics 1`] = `"main.ts(1,18): error TSTL: Classes with the '@luaTable' annotation must be ambient."`;
 
+exports[`LuaTable set() cannot be used in a LuaTable call expression: code 1`] = `"local exp = tbl:set(\\"value\\", 5)"`;
+
+exports[`LuaTable set() cannot be used in a LuaTable call expression: code 2`] = `"local exp = tbl:set(\\"value\\", 5)"`;
+
+exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 1`] = `"main.ts(11,13): error TSTL: LuaTable.set is unsupported."`;
+
+exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 2`] = `"main.ts(11,13): error TSTL: LuaTable.set is unsupported."`;
+
 exports[`LuaTables cannot be constructed with arguments: code 1`] = `"local ____table = {}"`;
 
 exports[`LuaTables cannot be constructed with arguments: diagnostics 1`] = `"main.ts(11,15): error TSTL: Invalid @luaTable usage: No parameters are allowed when constructing a LuaTable object."`;
+
+exports[`LuaTables cannot have other members: code 1`] = `"tbl:other()"`;
+
+exports[`LuaTables cannot have other members: code 2`] = `"tbl:other()"`;
+
+exports[`LuaTables cannot have other members: code 3`] = `"local x = tbl:other()"`;
+
+exports[`LuaTables cannot have other members: code 4`] = `"local x = tbl:other()"`;
+
+exports[`LuaTables cannot have other members: diagnostics 1`] = `"main.ts(11,1): error TSTL: LuaTable.other is unsupported."`;
+
+exports[`LuaTables cannot have other members: diagnostics 2`] = `"main.ts(11,1): error TSTL: LuaTable.other is unsupported."`;
+
+exports[`LuaTables cannot have other members: diagnostics 3`] = `"main.ts(11,9): error TSTL: LuaTable.other is unsupported."`;
+
+exports[`LuaTables cannot have other members: diagnostics 4`] = `"main.ts(11,9): error TSTL: LuaTable.other is unsupported."`;

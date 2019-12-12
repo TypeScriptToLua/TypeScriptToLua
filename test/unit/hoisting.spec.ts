@@ -231,7 +231,7 @@ test.each([
     `function makeFoo() { return new Foo(); } class Foo {}`,
     `function bar() { return E.A; } enum E { A = "foo" }`,
     `function setBar() { const bar = { foo }; } let foo = "foo";`,
-])("No Hoisting (%p)", (code) => {
+])("No Hoisting (%p)", code => {
     util.testModule(code)
         .setOptions({ noHoisting: true })
         .expectDiagnosticsToMatchSnapshot();

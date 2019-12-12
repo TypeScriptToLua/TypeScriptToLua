@@ -106,13 +106,7 @@ export function transformCompoundAssignmentExpression(
         } else {
             // local ____tmp = ____obj[____index] ${replacementOperator} ${right};
             // ____obj[____index] = ____tmp;
-            const operatorExpression = transformBinaryOperation(
-                context,
-                accessExpression,
-                right,
-                operator,
-                expression
-            );
+            const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, expression);
             tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
             assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
         }
@@ -129,13 +123,7 @@ export function transformCompoundAssignmentExpression(
         // return ____tmp
         const tmpIdentifier = lua.createIdentifier("____tmp");
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
-        const operatorExpression = transformBinaryOperation(
-            context,
-            tmpIdentifier,
-            right,
-            operator,
-            expression
-        );
+        const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
         const assignStatement = transformAssignment(context, lhs, operatorExpression);
         return createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, expression);
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {

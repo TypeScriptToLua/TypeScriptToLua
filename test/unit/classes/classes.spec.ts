@@ -236,6 +236,26 @@ test("Subclass constructor across merged namespace", () => {
     expect(util.transpileAndExecute("return (new NS.Sub()).prop", undefined, undefined, tsHeader)).toBe("foo");
 });
 
+test("super without class", () => {
+    util.testExpression`super()`.expectDiagnosticsToMatchSnapshot();
+});
+
+test("super in unnamed class", () => {
+    util.testFunction`
+        class Foo {
+            public x = true;
+        }
+
+        const Bar = (class extends (Foo) {
+            constructor() {
+                super();
+            }
+        });
+
+        return new Bar().x;
+    `.expectToMatchJsResult();
+});
+
 test("classSuper", () => {
     const result = util.transpileAndExecute(
         `class a {

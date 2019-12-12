@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assert, getOrUpdate, isNonNull } from "../../../utils";
+import { getOrUpdate, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
@@ -59,16 +59,17 @@ export function transformClassAsExpression(
     return createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
 }
 
-const classStacks = new WeakMap<TransformationContext, ts.ClassLikeDeclaration[]>();
+const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
+interface ClassSuperInfo {
+    className: lua.Identifier;
+    extendsTypeNode?: ts.ExpressionWithTypeArguments;
+}
 
 export function transformClassDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
     nameOverride?: lua.Identifier
 ): OneToManyVisitorResult<lua.Statement> {
-    const classStack = getOrUpdate(classStacks, context, () => []);
-    classStack.push(classDeclaration);
-
     let className: lua.Identifier;
     let classNameText: string;
     if (nameOverride !== undefined) {
@@ -107,6 +108,9 @@ export function transformClassDeclaration(
     // Get type that is extended
     const extendsTypeNode = getExtendedTypeNode(context, classDeclaration);
     const extendsType = getExtendedType(context, classDeclaration);
+
+    const superInfo = getOrUpdate(classSuperInfos, context, () => []);
+    superInfo.push({ className, extendsTypeNode });
 
     if (extendsType) {
         checkForLuaLibType(context, extendsType);
@@ -308,17 +312,19 @@ export function transformClassDeclaration(
         result.push(decorationStatement);
     }
 
-    classStack.pop();
+    superInfo.pop();
 
     return result;
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
-    const classStack = getOrUpdate(classStacks, context, () => []);
-    const classDeclaration = classStack[classStack.length - 1];
-    const typeNode = getExtendedTypeNode(context, classDeclaration);
-    // `undefined` is a TypeScript error
-    const extendsExpression = typeNode?.expression;
+    const superInfos = getOrUpdate(classSuperInfos, context, () => []);
+    const superInfo = superInfos[superInfos.length - 1];
+    if (!superInfo) return lua.createAnonymousIdentifier(expression);
+    const { className, extendsTypeNode } = superInfo;
+
+    // Using `super` without extended type node is a TypeScript error
+    const extendsExpression = extendsTypeNode?.expression;
     let baseClassName: lua.AssignmentLeftHandSideExpression | undefined;
 
     if (extendsExpression && ts.isIdentifier(extendsExpression)) {
@@ -330,14 +336,8 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
     }
 
     if (!baseClassName) {
-        assert(classDeclaration.name);
-
         // Use "className.____super" if the base is not a simple identifier
-        baseClassName = lua.createTableIndexExpression(
-            transformIdentifier(context, classDeclaration.name),
-            lua.createStringLiteral("____super"),
-            expression
-        );
+        baseClassName = lua.createTableIndexExpression(className, lua.createStringLiteral("____super"), expression);
     }
 
     return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));

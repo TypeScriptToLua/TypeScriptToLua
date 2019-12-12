@@ -10,8 +10,6 @@ export class TranspileError extends Error {
 export const InvalidDecoratorContext = (node: ts.Node) =>
     new TranspileError(`Decorator function cannot have 'this: void'.`, node);
 
-export const UndefinedScope = () => new Error("Expected to pop a scope, but found undefined.");
-
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
 

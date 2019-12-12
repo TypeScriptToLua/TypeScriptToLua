@@ -3,7 +3,6 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { getCurrentNamespace } from "../visitors/namespace";
-import { UndefinedScope } from "./errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { findScope, peekScope, ScopeType } from "./scope";
 import { isFirstDeclaration, isFunctionType } from "./typescript";
@@ -193,15 +192,13 @@ export function createLocalOrExportedOrGlobalDeclaration(
                         ? peekScope(context)
                         : findScope(context, ScopeType.Function | ScopeType.File);
 
-                if (scope === undefined) {
-                    throw UndefinedScope();
-                }
+                if (scope) {
+                    if (!scope.variableDeclarations) {
+                        scope.variableDeclarations = [];
+                    }
 
-                if (!scope.variableDeclarations) {
-                    scope.variableDeclarations = [];
+                    scope.variableDeclarations.push(declaration);
                 }
-
-                scope.variableDeclarations.push(declaration);
             }
         } else if (rhs) {
             // global

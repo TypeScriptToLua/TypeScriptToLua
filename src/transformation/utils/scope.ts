@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assert, getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
-import { UndefinedScope } from "./errors";
 import { replaceStatementInParent } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { getFirstDeclarationInFile } from "./typescript";
@@ -65,9 +64,7 @@ export function markSymbolAsReferencedInCurrentScopes(
 export function peekScope(context: TransformationContext): Scope {
     const scopeStack = getScopeStack(context);
     const scope = scopeStack[scopeStack.length - 1];
-    if (!scope) {
-        throw UndefinedScope();
-    }
+    assert(scope);
 
     return scope;
 }
@@ -88,9 +85,7 @@ export function pushScope(context: TransformationContext, scopeType: ScopeType):
 export function popScope(context: TransformationContext): Scope {
     const scopeStack = getScopeStack(context);
     const scope = scopeStack.pop();
-    if (!scope) {
-        throw UndefinedScope();
-    }
+    assert(scope);
 
     return scope;
 }

@@ -3,16 +3,11 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { unsupportedForTarget } from "../utils/diagnostics";
-import { UndefinedScope } from "../utils/errors";
 import { findScope, ScopeType } from "../utils/scope";
 
 export const transformBreakStatement: FunctionVisitor<ts.BreakStatement> = (breakStatement, context) => {
     const breakableScope = findScope(context, ScopeType.Loop | ScopeType.Switch);
-    if (breakableScope === undefined) {
-        throw UndefinedScope();
-    }
-
-    if (breakableScope.type === ScopeType.Switch) {
+    if (breakableScope?.type === ScopeType.Switch) {
         return lua.createGotoStatement(`____switch${breakableScope.id}_end`);
     } else {
         return lua.createBreakStatement(breakStatement);
@@ -25,10 +20,10 @@ export const transformContinueStatement: FunctionVisitor<ts.ContinueStatement> =
     }
 
     const scope = findScope(context, ScopeType.Loop);
-    if (scope === undefined) {
-        throw UndefinedScope();
+
+    if (scope) {
+        scope.loopContinued = true;
     }
 
-    scope.loopContinued = true;
-    return lua.createGotoStatement(`__continue${scope.id}`, statement);
+    return lua.createGotoStatement(`__continue${scope?.id ?? ""}`, statement);
 };

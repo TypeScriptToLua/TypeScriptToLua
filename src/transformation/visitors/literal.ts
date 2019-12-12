@@ -11,7 +11,6 @@ import {
     hasUnsafeIdentifierName,
     hasUnsafeSymbolName,
     isValidLuaIdentifier,
-    luaKeywords,
 } from "../utils/safe-names";
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
@@ -40,7 +39,7 @@ export function createShorthandIdentifier(
             : valueSymbol.name;
     } else {
         const propertyName = propertyIdentifier.text;
-        if (luaKeywords.has(propertyName) || !isValidLuaIdentifier(propertyName)) {
+        if (!isValidLuaIdentifier(propertyName)) {
             // Catch ambient declarations of identifiers with bad names
             throw InvalidAmbientIdentifierName(propertyIdentifier);
         }

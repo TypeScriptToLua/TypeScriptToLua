@@ -7,7 +7,7 @@ import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { isValidLuaIdentifier, luaKeywords } from "../utils/safe-names";
+import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformIdentifier } from "./identifier";
@@ -46,11 +46,7 @@ export function transformContextualCallExpression(
     transformedArguments: lua.Expression[]
 ): lua.Expression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
-    if (
-        ts.isPropertyAccessExpression(left) &&
-        !luaKeywords.has(left.name.text) &&
-        isValidLuaIdentifier(left.name.text)
-    ) {
+    if (ts.isPropertyAccessExpression(left) && isValidLuaIdentifier(left.name.text)) {
         // table:name()
         let table = context.transformExpression(left.expression);
         if (lua.isTableExpression(table)) {

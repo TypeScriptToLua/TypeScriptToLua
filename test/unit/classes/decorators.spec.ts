@@ -1,4 +1,3 @@
-import { InvalidDecoratorContext } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
@@ -105,11 +104,11 @@ test("Class decorators are applied in order and executed in reverse order", () =
 
 test("Throws error if decorator function has void context", () => {
     util.testFunction`
-        function SetBool(this: void, constructor: new (...args: any[]) => {}) {}
+        function decorator(this: void, constructor: new (...args: any[]) => {}) {}
 
-        @SetBool
+        @decorator
         class TestClass {}
-    `.expectToHaveDiagnosticOfError(InvalidDecoratorContext(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("Exported class decorator", () => {

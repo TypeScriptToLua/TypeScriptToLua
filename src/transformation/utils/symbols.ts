@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
-import { ReferencedBeforeDeclaration } from "./errors";
+import { referencedBeforeDeclaration } from "./diagnostics";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
 import { getFirstDeclarationInFile } from "./typescript";
 
@@ -50,7 +50,7 @@ export function trackSymbolReference(
         // Check for reference-before-declaration
         const declaration = getFirstDeclarationInFile(symbol, context.sourceFile);
         if (declaration && identifier.pos < declaration.pos) {
-            throw ReferencedBeforeDeclaration(identifier);
+            context.diagnostics.push(referencedBeforeDeclaration(identifier, identifier.text));
         }
     }
 

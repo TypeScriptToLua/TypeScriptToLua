@@ -1,0 +1,146 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`No Hoisting ("const foo = bar(); export function bar() { return \\"bar\\"; }"): code 1`] = `
+"local ____exports = {}
+local foo = ____exports.bar(nil)
+function ____exports.bar(self)
+    return \\"bar\\"
+end
+return ____exports"
+`;
+
+exports[`No Hoisting ("const foo = bar(); export function bar() { return \\"bar\\"; }"): diagnostics 1`] = `"main.ts(1,13): error TSTL: Identifier 'bar' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("const foo = bar(); function bar() { return \\"bar\\"; }"): code 1`] = `
+"local foo = bar(_G)
+function bar(self)
+    return \\"bar\\"
+end"
+`;
+
+exports[`No Hoisting ("const foo = bar(); function bar() { return \\"bar\\"; }"): diagnostics 1`] = `"main.ts(1,13): error TSTL: Identifier 'bar' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("export const foo = bar(); function bar() { return \\"bar\\"; }"): code 1`] = `
+"local ____exports = {}
+____exports.foo = bar(nil)
+local function bar(self)
+    return \\"bar\\"
+end
+return ____exports"
+`;
+
+exports[`No Hoisting ("export const foo = bar(); function bar() { return \\"bar\\"; }"): diagnostics 1`] = `"main.ts(1,20): error TSTL: Identifier 'bar' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("export namespace O { export function f() { return I.foo; } namespace I { export let foo = \\"foo\\"; } }"): code 1`] = `
+"local ____exports = {}
+____exports.O = {}
+local O = ____exports.O
+do
+    function O.f(self)
+        return I.foo
+    end
+    local I = {}
+    do
+        I.foo = \\"foo\\"
+    end
+end
+return ____exports"
+`;
+
+exports[`No Hoisting ("export namespace O { export function f() { return I.foo; } namespace I { export let foo = \\"foo\\"; } }"): diagnostics 1`] = `"main.ts(1,51): error TSTL: Identifier 'I' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("foo = \\"foo\\"; export var foo;"): code 1`] = `
+"local ____exports = {}
+____exports.foo = \\"foo\\"
+return ____exports"
+`;
+
+exports[`No Hoisting ("foo = \\"foo\\"; export var foo;"): diagnostics 1`] = `"main.ts(1,1): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("foo = \\"foo\\"; var foo;"): code 1`] = `"foo = \\"foo\\""`;
+
+exports[`No Hoisting ("foo = \\"foo\\"; var foo;"): diagnostics 1`] = `"main.ts(1,1): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function bar() { return E.A; } enum E { A = \\"foo\\" }"): code 1`] = `
+"function bar(self)
+    return E.A
+end
+E = {}
+E.A = \\"foo\\""
+`;
+
+exports[`No Hoisting ("function bar() { return E.A; } enum E { A = \\"foo\\" }"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Identifier 'E' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function bar() { return NS.foo; } namespace NS { export let foo = \\"foo\\"; }"): code 1`] = `
+"function bar(self)
+    return NS.foo
+end
+NS = NS or {}
+do
+    NS.foo = \\"foo\\"
+end"
+`;
+
+exports[`No Hoisting ("function bar() { return NS.foo; } namespace NS { export let foo = \\"foo\\"; }"): diagnostics 1`] = `"main.ts(1,25): error TSTL: Identifier 'NS' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function makeFoo() { return new Foo(); } class Foo {}"): code 1`] = `
+"require(\\"lualib_bundle\\");
+function makeFoo(self)
+    return __TS__New(Foo)
+end
+Foo = __TS__Class()
+Foo.name = \\"Foo\\"
+function Foo.prototype.____constructor(self)
+end"
+`;
+
+exports[`No Hoisting ("function makeFoo() { return new Foo(); } class Foo {}"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'Foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function setBar() { const bar = { foo }; } let foo = \\"foo\\";"): code 1`] = `
+"function setBar(self)
+    local bar = {foo = foo}
+end
+local foo = \\"foo\\""
+`;
+
+exports[`No Hoisting ("function setBar() { const bar = { foo }; } let foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,35): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } const foo = \\"foo\\";"): code 1`] = `
+"function setBar(self)
+    local bar = foo
+end
+local foo = \\"foo\\""
+`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } const foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } export const foo = \\"foo\\";"): code 1`] = `
+"local ____exports = {}
+local function setBar(self)
+    local bar = ____exports.foo
+end
+____exports.foo = \\"foo\\"
+return ____exports"
+`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } export const foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } export let foo = \\"foo\\";"): code 1`] = `
+"local ____exports = {}
+local function setBar(self)
+    local bar = ____exports.foo
+end
+____exports.foo = \\"foo\\"
+return ____exports"
+`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } export let foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } let foo = \\"foo\\";"): code 1`] = `
+"function setBar(self)
+    local bar = foo
+end
+local foo = \\"foo\\""
+`;
+
+exports[`No Hoisting ("function setBar() { const bar = foo; } let foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;

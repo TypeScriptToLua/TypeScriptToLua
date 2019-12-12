@@ -41,6 +41,8 @@ export const unsupportedOverloadAssignment = createDiagnosticFactory((name?: str
     );
 });
 
+export const decoratorInvalidContext = createDiagnosticFactory(`Decorator function cannot have 'this: void'.`);
+
 export const annotationInvalidArgumentCount = createDiagnosticFactory(
     (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
 );
@@ -125,4 +127,14 @@ export const forOfUnsupportedObjectDestructuring = createDiagnosticFactory(
 
 export const invalidAmbientIdentifierName = createDiagnosticFactory(
     (text: string) => `Invalid ambient identifier name '${text}'. Ambient identifiers must be valid lua identifiers.`
+);
+
+export const referencedBeforeDeclaration = createDiagnosticFactory(
+    (text: string) =>
+        `Identifier '${text}' was referenced before it was declared. The declaration ` +
+        "must be moved before the identifier's use, or hoisting must be enabled."
+);
+
+export const unresolvableRequirePath = createDiagnosticFactory(
+    (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
 );

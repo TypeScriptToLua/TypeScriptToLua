@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { ReferencedBeforeDeclaration } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test("Var Hoisting", () => {
@@ -219,27 +217,24 @@ test("Enum Hoisting", () => {
 });
 
 test.each([
-    { code: `foo = "foo"; var foo;`, identifier: "foo" },
-    { code: `foo = "foo"; export var foo;`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } let foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } const foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } export let foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } export const foo = "foo";`, identifier: "foo" },
-    { code: `const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `export const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `const foo = bar(); export function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, identifier: "NS" },
-    {
-        code: `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
-        identifier: "I",
-    },
-    { code: `function makeFoo() { return new Foo(); } class Foo {}`, identifier: "Foo" },
-    { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
-    { code: `function setBar() { const bar = { foo }; } let foo = "foo";`, identifier: "foo" },
-])("No Hoisting (%p)", ({ code, identifier }) => {
-    expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
-        ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
-    );
+    `foo = "foo"; var foo;`,
+    `foo = "foo"; export var foo;`,
+    `function setBar() { const bar = foo; } let foo = "foo";`,
+    `function setBar() { const bar = foo; } const foo = "foo";`,
+    `function setBar() { const bar = foo; } export let foo = "foo";`,
+    `function setBar() { const bar = foo; } export const foo = "foo";`,
+    `const foo = bar(); function bar() { return "bar"; }`,
+    `export const foo = bar(); function bar() { return "bar"; }`,
+    `const foo = bar(); export function bar() { return "bar"; }`,
+    `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`,
+    `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
+    `function makeFoo() { return new Foo(); } class Foo {}`,
+    `function bar() { return E.A; } enum E { A = "foo" }`,
+    `function setBar() { const bar = { foo }; } let foo = "foo";`,
+])("No Hoisting (%p)", (code) => {
+    util.testModule(code)
+        .setOptions({ noHoisting: true })
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test("Import hoisting (named)", () => {

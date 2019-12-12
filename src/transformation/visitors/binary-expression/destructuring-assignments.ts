@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assertNever, flatMap } from "../../../utils";
+import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
@@ -56,7 +56,7 @@ function transformArrayLiteralAssignmentPattern(
     node: ts.ArrayLiteralExpression,
     root: lua.Expression
 ): lua.Statement[] {
-    return flatMap(node.elements, (element, index) => {
+    return node.elements.flatMap((element, index) => {
         const indexedRoot = lua.createTableIndexExpression(root, lua.createNumericLiteral(index + 1), element);
 
         switch (element.kind) {

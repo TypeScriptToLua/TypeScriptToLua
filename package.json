@@ -36,7 +36,7 @@
         "tstl": "./dist/tstl.js"
     },
     "engines": {
-        "node": ">=8.5.0"
+        "node": ">=12.13.0"
     },
     "dependencies": {
         "resolve": "^1.13.1",

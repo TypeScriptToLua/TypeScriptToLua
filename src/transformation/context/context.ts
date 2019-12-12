@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { flatMap } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { isFileModule } from "../utils/typescript";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
@@ -82,14 +81,14 @@ export class TransformationContext {
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
-            ? flatMap(node, n => this.transformStatements(n))
+            ? node.flatMap(n => this.transformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
               (this.transformNode(node as StatementLikeNode) as lua.Statement[]);
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
-            ? flatMap(node, n => this.superTransformStatements(n))
+            ? node.flatMap(n => this.superTransformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
               (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
     }

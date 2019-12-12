@@ -60,7 +60,7 @@ export function testEachVersion<T extends TestBuilder>(
         test(testName, () => {
             const builder = common();
             builder.setOptions({ luaTarget: version });
-            if (typeof specialBuilder === 'function') {
+            if (typeof specialBuilder === "function") {
                 specialBuilder(builder);
             }
         });
@@ -151,7 +151,6 @@ export class ExecutionError extends Error {
 
 export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
-export type DiagnosticMatcher = (diagnostic: ts.Diagnostic) => boolean;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}
 
@@ -339,47 +338,21 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveDiagnostic(matcher: DiagnosticMatcher): this {
-        expect(this.getLuaDiagnostics().find(matcher)).toBeDefined();
-        return this;
-    }
-
-    public expectToHaveExactDiagnostic(diagnostic: ts.Diagnostic): this {
-        expect(this.getLuaDiagnostics()).toContainEqual(diagnostic);
-        return this;
-    }
+    private diagnosticsChecked = false;
 
     public expectToHaveDiagnostics(): this {
+        if (this.diagnosticsChecked) return this;
+        this.diagnosticsChecked = true;
+
         expect(this.getLuaDiagnostics()).toHaveDiagnostics();
         return this;
     }
 
-    public expectToHaveDiagnosticOfError(error: Error): this {
-        this.expectToHaveDiagnostics();
-        expect(this.getLuaDiagnostics()).toHaveLength(1);
-        const firstDiagnostic = this.getLuaDiagnostics()[0];
-        expect(firstDiagnostic).toMatchObject({ messageText: error.message });
-        return this;
-    }
-
     public expectToHaveNoDiagnostics(): this {
+        if (this.diagnosticsChecked) return this;
+        this.diagnosticsChecked = true;
+
         expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
-        return this;
-    }
-
-    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
-        this.expectToHaveDiagnostics();
-
-        const diagnosticMessages = ts.formatDiagnostics(
-            this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
-            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
-        );
-
-        expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
-        if (!diagnosticsOnly) {
-            expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
-        }
-
         return this;
     }
 
@@ -416,9 +389,19 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectResultToMatchSnapshot(): this {
-        this.expectToHaveNoDiagnostics();
-        expect(this.getLuaExecutionResult()).toMatchSnapshot();
+    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
+        this.expectToHaveDiagnostics();
+
+        const diagnosticMessages = ts.formatDiagnostics(
+            this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+        );
+
+        expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
+        if (!diagnosticsOnly) {
+            expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
+        }
+
         return this;
     }
 

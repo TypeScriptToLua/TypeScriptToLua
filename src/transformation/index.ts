@@ -3,19 +3,8 @@ import * as lua from "../LuaAST";
 import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./context";
-import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
 import { standardVisitors } from "./visitors";
-
-const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
-    file: error.node.getSourceFile(),
-    start: error.node.getStart(),
-    length: error.node.getWidth(),
-    category: ts.DiagnosticCategory.Error,
-    code: 0,
-    source: "typescript-to-lua",
-    messageText: error.message,
-});
 
 export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     const visitorMap: VisitorMap = new Map();
@@ -52,27 +41,11 @@ export function transformSourceFile(
     visitorMap: VisitorMap
 ): TransformSourceFileResult {
     const context = new TransformationContext(program, sourceFile, visitorMap);
+    const [luaAst] = context.transformNode(sourceFile) as [lua.Block];
 
-    // TODO: Remove once we'll get rid of all `TranspileError`s
-    try {
-        const [luaAst] = context.transformNode(sourceFile) as [lua.Block];
-
-        return {
-            luaAst,
-            luaLibFeatures: getUsedLuaLibFeatures(context),
-            diagnostics: context.diagnostics,
-        };
-    } catch (error) {
-        if (!(error instanceof TranspileError)) throw error;
-
-        return {
-            luaAst: lua.createBlock([
-                lua.createExpressionStatement(
-                    lua.createCallExpression(lua.createIdentifier("error"), [lua.createStringLiteral(error.message)])
-                ),
-            ]),
-            luaLibFeatures: new Set(),
-            diagnostics: [transpileErrorDiagnostic(error)],
-        };
-    }
+    return {
+        luaAst,
+        luaLibFeatures: getUsedLuaLibFeatures(context),
+        diagnostics: context.diagnostics,
+    };
 }

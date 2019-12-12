@@ -1,8 +1,8 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
-import { InvalidAmbientIdentifierName } from "./errors";
-import { isAmbientNode } from "./typescript";
+import { invalidAmbientIdentifierName } from "./diagnostics";
 import { isSymbolExported } from "./export";
+import { isAmbientNode } from "./typescript";
 
 export const isValidLuaIdentifier = (name: string) => !luaKeywords.has(name) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
 export const luaKeywords: ReadonlySet<string> = new Set([
@@ -61,23 +61,31 @@ export function hasUnsafeSymbolName(
 ): boolean {
     const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
 
+    // Catch ambient declarations of identifiers with bad names
     if (!isValidLuaIdentifier(symbol.name) && isAmbient) {
-        // Catch ambient declarations of identifiers with bad names
-        throw InvalidAmbientIdentifierName(tsOriginal);
+        context.diagnostics.push(invalidAmbientIdentifierName(tsOriginal, symbol.name));
+        return true;
     }
 
     // only unsafe when non-ambient and not exported
     return isUnsafeName(symbol.name) && !isAmbient && !isSymbolExported(context, symbol);
 }
 
-export function hasUnsafeIdentifierName(context: TransformationContext, identifier: ts.Identifier): boolean {
-    const symbol = context.checker.getSymbolAtLocation(identifier);
-    if (symbol) {
-        return hasUnsafeSymbolName(context, symbol, identifier);
+export function hasUnsafeIdentifierName(
+    context: TransformationContext,
+    identifier: ts.Identifier,
+    checkSymbol = true
+): boolean {
+    if (checkSymbol) {
+        const symbol = context.checker.getSymbolAtLocation(identifier);
+        if (symbol) {
+            return hasUnsafeSymbolName(context, symbol, identifier);
+        }
     }
 
     if (!isValidLuaIdentifier(identifier.text)) {
-        throw InvalidAmbientIdentifierName(identifier);
+        context.diagnostics.push(invalidAmbientIdentifierName(identifier, identifier.text));
+        return true;
     }
 
     return false;

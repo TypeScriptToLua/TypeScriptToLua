@@ -3,15 +3,9 @@ import * as lua from "../../LuaAST";
 import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
 import { unsupportedAccessorInObjectLiteral } from "../utils/diagnostics";
-import { InvalidAmbientIdentifierName } from "../utils/errors";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import {
-    createSafeName,
-    hasUnsafeIdentifierName,
-    hasUnsafeSymbolName,
-    isValidLuaIdentifier,
-} from "../utils/safe-names";
+import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "../utils/safe-names";
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
@@ -32,20 +26,13 @@ export function createShorthandIdentifier(
     valueSymbol: ts.Symbol | undefined,
     propertyIdentifier: ts.Identifier
 ): lua.Expression {
-    let name: string;
-    if (valueSymbol !== undefined) {
-        name = hasUnsafeSymbolName(context, valueSymbol, propertyIdentifier)
-            ? createSafeName(valueSymbol.name)
-            : valueSymbol.name;
-    } else {
-        const propertyName = propertyIdentifier.text;
-        if (!isValidLuaIdentifier(propertyName)) {
-            // Catch ambient declarations of identifiers with bad names
-            throw InvalidAmbientIdentifierName(propertyIdentifier);
-        }
+    const propertyName = propertyIdentifier.text;
 
-        name = hasUnsafeIdentifierName(context, propertyIdentifier) ? createSafeName(propertyName) : propertyName;
-    }
+    const isUnsafeName = valueSymbol
+        ? hasUnsafeSymbolName(context, valueSymbol, propertyIdentifier)
+        : hasUnsafeIdentifierName(context, propertyIdentifier, false);
+
+    const name = isUnsafeName ? createSafeName(propertyName) : propertyName;
 
     let identifier = context.transformExpression(ts.createIdentifier(name));
     lua.setNodeOriginal(identifier, propertyIdentifier);

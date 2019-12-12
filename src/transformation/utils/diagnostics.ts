@@ -122,3 +122,7 @@ export const unsupportedProperty = createDiagnosticFactory(
 export const forOfUnsupportedObjectDestructuring = createDiagnosticFactory(
     `Unsupported object destructuring in for...of statement.`
 );
+
+export const invalidAmbientIdentifierName = createDiagnosticFactory(
+    (text: string) => `Invalid ambient identifier name '${text}'. Ambient identifiers must be valid lua identifiers.`
+);

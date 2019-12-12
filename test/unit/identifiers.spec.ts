@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { InvalidAmbientIdentifierName } from "../../src/transformation/utils/errors";
 import { luaKeywords } from "../../src/transformation/utils/safe-names";
 import * as util from "../util";
 
@@ -83,7 +81,7 @@ test.each([
         local;
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("local")));
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([
@@ -100,7 +98,7 @@ test.each([
     util.testModule`
         declare ${statement}
         $$$;
-    `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("$$$")));
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -109,7 +107,7 @@ test.each(validTsInvalidLuaNames)(
         util.testModule`
             declare var ${name}: any;
             const foo = { ${name} };
-        `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        `.expectDiagnosticsToMatchSnapshot();
     }
 );
 
@@ -118,7 +116,7 @@ test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua ide
         const foo = ${name};
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -128,7 +126,7 @@ test.each(validTsInvalidLuaNames)(
             const foo = { ${name} };
         `
             .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+            .expectDiagnosticsToMatchSnapshot();
     }
 );
 

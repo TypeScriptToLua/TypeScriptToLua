@@ -21,9 +21,3 @@ export const ReferencedBeforeDeclaration = (node: ts.Identifier) =>
             "must be moved before the identifier's use, or hoisting must be enabled.",
         node
     );
-
-export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
-    new TranspileError(
-        `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,
-        node
-    );

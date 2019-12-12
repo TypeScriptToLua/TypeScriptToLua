@@ -160,14 +160,14 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("basic", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
             mymap.set("b", 6);
             mymap.set(1, 4);
             mymap.set("a", 5);
-            
+
             mymap.delete("b");
 
             return [...mymap.${iterationMethod}()];
@@ -177,11 +177,11 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing last", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
-            
+
             mymap.delete(4);
 
             return [...mymap.${iterationMethod}()];
@@ -191,11 +191,11 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing first", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
             mymap.set(4, 3);
-            
+
             mymap.delete("x");
 
             return [...mymap.${iterationMethod}()];
@@ -205,10 +205,10 @@ describe.each(iterationMethods)("map.%s() preserves insertion order", iterationM
     test("after removing all", () => {
         util.testFunction`
             const mymap = new Map();
-                
+
             mymap.set("x", 1);
             mymap.set("a", 2);
-            
+
             mymap.delete("a");
             mymap.delete("x");
 

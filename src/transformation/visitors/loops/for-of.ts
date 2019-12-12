@@ -35,11 +35,17 @@ function transformForOfInitializer(
             return;
         }
 
-        // we can safely assume that for vars are not exported and therefore VariableDeclarationStatement's
-        const assignmentStatement = cast(
-            transformVariableDeclaration(context, initializer.declarations[0])[0],
-            lua.isVariableDeclarationStatement
-        );
+        // TODO: It's not correct without https://github.com/TypeScriptToLua/TypeScriptToLua/pull/762
+        // // we can safely assume that for vars are not exported and therefore VariableDeclarationStatement's
+        // const assignmentStatement = cast(
+        //     transformVariableDeclaration(context, initializer.declarations[0])[0],
+        //     lua.isVariableDeclarationStatement
+        // );
+
+        const assignmentStatement = transformVariableDeclaration(context, initializer.declarations[0])[0] as
+            | lua.VariableDeclarationStatement
+            | undefined;
+        assert(assignmentStatement);
 
         return lua.createVariableDeclarationStatement(assignmentStatement.left, expression);
     } else {

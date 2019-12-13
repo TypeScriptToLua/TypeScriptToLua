@@ -34,12 +34,6 @@ export function transformMathCall(context: TransformationContext, node: Property
 
     const expressionName = expression.name.text;
 
-    if (context.options.luaTarget === LuaTarget.Lua53 && expressionName === "atan2") {
-        const math = lua.createIdentifier("math");
-        const method = lua.createStringLiteral("atan");
-        return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
-    }
-
     switch (expressionName) {
         // (math.log(x) / Math.LNe)
         case "log10":
@@ -74,7 +68,13 @@ export function transformMathCall(context: TransformationContext, node: Property
         case "acos":
         case "asin":
         case "atan":
-        case "atan2":
+        case "atan2": {
+            if (expressionName === "atan2" && context.options.luaTarget === LuaTarget.Lua53) {
+                const math = lua.createIdentifier("math");
+                const method = lua.createStringLiteral("atan");
+                return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
+            }
+        }
         case "ceil":
         case "cos":
         case "exp":

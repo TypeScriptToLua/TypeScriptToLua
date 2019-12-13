@@ -49,7 +49,7 @@ const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, ts.Binar
 };
 
 export const isCompoundAssignmentToken = (token: ts.BinaryOperator): token is ts.CompoundAssignmentOperator =>
-    (compoundToAssignmentTokens as any)[token] !== undefined;
+    token in compoundToAssignmentTokens;
 
 export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperator) =>
     compoundToAssignmentTokens[token];

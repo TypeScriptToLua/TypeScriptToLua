@@ -64,12 +64,15 @@ test.each([
     util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();
 });
 
-test.each([["", ""], ["hello", "test"], ["hello", "test", "bye"], ["hello", 42], [42, "hello"]])(
-    "string.concat[+] (%p)",
-    (...elements) => {
-        util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
-    }
-);
+test.each([
+    ["", ""],
+    ["hello", "test"],
+    ["hello", "test", "bye"],
+    ["hello", 42],
+    [42, "hello"],
+])("string.concat[+] (%p)", (...elements) => {
+    util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
+});
 
 test.each([
     { str: "", args: ["", ""] },
@@ -99,12 +102,12 @@ test.each([
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, ${offset})`.expectToMatchJsResult();
 });
 
-test.each([{ inp: "hello test", searchValue: "t", x: 4, y: 3 }, { inp: "hello test", searchValue: "h", x: 3, y: 4 }])(
-    "string.indexOf with offset expression (%p)",
-    ({ inp, searchValue, x, y }) => {
-        util.testExpressionTemplate`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.expectToMatchJsResult();
-    }
-);
+test.each([
+    { inp: "hello test", searchValue: "t", x: 4, y: 3 },
+    { inp: "hello test", searchValue: "h", x: 3, y: 4 },
+])("string.indexOf with offset expression (%p)", ({ inp, searchValue, x, y }) => {
+    util.testExpressionTemplate`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.expectToMatchJsResult();
+});
 
 test.each([
     { inp: "hello test", args: [] },
@@ -125,13 +128,13 @@ test.each([
     util.testExpression`"${inp}".substring(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
-test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 5 }])(
-    "string.substring with expression (%p)",
-    ({ inp, start, ignored, end }) => {
-        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
-        util.testExpression`"${inp}".substring(${paramStr})`.expectToMatchJsResult();
-    }
-);
+test.each([
+    { inp: "hello test", start: 1, ignored: 0 },
+    { inp: "hello test", start: 3, ignored: 0, end: 5 },
+])("string.substring with expression (%p)", ({ inp, start, ignored, end }) => {
+    const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
+    util.testExpression`"${inp}".substring(${paramStr})`.expectToMatchJsResult();
+});
 
 test.each([
     { inp: "hello test", args: [0] },
@@ -142,15 +145,15 @@ test.each([
     util.testExpression`"${inp}".substr(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
-test.each([{ inp: "hello test", start: 1, ignored: 0 }, { inp: "hello test", start: 3, ignored: 0, end: 2 }])(
-    "string.substr with expression (%p)",
-    ({ inp, start, ignored, end }) => {
-        const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
-        const result = util.transpileAndExecute(`return "${inp}".substr(${paramStr})`);
+test.each([
+    { inp: "hello test", start: 1, ignored: 0 },
+    { inp: "hello test", start: 3, ignored: 0, end: 2 },
+])("string.substr with expression (%p)", ({ inp, start, ignored, end }) => {
+    const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
+    const result = util.transpileAndExecute(`return "${inp}".substr(${paramStr})`);
 
-        expect(result).toBe(inp.substr(start, end));
-    }
-);
+    expect(result).toBe(inp.substr(start, end));
+});
 
 test.each(["", "h", "hello"])("string.length (%p)", input => {
     util.testExpressionTemplate`${input}.length`.expectToMatchJsResult();
@@ -185,12 +188,13 @@ test.each([
     util.testExpressionTemplate`${inp}.charAt(${index})`.expectToMatchJsResult();
 });
 
-test.each([{ inp: "hello test", index: 1 }, { inp: "hello test", index: 2 }, { inp: "hello test", index: 3 }])(
-    "string.charCodeAt (%p)",
-    ({ inp, index }) => {
-        util.testExpressionTemplate`${inp}.charCodeAt(${index})`.expectToMatchJsResult();
-    }
-);
+test.each([
+    { inp: "hello test", index: 1 },
+    { inp: "hello test", index: 2 },
+    { inp: "hello test", index: 3 },
+])("string.charCodeAt (%p)", ({ inp, index }) => {
+    util.testExpressionTemplate`${inp}.charCodeAt(${index})`.expectToMatchJsResult();
+});
 
 test.each([
     { inp: "hello test", index: 1, ignored: 0 },
@@ -260,4 +264,26 @@ test.each([
             return generic("string");
         `;
     expect(util.transpileAndExecute(code)).toBe(6);
+});
+
+const trimTestCases = [
+    "",
+    " ",
+    "\t",
+    "\t \t",
+    " foo ",
+    "\tfoo\t",
+    "\ffoo\f",
+    "\vfoo\v",
+    "\uFEFFFoo\uFEFF",
+    "\xA0Foo\xA0",
+    " \t foo \t ",
+    " foo    bar ",
+    "\r\nfoo\n\r\n",
+    "\r\nfoo\nbar\n\r\n",
+];
+describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", trim => {
+    test.each(trimTestCases)("matches JS result (%p)", testString => {
+        util.testExpression`${util.formatCode(testString)}.${trim}()`.expectToMatchJsResult();
+    });
 });

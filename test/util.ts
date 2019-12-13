@@ -476,9 +476,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
             substitutions = substitutions.map(s => formatCode(s));
         }
 
-        tsCode = template
-            .map((chunk, index) => (substitutions[index - 1] !== undefined ? substitutions[index - 1] : "") + chunk)
-            .join("");
+        tsCode = template.map((chunk, index) => (substitutions[index - 1] ?? "") + chunk).join("");
     }
 
     return new builder(tsCode);

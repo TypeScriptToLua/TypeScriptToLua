@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assertNever, flatMap } from "../../utils";
+import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
@@ -61,7 +61,7 @@ export function transformBindingPattern(
         // The identifier of the new variable
         const variableName = transformIdentifier(context, element.name as ts.Identifier);
         // The field to extract
-        const propertyName = transformPropertyName(context, element.propertyName || element.name);
+        const propertyName = transformPropertyName(context, element.propertyName ?? element.name);
 
         let expression: lua.Expression;
         if (element.dotDotDotToken) {
@@ -73,8 +73,8 @@ export function transformBindingPattern(
                     lua.createTableFieldExpression(
                         lua.createBooleanLiteral(true),
                         lua.createStringLiteral(
-                            ((e.propertyName || e.name) as ts.Identifier).text,
-                            e.propertyName || e.name
+                            ((e.propertyName ?? e.name) as ts.Identifier).text,
+                            e.propertyName ?? e.name
                         )
                     )
                 );
@@ -223,4 +223,4 @@ export function transformVariableDeclaration(
 }
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) =>
-    flatMap(node.declarationList.declarations, declaration => transformVariableDeclaration(context, declaration));
+    node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));

@@ -3,7 +3,7 @@ import * as util from "./util";
 
 declare global {
     namespace jest {
-        interface Matchers<R> {
+        interface Matchers<R, T> {
             toThrowExactError(error: Error): R;
             toHaveDiagnostics(): R;
         }

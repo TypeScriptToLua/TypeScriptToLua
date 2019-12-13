@@ -18,7 +18,7 @@ export function importLuaLibFeature(context: TransformationContext, feature: Lua
 export function transformLuaLibFunction(
     context: TransformationContext,
     feature: LuaLibFeature,
-    tsParent?: ts.Expression,
+    tsParent?: ts.Node,
     ...params: lua.Expression[]
 ): lua.CallExpression {
     importLuaLibFeature(context, feature);

@@ -1,5 +1,5 @@
 import * as path from "path";
-import { EmitHost } from "./Transpile";
+import { EmitHost } from "./transpilation";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -24,6 +24,7 @@ export enum LuaLibFeature {
     ArrayFlat = "ArrayFlat",
     ArrayFlatMap = "ArrayFlatMap",
     ArraySetLength = "ArraySetLength",
+    Class = "Class",
     ClassIndex = "ClassIndex",
     ClassNewIndex = "ClassNewIndex",
     Decorate = "Decorate",
@@ -36,6 +37,7 @@ export enum LuaLibFeature {
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
     Map = "Map",
+    New = "New",
     NewIndex = "NewIndex",
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",
@@ -59,6 +61,9 @@ export enum LuaLibFeature {
     StringReplace = "StringReplace",
     StringSplit = "StringSplit",
     StringStartsWith = "StringStartsWith",
+    StringTrim = "StringTrim",
+    StringTrimEnd = "StringTrimEnd",
+    StringTrimStart = "StringTrimStart",
     Symbol = "Symbol",
     SymbolRegistry = "SymbolRegistry",
     TypeOf = "TypeOf",
@@ -67,7 +72,7 @@ export enum LuaLibFeature {
 const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
-    Error: [LuaLibFeature.FunctionCall],
+    Error: [LuaLibFeature.New, LuaLibFeature.FunctionCall],
     InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
     ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],
@@ -93,12 +98,12 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
             dependencies.forEach(load);
         }
 
-        const featureFile = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-        const luaLibFeature = emitHost.readFile(featureFile);
+        const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
+        const luaLibFeature = emitHost.readFile(featurePath);
         if (luaLibFeature !== undefined) {
             result += luaLibFeature + "\n";
         } else {
-            throw new Error(`Could not read lualib feature ../dist/lualib/${feature}.lua`);
+            throw new Error(`Could not load lualib feature from '${featurePath}'`);
         }
     }
 
@@ -107,4 +112,19 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
     }
 
     return result;
+}
+
+let luaLibBundleContent: string;
+export function getLuaLibBundle(emitHost: EmitHost): string {
+    if (luaLibBundleContent === undefined) {
+        const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua");
+        const result = emitHost.readFile(lualibPath);
+        if (result !== undefined) {
+            luaLibBundleContent = result;
+        } else {
+            throw new Error(`Could not load lualib bundle from '${lualibPath}'`);
+        }
+    }
+
+    return luaLibBundleContent;
 }

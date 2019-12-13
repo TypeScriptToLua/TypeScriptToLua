@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { Printer } from "./LuaPrinter";
-import { Visitors } from "./transformation/context";
+import { Printer } from "../LuaPrinter";
+import { Visitors } from "../transformation/context";
 
 export interface Plugin {
     /**

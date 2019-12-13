@@ -22,13 +22,9 @@ test.each([{}, { abc: "def" }, { abc: 3, def: "xyz" }])("Object.values (%p)", ob
     util.testExpressionTemplate`Object.values(${obj})`.expectToMatchJsResult();
 });
 
-// TODO: Jest 25: as const
-test.each<[string, object]>([
-    ["[]", []],
-    ['[["a", 1], ["b", 2]]', { a: 1, b: 2 }],
-    ['[["a", 1], ["a", 2]]', { a: 2 }],
-    ['new Map([["foo", "bar"]])', { foo: "bar" }],
-])("Object.fromEntries(%s)", (entries, expected) => {
-    // TODO: Node 12
-    util.testExpression`Object.fromEntries(${entries})`.expectToEqual(expected);
-});
+test.each(["[]", '[["a", 1], ["b", 2]]', '[["a", 1], ["a", 2]]', 'new Map([["foo", "bar"]])'])(
+    "Object.fromEntries(%s)",
+    entries => {
+        util.testExpression`Object.fromEntries(${entries})`.expectToMatchJsResult();
+    }
+);

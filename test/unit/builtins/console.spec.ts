@@ -15,6 +15,42 @@ test.each([
 });
 
 test.each([
+    "console.info()",
+    'console.info("Hello")',
+    'console.info("Hello %s", "there")',
+    'console.info("Hello %%s", "there")',
+    'console.info("Hello", "There")',
+])("console.info (%p)", code => {
+    util.testFunction(code)
+        .setOptions(compilerOptions)
+        .expectLuaToMatchSnapshot();
+});
+
+test.each([
+    "console.error()",
+    'console.error("Hello")',
+    'console.error("Hello %s", "there")',
+    'console.error("Hello %%s", "there")',
+    'console.error("Hello", "There")',
+])("console.error (%p)", code => {
+    util.testFunction(code)
+        .setOptions(compilerOptions)
+        .expectLuaToMatchSnapshot();
+});
+
+test.each([
+    "console.warn()",
+    'console.warn("Hello")',
+    'console.warn("Hello %s", "there")',
+    'console.warn("Hello %%s", "there")',
+    'console.warn("Hello", "There")',
+])("console.warn (%p)", code => {
+    util.testFunction(code)
+        .setOptions(compilerOptions)
+        .expectLuaToMatchSnapshot();
+});
+
+test.each([
     "console.trace()",
     'console.trace("message")',
     'console.trace("Hello %s", "there")',

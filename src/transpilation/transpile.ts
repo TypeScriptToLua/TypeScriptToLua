@@ -1,13 +1,13 @@
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
+import { CompilerOptions, validateOptions } from "../CompilerOptions";
+import { Block } from "../LuaAST";
+import { createPrinter } from "../LuaPrinter";
+import { createVisitorMap, transformSourceFile } from "../transformation";
+import { isNonNull } from "../utils";
 import { bundleTranspiledFiles } from "./bundle";
-import { CompilerOptions, validateOptions } from "./CompilerOptions";
-import { Block } from "./LuaAST";
-import { createPrinter } from "./LuaPrinter";
 import { getPlugins, Plugin } from "./plugins";
-import { createVisitorMap, transformSourceFile } from "./transformation";
-import { getCustomTransformers } from "./TSTransformers";
-import { isNonNull } from "./utils";
+import { getCustomTransformers } from "./transformers";
 
 export interface TranspiledFile {
     fileName: string;

@@ -1,4 +1,3 @@
-import { flatMap } from "../../../src/utils";
 import * as util from "../../util";
 
 test.each([
@@ -51,7 +50,7 @@ describe("Number", () => {
 
 const toStringRadixes = [undefined, 10, 2, 8, 9, 16, 17, 36, 36.9];
 const toStringValues = [-1, 0, 1, 1.5, 1024, 1.2];
-const toStringPairs = flatMap(toStringValues, value => toStringRadixes.map(radix => [value, radix] as const));
+const toStringPairs = toStringValues.flatMap(value => toStringRadixes.map(radix => [value, radix] as const));
 
 test.each(toStringPairs)("(%p).toString(%p)", (value, radix) => {
     util.testExpressionTemplate`(${value}).toString(${radix})`.expectToMatchJsResult();

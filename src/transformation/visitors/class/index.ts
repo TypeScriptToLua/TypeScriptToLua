@@ -5,7 +5,6 @@ import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
     ForbiddenLuaTableNonDeclaration,
-    ForbiddenStaticClassPropertyName,
     InvalidExportsExtension,
     InvalidExtendsExtension,
     InvalidExtendsLuaTable,
@@ -80,16 +79,13 @@ export function transformClassDeclaration(
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
         classNameText = classDeclaration.name.text;
-    } else {
-        const isDefaultExport = hasDefaultExportModifier(classDeclaration);
-        if (isDefaultExport) {
-            const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
-            const right = transformClassAsExpression(classDeclaration, context, true);
+    } else if (hasDefaultExportModifier(classDeclaration)) {
+        const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
+        const right = transformClassAsExpression(classDeclaration, context, true);
 
-            return lua.createAssignmentStatement(left, right, classDeclaration);
-        } else {
-            throw MissingClassName(classDeclaration);
-        }
+        return lua.createAssignmentStatement(left, right, classDeclaration);
+    } else {
+        throw MissingClassName(classDeclaration);
     }
 
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
@@ -134,14 +130,6 @@ export function transformClassDeclaration(
     // LuaTable classes must be ambient
     if (annotations.has(AnnotationKind.LuaTable) && !isAmbientNode(classDeclaration)) {
         throw ForbiddenLuaTableNonDeclaration(classDeclaration);
-    }
-
-    for (const member of classDeclaration.members) {
-        if (member.name && (ts.isStringLiteral(member.name) || ts.isIdentifier(member.name))) {
-            if (isStaticNode(member) && member.name.text === "new") {
-                throw ForbiddenStaticClassPropertyName(member, member.name.text);
-            }
-        }
     }
 
     // Get all properties with value

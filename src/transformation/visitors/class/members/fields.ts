@@ -40,7 +40,7 @@ export function transformClassInstanceFields(
                 getterName,
                 lua.createNilLiteral(),
             ]),
-            classDeclaration.members.find(ts.isConstructorDeclaration) || classDeclaration
+            classDeclaration.members.find(ts.isConstructorDeclaration) ?? classDeclaration
         );
         statements.push(resetGetter);
     }

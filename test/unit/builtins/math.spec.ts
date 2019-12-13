@@ -1,5 +1,5 @@
+import * as tstl from "../../../src";
 import * as util from "../../util";
-import { LuaTarget } from "../../../src";
 
 test.each([
     "Math.cos()",
@@ -25,10 +25,12 @@ test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math.%s"
     });
 });
 
-test.each([LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.Lua53, LuaTarget.LuaJIT])("Math.atan2 (%p)", luaTarget => {
-    util.testExpression`
-        Math.atan2(4, 5);
-    `
-        .setOptions({ luaTarget })
-        .expectLuaToMatchSnapshot();
+const expectMathAtan2: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch("math.atan2");
+const expectMathAtan: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("math.atan");
+
+util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, {
+    [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectMathAtan2),
+    [tstl.LuaTarget.Lua51]: builder => builder.tap(expectMathAtan2),
+    [tstl.LuaTarget.Lua52]: builder => builder.tap(expectMathAtan2),
+    [tstl.LuaTarget.Lua53]: builder => builder.tap(expectMathAtan),
 });

@@ -1,11 +1,12 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions } from "./CompilerOptions";
+import { CompilerOptions } from "../CompilerOptions";
+import { getLuaLibBundle } from "../LuaLib";
+import { escapeString } from "../LuaPrinter";
+import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { escapeString } from "./LuaPrinter";
-import { EmitHost, TranspiledFile } from "./Transpile";
-import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "./utils";
+import { EmitHost, TranspiledFile } from "./transpile";
 
 const createModulePath = (baseDir: string, pathToResolve: string) =>
     escapeString(formatPathToLuaPath(trimExtension(path.relative(baseDir, pathToResolve))));
@@ -41,10 +42,9 @@ export function bundleTranspiledFiles(
     );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
-    const lualibRequired = transpiledFiles.some(f => f.lua && f.lua.includes(`require("lualib_bundle")`));
+    const lualibRequired = transpiledFiles.some(f => f.lua?.includes(`require("lualib_bundle")`));
     if (lualibRequired) {
-        const lualibBundle = emitHost.readFile(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"));
-        moduleTableEntries.push(`["lualib_bundle"] = function() ${lualibBundle} end,\n`);
+        moduleTableEntries.push(`["lualib_bundle"] = function() ${getLuaLibBundle(emitHost)} end,\n`);
     }
 
     // Create ____modules table containing all entries from moduleTableEntries

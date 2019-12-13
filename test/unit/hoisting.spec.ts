@@ -116,10 +116,11 @@ test.each([
     expect(result).toBe(expectResult);
 });
 
-test.each([{ initializer: "", expectResult: "foofoo" }, { initializer: ' = "bar"', expectResult: "barbar" }])(
-    "Var hoisting from child scope (%p)",
-    ({ initializer, expectResult }) => {
-        const code = `
+test.each([
+    { initializer: "", expectResult: "foofoo" },
+    { initializer: ' = "bar"', expectResult: "barbar" },
+])("Var hoisting from child scope (%p)", ({ initializer, expectResult }) => {
+    const code = `
         foo = "foo";
         let result: string;
         if (true) {
@@ -128,10 +129,9 @@ test.each([{ initializer: "", expectResult: "foofoo" }, { initializer: ' = "bar"
         }
         return foo + result;
     `;
-        const result = util.transpileAndExecute(code);
-        expect(result).toBe(expectResult);
-    }
-);
+    const result = util.transpileAndExecute(code);
+    expect(result).toBe(expectResult);
+});
 
 test("Hoisting due to reference from hoisted function", () => {
     const code = `

@@ -3,7 +3,7 @@ import { TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 
 export function isStaticNode(node: ts.Node): boolean {
-    return node.modifiers !== undefined && node.modifiers.some(m => m.kind === ts.SyntaxKind.StaticKeyword);
+    return (node.modifiers ?? []).some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
 export function getExtendedTypeNode(

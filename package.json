@@ -36,27 +36,27 @@
         "tstl": "./dist/tstl.js"
     },
     "engines": {
-        "node": ">=8.5.0"
+        "node": ">=12.13.0"
     },
     "dependencies": {
-        "resolve": "^1.11.0",
+        "resolve": "^1.13.1",
         "source-map": "^0.7.3",
-        "typescript": "^3.6.2"
+        "typescript": "^3.7.3"
     },
     "devDependencies": {
         "@types/fs-extra": "^8.0.1",
         "@types/glob": "^7.1.1",
-        "@types/jest": "^24.0.15",
-        "@types/node": "^11.13.14",
+        "@types/jest": "^24.0.23",
+        "@types/node": "^12.12.14",
         "@types/resolve": "0.0.8",
         "fengari": "^0.1.4",
         "fs-extra": "^8.1.0",
-        "javascript-stringify": "^2.0.0",
-        "jest": "^24.8.0",
-        "jest-circus": "^24.8.0",
-        "prettier": "^1.18.2",
-        "ts-jest": "^24.0.2",
-        "ts-node": "^7.0.1",
-        "tslint": "^5.17.0"
+        "javascript-stringify": "^2.0.1",
+        "jest": "^24.9.0",
+        "jest-circus": "^24.9.0",
+        "prettier": "^1.19.1",
+        "ts-jest": "^24.2.0",
+        "ts-node": "^8.5.4",
+        "tslint": "^5.20.1"
     }
 }

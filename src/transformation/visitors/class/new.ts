@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
-import { importLuaLibFeature, LuaLibFeature } from "../../utils/lualib";
+import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments } from "../call";
 import { transformLuaTableNewExpression } from "../lua-table";
 
@@ -77,10 +77,10 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
         return lua.createCallExpression(
             lua.createIdentifier(customConstructorAnnotation.args[0]),
-            transformArguments(context, node.arguments || []),
+            transformArguments(context, node.arguments ?? []),
             node
         );
     }
 
-    return lua.createCallExpression(lua.createTableIndexExpression(name, lua.createStringLiteral("new")), params, node);
+    return transformLuaLibFunction(context, LuaLibFeature.New, node, name, ...params);
 };

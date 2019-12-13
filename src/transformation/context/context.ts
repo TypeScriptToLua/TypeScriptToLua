@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
-import { flatMap } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { isFileModule } from "../utils/typescript";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
@@ -23,25 +22,24 @@ export class TransformationContext {
     public readonly resolver: EmitResolver;
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
-    public readonly luaTarget = this.options.luaTarget || LuaTarget.LuaJIT;
+    public readonly luaTarget = this.options.luaTarget ?? LuaTarget.LuaJIT;
     public readonly isModule = isFileModule(this.sourceFile);
     public readonly isStrict =
-        this.options.alwaysStrict !== undefined ||
-        (this.options.strict !== undefined && this.options.alwaysStrict !== false) ||
+        (this.options.alwaysStrict ?? this.options.strict) ||
         (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 
     public constructor(public program: ts.Program, public sourceFile: ts.SourceFile, private visitorMap: VisitorMap) {
         // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
         // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
         // and would try to re-analyze the file, which would fail because of replaced nodes.
-        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) || sourceFile;
+        const originalSourceFile = ts.getParseTreeNode(sourceFile, ts.isSourceFile) ?? sourceFile;
         this.resolver = this.checker.getEmitResolver(originalSourceFile);
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
     public transformNode(node: ts.Node): lua.Node[] {
         // TODO: Move to visitors?
-        if (node.modifiers && node.modifiers.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
         }
 
@@ -82,14 +80,14 @@ export class TransformationContext {
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
-            ? flatMap(node, n => this.transformStatements(n))
+            ? node.flatMap(n => this.transformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
               (this.transformNode(node as StatementLikeNode) as lua.Statement[]);
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
-            ? flatMap(node, n => this.superTransformStatements(n))
+            ? node.flatMap(n => this.superTransformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
               (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
     }

@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { flatMap } from "../../utils";
 import { TransformationContext } from "../context";
 import { findFirstNodeAbove, inferAssignedType } from "./typescript";
 
@@ -102,7 +101,7 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
         // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
         const jsDoc = sourceFile.statements[0].jsDoc;
         if (jsDoc) {
-            for (const tag of flatMap(jsDoc, x => x.tags || [])) {
+            for (const tag of jsDoc.flatMap(x => x.tags ?? [])) {
                 const tagName = tag.tagName.text;
                 const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
                 if (annotation) {

@@ -34,7 +34,7 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     }
 
     for (const nodeVisitors of visitorMap.values()) {
-        nodeVisitors.sort((a, b) => (a.priority || 0) - (b.priority || 0));
+        nodeVisitors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
     }
 
     return visitorMap;

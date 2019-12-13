@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import { CompilerOptions } from "../../CompilerOptions";
-import { flatMap } from "../../utils";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getFileAnnotations, getNodeAnnotations } from "./annotations";
 import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./typescript";
@@ -107,7 +106,7 @@ function getSignatureDeclarations(
     context: TransformationContext,
     signatures: readonly ts.Signature[]
 ): ts.SignatureDeclaration[] {
-    return flatMap(signatures, signature => {
+    return signatures.flatMap(signature => {
         const signatureDeclaration = signature.getDeclaration();
         if (
             (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
@@ -129,7 +128,7 @@ function getSignatureDeclarations(
 
 export function getFunctionContextType(context: TransformationContext, type: ts.Type): ContextType {
     if (type.isTypeParameter()) {
-        type = type.getConstraint() || type;
+        type = type.getConstraint() ?? type;
     }
 
     if (type.isUnion()) {

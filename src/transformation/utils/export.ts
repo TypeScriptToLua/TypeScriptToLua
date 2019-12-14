@@ -98,6 +98,10 @@ export function isSymbolExportedFromScope(
         return false;
     }
 
+    if (symbol.declarations.find(d => findFirstNodeAbove(d, ts.isBlock))) {
+        return false;
+    }
+
     return scopeSymbol.exports.has(symbol.escapedName);
 }
 

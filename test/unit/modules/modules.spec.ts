@@ -220,3 +220,13 @@ test.each(["x = true", "[x] = [true]", "[[x]] = [[true]]", "({ x } = { x: true }
         `.expectToMatchJsResult();
     }
 );
+
+test.each(["(() => { let a = 2; a = 3 })()", "{ let a = 2; a = 3 }"])(
+    "does not export shadowed identifiers",
+    shadow => {
+        util.testModule`
+            export let a = 1;
+            ${shadow};
+        `.expectToMatchJsResult();
+    }
+);

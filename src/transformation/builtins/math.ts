@@ -34,7 +34,8 @@ export function transformMathCall(context: TransformationContext, node: Property
 
     const expressionName = expression.name.text;
     switch (expressionName) {
-        // math.atan(y, x) Lua 5.3 only
+        // Lua 5.3: math.atan(y, x)
+        // Otherwise: math.atan2(y, x)
         case "atan2": {
             const math = lua.createIdentifier("math");
             const functionChoice = context.options.luaTarget === LuaTarget.Lua53 ? "atan" : expressionName;

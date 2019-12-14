@@ -4,11 +4,13 @@ import { TransformationContext } from "../../context";
 import { UnsupportedKind } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
+import { getDependenciesOfSymbol } from "../../utils/export";
 import { transformPropertyName } from "../literal";
 import {
     transformAssignment,
     transformAssignmentLeftHandSideExpression,
     transformAssignmentStatement,
+    createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect,
 } from "./assignments";
 
 export function isArrayLength(
@@ -179,7 +181,16 @@ function transformShorthandPropertyAssignment(
         lua.createTableIndexExpression(root, extractionIndex)
     );
 
-    result.push(variableExtractionAssignmentStatement);
+    const symbol = context.checker.getShorthandAssignmentValueSymbol(node);
+    const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
+
+    result.push(
+        createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
+            context,
+            variableExtractionAssignmentStatement,
+            dependentSymbols
+        )
+    );
 
     const defaultInitializer = node.objectAssignmentInitializer
         ? context.transformExpression(node.objectAssignmentInitializer)
@@ -194,7 +205,13 @@ function transformShorthandPropertyAssignment(
 
         const assignment = lua.createAssignmentStatement(assignmentVariableName, defaultInitializer);
 
-        const ifBlock = lua.createBlock([assignment]);
+        const ifBlock = lua.createBlock([
+            createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
+                context,
+                assignment,
+                dependentSymbols
+            ),
+        ]);
 
         result.push(lua.createIfStatement(nilCondition, ifBlock, undefined, node));
     }

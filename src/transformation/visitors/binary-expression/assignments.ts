@@ -4,7 +4,7 @@ import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
 import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
-import { createExportedIdentifier, isSymbolExported } from "../../utils/export";
+import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
@@ -21,6 +21,22 @@ export function transformAssignmentLeftHandSideExpression(
     return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
         ? createExportedIdentifier(context, left)
         : cast(left, lua.isAssignmentLeftHandSideExpression);
+}
+
+export function createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
+    context: TransformationContext,
+    rootAssignment: lua.AssignmentStatement,
+    symbols: ts.Symbol[]
+): lua.AssignmentStatement {
+    return symbols.reduce<lua.AssignmentStatement>((statement, symbol) => {
+        const [left] = statement.left;
+        const assignmentFunction = createImmediatelyInvokedFunctionExpression([statement], left);
+        const identifierToAssign = createExportedIdentifier(
+            context,
+            lua.createIdentifier(symbol.escapedName.toString())
+        );
+        return lua.createAssignmentStatement(identifierToAssign, assignmentFunction);
+    }, rootAssignment);
 }
 
 export function transformAssignment(
@@ -42,7 +58,20 @@ export function transformAssignment(
         );
     }
 
-    return lua.createAssignmentStatement(transformAssignmentLeftHandSideExpression(context, lhs), right, lhs.parent);
+    const symbol = ts.isIdentifier(lhs) && context.checker.getSymbolAtLocation(lhs);
+    const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
+
+    const rootAssignment = lua.createAssignmentStatement(
+        transformAssignmentLeftHandSideExpression(context, lhs),
+        right,
+        lhs.parent
+    );
+
+    return createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
+        context,
+        rootAssignment,
+        dependentSymbols
+    );
 }
 
 export function transformAssignmentExpression(
@@ -122,6 +151,32 @@ export function transformAssignmentExpression(
     }
 }
 
+const canBeTransformedToLuaAssignmentStatement = (
+    context: TransformationContext,
+    expression: ts.DestructuringAssignment
+): expression is ts.ArrayDestructuringAssignment => {
+    return (
+        ts.isArrayLiteralExpression(expression.left) &&
+        expression.left.elements.every(expression => {
+            if (isArrayLength(context, expression)) {
+                return false;
+            }
+
+            if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+                return true;
+            }
+
+            if (ts.isIdentifier(expression)) {
+                const symbol = context.checker.getSymbolAtLocation(expression);
+                if (symbol) {
+                    const aliases = getDependenciesOfSymbol(context, symbol);
+                    return aliases.length === 0;
+                }
+            }
+        })
+    );
+};
+
 export function transformAssignmentStatement(
     context: TransformationContext,
     expression: ts.AssignmentExpression<ts.EqualsToken>
@@ -133,14 +188,7 @@ export function transformAssignmentStatement(
     validatePropertyAssignment(context, expression);
 
     if (isDestructuringAssignment(expression)) {
-        if (
-            ts.isArrayLiteralExpression(expression.left) &&
-            expression.left.elements.every(
-                e =>
-                    (ts.isIdentifier(e) || ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) &&
-                    !isArrayLength(context, e)
-            )
-        ) {
+        if (canBeTransformedToLuaAssignmentStatement(context, expression)) {
             const rightType = context.checker.getTypeAtLocation(expression.right);
             let right = context.transformExpression(expression.right);
 

@@ -33,7 +33,6 @@ export function transformMathCall(context: TransformationContext, node: Property
     const params = transformArguments(context, node.arguments, signature);
 
     const expressionName = expression.name.text;
-
     switch (expressionName) {
         // math.atan(y, x) Lua 5.3 only
         case "atan2": {

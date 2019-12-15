@@ -110,20 +110,17 @@ test("Hoisting due to reference from hoisted function", () => {
 });
 
 test("Namespace Hoisting", () => {
-    util.testModule`
-        const Inner = 0;
-        namespace Outer {
-            export function bar() {
-                return Inner.foo;
-            }
-            namespace Inner {
-                export const foo = "foo";
-            }
+    const code = `
+        function bar() {
+            return NS.foo;
         }
-
-        export const foo = Outer.bar();
-        export { Inner };
-    `.expectToMatchJsResult();
+        namespace NS {
+            export let foo = "foo";
+        }
+        export const foo = bar();
+    `;
+    const result = util.transpileExecuteAndReturnExport(code, "foo");
+    expect(result).toBe("foo");
 });
 
 test("Exported Namespace Hoisting", () => {
@@ -141,19 +138,20 @@ test("Exported Namespace Hoisting", () => {
 });
 
 test("Nested Namespace Hoisting", () => {
-    const code = `
-        export namespace Outer {
+    util.testModule`
+        const Inner = 0;
+        namespace Outer {
             export function bar() {
                 return Inner.foo;
             }
             namespace Inner {
-                export let foo = "foo";
+                export const foo = "foo";
             }
         }
+
         export const foo = Outer.bar();
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
+        export { Inner };
+    `.expectToMatchJsResult();
 });
 
 test("Class Hoisting", () => {

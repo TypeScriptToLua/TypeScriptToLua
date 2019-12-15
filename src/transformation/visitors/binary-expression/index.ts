@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assertNever } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
@@ -21,12 +20,16 @@ import {
     unwrapCompoundAssignmentToken,
 } from "./compound";
 
-type SimpleOperator = keyof typeof simpleOperatorsToLua;
-const isSimpleOperator = (operator: ts.BinaryOperator): operator is SimpleOperator => operator in simpleOperatorsToLua;
+type SimpleOperator =
+    | ts.AdditiveOperatorOrHigher
+    | Exclude<ts.RelationalOperator, ts.SyntaxKind.InstanceOfKeyword | ts.SyntaxKind.InKeyword>
+    | ts.EqualityOperator
+    | ts.LogicalOperator;
 
-const simpleOperatorsToLua = {
+const simpleOperatorsToLua: Record<SimpleOperator, lua.BinaryOperator> = {
     [ts.SyntaxKind.AmpersandAmpersandToken]: lua.SyntaxKind.AndOperator,
     [ts.SyntaxKind.BarBarToken]: lua.SyntaxKind.OrOperator,
+    [ts.SyntaxKind.PlusToken]: lua.SyntaxKind.AdditionOperator,
     [ts.SyntaxKind.MinusToken]: lua.SyntaxKind.SubtractionOperator,
     [ts.SyntaxKind.AsteriskToken]: lua.SyntaxKind.MultiplicationOperator,
     [ts.SyntaxKind.AsteriskAsteriskToken]: lua.SyntaxKind.PowerOperator,
@@ -46,35 +49,27 @@ export function transformBinaryOperation(
     context: TransformationContext,
     left: lua.Expression,
     right: lua.Expression,
-    operator: BitOperator | SimpleOperator | ts.SyntaxKind.PlusToken,
+    operator: BitOperator | SimpleOperator,
     node: ts.Node
 ): lua.Expression {
     if (isBitOperator(operator)) {
         return transformBinaryBitOperation(context, node, left, right, operator);
     }
 
-    if (isSimpleOperator(operator)) {
-        const luaOperator = simpleOperatorsToLua[operator] as lua.BinaryOperator;
-        return lua.createBinaryExpression(left, right, luaOperator, node);
-    }
+    let luaOperator = simpleOperatorsToLua[operator];
 
-    if (operator === ts.SyntaxKind.PlusToken) {
-        let luaOperator = lua.SyntaxKind.AdditionOperator;
-        if (ts.isBinaryExpression(node)) {
-            // Check is we need to use string concat operator
-            const typeLeft = context.checker.getTypeAtLocation(node.left);
-            const typeRight = context.checker.getTypeAtLocation(node.right);
-            if (isStringType(context, typeLeft) || isStringType(context, typeRight)) {
-                luaOperator = lua.SyntaxKind.ConcatOperator;
-                left = wrapInToStringForConcat(left);
-                right = wrapInToStringForConcat(right);
-            }
+    // Check is we need to use string concat operator
+    if (operator === ts.SyntaxKind.PlusToken && ts.isBinaryExpression(node)) {
+        const typeLeft = context.checker.getTypeAtLocation(node.left);
+        const typeRight = context.checker.getTypeAtLocation(node.right);
+        if (isStringType(context, typeLeft) || isStringType(context, typeRight)) {
+            left = wrapInToStringForConcat(left);
+            right = wrapInToStringForConcat(right);
+            luaOperator = lua.SyntaxKind.ConcatOperator;
         }
-
-        return lua.createBinaryExpression(left, right, luaOperator, node);
     }
 
-    assertNever(operator);
+    return lua.createBinaryExpression(left, right, luaOperator, node);
 }
 
 export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (node, context) => {
@@ -96,7 +91,6 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         );
     }
 
-    // Transpile operators
     switch (operator) {
         case ts.SyntaxKind.EqualsToken:
             return transformAssignmentExpression(context, node as ts.AssignmentExpression<ts.EqualsToken>);
@@ -168,27 +162,26 @@ export function transformBinaryExpressionStatement(
     node: ts.ExpressionStatement
 ): lua.Statement[] | lua.Statement | undefined {
     const { expression } = node;
-    if (ts.isBinaryExpression(expression)) {
-        const operator = expression.operatorToken.kind;
+    if (!ts.isBinaryExpression(expression)) return;
+    const operator = expression.operatorToken.kind;
 
-        if (isCompoundAssignmentToken(operator)) {
-            // +=, -=, etc...
-            return transformCompoundAssignmentStatement(
-                context,
-                expression,
-                expression.left,
-                expression.right,
-                unwrapCompoundAssignmentToken(operator)
-            );
-        } else if (operator === ts.SyntaxKind.EqualsToken) {
-            return transformAssignmentStatement(context, expression as ts.AssignmentExpression<ts.EqualsToken>);
-        } else if (operator === ts.SyntaxKind.CommaToken) {
-            const statements = [
-                ...context.transformStatements(ts.createExpressionStatement(expression.left)),
-                ...context.transformStatements(ts.createExpressionStatement(expression.right)),
-            ];
+    if (isCompoundAssignmentToken(operator)) {
+        // +=, -=, etc...
+        return transformCompoundAssignmentStatement(
+            context,
+            expression,
+            expression.left,
+            expression.right,
+            unwrapCompoundAssignmentToken(operator)
+        );
+    } else if (operator === ts.SyntaxKind.EqualsToken) {
+        return transformAssignmentStatement(context, expression as ts.AssignmentExpression<ts.EqualsToken>);
+    } else if (operator === ts.SyntaxKind.CommaToken) {
+        const statements = [
+            ...context.transformStatements(ts.createExpressionStatement(expression.left)),
+            ...context.transformStatements(ts.createExpressionStatement(expression.right)),
+        ];
 
-            return lua.createDoStatement(statements, expression);
-        }
+        return lua.createDoStatement(statements, expression);
     }
 }

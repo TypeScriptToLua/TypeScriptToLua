@@ -58,7 +58,7 @@ export function transformBinaryOperation(
 
     let luaOperator = simpleOperatorsToLua[operator];
 
-    // Check is we need to use string concat operator
+    // Check if we need to use string concat operator
     if (operator === ts.SyntaxKind.PlusToken && ts.isBinaryExpression(node)) {
         const typeLeft = context.checker.getTypeAtLocation(node.left);
         const typeRight = context.checker.getTypeAtLocation(node.right);

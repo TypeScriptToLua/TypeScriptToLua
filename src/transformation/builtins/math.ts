@@ -38,8 +38,8 @@ export function transformMathCall(context: TransformationContext, node: Property
         // Otherwise: math.atan2(y, x)
         case "atan2": {
             const math = lua.createIdentifier("math");
-            const functionChoice = context.options.luaTarget === LuaTarget.Lua53 ? "atan" : expressionName;
-            const method = lua.createStringLiteral(functionChoice);
+            const methodName = context.options.luaTarget === LuaTarget.Lua53 ? "atan" : expressionName;
+            const method = lua.createStringLiteral(methodName);
             return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
         }
 

@@ -152,21 +152,21 @@ export function transformAssignmentExpression(
 
 const canBeTransformedToLuaAssignmentStatement = (
     context: TransformationContext,
-    expression: ts.DestructuringAssignment
-): expression is ts.ArrayDestructuringAssignment => {
+    node: ts.DestructuringAssignment
+): node is ts.ArrayDestructuringAssignment => {
     return (
-        ts.isArrayLiteralExpression(expression.left) &&
-        expression.left.elements.every(expression => {
-            if (isArrayLength(context, expression)) {
+        ts.isArrayLiteralExpression(node.left) &&
+        node.left.elements.every(element => {
+            if (isArrayLength(context, element)) {
                 return false;
             }
 
-            if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
+            if (ts.isPropertyAccessExpression(element) || ts.isElementAccessExpression(element)) {
                 return true;
             }
 
-            if (ts.isIdentifier(expression)) {
-                const symbol = context.checker.getSymbolAtLocation(expression);
+            if (ts.isIdentifier(element)) {
+                const symbol = context.checker.getSymbolAtLocation(element);
                 if (symbol) {
                     const aliases = getDependenciesOfSymbol(context, symbol);
                     return aliases.length === 0;

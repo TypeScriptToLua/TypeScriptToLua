@@ -31,10 +31,7 @@ export function createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSi
     return symbols.reduce<lua.AssignmentStatement>((statement, symbol) => {
         const [left] = statement.left;
         const assignmentFunction = createImmediatelyInvokedFunctionExpression([statement], left);
-        const identifierToAssign = createExportedIdentifier(
-            context,
-            lua.createIdentifier(symbol.escapedName.toString())
-        );
+        const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
         return lua.createAssignmentStatement(identifierToAssign, assignmentFunction);
     }, rootAssignment);
 }

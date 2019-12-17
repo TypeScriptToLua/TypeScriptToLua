@@ -212,6 +212,7 @@ test("Export Equals", () => {
 
 const reassignmentTestCases = [
     "x = true",
+    "(x = true)",
     "[x] = [true]",
     "[[x]] = [[true]]",
     "({ x } = { x: true })",
@@ -221,10 +222,10 @@ const reassignmentTestCases = [
 
 test.each(reassignmentTestCases)("export specifier with reassignment afterwards (%p)", reassignment => {
     util.testModule`
-            let x: any = false;
-            export { x };
-            ${reassignment};
-        `.expectToMatchJsResult();
+        let x: any = false;
+        export { x };
+        ${reassignment};
+    `.expectToMatchJsResult();
 });
 
 test.each(reassignmentTestCases)("export specifier fork (%p)", reassignment => {
@@ -236,15 +237,12 @@ test.each(reassignmentTestCases)("export specifier fork (%p)", reassignment => {
     `.expectToMatchJsResult();
 });
 
-test.each(["(() => { let a = 2; a = 3 })()", "{ let a = 2; a = 3 }"])(
-    "does not export shadowed identifiers",
-    shadow => {
-        util.testModule`
-            export let a = 1;
-            ${shadow};
-        `.expectToMatchJsResult();
-    }
-);
+test("does not export shadowed identifiers", () => {
+    util.testModule`
+        export let a = 1;
+        { let a = 2; a = 3 };
+    `.expectToMatchJsResult();
+});
 
 test("export as specifier shouldn't effect local vars", () => {
     util.testModule`
@@ -252,13 +250,5 @@ test("export as specifier shouldn't effect local vars", () => {
         export { x as a };
         let a = 5;
         a = 6;
-    `.expectToMatchJsResult();
-});
-
-test("special export specifier side effects", () => {
-    util.testModule`
-        let x = [0, 1, 2];
-        export { x as a };
-        [x.length] = [0];
     `.expectToMatchJsResult();
 });

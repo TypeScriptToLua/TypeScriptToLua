@@ -23,17 +23,20 @@ export function transformAssignmentLeftHandSideExpression(
         : cast(left, lua.isAssignmentLeftHandSideExpression);
 }
 
-export function createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
+export function createAssignmentStatementsForEachSymbolSideEffect(
     context: TransformationContext,
     rootAssignment: lua.AssignmentStatement,
     symbols: ts.Symbol[]
-): lua.AssignmentStatement {
-    return symbols.reduce<lua.AssignmentStatement>((statement, symbol) => {
-        const [left] = statement.left;
-        const assignmentFunction = createImmediatelyInvokedFunctionExpression([statement], left);
-        const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
-        return lua.createAssignmentStatement(identifierToAssign, assignmentFunction);
-    }, rootAssignment);
+): lua.AssignmentStatement[] {
+    return symbols.reduce<lua.AssignmentStatement[]>(
+        (statements, symbol) => {
+            const [left] = statements[statements.length - 1].left;
+            const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
+            const assignment = lua.createAssignmentStatement(identifierToAssign, left);
+            return statements.concat(assignment);
+        },
+        [rootAssignment]
+    );
 }
 
 export function transformAssignment(
@@ -42,9 +45,9 @@ export function transformAssignment(
     lhs: ts.Expression,
     right: lua.Expression,
     parent?: ts.Expression
-): lua.Statement {
+): lua.Statement[] {
     if (isArrayLength(context, lhs)) {
-        return lua.createExpressionStatement(
+        const arrayLengthAssignment = lua.createExpressionStatement(
             transformLuaLibFunction(
                 context,
                 LuaLibFeature.ArraySetLength,
@@ -53,24 +56,21 @@ export function transformAssignment(
                 right
             )
         );
+
+        return [arrayLengthAssignment];
     }
 
     const symbol = ts.isShorthandPropertyAssignment(lhs.parent)
         ? context.checker.getShorthandAssignmentValueSymbol(lhs.parent)
         : context.checker.getSymbolAtLocation(lhs);
+
     const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
 
-    const rootAssignment = lua.createAssignmentStatement(
-        transformAssignmentLeftHandSideExpression(context, lhs),
-        right,
-        lhs.parent
-    );
+    const left = transformAssignmentLeftHandSideExpression(context, lhs);
 
-    return createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
-        context,
-        rootAssignment,
-        dependentSymbols
-    );
+    const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
+
+    return createAssignmentStatementsForEachSymbolSideEffect(context, rootAssignment, dependentSymbols);
 }
 
 export function transformAssignmentExpression(
@@ -143,7 +143,7 @@ export function transformAssignmentExpression(
         const left = context.transformExpression(expression.left);
         const right = context.transformExpression(expression.right);
         return createImmediatelyInvokedFunctionExpression(
-            [transformAssignment(context, expression.left, right)],
+            transformAssignment(context, expression.left, right),
             left,
             expression
         );
@@ -211,6 +211,6 @@ export function transformAssignmentStatement(
             ...transformDestructuringAssignment(context, expression, rootIdentifier),
         ];
     } else {
-        return [transformAssignment(context, expression.left, context.transformExpression(expression.right))];
+        return transformAssignment(context, expression.left, context.transformExpression(expression.right));
     }
 }

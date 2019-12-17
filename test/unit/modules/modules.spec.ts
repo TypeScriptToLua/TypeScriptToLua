@@ -211,18 +211,19 @@ test("Export Equals", () => {
 });
 
 const reassignmentTestCases = [
-    "x = true",
-    "(x = true)",
-    "[x] = [true]",
-    "[[x]] = [[true]]",
-    "({ x } = { x: true })",
-    "({ y: x } = { y: true })",
-    "({ x = false } = { x: undefined })",
+    "x = 1",
+    "x++",
+    "(x = 1)",
+    "[x] = [1]",
+    "[[x]] = [[1]]",
+    "({ x } = { x: 1 })",
+    "({ y: x } = { y: 1 })",
+    "({ x = 1 } = { x: undefined })",
 ];
 
 test.each(reassignmentTestCases)("export specifier with reassignment afterwards (%p)", reassignment => {
     util.testModule`
-        let x: any = false;
+        let x = 0;
         export { x };
         ${reassignment};
     `.expectToMatchJsResult();
@@ -230,7 +231,7 @@ test.each(reassignmentTestCases)("export specifier with reassignment afterwards 
 
 test.each(reassignmentTestCases)("export specifier fork (%p)", reassignment => {
     util.testModule`
-        let x: any = false;
+        let x = 0;
         export { x as a };
         export { x as b };
         ${reassignment};

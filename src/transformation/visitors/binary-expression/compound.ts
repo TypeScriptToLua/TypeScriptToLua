@@ -121,8 +121,12 @@ export function transformCompoundAssignmentExpression(
             replacementOperator,
             expression
         );
-        const assignStatement = transformAssignment(context, lhs, operatorExpression);
-        return createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, expression);
+        const assignStatements = transformAssignment(context, lhs, operatorExpression);
+        return createImmediatelyInvokedFunctionExpression(
+            [tmpDeclaration, ...assignStatements],
+            tmpIdentifier,
+            expression
+        );
     } else if (ts.isPropertyAccessExpression(lhs) || ts.isElementAccessExpression(lhs)) {
         // Simple property/element access expressions need to cache in temp to avoid double-evaluation
         // local ____tmp = ${left} ${replacementOperator} ${right};
@@ -131,14 +135,18 @@ export function transformCompoundAssignmentExpression(
         const tmpIdentifier = lua.createIdentifier("____tmp");
         const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
-        const assignStatement = transformAssignment(context, lhs, tmpIdentifier);
-        return createImmediatelyInvokedFunctionExpression([tmpDeclaration, assignStatement], tmpIdentifier, expression);
+        const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
+        return createImmediatelyInvokedFunctionExpression(
+            [tmpDeclaration, ...assignStatements],
+            tmpIdentifier,
+            expression
+        );
     } else {
         // Simple expressions
         // ${left} = ${right}; return ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, expression);
-        const assignStatement = transformAssignment(context, lhs, operatorExpression);
-        return createImmediatelyInvokedFunctionExpression([assignStatement], left, expression);
+        const assignStatements = transformAssignment(context, lhs, operatorExpression);
+        return createImmediatelyInvokedFunctionExpression(assignStatements, left, expression);
     }
 }
 
@@ -177,6 +185,11 @@ export function transformCompoundAssignmentStatement(
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, node);
-        return transformAssignment(context, lhs, operatorExpression);
+        const assignmentStatements = transformAssignment(context, lhs, operatorExpression);
+        if (assignmentStatements.length === 1) {
+            return assignmentStatements[0];
+        } else {
+            return lua.createDoStatement(assignmentStatements, lhs);
+        }
     }
 }

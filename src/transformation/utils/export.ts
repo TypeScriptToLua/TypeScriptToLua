@@ -95,18 +95,12 @@ export function getExportedSymbolsFromScope(
 }
 
 export function getDependenciesOfSymbol(context: TransformationContext, originalSymbol: ts.Symbol): ts.Symbol[] {
-    return getExportedSymbolsFromScope(context, context.sourceFile).reduce<ts.Symbol[]>((relatedSymbols, symbol) => {
-        if (
-            symbol.declarations
-                .filter(ts.isExportSpecifier)
-                .map(context.checker.getExportSpecifierLocalTargetSymbol)
-                .some((symbol): symbol is ts.Symbol => (symbol ? symbol === originalSymbol : false))
-        ) {
-            relatedSymbols.push(symbol);
-        }
-
-        return relatedSymbols;
-    }, []);
+    return getExportedSymbolsFromScope(context, context.sourceFile).filter(exportSymbol =>
+        exportSymbol.declarations
+            .filter(ts.isExportSpecifier)
+            .map(context.checker.getExportSpecifierLocalTargetSymbol)
+            .includes(originalSymbol)
+    );
 }
 
 export function isSymbolExported(context: TransformationContext, symbol: ts.Symbol): boolean {

@@ -36,5 +36,5 @@ util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, 
 });
 
 test("Lua 5.3 Math.atan2 comparison", () => {
-    util.testExpression`Math.atan2(4, 5)`.setOptions({ luaTarget: tstl.LuaTarget.Lua53 }).expectToMatchJsResult();
+    util.testExpression`Math.atan2(4, 5)`.expectToMatchJsResult();
 });

@@ -23,22 +23,6 @@ export function transformAssignmentLeftHandSideExpression(
         : cast(left, lua.isAssignmentLeftHandSideExpression);
 }
 
-export function createAssignmentStatementsForEachSymbolSideEffect(
-    context: TransformationContext,
-    rootAssignment: lua.AssignmentStatement,
-    symbols: ts.Symbol[]
-): lua.AssignmentStatement[] {
-    return symbols.reduce<lua.AssignmentStatement[]>(
-        (statements, symbol) => {
-            const [left] = statements[statements.length - 1].left;
-            const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
-            const assignment = lua.createAssignmentStatement(identifierToAssign, left);
-            return statements.concat(assignment);
-        },
-        [rootAssignment]
-    );
-}
-
 export function transformAssignment(
     context: TransformationContext,
     // TODO: Change type to ts.LeftHandSideExpression?
@@ -70,7 +54,14 @@ export function transformAssignment(
 
     const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
 
-    return createAssignmentStatementsForEachSymbolSideEffect(context, rootAssignment, dependentSymbols);
+    return [
+        rootAssignment,
+        ...dependentSymbols.map(symbol => {
+            const [left] = rootAssignment.left;
+            const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
+            return lua.createAssignmentStatement(identifierToAssign, left);
+        }),
+    ];
 }
 
 export function transformAssignmentExpression(

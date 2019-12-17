@@ -4,13 +4,11 @@ import { TransformationContext } from "../../context";
 import { UnsupportedKind } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
-import { getDependenciesOfSymbol } from "../../utils/export";
 import { transformPropertyName } from "../literal";
 import {
     transformAssignment,
     transformAssignmentLeftHandSideExpression,
     transformAssignmentStatement,
-    createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect,
 } from "./assignments";
 
 export function isArrayLength(
@@ -176,21 +174,13 @@ function transformShorthandPropertyAssignment(
     const result: lua.Statement[] = [];
     const assignmentVariableName = transformAssignmentLeftHandSideExpression(context, node.name);
     const extractionIndex = lua.createStringLiteral(node.name.text);
-    const variableExtractionAssignmentStatement = lua.createAssignmentStatement(
-        assignmentVariableName,
+    const variableExtractionAssignmentStatement = transformAssignment(
+        context,
+        node.name,
         lua.createTableIndexExpression(root, extractionIndex)
     );
 
-    const symbol = context.checker.getShorthandAssignmentValueSymbol(node);
-    const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
-
-    result.push(
-        createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
-            context,
-            variableExtractionAssignmentStatement,
-            dependentSymbols
-        )
-    );
+    result.push(variableExtractionAssignmentStatement);
 
     const defaultInitializer = node.objectAssignmentInitializer
         ? context.transformExpression(node.objectAssignmentInitializer)
@@ -203,15 +193,9 @@ function transformShorthandPropertyAssignment(
             lua.SyntaxKind.EqualityOperator
         );
 
-        const assignment = lua.createAssignmentStatement(assignmentVariableName, defaultInitializer);
+        const assignment = transformAssignment(context, node.name, defaultInitializer);
 
-        const ifBlock = lua.createBlock([
-            createNestedImmediatelyInvokedFunctionExpressionsForEachSymbolSideEffect(
-                context,
-                assignment,
-                dependentSymbols
-            ),
-        ]);
+        const ifBlock = lua.createBlock([assignment]);
 
         result.push(lua.createIfStatement(nilCondition, ifBlock, undefined, node));
     }

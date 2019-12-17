@@ -58,7 +58,9 @@ export function transformAssignment(
         );
     }
 
-    const symbol = ts.isIdentifier(lhs) && context.checker.getSymbolAtLocation(lhs);
+    const symbol = ts.isShorthandPropertyAssignment(lhs.parent)
+        ? context.checker.getShorthandAssignmentValueSymbol(lhs.parent)
+        : context.checker.getSymbolAtLocation(lhs);
     const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
 
     const rootAssignment = lua.createAssignmentStatement(

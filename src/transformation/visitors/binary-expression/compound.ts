@@ -156,7 +156,7 @@ export function transformCompoundAssignmentStatement(
     lhs: ts.Expression,
     rhs: ts.Expression,
     replacementOperator: ts.BinaryOperator
-): lua.Statement {
+): lua.Statement[] {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
     const right = context.transformExpression(rhs);
 
@@ -180,16 +180,12 @@ export function transformCompoundAssignmentStatement(
             node
         );
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
-        return lua.createDoStatement([objAndIndexDeclaration, assignStatement]);
+        return [objAndIndexDeclaration, assignStatement];
     } else {
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, node);
         const assignmentStatements = transformAssignment(context, lhs, operatorExpression);
-        if (assignmentStatements.length === 1) {
-            return assignmentStatements[0];
-        } else {
-            return lua.createDoStatement(assignmentStatements, lhs);
-        }
+        return assignmentStatements;
     }
 }

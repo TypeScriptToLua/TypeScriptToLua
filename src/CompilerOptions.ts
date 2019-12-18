@@ -17,6 +17,11 @@ export interface TransformerImport {
     [option: string]: any;
 }
 
+export interface LuaPluginImport {
+    plugin: string;
+    import?: string;
+}
+
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     noImplicitSelf?: boolean;
     noHeader?: boolean;
@@ -26,8 +31,9 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     luaLibImport?: LuaLibImportKind;
     noHoisting?: boolean;
     sourceMapTraceback?: boolean;
+    luaPlugins?: LuaPluginImport[];
     plugins?: Array<ts.PluginImport | TransformerImport>;
-    [option: string]: ts.CompilerOptions[string] | Array<ts.PluginImport | TransformerImport>;
+    [option: string]: ts.CompilerOptions[string] | LuaPluginImport[] | Array<ts.PluginImport | TransformerImport>;
 };
 
 export enum LuaLibImportKind {

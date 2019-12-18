@@ -8,14 +8,6 @@ end
 return ____exports"
 `;
 
-exports[`Math.atan2(2, 3) 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    math.atan(2 / 3)
-end
-return ____exports"
-`;
-
 exports[`Math.cos() 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)

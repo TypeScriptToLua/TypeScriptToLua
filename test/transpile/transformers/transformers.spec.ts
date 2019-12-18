@@ -2,10 +2,6 @@ import * as path from "path";
 import * as tstl from "../../../src";
 import * as util from "../../util";
 
-const optionsOfTransformer = (transformer: tstl.TransformerImport): tstl.CompilerOptions => ({
-    plugins: [transformer],
-});
-
 test("should ignore language service plugins", () => {
     util.testFunction`
         return;
@@ -19,7 +15,7 @@ describe("resolution", () => {
         util.testFunction`
             return;
         `
-            .setOptions(optionsOfTransformer(transformer))
+            .setOptions({ plugins: [transformer] })
             .expectToEqual(true);
     };
 
@@ -42,7 +38,7 @@ describe("resolution", () => {
 
     test("error if transformer could not be resolved", () => {
         util.testModule``
-            .setOptions(optionsOfTransformer({ transform: path.join(__dirname, "error.ts") }))
+            .setOptions({ plugins: [{ transform: path.join(__dirname, "error.ts") }] })
             .expectToHaveDiagnostics();
     });
 });
@@ -50,17 +46,12 @@ describe("resolution", () => {
 describe("factory types", () => {
     for (const type of ["program", "config", "checker", "raw", "compilerOptions"] as const) {
         test(type, () => {
-            const options = optionsOfTransformer({
-                transform: path.join(__dirname, "types.ts"),
-                type,
-                import: type,
-                value: true,
-            });
-
             util.testFunction`
                 return false;
             `
-                .setOptions(options)
+                .setOptions({
+                    plugins: [{ transform: path.join(__dirname, "types.ts"), type, import: type, value: true }],
+                })
                 .expectToEqual(true);
         });
     }

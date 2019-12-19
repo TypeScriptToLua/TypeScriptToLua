@@ -160,7 +160,11 @@ function hoistVariableDeclarations(
     const hoistedLocals: lua.Identifier[] = [];
     for (const declaration of scope.variableDeclarations) {
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
-        if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
+        if (
+            symbols.some(s => shouldHoistSymbol(context, s, scope)) ||
+            // Hoist all symbols declared in switch scope to prevent `jumps into the scope of local` error
+            scope.type === ScopeType.Switch
+        ) {
             let assignment: lua.AssignmentStatement | undefined;
             if (declaration.right) {
                 assignment = lua.createAssignmentStatement(declaration.left, declaration.right);

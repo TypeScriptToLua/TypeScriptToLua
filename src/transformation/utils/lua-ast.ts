@@ -115,7 +115,7 @@ export function createHoistableVariableDeclarationStatement(
     parent?: lua.Node
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal, parent);
-    if (!context.options.noHoisting) {
+    if (!context.options.noHoisting && identifier.symbolId) {
         const scope = peekScope(context);
         if (!scope.variableDeclarations) {
             scope.variableDeclarations = [];

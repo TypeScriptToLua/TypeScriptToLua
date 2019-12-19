@@ -162,7 +162,7 @@ function hoistVariableDeclarations(
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
         if (
             symbols.some(s => shouldHoistSymbol(context, s, scope)) ||
-            // Hoist all symbols declared in switch scope to prevent `jumps into the scope of local` error
+            // Hoist all symbols declared in switch scope to share scope
             scope.type === ScopeType.Switch
         ) {
             let assignment: lua.AssignmentStatement | undefined;

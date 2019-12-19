@@ -3,7 +3,6 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { UnsupportedForTarget } from "../utils/errors";
-import { createHoistableVariableDeclarationStatement } from "../utils/lua-ast";
 import { peekScope, performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
@@ -40,7 +39,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     for (const [index, clause] of statement.caseBlock.clauses.entries()) {
         const labelName = `${switchName}_case_${ts.isCaseClause(clause) ? index : "default"}`;
         statements.push(lua.createLabelStatement(labelName));
-        statements.push(...context.transformStatements(clause.statements));
+        statements.push(lua.createDoStatement(context.transformStatements(clause.statements)));
     }
 
     statements.push(lua.createLabelStatement(`${switchName}_end`));
@@ -49,7 +48,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     popScope(context);
 
     const expression = context.transformExpression(statement.expression);
-    statements.unshift(createHoistableVariableDeclarationStatement(context, switchVariable, expression));
+    statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
     return statements;
 };

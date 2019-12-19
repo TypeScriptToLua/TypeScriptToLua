@@ -273,12 +273,8 @@ export class LuaPrinter {
 
     protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {
         const statementNodes: SourceNode[] = [];
-        for (let [index, statement] of statements.entries()) {
+        for (const [index, statement] of statements.entries()) {
             if (this.isStatementEmpty(statement)) continue;
-
-            if (lua.isReturnStatement(statement) && index !== statements.length - 1) {
-                statement = lua.createDoStatement([statement]);
-            }
 
             const node = this.printStatement(statement);
 
@@ -291,6 +287,8 @@ export class LuaPrinter {
             }
 
             statementNodes.push(node);
+
+            if (lua.isReturnStatement(statement)) break;
         }
 
         return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];

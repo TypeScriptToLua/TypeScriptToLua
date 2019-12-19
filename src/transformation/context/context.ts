@@ -5,11 +5,19 @@ import { unwrapVisitorResult } from "../utils/lua-ast";
 import { isFileModule } from "../utils/typescript";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
+export interface AllAccessorDeclarations {
+    firstAccessor: ts.AccessorDeclaration;
+    secondAccessor: ts.AccessorDeclaration | undefined;
+    getAccessor: ts.GetAccessorDeclaration | undefined;
+    setAccessor: ts.SetAccessorDeclaration | undefined;
+}
+
 export interface EmitResolver {
     isValueAliasDeclaration(node: ts.Node): boolean;
     isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
     isTopLevelValueImportEqualsWithEntityName(node: ts.ImportEqualsDeclaration): boolean;
     moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
+    getAllAccessorDeclarations(declaration: ts.AccessorDeclaration): AllAccessorDeclarations;
 }
 
 export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {

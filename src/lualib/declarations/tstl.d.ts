@@ -12,6 +12,7 @@ interface LuaClass {
     ____getters?: { [key: string]: (self: LuaClass) => any };
     ____setters?: { [key: string]: (self: LuaClass, val: any) => void };
     __index?: any;
+    __newindex?: any;
 }
 
 interface LuaObject {
@@ -19,4 +20,5 @@ interface LuaObject {
     ____getters?: { [key: string]: (self: LuaObject) => any };
     ____setters?: { [key: string]: (self: LuaObject, val: any) => void };
     __index?: any;
+    __newindex?: any;
 }

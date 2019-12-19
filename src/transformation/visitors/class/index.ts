@@ -38,7 +38,7 @@ import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
 import { createClassSetup } from "./setup";
-import { getExtendedType, getExtendedTypeNode, isStaticNode } from "./utils";
+import { getExtendedType, getExtendedNode, isStaticNode } from "./utils";
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
@@ -105,23 +105,23 @@ export function transformClassDeclaration(
     }
 
     // Get type that is extended
-    const extendsType = getExtendedType(context, classDeclaration);
+    const extendedType = getExtendedType(context, classDeclaration);
 
-    if (extendsType) {
-        checkForLuaLibType(context, extendsType);
+    if (extendedType) {
+        checkForLuaLibType(context, extendedType);
     }
 
-    if (!(isExtension || isMetaExtension) && extendsType) {
+    if (!(isExtension || isMetaExtension) && extendedType) {
         // Non-extensions cannot extend extension classes
-        const extendsAnnotations = getTypeAnnotations(context, extendsType);
+        const extendsAnnotations = getTypeAnnotations(context, extendedType);
         if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
             throw InvalidExtendsExtension(classDeclaration);
         }
     }
 
     // You cannot extend LuaTable classes
-    if (extendsType) {
-        const annotations = getTypeAnnotations(context, extendsType);
+    if (extendedType) {
+        const annotations = getTypeAnnotations(context, extendedType);
         if (annotations.has(AnnotationKind.LuaTable)) {
             throw InvalidExtendsLuaTable(classDeclaration);
         }
@@ -143,11 +143,11 @@ export function transformClassDeclaration(
 
     // Overwrite the original className with the class we are overriding for extensions
     if (isMetaExtension) {
-        if (!extendsType) {
+        if (!extendedType) {
             throw MissingMetaExtension(classDeclaration);
         }
 
-        const extendsName = lua.createStringLiteral(extendsType.symbol.name as string);
+        const extendsName = lua.createStringLiteral(extendedType.symbol.name as string);
         className = lua.createIdentifier("__meta__" + extendsName.value);
 
         // local className = debug.getregistry()["extendsName"]
@@ -173,8 +173,8 @@ export function transformClassDeclaration(
         const [extensionName] = extensionDirective.args;
         if (extensionName) {
             className = lua.createIdentifier(extensionName);
-        } else if (extendsType) {
-            className = lua.createIdentifier(extendsType.symbol.name);
+        } else if (extendedType) {
+            className = lua.createIdentifier(extendedType.symbol.name);
         }
     }
 
@@ -193,7 +193,7 @@ export function transformClassDeclaration(
 
     if (!isExtension && !isMetaExtension) {
         result.push(
-            ...createClassSetup(context, classDeclaration, className, localClassName, classNameText, extendsType)
+            ...createClassSetup(context, classDeclaration, className, localClassName, classNameText, extendedType)
         );
     } else {
         for (const f of instanceFields) {
@@ -228,7 +228,7 @@ export function transformClassDeclaration(
             );
 
             if (constructorResult) result.push(constructorResult);
-        } else if (!extendsType) {
+        } else if (!extendedType) {
             // Generate a constructor if none was defined in a base class
             const constructorResult = transformConstructorDeclaration(
                 context,
@@ -317,12 +317,12 @@ export function transformClassDeclaration(
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
     const classStack = getOrUpdate(classStacks, context, () => []);
     const classDeclaration = classStack[classStack.length - 1];
-    const typeNode = getExtendedTypeNode(context, classDeclaration);
-    if (typeNode === undefined) {
+    const extendedNode = getExtendedNode(context, classDeclaration);
+    if (extendedNode === undefined) {
         throw UnknownSuperType(expression);
     }
 
-    const extendsExpression = typeNode.expression;
+    const extendsExpression = extendedNode.expression;
     let baseClassName: lua.AssignmentLeftHandSideExpression | undefined;
 
     if (ts.isIdentifier(extendsExpression)) {

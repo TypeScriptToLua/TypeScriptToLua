@@ -10,7 +10,7 @@ import {
 } from "../../utils/export";
 import { createExportsIdentifier, createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
-import { getExtendedTypeNode } from "./utils";
+import { getExtendedNode, getExtendsClause } from "./utils";
 
 export function createClassSetup(
     context: TransformationContext,
@@ -62,8 +62,8 @@ export function createClassSetup(
     );
 
     if (extendsType) {
-        const extendedTypeNode = getExtendedTypeNode(context, statement);
-        if (extendedTypeNode === undefined) {
+        const extendedNode = getExtendedNode(context, statement);
+        if (extendedNode === undefined) {
             throw UndefinedTypeNode(statement);
         }
 
@@ -72,9 +72,9 @@ export function createClassSetup(
                 transformLuaLibFunction(
                     context,
                     LuaLibFeature.ClassExtends,
-                    statement,
+                    getExtendsClause(statement),
                     lua.cloneIdentifier(localClassName),
-                    context.transformExpression(extendedTypeNode.expression)
+                    context.transformExpression(extendedNode.expression)
                 )
             )
         );

@@ -40,7 +40,6 @@ export const luaBuiltins: ReadonlySet<string> = new Set([
     "pcall",
     "print",
     "rawget",
-    "rawset",
     "repeat",
     "require",
     "self",

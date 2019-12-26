@@ -505,17 +505,13 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (_G)", () => {
-        const tsHeader = `
-            var foobar = "foo";`;
-
         const code = `
             const _G = "bar";
-            function foo(this: any) {
-                return this.foobar + _G;
-            }
-            return foo();`;
+            (globalThis as any).foo = "foo";
+            return (globalThis as any).foo + _G;
+        `;
 
-        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("foobar");
+        expect(util.transpileAndExecute(code)).toBe("foobar");
     });
 
     test("function parameter", () => {

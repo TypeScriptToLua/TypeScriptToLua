@@ -410,14 +410,17 @@ test("Function local overriding export", () => {
 });
 
 test("Function using global as this", () => {
-    const tsHeader = `
-        var foo = "foo";
+    // Value is provided with top-level return with ts-ignore, because modules are always strict.
+    // TODO: Provide a different builder kind for such tests?
+    util.testModule`
+        (globalThis as any).foo = "foo";
         function bar(this: any) {
             return this.foo;
         }
-    `;
 
-    util.testExpression`foo`.setTsHeader(tsHeader).expectToMatchJsResult();
+        // @ts-ignore
+        return bar();
+    `.expectToEqual("foo");
 });
 
 test("Function rest binding pattern", () => {

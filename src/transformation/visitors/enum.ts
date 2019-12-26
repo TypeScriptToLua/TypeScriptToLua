@@ -75,7 +75,6 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                         : lua.createIdentifier(member.name.getText(), member.name),
                     valueExpression,
                     node,
-                    undefined,
                     exportScope
                 )
             );

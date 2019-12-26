@@ -2,25 +2,6 @@ import * as ts from "typescript";
 import { ReferencedBeforeDeclaration } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
-test("Var Hoisting", () => {
-    const code = `
-        foo = "foo";
-        var foo;
-        return foo;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foo");
-});
-
-test("Exported Var Hoisting", () => {
-    const code = `
-        foo = "foo";
-        export var foo;
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
-});
-
 test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
     const code = `
         let bar: string;
@@ -98,37 +79,19 @@ test("Exported Namespace Function Hoisting", () => {
 });
 
 test.each([
-    { varType: "var", expectResult: "foo" },
     { varType: "let", expectResult: "bar" },
     { varType: "const", expectResult: "bar" },
 ])("Hoisting in Non-Function Scope (%p)", ({ varType, expectResult }) => {
     const code = `
-        function foo() {
-            ${varType} bar = "bar";
-            for (let i = 0; i < 1; ++i) {
-                ${varType} bar = "foo";
+            function foo() {
+                ${varType} bar = "bar";
+                for (let i = 0; i < 1; ++i) {
+                    ${varType} bar = "foo";
+                }
+                return bar;
             }
-            return bar;
-        }
-        return foo();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(expectResult);
-});
-
-test.each([
-    { initializer: "", expectResult: "foofoo" },
-    { initializer: ' = "bar"', expectResult: "barbar" },
-])("Var hoisting from child scope (%p)", ({ initializer, expectResult }) => {
-    const code = `
-        foo = "foo";
-        let result: string;
-        if (true) {
-            var foo${initializer};
-            result = foo;
-        }
-        return foo + result;
-    `;
+            return foo();
+        `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(expectResult);
 });
@@ -175,19 +138,20 @@ test("Exported Namespace Hoisting", () => {
 });
 
 test("Nested Namespace Hoisting", () => {
-    const code = `
-        export namespace Outer {
+    util.testModule`
+        const Inner = 0;
+        namespace Outer {
             export function bar() {
                 return Inner.foo;
             }
             namespace Inner {
-                export let foo = "foo";
+                export const foo = "foo";
             }
         }
+
         export const foo = Outer.bar();
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
+        export { Inner };
+    `.expectToMatchJsResult();
 });
 
 test("Class Hoisting", () => {

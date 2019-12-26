@@ -130,19 +130,18 @@ export interface TextRange {
 
 export interface Node extends TextRange {
     kind: SyntaxKind;
-    parent?: Node;
 }
 
-export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node, parent?: Node): Node {
+export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node): Node {
     if (tsOriginal === undefined) {
-        return { kind, parent };
+        return { kind };
     }
 
     const sourcePosition = getSourcePosition(tsOriginal);
     if (sourcePosition) {
-        return { kind, parent, line: sourcePosition.line, column: sourcePosition.column };
+        return { kind, line: sourcePosition.line, column: sourcePosition.column };
     } else {
-        return { kind, parent };
+        return { kind };
     }
 }
 
@@ -172,19 +171,6 @@ export function setNodeOriginal<T extends Node>(node: T | undefined, tsOriginal:
     return node;
 }
 
-export function setParent(node: Node | Node[] | undefined, parent: Node): void {
-    if (!node) {
-        return;
-    }
-    if (Array.isArray(node)) {
-        node.forEach(n => {
-            n.parent = parent;
-        });
-    } else {
-        node.parent = parent;
-    }
-}
-
 function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
     if (sourceNode.getSourceFile() !== undefined && sourceNode.pos >= 0) {
         const { line, character } = ts.getLineAndCharacterOfPosition(
@@ -209,9 +195,8 @@ export function isBlock(node: Node): node is Block {
     return node.kind === SyntaxKind.Block;
 }
 
-export function createBlock(statements: Statement[], tsOriginal?: ts.Node, parent?: Node): Block {
-    const block = createNode(SyntaxKind.Block, tsOriginal, parent) as Block;
-    setParent(statements, block);
+export function createBlock(statements: Statement[], tsOriginal?: ts.Node): Block {
+    const block = createNode(SyntaxKind.Block, tsOriginal) as Block;
     block.statements = statements;
     return block;
 }
@@ -229,9 +214,8 @@ export function isDoStatement(node: Node): node is DoStatement {
     return node.kind === SyntaxKind.DoStatement;
 }
 
-export function createDoStatement(statements: Statement[], tsOriginal?: ts.Node, parent?: Node): DoStatement {
-    const statement = createNode(SyntaxKind.DoStatement, tsOriginal, parent) as DoStatement;
-    setParent(statements, statement);
+export function createDoStatement(statements: Statement[], tsOriginal?: ts.Node): DoStatement {
+    const statement = createNode(SyntaxKind.DoStatement, tsOriginal) as DoStatement;
     statement.statements = statements;
     return statement;
 }
@@ -250,26 +234,17 @@ export function isVariableDeclarationStatement(node: Node): node is VariableDecl
 export function createVariableDeclarationStatement(
     left: Identifier | Identifier[],
     right?: Expression | Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): VariableDeclarationStatement {
-    const statement = createNode(
-        SyntaxKind.VariableDeclarationStatement,
-        tsOriginal,
-        parent
-    ) as VariableDeclarationStatement;
-    setParent(left, statement);
-    if (Array.isArray(left)) {
-        statement.left = left;
-    } else {
-        statement.left = [left];
-    }
-    setParent(right, statement);
+    const statement = createNode(SyntaxKind.VariableDeclarationStatement, tsOriginal) as VariableDeclarationStatement;
+    statement.left = Array.isArray(left) ? left : [left];
+
     if (Array.isArray(right)) {
         statement.right = right;
     } else if (right) {
         statement.right = [right];
     }
+
     return statement;
 }
 
@@ -287,22 +262,17 @@ export function isAssignmentStatement(node: Node): node is AssignmentStatement {
 export function createAssignmentStatement(
     left: AssignmentLeftHandSideExpression | AssignmentLeftHandSideExpression[],
     right?: Expression | Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): AssignmentStatement {
-    const statement = createNode(SyntaxKind.AssignmentStatement, tsOriginal, parent) as AssignmentStatement;
-    setParent(left, statement);
-    if (Array.isArray(left)) {
-        statement.left = left;
-    } else {
-        statement.left = [left];
-    }
-    setParent(right, statement);
+    const statement = createNode(SyntaxKind.AssignmentStatement, tsOriginal) as AssignmentStatement;
+    statement.left = Array.isArray(left) ? left : [left];
+
     if (Array.isArray(right)) {
         statement.right = right;
     } else {
         statement.right = right ? [right] : [];
     }
+
     return statement;
 }
 
@@ -321,15 +291,11 @@ export function createIfStatement(
     condition: Expression,
     ifBlock: Block,
     elseBlock?: Block | IfStatement,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): IfStatement {
-    const statement = createNode(SyntaxKind.IfStatement, tsOriginal, parent) as IfStatement;
-    setParent(condition, statement);
+    const statement = createNode(SyntaxKind.IfStatement, tsOriginal) as IfStatement;
     statement.condition = condition;
-    setParent(ifBlock, statement);
     statement.ifBlock = ifBlock;
-    setParent(elseBlock, statement);
     statement.elseBlock = elseBlock;
     return statement;
 }
@@ -356,16 +322,9 @@ export function isWhileStatement(node: Node): node is WhileStatement {
     return node.kind === SyntaxKind.WhileStatement;
 }
 
-export function createWhileStatement(
-    body: Block,
-    condition: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
-): WhileStatement {
-    const statement = createNode(SyntaxKind.WhileStatement, tsOriginal, parent) as WhileStatement;
-    setParent(body, statement);
+export function createWhileStatement(body: Block, condition: Expression, tsOriginal?: ts.Node): WhileStatement {
+    const statement = createNode(SyntaxKind.WhileStatement, tsOriginal) as WhileStatement;
     statement.body = body;
-    setParent(condition, statement);
     statement.condition = condition;
     return statement;
 }
@@ -379,16 +338,9 @@ export function isRepeatStatement(node: Node): node is RepeatStatement {
     return node.kind === SyntaxKind.RepeatStatement;
 }
 
-export function createRepeatStatement(
-    body: Block,
-    condition: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
-): RepeatStatement {
-    const statement = createNode(SyntaxKind.RepeatStatement, tsOriginal, parent) as RepeatStatement;
-    setParent(body, statement);
+export function createRepeatStatement(body: Block, condition: Expression, tsOriginal?: ts.Node): RepeatStatement {
+    const statement = createNode(SyntaxKind.RepeatStatement, tsOriginal) as RepeatStatement;
     statement.body = body;
-    setParent(condition, statement);
     statement.condition = condition;
     return statement;
 }
@@ -412,19 +364,13 @@ export function createForStatement(
     controlVariableInitializer: Expression,
     limitExpression: Expression,
     stepExpression?: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): ForStatement {
-    const statement = createNode(SyntaxKind.ForStatement, tsOriginal, parent) as ForStatement;
-    setParent(body, statement);
+    const statement = createNode(SyntaxKind.ForStatement, tsOriginal) as ForStatement;
     statement.body = body;
-    setParent(controlVariable, statement);
     statement.controlVariable = controlVariable;
-    setParent(controlVariableInitializer, statement);
     statement.controlVariableInitializer = controlVariableInitializer;
-    setParent(limitExpression, statement);
     statement.limitExpression = limitExpression;
-    setParent(stepExpression, statement);
     statement.stepExpression = stepExpression;
     return statement;
 }
@@ -443,15 +389,11 @@ export function createForInStatement(
     body: Block,
     names: Identifier[],
     expressions: Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): ForInStatement {
-    const statement = createNode(SyntaxKind.ForInStatement, tsOriginal, parent) as ForInStatement;
-    setParent(body, statement);
+    const statement = createNode(SyntaxKind.ForInStatement, tsOriginal) as ForInStatement;
     statement.body = body;
-    setParent(names, statement);
     statement.names = names;
-    setParent(expressions, statement);
     statement.expressions = expressions;
     return statement;
 }
@@ -465,8 +407,8 @@ export function isGotoStatement(node: Node): node is GotoStatement {
     return node.kind === SyntaxKind.GotoStatement;
 }
 
-export function createGotoStatement(label: string, tsOriginal?: ts.Node, parent?: Node): GotoStatement {
-    const statement = createNode(SyntaxKind.GotoStatement, tsOriginal, parent) as GotoStatement;
+export function createGotoStatement(label: string, tsOriginal?: ts.Node): GotoStatement {
+    const statement = createNode(SyntaxKind.GotoStatement, tsOriginal) as GotoStatement;
     statement.label = label;
     return statement;
 }
@@ -480,8 +422,8 @@ export function isLabelStatement(node: Node): node is LabelStatement {
     return node.kind === SyntaxKind.LabelStatement;
 }
 
-export function createLabelStatement(name: string, tsOriginal?: ts.Node, parent?: Node): LabelStatement {
-    const statement = createNode(SyntaxKind.LabelStatement, tsOriginal, parent) as LabelStatement;
+export function createLabelStatement(name: string, tsOriginal?: ts.Node): LabelStatement {
+    const statement = createNode(SyntaxKind.LabelStatement, tsOriginal) as LabelStatement;
     statement.name = name;
     return statement;
 }
@@ -495,13 +437,8 @@ export function isReturnStatement(node: Node): node is ReturnStatement {
     return node.kind === SyntaxKind.ReturnStatement;
 }
 
-export function createReturnStatement(
-    expressions?: Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
-): ReturnStatement {
-    const statement = createNode(SyntaxKind.ReturnStatement, tsOriginal, parent) as ReturnStatement;
-    setParent(expressions, statement);
+export function createReturnStatement(expressions?: Expression[], tsOriginal?: ts.Node): ReturnStatement {
+    const statement = createNode(SyntaxKind.ReturnStatement, tsOriginal) as ReturnStatement;
     statement.expressions = expressions;
     return statement;
 }
@@ -514,8 +451,8 @@ export function isBreakStatement(node: Node): node is BreakStatement {
     return node.kind === SyntaxKind.BreakStatement;
 }
 
-export function createBreakStatement(tsOriginal?: ts.Node, parent?: Node): BreakStatement {
-    return createNode(SyntaxKind.BreakStatement, tsOriginal, parent) as BreakStatement;
+export function createBreakStatement(tsOriginal?: ts.Node): BreakStatement {
+    return createNode(SyntaxKind.BreakStatement, tsOriginal) as BreakStatement;
 }
 
 export interface ExpressionStatement extends Statement {
@@ -527,13 +464,8 @@ export function isExpressionStatement(node: Node): node is ExpressionStatement {
     return node.kind === SyntaxKind.ExpressionStatement;
 }
 
-export function createExpressionStatement(
-    expressions: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
-): ExpressionStatement {
-    const statement = createNode(SyntaxKind.ExpressionStatement, tsOriginal, parent) as ExpressionStatement;
-    setParent(expressions, statement);
+export function createExpressionStatement(expressions: Expression, tsOriginal?: ts.Node): ExpressionStatement {
+    const statement = createNode(SyntaxKind.ExpressionStatement, tsOriginal) as ExpressionStatement;
     statement.expression = expressions;
     return statement;
 }
@@ -552,8 +484,8 @@ export function isNilLiteral(node: Node): node is NilLiteral {
     return node.kind === SyntaxKind.NilKeyword;
 }
 
-export function createNilLiteral(tsOriginal?: ts.Node, parent?: Node): NilLiteral {
-    return createNode(SyntaxKind.NilKeyword, tsOriginal, parent) as NilLiteral;
+export function createNilLiteral(tsOriginal?: ts.Node): NilLiteral {
+    return createNode(SyntaxKind.NilKeyword, tsOriginal) as NilLiteral;
 }
 
 export interface BooleanLiteral extends Expression {
@@ -564,11 +496,11 @@ export function isBooleanLiteral(node: Node): node is BooleanLiteral {
     return node.kind === SyntaxKind.TrueKeyword || node.kind === SyntaxKind.FalseKeyword;
 }
 
-export function createBooleanLiteral(value: boolean, tsOriginal?: ts.Node, parent?: Node): BooleanLiteral {
+export function createBooleanLiteral(value: boolean, tsOriginal?: ts.Node): BooleanLiteral {
     if (value) {
-        return createNode(SyntaxKind.TrueKeyword, tsOriginal, parent) as BooleanLiteral;
+        return createNode(SyntaxKind.TrueKeyword, tsOriginal) as BooleanLiteral;
     } else {
-        return createNode(SyntaxKind.FalseKeyword, tsOriginal, parent) as BooleanLiteral;
+        return createNode(SyntaxKind.FalseKeyword, tsOriginal) as BooleanLiteral;
     }
 }
 
@@ -581,8 +513,8 @@ export function isDotsLiteral(node: Node): node is DotsLiteral {
     return node.kind === SyntaxKind.DotsKeyword;
 }
 
-export function createDotsLiteral(tsOriginal?: ts.Node, parent?: Node): DotsLiteral {
-    return createNode(SyntaxKind.DotsKeyword, tsOriginal, parent) as DotsLiteral;
+export function createDotsLiteral(tsOriginal?: ts.Node): DotsLiteral {
+    return createNode(SyntaxKind.DotsKeyword, tsOriginal) as DotsLiteral;
 }
 
 // StringLiteral / NumberLiteral
@@ -599,8 +531,8 @@ export function isNumericLiteral(node: Node): node is NumericLiteral {
     return node.kind === SyntaxKind.NumericLiteral;
 }
 
-export function createNumericLiteral(value: number, tsOriginal?: ts.Node, parent?: Node): NumericLiteral {
-    const expression = createNode(SyntaxKind.NumericLiteral, tsOriginal, parent) as NumericLiteral;
+export function createNumericLiteral(value: number, tsOriginal?: ts.Node): NumericLiteral {
+    const expression = createNode(SyntaxKind.NumericLiteral, tsOriginal) as NumericLiteral;
     expression.value = value;
     return expression;
 }
@@ -614,8 +546,8 @@ export function isStringLiteral(node: Node): node is StringLiteral {
     return node.kind === SyntaxKind.StringLiteral;
 }
 
-export function createStringLiteral(value: string, tsOriginal?: ts.Node, parent?: Node): StringLiteral {
-    const expression = createNode(SyntaxKind.StringLiteral, tsOriginal, parent) as StringLiteral;
+export function createStringLiteral(value: string, tsOriginal?: ts.Node): StringLiteral {
+    const expression = createNode(SyntaxKind.StringLiteral, tsOriginal) as StringLiteral;
     expression.value = value;
     return expression;
 }
@@ -645,17 +577,12 @@ export function createFunctionExpression(
     dots?: DotsLiteral,
     restParamName?: Identifier,
     flags = FunctionExpressionFlags.None,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): FunctionExpression {
-    const expression = createNode(SyntaxKind.FunctionExpression, tsOriginal, parent) as FunctionExpression;
-    setParent(body, expression);
+    const expression = createNode(SyntaxKind.FunctionExpression, tsOriginal) as FunctionExpression;
     expression.body = body;
-    setParent(params, expression);
     expression.params = params;
-    setParent(dots, expression);
     expression.dots = dots;
-    setParent(restParamName, expression);
     expression.restParamName = restParamName;
     expression.flags = flags;
     return expression;
@@ -674,13 +601,10 @@ export function isTableFieldExpression(node: Node): node is TableFieldExpression
 export function createTableFieldExpression(
     value: Expression,
     key?: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): TableFieldExpression {
-    const expression = createNode(SyntaxKind.TableFieldExpression, tsOriginal, parent) as TableFieldExpression;
-    setParent(value, expression);
+    const expression = createNode(SyntaxKind.TableFieldExpression, tsOriginal) as TableFieldExpression;
     expression.value = value;
-    setParent(key, expression);
     expression.key = key;
     return expression;
 }
@@ -694,13 +618,8 @@ export function isTableExpression(node: Node): node is TableExpression {
     return node.kind === SyntaxKind.TableExpression;
 }
 
-export function createTableExpression(
-    fields: TableFieldExpression[] = [],
-    tsOriginal?: ts.Node,
-    parent?: Node
-): TableExpression {
-    const expression = createNode(SyntaxKind.TableExpression, tsOriginal, parent) as TableExpression;
-    setParent(fields, expression);
+export function createTableExpression(fields: TableFieldExpression[] = [], tsOriginal?: ts.Node): TableExpression {
+    const expression = createNode(SyntaxKind.TableExpression, tsOriginal) as TableExpression;
     expression.fields = fields;
     return expression;
 }
@@ -718,11 +637,9 @@ export function isUnaryExpression(node: Node): node is UnaryExpression {
 export function createUnaryExpression(
     operand: Expression,
     operator: UnaryOperator,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): UnaryExpression {
-    const expression = createNode(SyntaxKind.UnaryExpression, tsOriginal, parent) as UnaryExpression;
-    setParent(operand, expression);
+    const expression = createNode(SyntaxKind.UnaryExpression, tsOriginal) as UnaryExpression;
     expression.operand = operand;
     expression.operator = operator;
     return expression;
@@ -743,13 +660,10 @@ export function createBinaryExpression(
     left: Expression,
     right: Expression,
     operator: BinaryOperator,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): BinaryExpression {
-    const expression = createNode(SyntaxKind.BinaryExpression, tsOriginal, parent) as BinaryExpression;
-    setParent(left, expression);
+    const expression = createNode(SyntaxKind.BinaryExpression, tsOriginal) as BinaryExpression;
     expression.left = left;
-    setParent(right, expression);
     expression.right = right;
     expression.operator = operator;
     return expression;
@@ -766,11 +680,9 @@ export function isParenthesizedExpression(node: Node): node is ParenthesizedExpr
 
 export function createParenthesizedExpression(
     innerExpression: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): ParenthesizedExpression {
-    const expression = createNode(SyntaxKind.ParenthesizedExpression, tsOriginal, parent) as ParenthesizedExpression;
-    setParent(innerExpression, expression);
+    const expression = createNode(SyntaxKind.ParenthesizedExpression, tsOriginal) as ParenthesizedExpression;
     expression.innerExpression = innerExpression;
     return expression;
 }
@@ -788,13 +700,10 @@ export function isCallExpression(node: Node): node is CallExpression {
 export function createCallExpression(
     expression: Expression,
     params?: Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): CallExpression {
-    const callExpression = createNode(SyntaxKind.CallExpression, tsOriginal, parent) as CallExpression;
-    setParent(expression, callExpression);
+    const callExpression = createNode(SyntaxKind.CallExpression, tsOriginal) as CallExpression;
     callExpression.expression = expression;
-    setParent(params, expression);
     callExpression.params = params;
     return callExpression;
 }
@@ -814,15 +723,11 @@ export function createMethodCallExpression(
     prefixExpression: Expression,
     name: Identifier,
     params?: Expression[],
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): MethodCallExpression {
-    const callExpression = createNode(SyntaxKind.MethodCallExpression, tsOriginal, parent) as MethodCallExpression;
-    setParent(prefixExpression, callExpression);
+    const callExpression = createNode(SyntaxKind.MethodCallExpression, tsOriginal) as MethodCallExpression;
     callExpression.prefixExpression = prefixExpression;
-    setParent(name, callExpression);
     callExpression.name = name;
-    setParent(params, callExpression);
     callExpression.params = params;
     return callExpression;
 }
@@ -843,10 +748,9 @@ export function createIdentifier(
     text: string,
     tsOriginal?: ts.Node,
     symbolId?: SymbolId,
-    originalName?: string,
-    parent?: Node
+    originalName?: string
 ): Identifier {
-    const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+    const expression = createNode(SyntaxKind.Identifier, tsOriginal) as Identifier;
     expression.exportable = true;
     expression.text = text;
     expression.symbolId = symbolId;
@@ -858,8 +762,8 @@ export function cloneIdentifier(identifier: Identifier, tsOriginal?: ts.Node): I
     return createIdentifier(identifier.text, tsOriginal, identifier.symbolId, identifier.originalName);
 }
 
-export function createAnonymousIdentifier(tsOriginal?: ts.Node, parent?: Node): Identifier {
-    const expression = createNode(SyntaxKind.Identifier, tsOriginal, parent) as Identifier;
+export function createAnonymousIdentifier(tsOriginal?: ts.Node): Identifier {
+    const expression = createNode(SyntaxKind.Identifier, tsOriginal) as Identifier;
     expression.exportable = false;
     expression.text = "____";
     return expression;
@@ -878,13 +782,10 @@ export function isTableIndexExpression(node: Node): node is TableIndexExpression
 export function createTableIndexExpression(
     table: Expression,
     index: Expression,
-    tsOriginal?: ts.Node,
-    parent?: Node
+    tsOriginal?: ts.Node
 ): TableIndexExpression {
-    const expression = createNode(SyntaxKind.TableIndexExpression, tsOriginal, parent) as TableIndexExpression;
-    setParent(table, expression);
+    const expression = createNode(SyntaxKind.TableIndexExpression, tsOriginal) as TableIndexExpression;
     expression.table = table;
-    setParent(index, expression);
     expression.index = index;
     return expression;
 }

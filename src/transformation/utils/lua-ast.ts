@@ -3,10 +3,9 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { getCurrentNamespace } from "../visitors/namespace";
-import { UndefinedScope } from "./errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { findScope, peekScope, ScopeType } from "./scope";
-import { isFirstDeclaration, isFunctionType } from "./typescript";
+import { isFunctionType } from "./typescript";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
 export function unwrapVisitorResult<T extends lua.Node>(result: OneToManyVisitorResult<T>): T[] {
@@ -25,22 +24,6 @@ export function createSelfIdentifier(tsOriginal?: ts.Node): lua.Identifier {
 
 export function createExportsIdentifier(): lua.Identifier {
     return lua.createIdentifier("____exports");
-}
-
-export function replaceStatementInParent(oldNode: lua.Statement, newNode?: lua.Statement): void {
-    if (!oldNode.parent) {
-        throw new Error("node has not yet been assigned a parent");
-    }
-
-    if (lua.isBlock(oldNode.parent) || lua.isDoStatement(oldNode.parent)) {
-        if (newNode) {
-            oldNode.parent.statements.splice(oldNode.parent.statements.indexOf(oldNode), 1, newNode);
-        } else {
-            oldNode.parent.statements.splice(oldNode.parent.statements.indexOf(oldNode), 1);
-        }
-    } else {
-        throw new Error("unexpected parent type");
-    }
 }
 
 export function createExpressionPlusOne(expression: lua.Expression): lua.Expression {
@@ -111,10 +94,9 @@ export function createHoistableVariableDeclarationStatement(
     context: TransformationContext,
     identifier: lua.Identifier,
     initializer?: lua.Expression,
-    tsOriginal?: ts.Node,
-    parent?: lua.Node
+    tsOriginal?: ts.Node
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
-    const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal, parent);
+    const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
     if (!context.options.noHoisting && identifier.symbolId) {
         const scope = peekScope(context);
         if (!scope.variableDeclarations) {
@@ -132,13 +114,13 @@ export function createLocalOrExportedOrGlobalDeclaration(
     lhs: lua.Identifier | lua.Identifier[],
     rhs?: lua.Expression | lua.Expression[],
     tsOriginal?: ts.Node,
-    parent?: lua.Node,
     overrideExportScope?: ts.SourceFile | ts.ModuleDeclaration
 ): lua.Statement[] {
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
-    const functionDeclaration = tsOriginal && ts.isFunctionDeclaration(tsOriginal) ? tsOriginal : undefined;
+    const isVariableDeclaration = tsOriginal !== undefined && ts.isVariableDeclaration(tsOriginal);
+    const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = Array.isArray(lhs) ? lhs : [lhs];
     if (identifiers.length === 0) {
@@ -154,48 +136,31 @@ export function createLocalOrExportedOrGlobalDeclaration(
             assignment = lua.createAssignmentStatement(
                 identifiers.map(identifier => createExportedIdentifier(context, identifier, exportScope)),
                 rhs,
-                tsOriginal,
-                parent
+                tsOriginal
             );
         }
     } else {
         const insideFunction = findScope(context, ScopeType.Function) !== undefined;
-        let isLetOrConst = false;
-        let isVariableFirstDeclaration = true; // var can have multiple declarations for the same variable :/
-        if (tsOriginal && ts.isVariableDeclaration(tsOriginal) && tsOriginal.parent) {
-            isLetOrConst = (tsOriginal.parent.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) !== 0;
-            isVariableFirstDeclaration = isLetOrConst || isFirstDeclaration(context, tsOriginal);
-        }
 
-        if (
-            (context.isModule || getCurrentNamespace(context) || insideFunction || isLetOrConst) &&
-            isVariableFirstDeclaration
-        ) {
+        if (context.isModule || getCurrentNamespace(context) || insideFunction || isVariableDeclaration) {
             // local
             const isPossibleWrappedFunction =
-                !functionDeclaration &&
+                !isFunctionDeclaration &&
                 tsOriginal &&
                 ts.isVariableDeclaration(tsOriginal) &&
                 tsOriginal.initializer &&
                 isFunctionType(context, context.checker.getTypeAtLocation(tsOriginal.initializer));
             if (isPossibleWrappedFunction) {
                 // Split declaration and assignment for wrapped function types to allow recursion
-                declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal, parent);
-                assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
+                declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
+                assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
             } else {
-                declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal, parent);
+                declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
             if (!context.options.noHoisting) {
                 // Remember local variable declarations for hoisting later
-                const scope =
-                    isLetOrConst || functionDeclaration
-                        ? peekScope(context)
-                        : findScope(context, ScopeType.Function | ScopeType.File);
-
-                if (scope === undefined) {
-                    throw UndefinedScope();
-                }
+                const scope = peekScope(context);
 
                 if (!scope.variableDeclarations) {
                     scope.variableDeclarations = [];
@@ -205,13 +170,13 @@ export function createLocalOrExportedOrGlobalDeclaration(
             }
         } else if (rhs) {
             // global
-            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal, parent);
+            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
         } else {
             return [];
         }
     }
 
-    if (!context.options.noHoisting && functionDeclaration) {
+    if (!context.options.noHoisting && isFunctionDeclaration) {
         // Remember function definitions for hoisting later
         const functionSymbolId = (lhs as lua.Identifier).symbolId;
         const scope = peekScope(context);

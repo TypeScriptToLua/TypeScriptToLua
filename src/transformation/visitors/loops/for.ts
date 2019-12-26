@@ -1,14 +1,15 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
-import { transformVariableDeclaration } from "../variable-declaration";
-import { transformLoopBody } from "./body";
+import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
+import { transformLoopBody } from "./utils";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
     const result: lua.Statement[] = [];
 
     if (statement.initializer) {
         if (ts.isVariableDeclarationList(statement.initializer)) {
+            checkVariableDeclarationList(statement.initializer);
             // local initializer = value
             result.push(...statement.initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
         } else {

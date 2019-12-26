@@ -1,9 +1,9 @@
+import * as assert from "assert";
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
-import { replaceStatementInParent } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { getFirstDeclarationInFile } from "./typescript";
 
@@ -168,15 +168,11 @@ function hoistVariableDeclarations(
             }
 
             const index = result.indexOf(declaration);
-            if (index >= 0) {
-                if (assignment) {
-                    result.splice(index, 1, assignment);
-                } else {
-                    result.splice(index, 1);
-                }
+            assert(index > -1);
+            if (assignment) {
+                result.splice(index, 1, assignment);
             } else {
-                // Special case for 'var's declared in child scopes
-                replaceStatementInParent(declaration, assignment);
+                result.splice(index, 1);
             }
 
             hoistedLocals.push(...declaration.left);

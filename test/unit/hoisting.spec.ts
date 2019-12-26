@@ -243,55 +243,45 @@ test.each([
 });
 
 test("Import hoisting (named)", () => {
-    const importCode = `
-        const bar = foo;
-        import {foo} from "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = foo;
+        import { foo } from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (namespace)", () => {
-    const importCode = `
-        const bar = myMod.foo;
-        import * as myMod from "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = module.foo;
+        import * as module from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (side-effect)", () => {
-    const importCode = `
-        const bar = foo;
-        import "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {_ = (function() foo = "foobar" end)()}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = (globalThis as any).result;
+        import "./module";
+    `
+        .addExtraFile("module.ts", "(globalThis as any).result = true; export {};")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisted before function", () => {
-    const importCode = `
-        let bar: any;
-        import {foo} from "myMod";
+    util.testBundle`
+        export let result: any;
+
         baz();
         function baz() {
-            bar = foo;
-        }`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+            result = foo;
+        }
+
+        import { foo } from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Hoisting Shorthand Property", () => {

@@ -304,7 +304,7 @@ test.each([
     { input: "true ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
     { input: "false ? false : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
     { input: "true ? undefined : true", options: { luaTarget: tstl.LuaTarget.LuaJIT } },
-])("Ternary operator (%p)", ({ input, options }) => {
+])("Ternary conditional operator (%p)", ({ input, options }) => {
     util.testFunction`
         const literalValue = "literal";
         let variableValue: string;
@@ -314,6 +314,15 @@ test.each([
     `
         .setOptions(options)
         .expectToMatchJsResult();
+});
+
+test("Nested ternary conditional conditional", () => {
+    util.testFunction`
+        const a: number = 4;
+        return a > 2
+            ? (a === 4 ? "foo" : "bar")
+            : "baz"; 
+    `.expectToMatchJsResult();
 });
 
 test.each([

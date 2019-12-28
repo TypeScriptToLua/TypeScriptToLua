@@ -77,17 +77,44 @@ export class TransformationContext {
         return result as lua.Expression;
     }
 
+    public transformStatement(node: StatementLikeNode): lua.Statement[] {
+        const transformationResult = this.transformNode(node) as lua.Statement[];
+        return [...this.popPrecedingStatements(), ...transformationResult];
+    }
+
+    public superTransformStatement(node: StatementLikeNode): lua.Statement[] {
+        const transformationResult = this.superTransformNode(node) as lua.Statement[];
+        return [...this.popPrecedingStatements(), ...transformationResult];
+    }
+
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
             ? node.flatMap(n => this.transformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.transformNode(node as StatementLikeNode) as lua.Statement[]);
+              this.transformStatement(node as StatementLikeNode);
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
         return Array.isArray(node)
             ? node.flatMap(n => this.superTransformStatements(n))
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
+              this.superTransformStatement(node as StatementLikeNode);
+    }
+
+    private identifierCounter = 0;
+    public createUniqueIdentifier(prefix?: string): lua.Identifier {
+        return lua.createIdentifier(`____${prefix ? prefix + "_" : ""}var_${this.identifierCounter++}`);
+    }
+
+    private precedingStatementsQueue: lua.Statement[] = [];
+    public pushPrecedingStatement(...statements: lua.Statement[]): void {
+        // Reverse because the queue is FIFO
+        this.precedingStatementsQueue.push(...statements.reverse());
+    }
+
+    public popPrecedingStatements(): lua.Statement[] {
+        const statements = this.precedingStatementsQueue.reverse();
+        this.precedingStatementsQueue = [];
+        return statements;
     }
 }

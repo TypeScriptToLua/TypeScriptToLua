@@ -14,7 +14,11 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
-import { transformArrayBindingElement, transformVariableDeclaration } from "../variable-declaration";
+import {
+    transformArrayBindingElement,
+    transformBindingPattern,
+    transformVariableDeclaration,
+} from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 function transformForOfInitializer(
@@ -196,10 +200,8 @@ function transformForOfArrayStatement(
         const binding = getVariableDeclarationBinding(statement.initializer);
         if (ts.isArrayBindingPattern(binding) || ts.isObjectBindingPattern(binding)) {
             valueVariable = lua.createIdentifier("____values");
-            const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
-            if (initializer) {
-                block.statements.unshift(initializer);
-            }
+            const destructuringStatements = transformBindingPattern(context, binding, valueVariable);
+            block.statements.unshift(...destructuringStatements);
         } else {
             valueVariable = transformIdentifier(context, binding);
         }

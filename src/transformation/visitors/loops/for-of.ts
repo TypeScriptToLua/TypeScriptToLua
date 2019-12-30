@@ -25,17 +25,17 @@ function transformForOfInitializer(
     context: TransformationContext,
     initializer: ts.ForInitializer,
     expression: lua.Expression
-): lua.Statement | undefined {
+): lua.Statement[] {
     if (ts.isVariableDeclarationList(initializer)) {
         const binding = getVariableDeclarationBinding(initializer);
         // Declaration of new variable
         if (ts.isArrayBindingPattern(binding)) {
             if (binding.elements.length === 0) {
                 // Ignore empty destructuring assignment
-                return undefined;
+                return [];
             }
 
-            expression = createUnpackCall(context, expression, initializer);
+            return transformBindingPattern(context, binding, expression);
         } else if (ts.isObjectBindingPattern(binding)) {
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }
@@ -43,10 +43,12 @@ function transformForOfInitializer(
         const variableStatements = transformVariableDeclaration(context, initializer.declarations[0]);
         if (variableStatements[0]) {
             // we can safely assume that for vars are not exported and therefore declarationstatenents
-            return lua.createVariableDeclarationStatement(
-                (variableStatements[0] as lua.VariableDeclarationStatement).left,
-                expression
-            );
+            return [
+                lua.createVariableDeclarationStatement(
+                    (variableStatements[0] as lua.VariableDeclarationStatement).left,
+                    expression
+                ),
+            ];
         } else {
             throw MissingForOfVariables(initializer);
         }
@@ -62,7 +64,7 @@ function transformForOfInitializer(
                 );
             } else {
                 // Ignore empty destructring assignment
-                return undefined;
+                return [];
             }
         } else if (ts.isObjectLiteralExpression(initializer)) {
             throw UnsupportedObjectDestructuringInForOf(initializer);
@@ -70,7 +72,7 @@ function transformForOfInitializer(
             variables = cast(context.transformExpression(initializer), lua.isAssignmentLeftHandSideExpression);
         }
 
-        return lua.createAssignmentStatement(variables, expression);
+        return [lua.createAssignmentStatement(variables, expression)];
     }
 }
 
@@ -182,7 +184,7 @@ function transformForOfLuaIteratorStatement(
             const valueVariable = lua.createIdentifier("____value");
             const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
             if (initializer) {
-                block.statements.splice(0, 0, initializer);
+                block.statements.splice(0, 0, ...initializer);
             }
             return lua.createForInStatement(block, [valueVariable], [luaIterator]);
         }
@@ -200,8 +202,10 @@ function transformForOfArrayStatement(
         const binding = getVariableDeclarationBinding(statement.initializer);
         if (ts.isArrayBindingPattern(binding) || ts.isObjectBindingPattern(binding)) {
             valueVariable = lua.createIdentifier("____values");
-            const destructuringStatements = transformBindingPattern(context, binding, valueVariable);
-            block.statements.unshift(...destructuringStatements);
+            const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
+            if (initializer) {
+                block.statements.unshift(...initializer);
+            }
         } else {
             valueVariable = transformIdentifier(context, binding);
         }
@@ -210,7 +214,7 @@ function transformForOfArrayStatement(
         valueVariable = lua.createIdentifier("____value");
         const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
         if (initializer) {
-            block.statements.unshift(initializer);
+            block.statements.unshift(...initializer);
         }
     }
 
@@ -246,7 +250,7 @@ function transformForOfIteratorStatement(
         const valueVariable = lua.createIdentifier("____value");
         const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
         if (initializer) {
-            block.statements.unshift(initializer);
+            block.statements.unshift(...initializer);
         }
 
         return lua.createForInStatement(

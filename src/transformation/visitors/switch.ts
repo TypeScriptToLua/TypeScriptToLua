@@ -3,17 +3,16 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { UnsupportedForTarget } from "../utils/errors";
-import { peekScope, performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
     if (context.luaTarget === LuaTarget.Lua51) {
         throw UnsupportedForTarget("Switch statements", LuaTarget.Lua51, statement);
     }
 
-    pushScope(context, ScopeType.Switch);
+    const scope = pushScope(context, ScopeType.Switch);
 
     // Give the switch a unique name to prevent nested switches from acting up.
-    const scope = peekScope(context);
     const switchName = `____switch${scope.id}`;
 
     const expression = context.transformExpression(statement.expression);

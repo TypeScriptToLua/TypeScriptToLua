@@ -505,6 +505,16 @@ test.each([
     );
 });
 
+test("forof nested destructuring", () => {
+    util.testFunction`
+        let result = 0;
+        for (const [[x]] of [[[1]]]) {
+            result = x;
+        }
+        return result;
+        `.expectToMatchJsResult();
+});
+
 test("forof with array typed as iterable", () => {
     const code = `
         function foo(): Iterable<string> {

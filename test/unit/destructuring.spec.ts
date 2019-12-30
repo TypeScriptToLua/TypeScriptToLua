@@ -42,16 +42,13 @@ test.each([
 });
 
 test("in function parameter creates local variables", () => {
-    const expectLuaContains = (lua: string, builder: util.TestBuilder) =>
-        expect(builder.getMainLuaCodeChunk()).toContain(lua);
+    const builder = util.testModule`
+        function test({ a, b }: any) {}
+    `;
 
-    util.testModule`
-        function test({a, b}) {}
-        test({ a: 4, b: 5});
-        `.tap(builder => {
-        expectLuaContains("local a =", builder);
-        expectLuaContains("local b =", builder);
-    });
+    const code = builder.getMainLuaCodeChunk();
+    expect(code).toContain("local a =");
+    expect(code).toContain("local b =");
 });
 
 test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
@@ -89,16 +86,6 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
         const expressionResult = (${binding} = ${value});
         return { ${allBindings}, obj, expressionResult };
     `.expectToMatchJsResult();
-});
-
-test("destructuring in loop", () => {
-    util.testFunction`
-        let result = 0;
-        for (const [[x]] of [[[1]]]) {
-            result = x;
-        }
-        return result;
-        `.expectToMatchJsResult();
 });
 
 describe("array destructuring optimization", () => {

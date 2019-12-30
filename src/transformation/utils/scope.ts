@@ -82,7 +82,7 @@ export function pushScope(context: TransformationContext, scopeType: ScopeType):
     scopeIdCounters.set(context, nextScopeId);
 
     const scopeStack = getScopeStack(context);
-    const scope = { type: scopeType, id: nextScopeId };
+    const scope: Scope = { type: scopeType, id: nextScopeId };
     scopeStack.push(scope);
     return scope;
 }

@@ -41,6 +41,19 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+test("in function parameter creates local variables", () => {
+    const expectLuaContains = (lua: string, builder: util.TestBuilder) =>
+        expect(builder.getMainLuaCodeChunk()).toContain(lua);
+
+    util.testModule`
+        function test({a, b}) {}
+        test({ a: 4, b: 5});
+        `.tap(builder => {
+        expectLuaContains("local a =", builder);
+        expectLuaContains("local b =", builder);
+    });
+});
+
 test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};

@@ -403,13 +403,10 @@ export class LuaPrinter {
         return this.createSourceNode(statement, chunks);
     }
 
-    public printIfStatement(statement: lua.IfStatement): SourceNode {
+    public printIfStatement(statement: lua.IfStatement, isElseIf = false): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        const isElseIf = statement.parent !== undefined && lua.isIfStatement(statement.parent);
-
         const prefix = isElseIf ? "elseif" : "if";
-
         chunks.push(this.indent(prefix + " "), this.printExpression(statement.condition), " then\n");
 
         this.pushIndent();
@@ -418,7 +415,7 @@ export class LuaPrinter {
 
         if (statement.elseBlock) {
             if (lua.isIfStatement(statement.elseBlock)) {
-                chunks.push(this.printIfStatement(statement.elseBlock));
+                chunks.push(this.printIfStatement(statement.elseBlock, true));
             } else {
                 chunks.push(this.indent("else\n"));
                 this.pushIndent();

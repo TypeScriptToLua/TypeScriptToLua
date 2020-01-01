@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
-import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
+import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";

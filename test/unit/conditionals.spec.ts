@@ -170,7 +170,21 @@ test("switch cases scope", () => {
     `.expectToMatchJsResult();
 });
 
-test("switch using variable re-declared in cases", () => {
+test("variable in nested scope does not interfere with case scope", () => {
+    util.testFunction`
+        let foo: number = 0;
+        switch (foo) {
+            case 0: {
+                let foo = 1;
+            }
+
+            case 1:
+                return foo;
+        }
+    `.expectToMatchJsResult();
+});
+
+test.only("switch using variable re-declared in cases", () => {
     util.testFunction`
         let foo: number = 0;
         switch (foo) {

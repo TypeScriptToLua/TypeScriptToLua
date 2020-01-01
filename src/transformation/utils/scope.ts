@@ -162,25 +162,21 @@ function hoistVariableDeclarations(
     const hoistedLocals: lua.Identifier[] = [];
     for (const declaration of scope.variableDeclarations) {
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
-        if (
-            symbols.some(s => shouldHoistSymbol(context, s, scope)) ||
-            // Hoist all symbols declared in switch scope to share scope
-            scope.type === ScopeType.Switch
-        ) {
-            let assignment: lua.AssignmentStatement | undefined;
-            if (declaration.right) {
-                assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
-                lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
-            }
-
+        if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
             const index = result.indexOf(declaration);
             assert(index > -1);
-            if (assignment) {
+
+            if (declaration.right) {
+                const assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
+                lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
                 result.splice(index, 1, assignment);
             } else {
                 result.splice(index, 1);
             }
 
+            hoistedLocals.push(...declaration.left);
+        } else if (scope.type === ScopeType.Switch) {
+            assert(!declaration.right);
             hoistedLocals.push(...declaration.left);
         }
     }

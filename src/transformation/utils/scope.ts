@@ -77,12 +77,14 @@ export function findScope(context: TransformationContext, scopeTypes: ScopeType)
 }
 
 const scopeIdCounters = new WeakMap<TransformationContext, number>();
-export function pushScope(context: TransformationContext, scopeType: ScopeType): void {
+export function pushScope(context: TransformationContext, scopeType: ScopeType): Scope {
     const nextScopeId = (scopeIdCounters.get(context) ?? 0) + 1;
     scopeIdCounters.set(context, nextScopeId);
 
     const scopeStack = getScopeStack(context);
-    scopeStack.push({ type: scopeType, id: nextScopeId });
+    const scope: Scope = { type: scopeType, id: nextScopeId };
+    scopeStack.push(scope);
+    return scope;
 }
 
 export function popScope(context: TransformationContext): Scope {

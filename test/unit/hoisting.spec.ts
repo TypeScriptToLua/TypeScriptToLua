@@ -1,24 +1,5 @@
 import * as util from "../util";
 
-test("Var Hoisting", () => {
-    const code = `
-        foo = "foo";
-        var foo;
-        return foo;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foo");
-});
-
-test("Exported Var Hoisting", () => {
-    const code = `
-        foo = "foo";
-        export var foo;
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
-});
-
 test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
     const code = `
         let bar: string;
@@ -96,37 +77,19 @@ test("Exported Namespace Function Hoisting", () => {
 });
 
 test.each([
-    { varType: "var", expectResult: "foo" },
     { varType: "let", expectResult: "bar" },
     { varType: "const", expectResult: "bar" },
 ])("Hoisting in Non-Function Scope (%p)", ({ varType, expectResult }) => {
     const code = `
-        function foo() {
-            ${varType} bar = "bar";
-            for (let i = 0; i < 1; ++i) {
-                ${varType} bar = "foo";
+            function foo() {
+                ${varType} bar = "bar";
+                for (let i = 0; i < 1; ++i) {
+                    ${varType} bar = "foo";
+                }
+                return bar;
             }
-            return bar;
-        }
-        return foo();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe(expectResult);
-});
-
-test.each([
-    { initializer: "", expectResult: "foofoo" },
-    { initializer: ' = "bar"', expectResult: "barbar" },
-])("Var hoisting from child scope (%p)", ({ initializer, expectResult }) => {
-    const code = `
-        foo = "foo";
-        let result: string;
-        if (true) {
-            var foo${initializer};
-            result = foo;
-        }
-        return foo + result;
-    `;
+            return foo();
+        `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(expectResult);
 });
@@ -173,19 +136,20 @@ test("Exported Namespace Hoisting", () => {
 });
 
 test("Nested Namespace Hoisting", () => {
-    const code = `
-        export namespace Outer {
+    util.testModule`
+        const Inner = 0;
+        namespace Outer {
             export function bar() {
                 return Inner.foo;
             }
             namespace Inner {
-                export let foo = "foo";
+                export const foo = "foo";
             }
         }
+
         export const foo = Outer.bar();
-    `;
-    const result = util.transpileExecuteAndReturnExport(code, "foo");
-    expect(result).toBe("foo");
+        export { Inner };
+    `.expectToMatchJsResult();
 });
 
 test("Class Hoisting", () => {
@@ -217,8 +181,6 @@ test("Enum Hoisting", () => {
 });
 
 test.each([
-    `foo = "foo"; var foo;`,
-    `foo = "foo"; export var foo;`,
     `function setBar() { const bar = foo; } let foo = "foo";`,
     `function setBar() { const bar = foo; } const foo = "foo";`,
     `function setBar() { const bar = foo; } export let foo = "foo";`,
@@ -238,55 +200,45 @@ test.each([
 });
 
 test("Import hoisting (named)", () => {
-    const importCode = `
-        const bar = foo;
-        import {foo} from "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = foo;
+        import { foo } from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (namespace)", () => {
-    const importCode = `
-        const bar = myMod.foo;
-        import * as myMod from "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = module.foo;
+        import * as module from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (side-effect)", () => {
-    const importCode = `
-        const bar = foo;
-        import "myMod";`;
-    const luaHeader = `
-        package.loaded["myMod"] = {_ = (function() foo = "foobar" end)()}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+    util.testBundle`
+        export const result = (globalThis as any).result;
+        import "./module";
+    `
+        .addExtraFile("module.ts", "(globalThis as any).result = true; export {};")
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisted before function", () => {
-    const importCode = `
-        let bar: any;
-        import {foo} from "myMod";
+    util.testBundle`
+        export let result: any;
+
         baz();
         function baz() {
-            bar = foo;
-        }`;
-    const luaHeader = `
-        package.loaded["myMod"] = {foo = "foobar"}
-        ${util.transpileString(importCode)}`;
-    const tsHeader = "declare const bar: any;";
-    const code = "return bar;";
-    expect(util.transpileAndExecute(code, undefined, luaHeader, tsHeader)).toBe("foobar");
+            result = foo;
+        }
+
+        import { foo } from "./module";
+    `
+        .addExtraFile("module.ts", "export const foo = true;")
+        .expectToEqual({ result: true });
 });
 
 test("Hoisting Shorthand Property", () => {

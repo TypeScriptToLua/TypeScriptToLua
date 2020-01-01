@@ -273,16 +273,24 @@ export class LuaPrinter {
 
     protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {
         const statementNodes: SourceNode[] = [];
-        statements = this.removeDeadAndEmptyStatements(statements);
-        statements.forEach((s, i) => {
-            const node = this.printStatement(s);
+        for (const [index, statement] of statements.entries()) {
+            if (this.isStatementEmpty(statement)) continue;
 
-            if (i > 0 && this.statementMayRequireSemiColon(statements[i - 1]) && this.nodeStartsWithParenthesis(node)) {
-                statementNodes[i - 1].add(";");
+            const node = this.printStatement(statement);
+
+            if (
+                index > 0 &&
+                this.statementMayRequireSemiColon(statements[index - 1]) &&
+                this.nodeStartsWithParenthesis(node)
+            ) {
+                statementNodes[index - 1].add(";");
             }
 
             statementNodes.push(node);
-        });
+
+            if (lua.isReturnStatement(statement)) break;
+        }
+
         return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];
     }
 
@@ -395,13 +403,10 @@ export class LuaPrinter {
         return this.createSourceNode(statement, chunks);
     }
 
-    public printIfStatement(statement: lua.IfStatement): SourceNode {
+    public printIfStatement(statement: lua.IfStatement, isElseIf = false): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        const isElseIf = statement.parent !== undefined && lua.isIfStatement(statement.parent);
-
         const prefix = isElseIf ? "elseif" : "if";
-
         chunks.push(this.indent(prefix + " "), this.printExpression(statement.condition), " then\n");
 
         this.pushIndent();
@@ -410,7 +415,7 @@ export class LuaPrinter {
 
         if (statement.elseBlock) {
             if (lua.isIfStatement(statement.elseBlock)) {
-                chunks.push(this.printIfStatement(statement.elseBlock));
+                chunks.push(this.printIfStatement(statement.elseBlock, true));
             } else {
                 chunks.push(this.indent("else\n"));
                 this.pushIndent();
@@ -771,19 +776,6 @@ export class LuaPrinter {
     public printOperator(kind: lua.Operator): SourceNode {
         // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
-    }
-
-    protected removeDeadAndEmptyStatements(statements: lua.Statement[]): lua.Statement[] {
-        const aliveStatements = [];
-        for (const statement of statements) {
-            if (!this.isStatementEmpty(statement)) {
-                aliveStatements.push(statement);
-            }
-            if (lua.isReturnStatement(statement)) {
-                break;
-            }
-        }
-        return aliveStatements;
     }
 
     protected isStatementEmpty(statement: lua.Statement): boolean {

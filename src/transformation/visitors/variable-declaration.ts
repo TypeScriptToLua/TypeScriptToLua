@@ -4,6 +4,7 @@ import { assert, assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
+import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -227,5 +228,13 @@ export function transformVariableDeclaration(
     }
 }
 
-export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) =>
-    node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
+export function checkVariableDeclarationList(context: TransformationContext, node: ts.VariableDeclarationList): void {
+    if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
+        context.diagnostics.push(unsupportedVarDeclaration(node));
+    }
+}
+
+export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
+    checkVariableDeclarationList(context, node.declarationList);
+    return node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
+};

@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { unwrapVisitorResult } from "../utils/lua-ast";
-import { isFileModule } from "../utils/typescript";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 
 export interface EmitResolver {
@@ -24,7 +23,7 @@ export class TransformationContext {
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
     public readonly luaTarget = this.options.luaTarget ?? LuaTarget.LuaJIT;
-    public readonly isModule = isFileModule(this.sourceFile);
+    public readonly isModule = ts.isExternalModule(this.sourceFile);
     public readonly isStrict =
         (this.options.alwaysStrict ?? this.options.strict) ||
         (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);

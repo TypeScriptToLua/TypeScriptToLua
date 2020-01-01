@@ -11,7 +11,7 @@ import {
 export function transformUnaryExpressionStatement(
     context: TransformationContext,
     node: ts.ExpressionStatement
-): lua.Statement | undefined {
+): lua.Statement[] | undefined {
     const expression = ts.isExpressionStatement(node) ? node.expression : node;
     if (
         ts.isPrefixUnaryExpression(expression) &&

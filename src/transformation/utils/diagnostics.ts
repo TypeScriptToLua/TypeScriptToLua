@@ -138,3 +138,7 @@ export const referencedBeforeDeclaration = createDiagnosticFactory(
 export const unresolvableRequirePath = createDiagnosticFactory(
     (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
 );
+
+export const unsupportedVarDeclaration = createDiagnosticFactory(
+    "`var` declarations are not supported. Use `let` or `const` instead."
+);

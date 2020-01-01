@@ -4,7 +4,7 @@ import { TransformationContext } from "../context";
 import { createModuleLocalNameIdentifier } from "../visitors/namespace";
 import { createExportsIdentifier } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
-import { findFirstNodeAbove, isFileModule } from "./typescript";
+import { findFirstNodeAbove } from "./typescript";
 
 export function hasDefaultExportModifier(node: ts.Node): boolean {
     return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
@@ -71,6 +71,29 @@ export function getSymbolExportScope(
     return scope;
 }
 
+export function getExportedSymbolsFromScope(
+    context: TransformationContext,
+    scope: ts.SourceFile | ts.ModuleDeclaration
+): ts.Symbol[] {
+    const scopeSymbol = context.checker.getSymbolAtLocation(ts.isSourceFile(scope) ? scope : scope.name);
+    if (scopeSymbol?.exports === undefined) {
+        return [];
+    }
+
+    // ts.Iterator is not a ES6-compatible iterator, because TypeScript targets ES5
+    const it: Iterable<ts.Symbol> = { [Symbol.iterator]: () => scopeSymbol!.exports!.values() };
+    return [...it];
+}
+
+export function getDependenciesOfSymbol(context: TransformationContext, originalSymbol: ts.Symbol): ts.Symbol[] {
+    return getExportedSymbolsFromScope(context, context.sourceFile).filter(exportSymbol =>
+        exportSymbol.declarations
+            .filter(ts.isExportSpecifier)
+            .map(context.checker.getExportSpecifierLocalTargetSymbol)
+            .includes(originalSymbol)
+    );
+}
+
 export function isSymbolExported(context: TransformationContext, symbol: ts.Symbol): boolean {
     return (
         getExportedSymbolDeclaration(symbol) !== undefined ||
@@ -84,23 +107,7 @@ export function isSymbolExportedFromScope(
     symbol: ts.Symbol,
     scope: ts.SourceFile | ts.ModuleDeclaration
 ): boolean {
-    if (ts.isSourceFile(scope) && !isFileModule(scope)) {
-        return false;
-    }
-
-    let scopeSymbol = context.checker.getSymbolAtLocation(scope);
-    if (scopeSymbol === undefined) {
-        // TODO: Necessary?
-        scopeSymbol = context.checker.getTypeAtLocation(scope).getSymbol();
-    }
-
-    if (scopeSymbol === undefined || scopeSymbol.exports === undefined) {
-        return false;
-    }
-
-    // ts.Iterator is not a ES6-compatible iterator, because TypeScript targets ES5
-    const it: Iterable<ts.Symbol> = { [Symbol.iterator]: () => scopeSymbol!.exports!.values() };
-    return [...it].includes(symbol);
+    return getExportedSymbolsFromScope(context, scope).includes(symbol);
 }
 
 export function addExportToIdentifier(

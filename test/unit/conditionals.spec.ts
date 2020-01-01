@@ -156,7 +156,46 @@ test.each([0, 1, 2, 3])("nestedSwitch (%p)", inp => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2])("switchLocalScope (%p)", inp => {
+test("switch cases scope", () => {
+    util.testFunction`
+        switch (0 as number) {
+            case 0:
+                let foo: number | undefined = 1;
+            case 1:
+                foo = 2;
+            case 2:
+                return foo;
+        }
+    `.expectToMatchJsResult();
+});
+
+test("variable in nested scope does not interfere with case scope", () => {
+    util.testFunction`
+        let foo: number = 0;
+        switch (foo) {
+            case 0: {
+                let foo = 1;
+            }
+
+            case 1:
+                return foo;
+        }
+    `.expectToMatchJsResult();
+});
+
+test.only("switch using variable re-declared in cases", () => {
+    util.testFunction`
+        let foo: number = 0;
+        switch (foo) {
+            case 0:
+                let foo = true;
+            case 1:
+                return foo;
+        }
+    `.expectToMatchJsResult();
+});
+
+test.each([0, 1, 2])("switch with block statement scope (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -182,8 +221,6 @@ test.each([0, 1, 2])("switchLocalScope (%p)", inp => {
 
 test.each([0, 1, 2, 3])("switchReturn (%p)", inp => {
     util.testFunction`
-        const result: number = -1;
-
         switch (<number>${inp}) {
             case 0:
                 return 0;
@@ -194,7 +231,8 @@ test.each([0, 1, 2, 3])("switchReturn (%p)", inp => {
                 return 2;
                 break;
         }
-        return result;
+
+        return -1;
     `.expectToMatchJsResult();
 });
 

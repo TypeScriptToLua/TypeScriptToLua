@@ -3,6 +3,7 @@ import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
 import { performHoisting, popScope, pushScope, ScopeType } from "../../utils/scope";
 import { transformBlockOrStatement } from "../block";
+import { checkVariableDeclarationList } from "../variable-declaration";
 
 export function transformLoopBody(
     context: TransformationContext,
@@ -22,4 +23,17 @@ export function transformLoopBody(
     baseResult.push(continueLabel);
 
     return baseResult;
+}
+
+export function getVariableDeclarationBinding(
+    context: TransformationContext,
+    node: ts.VariableDeclarationList
+): ts.BindingName {
+    checkVariableDeclarationList(context, node);
+
+    if (node.declarations.length === 0) {
+        return ts.createIdentifier("____");
+    }
+
+    return node.declarations[0].name;
 }

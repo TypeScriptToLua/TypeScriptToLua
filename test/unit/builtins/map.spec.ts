@@ -43,7 +43,7 @@ test("map entries", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var [key, value] of mymap.entries()) { count += key + value; }
+        for (const [key, value] of mymap.entries()) { count += key + value; }
         return count;`
     );
     expect(result).toBe(27);
@@ -120,7 +120,7 @@ test("map keys", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var key of mymap.keys()) { count += key; }
+        for (const key of mymap.keys()) { count += key; }
         return count;`
     );
 
@@ -140,7 +140,7 @@ test("map values", () => {
     const result = util.transpileAndExecute(
         `let mymap = new Map([[5, 2],[6, 3],[7, 4]]);
         let count = 0;
-        for (var value of mymap.values()) { count += value; }
+        for (const value of mymap.values()) { count += value; }
         return count;`
     );
 

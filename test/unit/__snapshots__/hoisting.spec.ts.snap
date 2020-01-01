@@ -49,18 +49,6 @@ return ____exports"
 
 exports[`No Hoisting ("export namespace O { export function f() { return I.foo; } namespace I { export let foo = \\"foo\\"; } }"): diagnostics 1`] = `"main.ts(1,51): error TSTL: Identifier 'I' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
 
-exports[`No Hoisting ("foo = \\"foo\\"; export var foo;"): code 1`] = `
-"local ____exports = {}
-____exports.foo = \\"foo\\"
-return ____exports"
-`;
-
-exports[`No Hoisting ("foo = \\"foo\\"; export var foo;"): diagnostics 1`] = `"main.ts(1,1): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
-
-exports[`No Hoisting ("foo = \\"foo\\"; var foo;"): code 1`] = `"foo = \\"foo\\""`;
-
-exports[`No Hoisting ("foo = \\"foo\\"; var foo;"): diagnostics 1`] = `"main.ts(1,1): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
-
 exports[`No Hoisting ("function bar() { return E.A; } enum E { A = \\"foo\\" }"): code 1`] = `
 "function bar(self)
     return E.A

@@ -1,9 +1,10 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast, castEach } from "../../../utils";
+import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
-import { validateAssignment } from "../../utils/assignment-validation";
+import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
+import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
@@ -11,15 +12,29 @@ import { transformElementAccessArgument } from "../access";
 import { transformLuaTablePropertyAccessInAssignment } from "../lua-table";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 
+export function transformAssignmentLeftHandSideExpression(
+    context: TransformationContext,
+    node: ts.Expression
+): lua.AssignmentLeftHandSideExpression {
+    const symbol = context.checker.getSymbolAtLocation(node);
+    const left =
+        (ts.isPropertyAccessExpression(node) && transformLuaTablePropertyAccessInAssignment(context, node)) ||
+        context.transformExpression(node);
+
+    return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
+        ? createExportedIdentifier(context, left)
+        : cast(left, lua.isAssignmentLeftHandSideExpression);
+}
+
 export function transformAssignment(
     context: TransformationContext,
     // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
     right: lua.Expression,
     parent?: ts.Expression
-): lua.Statement {
+): lua.Statement[] {
     if (isArrayLength(context, lhs)) {
-        return lua.createExpressionStatement(
+        const arrayLengthAssignment = lua.createExpressionStatement(
             transformLuaLibFunction(
                 context,
                 LuaLibFeature.ArraySetLength,
@@ -28,18 +43,28 @@ export function transformAssignment(
                 right
             )
         );
+
+        return [arrayLengthAssignment];
     }
 
-    let left: lua.AssignmentLeftHandSideExpression | undefined;
-    if (ts.isPropertyAccessExpression(lhs)) {
-        left = transformLuaTablePropertyAccessInAssignment(context, lhs);
-    }
+    const symbol = ts.isShorthandPropertyAssignment(lhs.parent)
+        ? context.checker.getShorthandAssignmentValueSymbol(lhs.parent)
+        : context.checker.getSymbolAtLocation(lhs);
 
-    if (!left) {
-        left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
-    }
+    const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
 
-    return lua.createAssignmentStatement(left, right, parent);
+    const left = transformAssignmentLeftHandSideExpression(context, lhs);
+
+    const rootAssignment = lua.createAssignmentStatement(left, right, lhs.parent);
+
+    return [
+        rootAssignment,
+        ...dependentSymbols.map(symbol => {
+            const [left] = rootAssignment.left;
+            const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
+            return lua.createAssignmentStatement(identifierToAssign, left);
+        }),
+    ];
 }
 
 export function transformAssignmentExpression(
@@ -115,12 +140,38 @@ export function transformAssignmentExpression(
         const left = context.transformExpression(expression.left);
         const right = context.transformExpression(expression.right);
         return createImmediatelyInvokedFunctionExpression(
-            [transformAssignment(context, expression.left, right)],
+            transformAssignment(context, expression.left, right),
             left,
             expression
         );
     }
 }
+
+const canBeTransformedToLuaAssignmentStatement = (
+    context: TransformationContext,
+    node: ts.DestructuringAssignment
+): node is ts.ArrayDestructuringAssignment => {
+    return (
+        ts.isArrayLiteralExpression(node.left) &&
+        node.left.elements.every(element => {
+            if (isArrayLength(context, element)) {
+                return false;
+            }
+
+            if (ts.isPropertyAccessExpression(element) || ts.isElementAccessExpression(element)) {
+                return true;
+            }
+
+            if (ts.isIdentifier(element)) {
+                const symbol = context.checker.getSymbolAtLocation(element);
+                if (symbol) {
+                    const aliases = getDependenciesOfSymbol(context, symbol);
+                    return aliases.length === 0;
+                }
+            }
+        })
+    );
+};
 
 export function transformAssignmentStatement(
     context: TransformationContext,
@@ -132,14 +183,7 @@ export function transformAssignmentStatement(
     validateAssignment(context, expression.right, rightType, leftType);
 
     if (isDestructuringAssignment(expression)) {
-        if (
-            ts.isArrayLiteralExpression(expression.left) &&
-            expression.left.elements.every(
-                e =>
-                    (ts.isIdentifier(e) || ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e)) &&
-                    !isArrayLength(context, e)
-            )
-        ) {
+        if (canBeTransformedToLuaAssignmentStatement(context, expression)) {
             const rightType = context.checker.getTypeAtLocation(expression.right);
             let right = context.transformExpression(expression.right);
 
@@ -147,10 +191,7 @@ export function transformAssignmentStatement(
                 right = createUnpackCall(context, right, expression.right);
             }
 
-            const left = castEach(
-                expression.left.elements.map(e => context.transformExpression(e)),
-                lua.isAssignmentLeftHandSideExpression
-            );
+            const left = expression.left.elements.map(e => transformAssignmentLeftHandSideExpression(context, e));
 
             return [lua.createAssignmentStatement(left, right, expression)];
         }
@@ -166,6 +207,6 @@ export function transformAssignmentStatement(
             ...transformDestructuringAssignment(context, expression, rootIdentifier),
         ];
     } else {
-        return [transformAssignment(context, expression.left, context.transformExpression(expression.right))];
+        return transformAssignment(context, expression.left, context.transformExpression(expression.right));
     }
 }

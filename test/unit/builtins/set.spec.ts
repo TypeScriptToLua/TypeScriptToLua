@@ -49,7 +49,7 @@ test("set entries", () => {
     util.testFunction`
         let myset = new Set([5, 6, 7]);
         let count = 0;
-        for (var [key, value] of myset.entries()) { count += key + value; }
+        for (const [key, value] of myset.entries()) { count += key + value; }
         return count;
     `.expectToMatchJsResult();
 });
@@ -138,14 +138,14 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
     test("basic", () => {
         util.testFunction`
             const myset = new Set();
-                
+
             myset.add("x");
             myset.add("a");
             myset.add(4);
             myset.add("b");
             myset.add(1);
             myset.add("a");
-            
+
             myset.delete("b");
 
             return [...myset.${iterationMethod}()];
@@ -155,11 +155,11 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
     test("after removing last", () => {
         util.testFunction`
             const myset = new Set();
-                
+
             myset.add("x");
             myset.add("a");
             myset.add(4);
-            
+
             myset.delete(4);
 
             return [...myset.${iterationMethod}()];
@@ -169,11 +169,11 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
     test("after removing first", () => {
         util.testFunction`
             const myset = new Set();
-                
+
             myset.add("x");
             myset.add("a");
             myset.add(4);
-            
+
             myset.delete("x");
 
             return [...myset.${iterationMethod}()];
@@ -183,10 +183,10 @@ describe.each(iterationMethods)("set.%s() preserves insertion order", iterationM
     test("after removing all", () => {
         util.testFunction`
             const myset = new Set();
-                
+
             myset.add("x");
             myset.add("a");
-            
+
             myset.delete("a");
             myset.delete("x");
 

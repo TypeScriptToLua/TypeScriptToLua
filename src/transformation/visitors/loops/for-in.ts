@@ -4,7 +4,7 @@ import { FunctionVisitor } from "../../context";
 import { forbiddenForIn } from "../../utils/diagnostics";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
-import { transformLoopBody } from "./body";
+import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
     if (isArrayType(context, context.checker.getTypeAtLocation(statement.expression))) {
@@ -22,11 +22,14 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
     // TODO: After the transformation pipeline refactor we should look at refactoring this together with the
     // for-of initializer transformation.
     let iterationVariable: lua.Identifier;
-    if (
-        ts.isVariableDeclarationList(statement.initializer) &&
-        ts.isIdentifier(statement.initializer.declarations[0].name)
-    ) {
-        iterationVariable = transformIdentifier(context, statement.initializer.declarations[0].name);
+    if (ts.isVariableDeclarationList(statement.initializer)) {
+        const binding = getVariableDeclarationBinding(context, statement.initializer);
+        if (!ts.isIdentifier(binding)) {
+            // TODO:
+            throw new Error(`Unsupported for...in variable kind: ${ts.SyntaxKind[binding.kind]}.`);
+        }
+
+        iterationVariable = transformIdentifier(context, binding);
     } else if (ts.isIdentifier(statement.initializer)) {
         // Iteration variable becomes ____key
         iterationVariable = lua.createIdentifier("____key");

@@ -1,27 +1,10 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../../context";
-import { isDeclaration } from "./nodes";
 
 export * from "./nodes";
 export * from "./types";
 
 // TODO: Move to separate files?
-
-export function isFileModule(sourceFile: ts.SourceFile): boolean {
-    return sourceFile.statements.some(isStatementExported);
-}
-
-function isStatementExported(statement: ts.Statement): boolean {
-    if (ts.isExportAssignment(statement) || ts.isExportDeclaration(statement)) {
-        return true;
-    }
-    if (ts.isVariableStatement(statement)) {
-        return statement.declarationList.declarations.some(
-            declaration => (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0
-        );
-    }
-    return isDeclaration(statement) && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0;
-}
 
 export function hasExportEquals(sourceFile: ts.SourceFile): boolean {
     return sourceFile.statements.some(node => ts.isExportAssignment(node) && node.isExportEquals);

@@ -4,9 +4,12 @@ import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
-import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { transformAssignment, transformAssignmentStatement } from "./assignments";
+import {
+    transformAssignment,
+    transformAssignmentLeftHandSideExpression,
+    transformAssignmentStatement,
+} from "./assignments";
 
 export function isArrayLength(
     context: TransformationContext,
@@ -86,21 +89,21 @@ function transformArrayLiteralAssignmentPattern(
                     lua.SyntaxKind.EqualityOperator
                 );
 
-                const defaultAssignmentStatement = transformAssignment(
+                const defaultAssignmentStatements = transformAssignment(
                     context,
                     (element as ts.BinaryExpression).left,
                     context.transformExpression((element as ts.BinaryExpression).right)
                 );
 
-                const elseAssignmentStatement = transformAssignment(
+                const elseAssignmentStatements = transformAssignment(
                     context,
                     (element as ts.BinaryExpression).left,
                     assignedVariable
                 );
 
-                const ifBlock = lua.createBlock([defaultAssignmentStatement]);
+                const ifBlock = lua.createBlock(defaultAssignmentStatements);
 
-                const elseBlock = lua.createBlock([elseAssignmentStatement]);
+                const elseBlock = lua.createBlock(elseAssignmentStatements);
 
                 const ifStatement = lua.createIfStatement(nilCondition, ifBlock, elseBlock, node);
 
@@ -178,14 +181,15 @@ function transformShorthandPropertyAssignment(
     root: lua.Expression
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
-    const assignmentVariableName = transformIdentifier(context, node.name);
+    const assignmentVariableName = transformAssignmentLeftHandSideExpression(context, node.name);
     const extractionIndex = lua.createStringLiteral(node.name.text);
-    const variableExtractionAssignmentStatement = lua.createAssignmentStatement(
-        assignmentVariableName,
+    const variableExtractionAssignmentStatements = transformAssignment(
+        context,
+        node.name,
         lua.createTableIndexExpression(root, extractionIndex)
     );
 
-    result.push(variableExtractionAssignmentStatement);
+    result.push(...variableExtractionAssignmentStatements);
 
     const defaultInitializer = node.objectAssignmentInitializer
         ? context.transformExpression(node.objectAssignmentInitializer)
@@ -198,9 +202,9 @@ function transformShorthandPropertyAssignment(
             lua.SyntaxKind.EqualityOperator
         );
 
-        const assignment = lua.createAssignmentStatement(assignmentVariableName, defaultInitializer);
+        const assignmentStatements = transformAssignment(context, node.name, defaultInitializer);
 
-        const ifBlock = lua.createBlock([assignment]);
+        const ifBlock = lua.createBlock(assignmentStatements);
 
         result.push(lua.createIfStatement(nilCondition, ifBlock, undefined, node));
     }
@@ -232,9 +236,9 @@ function transformPropertyAssignment(
     const variableToExtract = transformPropertyName(context, node.name);
     const extractingExpression = lua.createTableIndexExpression(root, variableToExtract);
 
-    const destructureAssignmentStatement = transformAssignment(context, leftExpression, extractingExpression);
+    const destructureAssignmentStatements = transformAssignment(context, leftExpression, extractingExpression);
 
-    result.push(destructureAssignmentStatement);
+    result.push(...destructureAssignmentStatements);
 
     if (ts.isBinaryExpression(node.initializer)) {
         const assignmentLeftHandSide = context.transformExpression(node.initializer.left);
@@ -283,5 +287,5 @@ function transformSpreadAssignment(
         lua.createTableExpression(usedProperties)
     );
 
-    return [transformAssignment(context, node.expression, extractingExpression)];
+    return transformAssignment(context, node.expression, extractingExpression);
 }

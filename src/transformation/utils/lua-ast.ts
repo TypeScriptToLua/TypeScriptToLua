@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import * as assert from "assert";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
@@ -99,6 +100,8 @@ export function createHoistableVariableDeclarationStatement(
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
     if (!context.options.noHoisting && identifier.symbolId) {
         const scope = peekScope(context);
+        assert(scope.type !== ScopeType.Switch);
+
         if (!scope.variableDeclarations) {
             scope.variableDeclarations = [];
         }
@@ -143,14 +146,16 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const insideFunction = findScope(context, ScopeType.Function) !== undefined;
 
         if (context.isModule || getCurrentNamespace(context) || insideFunction || isVariableDeclaration) {
-            // local
+            const scope = peekScope(context);
+
             const isPossibleWrappedFunction =
                 !isFunctionDeclaration &&
                 tsOriginal &&
                 ts.isVariableDeclaration(tsOriginal) &&
                 tsOriginal.initializer &&
                 isFunctionType(context, context.checker.getTypeAtLocation(tsOriginal.initializer));
-            if (isPossibleWrappedFunction) {
+
+            if (isPossibleWrappedFunction || scope.type === ScopeType.Switch) {
                 // Split declaration and assignment for wrapped function types to allow recursion
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
                 assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
@@ -160,13 +165,15 @@ export function createLocalOrExportedOrGlobalDeclaration(
 
             if (!context.options.noHoisting) {
                 // Remember local variable declarations for hoisting later
-                const scope = peekScope(context);
-
                 if (!scope.variableDeclarations) {
                     scope.variableDeclarations = [];
                 }
 
                 scope.variableDeclarations.push(declaration);
+
+                if (scope.type === ScopeType.Switch) {
+                    declaration = undefined;
+                }
             }
         } else if (rhs) {
             // global

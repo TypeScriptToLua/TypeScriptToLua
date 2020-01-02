@@ -3,7 +3,6 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { isExplicitArrayType } from "../utils/typescript";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformArrayPrototypeCall(
@@ -11,7 +10,6 @@ export function transformArrayPrototypeCall(
     node: PropertyCallExpression
 ): lua.CallExpression | undefined {
     const expression = node.expression;
-    const ownerType = context.checker.getTypeAtLocation(expression.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
     const caller = context.transformExpression(expression.expression);
@@ -79,9 +77,7 @@ export function transformArrayPrototypeCall(
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
-            if (isExplicitArrayType(context, ownerType)) {
-                throw UnsupportedProperty("array", expressionName, node);
-            }
+            throw UnsupportedProperty("array", expressionName, node);
     }
 }
 

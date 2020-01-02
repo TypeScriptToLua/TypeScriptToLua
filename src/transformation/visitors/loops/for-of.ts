@@ -15,7 +15,7 @@ import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
 import {
-    createDestructuringStatements,
+    transformBindingPattern,
     transformArrayBindingElement,
     transformVariableDeclaration,
 } from "../variable-declaration";
@@ -35,7 +35,7 @@ function transformForOfInitializer(
                 return [];
             }
 
-            return createDestructuringStatements(context, binding, expression);
+            return transformBindingPattern(context, binding, expression);
         } else if (ts.isObjectBindingPattern(binding)) {
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }

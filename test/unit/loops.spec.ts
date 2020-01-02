@@ -17,7 +17,7 @@ test("while", () => {
             i++;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("while with continue", () => {
@@ -43,7 +43,7 @@ test("while with continue", () => {
             i++;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("dowhile with continue", () => {
@@ -69,7 +69,7 @@ test("dowhile with continue", () => {
             i++;
         } while (i < arrTest.length)
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("for", () => {
@@ -80,7 +80,7 @@ test("for", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("for with expression", () => {
@@ -92,7 +92,7 @@ test("for with expression", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("for with continue", () => {
@@ -112,7 +112,7 @@ test("for with continue", () => {
             }
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forMirror", () => {
@@ -123,7 +123,7 @@ test("forMirror", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forBreak", () => {
@@ -135,7 +135,7 @@ test("forBreak", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forNoDeclarations", () => {
@@ -147,7 +147,7 @@ test("forNoDeclarations", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forNoCondition", () => {
@@ -163,7 +163,7 @@ test("forNoCondition", () => {
             arrTest[i] = arrTest[i] + 1;
         }
         return arrTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forNoPostExpression", () => {
@@ -290,7 +290,7 @@ test("forof existing variable", () => {
             arrResultTest.push(value + 1)
         }
         return arrResultTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof destructing", () => {
@@ -307,7 +307,7 @@ test("forof destructing", () => {
             arrResultTest.push(a + b)
         }
         return arrResultTest;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof destructing with existing variables", () => {
@@ -368,13 +368,7 @@ test("forof with iterator", () => {
             result += e;
         }
         return result;
-    `
-        .setOptions({
-            luaLibImport: tstl.LuaLibImportKind.Require,
-            luaTarget: tstl.LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        })
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof with iterator and existing variable", () => {
@@ -393,13 +387,7 @@ test("forof with iterator and existing variable", () => {
             result += e;
         }
         return result;
-    `
-        .setOptions({
-            luaLibImport: tstl.LuaLibImportKind.Require,
-            luaTarget: tstl.LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        })
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof destructuring with iterator", () => {
@@ -417,13 +405,7 @@ test("forof destructuring with iterator", () => {
             result += a + b;
         }
         return result;
-    `
-        .setOptions({
-            luaLibImport: tstl.LuaLibImportKind.Require,
-            luaTarget: tstl.LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        })
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof destructuring with iterator and existing variables", () => {
@@ -443,13 +425,7 @@ test("forof destructuring with iterator and existing variables", () => {
             result += a + b;
         }
         return result;
-    `
-        .setOptions({
-            luaLibImport: tstl.LuaLibImportKind.Require,
-            luaTarget: tstl.LuaTarget.Lua53,
-            target: ts.ScriptTarget.ES2015,
-        })
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof array which modifies length", () => {
@@ -463,7 +439,7 @@ test("forof array which modifies length", () => {
             result += v;
         }
         return result;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -489,7 +465,7 @@ test("forof nested destructuring", () => {
             result = x;
         }
         return result;
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("forof with array typed as iterable", () => {

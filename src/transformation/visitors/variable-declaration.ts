@@ -26,7 +26,7 @@ export function transformArrayBindingElement(
     }
 }
 
-export function createDestructuringStatements(
+export function transformBindingPattern(
     context: TransformationContext,
     pattern: ts.BindingPattern,
     table: lua.Identifier,
@@ -52,7 +52,7 @@ export function createDestructuringStatements(
                 propertyAccessStack.push(propertyName);
             }
 
-            result.push(...createDestructuringStatements(context, element.name, table, propertyAccessStack));
+            result.push(...transformBindingPattern(context, element.name, table, propertyAccessStack));
             continue;
         }
 
@@ -124,7 +124,7 @@ export function createDestructuringStatements(
     return result;
 }
 
-export function transformBindingPattern(
+export function transformBindingVariableDeclaration(
     context: TransformationContext,
     bindingPattern: ts.BindingPattern,
     initializer?: ts.Expression
@@ -152,7 +152,7 @@ export function transformBindingPattern(
                 );
             }
         }
-        statements.push(...createDestructuringStatements(context, bindingPattern, table));
+        statements.push(...transformBindingPattern(context, bindingPattern, table));
         return statements;
     }
 
@@ -228,7 +228,7 @@ export function transformVariableDeclaration(
         const value = statement.initializer && context.transformExpression(statement.initializer);
         return createLocalOrExportedOrGlobalDeclaration(context, identifierName, value, statement);
     } else if (ts.isArrayBindingPattern(statement.name) || ts.isObjectBindingPattern(statement.name)) {
-        return transformBindingPattern(context, statement.name, statement.initializer);
+        return transformBindingVariableDeclaration(context, statement.name, statement.initializer);
     } else {
         return assertNever(statement.name);
     }

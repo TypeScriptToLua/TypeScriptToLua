@@ -91,7 +91,7 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
 test.each(["[]", "{}"])("empty binding pattern", bindingPattern => {
     util.testFunction`
         let i = 1;
-        const [] = [i++];
+        const ${bindingPattern} = [i++];
         return i;
     `.expectToMatchJsResult();
 });

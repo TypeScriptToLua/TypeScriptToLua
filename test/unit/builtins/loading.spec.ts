@@ -44,10 +44,4 @@ describe("Unknown builtin property", () => {
             .disableSemanticCheck()
             .expectToHaveDiagnosticOfError(UnsupportedProperty("Math", "unknownProperty", util.nodeStub));
     });
-
-    test("function call", () => {
-        util.testExpression`[].unknownFunction()`
-            .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(UnsupportedProperty("array", "unknownFunction", util.nodeStub));
-    });
 });

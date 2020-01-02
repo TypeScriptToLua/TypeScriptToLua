@@ -742,7 +742,9 @@ export class LuaPrinter {
     public printMethodCallExpression(expression: lua.MethodCallExpression): SourceNode {
         const chunks = [];
 
-        const prefix = this.printExpression(expression.prefixExpression);
+        const prefix = lua.isStringLiteral(expression.prefixExpression)
+            ? this.printExpression(lua.createParenthesizedExpression(expression.prefixExpression))
+            : this.printExpression(expression.prefixExpression);
 
         const name = this.printIdentifier(expression.name);
 

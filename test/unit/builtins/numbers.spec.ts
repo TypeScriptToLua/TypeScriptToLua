@@ -67,3 +67,10 @@ test.each(cases)("isNaN(%p)", value => {
 test.each(cases)("isFinite(%p)", value => {
     util.testExpressionTemplate`isFinite(${value} as any)`.expectToMatchJsResult();
 });
+
+test("number intersected method", () => {
+    util.testFunction`
+        type Vector = number & { normalize(): Vector };
+        return ({ normalize: () => 3 } as Vector).normalize();
+    `.expectToMatchJsResult();
+});

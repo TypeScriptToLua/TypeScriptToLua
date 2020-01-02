@@ -11,6 +11,7 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     }
 
     const scope = pushScope(context, ScopeType.Switch);
+
     // Give the switch a unique name to prevent nested switches from acting up.
     const switchName = `____switch${scope.id}`;
     const switchVariable = lua.createIdentifier(switchName);

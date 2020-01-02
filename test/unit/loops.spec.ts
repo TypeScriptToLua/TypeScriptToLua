@@ -8,9 +8,8 @@ import {
 import * as util from "../util";
 
 test("while", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         let i = 0;
         while (i < arrTest.length) {
             arrTest[i] = arrTest[i] + 1;
@@ -21,9 +20,8 @@ test("while", () => {
 });
 
 test("while with continue", () => {
-    const inp = [0, 1, 2, 3, 4];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         while (i < arrTest.length) {
             if (i % 2 == 0) {
@@ -47,9 +45,8 @@ test("while with continue", () => {
 });
 
 test("dowhile with continue", () => {
-    const inp = [0, 1, 2, 3, 4];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3, 4];
         let i = 0;
         do {
             if (i % 2 == 0) {
@@ -73,9 +70,8 @@ test("dowhile with continue", () => {
 });
 
 test("for", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         for (let i = 0; i < arrTest.length; ++i) {
             arrTest[i] = arrTest[i] + 1;
         }
@@ -84,9 +80,8 @@ test("for", () => {
 });
 
 test("for with expression", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         let i: number;
         for (i = 0 * 1; i < arrTest.length; ++i) {
             arrTest[i] = arrTest[i] + 1;
@@ -96,9 +91,8 @@ test("for with expression", () => {
 });
 
 test("for with continue", () => {
-    const inp = [0, 1, 2, 3, 4];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3, 4];
         for (let i = 0; i < arrTest.length; i++) {
             if (i % 2 == 0) {
                 continue;
@@ -116,9 +110,8 @@ test("for with continue", () => {
 });
 
 test("forMirror", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         for (let i = 0; arrTest.length > i; i++) {
             arrTest[i] = arrTest[i] + 1;
         }
@@ -127,9 +120,8 @@ test("forMirror", () => {
 });
 
 test("forBreak", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         for (let i = 0; i < arrTest.length; ++i) {
             break;
             arrTest[i] = arrTest[i] + 1;
@@ -139,9 +131,8 @@ test("forBreak", () => {
 });
 
 test("forNoDeclarations", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         let i = 0;
         for (; i < arrTest.length; ++i) {
             arrTest[i] = arrTest[i] + 1;
@@ -151,9 +142,8 @@ test("forNoDeclarations", () => {
 });
 
 test("forNoCondition", () => {
-    const inp = [0, 1, 2, 3];
     util.testFunction`
-        let arrTest = ${util.formatCode(inp)};
+        let arrTest = [0, 1, 2, 3];
         let i = 0;
         for (;; ++i) {
             if (i >= arrTest.length) {
@@ -280,10 +270,8 @@ test("Tuple loop", () => {
 });
 
 test("forof existing variable", () => {
-    const input = [0, 1, 2];
-
     util.testFunction`
-        let objTest = ${util.formatCode(input)};
+        let objTest = [0, 1, 2];
         let arrResultTest = [];
         let value: number;
         for (value of objTest) {
@@ -330,10 +318,8 @@ test("forof destructing with existing variables", () => {
 });
 
 test("forof with continue", () => {
-    const input = [0, 1, 2, 3, 4];
-
     util.testFunction`
-        let testArr = ${util.formatCode(input)};
+        let testArr = [0, 1, 2, 3, 4];
         let a = 0;
         for (let i of testArr) {
             if (i % 2 == 0) {

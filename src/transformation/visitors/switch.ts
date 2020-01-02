@@ -14,12 +14,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
 
     // Give the switch a unique name to prevent nested switches from acting up.
     const switchName = `____switch${scope.id}`;
-
-    const expression = context.transformExpression(statement.expression);
     const switchVariable = lua.createIdentifier(switchName);
-    const switchVariableDeclaration = lua.createVariableDeclarationStatement(switchVariable, expression);
 
-    let statements: lua.Statement[] = [switchVariableDeclaration];
+    let statements: lua.Statement[] = [];
 
     const caseClauses = statement.caseBlock.clauses.filter(ts.isCaseClause);
     for (const [index, clause] of caseClauses.entries()) {
@@ -36,25 +33,21 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     }
 
     const hasDefaultCase = statement.caseBlock.clauses.some(ts.isDefaultClause);
-    if (hasDefaultCase) {
-        statements.push(lua.createGotoStatement(`${switchName}_case_default`));
-    } else {
-        statements.push(lua.createGotoStatement(`${switchName}_end`));
-    }
+    statements.push(lua.createGotoStatement(`${switchName}_${hasDefaultCase ? "case_default" : "end"}`));
 
     for (const [index, clause] of statement.caseBlock.clauses.entries()) {
-        const label = ts.isCaseClause(clause)
-            ? lua.createLabelStatement(`${switchName}_case_${index}`)
-            : lua.createLabelStatement(`${switchName}_case_default`);
-
-        const body = lua.createDoStatement(context.transformStatements(clause.statements));
-        statements.push(label, body);
+        const labelName = `${switchName}_case_${ts.isCaseClause(clause) ? index : "default"}`;
+        statements.push(lua.createLabelStatement(labelName));
+        statements.push(lua.createDoStatement(context.transformStatements(clause.statements)));
     }
 
     statements.push(lua.createLabelStatement(`${switchName}_end`));
 
     statements = performHoisting(context, statements);
     popScope(context);
+
+    const expression = context.transformExpression(statement.expression);
+    statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
     return statements;
 };

@@ -2,7 +2,7 @@
 
 ## 0.30.0
 
-- **Breaking:** We dropped support for `var` variables. If you still have any `var` variable declarations, they will not break compilation, but they will behave as if they were declared using `let`.
+- **Breaking:** We dropped support for `var` variables. If you still have any `var` variable declarations, please use `let` or `const` instead.
 - **Breaking:** We now depend on Node.js >= 12.13.0
 - Added support for string `trimLeft`, `trimRight`, `trimStart` and `trimEnd`.
 - Added support for `console.error`, `console.warn` and `console.info` , they will all be transpiled to Lua's `print`.

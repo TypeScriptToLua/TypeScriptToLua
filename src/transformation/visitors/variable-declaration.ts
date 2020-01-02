@@ -29,7 +29,7 @@ export function transformArrayBindingElement(
 export function createDestructuringStatements(
     context: TransformationContext,
     pattern: ts.BindingPattern,
-    table: lua.Expression,
+    table: lua.Identifier,
     propertyAccessStack: ts.PropertyName[] = []
 ): lua.Statement[] {
     if (pattern.elements.length === 0) {

@@ -43,6 +43,15 @@ export function isFirstDeclaration(context: TransformationContext, node: ts.Vari
     return firstDeclaration === node;
 }
 
+function isStandardLibraryDeclaration(context: TransformationContext, declaration: ts.Declaration): boolean {
+    const sourceFile = declaration.getSourceFile();
+    if (!sourceFile) {
+        return false;
+    }
+
+    return context.program.isSourceFileDefaultLibrary(sourceFile);
+}
+
 export function isStandardLibraryType(
     context: TransformationContext,
     type: ts.Type,
@@ -59,12 +68,16 @@ export function isStandardLibraryType(
         return true;
     }
 
-    const sourceFile = declaration.getSourceFile();
-    if (!sourceFile) {
-        return false;
-    }
+    return isStandardLibraryDeclaration(context, declaration);
+}
 
-    return context.program.isSourceFileDefaultLibrary(sourceFile);
+export function hasStandardLibrarySignature(
+    context: TransformationContext,
+    callExpression: ts.CallExpression
+): boolean {
+    const signature = context.checker.getResolvedSignature(callExpression);
+
+    return signature && signature.declaration ? isStandardLibraryDeclaration(context, signature.declaration) : false;
 }
 
 export function inferAssignedType(context: TransformationContext, expression: ts.Expression): ts.Type {

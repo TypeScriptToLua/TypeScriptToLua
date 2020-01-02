@@ -1,22 +1,7 @@
-import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
 import * as util from "../../util";
 
-test("Unsupported string function", () => {
-    util.testExpression`"test".testThisIsNoMember()`
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(UnsupportedProperty("string", "testThisIsNoMember", util.nodeStub));
-});
-
 test("Supported lua string function", () => {
-    const tsHeader = `
-        declare global {
-            interface String {
-                upper(): string;
-            }
-        }
-    `;
-
-    util.testExpression`"test".upper()`.setTsHeader(tsHeader).expectToEqual("TEST");
+    util.testExpression`"test".toUpperCase()`.expectToEqual("TEST");
 });
 
 test.each([[], [65], [65, 66], [65, 66, 67]])("String.fromCharCode (%p)", (...args) => {
@@ -286,4 +271,11 @@ describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string
     test.each(trimTestCases)("matches JS result (%p)", testString => {
         util.testExpression`${util.formatCode(testString)}.${trim}()`.expectToMatchJsResult();
     });
+});
+
+test("string intersected method", () => {
+    util.testFunction`
+        type Vector = string & { abc(): Vector };
+        return ({ abc: () => "a" } as Vector).abc();
+        `.expectToMatchJsResult();
 });

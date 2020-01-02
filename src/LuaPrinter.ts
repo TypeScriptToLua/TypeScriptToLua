@@ -742,15 +742,13 @@ export class LuaPrinter {
     public printMethodCallExpression(expression: lua.MethodCallExpression): SourceNode {
         const chunks = [];
 
+        const prefix = lua.isStringLiteral(expression.prefixExpression)
+            ? this.printExpression(lua.createParenthesizedExpression(expression.prefixExpression))
+            : this.printExpression(expression.prefixExpression);
+
         const name = this.printIdentifier(expression.name);
 
-        const prefix = this.printExpression(expression.prefixExpression);
-
-        if (lua.isStringLiteral(expression.prefixExpression)) {
-            chunks.push("(", prefix, ")", ":", name, "(");
-        } else {
-            chunks.push(prefix, ":", name, "(");
-        }
+        chunks.push(prefix, ":", name, "(");
 
         if (expression.params) {
             chunks.push(...this.printExpressionList(expression.params));

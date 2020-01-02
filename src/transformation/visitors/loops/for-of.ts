@@ -15,8 +15,8 @@ import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
 import {
+    createDestructuringStatements,
     transformArrayBindingElement,
-    transformBindingPattern,
     transformVariableDeclaration,
 } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
@@ -24,7 +24,7 @@ import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 function transformForOfInitializer(
     context: TransformationContext,
     initializer: ts.ForInitializer,
-    expression: lua.Expression
+    expression: lua.Identifier
 ): lua.Statement[] {
     if (ts.isVariableDeclarationList(initializer)) {
         const binding = getVariableDeclarationBinding(initializer);
@@ -35,7 +35,7 @@ function transformForOfInitializer(
                 return [];
             }
 
-            return transformBindingPattern(context, binding, expression);
+            return createDestructuringStatements(context, binding, expression);
         } else if (ts.isObjectBindingPattern(binding)) {
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }
@@ -55,9 +55,10 @@ function transformForOfInitializer(
     } else {
         // Assignment to existing variable
         let variables: lua.AssignmentLeftHandSideExpression | lua.AssignmentLeftHandSideExpression[];
+        let valueExpression: lua.Expression = expression;
         if (ts.isArrayLiteralExpression(initializer)) {
             if (initializer.elements.length > 0) {
-                expression = createUnpackCall(context, expression, initializer);
+                valueExpression = createUnpackCall(context, expression, initializer);
                 variables = castEach(
                     initializer.elements.map(e => context.transformExpression(e)),
                     lua.isAssignmentLeftHandSideExpression
@@ -72,7 +73,7 @@ function transformForOfInitializer(
             variables = cast(context.transformExpression(initializer), lua.isAssignmentLeftHandSideExpression);
         }
 
-        return [lua.createAssignmentStatement(variables, expression)];
+        return [lua.createAssignmentStatement(variables, valueExpression)];
     }
 }
 

@@ -16,7 +16,7 @@ import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } fro
 import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformGeneratorFunctionBody } from "./generator";
 import { transformIdentifier } from "./identifier";
-import { transformBindingPattern } from "./variable-declaration";
+import { createDestructuringStatements } from "./variable-declaration";
 
 function transformParameterDefaultValueDeclaration(
     context: TransformationContext,
@@ -80,7 +80,7 @@ export function transformFunctionBodyHeader(
             }
 
             // Binding pattern
-            bindingPatternDeclarations.push(...transformBindingPattern(context, declaration.name, identifier));
+            bindingPatternDeclarations.push(...createDestructuringStatements(context, declaration.name, identifier));
         } else if (declaration.initializer !== undefined) {
             // Default parameter
             headerStatements.push(

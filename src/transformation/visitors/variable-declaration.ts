@@ -131,10 +131,6 @@ export function transformBindingVariableDeclaration(
 ): lua.Statement[] {
     const statements: lua.Statement[] = [];
 
-    if (bindingPattern.elements.length === 0) {
-        return [];
-    }
-
     // For object, nested or rest bindings fall back to transformBindingPattern
     const isComplexBindingElement = (e: ts.ArrayBindingElement) =>
         ts.isBindingElement(e) && (!ts.isIdentifier(e.name) || e.dotDotDotToken);
@@ -156,7 +152,10 @@ export function transformBindingVariableDeclaration(
         return statements;
     }
 
-    const vars = bindingPattern.elements.map(e => transformArrayBindingElement(context, e));
+    const vars =
+        bindingPattern.elements.length > 0
+            ? bindingPattern.elements.map(e => transformArrayBindingElement(context, e))
+            : lua.createAnonymousIdentifier();
 
     if (initializer) {
         if (isTupleReturnCall(context, initializer)) {

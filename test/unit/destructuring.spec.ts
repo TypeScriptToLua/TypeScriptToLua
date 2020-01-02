@@ -88,6 +88,14 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
     `.expectToMatchJsResult();
 });
 
+test.each(["[]", "{}"])("empty binding pattern", bindingPattern => {
+    util.testFunction`
+        let i = 1;
+        const [] = [i++];
+        return i;
+    `.expectToMatchJsResult();
+});
+
 describe("array destructuring optimization", () => {
     // TODO: Try to generalize optimization logic between declaration and assignment and make more generic tests
 

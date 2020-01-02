@@ -32,10 +32,6 @@ export function transformBindingPattern(
     table: lua.Identifier,
     propertyAccessStack: ts.PropertyName[] = []
 ): lua.Statement[] {
-    if (pattern.elements.length === 0) {
-        return [];
-    }
-
     const result: lua.Statement[] = [];
     const isObjectBindingPattern = ts.isObjectBindingPattern(pattern);
 

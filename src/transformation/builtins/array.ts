@@ -8,7 +8,7 @@ import { PropertyCallExpression, transformArguments } from "../visitors/call";
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression | undefined {
+): lua.CallExpression {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);

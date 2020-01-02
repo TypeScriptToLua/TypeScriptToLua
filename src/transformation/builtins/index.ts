@@ -21,7 +21,12 @@ import { transformGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
 import { transformObjectConstructorCall, transformObjectPrototypeCall } from "./object";
-import { transformStringConstructorCall, transformStringProperty, transformStringPrototypeCall } from "./string";
+import {
+    transformStringConstructorCall,
+    transformStringProperty,
+    transformStringPrototypeCall,
+    isLuaStringMethod,
+} from "./string";
 import { transformSymbolConstructorCall } from "./symbol";
 
 export function transformBuiltinPropertyAccessExpression(
@@ -92,7 +97,10 @@ export function transformBuiltinCallExpression(
         }
     }
 
-    if (isStringType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+    if (
+        isStringType(context, ownerType) &&
+        (hasStandardLibrarySignature(context, node) || isLuaStringMethod(node.expression.name.text))
+    ) {
         return transformStringPrototypeCall(context, node);
     }
 
@@ -100,14 +108,14 @@ export function transformBuiltinCallExpression(
         return transformNumberPrototypeCall(context, node);
     }
 
-    if (isArrayType(context, ownerType)) {
+    if (isArrayType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
         const result = transformArrayPrototypeCall(context, node);
         if (result) {
             return result;
         }
     }
 
-    if (isFunctionType(context, ownerType)) {
+    if (isFunctionType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
         return transformFunctionPrototypeCall(context, node);
     }
 

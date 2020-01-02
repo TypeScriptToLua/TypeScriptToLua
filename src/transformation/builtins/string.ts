@@ -7,6 +7,26 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 import { transformIdentifier } from "../visitors/identifier";
 
+const luaStringMethodNames = new Set([
+    "byte",
+    "char",
+    "dump",
+    "find",
+    "format",
+    "gmatch",
+    "gsub",
+    "len",
+    "lower",
+    "match",
+    "pack",
+    "packsize",
+    "rep",
+    "reverse",
+    "sub",
+    "unpack",
+    "upper",
+]);
+
 function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lua.Expression[]): lua.CallExpression {
     const stringIdentifier = lua.createIdentifier("string");
     return lua.createCallExpression(
@@ -124,40 +144,29 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringPadStart, node, caller, ...params);
         case "padEnd":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadEnd, node, caller, ...params);
-
-        case "byte":
-        case "char":
-        case "dump":
-        case "find":
-        case "format":
-        case "gmatch":
-        case "gsub":
-        case "len":
-        case "lower":
-        case "match":
-        case "pack":
-        case "packsize":
-        case "rep":
-        case "reverse":
-        case "sub":
-        case "unpack":
-        case "upper":
-            // Allow lua's string instance methods
-            let stringVariable = context.transformExpression(expression.expression);
-            if (ts.isStringLiteralLike(expression.expression)) {
-                // "foo":method() needs to be ("foo"):method()
-                stringVariable = lua.createParenthesizedExpression(stringVariable);
-            }
-
-            return lua.createMethodCallExpression(
-                stringVariable,
-                transformIdentifier(context, expression.name),
-                params,
-                node
-            );
-        default:
-            throw UnsupportedProperty("string", expressionName, node);
     }
+
+    // Allow lua's string instance methods
+    if (isLuaStringMethod(expressionName)) {
+        let stringVariable = context.transformExpression(expression.expression);
+        if (ts.isStringLiteralLike(expression.expression)) {
+            // "foo":method() needs to be ("foo"):method()
+            stringVariable = lua.createParenthesizedExpression(stringVariable);
+        }
+
+        return lua.createMethodCallExpression(
+            stringVariable,
+            transformIdentifier(context, expression.name),
+            params,
+            node
+        );
+    }
+
+    throw UnsupportedProperty("string", expressionName, node);
+}
+
+export function isLuaStringMethod(method: string): boolean {
+    return luaStringMethodNames.has(method);
 }
 
 export function transformStringConstructorCall(

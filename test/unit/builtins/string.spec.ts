@@ -1,7 +1,15 @@
 import * as util from "../../util";
 
 test("Supported lua string function", () => {
-    util.testExpression`"test".toUpperCase()`.expectToEqual("TEST");
+    const tsHeader = `
+        declare global {
+            interface String {
+                upper(): string;
+            }
+        }
+    `;
+
+    util.testExpression`"test".upper()`.setTsHeader(tsHeader).expectToEqual("TEST");
 });
 
 test.each([[], [65], [65, 66], [65, 66, 67]])("String.fromCharCode (%p)", (...args) => {
@@ -277,5 +285,5 @@ test("string intersected method", () => {
     util.testFunction`
         type Vector = string & { abc(): Vector };
         return ({ abc: () => "a" } as Vector).abc();
-        `.expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });

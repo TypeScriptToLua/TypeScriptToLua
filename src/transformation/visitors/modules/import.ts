@@ -9,6 +9,7 @@ import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
 import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
+import { isHelpersImport } from "../../helpers/tuple";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
 
@@ -66,6 +67,10 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
+    if (isHelpersImport(context, importNode)) {
+        return false;
+    }
+
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
 
     return (

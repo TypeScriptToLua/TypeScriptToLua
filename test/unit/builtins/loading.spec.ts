@@ -41,8 +41,4 @@ describe("Unknown builtin property", () => {
     test("access", () => {
         util.testExpression`Math.unknownProperty`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
     });
-
-    test("function call", () => {
-        util.testExpression`[].unknownFunction()`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
-    });
 });

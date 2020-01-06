@@ -4,7 +4,14 @@ import { assume } from "../../utils";
 import { TransformationContext } from "../context";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
-import { isArrayType, isFunctionType, isNumberType, isStandardLibraryType, isStringType } from "../utils/typescript";
+import {
+    hasStandardLibrarySignature,
+    isArrayType,
+    isFunctionType,
+    isNumberType,
+    isStandardLibraryType,
+    isStringType,
+} from "../utils/typescript";
 import { PropertyCallExpression } from "../visitors/call";
 import { checkForLuaLibType } from "../visitors/class/new";
 import { transformArrayProperty, transformArrayPrototypeCall } from "./array";
@@ -83,22 +90,19 @@ export function transformBuiltinCallExpression(
         }
     }
 
-    if (isStringType(context, ownerType)) {
+    if (isStringType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
         return transformStringPrototypeCall(context, node);
     }
 
-    if (isNumberType(context, ownerType)) {
+    if (isNumberType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
         return transformNumberPrototypeCall(context, node);
     }
 
-    if (isArrayType(context, ownerType)) {
-        const result = transformArrayPrototypeCall(context, node);
-        if (result) {
-            return result;
-        }
+    if (isArrayType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
+        return transformArrayPrototypeCall(context, node);
     }
 
-    if (isFunctionType(context, ownerType)) {
+    if (isFunctionType(context, ownerType) && hasStandardLibrarySignature(context, node)) {
         return transformFunctionPrototypeCall(context, node);
     }
 

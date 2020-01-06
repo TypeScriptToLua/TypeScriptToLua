@@ -13,27 +13,31 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
-import { transformArrayBindingElement, transformVariableDeclaration } from "../variable-declaration";
+import {
+    transformBindingPattern,
+    transformArrayBindingElement,
+    transformVariableDeclaration,
+} from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 function transformForOfInitializer(
     context: TransformationContext,
     initializer: ts.ForInitializer,
-    expression: lua.Expression
-): lua.Statement | undefined {
+    expression: lua.Identifier
+): lua.Statement[] {
     if (ts.isVariableDeclarationList(initializer)) {
         const binding = getVariableDeclarationBinding(context, initializer);
         // Declaration of new variable
         if (ts.isArrayBindingPattern(binding)) {
             if (binding.elements.length === 0) {
                 // Ignore empty destructuring assignment
-                return undefined;
+                return [];
             }
 
-            expression = createUnpackCall(context, expression, initializer);
+            return transformBindingPattern(context, binding, expression);
         } else if (ts.isObjectBindingPattern(binding)) {
             context.diagnostics.push(forOfUnsupportedObjectDestructuring(initializer));
-            return;
+            return [];
         }
 
         const assignmentStatement = cast(
@@ -41,29 +45,30 @@ function transformForOfInitializer(
             lua.isVariableDeclarationStatement
         );
 
-        return lua.createVariableDeclarationStatement(assignmentStatement.left, expression);
+        return [lua.createVariableDeclarationStatement(assignmentStatement.left, expression)];
     } else {
         // Assignment to existing variable
         let variables: lua.AssignmentLeftHandSideExpression | lua.AssignmentLeftHandSideExpression[];
+        let valueExpression: lua.Expression = expression;
         if (ts.isArrayLiteralExpression(initializer)) {
             if (initializer.elements.length > 0) {
-                expression = createUnpackCall(context, expression, initializer);
+                valueExpression = createUnpackCall(context, expression, initializer);
                 variables = castEach(
                     initializer.elements.map(e => context.transformExpression(e)),
                     lua.isAssignmentLeftHandSideExpression
                 );
             } else {
                 // Ignore empty destructring assignment
-                return undefined;
+                return [];
             }
         } else if (ts.isObjectLiteralExpression(initializer)) {
             context.diagnostics.push(forOfUnsupportedObjectDestructuring(initializer));
-            return;
+            return [];
         } else {
             variables = cast(context.transformExpression(initializer), lua.isAssignmentLeftHandSideExpression);
         }
 
-        return lua.createAssignmentStatement(variables, expression);
+        return [lua.createAssignmentStatement(variables, valueExpression)];
     }
 }
 
@@ -182,7 +187,7 @@ function transformForOfLuaIteratorStatement(
             const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
             if (initializer) {
                 identifiers.push(valueVariable);
-                block.statements.unshift(initializer);
+                block.statements.unshift(...initializer);
             }
         }
     }
@@ -207,7 +212,7 @@ function transformForOfArrayStatement(
             valueVariable = lua.createIdentifier("____values");
             const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
             if (initializer) {
-                block.statements.unshift(initializer);
+                block.statements.unshift(...initializer);
             }
         } else {
             valueVariable = transformIdentifier(context, binding);
@@ -217,7 +222,7 @@ function transformForOfArrayStatement(
         valueVariable = lua.createIdentifier("____value");
         const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
         if (initializer) {
-            block.statements.unshift(initializer);
+            block.statements.unshift(...initializer);
         }
     }
 
@@ -253,7 +258,7 @@ function transformForOfIteratorStatement(
         const valueVariable = lua.createIdentifier("____value");
         const initializer = transformForOfInitializer(context, statement.initializer, valueVariable);
         if (initializer) {
-            block.statements.unshift(initializer);
+            block.statements.unshift(...initializer);
         }
 
         return lua.createForInStatement(

@@ -7,11 +7,3 @@ return ____exports"
 `;
 
 exports[`Unknown builtin property access: diagnostics 1`] = `"main.ts(1,25): error TSTL: Math.unknownProperty is unsupported."`;
-
-exports[`Unknown builtin property function call: code 1`] = `
-"local ____exports = {}
-____exports.__result = ({}):unknownFunction()
-return ____exports"
-`;
-
-exports[`Unknown builtin property function call: diagnostics 1`] = `"main.ts(1,25): error TSTL: array.unknownFunction is unsupported."`;

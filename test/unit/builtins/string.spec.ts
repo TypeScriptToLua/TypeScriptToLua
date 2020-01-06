@@ -280,3 +280,10 @@ describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string
         util.testExpression`${util.formatCode(testString)}.${trim}()`.expectToMatchJsResult();
     });
 });
+
+test("string intersected method", () => {
+    util.testFunction`
+        type Vector = string & { abc(): Vector };
+        return ({ abc: () => "a" } as Vector).abc();
+    `.expectToMatchJsResult();
+});

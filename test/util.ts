@@ -389,7 +389,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
+    private getDiagnosticsSnapshot(): string {
         this.expectToHaveDiagnostics();
 
         const diagnosticMessages = ts.formatDiagnostics(
@@ -397,7 +397,23 @@ export abstract class TestBuilder {
             { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
         );
 
-        expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
+        return diagnosticMessages.trim();
+    }
+
+    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
+        expect(this.getDiagnosticsSnapshot()).toMatchSnapshot("diagnostics");
+        if (!diagnosticsOnly) {
+            expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
+        }
+
+        return this;
+    }
+
+    public expectDiagnostics(
+        callback: (matchers: Pick<jest.JestMatchers<string>, "toMatchInlineSnapshot">) => void,
+        diagnosticsOnly = false
+    ): this {
+        callback(expect(this.getDiagnosticsSnapshot()));
         if (!diagnosticsOnly) {
             expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
         }

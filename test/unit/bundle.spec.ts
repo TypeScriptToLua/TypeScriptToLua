@@ -90,7 +90,13 @@ test("LuaLibImportKind.Inline generates a warning", () => {
         result.push(3);
     `
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
-        .expectDiagnosticsToMatchSnapshot(true)
+        .expectDiagnostics(
+            m =>
+                m.toMatchInlineSnapshot(
+                    `"warning TSTL: Using 'luaBundle' with 'luaLibImport: \\"inline\\"' might generate duplicate code. It is recommended to use 'luaLibImport: \\"require\\"'"`
+                ),
+            true
+        )
         .expectToEqual({ result: [1, 2, 3] });
 });
 
@@ -113,9 +119,22 @@ test("cyclic imports", () => {
 });
 
 test("no entry point", () => {
-    util.testBundle``.setOptions({ luaBundleEntry: undefined }).expectDiagnosticsToMatchSnapshot(true);
+    util.testBundle``
+        .setOptions({ luaBundleEntry: undefined })
+        .expectDiagnostics(
+            m => m.toMatchInlineSnapshot(`"error TSTL: 'luaBundleEntry' is required when 'luaBundle' is enabled."`),
+            true
+        );
 });
 
 test("luaEntry doesn't exist", () => {
-    util.testBundle``.setEntryPoint("entry.ts").expectDiagnosticsToMatchSnapshot(true);
+    util.testBundle``
+        .setEntryPoint("entry.ts")
+        .expectDiagnostics(
+            m =>
+                m.toMatchInlineSnapshot(
+                    `"error TSTL: Could not find bundle entry point 'entry.ts'. It should be a file in the project."`
+                ),
+            true
+        );
 });

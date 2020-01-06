@@ -108,7 +108,9 @@ test("Throws error if decorator function has void context", () => {
 
         @decorator
         class TestClass {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnostics(m =>
+        m.toMatchInlineSnapshot(`"main.ts(4,9): error TSTL: Decorator function cannot have 'this: void'."`)
+    );
 });
 
 test("Exported class decorator", () => {

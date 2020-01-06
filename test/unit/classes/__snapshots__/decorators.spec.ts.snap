@@ -14,5 +14,3 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
-
-exports[`Throws error if decorator function has void context: diagnostics 1`] = `"main.ts(4,9): error TSTL: Decorator function cannot have 'this: void'."`;

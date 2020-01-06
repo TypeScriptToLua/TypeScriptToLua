@@ -28,7 +28,11 @@ describe("invalid usage", () => {
         util.testModule`
             /** @forRange */
             function luaRange() {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnostics(m =>
+            m.toMatchInlineSnapshot(
+                `"main.ts(3,22): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`
+            )
+        );
     });
 
     test.each<[number[]]>([[[]], [[1]], [[1, 2, 3, 4]]])("argument count (%p)", args => {
@@ -43,28 +47,42 @@ describe("invalid usage", () => {
             ${createForRangeDeclaration()}
             let i: number;
             for (i of luaRange(1, 10, 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnostics(m =>
+            m.toMatchInlineSnapshot(
+                `"main.ts(7,18): error TSTL: Invalid @forRange call: loop must declare it's own control variable."`
+            )
+        );
     });
 
     test("argument types", () => {
         util.testModule`
             ${createForRangeDeclaration("i: string, j: number")}
             for (const i of luaRange("foo", 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnostics(m =>
+            m.toMatchInlineSnapshot(`"main.ts(6,29): error TSTL: Invalid @forRange call: arguments must be numbers."`)
+        );
     });
 
     test("variable destructuring", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "number[][]")}
             for (const [i] of luaRange(1, 10, 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnostics(m =>
+            m.toMatchInlineSnapshot(
+                `"main.ts(6,18): error TSTL: Invalid @forRange call: destructuring cannot be used."`
+            )
+        );
     });
 
     test("return type", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "string[]")}
             for (const i of luaRange(1, 10)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnostics(m =>
+            m.toMatchInlineSnapshot(
+                `"main.ts(6,29): error TSTL: Invalid @forRange call: function must return Iterable<number>."`
+            )
+        );
     });
 
     test.each([

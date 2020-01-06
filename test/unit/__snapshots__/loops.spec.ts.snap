@@ -10,8 +10,6 @@ end
 return ____exports"
 `;
 
-exports[`forin[Array]: diagnostics 1`] = `"main.ts(3,9): error TSTL: Iterating over arrays with 'for ... in' is not allowed."`;
-
 exports[`forof object destructuring ({"initializer": "{a, b}", "vars": "let a: string, b: string;"}): code 1`] = `
 "local a
 local b

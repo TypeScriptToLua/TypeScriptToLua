@@ -234,7 +234,9 @@ test("forin[Array]", () => {
     util.testFunction`
         const array = [];
         for (const key in array) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnostics(m =>
+        m.toMatchInlineSnapshot(`"main.ts(3,9): error TSTL: Iterating over arrays with 'for ... in' is not allowed."`)
+    );
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(

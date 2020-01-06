@@ -237,7 +237,11 @@ test("Subclass constructor across merged namespace", () => {
 });
 
 test("super without class", () => {
-    util.testExpression`super()`.expectDiagnosticsToMatchSnapshot();
+    util.testExpression`super()`.expectDiagnostics(m =>
+        m.toMatchInlineSnapshot(
+            `"main.ts(1,25): error TS2337: Super calls are not permitted outside constructors or in nested functions inside constructors."`
+        )
+    );
 });
 
 test("super in unnamed class", () => {

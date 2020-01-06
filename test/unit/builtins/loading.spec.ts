@@ -39,18 +39,10 @@ test("lualib should not include tstl header", () => {
 
 describe("Unknown builtin property", () => {
     test("access", () => {
-        util.testExpression`Math.unknownProperty`
-            .disableSemanticCheck()
-            .expectDiagnostics(m =>
-                m.toMatchInlineSnapshot(`"main.ts(1,25): error TSTL: Math.unknownProperty is unsupported."`)
-            );
+        util.testExpression`Math.unknownProperty`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
     });
 
     test("function call", () => {
-        util.testExpression`[].unknownFunction()`
-            .disableSemanticCheck()
-            .expectDiagnostics(m =>
-                m.toMatchInlineSnapshot(`"main.ts(1,25): error TSTL: array.unknownFunction is unsupported."`)
-            );
+        util.testExpression`[].unknownFunction()`.disableSemanticCheck().expectDiagnosticsToMatchSnapshot();
     });
 });

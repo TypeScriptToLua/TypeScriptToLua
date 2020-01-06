@@ -29,7 +29,5 @@ test("IncorrectUsage", () => {
         class Point2D {}
 
         new Point2D();
-    `.expectDiagnostics(m =>
-        m.toMatchInlineSnapshot(`"main.ts(5,9): error TSTL: '@customConstructor' expects 1 arguments, but got 0."`)
-    );
+    `.expectDiagnosticsToMatchSnapshot();
 });

@@ -315,11 +315,7 @@ test("switch not allowed in 5.1", () => {
         switch ("abc") {}
     `
         .setOptions({ luaTarget: tstl.LuaTarget.Lua51 })
-        .expectDiagnostics(m =>
-            m.toMatchInlineSnapshot(
-                `"main.ts(2,9): error TSTL: Switch statements is/are not supported for target Lua 5.1."`
-            )
-        );
+        .expectDiagnosticsToMatchSnapshot();
 });
 
 test.each([

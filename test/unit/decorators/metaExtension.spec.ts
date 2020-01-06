@@ -32,11 +32,7 @@ test("IncorrectUsage", () => {
                 return 5;
             }
         }
-    `.expectDiagnostics(m =>
-        m.toMatchInlineSnapshot(
-            `"main.ts(3,9): error TSTL: '@metaExtension' annotation requires the extension of the metatable class."`
-        )
-    );
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("DontAllowInstantiation", () => {
@@ -45,9 +41,5 @@ test("DontAllowInstantiation", () => {
         /** @metaExtension */
         class Ext extends _LOADED {}
         const e = new Ext();
-    `.expectDiagnostics(m =>
-        m.toMatchInlineSnapshot(
-            `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`
-        )
-    );
+    `.expectDiagnosticsToMatchSnapshot();
 });

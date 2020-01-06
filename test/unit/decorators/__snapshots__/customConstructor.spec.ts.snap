@@ -12,3 +12,5 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
+
+exports[`IncorrectUsage: diagnostics 1`] = `"main.ts(5,9): error TSTL: '@customConstructor' expects 1 arguments, but got 0."`;

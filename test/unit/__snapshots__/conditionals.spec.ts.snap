@@ -9,3 +9,5 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
+
+exports[`switch not allowed in 5.1: diagnostics 1`] = `"main.ts(2,9): error TSTL: Switch statements is/are not supported for target Lua 5.1."`;

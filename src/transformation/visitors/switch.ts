@@ -3,24 +3,20 @@ import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { UnsupportedForTarget } from "../utils/errors";
-import { peekScope, performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
+import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
     if (context.luaTarget === LuaTarget.Lua51) {
         throw UnsupportedForTarget("Switch statements", LuaTarget.Lua51, statement);
     }
 
-    pushScope(context, ScopeType.Switch);
+    const scope = pushScope(context, ScopeType.Switch);
 
     // Give the switch a unique name to prevent nested switches from acting up.
-    const scope = peekScope(context);
     const switchName = `____switch${scope.id}`;
-
-    const expression = context.transformExpression(statement.expression);
     const switchVariable = lua.createIdentifier(switchName);
-    const switchVariableDeclaration = lua.createVariableDeclarationStatement(switchVariable, expression);
 
-    let statements: lua.Statement[] = [switchVariableDeclaration];
+    let statements: lua.Statement[] = [];
 
     const caseClauses = statement.caseBlock.clauses.filter(ts.isCaseClause);
     for (const [index, clause] of caseClauses.entries()) {
@@ -37,25 +33,21 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     }
 
     const hasDefaultCase = statement.caseBlock.clauses.some(ts.isDefaultClause);
-    if (hasDefaultCase) {
-        statements.push(lua.createGotoStatement(`${switchName}_case_default`));
-    } else {
-        statements.push(lua.createGotoStatement(`${switchName}_end`));
-    }
+    statements.push(lua.createGotoStatement(`${switchName}_${hasDefaultCase ? "case_default" : "end"}`));
 
     for (const [index, clause] of statement.caseBlock.clauses.entries()) {
-        const label = ts.isCaseClause(clause)
-            ? lua.createLabelStatement(`${switchName}_case_${index}`)
-            : lua.createLabelStatement(`${switchName}_case_default`);
-
-        const body = lua.createDoStatement(context.transformStatements(clause.statements));
-        statements.push(label, body);
+        const labelName = `${switchName}_case_${ts.isCaseClause(clause) ? index : "default"}`;
+        statements.push(lua.createLabelStatement(labelName));
+        statements.push(lua.createDoStatement(context.transformStatements(clause.statements)));
     }
 
     statements.push(lua.createLabelStatement(`${switchName}_end`));
 
     statements = performHoisting(context, statements);
     popScope(context);
+
+    const expression = context.transformExpression(statement.expression);
+    statements.unshift(lua.createVariableDeclarationStatement(switchVariable, expression));
 
     return statements;
 };

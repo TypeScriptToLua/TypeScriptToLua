@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.30.0
+
+- **Breaking:** We dropped support for `var` variables. If you still have any `var` variable declarations, please use `let` or `const` instead.
+- **Breaking:** We now depend on Node.js >= 12.13.0
+- Added support for string `trimLeft`, `trimRight`, `trimStart` and `trimEnd`.
+- Added support for `console.error`, `console.warn` and `console.info` , they will all be transpiled to Lua's `print`.
+- Avoided exporting anonymous identifiers.
+- Fixed an issue when assigning to an already-exported variable.
+- Math.atan2 will now be transpiled to the correct Lua atan2 (or atan for 5.3) method.
+- Fixed various destructuring issues.
+- Fixed incorrect error for intersection types containing built-ins (like `number` or `string`)
+- Modules containing `import` or `export` will now always be recognized as module to match TypeScript's logic.
+- Fixed `true` not being recognized as lua keyword.
+- Fixed inaccuracies in switch case variable scoping.
+- Fixed various problems with variables being global instead of local.
+
+### Internal:
+
+- Refactored transformation pipeline from one big LuaTransformer class to many small modules.
+- Moved class construction methods from transformer to LuaLib.
+- Upgraded dependencies.
+
 ## 0.29.0
 
 - Added bundling support using options `luaBundle` and `luaBundleEntry` (so **not** TS's outFile). This will bundle all output files into one single bundle file, with _luaBundleEntry_ as entry point. For more information on these options see https://github.com/TypeScriptToLua/TypeScriptToLua/wiki#tstl-specific-options

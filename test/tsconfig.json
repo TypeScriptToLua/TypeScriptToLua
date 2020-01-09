@@ -5,6 +5,7 @@
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "newLine": "LF",
         "target": "es2019",
         "lib": ["es2019"],
         "types": ["node", "jest"],

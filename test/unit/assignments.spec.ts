@@ -1,13 +1,23 @@
 import * as util from "../util";
 
 test("const declaration", () => {
-    const lua = util.transpileString(`const foo = true;`);
-    expect(lua).toBe(`local foo = true`);
+    const lua = util.testFunction`const foo = true;`.getMainLuaCodeChunk();
+    expect(lua).toContain(`local foo = true`);
 });
 
 test("let declaration", () => {
-    const lua = util.transpileString(`let foo = true;`);
-    expect(lua).toBe(`local foo = true`);
+    const lua = util.testFunction`let foo = true;`.getMainLuaCodeChunk();
+    expect(lua).toContain(`local foo = true`);
+});
+
+test("const declaration top-level is global", () => {
+    const lua = util.testModule`const foo = true;`.getMainLuaCodeChunk();
+    expect(lua).toBe(`foo = true`);
+});
+
+test("let declaration top-level is global", () => {
+    const lua = util.testModule`let foo = true;`.getMainLuaCodeChunk();
+    expect(lua).toBe(`foo = true`);
 });
 
 test("var declaration is disallowed", () => {

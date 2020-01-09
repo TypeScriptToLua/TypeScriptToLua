@@ -122,7 +122,6 @@ export function createLocalOrExportedOrGlobalDeclaration(
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
-    const isVariableDeclaration = tsOriginal !== undefined && ts.isVariableDeclaration(tsOriginal);
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = Array.isArray(lhs) ? lhs : [lhs];
@@ -145,7 +144,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
     } else {
         const insideFunction = findScope(context, ScopeType.Function) !== undefined;
 
-        if (context.isModule || getCurrentNamespace(context) || insideFunction || isVariableDeclaration) {
+        if (context.isModule || getCurrentNamespace(context) || insideFunction) {
             const scope = peekScope(context);
 
             const isPossibleWrappedFunction =

@@ -318,10 +318,12 @@ test("switch uses elseif", () => {
 
             switch (2 as number) {
                 case 0: {
+                    result = 200;
                     break;
                 }
 
                 case 1: {
+                    result = 100;
                     break;
                 }
 

@@ -16,12 +16,14 @@ function ____exports.__main(self)
     ::____switch3_case_0::
     do
         do
+            result = 200
             goto ____switch3_end
         end
     end
     ::____switch3_case_1::
     do
         do
+            result = 100
             goto ____switch3_end
         end
     end

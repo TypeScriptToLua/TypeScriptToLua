@@ -143,8 +143,9 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     } else {
         const insideFunction = findScope(context, ScopeType.Function) !== undefined;
+        const insideBlock = findScope(context, ScopeType.Block) !== undefined;
 
-        if (context.isModule || getCurrentNamespace(context) || insideFunction) {
+        if (context.isModule || getCurrentNamespace(context) || insideFunction || insideBlock) {
             const scope = peekScope(context);
 
             const isPossibleWrappedFunction =

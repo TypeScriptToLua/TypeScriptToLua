@@ -1,5 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Transformation (blockScopeVariables) 1`] = `
+"do
+    local a = 1
+    local b = 1
+    local ____ = {c = 1}
+    local c = ____.c
+end"
+`;
+
 exports[`Transformation (characterEscapeSequence) 1`] = `
 "quoteInDoubleQuotes = \\"' ' '\\"
 quoteInTemplateString = \\"' ' '\\"

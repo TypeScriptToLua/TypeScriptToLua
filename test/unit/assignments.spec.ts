@@ -10,14 +10,12 @@ test("let declaration", () => {
     expect(lua).toContain(`local foo = true`);
 });
 
-test("const declaration top-level is global", () => {
-    const lua = util.testModule`const foo = true;`.getMainLuaCodeChunk();
-    expect(lua).toBe(`foo = true`);
-});
-
-test("let declaration top-level is global", () => {
-    const lua = util.testModule`let foo = true;`.getMainLuaCodeChunk();
-    expect(lua).toBe(`foo = true`);
+test.each(["const", "let"])("%s declaration top-level is global", declarationKind => {
+    util.testModule`
+        ${declarationKind} foo = true;
+        // @ts-ignore
+        return (globalThis as any).foo;
+    `.expectToEqual(true);
 });
 
 test("var declaration is disallowed", () => {

@@ -22,18 +22,14 @@ describe("property shorthand", () => {
     });
 
     test.each([NaN, Infinity])("should support %p shorthand", identifier => {
-        util.testFunction`return ({ ${identifier} }).${identifier}`.expectToMatchJsResult();
+        util.testExpression`({ ${identifier} }).${identifier}`.expectToMatchJsResult();
     });
 
     test("should support _G shorthand", () => {
-        const luaResult = util.testFunction`
-            return ({ _G })._G.foobar;
-        `
+        util.testExpression`({ _G })._G.foobar`
             .setTsHeader(`declare const _G: any;`)
             .setLuaHeader(`foobar = "foobar"`)
-            .getLuaExecutionResult();
-
-        expect(luaResult).toEqual("foobar");
+            .expectToEqual("foobar");
     });
 
     test("should support export property shorthand", () => {
@@ -55,6 +51,6 @@ test("undefined as object key", () => {
 test.each([`({x: "foobar"}.x)`, `({x: "foobar"}["x"])`, `({x: () => "foobar"}.x())`, `({x: () => "foobar"}["x"]())`])(
     "object literal property access (%p)",
     expression => {
-        util.testFunction`return ${expression}`.expectToMatchJsResult();
+        util.testExpression(expression).expectToMatchJsResult();
     }
 );

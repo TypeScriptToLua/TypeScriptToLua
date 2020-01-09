@@ -261,6 +261,9 @@ exports[`Transformation (topLevelVariables) 1`] = `
 "obj = {value1 = 1, value2 = 2}
 value1 = obj.value1
 value2 = obj.value2
+obj2 = {value3 = 1, value4 = 2}
+value3 = obj2.value3
+value4 = obj2.value4
 function fun1(self)
 end
 fun2 = function()

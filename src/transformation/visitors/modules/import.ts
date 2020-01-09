@@ -105,6 +105,10 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         scope.importStatements = [];
     }
 
+    if (isHelpersImport(context, statement)) {
+        return;
+    }
+
     const result: lua.Statement[] = [];
     const requireCall = createModuleRequire(context, statement.moduleSpecifier);
 

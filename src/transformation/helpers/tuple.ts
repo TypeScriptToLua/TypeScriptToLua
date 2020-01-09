@@ -5,23 +5,26 @@ import { TransformationContext } from "../context";
 import { transformArrayBindingElement } from "../visitors/variable-declaration";
 import { transformArguments } from "../visitors/call";
 
-const helperPath = path.resolve(__dirname, "../../helpers");
-
 function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
-    const filePath = path.normalize(sourceFile.fileName);
-    const tuplePath = path.resolve(helperPath, "./tuple.d.ts");
-    return filePath === tuplePath;
+    const helperDirectory = path.resolve(__dirname, "../../helpers");
+    const sourceFileDirectory = path.dirname(path.normalize(sourceFile.fileName));
+    return helperDirectory === sourceFileDirectory;
 }
 
 export function isHelpersImport(
     context: TransformationContext,
-    importNode: ts.ImportClause | ts.ImportSpecifier
+    importNode: ts.ImportClause | ts.ImportSpecifier | ts.ImportDeclaration
 ): boolean {
+    if (ts.isImportDeclaration(importNode)) {
+        const symbol = context.checker.getSymbolAtLocation(importNode.moduleSpecifier);
+        return symbol?.declarations.map(d => d.getSourceFile()).some(isSourceFileFromHelpers) ?? false;
+    }
+
     if (importNode.name) {
         const symbol = context.checker.getSymbolAtLocation(importNode.name);
         if (symbol) {
             const originalSymbol = context.checker.getAliasedSymbol(symbol);
-            return originalSymbol.declarations.map(d => d.getSourceFile()).some(isSourceFileFromHelpers);
+            return originalSymbol?.declarations?.map(d => d.getSourceFile()).some(isSourceFileFromHelpers) ?? false;
         }
     }
 

@@ -2,8 +2,9 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
+import { isTupleHelperType } from "../helpers/tuple";
 import { isForRangeType } from "../utils/annotations";
-import { InvalidForRangeCall } from "../utils/errors";
+import { InvalidForRangeCall, InvalidTupleFunctionUse } from "../utils/errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
@@ -18,6 +19,10 @@ export function transformIdentifier(context: TransformationContext, identifier: 
                 "@forRange function can only be used as an iterable in a for...of loop."
             );
         }
+    }
+
+    if (isTupleHelperType(context, identifier)) {
+        throw InvalidTupleFunctionUse(identifier);
     }
 
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;

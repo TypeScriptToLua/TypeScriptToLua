@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { InvalidAmbientIdentifierName, UnsupportedKind } from "../utils/errors";
+import { InvalidAmbientIdentifierName, UnsupportedKind, InvalidTupleFunctionUse } from "../utils/errors";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import {
@@ -14,6 +14,7 @@ import {
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
+import { isTupleHelperType } from "../helpers/tuple";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -60,6 +61,10 @@ export function createShorthandIdentifier(
     return identifier;
 }
 
+function resolveSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
+    return symbol?.declarations.find(d => d);
+}
+
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
     let properties: lua.TableFieldExpression[] = [];
     const tableExpressions: lua.Expression[] = [];
@@ -73,6 +78,11 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
         } else if (ts.isShorthandPropertyAssignment(element)) {
             const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
             if (valueSymbol) {
+                const declaration = resolveSymbolDeclaration(valueSymbol);
+                if (declaration && isTupleHelperType(context, declaration)) {
+                    throw InvalidTupleFunctionUse(expression);
+                }
+
                 trackSymbolReference(context, valueSymbol, element.name);
             }
 

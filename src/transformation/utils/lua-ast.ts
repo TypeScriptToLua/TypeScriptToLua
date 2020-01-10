@@ -1,11 +1,10 @@
-import * as ts from "typescript";
 import * as assert from "assert";
+import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { getCurrentNamespace } from "../visitors/namespace";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { findScope, peekScope, ScopeType } from "./scope";
+import { peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
@@ -142,10 +141,12 @@ export function createLocalOrExportedOrGlobalDeclaration(
             );
         }
     } else {
-        const insideFunction = findScope(context, ScopeType.Function) !== undefined;
-        const insideBlock = findScope(context, ScopeType.Block) !== undefined;
+        const isTopLevelVariable = peekScope(context).type === ScopeType.File;
 
-        if (context.isModule || getCurrentNamespace(context) || insideFunction || insideBlock) {
+        if (rhs && isTopLevelVariable && !context.isModule) {
+            // top-level declarations in non-module files are considered global
+            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
+        } else {
             const scope = peekScope(context);
 
             const isPossibleWrappedFunction =
@@ -175,11 +176,6 @@ export function createLocalOrExportedOrGlobalDeclaration(
                     declaration = undefined;
                 }
             }
-        } else if (rhs) {
-            // global
-            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
-        } else {
-            return [];
         }
     }
 

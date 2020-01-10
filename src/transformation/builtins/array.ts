@@ -40,6 +40,8 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFind, node, caller, ...params);
         case "findIndex":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFindIndex, node, caller, ...params);
+        case "includes":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayIncludes, node, caller, ...params);
         case "indexOf":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayIndexOf, node, caller, ...params);
         case "map":

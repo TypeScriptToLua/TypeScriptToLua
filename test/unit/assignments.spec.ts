@@ -10,6 +10,16 @@ test("let declaration", () => {
     expect(lua).toContain(`local foo = true`);
 });
 
+test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
+    util.testModule`
+        {
+            ${declarationKind} foo = true;
+        }
+        // @ts-ignore
+        return (globalThis as any).foo;
+    `.expectToEqual(undefined);
+});
+
 test.each(["const", "let"])("%s declaration top-level is global", declarationKind => {
     util.testModule`
         ${declarationKind} foo = true;

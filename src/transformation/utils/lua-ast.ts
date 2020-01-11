@@ -3,6 +3,7 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
+import { getCurrentNamespace } from "../visitors/namespace";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
@@ -141,14 +142,10 @@ export function createLocalOrExportedOrGlobalDeclaration(
             );
         }
     } else {
-        const isTopLevelVariable = peekScope(context).type === ScopeType.File;
+        const scope = peekScope(context);
+        const isTopLevelVariable = scope.type === ScopeType.File;
 
-        if (rhs && isTopLevelVariable && !context.isModule) {
-            // top-level declarations in non-module files are considered global
-            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
-        } else {
-            const scope = peekScope(context);
-
+        if (context.isModule || getCurrentNamespace(context) || !isTopLevelVariable) {
             const isPossibleWrappedFunction =
                 !isFunctionDeclaration &&
                 tsOriginal &&
@@ -176,6 +173,11 @@ export function createLocalOrExportedOrGlobalDeclaration(
                     declaration = undefined;
                 }
             }
+        } else if (rhs) {
+            // global
+            assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
+        } else {
+            return [];
         }
     }
 

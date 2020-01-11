@@ -8,7 +8,9 @@ test.each([
     { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4"\n}' },
     { inp: `{x}`, out: `{x = x}` },
 ])("Object Literal (%p)", ({ inp, out }) => {
-    const lua = util.testModule`const myvar = ${inp};`.getMainLuaCodeChunk();
+    const lua = util.testModule`
+        const myvar = ${inp};
+    `.getMainLuaCodeChunk();
     expect(lua).toBe(`myvar = ${out}`);
 });
 

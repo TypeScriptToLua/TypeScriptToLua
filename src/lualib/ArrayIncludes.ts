@@ -11,11 +11,10 @@ function __TS__ArrayIncludes<T>(this: T[], searchElement: T, fromIndex = 0): boo
         k = 0;
     }
 
-    while (k < len) {
-        if (this[k] === searchElement) {
+    for (const i of forRange(k, len)) {
+        if (this[i] === searchElement) {
             return true;
         }
-        k = k + 1;
     }
 
     return false;

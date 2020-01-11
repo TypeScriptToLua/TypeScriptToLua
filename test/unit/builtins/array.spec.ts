@@ -397,7 +397,7 @@ test.each([
     { array: [[1], [2], [3]], includes: [2] },
     { array: [1, [2], 3], includes: 2 },
 ])("array.includes (%p)", ({ array, includes }) => {
-    util.testExpression`${util.formatCode(array)}.includes(${util.formatCode(includes)})`.expectToMatchJsResult();
+    util.testExpressionTemplate`${array}.includes(${includes})`.expectToMatchJsResult();
 });
 
 test("array.includes reference", () => {
@@ -417,8 +417,7 @@ test.each([
     { array: [1, 2, 3], includes: 2, fromIndex: -3 },
     { array: [1, 2, 3], includes: 2, fromIndex: -4 },
 ])("array.includes with fromIndex (%p)", ({ array, includes, fromIndex }) => {
-    const includeParams = `${util.formatCode(includes)}, ${fromIndex}`;
-    util.testExpression`${util.formatCode(array)}.includes(${includeParams})`.expectToMatchJsResult();
+    util.testExpressionTemplate`${array}.includes(${includes}, ${fromIndex})`.expectToMatchJsResult();
 });
 
 test.each([

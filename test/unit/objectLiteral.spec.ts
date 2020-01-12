@@ -1,17 +1,21 @@
 import * as util from "../util";
 
-test.each([
-    { inp: `{a:3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{"a":3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{["a"]:3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{["a"+123]:3,b:"4"}`, out: '{["a" .. 123] = 3, b = "4"}' },
-    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4"\n}' },
-    { inp: `{x}`, out: `{x = x}` },
-])("Object Literal (%p)", ({ inp, out }) => {
-    const lua = util.testModule`
-        const myvar = ${inp};
-    `.getMainLuaCodeChunk();
-    expect(lua).toBe(`myvar = ${out}`);
+test.each([`{a:3,b:"4"}`, `{"a":3,b:"4"}`, `{["a"]:3,b:"4"}`, `{["a"+123]:3,b:"4"}`])("Object Literal (%p)", inp => {
+    util.testExpression(inp).expectToMatchJsResult();
+});
+
+test("object literal with function call to get key", () => {
+    util.testFunction`
+        const myFunc = () => "a";
+    	return {[myFunc() + "b"]: 3};
+    `.expectToMatchJsResult();
+});
+
+test("object literal with shorthand property", () => {
+    util.testFunction`
+        const x = 5;
+        return {x};
+    `.expectToMatchJsResult();
 });
 
 describe("property shorthand", () => {

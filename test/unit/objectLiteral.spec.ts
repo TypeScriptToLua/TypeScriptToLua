@@ -1,20 +1,23 @@
 import * as util from "../util";
 
-test.each([`{a:3,b:"4"}`, `{"a":3,b:"4"}`, `{["a"]:3,b:"4"}`, `{["a"+123]:3,b:"4"}`])("Object Literal (%p)", inp => {
-    util.testExpression(inp).expectToMatchJsResult();
-});
+test.each([`{ a: 3, b: "4" }`, `{ "a": 3, b: "4" }`, `{ ["a"]: 3, b: "4" }`, `{ ["a" + 123]: 3, b: "4" }`])(
+    "Object Literal (%p)",
+    inp => {
+        util.testExpression(inp).expectToMatchJsResult();
+    }
+);
 
 test("object literal with function call to get key", () => {
     util.testFunction`
         const myFunc = () => "a";
-    	return {[myFunc() + "b"]: 3};
+        return { [myFunc() + "b"]: 3 };
     `.expectToMatchJsResult();
 });
 
 test("object literal with shorthand property", () => {
     util.testFunction`
         const x = 5;
-        return {x};
+        return { x };
     `.expectToMatchJsResult();
 });
 

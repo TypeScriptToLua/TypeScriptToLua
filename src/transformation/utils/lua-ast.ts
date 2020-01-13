@@ -3,7 +3,6 @@ import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { getCurrentNamespace } from "../visitors/namespace";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
@@ -145,7 +144,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const scope = peekScope(context);
         const isTopLevelVariable = scope.type === ScopeType.File;
 
-        if (context.isModule || getCurrentNamespace(context) || !isTopLevelVariable) {
+        if (context.isModule || !isTopLevelVariable) {
             const isPossibleWrappedFunction =
                 !isFunctionDeclaration &&
                 tsOriginal &&

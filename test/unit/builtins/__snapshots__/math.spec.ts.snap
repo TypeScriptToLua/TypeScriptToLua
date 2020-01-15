@@ -27,7 +27,7 @@ return ____exports"
 exports[`Math.log2(3) 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____ = (math.log(3) / 0.6931471805599453)
+    local ____ = math.log(3) / 0.6931471805599453
 end
 return ____exports"
 `;
@@ -35,7 +35,7 @@ return ____exports"
 exports[`Math.log10(3) 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local ____ = (math.log(3) / 2.302585092994046)
+    local ____ = math.log(3) / 2.302585092994046
 end
 return ____exports"
 `;
@@ -67,7 +67,7 @@ return ____exports"
 exports[`const x = Math.log2(3) 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local x = (math.log(3) / 0.6931471805599453)
+    local x = math.log(3) / 0.6931471805599453
 end
 return ____exports"
 `;
@@ -75,7 +75,7 @@ return ____exports"
 exports[`const x = Math.log10(3) 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
-    local x = (math.log(3) / 2.302585092994046)
+    local x = math.log(3) / 2.302585092994046
 end
 return ____exports"
 `;

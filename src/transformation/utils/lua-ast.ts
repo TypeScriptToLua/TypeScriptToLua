@@ -42,8 +42,6 @@ export function createExpressionPlusOne(expression: lua.Expression): lua.Express
         ) {
             return expression.left;
         }
-
-        expression = lua.createParenthesizedExpression(expression);
     }
 
     return lua.createBinaryExpression(expression, lua.createNumericLiteral(1), lua.SyntaxKind.AdditionOperator);

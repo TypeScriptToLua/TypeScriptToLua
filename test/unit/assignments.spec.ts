@@ -1,15 +1,5 @@
 import * as util from "../util";
 
-test("const declaration", () => {
-    const lua = util.testFunction`const foo = true;`.getMainLuaCodeChunk();
-    expect(lua).toContain(`local foo = true`);
-});
-
-test("let declaration", () => {
-    const lua = util.testFunction`let foo = true;`.getMainLuaCodeChunk();
-    expect(lua).toContain(`local foo = true`);
-});
-
 test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
     util.testModule`
         {

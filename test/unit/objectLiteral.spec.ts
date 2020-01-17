@@ -1,66 +1,65 @@
 import * as util from "../util";
 
-test.each([
-    { inp: `{a:3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{"a":3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{["a"]:3,b:"4"}`, out: '{a = 3, b = "4"}' },
-    { inp: `{["a"+123]:3,b:"4"}`, out: '{["a" .. 123] = 3, b = "4"}' },
-    { inp: `{[myFunc()]:3,b:"4"}`, out: '{\n    [myFunc(_G)] = 3,\n    b = "4"\n}' },
-    { inp: `{x}`, out: `{x = x}` },
-])("Object Literal (%p)", ({ inp, out }) => {
-    const lua = util.transpileString(`const myvar = ${inp};`);
-    expect(lua).toBe(`local myvar = ${out}`);
+test.each([`{ a: 3, b: "4" }`, `{ "a": 3, b: "4" }`, `{ ["a"]: 3, b: "4" }`, `{ ["a" + 123]: 3, b: "4" }`])(
+    "Object Literal (%p)",
+    inp => {
+        util.testExpression(inp).expectToMatchJsResult();
+    }
+);
+
+test("object literal with function call to get key", () => {
+    util.testFunction`
+        const myFunc = () => "a";
+        return { [myFunc() + "b"]: 3 };
+    `.expectToMatchJsResult();
+});
+
+test("object literal with shorthand property", () => {
+    util.testFunction`
+        const x = 5;
+        return { x };
+    `.expectToMatchJsResult();
 });
 
 describe("property shorthand", () => {
     test("should support property shorthand", () => {
-        const result = util.transpileAndExecute(`
+        util.testFunction`
             const x = 1;
             const o = { x };
             return o.x;
-        `);
-
-        expect(result).toBe(1);
+        `.expectToMatchJsResult();
     });
 
     test.each([NaN, Infinity])("should support %p shorthand", identifier => {
-        const result = util.transpileAndExecute(`return ({ ${identifier} }).${identifier}`);
-
-        expect(result).toBe(identifier);
+        util.testExpression`({ ${identifier} }).${identifier}`.expectToMatchJsResult();
     });
 
     test("should support _G shorthand", () => {
-        const result = util.transpileAndExecute(
-            `return ({ _G })._G.foobar;`,
-            undefined,
-            `foobar = "foobar"`,
-            "declare const _G: any;"
-        );
-
-        expect(result).toBe("foobar");
+        util.testExpression`({ _G })._G.foobar`
+            .setTsHeader(`declare const _G: any;`)
+            .setLuaHeader(`foobar = "foobar"`)
+            .expectToEqual("foobar");
     });
 
     test("should support export property shorthand", () => {
-        const code = `
+        util.testModule`
             export const x = 1;
             const o = { x };
             export const y = o.x;
-        `;
-        expect(util.transpileExecuteAndReturnExport(code, "y")).toBe(1);
+        `.expectToMatchJsResult();
     });
 });
 
 test("undefined as object key", () => {
-    const code = `const foo = {undefined: "foo"};
-        return foo.undefined;`;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    util.testFunction`
+        const foo = {undefined: "foo"};
+        return foo.undefined;
+    `.expectToMatchJsResult();
 });
 
 test.each([`({x: "foobar"}.x)`, `({x: "foobar"}["x"])`, `({x: () => "foobar"}.x())`, `({x: () => "foobar"}["x"]())`])(
     "object literal property access (%p)",
     expression => {
-        const code = `return ${expression}`;
-        const expectResult = eval(expression);
-        expect(util.transpileAndExecute(code)).toBe(expectResult);
+        util.testExpression(expression).expectToMatchJsResult();
     }
 );

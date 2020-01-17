@@ -1,18 +1,27 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Transformation (blockScopeVariables) 1`] = `
+"do
+    local a = 1
+    local b = 1
+    local ____ = {c = 1}
+    local c = ____.c
+end"
+`;
+
 exports[`Transformation (characterEscapeSequence) 1`] = `
-"local quoteInDoubleQuotes = \\"' ' '\\"
-local quoteInTemplateString = \\"' ' '\\"
-local doubleQuoteInQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-local doubleQuoteInDoubleQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-local doubleQuoteInTemplateString = \\"\\\\\\" \\\\\\" \\\\\\"\\"
-local backQuoteInQuotes = \\"\` \` \`\\"
-local backQuoteInDoubleQuotes = \\"\` \` \`\\"
-local backQuoteInTemplateString = \\"\` \` \`\\"
-local escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-local escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-local escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-local nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. \\"Level 1: \\\\n\\\\t\\\\t \\" .. \\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\""
+"quoteInDoubleQuotes = \\"' ' '\\"
+quoteInTemplateString = \\"' ' '\\"
+doubleQuoteInQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
+doubleQuoteInDoubleQuotes = \\"\\\\\\" \\\\\\" \\\\\\"\\"
+doubleQuoteInTemplateString = \\"\\\\\\" \\\\\\" \\\\\\"\\"
+backQuoteInQuotes = \\"\` \` \`\\"
+backQuoteInDoubleQuotes = \\"\` \` \`\\"
+backQuoteInTemplateString = \\"\` \` \`\\"
+escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
+escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
+escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
+nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. \\"Level 1: \\\\n\\\\t\\\\t \\" .. \\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\""
 `;
 
 exports[`Transformation (classExtension1) 1`] = `
@@ -244,7 +253,7 @@ ____exports.foo = \\"bar\\"
 return ____exports"
 `;
 
-exports[`Transformation (modulesVariableNoExport) 1`] = `"local foo = \\"bar\\""`;
+exports[`Transformation (modulesVariableNoExport) 1`] = `"foo = \\"bar\\""`;
 
 exports[`Transformation (namespacePhantom) 1`] = `
 "function nsMember(self)
@@ -254,6 +263,19 @@ end"
 exports[`Transformation (returnDefault) 1`] = `
 "function myFunc(self)
     return
+end"
+`;
+
+exports[`Transformation (topLevelVariables) 1`] = `
+"obj = {value1 = 1, value2 = 2}
+value1 = obj.value1
+value2 = obj.value2
+obj2 = {value3 = 1, value4 = 2}
+value3 = obj2.value3
+value4 = obj2.value4
+function fun1(self)
+end
+fun2 = function()
 end"
 `;
 

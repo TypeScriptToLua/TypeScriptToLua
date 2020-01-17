@@ -1,13 +1,21 @@
 import * as util from "../util";
 
-test("const declaration", () => {
-    const lua = util.transpileString(`const foo = true;`);
-    expect(lua).toBe(`local foo = true`);
+test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
+    util.testModule`
+        {
+            ${declarationKind} foo = true;
+        }
+        // @ts-ignore
+        return (globalThis as any).foo;
+    `.expectToEqual(undefined);
 });
 
-test("let declaration", () => {
-    const lua = util.transpileString(`let foo = true;`);
-    expect(lua).toBe(`local foo = true`);
+test.each(["const", "let"])("%s declaration top-level is global", declarationKind => {
+    util.testModule`
+        ${declarationKind} foo = true;
+        // @ts-ignore
+        return (globalThis as any).foo;
+    `.expectToEqual(true);
 });
 
 test("var declaration is disallowed", () => {

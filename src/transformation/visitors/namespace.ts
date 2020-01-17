@@ -46,8 +46,8 @@ function moduleHasEmittedBody(
     return false;
 }
 
+// Static context -> namespace dictionary keeping the current namespace for each transformation context
 const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaration | undefined>();
-export const getCurrentNamespace = (context: TransformationContext) => currentNamespaces.get(context);
 
 export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
     const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node));

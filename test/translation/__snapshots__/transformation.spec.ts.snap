@@ -21,7 +21,7 @@ backQuoteInTemplateString = \\"\` \` \`\\"
 escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. \\"Level 1: \\\\n\\\\t\\\\t \\" .. \\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\""
+nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. ((\\"Level 1: \\\\n\\\\t\\\\t \\" .. ((\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\")) .. \\" \\\\n --\\")) .. \\" \\\\n --\\""
 `;
 
 exports[`Transformation (classExtension1) 1`] = `

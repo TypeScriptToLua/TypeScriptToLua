@@ -63,7 +63,7 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
 
     checkForLuaLibType(context, type);
 
-    const annotations = getTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(type);
 
     if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
         throw InvalidNewExpressionOnExtension(node);

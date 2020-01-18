@@ -26,12 +26,16 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);
 }
 
+function isGlobalAugmentation(module: ts.ModuleDeclaration): boolean {
+    return (module.flags & ts.NodeFlags.GlobalAugmentation) !== 0;
+}
+
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
     // TODO: Move below to avoid extra transforms?
     const identifier = transformIdentifier(context, node);
 
     const exportScope = getIdentifierExportScope(context, identifier);
-    if (exportScope) {
+    if (exportScope && !(ts.isModuleDeclaration(exportScope) && isGlobalAugmentation(exportScope))) {
         return createExportedIdentifier(context, identifier, exportScope);
     }
 

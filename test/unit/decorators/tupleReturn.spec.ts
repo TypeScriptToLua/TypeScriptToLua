@@ -346,31 +346,33 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
 });
 
 test("TupleReturn assignment", () => {
-    const lua = util.testFunction`
+    util.testFunction`
         /** @tupleReturn */
-        declare function abc(this: void): number[]
-        let [a,b] = abc();
-    `.getMainLuaCodeChunk();
-
-    expect(lua).toContain("local a, b = abc()");
+        function abc(this: void): number[] {
+            return [3, 5];
+        }
+        let [a, b] = abc();
+        return { a, b };
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn Single assignment", () => {
-    const lua = util.testFunction`
+    util.testFunction`
         /** @tupleReturn */
-        declare function abc(this: void): [number, string];
+        function abc(this: void): [number, string] {
+            return [3, "foo"];
+        }
         let a = abc();
         a = abc();
-    `.getMainLuaCodeChunk();
-
-    expect(lua).toContain(`local a = ({\n        abc()\n    })\n    a = ({\n        abc()\n    })`);
+        return a;
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn interface assignment", () => {
     const lua = util.testFunction`
         interface def {
-        /** @tupleReturn */
-        abc();
+            /** @tupleReturn */
+            abc();
         } declare const jkl : def;
         let [a,b] = jkl.abc();
     `.getMainLuaCodeChunk();
@@ -381,8 +383,8 @@ test("TupleReturn interface assignment", () => {
 test("TupleReturn namespace assignment", () => {
     const lua = util.testFunction`
         declare namespace def {
-        /** @tupleReturn */
-        function abc(this: void) {}
+            /** @tupleReturn */
+            function abc(this: void) {}
         }
         let [a,b] = def.abc();
     `.getMainLuaCodeChunk();

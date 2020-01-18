@@ -55,7 +55,7 @@ export function createImmediatelyInvokedFunctionExpression(
     body.push(lua.createReturnStatement(Array.isArray(result) ? result : [result]));
     const flags = statements.length === 0 ? lua.FunctionExpressionFlags.Inline : lua.FunctionExpressionFlags.None;
     const iife = lua.createFunctionExpression(lua.createBlock(body), undefined, undefined, undefined, flags);
-    return lua.createCallExpression(lua.createParenthesizedExpression(iife), [], tsOriginal);
+    return lua.createCallExpression(iife, [], tsOriginal);
 }
 
 export function createUnpackCall(
@@ -71,9 +71,9 @@ export function createUnpackCall(
     return lua.createCallExpression(unpack, [expression], tsOriginal);
 }
 
-export function wrapInTable(...expressions: lua.Expression[]): lua.ParenthesizedExpression {
+export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {
     const fields = expressions.map(e => lua.createTableFieldExpression(e));
-    return lua.createParenthesizedExpression(lua.createTableExpression(fields));
+    return lua.createTableExpression(fields);
 }
 
 export function wrapInToStringForConcat(expression: lua.Expression): lua.Expression {

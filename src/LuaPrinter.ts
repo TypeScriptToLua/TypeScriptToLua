@@ -64,9 +64,6 @@ function isSimpleExpression(expression: lua.Expression): boolean {
         case lua.SyntaxKind.BinaryExpression:
             const binaryExpression = expression as lua.BinaryExpression;
             return isSimpleExpression(binaryExpression.left) && isSimpleExpression(binaryExpression.right);
-
-        case lua.SyntaxKind.ParenthesizedExpression:
-            return isSimpleExpression((expression as lua.ParenthesizedExpression).innerExpression);
     }
 
     return true;
@@ -560,8 +557,6 @@ export class LuaPrinter {
                 return this.printUnaryExpression(expression as lua.UnaryExpression);
             case lua.SyntaxKind.BinaryExpression:
                 return this.printBinaryExpression(expression as lua.BinaryExpression);
-            case lua.SyntaxKind.ParenthesizedExpression:
-                return this.printParenthesizedExpression(expression as lua.ParenthesizedExpression);
             case lua.SyntaxKind.CallExpression:
                 return this.printCallExpression(expression as lua.CallExpression);
             case lua.SyntaxKind.MethodCallExpression:
@@ -714,29 +709,9 @@ export class LuaPrinter {
         return (
             lua.isBinaryExpression(expression) ||
             lua.isFunctionExpression(expression) ||
-            lua.isTableExpression(expression)
+            lua.isTableExpression(expression) ||
+            (lua.isUnaryExpression(expression) && expression.operator === lua.SyntaxKind.NotOperator)
         );
-    }
-
-    private canStripParenthesis(expression: lua.Expression): boolean {
-        return (
-            lua.isParenthesizedExpression(expression) ||
-            lua.isTableIndexExpression(expression) ||
-            lua.isCallExpression(expression) ||
-            lua.isMethodCallExpression(expression) ||
-            lua.isIdentifier(expression) ||
-            lua.isNilLiteral(expression) ||
-            lua.isNumericLiteral(expression) ||
-            lua.isBooleanLiteral(expression)
-        );
-    }
-
-    public printParenthesizedExpression(expression: lua.ParenthesizedExpression): SourceNode {
-        const innerExpression = this.printExpression(expression.innerExpression);
-        if (this.canStripParenthesis(expression.innerExpression)) {
-            return this.createSourceNode(expression, innerExpression);
-        }
-        return this.createSourceNode(expression, ["(", innerExpression, ")"]);
     }
 
     public printCallExpression(expression: lua.CallExpression): SourceNode {

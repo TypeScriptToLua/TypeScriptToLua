@@ -123,7 +123,7 @@ function transformForOfLuaIteratorStatement(
 ): lua.Statement {
     const luaIterator = context.transformExpression(statement.expression);
     const type = context.checker.getTypeAtLocation(statement.expression);
-    const tupleReturn = getTypeAnnotations(context, type).has(AnnotationKind.TupleReturn);
+    const tupleReturn = getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
     if (tupleReturn) {
         // LuaIterator + TupleReturn
         if (ts.isVariableDeclarationList(statement.initializer)) {

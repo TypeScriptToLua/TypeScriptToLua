@@ -88,7 +88,7 @@ export function transformClassDeclaration(
         throw MissingClassName(classDeclaration);
     }
 
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(classDeclaration));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));
 
     // Find out if this class is extension of existing class
     const extensionDirective = annotations.get(AnnotationKind.Extension);
@@ -113,7 +113,7 @@ export function transformClassDeclaration(
 
     if (!(isExtension || isMetaExtension) && extendsType) {
         // Non-extensions cannot extend extension classes
-        const extendsAnnotations = getTypeAnnotations(context, extendsType);
+        const extendsAnnotations = getTypeAnnotations(extendsType);
         if (extendsAnnotations.has(AnnotationKind.Extension) || extendsAnnotations.has(AnnotationKind.MetaExtension)) {
             throw InvalidExtendsExtension(classDeclaration);
         }
@@ -121,7 +121,7 @@ export function transformClassDeclaration(
 
     // You cannot extend LuaTable classes
     if (extendsType) {
-        const annotations = getTypeAnnotations(context, extendsType);
+        const annotations = getTypeAnnotations(extendsType);
         if (annotations.has(AnnotationKind.LuaTable)) {
             throw InvalidExtendsLuaTable(classDeclaration);
         }

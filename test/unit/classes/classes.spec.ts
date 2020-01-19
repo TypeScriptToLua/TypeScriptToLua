@@ -699,14 +699,19 @@ test("Class expression name via constructor", () => {
     `.expectToMatchJsResult();
 });
 
-test("Class annonymous expression name", () => {
+test("Anonymous class in variable declaration has name", () => {
     util.testFunction`
         const foo = class {};
-        return foo.name;
+        const bar = foo;
+        return { a: foo.name, b: bar.name };
     `.expectToMatchJsResult();
 });
 
-test("Class annonymous expression name via constructor", () => {
+test("Anonymous class expression outside variable assignment", () => {
+    util.testExpression`(class {}).name`.expectToMatchJsResult();
+});
+
+test("Class anonymous expression name via constructor", () => {
     util.testFunction`
         const foo = class {};
         const bar = new foo();

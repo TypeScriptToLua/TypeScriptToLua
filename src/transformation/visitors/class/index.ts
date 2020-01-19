@@ -45,14 +45,7 @@ export function transformClassAsExpression(
     context: TransformationContext,
     isDefaultExport = false
 ): lua.Expression {
-    let className: lua.Identifier;
-    if (expression.name) {
-        className = transformIdentifier(context, expression.name);
-    } else if (isDefaultExport) {
-        className = createDefaultExportIdentifier(expression);
-    } else {
-        className = lua.createAnonymousIdentifier();
-    }
+    const className = isDefaultExport ? createDefaultExportIdentifier(expression) : lua.createAnonymousIdentifier();
 
     pushScope(context, ScopeType.Function);
     const classDeclaration = unwrapVisitorResult(transformClassDeclaration(expression, context, className));
@@ -72,13 +65,10 @@ export function transformClassDeclaration(
     classStack.push(classDeclaration);
 
     let className: lua.Identifier;
-    let classNameText: string;
     if (nameOverride !== undefined) {
         className = nameOverride;
-        classNameText = nameOverride.text;
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
-        classNameText = classDeclaration.name.text;
     } else if (hasDefaultExportModifier(classDeclaration)) {
         const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
         const right = transformClassAsExpression(classDeclaration, context, true);
@@ -193,7 +183,14 @@ export function transformClassDeclaration(
 
     if (!isExtension && !isMetaExtension) {
         result.push(
-            ...createClassSetup(context, classDeclaration, className, localClassName, classNameText, extendsType)
+            ...createClassSetup(
+                context,
+                classDeclaration,
+                className,
+                localClassName,
+                getReflectionClassName(context, classDeclaration),
+                extendsType
+            )
         );
     } else {
         for (const f of instanceFields) {
@@ -349,3 +346,15 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
 };
 
 export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
+
+function getReflectionClassName(context: TransformationContext, declaration: ts.ClassLikeDeclaration): string {
+    if (declaration.name) {
+        return declaration.name.text;
+    } else if (ts.isVariableDeclaration(declaration.parent) && ts.isIdentifier(declaration.parent.name)) {
+        return declaration.parent.name.text;
+    } else if (hasDefaultExportModifier(declaration)) {
+        return context.createUniqueString("default");
+    } else {
+        return "";
+    }
+}

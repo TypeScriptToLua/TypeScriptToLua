@@ -13,7 +13,7 @@ test("@vararg", () => {
         }
         return bar("A", "B", "C", "D");
     `
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("{...}"))
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("b = "))
         .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
         .expectToMatchJsResult();
 });

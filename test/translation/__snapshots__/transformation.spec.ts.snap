@@ -82,6 +82,11 @@ end
 return ____exports"
 `;
 
+exports[`Transformation (globalAugmentation) 1`] = `
+"local ____exports = globalVariable
+return ____exports"
+`;
+
 exports[`Transformation (methodRestArguments) 1`] = `
 "require(\\"lualib_bundle\\");
 MyClass = __TS__Class()

@@ -630,18 +630,23 @@ test("Class Method Runtime Override", () => {
 });
 
 test("Exported class super call", () => {
-    util.testModule`
-        export class Foo {
-            prop: string;
-            constructor(prop: string) { this.prop = prop; }
-        }
-        export class Bar extends Foo {
-            constructor() {
-                super("bar");
-            }
-        }
-        export const baz = (new Bar()).prop;
-    `.debug().expectToMatchJsResult();
+    util.testExpression`
+        (new Bar()).prop;
+    `
+        .setTsHeader(
+            `
+                export class Foo {
+                    prop: string;
+                    constructor(prop: string) { this.prop = prop; }
+                }
+                export class Bar extends Foo {
+                    constructor() {
+                        super("bar");
+                    }
+                }
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test.each(["(new Foo())", "Foo"])("Class method name collision (%p)", input => {

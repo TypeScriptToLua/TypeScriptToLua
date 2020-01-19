@@ -98,10 +98,6 @@ export function popScope(context: TransformationContext): Scope {
 }
 
 export function performHoisting(context: TransformationContext, statements: lua.Statement[]): lua.Statement[] {
-    if (context.options.noHoisting) {
-        return statements;
-    }
-
     const scope = peekScope(context);
     let result = statements;
     result = hoistFunctionDefinitions(context, scope, result);

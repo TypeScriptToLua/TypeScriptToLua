@@ -97,7 +97,7 @@ export function createHoistableVariableDeclarationStatement(
     tsOriginal?: ts.Node
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
-    if (!context.options.noHoisting && identifier.symbolId) {
+    if (identifier.symbolId !== undefined) {
         const scope = peekScope(context);
         assert(scope.type !== ScopeType.Switch);
 
@@ -160,17 +160,15 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
-            if (!context.options.noHoisting) {
-                // Remember local variable declarations for hoisting later
-                if (!scope.variableDeclarations) {
-                    scope.variableDeclarations = [];
-                }
+            // Remember local variable declarations for hoisting later
+            if (!scope.variableDeclarations) {
+                scope.variableDeclarations = [];
+            }
 
-                scope.variableDeclarations.push(declaration);
+            scope.variableDeclarations.push(declaration);
 
-                if (scope.type === ScopeType.Switch) {
-                    declaration = undefined;
-                }
+            if (scope.type === ScopeType.Switch) {
+                declaration = undefined;
             }
         } else if (rhs) {
             // global
@@ -180,7 +178,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
-    if (!context.options.noHoisting && isFunctionDeclaration) {
+    if (isFunctionDeclaration) {
         // Remember function definitions for hoisting later
         const functionSymbolId = (lhs as lua.Identifier).symbolId;
         const scope = peekScope(context);

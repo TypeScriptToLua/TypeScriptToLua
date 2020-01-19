@@ -69,7 +69,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     const property = expression.name.text;
     const type = context.checker.getTypeAtLocation(expression.expression);
 
-    const annotations = getTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(type);
     // Do not output path for member only enums
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(expression.expression)) {

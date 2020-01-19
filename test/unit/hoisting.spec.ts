@@ -109,6 +109,28 @@ test("Hoisting due to reference from hoisted function", () => {
     expect(result).toBe("foo");
 });
 
+test("Hoisting with synthetic source file node", () => {
+    util.testModule`
+        export const foo = bar();
+        function bar() { return "bar"; }
+    `
+        .setCustomTransformers({
+            before: [
+                () => sourceFile =>
+                    ts.updateSourceFileNode(
+                        sourceFile,
+                        [ts.createNotEmittedStatement(undefined!), ...sourceFile.statements],
+                        sourceFile.isDeclarationFile,
+                        sourceFile.referencedFiles,
+                        sourceFile.typeReferenceDirectives,
+                        sourceFile.hasNoDefaultLib,
+                        sourceFile.libReferenceDirectives
+                    ),
+            ],
+        })
+        .expectToMatchJsResult();
+});
+
 test("Namespace Hoisting", () => {
     const code = `
         function bar() {

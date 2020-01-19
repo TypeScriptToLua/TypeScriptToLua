@@ -1,8 +1,9 @@
 import * as util from "../../util";
 
-test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
-    const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+test("@vararg", () => {
+    util.testFunction`
+        /** @vararg */
+        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("");
@@ -11,36 +12,34 @@ test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
             return foo(a, ...b);
         }
         return bar("A", "B", "C", "D");
-    `;
-
-    const lua = util.transpileString(code, compilerOptions);
-    expect(lua).not.toMatch("b = ({...})");
-    expect(lua).not.toMatch("unpack");
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("{...}"))
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("@vararg array access", compilerOptions => {
-    const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+test("@vararg array access", () => {
+    util.testFunction`
+        /** @vararg */
+        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("") + b[0];
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCDB");
+    `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("@vararg global", compilerOptions => {
+test("@vararg global", () => {
     const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        /** @vararg */
+        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
         declare const arg: LuaVarArg<string[]>;
         const arr = [...arg];
         const result = arr.join("");
     `;
 
-    const luaBody = util.transpileString(code, compilerOptions, false);
+    const luaBody = util.transpileString(code, undefined, false);
     expect(luaBody).not.toMatch("unpack");
 
     const lua = `

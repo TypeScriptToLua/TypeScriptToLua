@@ -43,7 +43,7 @@ function transformProtectedConditionalExpression(
     context: TransformationContext,
     expression: ts.ConditionalExpression
 ): lua.CallExpression {
-    const condition = lua.createParenthesizedExpression(context.transformExpression(expression.condition));
+    const condition = context.transformExpression(expression.condition);
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 
@@ -53,7 +53,7 @@ function transformProtectedConditionalExpression(
     // (condition and (() => v1) or (() => v2))()
     const conditionAnd = lua.createBinaryExpression(condition, val1Function, lua.SyntaxKind.AndOperator);
     const orExpression = lua.createBinaryExpression(conditionAnd, val2Function, lua.SyntaxKind.OrOperator);
-    return lua.createCallExpression(lua.createParenthesizedExpression(orExpression), [], expression);
+    return lua.createCallExpression(orExpression, [], expression);
 }
 
 export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpression> = (expression, context) => {
@@ -61,7 +61,7 @@ export const transformConditionalExpression: FunctionVisitor<ts.ConditionalExpre
         return transformProtectedConditionalExpression(context, expression);
     }
 
-    const condition = lua.createParenthesizedExpression(context.transformExpression(expression.condition));
+    const condition = context.transformExpression(expression.condition);
     const val1 = context.transformExpression(expression.whenTrue);
     const val2 = context.transformExpression(expression.whenFalse);
 

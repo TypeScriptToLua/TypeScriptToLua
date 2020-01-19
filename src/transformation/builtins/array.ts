@@ -89,10 +89,7 @@ export function transformArrayProperty(
 ): lua.UnaryExpression | undefined {
     switch (node.name.text) {
         case "length":
-            let expression = context.transformExpression(node.expression);
-            if (lua.isTableExpression(expression)) {
-                expression = lua.createParenthesizedExpression(expression);
-            }
+            const expression = context.transformExpression(node.expression);
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             return undefined;

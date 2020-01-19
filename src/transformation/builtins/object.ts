@@ -49,8 +49,11 @@ export function transformObjectPrototypeCall(
             const parameters = transformArguments(context, node.arguments, signature);
             const rawGetIdentifier = lua.createIdentifier("rawget");
             const rawGetCall = lua.createCallExpression(rawGetIdentifier, [expr, ...parameters]);
-            return lua.createParenthesizedExpression(
-                lua.createBinaryExpression(rawGetCall, lua.createNilLiteral(), lua.SyntaxKind.InequalityOperator, node)
+            return lua.createBinaryExpression(
+                rawGetCall,
+                lua.createNilLiteral(),
+                lua.SyntaxKind.InequalityOperator,
+                node
             );
     }
 }

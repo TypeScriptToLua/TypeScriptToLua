@@ -1,5 +1,3 @@
-import * as ts from "typescript";
-import { ReferencedBeforeDeclaration } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {

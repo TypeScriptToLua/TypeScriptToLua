@@ -40,7 +40,7 @@ export function transformConstructorDeclaration(
     // Check for field declarations in constructor
     const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
 
-    const classInstanceFields = transformClassInstanceFields(context, instanceFields);
+    const classInstanceFields = transformClassInstanceFields(context, classDeclaration, instanceFields);
 
     // If there are field initializers and the first statement is a super call,
     // move super call between default assignments and initializers

@@ -32,13 +32,13 @@ import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
 import { createConstructorDecorationStatement } from "./decorators";
-import { transformAccessorDeclarations } from "./members/accessors";
+import { isGetAccessorOverride, transformAccessorDeclarations } from "./members/accessors";
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
 import { createClassSetup } from "./setup";
-import { getExtendedType, getExtendedNode, isStaticNode } from "./utils";
+import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
@@ -239,12 +239,15 @@ export function transformClassDeclaration(
             );
 
             if (constructorResult) result.push(constructorResult);
-        } else if (instanceFields.length > 0) {
+        } else if (
+            instanceFields.length > 0 ||
+            classDeclaration.members.some(m => isGetAccessorOverride(context, m, classDeclaration))
+        ) {
             // Generate a constructor if none was defined in a class with instance fields that need initialization
             // localClassName.prototype.____constructor = function(self, ...)
             //     baseClassName.prototype.____constructor(self, ...)
             //     ...
-            const constructorBody = transformClassInstanceFields(context, instanceFields);
+            const constructorBody = transformClassInstanceFields(context, classDeclaration, instanceFields);
             const superCall = lua.createExpressionStatement(
                 lua.createCallExpression(
                     lua.createTableIndexExpression(

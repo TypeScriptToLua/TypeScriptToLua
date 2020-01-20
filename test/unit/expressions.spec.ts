@@ -111,6 +111,14 @@ test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(
     }
 );
 
+test("Assignment order of operations is preserved", () => {
+    util.testFunction`
+        let x = 0;
+        x *= 2 + 3;
+        return x;
+    `.expectToMatchJsResult();
+});
+
 test.each(["bar(),foo()", "foo(),bar()", "foo(),bar(),baz()"])("Binary Comma (%p)", input => {
     util.testFunction`
         function foo() { return 1; }

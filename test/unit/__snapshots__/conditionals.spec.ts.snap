@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`array 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result = -1
+    local ____switch3 = 2
+    if ____switch3 == 0 then
+        goto ____switch3_case_0
+    elseif ____switch3 == 1 then
+        goto ____switch3_case_1
+    elseif ____switch3 == 2 then
+        goto ____switch3_case_2
+    end
+    goto ____switch3_end
+    ::____switch3_case_0::
+    do
+        do
+            result = 200
+            goto ____switch3_end
+        end
+    end
+    ::____switch3_case_1::
+    do
+        do
+            result = 100
+            goto ____switch3_end
+        end
+    end
+    ::____switch3_case_2::
+    do
+        do
+            result = 1
+            goto ____switch3_end
+        end
+    end
+    ::____switch3_end::
+    return result
+end
+return ____exports"
+`;

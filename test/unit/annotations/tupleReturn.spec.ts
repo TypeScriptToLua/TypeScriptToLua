@@ -346,65 +346,62 @@ test("Tuple Return vs Non-Tuple Return Overload", () => {
 });
 
 test("TupleReturn assignment", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
-        declare function abc(this: void): number[]
-        let [a,b] = abc();
-    `;
-
-    const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = abc()");
+        function abc(this: void): number[] {
+            return [3, 5];
+        }
+        let [a, b] = abc();
+        return { a, b };
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn Single assignment", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
-        declare function abc(this: void): [number, string];
+        function abc(this: void): [number, string] {
+            return [3, "foo"];
+        }
         let a = abc();
         a = abc();
-    `;
-
-    const lua = util.transpileString(code);
-    expect(lua).toBe("local a = ({\n    abc()\n})\na = ({\n    abc()\n})");
+        return a;
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn interface assignment", () => {
-    const code = `
+    const lua = util.testFunction`
         interface def {
-        /** @tupleReturn */
-        abc();
+            /** @tupleReturn */
+            abc();
         } declare const jkl : def;
         let [a,b] = jkl.abc();
-    `;
+    `.getMainLuaCodeChunk();
 
-    const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = jkl:abc()");
+    expect(lua).toContain("local a, b = jkl:abc()");
 });
 
 test("TupleReturn namespace assignment", () => {
-    const code = `
+    const lua = util.testFunction`
         declare namespace def {
-        /** @tupleReturn */
-        function abc(this: void) {}
+            /** @tupleReturn */
+            function abc(this: void) {}
         }
         let [a,b] = def.abc();
-    `;
+    `.getMainLuaCodeChunk();
 
-    const lua = util.transpileString(code);
-    expect(lua).toBe("local a, b = def.abc()");
+    expect(lua).toContain("local a, b = def.abc()");
 });
 
 test("TupleReturn method assignment", () => {
-    const code = `
+    const lua = util.testFunction`
         declare class def {
         /** @tupleReturn */
         abc() { return [1,2,3]; }
         } const jkl = new def();
         let [a,b] = jkl.abc();
-    `;
+    `.getMainLuaCodeChunk();
 
-    const lua = util.transpileString(code);
-    expect(lua).toBe('require("lualib_bundle");\nlocal jkl = __TS__New(def)\nlocal a, b = jkl:abc()');
+    expect(lua).toContain("local a, b = jkl:abc()");
 });
 
 test("TupleReturn functional", () => {

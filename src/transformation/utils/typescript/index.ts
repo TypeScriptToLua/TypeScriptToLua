@@ -1,27 +1,10 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../../context";
-import { isDeclaration } from "./nodes";
 
 export * from "./nodes";
 export * from "./types";
 
 // TODO: Move to separate files?
-
-export function isFileModule(sourceFile: ts.SourceFile): boolean {
-    return sourceFile.statements.some(isStatementExported);
-}
-
-function isStatementExported(statement: ts.Statement): boolean {
-    if (ts.isExportAssignment(statement) || ts.isExportDeclaration(statement)) {
-        return true;
-    }
-    if (ts.isVariableStatement(statement)) {
-        return statement.declarationList.declarations.some(
-            declaration => (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0
-        );
-    }
-    return isDeclaration(statement) && (ts.getCombinedModifierFlags(statement) & ts.ModifierFlags.Export) !== 0;
-}
 
 export function hasExportEquals(sourceFile: ts.SourceFile): boolean {
     return sourceFile.statements.some(node => ts.isExportAssignment(node) && node.isExportEquals);
@@ -42,22 +25,19 @@ export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (
 }
 
 export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
-    const declarations = (symbol.getDeclarations() ?? []).filter(
-        // TODO: getSourceFile?
-        declaration => findFirstNodeAbove(declaration, ts.isSourceFile) === sourceFile
-    );
+    const originalSourceFile = ts.getParseTreeNode(sourceFile) ?? sourceFile;
+    const declarations = (symbol.getDeclarations() ?? []).filter(d => d.getSourceFile() === originalSourceFile);
 
     return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
 }
 
-export function isFirstDeclaration(context: TransformationContext, node: ts.VariableDeclaration): boolean {
-    const symbol = context.checker.getSymbolAtLocation(node.name);
-    if (!symbol) {
+function isStandardLibraryDeclaration(context: TransformationContext, declaration: ts.Declaration): boolean {
+    const sourceFile = declaration.getSourceFile();
+    if (!sourceFile) {
         return false;
     }
 
-    const firstDeclaration = getFirstDeclarationInFile(symbol, context.sourceFile);
-    return firstDeclaration === node;
+    return context.program.isSourceFileDefaultLibrary(sourceFile);
 }
 
 export function isStandardLibraryType(
@@ -76,12 +56,16 @@ export function isStandardLibraryType(
         return true;
     }
 
-    const sourceFile = declaration.getSourceFile();
-    if (!sourceFile) {
-        return false;
-    }
+    return isStandardLibraryDeclaration(context, declaration);
+}
 
-    return context.program.isSourceFileDefaultLibrary(sourceFile);
+export function hasStandardLibrarySignature(
+    context: TransformationContext,
+    callExpression: ts.CallExpression
+): boolean {
+    const signature = context.checker.getResolvedSignature(callExpression);
+
+    return signature && signature.declaration ? isStandardLibraryDeclaration(context, signature.declaration) : false;
 }
 
 export function inferAssignedType(context: TransformationContext, expression: ts.Expression): ts.Type {

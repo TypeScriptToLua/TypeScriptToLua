@@ -24,6 +24,7 @@ export const luaKeywords: ReadonlySet<string> = new Set([
     "repeat",
     "return",
     "then",
+    "true",
     "until",
     "while",
 ]);

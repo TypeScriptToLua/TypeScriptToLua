@@ -18,7 +18,7 @@ export function getExtendedNode(
     if (!extendsClause) return;
 
     const superType = context.checker.getTypeAtLocation(extendsClause.types[0]);
-    const annotations = getTypeAnnotations(context, superType);
+    const annotations = getTypeAnnotations(superType);
     if (!annotations.has(AnnotationKind.PureAbstract)) {
         return extendsClause.types[0];
     }

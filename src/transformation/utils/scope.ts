@@ -1,9 +1,9 @@
+import * as assert from "assert";
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
 import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
-import { replaceStatementInParent } from "./lua-ast";
 import { getSymbolInfo } from "./symbols";
 import { getFirstDeclarationInFile } from "./typescript";
 
@@ -77,12 +77,14 @@ export function findScope(context: TransformationContext, scopeTypes: ScopeType)
 }
 
 const scopeIdCounters = new WeakMap<TransformationContext, number>();
-export function pushScope(context: TransformationContext, scopeType: ScopeType): void {
+export function pushScope(context: TransformationContext, scopeType: ScopeType): Scope {
     const nextScopeId = (scopeIdCounters.get(context) ?? 0) + 1;
     scopeIdCounters.set(context, nextScopeId);
 
     const scopeStack = getScopeStack(context);
-    scopeStack.push({ type: scopeType, id: nextScopeId });
+    const scope: Scope = { type: scopeType, id: nextScopeId };
+    scopeStack.push(scope);
+    return scope;
 }
 
 export function popScope(context: TransformationContext): Scope {
@@ -161,24 +163,20 @@ function hoistVariableDeclarations(
     for (const declaration of scope.variableDeclarations) {
         const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
         if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
-            let assignment: lua.AssignmentStatement | undefined;
-            if (declaration.right) {
-                assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
-                lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
-            }
-
             const index = result.indexOf(declaration);
-            if (index >= 0) {
-                if (assignment) {
-                    result.splice(index, 1, assignment);
-                } else {
-                    result.splice(index, 1);
-                }
+            assert(index > -1);
+
+            if (declaration.right) {
+                const assignment = lua.createAssignmentStatement(declaration.left, declaration.right);
+                lua.setNodePosition(assignment, declaration); // Preserve position info for sourcemap
+                result.splice(index, 1, assignment);
             } else {
-                // Special case for 'var's declared in child scopes
-                replaceStatementInParent(declaration, assignment);
+                result.splice(index, 1);
             }
 
+            hoistedLocals.push(...declaration.left);
+        } else if (scope.type === ScopeType.Switch) {
+            assert(!declaration.right);
             hoistedLocals.push(...declaration.left);
         }
     }

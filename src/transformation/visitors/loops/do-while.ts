@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
-import { transformLoopBody } from "./body";
+import { transformLoopBody } from "./utils";
 
 export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
     return lua.createWhileStatement(
@@ -17,7 +17,7 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
     if (lua.isUnaryExpression(condition) && condition.operator === lua.SyntaxKind.NotOperator) {
         condition = condition.operand;
     } else {
-        condition = lua.createUnaryExpression(lua.createParenthesizedExpression(condition), lua.SyntaxKind.NotOperator);
+        condition = lua.createUnaryExpression(condition, lua.SyntaxKind.NotOperator);
     }
 
     return lua.createRepeatStatement(lua.createBlock([body]), condition, statement);

@@ -5,6 +5,7 @@ import { transformParameters, transformFunctionBodyStatements, transformFunction
 import { TransformationContext } from "../../../context";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
+import { pushScope, ScopeType, popScope } from "../../../utils/scope";
 
 export function createConstructorName(className: lua.Identifier): lua.TableIndexExpression {
     return lua.createTableIndexExpression(
@@ -26,7 +27,8 @@ export function transformConstructorDeclaration(
     }
 
     // Transform body
-    const [body, scope] = transformFunctionBodyStatements(context, statement.body);
+    const scope = pushScope(context, ScopeType.Function);
+    const body = transformFunctionBodyStatements(context, statement.body);
 
     const [params, dotsLiteral, restParamName] = transformParameters(
         context,
@@ -80,6 +82,8 @@ export function transformConstructorDeclaration(
     const block = lua.createBlock(bodyWithFieldInitializers);
 
     const constructorWasGenerated = statement.pos === -1;
+
+    popScope(context);
 
     return lua.createAssignmentStatement(
         createConstructorName(className),

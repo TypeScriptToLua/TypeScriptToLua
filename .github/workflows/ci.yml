@@ -26,7 +26,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Use Node.js 12.13.1
         uses: actions/setup-node@v1
         with:

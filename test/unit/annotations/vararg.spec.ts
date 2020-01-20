@@ -1,9 +1,13 @@
 import * as util from "../../util";
 
+const varargDeclaration = `
+    /** @vararg */
+    type LuaVarArg<A extends unknown[]> = A & { __luaVararg?: never };
+`;
+
 test("@vararg", () => {
     util.testFunction`
-        /** @vararg */
-        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        ${varargDeclaration}
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("");
@@ -20,8 +24,7 @@ test("@vararg", () => {
 
 test("@vararg array access", () => {
     util.testFunction`
-        /** @vararg */
-        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+        ${varargDeclaration}
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("") + b[0];
@@ -31,24 +34,12 @@ test("@vararg array access", () => {
 });
 
 test("@vararg global", () => {
-    const code = `
-        /** @vararg */
-        type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+    util.testModule`
+        ${varargDeclaration}
         declare const arg: LuaVarArg<string[]>;
-        const arr = [...arg];
-        const result = arr.join("");
-    `;
-
-    const luaBody = util.transpileString(code, undefined, false);
-    expect(luaBody).not.toMatch("unpack");
-
-    const lua = `
-        function test(...)
-            ${luaBody}
-            return result
-        end
-        return test("A", "B", "C", "D")
-    `;
-
-    expect(util.executeLua(lua)).toBe("ABCD");
+        export const result = [...arg].join("");
+    `
+        .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .expectToEqual({ result: "ABCD" });
 });

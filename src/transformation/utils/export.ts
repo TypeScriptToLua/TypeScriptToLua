@@ -47,6 +47,10 @@ export function getIdentifierExportScope(
     return getSymbolExportScope(context, symbol);
 }
 
+function isGlobalAugmentation(module: ts.ModuleDeclaration): boolean {
+    return (module.flags & ts.NodeFlags.GlobalAugmentation) !== 0;
+}
+
 export function getSymbolExportScope(
     context: TransformationContext,
     symbol: ts.Symbol
@@ -61,6 +65,10 @@ export function getSymbolExportScope(
         (n): n is ts.SourceFile | ts.ModuleDeclaration => ts.isSourceFile(n) || ts.isModuleDeclaration(n)
     );
     if (!scope) {
+        return undefined;
+    }
+
+    if (ts.isModuleDeclaration(scope) && isGlobalAugmentation(scope)) {
         return undefined;
     }
 

@@ -36,7 +36,6 @@ export enum SyntaxKind {
     TableExpression,
     UnaryExpression,
     BinaryExpression,
-    ParenthesizedExpression,
     CallExpression,
     MethodCallExpression,
     Identifier,
@@ -666,24 +665,6 @@ export function createBinaryExpression(
     expression.left = left;
     expression.right = right;
     expression.operator = operator;
-    return expression;
-}
-
-export interface ParenthesizedExpression extends Expression {
-    kind: SyntaxKind.ParenthesizedExpression;
-    innerExpression: Expression;
-}
-
-export function isParenthesizedExpression(node: Node): node is ParenthesizedExpression {
-    return node.kind === SyntaxKind.ParenthesizedExpression;
-}
-
-export function createParenthesizedExpression(
-    innerExpression: Expression,
-    tsOriginal?: ts.Node
-): ParenthesizedExpression {
-    const expression = createNode(SyntaxKind.ParenthesizedExpression, tsOriginal) as ParenthesizedExpression;
-    expression.innerExpression = innerExpression;
     return expression;
 }
 

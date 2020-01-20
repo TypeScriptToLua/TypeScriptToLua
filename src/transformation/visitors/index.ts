@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import * as lua from "../../LuaAST";
 import { FunctionVisitor, Visitors } from "../context";
 import { transformElementAccessExpression, transformPropertyAccessExpression, transformQualifiedName } from "./access";
 import { transformBinaryExpression } from "./binary-expression";
@@ -44,7 +43,7 @@ import { transformVariableStatement } from "./variable-declaration";
 
 const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
 const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>
-    lua.createParenthesizedExpression(context.transformExpression(node.expression), node);
+    context.transformExpression(node.expression);
 
 export const standardVisitors: Visitors = {
     ...literalVisitors,

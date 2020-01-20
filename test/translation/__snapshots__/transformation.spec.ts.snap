@@ -21,7 +21,7 @@ backQuoteInTemplateString = \\"\` \` \`\\"
 escapedCharsInQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInDoubleQuotes = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
 escapedCharsInTemplateString = \\"\\\\\\\\ \\\\0 \\\\b \\\\t \\\\n \\\\v \\\\f \\\\\\" ' \`\\"
-nonEmptyTemplateString = \\"Level 0: \\\\n\\\\t \\" .. \\"Level 1: \\\\n\\\\t\\\\t \\" .. \\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\" .. \\" \\\\n --\\""
+nonEmptyTemplateString = (\\"Level 0: \\\\n\\\\t \\" .. ((\\"Level 1: \\\\n\\\\t\\\\t \\" .. ((\\"Level 3: \\\\n\\\\t\\\\t\\\\t \\" .. \\"Last level \\\\n --\\") .. \\" \\\\n --\\")) .. \\" \\\\n --\\")) .. \\" \\\\n --\\""
 `;
 
 exports[`Transformation (classExtension1) 1`] = `
@@ -79,6 +79,11 @@ do
     local def = ____xyz.abc
     ____exports.def = def
 end
+return ____exports"
+`;
+
+exports[`Transformation (globalAugmentation) 1`] = `
+"local ____exports = globalVariable
 return ____exports"
 `;
 
@@ -224,7 +229,7 @@ end
 return ____exports"
 `;
 
-exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = TestSpace or {}"`;
+exports[`Transformation (modulesNamespaceNoExport) 1`] = `"TestSpace = TestSpace or ({})"`;
 
 exports[`Transformation (modulesNamespaceWithMemberExport) 1`] = `
 "local ____exports = {}

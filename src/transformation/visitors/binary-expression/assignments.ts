@@ -127,7 +127,7 @@ export function transformAssignmentExpression(
         }
 
         const args = [objExpression, indexExpression, context.transformExpression(expression.right)];
-        return lua.createCallExpression(lua.createParenthesizedExpression(iife), args, expression);
+        return lua.createCallExpression(iife, args, expression);
     } else {
         // Simple assignment
         // (function() ${left} = ${right}; return ${left} end)()

@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import * as util from "../util";
 
 test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
@@ -105,6 +106,28 @@ test("Hoisting due to reference from hoisted function", () => {
     `;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foo");
+});
+
+test("Hoisting with synthetic source file node", () => {
+    util.testModule`
+        export const foo = bar();
+        function bar() { return "bar"; }
+    `
+        .setCustomTransformers({
+            before: [
+                () => sourceFile =>
+                    ts.updateSourceFileNode(
+                        sourceFile,
+                        [ts.createNotEmittedStatement(undefined!), ...sourceFile.statements],
+                        sourceFile.isDeclarationFile,
+                        sourceFile.referencedFiles,
+                        sourceFile.typeReferenceDirectives,
+                        sourceFile.hasNoDefaultLib,
+                        sourceFile.libReferenceDirectives
+                    ),
+            ],
+        })
+        .expectToMatchJsResult();
 });
 
 test("Namespace Hoisting", () => {

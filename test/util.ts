@@ -123,18 +123,14 @@ function executeLua(code: string): any {
     }
 }
 
-const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8") + "\n";
+const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
 const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
 export function executeLuaModule(code: string): any {
     const lualibImport = code.includes('require("lualib_bundle")')
-        ? `package.preload.lualib_bundle = function()\n${lualibContent}\nend\n`
+        ? `package.preload.lualib_bundle = function()\n${lualibContent}\nend`
         : "";
 
-    return executeLua(`
-        ${minimalTestLib}
-        ${lualibImport}
-        return JSONStringify((function()\n${code}\nend)())
-    `);
+    return executeLua(`${minimalTestLib}\n${lualibImport}\nreturn JSONStringify((function()\n${code}\nend)())`);
 }
 
 function executeJsModule(code: string): any {

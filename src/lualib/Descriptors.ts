@@ -48,6 +48,7 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
     rawset(this, key, value);
 }
 
+// It's also used directly in class transform to add descriptors to the prototype
 function __TS__SetDescriptor(this: void, metatable: Metatable, prop: string, descriptor: PropertyDescriptor): void {
     if (!metatable._descriptors) metatable._descriptors = {};
     metatable._descriptors[prop] = descriptor;
@@ -56,6 +57,7 @@ function __TS__SetDescriptor(this: void, metatable: Metatable, prop: string, des
     if (descriptor.set) metatable.__newindex = ____descriptorNewindex;
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
 function __TS__ObjectDefineProperty<T extends object>(
     this: void,
     object: T,

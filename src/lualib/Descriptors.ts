@@ -48,11 +48,12 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
     rawset(this, key, value);
 }
 
-function __TS__SetDescriptor(this: void, metatable: any, prop: string, descriptor: PropertyDescriptor): void {
-    if (descriptor.get) metatable.__index = ____descriptorIndex;
-    if (descriptor.set) metatable.__newindex = ____descriptorNewindex;
+function __TS__SetDescriptor(this: void, metatable: Metatable, prop: string, descriptor: PropertyDescriptor): void {
     if (!metatable._descriptors) metatable._descriptors = {};
     metatable._descriptors[prop] = descriptor;
+
+    if (descriptor.get) metatable.__index = ____descriptorIndex;
+    if (descriptor.set) metatable.__newindex = ____descriptorNewindex;
 }
 
 function __TS__ObjectDefineProperty<T extends object>(

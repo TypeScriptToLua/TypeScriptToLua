@@ -6,19 +6,18 @@ interface Vararg<T> extends Array<T> {}
 /** @forRange */
 declare function forRange(start: number, limit: number, step?: number): number[];
 
-interface LuaClass {
-    prototype: LuaObject;
-    ____super?: LuaClass;
-    ____getters?: { [key: string]: (self: LuaClass) => any };
-    ____setters?: { [key: string]: (self: LuaClass, val: any) => void };
+interface Metatable {
+    _descriptors?: Record<string, PropertyDescriptor>;
     __index?: any;
     __newindex?: any;
 }
 
-interface LuaObject {
+interface LuaClass extends Metatable {
+    prototype: LuaClassInstance;
+    [Symbol.hasInstance]?(instance: LuaClassInstance): any;
+    ____super?: LuaClass;
+}
+
+interface LuaClassInstance extends Metatable {
     constructor: LuaClass;
-    ____getters?: { [key: string]: (self: LuaObject) => any };
-    ____setters?: { [key: string]: (self: LuaObject, val: any) => void };
-    __index?: any;
-    __newindex?: any;
 }

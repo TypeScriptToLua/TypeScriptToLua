@@ -90,9 +90,4 @@ export class TransformationContext {
             : // TODO: https://github.com/microsoft/TypeScript/pull/28916
               (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
     }
-
-    private identifierCounter = 0;
-    public createUniqueString(prefix: string): string {
-        return `${prefix}_${++this.identifierCounter}`;
-    }
 }

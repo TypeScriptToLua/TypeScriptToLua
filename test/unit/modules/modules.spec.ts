@@ -175,13 +175,20 @@ test("Export Default Function", () => {
     expect(result).toBe(true);
 });
 
-test.each([
-    "export default class Test { static method() { return true; } }",
-    "export default class { static method() { return true; } }",
-])("Export Default Class Name (%p)", classDeclarationStatement => {
-    util.testModule(classDeclarationStatement)
+test("default exported name class has correct name property", () => {
+    util.testModule`
+        export default class Test { static method() { return true; } }
+    `
         .setReturnExport("default.name")
         .expectToMatchJsResult();
+});
+
+test("default exported anonymous class has 'default' name property", () => {
+    util.testModule`
+        export default class { static method() { return true; } }
+    `
+        .setReturnExport("default.name")
+        .expectToEqual("default");
 });
 
 test("Export Equals", () => {

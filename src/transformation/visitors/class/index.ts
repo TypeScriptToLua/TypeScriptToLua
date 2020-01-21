@@ -188,7 +188,7 @@ export function transformClassDeclaration(
                 classDeclaration,
                 className,
                 localClassName,
-                getReflectionClassName(context, classDeclaration),
+                getReflectionClassName(classDeclaration),
                 extendsType
             )
         );
@@ -347,13 +347,13 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
 
 export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
 
-function getReflectionClassName(context: TransformationContext, declaration: ts.ClassLikeDeclaration): string {
+function getReflectionClassName(declaration: ts.ClassLikeDeclaration): string {
     if (declaration.name) {
         return declaration.name.text;
     } else if (ts.isVariableDeclaration(declaration.parent) && ts.isIdentifier(declaration.parent.name)) {
         return declaration.parent.name.text;
     } else if (hasDefaultExportModifier(declaration)) {
-        return context.createUniqueString("default");
+        return "default";
     } else {
         return "";
     }

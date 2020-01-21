@@ -13,18 +13,14 @@ return ____exports"
 exports[`forin[Array]: diagnostics 1`] = `"main.ts(3,9): error TSTL: Iterating over arrays with 'for ... in' is not allowed."`;
 
 exports[`forof object destructuring ({"initializer": "{a, b}", "vars": "let a: string, b: string;"}): code 1`] = `
-"local a
-local b
-for ____, ____value in ipairs(arr) do
+"for ____, ____value in ipairs(arr) do
 end"
 `;
 
 exports[`forof object destructuring ({"initializer": "{a, b}", "vars": "let a: string, b: string;"}): diagnostics 1`] = `"main.ts(4,14): error TSTL: Unsupported object destructuring in for...of statement."`;
 
 exports[`forof object destructuring ({"initializer": "{a: c, b: d}", "vars": "let c: string, d: string;"}): code 1`] = `
-"local c
-local d
-for ____, ____value in ipairs(arr) do
+"for ____, ____value in ipairs(arr) do
 end"
 `;
 

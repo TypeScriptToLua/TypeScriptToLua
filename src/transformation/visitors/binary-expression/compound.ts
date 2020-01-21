@@ -79,7 +79,7 @@ export function transformCompoundAssignmentExpression(
     isPostfix: boolean
 ): lua.CallExpression {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
-    let right = context.transformExpression(rhs);
+    const right = context.transformExpression(rhs);
 
     const [objExpression, indexExpression] = parseAccessExpressionWithEvaluationEffects(context, lhs);
     if (objExpression && indexExpression) {
@@ -94,7 +94,6 @@ export function transformCompoundAssignmentExpression(
         const accessExpression = lua.createTableIndexExpression(obj, index);
 
         const tmp = lua.createIdentifier("____tmp");
-        right = lua.createParenthesizedExpression(right);
         let tmpDeclaration: lua.VariableDeclarationStatement;
         let assignStatement: lua.AssignmentStatement;
         if (isPostfix) {
@@ -175,13 +174,7 @@ export function transformCompoundAssignmentStatement(
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
         const accessExpression = lua.createTableIndexExpression(obj, index);
-        const operatorExpression = transformBinaryOperation(
-            context,
-            accessExpression,
-            lua.createParenthesizedExpression(right),
-            operator,
-            node
-        );
+        const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         return [objAndIndexDeclaration, assignStatement];
     } else {

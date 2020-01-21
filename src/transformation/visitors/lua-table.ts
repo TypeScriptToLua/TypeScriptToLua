@@ -48,7 +48,7 @@ export function transformLuaTableExpressionStatement(
     if (!ts.isCallExpression(expression) || !ts.isPropertyAccessExpression(expression.expression)) return;
 
     const ownerType = context.checker.getTypeAtLocation(expression.expression.expression);
-    const annotations = getTypeAnnotations(context, ownerType);
+    const annotations = getTypeAnnotations(ownerType);
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, methodName] = parseLuaTableExpression(context, expression.expression);
@@ -81,7 +81,7 @@ export function transformLuaTableCallExpression(
     if (!ts.isPropertyAccessExpression(node.expression)) return;
 
     const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
-    const annotations = getTypeAnnotations(context, ownerType);
+    const annotations = getTypeAnnotations(ownerType);
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, methodName] = parseLuaTableExpression(context, node.expression);
@@ -101,7 +101,7 @@ export function transformLuaTablePropertyAccessExpression(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node.expression));
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, propertyName] = parseLuaTableExpression(context, node);
@@ -118,7 +118,7 @@ export function transformLuaTablePropertyAccessInAssignment(
 ): lua.AssignmentLeftHandSideExpression | undefined {
     if (!ts.isPropertyAccessExpression(node)) return;
 
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node.expression));
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     const [luaTable, propertyName] = parseLuaTableExpression(context, node);
@@ -134,7 +134,7 @@ export function validateLuaTableElementAccessExpression(
     context: TransformationContext,
     node: ts.ElementAccessExpression
 ): void {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node.expression));
     if (annotations.has(AnnotationKind.LuaTable)) {
         context.diagnostics.push(luaTableCannotBeAccessedDynamically(node));
     }
@@ -144,7 +144,7 @@ export function transformLuaTableNewExpression(
     context: TransformationContext,
     node: ts.NewExpression
 ): lua.Expression | undefined {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node));
     if (!annotations.has(AnnotationKind.LuaTable)) return;
 
     if (node.arguments && node.arguments.length > 0) {

@@ -133,6 +133,7 @@ type NodesBySyntaxKind = {
     [ts.SyntaxKind.NullKeyword]: ts.NullLiteral;
     [ts.SyntaxKind.SuperKeyword]: ts.SuperExpression;
     [ts.SyntaxKind.ThisKeyword]: ts.ThisExpression;
+    [ts.SyntaxKind.NotEmittedStatement]: ts.NotEmittedStatement;
 };
 
 export type ExpressionLikeNode = ts.Expression | ts.QualifiedName | ts.ExternalModuleReference;

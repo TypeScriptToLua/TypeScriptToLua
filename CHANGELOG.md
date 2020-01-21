@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.31.0
+
+- **Breaking:** The old annotation syntax (`/* !varArg */`) **no longer works**, the only currently supported syntax is:
+
+  `/** @varArg */`.
+
+- **Breaking:** Fixed some cases where variables were **incorrectly** not labeled `local`. The only variables that are implicitly put in the global context are _top-level variables in non-module files, without any imports or exports in their file_.
+
+- Moved handling of parentheses out of the transformers and unified this logic in the printer. This might result in some more parentheses in the generated code, but also makes it more correct and fixes some related bugs.
+
+- Added support for `array.includes`.
+
+- Fixed a bug breaking global augmentation.
+
+- Fixed hoisting breaking if there were synthetic nodes in the AST (i.e. when a TS transformer modified the AST).
+
 ## 0.30.0
 
 - **Breaking:** We dropped support for `var` variables. If you still have any `var` variable declarations, please use `let` or `const` instead.

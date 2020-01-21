@@ -19,7 +19,9 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
     let statements: lua.Statement[] = [];
 
     const caseClauses = statement.caseBlock.clauses.filter(ts.isCaseClause);
-    for (const [index, clause] of caseClauses.entries()) {
+
+    // Starting from the back, concatenating ifs into one big if/elseif statement
+    const concatenatedIf = caseClauses.reduceRight((previousCondition, clause, index) => {
         // If the clause condition holds, go to the correct label
         const condition = lua.createBinaryExpression(
             switchVariable,
@@ -28,8 +30,11 @@ export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (st
         );
 
         const goto = lua.createGotoStatement(`${switchName}_case_${index}`);
-        const conditionalGoto = lua.createIfStatement(condition, lua.createBlock([goto]));
-        statements.push(conditionalGoto);
+        return lua.createIfStatement(condition, lua.createBlock([goto]), previousCondition);
+    }, undefined as lua.IfStatement | undefined);
+
+    if (concatenatedIf) {
+        statements.push(concatenatedIf);
     }
 
     const hasDefaultCase = statement.caseBlock.clauses.some(ts.isDefaultClause);

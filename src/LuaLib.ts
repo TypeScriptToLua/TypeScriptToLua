@@ -8,6 +8,7 @@ export enum LuaLibFeature {
     ArrayForEach = "ArrayForEach",
     ArrayFind = "ArrayFind",
     ArrayFindIndex = "ArrayFindIndex",
+    ArrayIncludes = "ArrayIncludes",
     ArrayIndexOf = "ArrayIndexOf",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",

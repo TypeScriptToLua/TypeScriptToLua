@@ -3,7 +3,7 @@
 exports[`DontAllowInstantiation: code 1`] = `
 "require(\\"lualib_bundle\\");
 local __meta___LOADED = debug.getregistry()._LOADED
-local e = __TS__New(Ext)"
+e = __TS__New(Ext)"
 `;
 
 exports[`DontAllowInstantiation: diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;

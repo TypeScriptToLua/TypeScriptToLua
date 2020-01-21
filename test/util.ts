@@ -215,6 +215,13 @@ export abstract class TestBuilder {
         return this;
     }
 
+    private customTransformers?: ts.CustomTransformers;
+    public setCustomTransformers(customTransformers?: ts.CustomTransformers): this {
+        expect(this.hasProgram).toBe(false);
+        this.customTransformers = customTransformers;
+        return this;
+    }
+
     // Transpilation and execution
 
     public getTsCode(): string {
@@ -231,7 +238,7 @@ export abstract class TestBuilder {
     @memoize
     public getLuaResult(): tstl.TranspileResult {
         const program = this.getProgram();
-        const result = tstl.transpile({ program });
+        const result = tstl.transpile({ program, customTransformers: this.customTransformers });
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...ts.getPreEmitDiagnostics(program),
             ...result.diagnostics,

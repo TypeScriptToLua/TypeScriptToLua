@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`forof lua iterator tuple-return single existing variable: code 1`] = `
-"local x
-for ____ in luaIter(_G) do
+"for ____ in luaIter(_G) do
 end"
 `;
 

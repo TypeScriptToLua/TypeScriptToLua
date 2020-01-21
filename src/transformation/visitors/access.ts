@@ -31,10 +31,7 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
         return constEnumValue;
     }
 
-    let table = context.transformExpression(expression.expression);
-    if (lua.isTableExpression(table)) {
-        table = lua.createParenthesizedExpression(table);
-    }
+    const table = context.transformExpression(expression.expression);
 
     const argumentType = context.checker.getTypeAtLocation(expression.argumentExpression);
     const type = context.checker.getTypeAtLocation(expression.expression);
@@ -72,7 +69,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     const property = expression.name.text;
     const type = context.checker.getTypeAtLocation(expression.expression);
 
-    const annotations = getTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(type);
     // Do not output path for member only enums
     if (annotations.has(AnnotationKind.CompileMembersOnly)) {
         if (ts.isPropertyAccessExpression(expression.expression)) {
@@ -87,11 +84,7 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
         }
     }
 
-    let callPath = context.transformExpression(expression.expression);
-    if (lua.isTableExpression(callPath)) {
-        callPath = lua.createParenthesizedExpression(callPath);
-    }
-
+    const callPath = context.transformExpression(expression.expression);
     return lua.createTableIndexExpression(callPath, lua.createStringLiteral(property), expression);
 };
 

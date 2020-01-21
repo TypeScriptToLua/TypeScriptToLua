@@ -36,21 +36,20 @@ end"
 exports[`invalid usage non-ambient declaration: diagnostics 1`] = `"main.ts(3,22): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 
 exports[`invalid usage non-declared loop variable: code 1`] = `
-"local i
-for ____ = 1, 10, 2 do
+"for ____ = 1, 10, 2 do
 end"
 `;
 
 exports[`invalid usage non-declared loop variable: diagnostics 1`] = `"main.ts(7,18): error TSTL: Invalid @forRange call: loop must declare it's own control variable."`;
 
 exports[`invalid usage reference ("const call = undefined as any; call(luaRange);"): code 1`] = `
-"local call = nil
+"call = nil
 call(_G, luaRange)"
 `;
 
 exports[`invalid usage reference ("const call = undefined as any; call(luaRange);"): diagnostics 1`] = `"main.ts(6,49): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 
-exports[`invalid usage reference ("const range = luaRange(1, 10);"): code 1`] = `"local range = luaRange(_G, 1, 10)"`;
+exports[`invalid usage reference ("const range = luaRange(1, 10);"): code 1`] = `"range = luaRange(_G, 1, 10)"`;
 
 exports[`invalid usage reference ("const range = luaRange(1, 10);"): diagnostics 1`] = `"main.ts(6,27): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 
@@ -67,7 +66,7 @@ end"
 
 exports[`invalid usage reference ("for (const i of [...luaRange(1, 10)]) {}"): diagnostics 1`] = `"main.ts(6,33): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 
-exports[`invalid usage reference ("let array = [0, luaRange, 1];"): code 1`] = `"local array = {0, luaRange, 1}"`;
+exports[`invalid usage reference ("let array = [0, luaRange, 1];"): code 1`] = `"array = {0, luaRange, 1}"`;
 
 exports[`invalid usage reference ("let array = [0, luaRange, 1];"): diagnostics 1`] = `"main.ts(6,29): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 

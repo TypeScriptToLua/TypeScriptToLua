@@ -2,7 +2,7 @@
 
 exports[`Class construct extension ("extension"): code 1`] = `
 "require(\\"lualib_bundle\\");
-local b = __TS__New(B)"
+b = __TS__New(B)"
 `;
 
 exports[`Class construct extension ("extension"): diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;
@@ -10,7 +10,7 @@ exports[`Class construct extension ("extension"): diagnostics 1`] = `"main.ts(5,
 exports[`Class construct extension ("metaExtension"): code 1`] = `
 "require(\\"lualib_bundle\\");
 local __meta__A = debug.getregistry().A
-local b = __TS__New(B)"
+b = __TS__New(B)"
 `;
 
 exports[`Class construct extension ("metaExtension"): diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;
@@ -40,7 +40,7 @@ exports[`Class extends extension ("metaExtension"): diagnostics 1`] = `"main.ts(
 
 exports[`instanceof extension ("extension"): code 1`] = `
 "require(\\"lualib_bundle\\");
-local result = __TS__InstanceOf(foo, B)"
+result = __TS__InstanceOf(foo, B)"
 `;
 
 exports[`instanceof extension ("extension"): diagnostics 1`] = `"main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."`;
@@ -48,7 +48,7 @@ exports[`instanceof extension ("extension"): diagnostics 1`] = `"main.ts(6,24): 
 exports[`instanceof extension ("metaExtension"): code 1`] = `
 "require(\\"lualib_bundle\\");
 local __meta__A = debug.getregistry().A
-local result = __TS__InstanceOf(foo, B)"
+result = __TS__InstanceOf(foo, B)"
 `;
 
 exports[`instanceof extension ("metaExtension"): diagnostics 1`] = `"main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."`;

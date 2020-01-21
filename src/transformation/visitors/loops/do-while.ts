@@ -17,7 +17,7 @@ export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement,
     if (lua.isUnaryExpression(condition) && condition.operator === lua.SyntaxKind.NotOperator) {
         condition = condition.operand;
     } else {
-        condition = lua.createUnaryExpression(lua.createParenthesizedExpression(condition), lua.SyntaxKind.NotOperator);
+        condition = lua.createUnaryExpression(condition, lua.SyntaxKind.NotOperator);
     }
 
     return lua.createRepeatStatement(lua.createBlock([body]), condition, statement);

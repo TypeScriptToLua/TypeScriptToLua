@@ -12,7 +12,7 @@ return ____exports"
 exports[`No Hoisting ("const foo = bar(); export function bar() { return \\"bar\\"; }"): diagnostics 1`] = `"main.ts(1,13): error TSTL: Identifier 'bar' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
 
 exports[`No Hoisting ("const foo = bar(); function bar() { return \\"bar\\"; }"): code 1`] = `
-"local foo = bar(_G)
+"foo = bar(_G)
 function bar(self)
     return \\"bar\\"
 end"
@@ -63,7 +63,7 @@ exports[`No Hoisting ("function bar() { return NS.foo; } namespace NS { export l
 "function bar(self)
     return NS.foo
 end
-NS = NS or {}
+NS = NS or ({})
 do
     NS.foo = \\"foo\\"
 end"
@@ -88,7 +88,7 @@ exports[`No Hoisting ("function setBar() { const bar = { foo }; } let foo = \\"f
 "function setBar(self)
     local bar = {foo = foo}
 end
-local foo = \\"foo\\""
+foo = \\"foo\\""
 `;
 
 exports[`No Hoisting ("function setBar() { const bar = { foo }; } let foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,35): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
@@ -97,7 +97,7 @@ exports[`No Hoisting ("function setBar() { const bar = foo; } const foo = \\"foo
 "function setBar(self)
     local bar = foo
 end
-local foo = \\"foo\\""
+foo = \\"foo\\""
 `;
 
 exports[`No Hoisting ("function setBar() { const bar = foo; } const foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;
@@ -128,7 +128,7 @@ exports[`No Hoisting ("function setBar() { const bar = foo; } let foo = \\"foo\\
 "function setBar(self)
     local bar = foo
 end
-local foo = \\"foo\\""
+foo = \\"foo\\""
 `;
 
 exports[`No Hoisting ("function setBar() { const bar = foo; } let foo = \\"foo\\";"): diagnostics 1`] = `"main.ts(1,33): error TSTL: Identifier 'foo' was referenced before it was declared. The declaration must be moved before the identifier's use, or hoisting must be enabled."`;

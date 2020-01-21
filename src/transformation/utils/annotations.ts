@@ -33,30 +33,7 @@ function createAnnotation(name: string, args: string[]): Annotation | undefined 
 
 export type AnnotationsMap = Map<AnnotationKind, Annotation>;
 
-function collectAnnotations(
-    context: TransformationContext,
-    source: ts.Symbol | ts.Signature,
-    annotationsMap: AnnotationsMap
-): void {
-    const comments = source.getDocumentationComment(context.checker);
-    const oldStyleAnnotations = comments
-        .filter(comment => comment.kind === "text")
-        .map(comment => comment.text.split("\n"))
-        .reduce((a, b) => a.concat(b), [])
-        .map(line => line.trim())
-        .filter(comment => comment[0] === "!");
-
-    for (const line of oldStyleAnnotations) {
-        const [name, ...args] = line.slice(1).split(" ");
-        const annotation = createAnnotation(name, args);
-        if (annotation) {
-            annotationsMap.set(annotation.kind, annotation);
-            console.warn(`[Deprecated] Annotations with ! are being deprecated, use '@${annotation.kind}' instead`);
-        } else {
-            console.warn(`Encountered unknown annotation '${line}'.`);
-        }
-    }
-
+function collectAnnotations(source: ts.Symbol | ts.Signature, annotationsMap: AnnotationsMap): void {
     for (const tag of source.getJsDocTags()) {
         const annotation = createAnnotation(tag.name, tag.text ? tag.text.split(" ") : []);
         if (annotation) {
@@ -65,17 +42,17 @@ function collectAnnotations(
     }
 }
 
-export function getSymbolAnnotations(context: TransformationContext, symbol: ts.Symbol): AnnotationsMap {
+export function getSymbolAnnotations(symbol: ts.Symbol): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
-    collectAnnotations(context, symbol, annotationsMap);
+    collectAnnotations(symbol, annotationsMap);
     return annotationsMap;
 }
 
-export function getTypeAnnotations(context: TransformationContext, type: ts.Type): AnnotationsMap {
+export function getTypeAnnotations(type: ts.Type): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
 
-    if (type.symbol) collectAnnotations(context, type.symbol, annotationsMap);
-    if (type.aliasSymbol) collectAnnotations(context, type.aliasSymbol, annotationsMap);
+    if (type.symbol) collectAnnotations(type.symbol, annotationsMap);
+    if (type.aliasSymbol) collectAnnotations(type.aliasSymbol, annotationsMap);
 
     return annotationsMap;
 }
@@ -116,14 +93,14 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
 
 export function getSignatureAnnotations(context: TransformationContext, signature: ts.Signature): AnnotationsMap {
     const annotationsMap: AnnotationsMap = new Map();
-    collectAnnotations(context, signature, annotationsMap);
+    collectAnnotations(signature, annotationsMap);
 
     // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
     const declaration = signature.getDeclaration();
     if (declaration && declaration.parent && ts.isPropertySignature(declaration.parent)) {
         const symbol = context.checker.getSymbolAtLocation(declaration.parent.name);
         if (symbol) {
-            collectAnnotations(context, symbol, annotationsMap);
+            collectAnnotations(symbol, annotationsMap);
         }
     }
 
@@ -154,7 +131,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const type = context.checker.getTypeAtLocation(node.expression);
-    return getTypeAnnotations(context, type).has(AnnotationKind.TupleReturn);
+    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
 }
 
 export function isInTupleReturnFunction(context: TransformationContext, node: ts.Node): boolean {
@@ -185,20 +162,20 @@ export function isInTupleReturnFunction(context: TransformationContext, node: ts
         return true;
     }
 
-    return getTypeAnnotations(context, functionType).has(AnnotationKind.TupleReturn);
+    return getTypeAnnotations(functionType).has(AnnotationKind.TupleReturn);
 }
 
 export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(context, type).has(AnnotationKind.LuaIterator);
+    return getTypeAnnotations(type).has(AnnotationKind.LuaIterator);
 }
 
 export function isVarArgType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(context, type).has(AnnotationKind.VarArg);
+    return getTypeAnnotations(type).has(AnnotationKind.VarArg);
 }
 
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(context, type).has(AnnotationKind.ForRange);
+    return getTypeAnnotations(type).has(AnnotationKind.ForRange);
 }

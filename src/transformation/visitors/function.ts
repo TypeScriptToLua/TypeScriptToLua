@@ -267,7 +267,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     }
 
     // Remember symbols referenced in this function for hoisting later
-    if (!context.options.noHoisting && name.symbolId !== undefined) {
+    if (name.symbolId !== undefined) {
         const scope = peekScope(context);
         if (!scope.functionDefinitions) {
             scope.functionDefinitions = new Map();

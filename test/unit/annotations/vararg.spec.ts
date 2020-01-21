@@ -1,8 +1,13 @@
 import * as util from "../../util";
 
-test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
-    const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+const varargDeclaration = `
+    /** @vararg */
+    type LuaVarArg<A extends unknown[]> = A & { __luaVararg?: never };
+`;
+
+test("@vararg", () => {
+    util.testFunction`
+        ${varargDeclaration}
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("");
@@ -11,45 +16,30 @@ test.each([{}, { noHoisting: true }])("@vararg", compilerOptions => {
             return foo(a, ...b);
         }
         return bar("A", "B", "C", "D");
-    `;
-
-    const lua = util.transpileString(code, compilerOptions);
-    expect(lua).not.toMatch("b = ({...})");
-    expect(lua).not.toMatch("unpack");
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("b = "))
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("@vararg array access", compilerOptions => {
-    const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+test("@vararg array access", () => {
+    util.testFunction`
+        ${varargDeclaration}
         function foo(a: unknown, ...b: LuaVarArg<unknown[]>) {
             const c = [...b];
             return c.join("") + b[0];
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCDB");
+    `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("@vararg global", compilerOptions => {
-    const code = `
-        /** @vararg */ type LuaVarArg<A extends unknown[]> = A & { __luaVarArg?: never };
+test("@vararg global", () => {
+    util.testModule`
+        ${varargDeclaration}
         declare const arg: LuaVarArg<string[]>;
-        const arr = [...arg];
-        const result = arr.join("");
-    `;
-
-    const luaBody = util.transpileString(code, compilerOptions, false);
-    expect(luaBody).not.toMatch("unpack");
-
-    const lua = `
-        function test(...)
-            ${luaBody}
-            return result
-        end
-        return test("A", "B", "C", "D")
-    `;
-
-    expect(util.executeLua(lua)).toBe("ABCD");
+        export const result = [...arg].join("");
+    `
+        .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .expectToEqual({ result: "ABCD" });
 });

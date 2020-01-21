@@ -62,11 +62,6 @@ export const optionDeclarations: CommandLineOption[] = [
         type: "boolean",
     },
     {
-        name: "noHoisting",
-        description: "Disables hoisting.",
-        type: "boolean",
-    },
-    {
         name: "sourceMapTraceback",
         description: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",

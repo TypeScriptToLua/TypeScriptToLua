@@ -182,7 +182,7 @@ test("SubclassConstructor", () => {
 });
 
 test("Subclass constructor across merged namespace", () => {
-    const tsHeader = `
+    util.testModule`
         namespace NS {
             export class Super {
                 prop: string;
@@ -197,11 +197,11 @@ test("Subclass constructor across merged namespace", () => {
                     super();
                 }
             }
-        }`;
-
-    util.testExpression("(new NS.Sub()).prop")
-        .setTsHeader(tsHeader)
-        .expectToEqual("foo");
+        }
+        export const result = (new NS.Sub()).prop;
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
 });
 
 test("classSuper", () => {
@@ -263,24 +263,24 @@ test("classSuperSkip", () => {
 });
 
 test("renamedClassExtends", () => {
-    util.testFunction`
-        const b = new B();
-        return b.value;
-    `
-        .setTsHeader(
-            `namespace Classes {
-                export class Base {
-                    public value: number;
-                    constructor(){ this.value = 3; }
-                }
+    util.testModule`
+        namespace Classes {
+            export class Base {
+                public value: number;
+                constructor(){ this.value = 3; }
             }
+        }
 
-            const A = Classes.Base;
-            class B extends A {
-                constructor(){ super(); }
-            };`
-        )
-        .expectToEqual(3);
+        const A = Classes.Base;
+        class B extends A {
+            constructor(){ super(); }
+        }
+
+        const b = new B();
+        export const result = b.value;
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
 });
 
 test("ClassMethodCall", () => {
@@ -630,22 +630,19 @@ test("Class Method Runtime Override", () => {
 });
 
 test("Exported class super call", () => {
-    util.testExpression`
-        (new Bar()).prop;
+    util.testModule`
+        export class Foo {
+            prop: string;
+            constructor(prop: string) { this.prop = prop; }
+        }
+        export class Bar extends Foo {
+            constructor() {
+                super("bar");
+            }
+        }
+        export const result = (new Bar()).prop;
     `
-        .setTsHeader(
-            `
-                export class Foo {
-                    prop: string;
-                    constructor(prop: string) { this.prop = prop; }
-                }
-                export class Bar extends Foo {
-                    constructor() {
-                        super("bar");
-                    }
-                }
-            `
-        )
+        .setReturnExport("result")
         .expectToMatchJsResult();
 });
 

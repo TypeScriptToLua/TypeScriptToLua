@@ -45,7 +45,14 @@ export function transformClassAsExpression(
     context: TransformationContext,
     isDefaultExport = false
 ): lua.Expression {
-    const className = isDefaultExport ? createDefaultExportIdentifier(expression) : lua.createAnonymousIdentifier();
+    let className: lua.Identifier;
+    if (expression.name) {
+        className = transformIdentifier(context, expression.name);
+    } else if (isDefaultExport) {
+        className = createDefaultExportIdentifier(expression);
+    } else {
+        className = lua.createAnonymousIdentifier();
+    }
 
     pushScope(context, ScopeType.Function);
     const classDeclaration = unwrapVisitorResult(transformClassDeclaration(expression, context, className));

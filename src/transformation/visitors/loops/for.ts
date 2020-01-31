@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
-import { checkVariableDeclarationList, transformVariableDeclaration } from "../variable-declaration";
+import { checkVariableDeclarationList } from "../variable-declaration";
 import { transformLoopBody } from "./utils";
 
 export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statement, context) => {
@@ -11,7 +11,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
         if (ts.isVariableDeclarationList(statement.initializer)) {
             checkVariableDeclarationList(statement.initializer);
             // local initializer = value
-            result.push(...statement.initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
+            result.push(...statement.initializer.declarations.flatMap(d => context.transformNode(d) as lua.Statement[]));
         } else {
             result.push(...context.transformStatements(ts.createExpressionStatement(statement.initializer)));
         }

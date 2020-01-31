@@ -17,7 +17,6 @@ import { transformIdentifier } from "../identifier";
 import {
     transformBindingPattern,
     transformArrayBindingElement,
-    transformVariableDeclaration,
 } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
@@ -40,7 +39,7 @@ function transformForOfInitializer(
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }
 
-        const variableStatements = transformVariableDeclaration(context, initializer.declarations[0]);
+        const variableStatements = context.transformNode(initializer.declarations[0]) as lua.Statement[];
         if (variableStatements[0]) {
             // we can safely assume that for vars are not exported and therefore declarationstatenents
             return [

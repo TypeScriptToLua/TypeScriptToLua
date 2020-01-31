@@ -51,12 +51,12 @@ function isTupleHelperVariableDeclaration(
     if (!declaration.initializer) {
         return false;
     }
-
+    
     if (!ts.isCallExpression(declaration.initializer)) {
         return false;
     }
 
-    return isTupleHelperType(context, declaration.initializer);
+    return isTupleHelperType(context, declaration.initializer.expression);
 }
 
 function transformTupleHelperVariableDeclaration(

@@ -39,7 +39,7 @@ import { transformTaggedTemplateExpression, transformTemplateExpression } from "
 import { transformTypeOfExpression } from "./typeof";
 import { typescriptVisitors } from "./typescript";
 import { transformPostfixUnaryExpression, transformPrefixUnaryExpression } from "./unary-expression";
-import { transformVariableStatement } from "./variable-declaration";
+import { transformVariableStatement, transformVariableDeclaration } from "./variable-declaration";
 
 const transformEmptyStatement: FunctionVisitor<ts.EmptyStatement> = () => undefined;
 const transformParenthesizedExpression: FunctionVisitor<ts.ParenthesizedExpression> = (node, context) =>
@@ -93,6 +93,7 @@ export const standardVisitors: Visitors = {
     [ts.SyntaxKind.ThrowStatement]: transformThrowStatement,
     [ts.SyntaxKind.TryStatement]: transformTryStatement,
     [ts.SyntaxKind.TypeOfExpression]: transformTypeOfExpression,
+    [ts.SyntaxKind.VariableDeclaration]: transformVariableDeclaration,
     [ts.SyntaxKind.VariableStatement]: transformVariableStatement,
     [ts.SyntaxKind.WhileStatement]: transformWhileStatement,
     [ts.SyntaxKind.YieldExpression]: transformYieldExpression,

@@ -64,9 +64,6 @@ function isSimpleExpression(expression: lua.Expression): boolean {
         case lua.SyntaxKind.BinaryExpression:
             const binaryExpression = expression as lua.BinaryExpression;
             return isSimpleExpression(binaryExpression.left) && isSimpleExpression(binaryExpression.right);
-
-        case lua.SyntaxKind.ParenthesizedExpression:
-            return isSimpleExpression((expression as lua.ParenthesizedExpression).innerExpression);
     }
 
     return true;
@@ -560,8 +557,6 @@ export class LuaPrinter {
                 return this.printUnaryExpression(expression as lua.UnaryExpression);
             case lua.SyntaxKind.BinaryExpression:
                 return this.printBinaryExpression(expression as lua.BinaryExpression);
-            case lua.SyntaxKind.ParenthesizedExpression:
-                return this.printParenthesizedExpression(expression as lua.ParenthesizedExpression);
             case lua.SyntaxKind.CallExpression:
                 return this.printCallExpression(expression as lua.CallExpression);
             case lua.SyntaxKind.MethodCallExpression:
@@ -689,7 +684,7 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printOperator(expression.operator));
-        chunks.push(this.printExpression(expression.operand));
+        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.operand));
 
         return this.createSourceNode(expression, chunks);
     }
@@ -697,38 +692,32 @@ export class LuaPrinter {
     public printBinaryExpression(expression: lua.BinaryExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.printExpression(expression.left));
+        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.left));
         chunks.push(" ", this.printOperator(expression.operator), " ");
-        chunks.push(this.printExpression(expression.right));
+        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.right));
 
         return this.createSourceNode(expression, chunks);
     }
 
-    private canStripParenthesis(expression: lua.Expression): boolean {
-        return (
-            lua.isParenthesizedExpression(expression) ||
-            lua.isTableIndexExpression(expression) ||
-            lua.isCallExpression(expression) ||
-            lua.isMethodCallExpression(expression) ||
-            lua.isIdentifier(expression) ||
-            lua.isNilLiteral(expression) ||
-            lua.isNumericLiteral(expression) ||
-            lua.isBooleanLiteral(expression)
-        );
+    private printExpressionInParenthesesIfNeeded(expression: lua.Expression): SourceNode {
+        return this.needsParenthesis(expression)
+            ? this.createSourceNode(expression, ["(", this.printExpression(expression), ")"])
+            : this.printExpression(expression);
     }
 
-    public printParenthesizedExpression(expression: lua.ParenthesizedExpression): SourceNode {
-        const innerExpression = this.printExpression(expression.innerExpression);
-        if (this.canStripParenthesis(expression.innerExpression)) {
-            return this.createSourceNode(expression, innerExpression);
-        }
-        return this.createSourceNode(expression, ["(", innerExpression, ")"]);
+    private needsParenthesis(expression: lua.Expression): boolean {
+        return (
+            lua.isBinaryExpression(expression) ||
+            lua.isFunctionExpression(expression) ||
+            lua.isTableExpression(expression) ||
+            (lua.isUnaryExpression(expression) && expression.operator === lua.SyntaxKind.NotOperator)
+        );
     }
 
     public printCallExpression(expression: lua.CallExpression): SourceNode {
         const chunks = [];
 
-        chunks.push(this.printExpression(expression.expression), "(");
+        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.expression), "(");
 
         if (expression.params) {
             chunks.push(...this.printExpressionList(expression.params));
@@ -742,13 +731,14 @@ export class LuaPrinter {
     public printMethodCallExpression(expression: lua.MethodCallExpression): SourceNode {
         const chunks = [];
 
-        const prefix = lua.isStringLiteral(expression.prefixExpression)
-            ? this.printExpression(lua.createParenthesizedExpression(expression.prefixExpression))
-            : this.printExpression(expression.prefixExpression);
+        const prefix =
+            this.needsParenthesis(expression.prefixExpression) || lua.isStringLiteral(expression.prefixExpression)
+                ? ["(", this.printExpression(expression.prefixExpression), ")"]
+                : [this.printExpression(expression.prefixExpression)];
 
         const name = this.printIdentifier(expression.name);
 
-        chunks.push(prefix, ":", name, "(");
+        chunks.push(...prefix, ":", name, "(");
 
         if (expression.params) {
             chunks.push(...this.printExpressionList(expression.params));
@@ -770,7 +760,7 @@ export class LuaPrinter {
     public printTableIndexExpression(expression: lua.TableIndexExpression): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.printExpression(expression.table));
+        chunks.push(this.printExpressionInParenthesesIfNeeded(expression.table));
         if (
             lua.isStringLiteral(expression.index) &&
             isValidLuaIdentifier(expression.index.value) &&

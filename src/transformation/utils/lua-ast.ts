@@ -1,11 +1,10 @@
-import * as ts from "typescript";
 import * as assert from "assert";
+import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { getCurrentNamespace } from "../visitors/namespace";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { findScope, peekScope, ScopeType } from "./scope";
+import { peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
@@ -42,8 +41,6 @@ export function createExpressionPlusOne(expression: lua.Expression): lua.Express
         ) {
             return expression.left;
         }
-
-        expression = lua.createParenthesizedExpression(expression);
     }
 
     return lua.createBinaryExpression(expression, lua.createNumericLiteral(1), lua.SyntaxKind.AdditionOperator);
@@ -58,7 +55,7 @@ export function createImmediatelyInvokedFunctionExpression(
     body.push(lua.createReturnStatement(Array.isArray(result) ? result : [result]));
     const flags = statements.length === 0 ? lua.FunctionExpressionFlags.Inline : lua.FunctionExpressionFlags.None;
     const iife = lua.createFunctionExpression(lua.createBlock(body), undefined, undefined, undefined, flags);
-    return lua.createCallExpression(lua.createParenthesizedExpression(iife), [], tsOriginal);
+    return lua.createCallExpression(iife, [], tsOriginal);
 }
 
 export function createUnpackCall(
@@ -74,9 +71,9 @@ export function createUnpackCall(
     return lua.createCallExpression(unpack, [expression], tsOriginal);
 }
 
-export function wrapInTable(...expressions: lua.Expression[]): lua.ParenthesizedExpression {
+export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {
     const fields = expressions.map(e => lua.createTableFieldExpression(e));
-    return lua.createParenthesizedExpression(lua.createTableExpression(fields));
+    return lua.createTableExpression(fields);
 }
 
 export function wrapInToStringForConcat(expression: lua.Expression): lua.Expression {
@@ -98,7 +95,7 @@ export function createHoistableVariableDeclarationStatement(
     tsOriginal?: ts.Node
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
-    if (!context.options.noHoisting && identifier.symbolId) {
+    if (identifier.symbolId !== undefined) {
         const scope = peekScope(context);
         assert(scope.type !== ScopeType.Switch);
 
@@ -122,7 +119,6 @@ export function createLocalOrExportedOrGlobalDeclaration(
     let declaration: lua.VariableDeclarationStatement | undefined;
     let assignment: lua.AssignmentStatement | undefined;
 
-    const isVariableDeclaration = tsOriginal !== undefined && ts.isVariableDeclaration(tsOriginal);
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
     const identifiers = Array.isArray(lhs) ? lhs : [lhs];
@@ -143,11 +139,10 @@ export function createLocalOrExportedOrGlobalDeclaration(
             );
         }
     } else {
-        const insideFunction = findScope(context, ScopeType.Function) !== undefined;
+        const scope = peekScope(context);
+        const isTopLevelVariable = scope.type === ScopeType.File;
 
-        if (context.isModule || getCurrentNamespace(context) || insideFunction || isVariableDeclaration) {
-            const scope = peekScope(context);
-
+        if (context.isModule || !isTopLevelVariable) {
             const isPossibleWrappedFunction =
                 !isFunctionDeclaration &&
                 tsOriginal &&
@@ -163,17 +158,15 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
-            if (!context.options.noHoisting) {
-                // Remember local variable declarations for hoisting later
-                if (!scope.variableDeclarations) {
-                    scope.variableDeclarations = [];
-                }
+            // Remember local variable declarations for hoisting later
+            if (!scope.variableDeclarations) {
+                scope.variableDeclarations = [];
+            }
 
-                scope.variableDeclarations.push(declaration);
+            scope.variableDeclarations.push(declaration);
 
-                if (scope.type === ScopeType.Switch) {
-                    declaration = undefined;
-                }
+            if (scope.type === ScopeType.Switch) {
+                declaration = undefined;
             }
         } else if (rhs) {
             // global
@@ -183,7 +176,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
-    if (!context.options.noHoisting && isFunctionDeclaration) {
+    if (isFunctionDeclaration) {
         // Remember function definitions for hoisting later
         const functionSymbolId = (lhs as lua.Identifier).symbolId;
         const scope = peekScope(context);

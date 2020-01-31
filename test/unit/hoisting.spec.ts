@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { ReferencedBeforeDeclaration } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
 test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
@@ -109,6 +108,28 @@ test("Hoisting due to reference from hoisted function", () => {
     expect(result).toBe("foo");
 });
 
+test("Hoisting with synthetic source file node", () => {
+    util.testModule`
+        export const foo = bar();
+        function bar() { return "bar"; }
+    `
+        .setCustomTransformers({
+            before: [
+                () => sourceFile =>
+                    ts.updateSourceFileNode(
+                        sourceFile,
+                        [ts.createNotEmittedStatement(undefined!), ...sourceFile.statements],
+                        sourceFile.isDeclarationFile,
+                        sourceFile.referencedFiles,
+                        sourceFile.typeReferenceDirectives,
+                        sourceFile.hasNoDefaultLib,
+                        sourceFile.libReferenceDirectives
+                    ),
+            ],
+        })
+        .expectToMatchJsResult();
+});
+
 test("Namespace Hoisting", () => {
     const code = `
         function bar() {
@@ -180,30 +201,6 @@ test("Enum Hoisting", () => {
     `;
     const result = util.transpileExecuteAndReturnExport(code, "foo");
     expect(result).toBe("foo");
-});
-
-test.each([
-    { code: `foo = "foo"; var foo;`, identifier: "foo" },
-    { code: `foo = "foo"; export var foo;`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } let foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } const foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } export let foo = "foo";`, identifier: "foo" },
-    { code: `function setBar() { const bar = foo; } export const foo = "foo";`, identifier: "foo" },
-    { code: `const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `export const foo = bar(); function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `const foo = bar(); export function bar() { return "bar"; }`, identifier: "bar" },
-    { code: `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`, identifier: "NS" },
-    {
-        code: `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
-        identifier: "I",
-    },
-    { code: `function makeFoo() { return new Foo(); } class Foo {}`, identifier: "Foo" },
-    { code: `function bar() { return E.A; } enum E { A = "foo" }`, identifier: "E" },
-    { code: `function setBar() { const bar = { foo }; } let foo = "foo";`, identifier: "foo" },
-])("No Hoisting (%p)", ({ code, identifier }) => {
-    expect(() => util.transpileString(code, { noHoisting: true })).toThrowExactError(
-        ReferencedBeforeDeclaration(ts.createIdentifier(identifier))
-    );
 });
 
 test("Import hoisting (named)", () => {

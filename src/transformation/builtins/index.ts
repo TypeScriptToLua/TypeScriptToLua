@@ -120,13 +120,11 @@ export function transformBuiltinIdentifierExpression(
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
-            return lua.createParenthesizedExpression(
-                lua.createBinaryExpression(
-                    lua.createNumericLiteral(0),
-                    lua.createNumericLiteral(0),
-                    lua.SyntaxKind.DivisionOperator,
-                    node
-                )
+            return lua.createBinaryExpression(
+                lua.createNumericLiteral(0),
+                lua.createNumericLiteral(0),
+                lua.SyntaxKind.DivisionOperator,
+                node
             );
 
         case "Infinity":

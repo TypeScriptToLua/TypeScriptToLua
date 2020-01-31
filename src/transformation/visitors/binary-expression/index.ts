@@ -178,7 +178,7 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             const lhs = context.transformExpression(node.left);
             const rhs = context.transformExpression(node.right);
             const rhsType = context.checker.getTypeAtLocation(node.right);
-            const annotations = getTypeAnnotations(context, rhsType);
+            const annotations = getTypeAnnotations(rhsType);
 
             if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
                 // Cannot use instanceof on extension classes

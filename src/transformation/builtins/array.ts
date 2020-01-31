@@ -40,6 +40,8 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFind, node, caller, ...params);
         case "findIndex":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFindIndex, node, caller, ...params);
+        case "includes":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayIncludes, node, caller, ...params);
         case "indexOf":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayIndexOf, node, caller, ...params);
         case "map":
@@ -87,10 +89,7 @@ export function transformArrayProperty(
 ): lua.UnaryExpression | undefined {
     switch (node.name.text) {
         case "length":
-            let expression = context.transformExpression(node.expression);
-            if (lua.isTableExpression(expression)) {
-                expression = lua.createParenthesizedExpression(expression);
-            }
+            const expression = context.transformExpression(node.expression);
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             return undefined;

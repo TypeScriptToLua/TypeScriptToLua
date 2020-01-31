@@ -123,8 +123,53 @@ function executeLua(code: string): any {
     }
 }
 
+const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
+const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
 export function executeLuaModule(code: string): any {
-    return executeLua(`${minimalTestLib}return JSONStringify((function()\n${code}\nend)())`);
+    const lualibImport = code.includes('require("lualib_bundle")')
+        ? `package.preload.lualib_bundle = function()\n${lualibContent}\nend`
+        : "";
+
+    return executeLua(`${minimalTestLib}\n${lualibImport}\nreturn JSONStringify((function()\n${code}\nend)())`);
+}
+
+function executeJsModule(code: string): any {
+    const exports = {};
+    const context = vm.createContext({ exports, module: { exports } });
+    context.global = context;
+    let result: unknown;
+    try {
+        result = vm.runInContext(code, context);
+    } catch (error) {
+        return new ExecutionError(error.message);
+    }
+
+    function transform(currentValue: any): any {
+        if (currentValue === null) {
+            return undefined;
+        }
+
+        if (Array.isArray(currentValue)) {
+            return currentValue.map(transform);
+        }
+
+        if (typeof currentValue === "object") {
+            for (const [key, value] of Object.entries(currentValue)) {
+                currentValue[key] = transform(value);
+                if (currentValue[key] === undefined) {
+                    delete currentValue[key];
+                }
+            }
+
+            if (Object.keys(currentValue).length === 0) {
+                return [];
+            }
+        }
+
+        return currentValue;
+    }
+
+    return transform(result);
 }
 
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
@@ -177,6 +222,13 @@ export abstract class TestBuilder {
         return this;
     }
 
+    protected abstract getLuaCodeWithWrapper: (code: string) => string;
+    public setLuaFactory(luaFactory: (code: string) => string): this {
+        expect(this.hasProgram).toBe(false);
+        this.getLuaCodeWithWrapper = luaFactory;
+        return this;
+    }
+
     private semanticCheck = true;
     public disableSemanticCheck(): this {
         expect(this.hasProgram).toBe(false);
@@ -212,6 +264,13 @@ export abstract class TestBuilder {
         return this;
     }
 
+    private customTransformers?: ts.CustomTransformers;
+    public setCustomTransformers(customTransformers?: ts.CustomTransformers): this {
+        expect(this.hasProgram).toBe(false);
+        this.customTransformers = customTransformers;
+        return this;
+    }
+
     // Transpilation and execution
 
     public getTsCode(): string {
@@ -228,7 +287,7 @@ export abstract class TestBuilder {
     @memoize
     public getLuaResult(): tstl.TranspileResult {
         const program = this.getProgram();
-        const result = tstl.transpile({ program });
+        const result = tstl.transpile({ program, customTransformers: this.customTransformers });
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...ts.getPreEmitDiagnostics(program),
             ...result.diagnostics,
@@ -253,11 +312,9 @@ export abstract class TestBuilder {
         return header + this.getMainLuaFileResult().lua.trimRight();
     }
 
-    public abstract getLuaCodeWithWrapper(): string;
-
     @memoize
     public getLuaExecutionResult(): any {
-        return executeLua(this.getLuaCodeWithWrapper());
+        return executeLuaModule(this.getLuaCodeWithWrapper(this.getMainLuaCodeChunk()));
     }
 
     @memoize
@@ -281,42 +338,7 @@ export abstract class TestBuilder {
 
     @memoize
     public getJsExecutionResult(): any {
-        const exports = {};
-        const context = vm.createContext({ exports, module: { exports } });
-        context.global = context;
-        let result: unknown;
-        try {
-            result = vm.runInContext(this.getJsCodeWithWrapper(), context);
-        } catch (error) {
-            return new ExecutionError(error.message);
-        }
-
-        function transform(currentValue: any): any {
-            if (currentValue === null) {
-                return undefined;
-            }
-
-            if (Array.isArray(currentValue)) {
-                return currentValue.map(transform);
-            }
-
-            if (typeof currentValue === "object") {
-                for (const [key, value] of Object.entries(currentValue)) {
-                    currentValue[key] = transform(value);
-                    if (currentValue[key] === undefined) {
-                        delete currentValue[key];
-                    }
-                }
-
-                if (Object.keys(currentValue).length === 0) {
-                    return [];
-                }
-            }
-
-            return currentValue;
-        }
-
-        return transform(result);
+        return executeJsModule(this.getJsCodeWithWrapper());
     }
 
     // Utilities
@@ -329,9 +351,9 @@ export abstract class TestBuilder {
     // Actions
 
     public debug(): this {
-        const luaCode = this.getMainLuaCodeChunk().replace(/(^|\n)/g, "\n    ");
-        const value = prettyFormat(this.getLuaExecutionResult());
-        console.log(`Lua Code:${luaCode}\nValue: ${value}`);
+        const luaCode = this.getMainLuaCodeChunk().replace(/^/gm, "  ");
+        const value = prettyFormat(this.getLuaExecutionResult()).replace(/^/gm, "  ");
+        console.log(`Lua Code:\n${luaCode}\n\nValue:\n${value}`);
         return this;
     }
 
@@ -408,20 +430,10 @@ export abstract class TestBuilder {
     }
 }
 
-const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
-const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8") + "\n";
 class AccessorTestBuilder extends TestBuilder {
     protected accessor = "";
 
-    @memoize
-    public getLuaCodeWithWrapper(): string {
-        let code = this.getMainLuaCodeChunk();
-        if (code.includes('require("lualib_bundle")')) {
-            code = `package.preload.lualib_bundle = function()\n${lualibContent}\nend\n${code}`;
-        }
-
-        return `${minimalTestLib}\nreturn JSONStringify((function()\n${code}\nend)()${this.accessor})`;
-    }
+    protected getLuaCodeWithWrapper = (code: string) => `return (function()\n${code}\nend)()${this.accessor}`;
 
     @memoize
     protected getJsCodeWithWrapper(): string {

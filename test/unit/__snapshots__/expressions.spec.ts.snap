@@ -14,13 +14,13 @@ return ____exports"
 
 exports[`Binary expressions ordering parentheses ("1*(3+4*2)") 1`] = `
 "local ____exports = {}
-____exports.__result = 1 * (3 + 4 * 2)
+____exports.__result = 1 * (3 + (4 * 2))
 return ____exports"
 `;
 
 exports[`Binary expressions ordering parentheses ("1*30+4") 1`] = `
 "local ____exports = {}
-____exports.__result = 1 * 30 + 4
+____exports.__result = (1 * 30) + 4
 return ____exports"
 `;
 

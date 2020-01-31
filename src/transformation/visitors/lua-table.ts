@@ -71,7 +71,7 @@ export function transformLuaTableExpressionStatement(
 
     if (ts.isCallExpression(expression) && ts.isPropertyAccessExpression(expression.expression)) {
         const ownerType = context.checker.getTypeAtLocation(expression.expression.expression);
-        const annotations = getTypeAnnotations(context, ownerType);
+        const annotations = getTypeAnnotations(ownerType);
         if (annotations.has(AnnotationKind.LuaTable)) {
             return transformLuaTableExpressionAsExpressionStatement(context, expression);
         }
@@ -84,7 +84,7 @@ export function transformLuaTableCallExpression(
 ): lua.Expression | undefined {
     if (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression)) {
         const ownerType = context.checker.getTypeAtLocation(node.expression.expression);
-        const annotations = getTypeAnnotations(context, ownerType);
+        const annotations = getTypeAnnotations(ownerType);
 
         if (annotations.has(AnnotationKind.LuaTable)) {
             const [luaTable, methodName] = parseLuaTableExpression(context, node.expression);
@@ -107,7 +107,7 @@ export function transformLuaTablePropertyAccessExpression(
     node: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node.expression);
-    const annotations = getTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(type);
     if (annotations.has(AnnotationKind.LuaTable)) {
         const [luaTable, propertyName] = parseLuaTableExpression(context, node);
         switch (node.name.text) {
@@ -123,7 +123,7 @@ export function transformLuaTableElementAccessExpression(
     context: TransformationContext,
     node: ts.ElementAccessExpression
 ): void {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node.expression));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node.expression));
     if (annotations.has(AnnotationKind.LuaTable)) {
         throw UnsupportedKind("LuaTable access expression", node.kind, node);
     }
@@ -134,7 +134,7 @@ export function transformLuaTableNewExpression(
     node: ts.NewExpression
 ): lua.Expression | undefined {
     const type = context.checker.getTypeAtLocation(node);
-    const annotations = getTypeAnnotations(context, type);
+    const annotations = getTypeAnnotations(type);
     if (annotations.has(AnnotationKind.LuaTable)) {
         if (node.arguments && node.arguments.length > 0) {
             throw ForbiddenLuaTableUseException("No parameters are allowed when constructing a LuaTable object.", node);

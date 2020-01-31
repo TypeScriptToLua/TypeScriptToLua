@@ -390,6 +390,37 @@ test.each([
 });
 
 test.each([
+    { array: [1, 2, 3], includes: 2 },
+    { array: [1, 2, 3, 2, 2], includes: 2 },
+    { array: [1, 2, 3], includes: 4 },
+    { array: ["a", "b", "c"], includes: "d" },
+    { array: [[1], [2], [3]], includes: [2] },
+    { array: [1, [2], 3], includes: 2 },
+])("array.includes (%p)", ({ array, includes }) => {
+    util.testExpressionTemplate`${array}.includes(${includes})`.expectToMatchJsResult();
+});
+
+test("array.includes reference", () => {
+    util.testFunction`
+        const inst = [2];
+        return [[1], [3], inst].includes(inst);
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { array: [1, 2, 3], includes: 2, fromIndex: 0 },
+    { array: [1, 2, 3], includes: 2, fromIndex: 1 },
+    { array: [1, 2, 3], includes: 2, fromIndex: 2 },
+    { array: [1, 2, 3], includes: 2, fromIndex: 3 },
+    { array: [1, 2, 3], includes: 2, fromIndex: -1 },
+    { array: [1, 2, 3], includes: 2, fromIndex: -2 },
+    { array: [1, 2, 3], includes: 2, fromIndex: -3 },
+    { array: [1, 2, 3], includes: 2, fromIndex: -4 },
+])("array.includes with fromIndex (%p)", ({ array, includes, fromIndex }) => {
+    util.testExpressionTemplate`${array}.includes(${includes}, ${fromIndex})`.expectToMatchJsResult();
+});
+
+test.each([
     { array: [] },
     { array: ["test1"] },
     { array: ["test1", "test2"] },

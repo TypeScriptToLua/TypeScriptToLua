@@ -50,8 +50,7 @@ export function transformMathCall(context: TransformationContext, node: Property
             const log1 = lua.createTableIndexExpression(math, lua.createStringLiteral("log"));
             const logCall1 = lua.createCallExpression(log1, params);
             const e = lua.createNumericLiteral(expressionName === "log10" ? Math.LN10 : Math.LN2);
-            const div = lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator);
-            return lua.createParenthesizedExpression(div, node);
+            return lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator, node);
         }
 
         // math.log(1 + x)

@@ -2,9 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
-import { ReferencedBeforeDeclaration } from "./errors";
 import { markSymbolAsReferencedInCurrentScopes } from "./scope";
-import { getFirstDeclarationInFile } from "./typescript";
 
 const symbolIdCounters = new WeakMap<TransformationContext, number>();
 function nextSymbolId(context: TransformationContext): lua.SymbolId {
@@ -44,14 +42,6 @@ export function trackSymbolReference(
         symbolIds.set(symbol, symbolId);
         const symbolInfo = getOrUpdate(symbolInfoMap, context, () => new Map());
         symbolInfo.set(symbolId, { symbol, firstSeenAtPos: identifier.pos });
-    }
-
-    if (context.options.noHoisting) {
-        // Check for reference-before-declaration
-        const declaration = getFirstDeclarationInFile(symbol, context.sourceFile);
-        if (declaration && identifier.pos < declaration.pos) {
-            throw ReferencedBeforeDeclaration(identifier);
-        }
     }
 
     markSymbolAsReferencedInCurrentScopes(context, symbolId, identifier);

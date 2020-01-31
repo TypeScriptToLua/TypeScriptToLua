@@ -130,13 +130,6 @@ export const UnsupportedNonDestructuringLuaIterator = (node: ts.Node) =>
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
 
-export const ReferencedBeforeDeclaration = (node: ts.Identifier) =>
-    new TranspileError(
-        `Identifier "${node.text}" was referenced before it was declared. The declaration ` +
-            "must be moved before the identifier's use, or hoisting must be enabled.",
-        node
-    );
-
 export const UnsupportedObjectDestructuringInForOf = (node: ts.Node) =>
     new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
 

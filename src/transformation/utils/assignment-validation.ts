@@ -19,7 +19,7 @@ export function validatePropertyAssignment(
     if (!ts.isPropertyAccessExpression(node.left)) return;
 
     const leftType = context.checker.getTypeAtLocation(node.left.expression);
-    const annotations = getTypeAnnotations(context, leftType);
+    const annotations = getTypeAnnotations(leftType);
     if (annotations.has(AnnotationKind.LuaTable) && node.left.name.text === "length") {
         throw ForbiddenLuaTableUseException(`A LuaTable object's length cannot be re-assigned.`, node);
     }

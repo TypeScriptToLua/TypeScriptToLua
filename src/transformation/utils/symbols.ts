@@ -68,3 +68,7 @@ export function getIdentifierSymbolId(
         return trackSymbolReference(context, symbol, identifier);
     }
 }
+
+export function resolveSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
+    return symbol?.declarations.find(d => d);
+}

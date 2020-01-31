@@ -10,7 +10,6 @@ import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../u
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
-import { transformTupleHelperVariableDeclaration, isTupleHelperVariableDeclaration } from "../helpers/tuple";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -212,10 +211,6 @@ export function transformVariableDeclaration(
     context: TransformationContext,
     statement: ts.VariableDeclaration
 ): lua.Statement[] {
-    if (isTupleHelperVariableDeclaration(context, statement)) {
-        return transformTupleHelperVariableDeclaration(context, statement);
-    }
-
     if (statement.initializer && statement.type) {
         const initializerType = context.checker.getTypeAtLocation(statement.initializer);
         const varType = context.checker.getTypeFromTypeNode(statement.type);

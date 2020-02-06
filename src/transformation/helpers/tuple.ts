@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import * as utils from "../utils/helpers";
 import { TransformationContext, Visitors } from "../context";
+import { transformAssignmentLeftHandSideExpression } from '../visitors/binary-expression/assignments';
 import { transformArrayBindingElement } from "../visitors/variable-declaration";
 import { transformArguments } from "../visitors/call";
 import { InvalidTupleFunctionUse } from "../utils/errors";
@@ -13,6 +14,13 @@ type VariableDeclarationWithCall = ts.VariableDeclaration & {
 
 type ReturnStatementWithCall = ts.ReturnStatement & {
     expression: ts.CallExpression;
+};
+
+type ExpressionStatementWithDestructuringAssignment = ts.ExpressionStatement & {
+    expression: {
+        left: ts.Expression;
+        right: ts.CallExpression;
+    };
 };
 
 function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
@@ -64,12 +72,39 @@ function isTupleHelperVariableDeclaration(
     return isTupleReturningCallExpression(context, declaration.initializer);
 }
 
+function isTupleHelperDestructuringAssignmentStatement(
+    context: TransformationContext,
+    statement: ts.ExpressionStatement
+): statement is ExpressionStatementWithDestructuringAssignment {
+    if (!ts.isBinaryExpression(statement.expression)) {
+        return false;
+    }
+
+    if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+        return false;
+    }
+
+    if (!ts.isCallExpression(statement.expression.right)) {
+        return false;
+    }
+
+    return isTupleReturningCallExpression(context, statement.expression.right);
+}
+
 function transformTupleHelperReturnStatement(
     context: TransformationContext,
     statement: ReturnStatementWithCall
 ): lua.Statement {
     const expressions = transformArguments(context, statement.expression.arguments);
     return lua.createReturnStatement(expressions, statement);
+}
+
+function transformTupleCallArguments(context: TransformationContext, expression: ts.CallExpression): lua.Expression[] | lua.Expression {
+    return isTupleHelperCallSignature(context, expression)
+        ? expression.arguments.length > 0
+            ? expression.arguments.map(e => context.transformExpression(e))
+            : lua.createNilLiteral(expression)
+        : context.transformExpression(expression);
 }
 
 function transformTupleHelperVariableDeclaration(
@@ -81,10 +116,21 @@ function transformTupleHelperVariableDeclaration(
     }
 
     const leftIdentifiers = declaration.name.elements.map(e => transformArrayBindingElement(context, e));
-    const rightExpressions = isTupleHelperCallSignature(context, declaration.initializer)
-        ? declaration.initializer.arguments.map(e => context.transformExpression(e))
-        : context.transformExpression(declaration.initializer);
+    const rightExpressions = transformTupleCallArguments(context, declaration.initializer);
     return [lua.createVariableDeclarationStatement(leftIdentifiers, rightExpressions, declaration)];
+}
+
+function transformTupleHelperDestructuringAssignmentStatement(
+    context: TransformationContext,
+    statement: ExpressionStatementWithDestructuringAssignment
+): lua.Statement {
+    if (!ts.isArrayLiteralExpression(statement.expression.left)) {
+        throw InvalidTupleFunctionUse(statement.expression.left);
+    }
+
+    const leftIdentifiers = statement.expression.left.elements.map(a => transformAssignmentLeftHandSideExpression(context, a));
+    const rightExpressions = transformTupleCallArguments(context, statement.expression.right);
+    return lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement);
 }
 
 export const tupleVisitors: Visitors = {
@@ -123,5 +169,11 @@ export const tupleVisitors: Visitors = {
             }
         });
         return context.superTransformExpression(node);
+    },
+    [ts.SyntaxKind.ExpressionStatement]: (node, context) => {
+        if (isTupleHelperDestructuringAssignmentStatement(context, node)) {
+            return transformTupleHelperDestructuringAssignmentStatement(context, node);
+        }
+        return context.superTransformStatements(node);
     },
 };

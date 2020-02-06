@@ -2,11 +2,12 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import * as utils from "../utils/helpers";
 import { TransformationContext, Visitors } from "../context";
-import { transformAssignmentLeftHandSideExpression } from '../visitors/binary-expression/assignments';
+import { transformAssignmentLeftHandSideExpression } from "../visitors/binary-expression/assignments";
 import { transformArrayBindingElement } from "../visitors/variable-declaration";
 import { transformArguments } from "../visitors/call";
 import { InvalidTupleFunctionUse } from "../utils/errors";
 import { isSymbolAlias } from "../utils/symbols";
+import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
 
 type VariableDeclarationWithCall = ts.VariableDeclaration & {
     initializer: ts.CallExpression;
@@ -99,12 +100,27 @@ function transformTupleHelperReturnStatement(
     return lua.createReturnStatement(expressions, statement);
 }
 
-function transformTupleCallArguments(context: TransformationContext, expression: ts.CallExpression): lua.Expression[] | lua.Expression {
+function transformTupleCallArguments(
+    context: TransformationContext,
+    expression: ts.CallExpression
+): lua.Expression[] | lua.Expression {
     return isTupleHelperCallSignature(context, expression)
         ? expression.arguments.length > 0
             ? expression.arguments.map(e => context.transformExpression(e))
             : lua.createNilLiteral(expression)
         : context.transformExpression(expression);
+}
+
+function isSimpleArrayBindingElement(element: ts.ArrayBindingElement): boolean {
+    if (ts.isOmittedExpression(element)) {
+        return true;
+    }
+
+    if (ts.isBindingElement(element) && !element.initializer) {
+        return true;
+    }
+
+    return false;
 }
 
 function transformTupleHelperVariableDeclaration(
@@ -115,22 +131,67 @@ function transformTupleHelperVariableDeclaration(
         throw InvalidTupleFunctionUse(declaration.name);
     }
 
+    if (declaration.name.elements.length < 1) {
+        throw InvalidTupleFunctionUse(declaration.name);
+    }
+
+    if (!declaration.name.elements.every(isSimpleArrayBindingElement)) {
+        throw InvalidTupleFunctionUse(declaration.name);
+    }
+
     const leftIdentifiers = declaration.name.elements.map(e => transformArrayBindingElement(context, e));
     const rightExpressions = transformTupleCallArguments(context, declaration.initializer);
     return [lua.createVariableDeclarationStatement(leftIdentifiers, rightExpressions, declaration)];
 }
 
+function isSimpleLeftHandSideDestructuringExpression(expression: ts.Expression): boolean {
+    if (ts.isBinaryExpression(expression)) {
+        return false;
+    }
+
+    return true;
+}
+
 function transformTupleHelperDestructuringAssignmentStatement(
     context: TransformationContext,
     statement: ExpressionStatementWithDestructuringAssignment
-): lua.Statement {
+): lua.Statement[] {
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
         throw InvalidTupleFunctionUse(statement.expression.left);
     }
 
-    const leftIdentifiers = statement.expression.left.elements.map(a => transformAssignmentLeftHandSideExpression(context, a));
+    if (statement.expression.left.elements.length < 1) {
+        throw InvalidTupleFunctionUse(statement.expression.left);
+    }
+
+    if (!statement.expression.left.elements.every(isSimpleLeftHandSideDestructuringExpression)) {
+        throw InvalidTupleFunctionUse(statement.expression.left);
+    }
+
+    const transformLeft = (expression: ts.Expression): lua.AssignmentLeftHandSideExpression => {
+        if (ts.isOmittedExpression(expression)) {
+            return lua.createAnonymousIdentifier(expression);
+        } else {
+            return transformAssignmentLeftHandSideExpression(context, expression);
+        }
+    };
+
+    const leftIdentifiers = statement.expression.left.elements.map(transformLeft);
+
     const rightExpressions = transformTupleCallArguments(context, statement.expression.right);
-    return lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement);
+
+    const trailingStatements = statement.expression.left.elements
+        .map(expression => {
+            const symbol = context.checker.getSymbolAtLocation(expression);
+            const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
+            return dependentSymbols.map(symbol => {
+                const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
+                return lua.createAssignmentStatement(identifierToAssign, transformLeft(expression));
+            });
+        })
+        .flat();
+
+    return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }
 
 export const tupleVisitors: Visitors = {

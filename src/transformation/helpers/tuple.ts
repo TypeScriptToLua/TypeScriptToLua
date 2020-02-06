@@ -59,18 +59,6 @@ function transformTupleCallArguments(
         : context.transformExpression(expression);
 }
 
-function isSimpleArrayBindingElement(element: ts.ArrayBindingElement): boolean {
-    if (ts.isOmittedExpression(element)) {
-        return true;
-    }
-
-    if (ts.isBindingElement(element) && !element.initializer) {
-        return true;
-    }
-
-    return false;
-}
-
 function transformTupleHelperVariableDeclaration(
     context: TransformationContext,
     declaration: ts.VariableDeclaration
@@ -95,7 +83,7 @@ function transformTupleHelperVariableDeclaration(
         throw InvalidTupleFunctionUse(declaration.name);
     }
 
-    if (!declaration.name.elements.every(isSimpleArrayBindingElement)) {
+    if (declaration.name.elements.some(ts.isBinaryExpression)) {
         throw InvalidTupleFunctionUse(declaration.name);
     }
 

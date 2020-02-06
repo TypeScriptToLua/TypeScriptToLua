@@ -13,9 +13,10 @@ test.each<[string, any]>([
     util.testModule`
         import { tuple } from "typescript-to-lua/helpers";
         ${statement}
-        // @ts-ignore
-        return a;
-    `.expectToEqual(result);
+        export { a };
+    `
+        .setReturnExport("a")
+        .expectToEqual(result);
 });
 
 test.each([
@@ -39,13 +40,13 @@ test.each<[string, any]>([
     ["return tuple(1);", 1],
 ])("valid tuple function return statement (%s)", (statement, result) => {
     util.testModule`
-      import { tuple } from "typescript-to-lua/helpers";
-      const [a] = (function() {
-        ${statement}
-      })();
-      // @ts-ignore
-      return a;
-  `.expectToEqual(result);
+        import { tuple } from "typescript-to-lua/helpers";
+        export const [a] = (function() {
+            ${statement}
+        })();
+    `
+        .setReturnExport("a")
+        .expectToEqual(result);
 });
 
 test("tuple destructuring assignment side effects", () => {
@@ -54,7 +55,7 @@ test("tuple destructuring assignment side effects", () => {
         let a, b;
         export { a };
         [a] = tuple(1);
-        // @ts-ignore
-        return a;
-    `.expectToEqual(1);
+    `
+        .setReturnExport("a")
+        .expectToEqual(1);
 });

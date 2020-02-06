@@ -3,11 +3,12 @@ import * as lua from "../../LuaAST";
 import * as utils from "../utils/helpers";
 import { TransformationContext, Visitors } from "../context";
 import { transformAssignmentLeftHandSideExpression } from "../visitors/binary-expression/assignments";
-import { transformArrayBindingElement } from "../visitors/variable-declaration";
+import { transformIdentifier } from "../visitors/identifier";
 import { transformArguments } from "../visitors/call";
-import { InvalidTupleFunctionUse } from "../utils/errors";
+import { InvalidTupleFunctionUse, UnsupportedKind } from "../utils/errors";
 import { isSymbolAlias } from "../utils/symbols";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
+import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
 
 function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
@@ -83,13 +84,19 @@ function transformTupleHelperVariableDeclaration(
         throw InvalidTupleFunctionUse(declaration.name);
     }
 
-    if (declaration.name.elements.some(ts.isBinaryExpression)) {
-        throw InvalidTupleFunctionUse(declaration.name);
-    }
+    const leftIdentifiers = declaration.name.elements.map(element => {
+        if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+            return transformIdentifier(context, element.name);
+        }
 
-    const leftIdentifiers = declaration.name.elements.map(e => transformArrayBindingElement(context, e));
+        if (ts.isOmittedExpression(element)) {
+            return lua.createAnonymousIdentifier(element);
+        }
+
+        throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
+    });
     const rightExpressions = transformTupleCallArguments(context, declaration.initializer);
-    return [lua.createVariableDeclarationStatement(leftIdentifiers, rightExpressions, declaration)];
+    return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
 
 function isSimpleLeftHandSideDestructuringExpression(expression: ts.Expression): boolean {

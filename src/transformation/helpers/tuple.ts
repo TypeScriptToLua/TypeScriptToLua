@@ -9,21 +9,6 @@ import { InvalidTupleFunctionUse } from "../utils/errors";
 import { isSymbolAlias } from "../utils/symbols";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
 
-type VariableDeclarationWithCall = ts.VariableDeclaration & {
-    initializer: ts.CallExpression;
-};
-
-type ReturnStatementWithCall = ts.ReturnStatement & {
-    expression: ts.CallExpression;
-};
-
-type ExpressionStatementWithDestructuringAssignment = ts.ExpressionStatement & {
-    expression: {
-        left: ts.Expression;
-        right: ts.CallExpression;
-    };
-};
-
 function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
     return type.symbol?.declarations?.some(isTupleHelperDeclaration) ? true : false;
@@ -43,59 +28,22 @@ function isTupleHelperNode(context: TransformationContext, node: ts.Node): boole
     return type.symbol?.declarations?.some(isTupleHelperDeclaration) ? true : false;
 }
 
-function isTupleHelperReturnStatement(
+function transformTupleHelperReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
-): statement is ReturnStatementWithCall {
+): lua.Statement | undefined {
     if (!statement.expression) {
-        return false;
+        return undefined;
     }
 
     if (!ts.isCallExpression(statement.expression)) {
-        return false;
+        return undefined;
     }
 
-    return isTupleHelperCallSignature(context, statement.expression);
-}
-
-function isTupleHelperVariableDeclaration(
-    context: TransformationContext,
-    declaration: ts.VariableDeclaration
-): declaration is VariableDeclarationWithCall {
-    if (!declaration.initializer) {
-        return false;
+    if (!isTupleHelperCallSignature(context, statement.expression)) {
+        return undefined;
     }
 
-    if (!ts.isCallExpression(declaration.initializer)) {
-        return false;
-    }
-
-    return isTupleReturningCallExpression(context, declaration.initializer);
-}
-
-function isTupleHelperDestructuringAssignmentStatement(
-    context: TransformationContext,
-    statement: ts.ExpressionStatement
-): statement is ExpressionStatementWithDestructuringAssignment {
-    if (!ts.isBinaryExpression(statement.expression)) {
-        return false;
-    }
-
-    if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
-        return false;
-    }
-
-    if (!ts.isCallExpression(statement.expression.right)) {
-        return false;
-    }
-
-    return isTupleReturningCallExpression(context, statement.expression.right);
-}
-
-function transformTupleHelperReturnStatement(
-    context: TransformationContext,
-    statement: ReturnStatementWithCall
-): lua.Statement {
     const expressions = transformArguments(context, statement.expression.arguments);
     return lua.createReturnStatement(expressions, statement);
 }
@@ -125,8 +73,20 @@ function isSimpleArrayBindingElement(element: ts.ArrayBindingElement): boolean {
 
 function transformTupleHelperVariableDeclaration(
     context: TransformationContext,
-    declaration: VariableDeclarationWithCall
-): lua.Statement[] {
+    declaration: ts.VariableDeclaration
+): lua.Statement[] | undefined {
+    if (!declaration.initializer) {
+        return undefined;
+    }
+
+    if (!ts.isCallExpression(declaration.initializer)) {
+        return undefined;
+    }
+
+    if (!isTupleReturningCallExpression(context, declaration.initializer)) {
+        return undefined;
+    }
+
     if (!ts.isArrayBindingPattern(declaration.name)) {
         throw InvalidTupleFunctionUse(declaration.name);
     }
@@ -154,8 +114,24 @@ function isSimpleLeftHandSideDestructuringExpression(expression: ts.Expression):
 
 function transformTupleHelperDestructuringAssignmentStatement(
     context: TransformationContext,
-    statement: ExpressionStatementWithDestructuringAssignment
-): lua.Statement[] {
+    statement: ts.ExpressionStatement
+): lua.Statement[] | undefined {
+    if (!ts.isBinaryExpression(statement.expression)) {
+        return undefined;
+    }
+
+    if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+        return undefined;
+    }
+
+    if (!ts.isCallExpression(statement.expression.right)) {
+        return undefined;
+    }
+
+    if (!isTupleReturningCallExpression(context, statement.expression.right)) {
+        return undefined;
+    }
+
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
         throw InvalidTupleFunctionUse(statement.expression.left);
     }
@@ -202,22 +178,22 @@ export const tupleVisitors: Visitors = {
         return context.superTransformNode(node);
     },
     [ts.SyntaxKind.ReturnStatement]: (node, context) => {
-        if (isTupleHelperReturnStatement(context, node)) {
-            return transformTupleHelperReturnStatement(context, node);
-        }
-        return context.superTransformStatements(node);
+        const result = transformTupleHelperReturnStatement(context, node);
+        return result ? result : context.superTransformStatements(node);
+    },
+    [ts.SyntaxKind.VariableDeclaration]: (node, context) => {
+        const result = transformTupleHelperVariableDeclaration(context, node);
+        return result ? result : context.superTransformNode(node);
+    },
+    [ts.SyntaxKind.ExpressionStatement]: (node, context) => {
+        const result = transformTupleHelperDestructuringAssignmentStatement(context, node);
+        return result ? result : context.superTransformStatements(node);
     },
     [ts.SyntaxKind.Identifier]: (node, context) => {
         if (isTupleHelperNode(context, node)) {
             throw InvalidTupleFunctionUse(node);
         }
         return context.superTransformExpression(node);
-    },
-    [ts.SyntaxKind.VariableDeclaration]: (node, context) => {
-        if (isTupleHelperVariableDeclaration(context, node)) {
-            return transformTupleHelperVariableDeclaration(context, node);
-        }
-        return context.superTransformNode(node);
     },
     [ts.SyntaxKind.ObjectLiteralExpression]: (node, context) => {
         node.properties.filter(ts.isShorthandPropertyAssignment).forEach(element => {
@@ -230,11 +206,5 @@ export const tupleVisitors: Visitors = {
             }
         });
         return context.superTransformExpression(node);
-    },
-    [ts.SyntaxKind.ExpressionStatement]: (node, context) => {
-        if (isTupleHelperDestructuringAssignmentStatement(context, node)) {
-            return transformTupleHelperDestructuringAssignmentStatement(context, node);
-        }
-        return context.superTransformStatements(node);
     },
 };

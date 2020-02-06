@@ -9,7 +9,7 @@ test.each<[string, any]>([
     ["const _ = null, [a] = tuple(1);", 1],
     ["let a; for (const [a] = tuple(1, 2); false; 1) {}", undefined],
     ["let a; for ([a] = tuple(1, 2); false; 1) {}", 1],
-])("valid tuple function assignment (%s)", (statement, result) => {
+])("valid tuple call and assign (%s)", (statement, result) => {
     util.testModule`
         import { tuple } from "typescript-to-lua/helpers";
         ${statement}
@@ -28,7 +28,7 @@ test.each([
     "const a = tuple();",
     "const {} = tuple();",
     "([a] = tuple(1)) => {}",
-])("invalid tuple function assignment (%s)", statement => {
+])("invalid tuple call (%s)", statement => {
     util.testModule`
         import { tuple } from "typescript-to-lua/helpers";
         ${statement}
@@ -38,7 +38,7 @@ test.each([
 test.each<[string, any]>([
     ["return tuple();", undefined],
     ["return tuple(1);", 1],
-])("valid tuple function return statement (%s)", (statement, result) => {
+])("valid tuple call return statement (%s)", (statement, result) => {
     util.testModule`
         import { tuple } from "typescript-to-lua/helpers";
         export const [a] = (function() {
@@ -49,7 +49,7 @@ test.each<[string, any]>([
         .expectToEqual(result);
 });
 
-test("tuple destructuring assignment side effects", () => {
+test("tuple call with destructuring assignment side effects", () => {
     util.testModule`
         import { tuple } from "typescript-to-lua";
         let a, b;

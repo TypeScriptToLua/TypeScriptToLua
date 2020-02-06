@@ -55,6 +55,16 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
                 return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
             }
 
+            if (filename.includes("typescript-to-lua")) {
+                const filePath = path.resolve(__dirname, "../helpers/tuple.ts");
+                if (libCache[filename]) return libCache[filename];
+                const content = fs.readFileSync(filePath, "utf8");
+
+                libCache[filename] = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, false);
+
+                return libCache[filename];
+            }
+
             if (filename.startsWith("lib.")) {
                 if (libCache[filename]) return libCache[filename];
                 const typeScriptDir = path.dirname(require.resolve("typescript"));

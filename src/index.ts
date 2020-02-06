@@ -8,4 +8,3 @@ export * from "./LuaPrinter";
 export * from "./transformation/context";
 export { TranspileError } from "./transformation/utils/errors";
 export * from "./transpilation";
-export * from "./helpers";

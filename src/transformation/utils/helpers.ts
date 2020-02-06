@@ -7,7 +7,7 @@ export enum HelperKind {
 }
 
 function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
-    const helperDirectory = path.resolve(__dirname, "../../helpers");
+    const helperDirectory = path.resolve(__dirname, "../../../helpers");
     const sourceFileDirectory = path.dirname(path.normalize(sourceFile.fileName));
     return helperDirectory === sourceFileDirectory;
 }

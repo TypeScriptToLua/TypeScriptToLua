@@ -11,7 +11,7 @@ test.each<[string, any]>([
     ["let a; for ([a] = tuple(1, 2); false; 1) {}", 1],
 ])("valid tuple function assignment (%s)", (statement, result) => {
     util.testModule`
-        import { tuple } from "typescript-to-lua";
+        import { tuple } from "typescript-to-lua/helpers";
         ${statement}
         // @ts-ignore
         return a;
@@ -29,7 +29,7 @@ test.each([
     "([a] = tuple(1)) => {}",
 ])("invalid tuple function assignment (%s)", statement => {
     util.testModule`
-        import { tuple } from "typescript-to-lua";
+        import { tuple } from "typescript-to-lua/helpers";
         ${statement}
     `.expectToHaveDiagnosticOfError(InvalidTupleFunctionUse(util.nodeStub));
 });
@@ -39,7 +39,7 @@ test.each<[string, any]>([
     ["return tuple(1);", 1],
 ])("valid tuple function return statement (%s)", (statement, result) => {
     util.testModule`
-      import { tuple } from "typescript-to-lua";
+      import { tuple } from "typescript-to-lua/helpers";
       const [a] = (function() {
         ${statement}
       })();

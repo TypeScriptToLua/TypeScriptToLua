@@ -6,6 +6,7 @@ test.each<[string, any]>([
     ["const [a] = tuple();", undefined],
     ["const [a] = tuple(1);", 1],
     ["const ar = [1]; const [a] = tuple(...ar);", 1],
+    ["const _ = null, [a] = tuple(1);", 1],
 ])("valid tuple function assignment (%s)", (statement, result) => {
     util.testModule`
         import { tuple } from "typescript-to-lua";

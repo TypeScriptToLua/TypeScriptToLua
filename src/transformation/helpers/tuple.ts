@@ -11,21 +11,21 @@ import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/expo
 
 function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isTupleHelperDeclaration) ? true : false;
+    return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
 }
 
 function isTupleReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(expression);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isTupleHelperDeclaration) ? true : false;
-}
-
-function isTupleHelperDeclaration(declaration: ts.Declaration): boolean {
-    return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Tuple;
+    return Boolean(signature?.getReturnType().aliasSymbol?.declarations?.some(isTupleHelperDeclaration));
 }
 
 function isTupleHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return type.symbol?.declarations?.some(isTupleHelperDeclaration) ? true : false;
+    return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
+}
+
+function isTupleHelperDeclaration(declaration: ts.Declaration): boolean {
+    return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Tuple;
 }
 
 function transformTupleHelperReturnStatement(

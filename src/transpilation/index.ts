@@ -56,7 +56,7 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
             }
 
             if (filename.includes("typescript-to-lua")) {
-                const filePath = path.resolve(__dirname, "../../helpers/tuple.ts");
+                const filePath = path.resolve(__dirname, "../../helpers/multi.ts");
                 if (libCache[filename]) return libCache[filename];
                 const content = fs.readFileSync(filePath, "utf8");
 

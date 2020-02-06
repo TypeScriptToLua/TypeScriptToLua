@@ -145,4 +145,5 @@ export const InvalidForRangeCall = (node: ts.Node, message: string) =>
 export const UnsupportedVarDeclaration = (node: ts.Node) =>
     new TranspileError("`var` declarations are not supported. Use `let` or `const` instead.", node);
 
-export const InvalidTupleFunctionUse = (node: ts.Node) => new TranspileError("Invalid tuple() function use.", node);
+export const InvalidMultiHelperFunctionUse = (node: ts.Node) =>
+    new TranspileError("Invalid multi() function use.", node);

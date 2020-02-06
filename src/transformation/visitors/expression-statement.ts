@@ -5,10 +5,10 @@ import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformDeleteExpressionStatement } from "./delete";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
-import { transformTupleHelperDestructuringAssignmentStatement } from "../helpers/tuple";
+import { transformMultiHelperDestructuringAssignmentStatement } from "../helpers/multi";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
-    const tupleResult = transformTupleHelperDestructuringAssignmentStatement(context, node);
+    const tupleResult = transformMultiHelperDestructuringAssignmentStatement(context, node);
     if (tupleResult) {
         return tupleResult;
     }

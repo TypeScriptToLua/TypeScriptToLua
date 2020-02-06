@@ -5,31 +5,31 @@ import { TransformationContext } from "../context";
 import { transformAssignmentLeftHandSideExpression } from "../visitors/binary-expression/assignments";
 import { transformIdentifier } from "../visitors/identifier";
 import { transformArguments } from "../visitors/call";
-import { InvalidTupleFunctionUse, UnsupportedKind } from "../utils/errors";
+import { InvalidMultiHelperFunctionUse, UnsupportedKind } from "../utils/errors";
 import { isSymbolAlias } from "../utils/symbols";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
 
-export function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
+function isMultiHelperDeclaration(declaration: ts.Declaration): boolean {
+    return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Multi;
+}
+
+function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
+    return Boolean(type.symbol?.declarations?.some(isMultiHelperDeclaration));
 }
 
-export function isTupleReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
+function isMultiReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(expression);
-    return Boolean(signature?.getReturnType().aliasSymbol?.declarations?.some(isTupleHelperDeclaration));
+    return Boolean(signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration));
 }
 
-export function isTupleHelperNode(context: TransformationContext, node: ts.Node): boolean {
+export function isMultiHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
+    return Boolean(type.symbol?.declarations?.some(isMultiHelperDeclaration));
 }
 
-export function isTupleHelperDeclaration(declaration: ts.Declaration): boolean {
-    return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Tuple;
-}
-
-export function transformTupleHelperReturnStatement(
+export function transformMultiHelperReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
 ): lua.Statement | undefined {
@@ -41,7 +41,7 @@ export function transformTupleHelperReturnStatement(
         return undefined;
     }
 
-    if (!isTupleHelperCallSignature(context, statement.expression)) {
+    if (!isMultiHelperCallSignature(context, statement.expression)) {
         return undefined;
     }
 
@@ -49,18 +49,18 @@ export function transformTupleHelperReturnStatement(
     return lua.createReturnStatement(expressions, statement);
 }
 
-export function transformTupleCallArguments(
+function transformMultiHelperCallArguments(
     context: TransformationContext,
     expression: ts.CallExpression
 ): lua.Expression[] | lua.Expression {
-    return isTupleHelperCallSignature(context, expression)
+    return isMultiHelperCallSignature(context, expression)
         ? expression.arguments.length > 0
             ? expression.arguments.map(e => context.transformExpression(e))
             : lua.createNilLiteral(expression)
         : context.transformExpression(expression);
 }
 
-export function transformTupleHelperVariableDeclaration(
+export function transformMultiHelperVariableDeclaration(
     context: TransformationContext,
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
@@ -72,16 +72,16 @@ export function transformTupleHelperVariableDeclaration(
         return undefined;
     }
 
-    if (!isTupleReturningCallExpression(context, declaration.initializer)) {
+    if (!isMultiReturningCallExpression(context, declaration.initializer)) {
         return undefined;
     }
 
     if (!ts.isArrayBindingPattern(declaration.name)) {
-        throw InvalidTupleFunctionUse(declaration.name);
+        throw InvalidMultiHelperFunctionUse(declaration.name);
     }
 
     if (declaration.name.elements.length < 1) {
-        throw InvalidTupleFunctionUse(declaration.name);
+        throw InvalidMultiHelperFunctionUse(declaration.name);
     }
 
     const leftIdentifiers = declaration.name.elements.map(element => {
@@ -95,11 +95,11 @@ export function transformTupleHelperVariableDeclaration(
 
         throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
     });
-    const rightExpressions = transformTupleCallArguments(context, declaration.initializer);
+    const rightExpressions = transformMultiHelperCallArguments(context, declaration.initializer);
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
 
-export function transformTupleHelperDestructuringAssignmentStatement(
+export function transformMultiHelperDestructuringAssignmentStatement(
     context: TransformationContext,
     statement: ts.ExpressionStatement
 ): lua.Statement[] | undefined {
@@ -115,20 +115,20 @@ export function transformTupleHelperDestructuringAssignmentStatement(
         return undefined;
     }
 
-    if (!isTupleReturningCallExpression(context, statement.expression.right)) {
+    if (!isMultiReturningCallExpression(context, statement.expression.right)) {
         return undefined;
     }
 
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
-        throw InvalidTupleFunctionUse(statement.expression.left);
+        throw InvalidMultiHelperFunctionUse(statement.expression.left);
     }
 
     if (statement.expression.left.elements.length < 1) {
-        throw InvalidTupleFunctionUse(statement.expression.left);
+        throw InvalidMultiHelperFunctionUse(statement.expression.left);
     }
 
     if (statement.expression.left.elements.some(ts.isBinaryExpression)) {
-        throw InvalidTupleFunctionUse(statement.expression.left);
+        throw InvalidMultiHelperFunctionUse(statement.expression.left);
     }
 
     const transformLeft = (expression: ts.Expression): lua.AssignmentLeftHandSideExpression => {
@@ -141,7 +141,7 @@ export function transformTupleHelperDestructuringAssignmentStatement(
 
     const leftIdentifiers = statement.expression.left.elements.map(transformLeft);
 
-    const rightExpressions = transformTupleCallArguments(context, statement.expression.right);
+    const rightExpressions = transformMultiHelperCallArguments(context, statement.expression.right);
 
     const trailingStatements = statement.expression.left.elements.flatMap(expression => {
         const symbol = context.checker.getSymbolAtLocation(expression);
@@ -155,7 +155,7 @@ export function transformTupleHelperDestructuringAssignmentStatement(
     return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }
 
-export function validateTupleHelperFunctionNotAssignedWithin(
+export function validateMultiHelperFunctionNotAssignedWithin(
     context: TransformationContext,
     node: ts.ObjectLiteralExpression
 ): void {
@@ -163,8 +163,8 @@ export function validateTupleHelperFunctionNotAssignedWithin(
         const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
         if (valueSymbol && isSymbolAlias(valueSymbol)) {
             const declaration = context.checker.getAliasedSymbol(valueSymbol).valueDeclaration;
-            if (declaration && isTupleHelperDeclaration(declaration)) {
-                throw InvalidTupleFunctionUse(element);
+            if (declaration && isMultiHelperDeclaration(declaration)) {
+                throw InvalidMultiHelperFunctionUse(element);
             }
         }
     });

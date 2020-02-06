@@ -10,7 +10,7 @@ import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../u
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
-import { transformTupleHelperVariableDeclaration } from "../helpers/tuple";
+import { transformMultiHelperVariableDeclaration } from "../helpers/multi";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -208,7 +208,7 @@ export function transformBindingVariableDeclaration(
 }
 
 export const transformVariableDeclaration: FunctionVisitor<ts.VariableDeclaration> = (statement, context) => {
-    const result = transformTupleHelperVariableDeclaration(context, statement);
+    const result = transformMultiHelperVariableDeclaration(context, statement);
     if (result) {
         return result;
     }

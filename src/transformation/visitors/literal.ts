@@ -14,7 +14,7 @@ import {
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
-import { validateTupleHelperFunctionNotAssignedWithin } from "../helpers/tuple";
+import { validateMultiHelperFunctionNotAssignedWithin } from "../helpers/multi";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -62,7 +62,7 @@ export function createShorthandIdentifier(
 }
 
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
-    validateTupleHelperFunctionNotAssignedWithin(context, expression);
+    validateMultiHelperFunctionNotAssignedWithin(context, expression);
 
     let properties: lua.TableFieldExpression[] = [];
     const tableExpressions: lua.Expression[] = [];

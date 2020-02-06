@@ -12,7 +12,7 @@ import { peekScope } from "../../utils/scope";
 import { isHelpersImport } from "../../utils/helpers";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { isTupleHelperNode } from "../../helpers/tuple";
+import { isMultiHelperNode } from "../../helpers/multi";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
     relativePath[0] !== "." && options.baseUrl
@@ -86,7 +86,7 @@ function transformImportSpecifier(
     importSpecifier: ts.ImportSpecifier,
     moduleTableName: lua.Identifier
 ): lua.VariableDeclarationStatement | undefined {
-    if (isTupleHelperNode(context, importSpecifier)) {
+    if (isMultiHelperNode(context, importSpecifier)) {
         return;
     }
 

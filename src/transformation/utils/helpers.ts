@@ -3,7 +3,7 @@ import * as path from "path";
 import { TransformationContext } from "../context";
 
 export enum HelperKind {
-    Tuple = "tuple",
+    Multi = "multi",
 }
 
 function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
@@ -16,8 +16,8 @@ export function getHelperFileKind(sourceFile: ts.SourceFile): HelperKind | undef
     if (isSourceFileFromHelpers(sourceFile)) {
         const baseFileName = path.basename(sourceFile.fileName).replace(/(\.d)?\.ts$/g, "");
         switch (baseFileName) {
-            case "tuple":
-                return HelperKind.Tuple;
+            case "multi":
+                return HelperKind.Multi;
             default:
                 throw new Error(`Unknown Helper Kind ${baseFileName}`);
         }

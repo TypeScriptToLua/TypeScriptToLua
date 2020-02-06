@@ -3,16 +3,16 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { InvalidForRangeCall, InvalidTupleFunctionUse } from "../utils/errors";
+import { InvalidForRangeCall, InvalidMultiHelperFunctionUse } from "../utils/errors";
 import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
-import { isTupleHelperNode } from "../helpers/tuple";
+import { isMultiHelperNode } from "../helpers/multi";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
-    if (isTupleHelperNode(context, identifier)) {
-        throw InvalidTupleFunctionUse(identifier);
+    if (isMultiHelperNode(context, identifier)) {
+        throw InvalidMultiHelperFunctionUse(identifier);
     }
 
     if (isForRangeType(context, identifier)) {

@@ -26,7 +26,7 @@ test.each([
     "const [] = tuple();",
     "const a = tuple();",
     "const {} = tuple();",
-    "let a; ([a] = tuple(1)) => {}",
+    "([a] = tuple(1)) => {}",
 ])("invalid tuple function assignment (%s)", statement => {
     util.testModule`
         import { tuple } from "typescript-to-lua";

@@ -6,6 +6,7 @@ import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
+import { transformTupleHelperReturnStatement } from "../helpers/tuple";
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
     // Bubble up explicit return flag and check if we're inside a try/catch block
@@ -18,6 +19,11 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         }
 
         insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
+    }
+
+    const result = transformTupleHelperReturnStatement(context, statement);
+    if (result) {
+        return result;
     }
 
     let results: lua.Expression[];

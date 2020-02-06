@@ -6,7 +6,6 @@ import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./co
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
 import { standardVisitors } from "./visitors";
-import { tupleVisitors } from "./helpers/tuple";
 
 const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),
@@ -20,7 +19,7 @@ const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
 
 export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     const visitorMap: VisitorMap = new Map();
-    for (const visitors of [standardVisitors, tupleVisitors, ...customVisitors]) {
+    for (const visitors of [standardVisitors, ...customVisitors]) {
         const priority = visitors === standardVisitors ? -Infinity : 0;
         for (const [syntaxKindKey, visitor] of Object.entries(visitors)) {
             if (!visitor) continue;

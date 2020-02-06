@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import * as utils from "../utils/helpers";
-import { TransformationContext, Visitors } from "../context";
+import { TransformationContext } from "../context";
 import { transformAssignmentLeftHandSideExpression } from "../visitors/binary-expression/assignments";
 import { transformIdentifier } from "../visitors/identifier";
 import { transformArguments } from "../visitors/call";
@@ -10,26 +10,26 @@ import { isSymbolAlias } from "../utils/symbols";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
 
-function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
+export function isTupleHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
     return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
 }
 
-function isTupleReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
+export function isTupleReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(expression);
     return Boolean(signature?.getReturnType().aliasSymbol?.declarations?.some(isTupleHelperDeclaration));
 }
 
-function isTupleHelperNode(context: TransformationContext, node: ts.Node): boolean {
+export function isTupleHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
     return Boolean(type.symbol?.declarations?.some(isTupleHelperDeclaration));
 }
 
-function isTupleHelperDeclaration(declaration: ts.Declaration): boolean {
+export function isTupleHelperDeclaration(declaration: ts.Declaration): boolean {
     return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Tuple;
 }
 
-function transformTupleHelperReturnStatement(
+export function transformTupleHelperReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
 ): lua.Statement | undefined {
@@ -49,7 +49,7 @@ function transformTupleHelperReturnStatement(
     return lua.createReturnStatement(expressions, statement);
 }
 
-function transformTupleCallArguments(
+export function transformTupleCallArguments(
     context: TransformationContext,
     expression: ts.CallExpression
 ): lua.Expression[] | lua.Expression {
@@ -60,7 +60,7 @@ function transformTupleCallArguments(
         : context.transformExpression(expression);
 }
 
-function transformTupleHelperVariableDeclaration(
+export function transformTupleHelperVariableDeclaration(
     context: TransformationContext,
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
@@ -99,15 +99,7 @@ function transformTupleHelperVariableDeclaration(
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
 
-function isSimpleLeftHandSideDestructuringExpression(expression: ts.Expression): boolean {
-    if (ts.isBinaryExpression(expression)) {
-        return false;
-    }
-
-    return true;
-}
-
-function transformTupleHelperDestructuringAssignmentStatement(
+export function transformTupleHelperDestructuringAssignmentStatement(
     context: TransformationContext,
     statement: ts.ExpressionStatement
 ): lua.Statement[] | undefined {
@@ -135,7 +127,7 @@ function transformTupleHelperDestructuringAssignmentStatement(
         throw InvalidTupleFunctionUse(statement.expression.left);
     }
 
-    if (!statement.expression.left.elements.every(isSimpleLeftHandSideDestructuringExpression)) {
+    if (statement.expression.left.elements.some(ts.isBinaryExpression)) {
         throw InvalidTupleFunctionUse(statement.expression.left);
     }
 
@@ -163,41 +155,17 @@ function transformTupleHelperDestructuringAssignmentStatement(
     return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }
 
-export const tupleVisitors: Visitors = {
-    [ts.SyntaxKind.ImportSpecifier]: (node, context) => {
-        if (isTupleHelperNode(context, node)) {
-            return;
-        }
-        return context.superTransformNode(node);
-    },
-    [ts.SyntaxKind.ReturnStatement]: (node, context) => {
-        const result = transformTupleHelperReturnStatement(context, node);
-        return result ? result : context.superTransformStatements(node);
-    },
-    [ts.SyntaxKind.VariableDeclaration]: (node, context) => {
-        const result = transformTupleHelperVariableDeclaration(context, node);
-        return result ? result : context.superTransformNode(node);
-    },
-    [ts.SyntaxKind.ExpressionStatement]: (node, context) => {
-        const result = transformTupleHelperDestructuringAssignmentStatement(context, node);
-        return result ? result : context.superTransformStatements(node);
-    },
-    [ts.SyntaxKind.Identifier]: (node, context) => {
-        if (isTupleHelperNode(context, node)) {
-            throw InvalidTupleFunctionUse(node);
-        }
-        return context.superTransformExpression(node);
-    },
-    [ts.SyntaxKind.ObjectLiteralExpression]: (node, context) => {
-        node.properties.filter(ts.isShorthandPropertyAssignment).forEach(element => {
-            const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-            if (valueSymbol && isSymbolAlias(valueSymbol)) {
-                const declaration = context.checker.getAliasedSymbol(valueSymbol).valueDeclaration;
-                if (declaration && isTupleHelperDeclaration(declaration)) {
-                    throw InvalidTupleFunctionUse(element);
-                }
+export function validateTupleHelperFunctionNotAssignedWithin(
+    context: TransformationContext,
+    node: ts.ObjectLiteralExpression
+): void {
+    node.properties.filter(ts.isShorthandPropertyAssignment).forEach(element => {
+        const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
+        if (valueSymbol && isSymbolAlias(valueSymbol)) {
+            const declaration = context.checker.getAliasedSymbol(valueSymbol).valueDeclaration;
+            if (declaration && isTupleHelperDeclaration(declaration)) {
+                throw InvalidTupleFunctionUse(element);
             }
-        });
-        return context.superTransformExpression(node);
-    },
-};
+        }
+    });
+}

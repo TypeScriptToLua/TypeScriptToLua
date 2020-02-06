@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { formatPathToLuaPath } from "../../../utils";
+import { formatPathToLuaPath, isNonNull } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
@@ -12,6 +12,7 @@ import { peekScope } from "../../utils/scope";
 import { isHelpersImport } from "../../utils/helpers";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
+import { isTupleHelperNode } from "../../helpers/tuple";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
     relativePath[0] !== "." && options.baseUrl
@@ -84,7 +85,11 @@ function transformImportSpecifier(
     context: TransformationContext,
     importSpecifier: ts.ImportSpecifier,
     moduleTableName: lua.Identifier
-): lua.VariableDeclarationStatement {
+): lua.VariableDeclarationStatement | undefined {
+    if (isTupleHelperNode(context, importSpecifier)) {
+        return;
+    }
+
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
     const propertyName = transformPropertyName(
         context,
@@ -172,7 +177,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
         const assignmentStatements = statement.importClause.namedBindings.elements
             .filter(importSpecifier => shouldBeImported(context, importSpecifier))
-            .map(importSpecifier => transformImportSpecifier(context, importSpecifier, importUniqueName));
+            .map(importSpecifier => transformImportSpecifier(context, importSpecifier, importUniqueName))
+            .filter(isNonNull);
 
         if (assignmentStatements.length > 0) {
             usingRequireStatement = true;

@@ -144,16 +144,14 @@ function transformTupleHelperDestructuringAssignmentStatement(
 
     const rightExpressions = transformTupleCallArguments(context, statement.expression.right);
 
-    const trailingStatements = statement.expression.left.elements
-        .map(expression => {
-            const symbol = context.checker.getSymbolAtLocation(expression);
-            const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
-            return dependentSymbols.map(symbol => {
-                const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
-                return lua.createAssignmentStatement(identifierToAssign, transformLeft(expression));
-            });
-        })
-        .flat();
+    const trailingStatements = statement.expression.left.elements.flatMap(expression => {
+        const symbol = context.checker.getSymbolAtLocation(expression);
+        const dependentSymbols = symbol ? getDependenciesOfSymbol(context, symbol) : [];
+        return dependentSymbols.map(symbol => {
+            const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
+            return lua.createAssignmentStatement(identifierToAssign, transformLeft(expression));
+        });
+    });
 
     return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }

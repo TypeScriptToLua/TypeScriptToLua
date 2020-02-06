@@ -9,12 +9,16 @@ import {
     UnsupportedNonDestructuringLuaIterator,
     UnsupportedObjectDestructuringInForOf,
 } from "../../utils/errors";
-import { createUnpackCall } from "../../utils/lua-ast";
+import { createUnpackCall, unwrapVisitorResult } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
-import { transformBindingPattern, transformArrayBindingElement } from "../variable-declaration";
+import {
+    transformBindingPattern,
+    transformArrayBindingElement,
+    transformVariableDeclaration,
+} from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 function transformForOfInitializer(
@@ -36,7 +40,9 @@ function transformForOfInitializer(
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }
 
-        const variableStatements = context.transformNode(initializer.declarations[0]) as lua.Statement[];
+        const variableStatements = unwrapVisitorResult(
+            transformVariableDeclaration(initializer.declarations[0], context)
+        );
         if (variableStatements[0]) {
             // we can safely assume that for vars are not exported and therefore declarationstatenents
             return [

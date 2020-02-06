@@ -233,5 +233,7 @@ export function checkVariableDeclarationList(node: ts.VariableDeclarationList): 
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
     checkVariableDeclarationList(node.declarationList);
-    return node.declarationList.declarations.flatMap(declaration => context.transformNode(declaration) as lua.Statement[]);
+    return node.declarationList.declarations.flatMap(
+        declaration => context.transformNode(declaration) as lua.Statement[]
+    );
 };

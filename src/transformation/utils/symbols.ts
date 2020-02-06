@@ -59,6 +59,6 @@ export function getIdentifierSymbolId(
     }
 }
 
-export function resolveSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
-    return symbol?.declarations.find(d => d);
+export function isSymbolAlias(symbol: ts.Symbol): boolean {
+    return (symbol.flags & ts.SymbolFlags.Alias) !== 0;
 }

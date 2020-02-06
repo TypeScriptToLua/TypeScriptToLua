@@ -6,7 +6,7 @@ import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./co
 import { TranspileError } from "./utils/errors";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
 import { standardVisitors } from "./visitors";
-import { tupleVisitors } from './helpers/tuple';
+import { tupleVisitors } from "./helpers/tuple";
 
 const transpileErrorDiagnostic = (error: TranspileError): ts.Diagnostic => ({
     file: error.node.getSourceFile(),

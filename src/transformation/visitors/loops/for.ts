@@ -11,7 +11,9 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
         if (ts.isVariableDeclarationList(statement.initializer)) {
             checkVariableDeclarationList(statement.initializer);
             // local initializer = value
-            result.push(...statement.initializer.declarations.flatMap(d => context.transformNode(d) as lua.Statement[]));
+            result.push(
+                ...statement.initializer.declarations.flatMap(d => context.transformNode(d) as lua.Statement[])
+            );
         } else {
             result.push(...context.transformStatements(ts.createExpressionStatement(statement.initializer)));
         }

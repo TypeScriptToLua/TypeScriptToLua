@@ -207,7 +207,11 @@ export function transformBindingVariableDeclaration(
     return statements;
 }
 
-export const transformVariableDeclaration: FunctionVisitor<ts.VariableDeclaration> = (statement, context) => {
+// TODO: FunctionVisitor<ts.VariableDeclaration>
+export function transformVariableDeclaration(
+    context: TransformationContext,
+    statement: ts.VariableDeclaration
+): lua.Statement[] {
     const result = transformMultiHelperVariableDeclaration(context, statement);
     if (result) {
         return result;
@@ -229,7 +233,7 @@ export const transformVariableDeclaration: FunctionVisitor<ts.VariableDeclaratio
     } else {
         return assertNever(statement.name);
     }
-};
+}
 
 export function checkVariableDeclarationList(node: ts.VariableDeclarationList): void {
     if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
@@ -239,7 +243,5 @@ export function checkVariableDeclarationList(node: ts.VariableDeclarationList): 
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
     checkVariableDeclarationList(node.declarationList);
-    return node.declarationList.declarations.flatMap(
-        declaration => context.transformNode(declaration) as lua.Statement[]
-    );
+    return node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
 };

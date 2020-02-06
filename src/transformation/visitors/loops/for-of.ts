@@ -9,7 +9,7 @@ import {
     UnsupportedNonDestructuringLuaIterator,
     UnsupportedObjectDestructuringInForOf,
 } from "../../utils/errors";
-import { createUnpackCall, unwrapVisitorResult } from "../../utils/lua-ast";
+import { createUnpackCall } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
@@ -40,9 +40,7 @@ function transformForOfInitializer(
             throw UnsupportedObjectDestructuringInForOf(initializer);
         }
 
-        const variableStatements = unwrapVisitorResult(
-            transformVariableDeclaration(initializer.declarations[0], context)
-        );
+        const variableStatements = transformVariableDeclaration(context, initializer.declarations[0]);
         if (variableStatements[0]) {
             // we can safely assume that for vars are not exported and therefore declarationstatenents
             return [

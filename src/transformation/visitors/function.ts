@@ -53,14 +53,9 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
     return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarArgType(context, r));
 }
 
-export function transformFunctionBodyStatements(
-    context: TransformationContext,
-    body: ts.Block
-): [lua.Statement[], Scope] {
-    pushScope(context, ScopeType.Function);
+export function transformFunctionBodyStatements(context: TransformationContext, body: ts.Block): lua.Statement[] {
     const bodyStatements = performHoisting(context, context.transformStatements(body.statements));
-    const scope = popScope(context);
-    return [bodyStatements, scope];
+    return bodyStatements;
 }
 
 export function transformFunctionBodyHeader(
@@ -116,8 +111,10 @@ export function transformFunctionBody(
     body: ts.Block,
     spreadIdentifier?: lua.Identifier
 ): [lua.Statement[], Scope] {
-    const [bodyStatements, scope] = transformFunctionBodyStatements(context, body);
+    const scope = pushScope(context, ScopeType.Function);
+    const bodyStatements = transformFunctionBodyStatements(context, body);
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
+    popScope(context);
     return [[...headerStatements, ...bodyStatements], scope];
 }
 
@@ -270,7 +267,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     }
 
     // Remember symbols referenced in this function for hoisting later
-    if (!context.options.noHoisting && name.symbolId !== undefined) {
+    if (name.symbolId !== undefined) {
         const scope = peekScope(context);
         if (!scope.functionDefinitions) {
             scope.functionDefinitions = new Map();

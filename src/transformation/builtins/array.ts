@@ -3,15 +3,13 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { UnsupportedProperty } from "../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { isExplicitArrayType } from "../utils/typescript";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression | undefined {
+): lua.CallExpression {
     const expression = node.expression;
-    const ownerType = context.checker.getTypeAtLocation(expression.expression);
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
     const caller = context.transformExpression(expression.expression);
@@ -42,6 +40,8 @@ export function transformArrayPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFind, node, caller, ...params);
         case "findIndex":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFindIndex, node, caller, ...params);
+        case "includes":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayIncludes, node, caller, ...params);
         case "indexOf":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayIndexOf, node, caller, ...params);
         case "map":
@@ -79,9 +79,7 @@ export function transformArrayPrototypeCall(
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
-            if (isExplicitArrayType(context, ownerType)) {
-                throw UnsupportedProperty("array", expressionName, node);
-            }
+            throw UnsupportedProperty("array", expressionName, node);
     }
 }
 
@@ -91,10 +89,7 @@ export function transformArrayProperty(
 ): lua.UnaryExpression | undefined {
     switch (node.name.text) {
         case "length":
-            let expression = context.transformExpression(node.expression);
-            if (lua.isTableExpression(expression)) {
-                expression = lua.createParenthesizedExpression(expression);
-            }
+            const expression = context.transformExpression(node.expression);
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             return undefined;

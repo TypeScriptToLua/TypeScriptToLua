@@ -7,174 +7,156 @@ import {
 } from "../../src/transformation/utils/errors";
 import * as util from "../util";
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("while (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
+test("while", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
         let i = 0;
         while (i < arrTest.length) {
             arrTest[i] = arrTest[i] + 1;
             i++;
         }
-        return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])("while with continue (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            while (i < arrTest.length) {
-                if (i % 2 == 0) {
-                    i++;
-                    continue;
-                }
-                let j = 2;
-                while (j > 0) {
-                    if (j == 2) {
-                        j--
-                        continue;
-                    }
-                    arrTest[i] = j;
-                    j--;
-                }
-
+test("while with continue", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3, 4];
+        let i = 0;
+        while (i < arrTest.length) {
+            if (i % 2 == 0) {
                 i++;
+                continue;
             }
-            return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
-});
-
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 1, 2, 1, 4] }])("dowhile with continue (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            do {
-                if (i % 2 == 0) {
-                    i++;
+            let j = 2;
+            while (j > 0) {
+                if (j == 2) {
+                    j--
                     continue;
                 }
-                let j = 2;
-                do {
-                    if (j == 2) {
-                        j--
-                        continue;
-                    }
-                    arrTest[i] = j;
-                    j--;
-                } while (j > 0)
+                arrTest[i] = j;
+                j--;
+            }
 
-                i++;
-            } while (i < arrTest.length)
-            return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+            i++;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
+test("dowhile with continue", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3, 4];
+        let i = 0;
+        do {
+            if (i % 2 == 0) {
+                i++;
+                continue;
+            }
+            let j = 2;
+            do {
+                if (j == 2) {
+                    j--
+                    continue;
+                }
+                arrTest[i] = j;
+                j--;
+            } while (j > 0)
+
+            i++;
+        } while (i < arrTest.length)
+        return arrTest;
+    `.expectToMatchJsResult();
+});
+
+test("for", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
         for (let i = 0; i < arrTest.length; ++i) {
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`
-    );
-    expect(result).toBe(JSON.stringify(expected));
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("for with expression (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i: number;
-            for (i = 0 * 1; i < arrTest.length; ++i) {
-                arrTest[i] = arrTest[i] + 1;
+test("for with expression", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
+        let i: number;
+        for (i = 0 * 1; i < arrTest.length; ++i) {
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
+});
+
+test("for with continue", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3, 4];
+        for (let i = 0; i < arrTest.length; i++) {
+            if (i % 2 == 0) {
+                continue;
             }
-            return JSONStringify(arrTest);`
-    );
-    expect(result).toBe(JSON.stringify(expected));
-});
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])("for with continue (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            for (let i = 0; i < arrTest.length; i++) {
-                if (i % 2 == 0) {
+            for (let j = 0; j < 2; j++) {
+                if (j == 1) {
                     continue;
                 }
-
-                for (let j = 0; j < 2; j++) {
-                    if (j == 1) {
-                        continue;
-                    }
-                    arrTest[i] = j;
-                }
+                arrTest[i] = j;
             }
-            return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forMirror (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            for (let i = 0; arrTest.length > i; i++) {
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+test("forMirror", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
+        for (let i = 0; arrTest.length > i; i++) {
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [0, 1, 2, 3] }])("forBreak (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
+test("forBreak", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
         for (let i = 0; i < arrTest.length; ++i) {
             break;
             arrTest[i] = arrTest[i] + 1;
         }
-        return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoDeclarations (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            for (; i < arrTest.length; ++i) {
-                arrTest[i] = arrTest[i] + 1;
+test("forNoDeclarations", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
+        let i = 0;
+        for (; i < arrTest.length; ++i) {
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
+});
+
+test("forNoCondition", () => {
+    util.testFunction`
+        let arrTest = [0, 1, 2, 3];
+        let i = 0;
+        for (;; ++i) {
+            if (i >= arrTest.length) {
+                break;
             }
-            return JSONStringify(arrTest);`
-    );
 
-    expect(result).toBe(JSON.stringify(expected));
+            arrTest[i] = arrTest[i] + 1;
+        }
+        return arrTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3], expected: [1, 2, 3, 4] }])("forNoCondition (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let arrTest = ${JSON.stringify(inp)};
-            let i = 0;
-            for (;; ++i) {
-                if (i >= arrTest.length) {
-                    break;
-                }
-
-                arrTest[i] = arrTest[i] + 1;
-            }
-            return JSONStringify(arrTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
-});
-
-test("forNoPostExpression (%p)", () => {
+test("forNoPostExpression", () => {
     util.testFunction`
         let arrTest = [0, 1, 2, 3];
         let i = 0;
@@ -202,7 +184,7 @@ test.each([
     { inp: [0, 1, 2, 3], header: "let i = arrTest.length - 1; i > 0; i -= 2" },
 ])("forheader (%p)", ({ inp, header }) => {
     util.testFunction`
-        let arrTest = ${JSON.stringify(inp)};
+        let arrTest = ${util.formatCode(inp)};
         for (${header}) {
             arrTest[i] = arrTest[i] + 1;
         }
@@ -287,92 +269,78 @@ test("Tuple loop", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof existing variable (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let objTest = ${JSON.stringify(inp)};
-            let arrResultTest = [];
-            let value: number;
-            for (value of objTest) {
-                arrResultTest.push(value + 1)
-            }
-            return JSONStringify(arrResultTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+test("forof existing variable", () => {
+    util.testFunction`
+        let objTest = [0, 1, 2];
+        let arrResultTest = [];
+        let value: number;
+        for (value of objTest) {
+            arrResultTest.push(value + 1)
+        }
+        return arrResultTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([
-    {
-        inp: [
-            [1, 2],
-            [2, 3],
-            [3, 4],
-        ],
-        expected: [3, 5, 7],
-    },
-])("forof destructing (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let objTest = ${JSON.stringify(inp)};
-            let arrResultTest = [];
-            for (let [a,b] of objTest) {
-                arrResultTest.push(a + b)
-            }
-            return JSONStringify(arrResultTest);`
-    );
+test("forof destructing", () => {
+    const input = [
+        [1, 2],
+        [2, 3],
+        [3, 4],
+    ];
 
-    expect(result).toBe(JSON.stringify(expected));
+    util.testFunction`
+        let objTest = ${util.formatCode(input)};
+        let arrResultTest = [];
+        for (let [a,b] of objTest) {
+            arrResultTest.push(a + b)
+        }
+        return arrResultTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([
-    {
-        inp: [
-            [1, 2],
-            [2, 3],
-            [3, 4],
-        ],
-        expected: [3, 5, 7],
-    },
-])("forof destructing with existing variables (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(`
-        let objTest = ${JSON.stringify(inp)};
+test("forof destructing with existing variables", () => {
+    const input = [
+        [1, 2],
+        [2, 3],
+        [3, 4],
+    ];
+
+    util.testFunction`
+        let objTest = ${util.formatCode(input)};
         let arrResultTest = [];
         let a: number;
         let b: number;
         for ([a,b] of objTest) {
             arrResultTest.push(a + b)
         }
-        return JSONStringify(arrResultTest);
-    `);
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrResultTest;
+    `.expectToMatchJsResult();
 });
 
-test.each([{ inp: [0, 1, 2, 3, 4], expected: [0, 0, 2, 0, 4] }])("forof with continue (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let testArr = ${JSON.stringify(inp)};
-            let a = 0;
-            for (let i of testArr) {
-                if (i % 2 == 0) {
-                    a++;
+test("forof with continue", () => {
+    util.testFunction`
+        let testArr = [0, 1, 2, 3, 4];
+        let a = 0;
+        for (let i of testArr) {
+            if (i % 2 == 0) {
+                a++;
+                continue;
+            }
+
+            for (let j of [0, 1]) {
+                if (j == 1) {
                     continue;
                 }
-
-                for (let j of [0, 1]) {
-                    if (j == 1) {
-                        continue;
-                    }
-                    testArr[a] = j;
-                }
-                a++;
+                testArr[a] = j;
             }
-            return JSONStringify(testArr);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+            a++;
+        }
+        return testArr;
+    `.expectToMatchJsResult();
 });
 
 test("forof with iterator", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         function iter(): IterableIterator<string> {
             let i = 0;
@@ -386,18 +354,11 @@ test("forof with iterator", () => {
             result += e;
         }
         return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
+    `.expectToMatchJsResult();
 });
 
 test("forof with iterator and existing variable", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         function iter(): IterableIterator<string> {
             let i = 0;
@@ -412,18 +373,11 @@ test("forof with iterator and existing variable", () => {
             result += e;
         }
         return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("abc");
+    `.expectToMatchJsResult();
 });
 
 test("forof destructuring with iterator", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         function iter(): IterableIterator<[string, string]> {
             let i = 0;
@@ -437,18 +391,11 @@ test("forof destructuring with iterator", () => {
             result += a + b;
         }
         return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
+    `.expectToMatchJsResult();
 });
 
 test("forof destructuring with iterator and existing variables", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         function iter(): IterableIterator<[string, string]> {
             let i = 0;
@@ -464,18 +411,11 @@ test("forof destructuring with iterator and existing variables", () => {
             result += a + b;
         }
         return result;
-    `;
-    const compilerOptions = {
-        luaLibImport: tstl.LuaLibImportKind.Require,
-        luaTarget: tstl.LuaTarget.Lua53,
-        target: ts.ScriptTarget.ES2015,
-    };
-    const result = util.transpileAndExecute(code, compilerOptions);
-    expect(result).toBe("0a1b2c");
+    `.expectToMatchJsResult();
 });
 
 test("forof array which modifies length", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         let result = "";
         for (const v of arr) {
@@ -484,9 +424,8 @@ test("forof array which modifies length", () => {
             }
             result += v;
         }
-        return result;`;
-
-    expect(util.transpileAndExecute(code)).toBe("abcd");
+        return result;
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -505,8 +444,18 @@ test.each([
     );
 });
 
+test("forof nested destructuring", () => {
+    util.testFunction`
+        let result = 0;
+        for (const [[x]] of [[[1]]]) {
+            result = x;
+        }
+        return result;
+    `.expectToMatchJsResult();
+});
+
 test("forof with array typed as iterable", () => {
-    const code = `
+    util.testFunction`
         function foo(): Iterable<string> {
             return ["A", "B", "C"];
         }
@@ -515,8 +464,7 @@ test("forof with array typed as iterable", () => {
             result += x;
         }
         return result;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("ABC");
+    `.expectToMatchJsResult();
 });
 
 describe("for...of empty destructuring", () => {
@@ -617,18 +565,17 @@ test.each([
 });
 
 test("do...while", () => {
-    const code = `
+    util.testFunction`
         let result = 0;
         do {
             ++result;
         } while (result < 2);
         return result;
-    `;
-    expect(util.transpileAndExecute(code)).toBe(2);
+    `.expectToMatchJsResult();
 });
 
 test("do...while scoping", () => {
-    const code = `
+    util.testFunction`
         let x = 0;
         let result = 0;
         do {
@@ -636,20 +583,19 @@ test("do...while scoping", () => {
             ++result;
         } while (x === 0 && result < 2);
         return result;
-    `;
-    expect(util.transpileAndExecute(code)).toBe(2);
+    `.expectToMatchJsResult();
 });
 
 test("do...while double-negation", () => {
-    const code = `
+    const builder = util.testFunction`
         let result = 0;
         do {
             ++result;
         } while (!(result >= 2));
         return result;
-    `;
-    expect(util.transpileString(code)).not.toMatch("not");
-    expect(util.transpileAndExecute(code)).toBe(2);
+    `.expectToMatchJsResult();
+
+    expect(builder.getMainLuaCodeChunk()).not.toMatch("not");
 });
 
 test("for...in with pre-defined variable", () => {

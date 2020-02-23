@@ -41,6 +41,16 @@ test.each([
     `.expectToMatchJsResult();
 });
 
+test("in function parameter creates local variables", () => {
+    const builder = util.testModule`
+        function test({ a, b }: any) {}
+    `;
+
+    const code = builder.getMainLuaCodeChunk();
+    expect(code).toContain("local a =");
+    expect(code).toContain("local b =");
+});
+
 test.each(testCases)("in variable declaration (%p)", ({ binding, value }) => {
     util.testFunction`
         let ${allBindings};
@@ -75,6 +85,14 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
         const obj = { prop: false };
         const expressionResult = (${binding} = ${value});
         return { ${allBindings}, obj, expressionResult };
+    `.expectToMatchJsResult();
+});
+
+test.each(["[]", "{}"])("empty binding pattern", bindingPattern => {
+    util.testFunction`
+        let i = 1;
+        const ${bindingPattern} = [i++];
+        return i;
     `.expectToMatchJsResult();
 });
 

@@ -14,7 +14,7 @@ export function getExtendedTypeNode(
         for (const clause of node.heritageClauses) {
             if (clause.token === ts.SyntaxKind.ExtendsKeyword) {
                 const superType = context.checker.getTypeAtLocation(clause.types[0]);
-                const annotations = getTypeAnnotations(context, superType);
+                const annotations = getTypeAnnotations(superType);
                 if (!annotations.has(AnnotationKind.PureAbstract)) {
                     return clause.types[0];
                 }

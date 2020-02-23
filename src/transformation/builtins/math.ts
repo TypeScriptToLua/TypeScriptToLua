@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { LuaTarget } from "../../CompilerOptions";
 import { TransformationContext } from "../context";
 import { UnsupportedProperty } from "../utils/errors";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
@@ -33,12 +34,13 @@ export function transformMathCall(context: TransformationContext, node: Property
 
     const expressionName = expression.name.text;
     switch (expressionName) {
-        // math.tan(x / y)
+        // Lua 5.3: math.atan(y, x)
+        // Otherwise: math.atan2(y, x)
         case "atan2": {
             const math = lua.createIdentifier("math");
-            const atan = lua.createStringLiteral("atan");
-            const div = lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.DivisionOperator);
-            return lua.createCallExpression(lua.createTableIndexExpression(math, atan), [div], node);
+            const methodName = context.options.luaTarget === LuaTarget.Lua53 ? "atan" : expressionName;
+            const method = lua.createStringLiteral(methodName);
+            return lua.createCallExpression(lua.createTableIndexExpression(math, method), params, node);
         }
 
         // (math.log(x) / Math.LNe)
@@ -48,8 +50,7 @@ export function transformMathCall(context: TransformationContext, node: Property
             const log1 = lua.createTableIndexExpression(math, lua.createStringLiteral("log"));
             const logCall1 = lua.createCallExpression(log1, params);
             const e = lua.createNumericLiteral(expressionName === "log10" ? Math.LN10 : Math.LN2);
-            const div = lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator);
-            return lua.createParenthesizedExpression(div, node);
+            return lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator, node);
         }
 
         // math.log(1 + x)

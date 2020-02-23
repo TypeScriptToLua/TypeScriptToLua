@@ -46,11 +46,11 @@ function moduleHasEmittedBody(
     return false;
 }
 
+// Static context -> namespace dictionary keeping the current namespace for each transformation context
 const currentNamespaces = new WeakMap<TransformationContext, ts.ModuleDeclaration | undefined>();
-export const getCurrentNamespace = (context: TransformationContext) => currentNamespaces.get(context);
 
 export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> = (node, context) => {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(node));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(node));
     // If phantom namespace elide the declaration and return the body
     if (annotations.has(AnnotationKind.Phantom) && node.body && ts.isModuleBlock(node.body)) {
         return context.transformStatements(node.body.statements);

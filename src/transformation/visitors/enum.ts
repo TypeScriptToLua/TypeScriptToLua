@@ -25,7 +25,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
     }
 
     const type = context.checker.getTypeAtLocation(node);
-    const membersOnly = getTypeAnnotations(context, type).has(AnnotationKind.CompileMembersOnly);
+    const membersOnly = getTypeAnnotations(type).has(AnnotationKind.CompileMembersOnly);
     const result: lua.Statement[] = [];
 
     if (!membersOnly) {
@@ -75,7 +75,6 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
                         : lua.createIdentifier(member.name.getText(), member.name),
                     valueExpression,
                     node,
-                    undefined,
                     exportScope
                 )
             );

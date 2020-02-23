@@ -5,7 +5,6 @@ import { UnsupportedProperty } from "../utils/errors";
 import { createExpressionPlusOne } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
-import { transformIdentifier } from "../visitors/identifier";
 
 function createStringCall(methodName: string, tsOriginal: ts.Node, ...params: lua.Expression[]): lua.CallExpression {
     const stringIdentifier = lua.createIdentifier("string");
@@ -41,19 +40,11 @@ export function transformStringPrototypeCall(
                 lua.createBooleanLiteral(true)
             );
 
-            return lua.createParenthesizedExpression(
-                lua.createBinaryExpression(
-                    lua.createParenthesizedExpression(
-                        lua.createBinaryExpression(
-                            stringExpression,
-                            lua.createNumericLiteral(0),
-                            lua.SyntaxKind.OrOperator
-                        )
-                    ),
-                    lua.createNumericLiteral(1),
-                    lua.SyntaxKind.SubtractionOperator,
-                    node
-                )
+            return lua.createBinaryExpression(
+                lua.createBinaryExpression(stringExpression, lua.createNumericLiteral(0), lua.SyntaxKind.OrOperator),
+                lua.createNumericLiteral(1),
+                lua.SyntaxKind.SubtractionOperator,
+                node
             );
         case "substr":
             if (node.arguments.length === 1) {
@@ -61,14 +52,8 @@ export function transformStringPrototypeCall(
                 const arg1 = createExpressionPlusOne(argument);
                 return createStringCall("sub", node, caller, arg1);
             } else {
-                const arg1 = params[0];
-                const arg2 = params[1];
-                const sumArg = lua.createBinaryExpression(
-                    lua.createParenthesizedExpression(arg1),
-                    lua.createParenthesizedExpression(arg2),
-                    lua.SyntaxKind.AdditionOperator
-                );
-                return createStringCall("sub", node, caller, createExpressionPlusOne(arg1), sumArg);
+                const sumArg = lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.AdditionOperator);
+                return createStringCall("sub", node, caller, createExpressionPlusOne(params[0]), sumArg);
             }
         case "substring":
             if (node.arguments.length === 1) {
@@ -124,37 +109,6 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringPadStart, node, caller, ...params);
         case "padEnd":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadEnd, node, caller, ...params);
-
-        case "byte":
-        case "char":
-        case "dump":
-        case "find":
-        case "format":
-        case "gmatch":
-        case "gsub":
-        case "len":
-        case "lower":
-        case "match":
-        case "pack":
-        case "packsize":
-        case "rep":
-        case "reverse":
-        case "sub":
-        case "unpack":
-        case "upper":
-            // Allow lua's string instance methods
-            let stringVariable = context.transformExpression(expression.expression);
-            if (ts.isStringLiteralLike(expression.expression)) {
-                // "foo":method() needs to be ("foo"):method()
-                stringVariable = lua.createParenthesizedExpression(stringVariable);
-            }
-
-            return lua.createMethodCallExpression(
-                stringVariable,
-                transformIdentifier(context, expression.name),
-                params,
-                node
-            );
         default:
             throw UnsupportedProperty("string", expressionName, node);
     }
@@ -188,10 +142,7 @@ export function transformStringProperty(
 ): lua.UnaryExpression {
     switch (node.name.text) {
         case "length":
-            let expression = context.transformExpression(node.expression);
-            if (ts.isTemplateExpression(node.expression)) {
-                expression = lua.createParenthesizedExpression(expression);
-            }
+            const expression = context.transformExpression(node.expression);
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
             throw UnsupportedProperty("string", node.name.text, node);

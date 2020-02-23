@@ -28,7 +28,7 @@ export function isNumberType(context: TransformationContext, type: ts.Type): boo
     return isTypeWithFlags(context, type, ts.TypeFlags.Number | ts.TypeFlags.NumberLike | ts.TypeFlags.NumberLiteral);
 }
 
-export function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
+function isExplicitArrayType(context: TransformationContext, type: ts.Type): boolean {
     if (type.symbol) {
         const baseConstraint = context.checker.getBaseConstraintOfType(type);
         if (baseConstraint && baseConstraint !== type) {

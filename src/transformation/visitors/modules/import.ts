@@ -39,7 +39,7 @@ function shouldResolveModulePath(context: TransformationContext, moduleSpecifier
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
     if (!moduleOwnerSymbol) return true;
 
-    const annotations = getSymbolAnnotations(context, moduleOwnerSymbol);
+    const annotations = getSymbolAnnotations(moduleOwnerSymbol);
     return !annotations.has(AnnotationKind.NoResolution);
 }
 
@@ -66,7 +66,7 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(importNode));
 
     return (
         context.resolver.isReferencedAliasDeclaration(importNode) &&
@@ -96,7 +96,7 @@ function transformImportSpecifier(
 export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> = (statement, context) => {
     const scope = peekScope(context);
 
-    if (!context.options.noHoisting && !scope.importStatements) {
+    if (!scope.importStatements) {
         scope.importStatements = [];
     }
 

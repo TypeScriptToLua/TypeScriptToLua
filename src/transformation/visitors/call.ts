@@ -53,10 +53,7 @@ export function transformContextualCallExpression(
         isValidLuaIdentifier(left.name.text)
     ) {
         // table:name()
-        let table = context.transformExpression(left.expression);
-        if (lua.isTableExpression(table)) {
-            table = lua.createParenthesizedExpression(table);
-        }
+        const table = context.transformExpression(left.expression);
 
         return lua.createMethodCallExpression(
             table,
@@ -109,10 +106,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
         // table:name()
         return transformContextualCallExpression(context, node, parameters);
     } else {
-        let table = context.transformExpression(node.expression.expression);
-        if (lua.isTableExpression(table)) {
-            table = lua.createParenthesizedExpression(table);
-        }
+        const table = context.transformExpression(node.expression.expression);
 
         // table.name()
         const name = node.expression.name.text;
@@ -130,11 +124,7 @@ function transformElementCall(context: TransformationContext, node: ts.CallExpre
         return transformContextualCallExpression(context, node, parameters);
     } else {
         // No context
-        let expression = context.transformExpression(node.expression);
-        if (lua.isTableExpression(expression)) {
-            expression = lua.createParenthesizedExpression(expression);
-        }
-
+        const expression = context.transformExpression(node.expression);
         return lua.createCallExpression(expression, parameters);
     }
 }

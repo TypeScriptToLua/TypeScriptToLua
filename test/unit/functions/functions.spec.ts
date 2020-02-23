@@ -410,14 +410,17 @@ test("Function local overriding export", () => {
 });
 
 test("Function using global as this", () => {
-    const tsHeader = `
-        var foo = "foo";
+    // Value is provided with top-level return with ts-ignore, because modules are always strict.
+    // TODO: Provide a different builder kind for such tests?
+    util.testModule`
+        (globalThis as any).foo = "foo";
         function bar(this: any) {
             return this.foo;
         }
-    `;
 
-    util.testExpression`foo`.setTsHeader(tsHeader).expectToMatchJsResult();
+        // @ts-ignore
+        return bar();
+    `.expectToEqual("foo");
 });
 
 test("Function rest binding pattern", () => {
@@ -429,19 +432,17 @@ test("Function rest binding pattern", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("Function rest parameter", compilerOptions => {
-    const code = `
+test("Function rest parameter", () => {
+    util.testFunction`
         function foo(a: unknown, ...b: string[]) {
             return b.join("");
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("Function nested rest parameter", compilerOptions => {
-    const code = `
+test("Function nested rest parameter", () => {
+    util.testFunction`
         function foo(a: unknown, ...b: string[]) {
             function bar() {
                 return b.join("");
@@ -449,13 +450,11 @@ test.each([{}, { noHoisting: true }])("Function nested rest parameter", compiler
             return bar();
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("Function nested rest spread", compilerOptions => {
-    const code = `
+test("Function nested rest spread", () => {
+    util.testFunction`
         function foo(a: unknown, ...b: string[]) {
             function bar() {
                 const c = [...b];
@@ -464,40 +463,36 @@ test.each([{}, { noHoisting: true }])("Function nested rest spread", compilerOpt
             return bar();
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `.expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("Function rest parameter (unreferenced)", compilerOptions => {
-    const code = `
+test("Function rest parameter (unreferenced)", () => {
+    util.testFunction`
         function foo(a: unknown, ...b: string[]) {
             return "foobar";
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileString(code, compilerOptions)).not.toMatch("b = ({...})");
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("foobar");
+    `
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("{...}"))
+        .expectToMatchJsResult();
 });
 
-test.each([{}, { noHoisting: true }])("Function rest parameter (referenced in property shorthand)", compilerOptions => {
-    const code = `
+test("Function rest parameter (referenced in property shorthand)", () => {
+    util.testFunction`
         function foo(a: unknown, ...b: string[]) {
             const c = { b };
             return c.b.join("");
         }
         return foo("A", "B", "C", "D");
-    `;
-
-    expect(util.transpileAndExecute(code, compilerOptions)).toBe("BCD");
+    `.expectToMatchJsResult();
 });
 
 test("named function expression reference", () => {
-    const code = `
-        const y = function x(inp: string) {
-            return inp + typeof x;
+    util.testFunction`
+        const y = function x() {
+            return { x: typeof x, y: typeof y };
         };
-        return y("foo-");`;
-    expect(util.transpileAndExecute(code)).toBe("foo-function");
+
+        return y();
+    `.expectToMatchJsResult();
 });

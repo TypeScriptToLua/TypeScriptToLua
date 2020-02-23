@@ -46,19 +46,14 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
 
         if ((tryScope.functionReturned || catchScope.functionReturned) && returnedIdentifier) {
             // Wrap catch in function if try or catch has return
-            const catchCall = lua.createCallExpression(
-                lua.createParenthesizedExpression(lua.createFunctionExpression(catchBlock))
-            );
+            const catchCall = lua.createCallExpression(lua.createFunctionExpression(catchBlock));
             const catchAssign = lua.createAssignmentStatement(
                 [lua.cloneIdentifier(returnedIdentifier), lua.cloneIdentifier(returnValueIdentifier)],
                 catchCall
             );
             catchBlock = lua.createBlock([catchAssign]);
         }
-        const notTryCondition = lua.createUnaryExpression(
-            lua.createParenthesizedExpression(tryResultIdentifier),
-            lua.SyntaxKind.NotOperator
-        );
+        const notTryCondition = lua.createUnaryExpression(tryResultIdentifier, lua.SyntaxKind.NotOperator);
         result.push(lua.createIfStatement(notTryCondition, catchBlock));
     } else if (tryScope.functionReturned) {
         // try with return, but no catch

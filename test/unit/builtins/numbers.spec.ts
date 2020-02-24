@@ -74,3 +74,7 @@ test("number intersected method", () => {
         return ({ normalize: () => 3 } as Vector).normalize();
     `.expectToMatchJsResult();
 });
+
+test("numbers overflowing the float limit become math.huge", () => {
+    util.testExpression`1e309`.expectToMatchJsResult();
+});

@@ -259,7 +259,7 @@ test("export modified in for in loop", () => {
         export let foo = '';
         for (foo in { x: true }) {}
     `
-        .setReturnExport("x")
+        .setReturnExport("foo")
         .expectToMatchJsResult();
 });
 

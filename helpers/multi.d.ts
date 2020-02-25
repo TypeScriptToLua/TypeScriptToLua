@@ -4,4 +4,4 @@ export type MultiReturn<T extends any[]> = T & {
 
 export { MultiReturn as MR };
 
-declare function multi<T extends any[]>(...values: T): MultiReturn<T>;
+export declare function multi<T extends any[]>(...values: T): MultiReturn<T>;

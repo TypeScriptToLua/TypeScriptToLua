@@ -20,10 +20,12 @@ export function transformIdentifier(context: TransformationContext, identifier: 
         }
     }
 
-    const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;
+    const symbol = context.checker.getSymbolAtLocation(identifier);
+    const name = symbol ? ts.unescapeLeadingUnderscores(symbol.escapedName) : identifier.text;
+    const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(name) : name;
 
     const symbolId = getIdentifierSymbolId(context, identifier);
-    return lua.createIdentifier(text, identifier, symbolId, identifier.text);
+    return lua.createIdentifier(text, identifier, symbolId, name);
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {

@@ -55,24 +55,21 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
                 return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
             }
 
-            if (filename.includes("typescript-to-lua")) {
-                const filePath = path.resolve(__dirname, "../../helpers/multi.ts");
-                if (libCache[filename]) return libCache[filename];
-                const content = fs.readFileSync(filePath, "utf8");
-
-                libCache[filename] = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, false);
-
-                return libCache[filename];
-            }
+            let filePath: string | undefined;
 
             if (filename.startsWith("lib.")) {
-                if (libCache[filename]) return libCache[filename];
                 const typeScriptDir = path.dirname(require.resolve("typescript"));
-                const filePath = path.join(typeScriptDir, filename);
+                filePath = path.join(typeScriptDir, filename);
+            }
+
+            if (filename.includes("typescript-to-lua/helpers")) {
+                filePath = path.resolve(__dirname, "../../helpers/multi.ts");
+            }
+
+            if (filePath !== undefined) {
+                if (libCache[filename]) return libCache[filename];
                 const content = fs.readFileSync(filePath, "utf8");
-
-                libCache[filename] = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, false);
-
+                libCache[filename] = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, false);
                 return libCache[filename];
             }
         },

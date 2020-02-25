@@ -12,7 +12,7 @@ import { peekScope } from "../../utils/scope";
 import { isHelpersImport } from "../../utils/helpers";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { isMultiHelperNode } from "../../helpers/multi";
+import { isMultiHelperNode } from "../helpers/multi";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
     relativePath[0] !== "." && options.baseUrl

@@ -1,14 +1,14 @@
 import * as ts from "typescript";
-import * as lua from "../../LuaAST";
-import * as utils from "../utils/helpers";
-import { TransformationContext } from "../context";
-import { transformAssignmentLeftHandSideExpression } from "../visitors/binary-expression/assignments";
-import { transformIdentifier } from "../visitors/identifier";
-import { transformArguments } from "../visitors/call";
-import { InvalidMultiHelperFunctionUse, UnsupportedKind } from "../utils/errors";
-import { isSymbolAlias } from "../utils/symbols";
-import { getDependenciesOfSymbol, createExportedIdentifier } from "../utils/export";
-import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
+import * as lua from "../../../LuaAST";
+import * as utils from "../../utils/helpers";
+import { TransformationContext } from "../../context";
+import { transformAssignmentLeftHandSideExpression } from "../binary-expression/assignments";
+import { transformIdentifier } from "../identifier";
+import { transformArguments } from "../call";
+import { InvalidMultiHelperFunctionUse, UnsupportedKind } from "../../utils/errors";
+import { isSymbolAlias } from "../../utils/symbols";
+import { getDependenciesOfSymbol, createExportedIdentifier } from "../../utils/export";
+import { createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 
 function isMultiHelperDeclaration(declaration: ts.Declaration): boolean {
     return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Multi;

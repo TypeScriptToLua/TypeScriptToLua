@@ -14,7 +14,7 @@ import {
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
-import { validateMultiHelperFunctionNotAssignedWithin } from "../helpers/multi";
+import { validateMultiHelperFunctionNotAssignedWithin } from "./helpers/multi";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {

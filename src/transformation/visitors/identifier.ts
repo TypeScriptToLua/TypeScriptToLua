@@ -21,7 +21,7 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     }
 
     const symbol = context.checker.getSymbolAtLocation(identifier);
-    const name = symbol ? ts.unescapeLeadingUnderscores(symbol.escapedName) : identifier.text;
+    const name = symbol?.name ?? identifier.text;
     const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(name) : name;
 
     const symbolId = getIdentifierSymbolId(context, identifier);

@@ -52,7 +52,7 @@ test.each<[string, any]>([
 test("multi helper call with destructuring assignment side effects", () => {
     util.testModule`
         import { multi } from "typescript-to-lua";
-        let a, b;
+        let a;
         export { a };
         [a] = multi(1);
     `

@@ -63,7 +63,7 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
             }
 
             if (filename.includes("typescript-to-lua/helpers")) {
-                filePath = path.resolve(__dirname, "../../helpers/multi.ts");
+                filePath = path.resolve(__dirname, "../../helpers/multi.d.ts");
             }
 
             if (filePath !== undefined) {

@@ -16,17 +16,17 @@ function isMultiHelperDeclaration(declaration: ts.Declaration): boolean {
 
 function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return Boolean(type.symbol?.declarations?.some(isMultiHelperDeclaration));
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 function isMultiReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(expression);
-    return Boolean(signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration));
+    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 export function isMultiHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return Boolean(type.symbol?.declarations?.some(isMultiHelperDeclaration));
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 export function transformMultiHelperReturnStatement(

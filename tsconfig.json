@@ -13,5 +13,5 @@
         "stripInternal": true
     },
     "include": ["src"],
-    "exclude": ["src/lualib", "helpers"]
+    "exclude": ["src/lualib"]
 }

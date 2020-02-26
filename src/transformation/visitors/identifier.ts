@@ -28,13 +28,15 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
     const symbol = context.checker.getSymbolAtLocation(node);
-    const exportScope = symbol ? getSymbolExportScope(context, symbol) : undefined;
-    if (exportScope) {
-        const name = symbol?.name ?? node.text;
-        const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
-
-        const symbolId = getIdentifierSymbolId(context, node);
-        return createExportedIdentifier(context, lua.createIdentifier(text, node, symbolId, name), exportScope);
+    if (symbol) {
+        const exportScope = getSymbolExportScope(context, symbol);
+        if (exportScope) {
+            const name = symbol.name;
+            const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
+            const symbolId = getIdentifierSymbolId(context, node);
+            const identifier = lua.createIdentifier(text, node, symbolId, name);
+            return createExportedIdentifier(context, identifier, exportScope);
+        }
     }
 
     if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {

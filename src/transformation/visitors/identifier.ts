@@ -4,7 +4,7 @@ import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
 import { InvalidForRangeCall } from "../utils/errors";
-import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
+import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
@@ -20,21 +20,21 @@ export function transformIdentifier(context: TransformationContext, identifier: 
         }
     }
 
-    const symbol = context.checker.getSymbolAtLocation(identifier);
-    const name = symbol?.name ?? identifier.text;
-    const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(name) : name;
+    const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;
 
     const symbolId = getIdentifierSymbolId(context, identifier);
-    return lua.createIdentifier(text, identifier, symbolId, name);
+    return lua.createIdentifier(text, identifier, symbolId, identifier.text);
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
-    // TODO: Move below to avoid extra transforms?
-    const identifier = transformIdentifier(context, node);
-
-    const exportScope = getIdentifierExportScope(context, identifier);
+    const symbol = context.checker.getSymbolAtLocation(node);
+    const exportScope = symbol ? getSymbolExportScope(context, symbol) : undefined;
     if (exportScope) {
-        return createExportedIdentifier(context, identifier, exportScope);
+        const name = symbol?.name ?? node.text;
+        const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
+
+        const symbolId = getIdentifierSymbolId(context, node);
+        return createExportedIdentifier(context, lua.createIdentifier(text, node, symbolId, name), exportScope);
     }
 
     if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
@@ -46,5 +46,5 @@ export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (no
         return builtinResult;
     }
 
-    return identifier;
+    return transformIdentifier(context, node);
 };

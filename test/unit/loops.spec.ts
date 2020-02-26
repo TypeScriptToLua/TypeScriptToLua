@@ -601,3 +601,28 @@ test("for...in with pre-defined variable keeps last value", () => {
         return x;
     `.expectToMatchJsResult();
 });
+
+test.each([
+    ["foo", "['bar']"],
+    ["[foo]", "[['bar']]"],
+    ["{ foo }", "[{ foo: 'bar' }]"],
+])("forof assignment updates dependencies", (initializer, expression) => {
+    util.testModule`
+        let foo = '';
+        export { foo };
+        for (${initializer} of ${expression}) {}
+    `
+        .setReturnExport("foo")
+        .expectToEqual("bar");
+});
+
+test.each([
+    ["const [foo]", "[['bar']]"],
+    ["const { foo }", "[{ foo: 'bar' }]"],
+])("forof variable declaration binding patterns", (initializer, expression) => {
+    util.testFunction`
+        for (${initializer} of ${expression}) {
+            return foo;
+        }
+    `.expectToMatchJsResult();
+});

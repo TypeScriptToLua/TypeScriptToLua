@@ -46,6 +46,19 @@ export function transformDestructuringAssignment(
     }
 }
 
+export function transformAssignmentPattern(
+    context: TransformationContext,
+    node: ts.AssignmentPattern,
+    root: lua.Expression
+): lua.Statement[] {
+    switch (node.kind) {
+        case ts.SyntaxKind.ObjectLiteralExpression:
+            return transformObjectLiteralAssignmentPattern(context, node, root);
+        case ts.SyntaxKind.ArrayLiteralExpression:
+            return transformArrayLiteralAssignmentPattern(context, node, root);
+    }
+}
+
 function transformArrayDestructuringAssignment(
     context: TransformationContext,
     node: ts.ArrayDestructuringAssignment,

@@ -141,27 +141,30 @@ describe("array destructuring optimization", () => {
     });
 });
 
+// TODO: Adjust this test to use expectToMatchJsResult() and testCases when TypeScript can correctly handle the code.
+// See Babel's transpiler for how this code is meant to be transpiled.
 test.each([
     ["foo", "['bar']"],
     ["[foo]", "[['bar']]"],
+    ["[foo = 'bar']", "[[]]"],
     ["{ foo }", "[{ foo: 'bar' }]"],
+    ["{ x: foo }", "[{ x: 'bar' }]"],
+    ["{ foo = 'bar' }", "[{}]"],
 ])("forof assignment updates dependencies", (initializer, expression) => {
     util.testModule`
         let foo = '';
         export { foo };
-        for (${initializer} of ${expression}) {}
+        for (${initializer} of ${expression} as any) {}
     `
         .setReturnExport("foo")
         .expectToEqual("bar");
 });
 
-test.each([
-    ["const [foo]", "[['bar']]"],
-    ["const { foo }", "[{ foo: 'bar' }]"],
-])("forof variable declaration binding patterns", (initializer, expression) => {
+test.each(testCases)("forof variable declaration binding patterns (%p)", ({ binding, value }) => {
     util.testFunction`
-        for (${initializer} of ${expression}) {
-            return foo;
+        let ${allBindings};
+        for (const ${binding} of [${value} as any]) {
+            return { ${allBindings} };
         }
     `.expectToMatchJsResult();
 });

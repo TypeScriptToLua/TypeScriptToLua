@@ -272,3 +272,24 @@ test("export dependency modified in for in loop", () => {
         .setReturnExport("bar")
         .expectToEqual("x");
 });
+
+test("export default class with future reference", () => {
+    util.testModule`
+        export default class Default {}
+        const d = new Default();
+        export const result = d.constructor.name;
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
+});
+
+test("export default function with future reference", () => {
+    util.testModule`
+        export default function defaultFunction() {
+            return true;
+        }
+        export const result = defaultFunction();
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
+});

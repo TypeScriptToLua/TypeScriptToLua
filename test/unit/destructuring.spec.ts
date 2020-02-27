@@ -141,8 +141,8 @@ describe("array destructuring optimization", () => {
     });
 });
 
-// TODO: Adjust this test to use expectToMatchJsResult() and testCases when TypeScript can correctly handle the code.
-// See Babel's transpiler for how this code is meant to be transpiled.
+// TODO: https://github.com/microsoft/TypeScript/pull/35906
+// Adjust this test to use expectToMatchJsResult() and testCases when this issue is fixed.
 test.each([
     ["foo", "['bar']"],
     ["[foo]", "[['bar']]"],

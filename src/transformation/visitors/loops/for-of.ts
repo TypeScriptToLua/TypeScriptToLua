@@ -43,6 +43,7 @@ function transformForOfInitializer(
         }
     } else {
         // Assignment to existing variable(s)
+
         if (isAssignmentPattern(initializer)) {
             return transformAssignmentPattern(context, initializer, expression);
         }

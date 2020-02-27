@@ -104,12 +104,12 @@ test.each([
     ["[foo = 'bar']", "[[]]"],
     ["{ foo }", "[{ foo: 'bar' }]"],
     ["{ x: foo }", "[{ x: 'bar' }]"],
-    ["{ foo = 'bar' }", "[{}]"],
+    ["{ foo = 'bar' }", "[{}] as { foo?: string }[]"],
 ])("forof assignment updates dependencies", (initializer, expression) => {
     util.testModule`
         let foo = '';
         export { foo };
-        for (${initializer} of ${expression} as any) {}
+        for (${initializer} of ${expression}) {}
     `
         .setReturnExport("foo")
         .expectToEqual("bar");

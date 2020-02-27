@@ -50,7 +50,7 @@ function transformSpreadableExpressionsIntoArrayConcatArguments(
     return chunks.map(chunk => wrapInTable(...chunk.map(expression => context.transformExpression(expression))));
 }
 
-export function flattenExpressions(
+export function flattenSpreadExpressions(
     context: TransformationContext,
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
@@ -84,7 +84,7 @@ export function transformArguments(
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): lua.Expression[] {
-    const parameters = flattenExpressions(context, params);
+    const parameters = flattenSpreadExpressions(context, params);
 
     // Add context as first param if present
     if (callContext) {

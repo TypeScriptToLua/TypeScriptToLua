@@ -14,7 +14,7 @@ import {
 import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
-import { flattenExpressions } from "./call";
+import { flattenSpreadExpressions } from "./call";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -141,7 +141,7 @@ const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression
     const filteredElements = expression.elements.map(e =>
         ts.isOmittedExpression(e) ? ts.createIdentifier("undefined") : e
     );
-    const values = flattenExpressions(context, filteredElements).map(e => lua.createTableFieldExpression(e));
+    const values = flattenSpreadExpressions(context, filteredElements).map(e => lua.createTableFieldExpression(e));
 
     return lua.createTableExpression(values, expression);
 };

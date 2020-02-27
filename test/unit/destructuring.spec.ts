@@ -96,6 +96,34 @@ test.each(["[]", "{}"])("empty binding pattern", bindingPattern => {
     `.expectToMatchJsResult();
 });
 
+// TODO: https://github.com/microsoft/TypeScript/pull/35906
+// Adjust this test to use expectToMatchJsResult() and testCases when this issue is fixed.
+test.each([
+    ["foo", "['bar']"],
+    ["[foo]", "[['bar']]"],
+    ["[foo = 'bar']", "[[]]"],
+    ["{ foo }", "[{ foo: 'bar' }]"],
+    ["{ x: foo }", "[{ x: 'bar' }]"],
+    ["{ foo = 'bar' }", "[{}]"],
+])("forof assignment updates dependencies", (initializer, expression) => {
+    util.testModule`
+        let foo = '';
+        export { foo };
+        for (${initializer} of ${expression} as any) {}
+    `
+        .setReturnExport("foo")
+        .expectToEqual("bar");
+});
+
+test.each(testCases)("forof variable declaration binding patterns (%p)", ({ binding, value }) => {
+    util.testFunction`
+        let ${allBindings};
+        for (const ${binding} of [${value} as any]) {
+            return { ${allBindings} };
+        }
+    `.expectToMatchJsResult();
+});
+
 describe("array destructuring optimization", () => {
     // TODO: Try to generalize optimization logic between declaration and assignment and make more generic tests
 
@@ -139,32 +167,4 @@ describe("array destructuring optimization", () => {
             .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
             .expectToMatchJsResult();
     });
-});
-
-// TODO: https://github.com/microsoft/TypeScript/pull/35906
-// Adjust this test to use expectToMatchJsResult() and testCases when this issue is fixed.
-test.each([
-    ["foo", "['bar']"],
-    ["[foo]", "[['bar']]"],
-    ["[foo = 'bar']", "[[]]"],
-    ["{ foo }", "[{ foo: 'bar' }]"],
-    ["{ x: foo }", "[{ x: 'bar' }]"],
-    ["{ foo = 'bar' }", "[{}]"],
-])("forof assignment updates dependencies", (initializer, expression) => {
-    util.testModule`
-        let foo = '';
-        export { foo };
-        for (${initializer} of ${expression} as any) {}
-    `
-        .setReturnExport("foo")
-        .expectToEqual("bar");
-});
-
-test.each(testCases)("forof variable declaration binding patterns (%p)", ({ binding, value }) => {
-    util.testFunction`
-        let ${allBindings};
-        for (const ${binding} of [${value} as any]) {
-            return { ${allBindings} };
-        }
-    `.expectToMatchJsResult();
 });

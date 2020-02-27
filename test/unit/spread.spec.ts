@@ -5,6 +5,14 @@ import * as util from "../util";
 const expectUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
 const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
 
+const spreadCases = [
+    "1, 2, ...[3, 4, 5]",
+    "...[1, 2], 3, 4, 5",
+    "1, 2, ...'spread', 4, 5",
+    "1, 2, ...[3, 4, 5], [2]",
+    "...[1, 2, 3], 4, ...[5, 6]",
+];
+
 describe("in function call", () => {
     util.testEachVersion(
         undefined,
@@ -23,6 +31,13 @@ describe("in function call", () => {
             [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         }
     );
+
+    test.each(spreadCases)("of arguments (%p)", expression => {
+        util.testFunction`
+            function foo(...args) { return args }
+            return foo(${expression});
+        `.expectToMatchJsResult();
+    });
 });
 
 describe("in array literal", () => {
@@ -31,6 +46,10 @@ describe("in array literal", () => {
         [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
         [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
         [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+    });
+
+    test.each(spreadCases)("of array literal (%p)", expression => {
+        util.testExpression`[${expression}]`.expectToMatchJsResult();
     });
 
     test.each(["", "string", "string with spaces", "string 1 2 3"])("of string literal (%p)", str => {
@@ -86,23 +105,4 @@ describe("in object literal", () => {
             return { "0": object[0], "1": object[1], "2": object[2] };
         `.expectToMatchJsResult();
     });
-});
-
-const spreadCases = [
-    "1, 2, ...[3, 4, 5]",
-    "...[1, 2], 3, 4, 5",
-    "1, 2, ...'spread', 4, 5",
-    "1, 2, ...[3, 4, 5], [2]",
-    "...[1, 2, 3], 4, ...[5, 6]",
-];
-
-test.each(spreadCases)("spread equivalence for array elements (%p)", expression => {
-    util.testExpression`[${expression}]`.expectToMatchJsResult();
-});
-
-test.each(spreadCases)("spread equivalence for call arguments (%p)", expression => {
-    util.testFunction`
-        function foo(...args) { return args }
-        return foo(${expression});
-    `.expectToMatchJsResult();
 });

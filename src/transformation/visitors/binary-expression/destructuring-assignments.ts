@@ -38,20 +38,20 @@ export function transformDestructuringAssignment(
     node: ts.DestructuringAssignment,
     root: lua.Expression
 ): lua.Statement[] {
-    switch (node.left.kind) {
-        case ts.SyntaxKind.ObjectLiteralExpression:
-            return transformObjectDestructuringAssignment(context, node as ts.ObjectDestructuringAssignment, root);
-        case ts.SyntaxKind.ArrayLiteralExpression:
-            return transformArrayDestructuringAssignment(context, node as ts.ArrayDestructuringAssignment, root);
-    }
+    return transformAssignmentPattern(context, node.left, root);
 }
 
-function transformArrayDestructuringAssignment(
+export function transformAssignmentPattern(
     context: TransformationContext,
-    node: ts.ArrayDestructuringAssignment,
+    node: ts.AssignmentPattern,
     root: lua.Expression
 ): lua.Statement[] {
-    return transformArrayLiteralAssignmentPattern(context, node.left, root);
+    switch (node.kind) {
+        case ts.SyntaxKind.ObjectLiteralExpression:
+            return transformObjectLiteralAssignmentPattern(context, node, root);
+        case ts.SyntaxKind.ArrayLiteralExpression:
+            return transformArrayLiteralAssignmentPattern(context, node, root);
+    }
 }
 
 function transformArrayLiteralAssignmentPattern(
@@ -130,14 +130,6 @@ function transformArrayLiteralAssignmentPattern(
                 throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
         }
     });
-}
-
-function transformObjectDestructuringAssignment(
-    context: TransformationContext,
-    node: ts.ObjectDestructuringAssignment,
-    root: lua.Expression
-): lua.Statement[] {
-    return transformObjectLiteralAssignmentPattern(context, node.left, root);
 }
 
 function transformObjectLiteralAssignmentPattern(

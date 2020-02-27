@@ -1,17 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast, castEach } from "../../../utils";
+import { castEach } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import {
-    InvalidForRangeCall,
-    MissingForOfVariables,
-    UnsupportedNonDestructuringLuaIterator,
-    UnsupportedObjectDestructuringInForOf,
-} from "../../utils/errors";
-import { createUnpackCall } from "../../utils/lua-ast";
+import { InvalidForRangeCall, MissingForOfVariables, UnsupportedNonDestructuringLuaIterator } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
-import { isArrayType, isNumberType } from "../../utils/typescript";
+import { isArrayType, isNumberType, isAssignmentPattern } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
 import {
@@ -20,6 +14,8 @@ import {
     transformVariableDeclaration,
 } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
+import { transformAssignment } from "../binary-expression/assignments";
+import { transformAssignmentPattern } from "../binary-expression/destructuring-assignments";
 
 function transformForOfInitializer(
     context: TransformationContext,
@@ -29,15 +25,8 @@ function transformForOfInitializer(
     if (ts.isVariableDeclarationList(initializer)) {
         const binding = getVariableDeclarationBinding(initializer);
         // Declaration of new variable
-        if (ts.isArrayBindingPattern(binding)) {
-            if (binding.elements.length === 0) {
-                // Ignore empty destructuring assignment
-                return [];
-            }
-
+        if (ts.isArrayBindingPattern(binding) || ts.isObjectBindingPattern(binding)) {
             return transformBindingPattern(context, binding, expression);
-        } else if (ts.isObjectBindingPattern(binding)) {
-            throw UnsupportedObjectDestructuringInForOf(initializer);
         }
 
         const variableStatements = transformVariableDeclaration(context, initializer.declarations[0]);
@@ -53,27 +42,13 @@ function transformForOfInitializer(
             throw MissingForOfVariables(initializer);
         }
     } else {
-        // Assignment to existing variable
-        let variables: lua.AssignmentLeftHandSideExpression | lua.AssignmentLeftHandSideExpression[];
-        let valueExpression: lua.Expression = expression;
-        if (ts.isArrayLiteralExpression(initializer)) {
-            if (initializer.elements.length > 0) {
-                valueExpression = createUnpackCall(context, expression, initializer);
-                variables = castEach(
-                    initializer.elements.map(e => context.transformExpression(e)),
-                    lua.isAssignmentLeftHandSideExpression
-                );
-            } else {
-                // Ignore empty destructring assignment
-                return [];
-            }
-        } else if (ts.isObjectLiteralExpression(initializer)) {
-            throw UnsupportedObjectDestructuringInForOf(initializer);
-        } else {
-            variables = cast(context.transformExpression(initializer), lua.isAssignmentLeftHandSideExpression);
+        // Assignment to existing variable(s)
+
+        if (isAssignmentPattern(initializer)) {
+            return transformAssignmentPattern(context, initializer, expression);
         }
 
-        return [lua.createAssignmentStatement(variables, valueExpression)];
+        return transformAssignment(context, initializer, expression);
     }
 }
 

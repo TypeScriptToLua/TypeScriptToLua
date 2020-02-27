@@ -33,19 +33,19 @@ function transformSpreadableExpressionsIntoArrayConcatArguments(
 ): lua.Expression[] {
     // [...array, a, b, ...tuple()] --> [ [...array], [a, b], [...tuple()] ]
     // chunk non-spread arguments together so they don't concat
-    const chunks = expressions.reduce<ts.Expression[][]>((chunks, argument, index, expressions) => {
-        if (ts.isSpreadElement(argument)) {
-            chunks.push([argument]);
-            const next = expressions[index + 1];
-            if (next && !ts.isSpreadElement(expressions[index + 1])) {
+    const chunks: ts.Expression[][] = [];
+    for (const expression of expressions) {
+        if (ts.isSpreadElement(expression)) {
+            chunks.push([expression]);
+            const next = expressions[expressions.indexOf(expression) + 1];
+            if (next && !ts.isSpreadElement(next)) {
                 chunks.push([]);
             }
         } else {
             const lastChunk = chunks[chunks.length - 1];
-            lastChunk.push(argument);
+            lastChunk.push(expression);
         }
-        return chunks;
-    }, []);
+    }
 
     return chunks.map(chunk => wrapInTable(...chunk.map(expression => context.transformExpression(expression))));
 }

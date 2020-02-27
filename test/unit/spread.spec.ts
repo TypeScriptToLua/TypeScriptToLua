@@ -87,3 +87,22 @@ describe("in object literal", () => {
         `.expectToMatchJsResult();
     });
 });
+
+const spreadCases = [
+    "1, 2, ...[3, 4, 5]",
+    "...[1, 2], 3, 4, 5",
+    "1, 2, ...'spread', 4, 5",
+    "1, [2], ...[3, 4, 5]",
+    "...[1, 2, 3], 4, ...[5, 6]",
+];
+
+test.each(spreadCases)("spread equivalence for array elements (%p)", expression => {
+    util.testExpression`[${expression}]`.expectToMatchJsResult();
+});
+
+test.each(spreadCases)("spread equivalence for call arguments (%p)", expression => {
+    util.testFunction`
+        function foo(...args) { return args }
+        return foo(${expression});
+    `.expectToMatchJsResult();
+});

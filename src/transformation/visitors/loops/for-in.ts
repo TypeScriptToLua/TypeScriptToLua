@@ -4,6 +4,7 @@ import { FunctionVisitor } from "../../context";
 import { forbiddenForIn } from "../../utils/diagnostics";
 import { isArrayType } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
+import { transformAssignment } from "../binary-expression/assignments";
 import { getVariableDeclarationBinding, transformLoopBody } from "./utils";
 
 export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (statement, context) => {
@@ -34,11 +35,14 @@ export const transformForInStatement: FunctionVisitor<ts.ForInStatement> = (stat
         // Iteration variable becomes ____key
         iterationVariable = lua.createIdentifier("____key");
         // Push variable = ____key to the start of the loop body to match TS scoping
-        const initializer = lua.createAssignmentStatement(
-            transformIdentifier(context, statement.initializer),
-            iterationVariable
+        const assignment = transformAssignment(
+            context,
+            statement.initializer,
+            iterationVariable,
+            statement.initializer
         );
-        body.statements.unshift(initializer);
+
+        body.statements.unshift(...assignment);
     } else {
         // TODO:
         throw new Error(`Unsupported for...in variable kind: ${ts.SyntaxKind[statement.initializer.kind]}.`);

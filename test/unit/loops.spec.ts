@@ -418,19 +418,6 @@ test("forof array which modifies length", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([
-    { initializer: "const {a, b}", vars: "" },
-    { initializer: "const {a: x, b: y}", vars: "" },
-    { initializer: "{a, b}", vars: "let a: string, b: string;" },
-    { initializer: "{a: c, b: d}", vars: "let c: string, d: string;" },
-])("forof object destructuring (%p)", ({ initializer, vars }) => {
-    util.testModule`
-        declare const arr: {a: string, b: string}[];
-        ${vars}
-        for (${initializer} of arr) {}
-    `.expectDiagnosticsToMatchSnapshot();
-});
-
 test("forof nested destructuring", () => {
     util.testFunction`
         let result = 0;

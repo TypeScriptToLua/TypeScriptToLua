@@ -12,34 +12,6 @@ return ____exports"
 
 exports[`forin[Array]: diagnostics 1`] = `"main.ts(3,9): error TSTL: Iterating over arrays with 'for ... in' is not allowed."`;
 
-exports[`forof object destructuring ({"initializer": "{a, b}", "vars": "let a: string, b: string;"}): code 1`] = `
-"for ____, ____value in ipairs(arr) do
-end"
-`;
-
-exports[`forof object destructuring ({"initializer": "{a, b}", "vars": "let a: string, b: string;"}): diagnostics 1`] = `"main.ts(4,14): error TSTL: Unsupported object destructuring in for...of statement."`;
-
-exports[`forof object destructuring ({"initializer": "{a: c, b: d}", "vars": "let c: string, d: string;"}): code 1`] = `
-"for ____, ____value in ipairs(arr) do
-end"
-`;
-
-exports[`forof object destructuring ({"initializer": "{a: c, b: d}", "vars": "let c: string, d: string;"}): diagnostics 1`] = `"main.ts(4,14): error TSTL: Unsupported object destructuring in for...of statement."`;
-
-exports[`forof object destructuring ({"initializer": "const {a, b}", "vars": ""}): code 1`] = `
-"for ____, ____values in ipairs(arr) do
-end"
-`;
-
-exports[`forof object destructuring ({"initializer": "const {a, b}", "vars": ""}): diagnostics 1`] = `"main.ts(4,14): error TSTL: Unsupported object destructuring in for...of statement."`;
-
-exports[`forof object destructuring ({"initializer": "const {a: x, b: y}", "vars": ""}): code 1`] = `
-"for ____, ____values in ipairs(arr) do
-end"
-`;
-
-exports[`forof object destructuring ({"initializer": "const {a: x, b: y}", "vars": ""}): diagnostics 1`] = `"main.ts(4,14): error TSTL: Unsupported object destructuring in for...of statement."`;
-
 exports[`loop continue (do { continue; } while (false)) [5.1]: code 1`] = `
 "repeat
     do

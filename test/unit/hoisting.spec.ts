@@ -203,25 +203,6 @@ test("Enum Hoisting", () => {
     expect(result).toBe("foo");
 });
 
-test.each([
-    `function setBar() { const bar = foo; } let foo = "foo";`,
-    `function setBar() { const bar = foo; } const foo = "foo";`,
-    `function setBar() { const bar = foo; } export let foo = "foo";`,
-    `function setBar() { const bar = foo; } export const foo = "foo";`,
-    `const foo = bar(); function bar() { return "bar"; }`,
-    `export const foo = bar(); function bar() { return "bar"; }`,
-    `const foo = bar(); export function bar() { return "bar"; }`,
-    `function bar() { return NS.foo; } namespace NS { export let foo = "foo"; }`,
-    `export namespace O { export function f() { return I.foo; } namespace I { export let foo = "foo"; } }`,
-    `function makeFoo() { return new Foo(); } class Foo {}`,
-    `function bar() { return E.A; } enum E { A = "foo" }`,
-    `function setBar() { const bar = { foo }; } let foo = "foo";`,
-])("No Hoisting (%p)", code => {
-    util.testModule(code)
-        .setOptions({ noHoisting: true })
-        .expectDiagnosticsToMatchSnapshot();
-});
-
 test("Import hoisting (named)", () => {
     util.testBundle`
         export const result = foo;

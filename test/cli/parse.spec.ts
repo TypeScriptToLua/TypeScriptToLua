@@ -82,11 +82,11 @@ describe("command line", () => {
         });
 
         test("shouldn't parse following arguments as values", () => {
-            const result = tstl.parseCommandLine(["--noHeader", "--noHoisting"]);
+            const result = tstl.parseCommandLine(["--noHeader", "--noImplicitSelf"]);
 
             expect(result.errors).not.toHaveDiagnostics();
             expect(result.options.noHeader).toBe(true);
-            expect(result.options.noHoisting).toBe(true);
+            expect(result.options.noImplicitSelf).toBe(true);
         });
 
         test("shouldn't parse following files as values", () => {
@@ -101,8 +101,6 @@ describe("command line", () => {
         test.each<[string, string, tstl.CompilerOptions]>([
             ["noHeader", "false", { noHeader: false }],
             ["noHeader", "true", { noHeader: true }],
-            ["noHoisting", "false", { noHoisting: false }],
-            ["noHoisting", "true", { noHoisting: true }],
             ["sourceMapTraceback", "false", { sourceMapTraceback: false }],
             ["sourceMapTraceback", "true", { sourceMapTraceback: true }],
 
@@ -209,8 +207,6 @@ describe("tsconfig", () => {
         test.each<[string, any, tstl.CompilerOptions]>([
             ["noHeader", false, { noHeader: false }],
             ["noHeader", true, { noHeader: true }],
-            ["noHoisting", false, { noHoisting: false }],
-            ["noHoisting", true, { noHoisting: true }],
             ["sourceMapTraceback", false, { sourceMapTraceback: false }],
             ["sourceMapTraceback", true, { sourceMapTraceback: true }],
 

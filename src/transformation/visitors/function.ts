@@ -265,7 +265,7 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     const name = node.name ? transformIdentifier(context, node.name) : lua.createAnonymousIdentifier();
 
     // Remember symbols referenced in this function for hoisting later
-    if (!context.options.noHoisting && name.symbolId !== undefined) {
+    if (name.symbolId !== undefined) {
         const scope = peekScope(context);
         if (!scope.functionDefinitions) {
             scope.functionDefinitions = new Map();

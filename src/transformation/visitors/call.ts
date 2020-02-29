@@ -34,10 +34,10 @@ function transformSpreadableExpressionsIntoArrayConcatArguments(
     // [...array, a, b, ...tuple()] --> [ [...array], [a, b], [...tuple()] ]
     // chunk non-spread arguments together so they don't concat
     const chunks: ts.Expression[][] = [];
-    for (const expression of expressions) {
+    for (const [index, expression] of expressions.entries()) {
         if (ts.isSpreadElement(expression)) {
             chunks.push([expression]);
-            const next = expressions[expressions.indexOf(expression) + 1];
+            const next = expressions[index + 1];
             if (next && !ts.isSpreadElement(next)) {
                 chunks.push([]);
             }

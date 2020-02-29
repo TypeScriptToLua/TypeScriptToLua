@@ -23,7 +23,7 @@ function getExpressionsBeforeAndAfterFirstSpread(
     const index = expressions.findIndex(ts.isSpreadElement);
     const hasSpreadElement = index !== -1;
     const before = hasSpreadElement ? expressions.slice(0, index) : expressions;
-    const after = hasSpreadElement ? expressions.slice(index, expressions.length) : [];
+    const after = hasSpreadElement ? expressions.slice(index) : [];
     return [before, after];
 }
 

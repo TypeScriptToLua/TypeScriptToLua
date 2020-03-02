@@ -42,7 +42,11 @@ function transformSpreadableExpressionsIntoArrayConcatArguments(
                 chunks.push([]);
             }
         } else {
-            const lastChunk = chunks[chunks.length - 1];
+            let lastChunk = chunks[chunks.length - 1];
+            if (!lastChunk) {
+                lastChunk = [];
+                chunks.push(lastChunk);
+            }
             lastChunk.push(expression);
         }
     }

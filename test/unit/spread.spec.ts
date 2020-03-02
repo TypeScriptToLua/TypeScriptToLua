@@ -8,7 +8,6 @@ const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLua
 const spreadCases = [
     "1, 2, ...[3, 4, 5]",
     "...[1, 2], 3, 4, 5",
-    "1, 2, ...'spread', 4, 5",
     "1, ...[[2]], 3",
     "...[1, 2, 3], 4, ...[5, 6]",
     "1, 2, ...[3, 4], ...[5, 6]",
@@ -65,6 +64,10 @@ describe("in array literal", () => {
             const array = [1, 2, ...[3], , 5];
             return { a: array[0], b: array[1], c: array[2], d: array[3] };
         `.expectToMatchJsResult();
+    });
+
+    test("of string literal mixed", () => {
+        util.testExpressionTemplate`[..."spread", ..."string"]`.expectToMatchJsResult();
     });
 
     test.each(spreadCases)("of array literal (%p)", expression => {

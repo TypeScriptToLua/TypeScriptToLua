@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { formatPathToLuaPath, isNonNull } from "../../../utils";
+import { formatPathToLuaPath } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { UnresolvableRequirePath } from "../../utils/errors";
@@ -9,10 +9,8 @@ import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
 import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
-import { isHelpersImport } from "../../utils/helpers";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { isMultiHelperNode } from "../helpers/multi";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
     relativePath[0] !== "." && options.baseUrl
@@ -68,10 +66,6 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    if (isHelpersImport(context, importNode)) {
-        return false;
-    }
-
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(importNode));
 
     return (
@@ -85,11 +79,7 @@ function transformImportSpecifier(
     context: TransformationContext,
     importSpecifier: ts.ImportSpecifier,
     moduleTableName: lua.Identifier
-): lua.VariableDeclarationStatement | undefined {
-    if (isMultiHelperNode(context, importSpecifier)) {
-        return;
-    }
-
+): lua.VariableDeclarationStatement {
     const leftIdentifier = transformIdentifier(context, importSpecifier.name);
     const propertyName = transformPropertyName(
         context,
@@ -108,10 +98,6 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
 
     if (!scope.importStatements) {
         scope.importStatements = [];
-    }
-
-    if (isHelpersImport(context, statement)) {
-        return;
     }
 
     const result: lua.Statement[] = [];
@@ -177,8 +163,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     if (statement.importClause.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
         const assignmentStatements = statement.importClause.namedBindings.elements
             .filter(importSpecifier => shouldBeImported(context, importSpecifier))
-            .map(importSpecifier => transformImportSpecifier(context, importSpecifier, importUniqueName))
-            .filter(isNonNull);
+            .map(importSpecifier => transformImportSpecifier(context, importSpecifier, importUniqueName));
 
         if (assignmentStatements.length > 0) {
             usingRequireStatement = true;

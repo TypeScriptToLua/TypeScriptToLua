@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as path from "path";
-import { TransformationContext } from "../context";
 
 export enum HelperKind {
     Multi = "multi",
@@ -22,24 +21,4 @@ export function getHelperFileKind(sourceFile: ts.SourceFile): HelperKind | undef
                 throw new Error(`Unknown Helper Kind ${baseFileName}`);
         }
     }
-}
-
-export function isHelpersImport(
-    context: TransformationContext,
-    importNode: ts.ImportClause | ts.ImportSpecifier | ts.ImportDeclaration
-): boolean {
-    if (ts.isImportDeclaration(importNode)) {
-        const symbol = context.checker.getSymbolAtLocation(importNode.moduleSpecifier);
-        return symbol?.declarations.map(d => d.getSourceFile()).some(isSourceFileFromHelpers) ?? false;
-    }
-
-    if (importNode.name) {
-        const symbol = context.checker.getSymbolAtLocation(importNode.name);
-        if (symbol) {
-            const originalSymbol = context.checker.getAliasedSymbol(symbol);
-            return originalSymbol?.declarations?.map(d => d.getSourceFile()).some(isSourceFileFromHelpers) ?? false;
-        }
-    }
-
-    return false;
 }

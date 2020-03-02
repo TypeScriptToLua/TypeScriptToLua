@@ -253,3 +253,22 @@ test("export as specifier shouldn't effect local vars", () => {
         a = 6;
     `.expectToMatchJsResult();
 });
+
+test("export modified in for in loop", () => {
+    util.testModule`
+        export let foo = '';
+        for (foo in { x: true }) {}
+    `
+        .setReturnExport("foo")
+        .expectToMatchJsResult();
+});
+
+test("export dependency modified in for in loop", () => {
+    util.testModule`
+        let foo = '';
+        export { foo as bar };
+        for (foo in { x: true }) {}
+    `
+        .setReturnExport("bar")
+        .expectToEqual("x");
+});

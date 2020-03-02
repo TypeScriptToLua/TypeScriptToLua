@@ -11,10 +11,10 @@ test.each<[string, any]>([
     ["let a; for ([a] = multi(1, 2); false; 1) {}", 1],
 ])("valid multi call and assign (%s)", (statement, result) => {
     util.testModule`
-        import { multi } from "typescript-to-lua/helpers";
         ${statement}
         export { a };
     `
+        .setOptions({ types: ["typescript-to-lua/helpers"] })
         .setReturnExport("a")
         .expectToEqual(result);
 });
@@ -30,9 +30,10 @@ test.each([
     "([a] = multi(1)) => {}",
 ])("invalid multi call (%s)", statement => {
     util.testModule`
-        import { multi } from "typescript-to-lua/helpers";
         ${statement}
-    `.expectToHaveDiagnosticOfError(InvalidMultiHelperFunctionUse(util.nodeStub));
+    `
+        .setOptions({ types: ["typescript-to-lua/helpers"] })
+        .expectToHaveDiagnosticOfError(InvalidMultiHelperFunctionUse(util.nodeStub));
 });
 
 test.each<[string, any]>([
@@ -40,22 +41,22 @@ test.each<[string, any]>([
     ["return multi(1);", 1],
 ])("valid multi call return statement (%s)", (statement, result) => {
     util.testModule`
-        import { multi } from "typescript-to-lua/helpers";
         export const [a] = (function() {
             ${statement}
         })();
     `
+        .setOptions({ types: ["typescript-to-lua/helpers"] })
         .setReturnExport("a")
         .expectToEqual(result);
 });
 
 test("multi helper call with destructuring assignment side effects", () => {
     util.testModule`
-        import { multi } from "typescript-to-lua/helpers";
         let a;
         export { a };
         [a] = multi(1);
     `
+        .setOptions({ types: ["typescript-to-lua/helpers"] })
         .setReturnExport("a")
         .expectToEqual(1);
 });

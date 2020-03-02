@@ -58,7 +58,3 @@ export function getIdentifierSymbolId(
         return trackSymbolReference(context, symbol, identifier);
     }
 }
-
-export function isSymbolAlias(symbol: ts.Symbol): boolean {
-    return (symbol.flags & ts.SymbolFlags.Alias) !== 0;
-}

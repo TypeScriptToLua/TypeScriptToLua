@@ -6,7 +6,6 @@ import { transformAssignmentLeftHandSideExpression } from "../binary-expression/
 import { transformIdentifier } from "../identifier";
 import { transformArguments } from "../call";
 import { InvalidMultiHelperFunctionUse, UnsupportedKind } from "../../utils/errors";
-import { isSymbolAlias } from "../../utils/symbols";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 
@@ -161,8 +160,8 @@ export function validateMultiHelperFunctionNotAssignedWithin(
 ): void {
     node.properties.filter(ts.isShorthandPropertyAssignment).forEach(element => {
         const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-        if (valueSymbol && isSymbolAlias(valueSymbol)) {
-            const declaration = context.checker.getAliasedSymbol(valueSymbol).valueDeclaration;
+        if (valueSymbol) {
+            const declaration = valueSymbol.valueDeclaration;
             if (declaration && isMultiHelperDeclaration(declaration)) {
                 throw InvalidMultiHelperFunctionUse(element);
             }

@@ -60,6 +60,13 @@ describe("in array literal", () => {
         `.expectToMatchJsResult();
     });
 
+    test("of array literal /w OmittedExpression", () => {
+        util.testFunction`
+            const array = [1, 2, ...[3], , 5];
+            return { a: array[0], b: array[1], c: array[2], d: array[3] };
+        `.expectToMatchJsResult();
+    });
+
     test.each(spreadCases)("of array literal (%p)", expression => {
         util.testExpression`[${expression}]`.expectToMatchJsResult();
     });

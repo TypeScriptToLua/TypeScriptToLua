@@ -130,9 +130,6 @@ export const UnsupportedNonDestructuringLuaIterator = (node: ts.Node) =>
 export const UnresolvableRequirePath = (node: ts.Node, reason: string, path?: string) =>
     new TranspileError(`${reason}. TypeScript path: ${path}.`, node);
 
-export const UnsupportedObjectDestructuringInForOf = (node: ts.Node) =>
-    new TranspileError(`Unsupported object destructuring in for...of statement.`, node);
-
 export const InvalidAmbientIdentifierName = (node: ts.Identifier) =>
     new TranspileError(
         `Invalid ambient identifier name "${node.text}". Ambient identifiers must be valid lua identifiers.`,

@@ -63,9 +63,8 @@ export function flattenSpreadExpressions(
     }
 
     // Only one spread element at the end? Will work as expected
-    const [firstExpression] = postSpreadExpressions;
-    if (postSpreadExpressions.length === 1 && ts.isSpreadElement(firstExpression)) {
-        return [...transformedPreSpreadExpressions, context.transformExpression(firstExpression)];
+    if (postSpreadExpressions.length === 1) {
+        return [...transformedPreSpreadExpressions, context.transformExpression(postSpreadExpressions[0])];
     }
 
     // Use Array.concat and unpack the result of that as the last Expression

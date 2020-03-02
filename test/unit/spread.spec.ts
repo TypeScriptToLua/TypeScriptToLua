@@ -48,6 +48,17 @@ describe("in array literal", () => {
         [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
     });
 
+    test("of tuple return call", () => {
+        util.testFunction`
+            /** @tupleReturn */
+            function tuple(...args) {
+                return args;
+            }
+
+            return [...tuple(1, 2, 3), ...tuple(4, 5, 6)];
+        `.expectToMatchJsResult();
+    });
+
     test.each(spreadCases)("of array literal (%p)", expression => {
         util.testExpression`[${expression}]`.expectToMatchJsResult();
     });

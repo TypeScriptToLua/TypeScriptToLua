@@ -9,7 +9,7 @@ import * as tstl from "../src";
 
 export * from "./legacy-utils";
 
-export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
+export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown, 0, 0);
 
 export function parseTypeScript(
     typescript: string,
@@ -362,11 +362,11 @@ export abstract class TestBuilder {
 
     private diagnosticsChecked = false;
 
-    public expectToHaveDiagnostics(): this {
+    public expectToHaveDiagnostics(expected?: number[]): this {
         if (this.diagnosticsChecked) return this;
         this.diagnosticsChecked = true;
 
-        expect(this.getLuaDiagnostics()).toHaveDiagnostics();
+        expect(this.getLuaDiagnostics()).toHaveDiagnostics(expected);
         return this;
     }
 
@@ -411,8 +411,8 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectDiagnosticsToMatchSnapshot(diagnosticsOnly = false): this {
-        this.expectToHaveDiagnostics();
+    public expectDiagnosticsToMatchSnapshot(expected?: number[], diagnosticsOnly = false): this {
+        this.expectToHaveDiagnostics(expected);
 
         const diagnosticMessages = ts.formatDiagnostics(
             this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),

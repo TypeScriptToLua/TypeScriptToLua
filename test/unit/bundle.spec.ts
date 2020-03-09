@@ -90,7 +90,7 @@ test("LuaLibImportKind.Inline generates a warning", () => {
         result.push(3);
     `
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
-        .expectDiagnosticsToMatchSnapshot(true)
+        .expectDiagnosticsToMatchSnapshot(undefined, true)
         .expectToEqual({ result: [1, 2, 3] });
 });
 
@@ -113,9 +113,9 @@ test("cyclic imports", () => {
 });
 
 test("no entry point", () => {
-    util.testBundle``.setOptions({ luaBundleEntry: undefined }).expectDiagnosticsToMatchSnapshot(true);
+    util.testBundle``.setOptions({ luaBundleEntry: undefined }).expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test("luaEntry doesn't exist", () => {
-    util.testBundle``.setEntryPoint("entry.ts").expectDiagnosticsToMatchSnapshot(true);
+    util.testBundle``.setEntryPoint("entry.ts").expectDiagnosticsToMatchSnapshot(undefined, true);
 });

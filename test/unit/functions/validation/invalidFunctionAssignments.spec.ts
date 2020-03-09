@@ -7,7 +7,7 @@ test.each(invalidTestFunctionAssignments)(
         util.testModule`
             ${testFunction.definition || ""}
             const fn: ${functionType} = ${testFunction.value};
-        `.expectDiagnosticsToMatchSnapshot(true);
+        `.expectDiagnosticsToMatchSnapshot(undefined, true);
     }
 );
 
@@ -16,7 +16,7 @@ test.each(invalidTestFunctionAssignments)("Invalid function assignment (%p)", (t
         ${testFunction.definition || ""}
         let fn: ${functionType};
         fn = ${testFunction.value};
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
@@ -24,7 +24,7 @@ test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)"
         ${testFunction.definition || ""}
         let fn: typeof ${testFunction.value};
         fn = ${castedFunction};
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionAssignments)("Invalid function argument (%p)", (testFunction, functionType) => {
@@ -32,7 +32,7 @@ test.each(invalidTestFunctionAssignments)("Invalid function argument (%p)", (tes
         ${testFunction.definition || ""}
         declare function takesFunction(fn: ${functionType});
         takesFunction(${testFunction.value});
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test("Invalid lua lib function argument", () => {
@@ -40,7 +40,7 @@ test("Invalid lua lib function argument", () => {
         declare function foo(this: void, value: string): void;
         declare const a: string[];
         a.forEach(foo);
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", (testFunction, castedFunction) => {
@@ -48,7 +48,7 @@ test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", 
         ${testFunction.definition || ""}
         declare function takesFunction(fn: typeof ${testFunction.value});
         takesFunction(${castedFunction});
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionAssignments)("Invalid function generic argument (%p)", (testFunction, functionType) => {
@@ -56,7 +56,7 @@ test.each(invalidTestFunctionAssignments)("Invalid function generic argument (%p
         ${testFunction.definition || ""}
         declare function takesFunction<T extends ${functionType}>(fn: T);
         takesFunction(${testFunction.value});
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionAssignments)("Invalid function return (%p)", (testFunction, functionType) => {
@@ -65,7 +65,7 @@ test.each(invalidTestFunctionAssignments)("Invalid function return (%p)", (testF
         function returnsFunction(): ${functionType} {
             return ${testFunction.value};
         }
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each(invalidTestFunctionCasts)("Invalid function return with cast (%p)", (testFunction, castedFunction) => {
@@ -74,7 +74,7 @@ test.each(invalidTestFunctionCasts)("Invalid function return with cast (%p)", (t
         function returnsFunction(): typeof ${testFunction.value} {
             return ${castedFunction};
         }
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test("Invalid function tuple assignment", () => {
@@ -83,7 +83,7 @@ test("Invalid function tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Meth];
         let [i, f]: [number, Func] = getTuple();
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test("Invalid method tuple assignment", () => {
@@ -92,7 +92,7 @@ test("Invalid method tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Func];
         let [i, f]: [number, Meth] = getTuple();
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test("Invalid interface method assignment", () => {
@@ -101,7 +101,7 @@ test("Invalid interface method assignment", () => {
         interface B { fn(this: void, s: string): string; }
         declare const a: A;
         const b: B = a;
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
 test.each([
@@ -117,5 +117,5 @@ test.each([
         }
         declare const o: O;
         let f: ${assignType} = o;
-    `.expectDiagnosticsToMatchSnapshot(true);
+    `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });

@@ -20,7 +20,7 @@ export function transformNumberPrototypeCall(
                 ? lua.createCallExpression(lua.createIdentifier("tostring"), [caller], node)
                 : transformLuaLibFunction(context, LuaLibFeature.NumberToString, node, caller, ...params);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "number", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "number", expressionName));
     }
 }
 
@@ -37,6 +37,6 @@ export function transformNumberConstructorCall(
         case "isFinite":
             return transformLuaLibFunction(context, LuaLibFeature.NumberIsFinite, expression, ...parameters);
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "Number", methodName));
+            context.diagnostics.push(unsupportedProperty(method.name, "Number", methodName));
     }
 }

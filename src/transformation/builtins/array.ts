@@ -79,7 +79,7 @@ export function transformArrayPrototypeCall(
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "array", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "array", expressionName));
     }
 }
 

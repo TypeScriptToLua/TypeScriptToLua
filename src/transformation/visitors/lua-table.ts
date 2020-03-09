@@ -70,7 +70,7 @@ export function transformLuaTableExpressionStatement(
                 expression
             );
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "LuaTable", methodName));
+            context.diagnostics.push(unsupportedProperty(expression.expression.name, "LuaTable", methodName));
     }
 }
 
@@ -93,7 +93,7 @@ export function transformLuaTableCallExpression(
         case "get":
             return lua.createTableIndexExpression(luaTable, params[0] ?? lua.createNilLiteral(), node);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "LuaTable", methodName));
+            context.diagnostics.push(unsupportedProperty(node.expression.name, "LuaTable", methodName));
     }
 }
 
@@ -109,7 +109,7 @@ export function transformLuaTablePropertyAccessExpression(
         return lua.createUnaryExpression(luaTable, lua.SyntaxKind.LengthOperator, node);
     }
 
-    context.diagnostics.push(unsupportedProperty(node, "LuaTable", propertyName));
+    context.diagnostics.push(unsupportedProperty(node.name, "LuaTable", propertyName));
 }
 
 export function transformLuaTablePropertyAccessInAssignment(
@@ -127,7 +127,7 @@ export function transformLuaTablePropertyAccessInAssignment(
         return lua.createTableIndexExpression(luaTable, lua.createStringLiteral(propertyName), node);
     }
 
-    context.diagnostics.push(unsupportedProperty(node, "LuaTable", propertyName));
+    context.diagnostics.push(unsupportedProperty(node.name, "LuaTable", propertyName));
 }
 
 export function validateLuaTableElementAccessExpression(

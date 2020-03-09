@@ -27,6 +27,6 @@ export function transformFunctionPrototypeCall(
         case "call":
             return transformLuaLibFunction(context, LuaLibFeature.FunctionCall, node, caller, ...params);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "function", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "function", expressionName));
     }
 }

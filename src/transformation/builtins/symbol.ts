@@ -20,6 +20,6 @@ export function transformSymbolConstructorCall(
             const functionIdentifier = lua.createIdentifier(`__TS__SymbolRegistry${upperMethodName}`);
             return lua.createCallExpression(functionIdentifier, parameters, expression);
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "Symbol", methodName));
+            context.diagnostics.push(unsupportedProperty(method.name, "Symbol", methodName));
     }
 }

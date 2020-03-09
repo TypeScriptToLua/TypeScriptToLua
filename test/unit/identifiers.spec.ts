@@ -101,6 +101,10 @@ test.each([
     `.expectDiagnosticsToMatchSnapshot();
 });
 
+test.each(["const x = ;", "({})[]"])("missing expression (%p)", statement => {
+    util.testModule(statement).expectDiagnosticsToMatchSnapshot();
+});
+
 test.each(validTsInvalidLuaNames)(
     "ambient identifier must be a valid lua identifier (object literal shorthand) (%p)",
     name => {

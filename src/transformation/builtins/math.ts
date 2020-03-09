@@ -26,7 +26,7 @@ export function transformMathProperty(
             return lua.createNumericLiteral(Math[name], node);
 
         default:
-            context.diagnostics.push(unsupportedProperty(node, "Math", name));
+            context.diagnostics.push(unsupportedProperty(node.name, "Math", name));
     }
 }
 
@@ -99,6 +99,6 @@ export function transformMathCall(
         }
 
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "Math", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "Math", expressionName));
     }
 }

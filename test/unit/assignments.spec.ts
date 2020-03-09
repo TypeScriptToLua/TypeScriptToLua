@@ -21,25 +21,25 @@ test.each(["const", "let"])("%s declaration top-level is global", declarationKin
 test("var declaration is disallowed", () => {
     util.testFunction`
         var foo = true;
-    `.expectToHaveDiagnostics();
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("var declaration in for loop is disallowed", () => {
     util.testFunction`
         for (var foo = 0;;) {}
-    `.expectToHaveDiagnostics();
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("var declaration in for...in loop is disallowed", () => {
     util.testFunction`
         for (var foo in {}) {}
-    `.expectToHaveDiagnostics();
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test("var declaration in for...of loop is disallowed", () => {
     util.testFunction`
         for (var foo of []) {}
-    `.expectToHaveDiagnostics();
+    `.expectDiagnosticsToMatchSnapshot();
 });
 
 test.each(["let myvar;", "const myvar = null;", "const myvar = undefined;"])("Null assignments (%p)", declaration => {

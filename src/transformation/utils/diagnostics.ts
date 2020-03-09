@@ -97,11 +97,11 @@ export const luaIteratorForbiddenUsage = createDiagnosticFactory(
         "the '@tupleReturn' annotation."
 );
 
-export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
-
 export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
     "Accessors in object literal are not supported."
 );
+
+export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
 
 export const unsupportedRightShiftOperator = createDiagnosticFactory(
     "Right shift operator is not supported. Use `>>>` instead."
@@ -115,10 +115,6 @@ export const unsupportedForTarget = createDiagnosticFactory(
 
 export const unsupportedProperty = createDiagnosticFactory(
     (parentName: string, property: string) => `${parentName}.${property} is unsupported.`
-);
-
-export const forOfUnsupportedObjectDestructuring = createDiagnosticFactory(
-    `Unsupported object destructuring in for...of statement.`
 );
 
 export const invalidAmbientIdentifierName = createDiagnosticFactory(

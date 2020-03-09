@@ -849,3 +849,9 @@ test("Class field override in subclass with constructors", () => {
         return (new Foo()).field + (new Bar()).field;`;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
+
+test("missing declaration name", () => {
+    util.testModule`
+        class {}
+    `.expectDiagnosticsToMatchSnapshot();
+});

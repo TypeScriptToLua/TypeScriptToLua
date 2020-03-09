@@ -110,7 +110,7 @@ export function transformStringPrototypeCall(
         case "padEnd":
             return transformLuaLibFunction(context, LuaLibFeature.StringPadEnd, node, caller, ...params);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "string", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "string", expressionName));
     }
 }
 
@@ -132,7 +132,7 @@ export function transformStringConstructorCall(
             );
 
         default:
-            context.diagnostics.push(unsupportedProperty(node, "String", expressionName));
+            context.diagnostics.push(unsupportedProperty(expression.name, "String", expressionName));
     }
 }
 
@@ -145,6 +145,6 @@ export function transformStringProperty(
             const expression = context.transformExpression(node.expression);
             return lua.createUnaryExpression(expression, lua.SyntaxKind.LengthOperator, node);
         default:
-            context.diagnostics.push(unsupportedProperty(node, "string", node.name.text));
+            context.diagnostics.push(unsupportedProperty(node.name, "string", node.name.text));
     }
 }

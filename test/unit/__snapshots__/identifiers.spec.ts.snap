@@ -128,6 +128,14 @@ exports[`ambient identifier must be a valid lua identifier (object literal short
 
 exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
 
+exports[`missing expression ("({})[]"): code 1`] = `"local ____ = ({})[____]"`;
+
+exports[`missing expression ("({})[]"): diagnostics 1`] = `"main.ts(1,6): error TS1011: An element access expression should take an argument."`;
+
+exports[`missing expression ("const x = ;"): code 1`] = `"x = ____"`;
+
+exports[`missing expression ("const x = ;"): diagnostics 1`] = `"main.ts(1,11): error TS1109: Expression expected."`;
+
 exports[`undeclared identifier must be a valid lua identifier ("$$"): code 1`] = `"foo = _____24_24_24"`;
 
 exports[`undeclared identifier must be a valid lua identifier ("$$"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;

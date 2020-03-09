@@ -237,7 +237,9 @@ export function transformVariableDeclaration(
 
 export function checkVariableDeclarationList(context: TransformationContext, node: ts.VariableDeclarationList): void {
     if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
-        context.diagnostics.push(unsupportedVarDeclaration(node));
+        const token = node.getFirstToken();
+        assert(token);
+        context.diagnostics.push(unsupportedVarDeclaration(token));
     }
 }
 

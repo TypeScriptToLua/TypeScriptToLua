@@ -55,6 +55,19 @@ const luaBuiltins: ReadonlySet<string> = new Set([
 
 export const isUnsafeName = (name: string) => !isValidLuaIdentifier(name) || luaBuiltins.has(name);
 
+function checkName(context: TransformationContext, name: string, node: ts.Node): boolean {
+    const isInvalid = !isValidLuaIdentifier(name);
+
+    if (isInvalid) {
+        // Empty identifier is a TypeScript error
+        if (name !== "") {
+            context.diagnostics.push(invalidAmbientIdentifierName(node, name));
+        }
+    }
+
+    return isInvalid;
+}
+
 export function hasUnsafeSymbolName(
     context: TransformationContext,
     symbol: ts.Symbol,
@@ -63,8 +76,7 @@ export function hasUnsafeSymbolName(
     const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
 
     // Catch ambient declarations of identifiers with bad names
-    if (!isValidLuaIdentifier(symbol.name) && isAmbient) {
-        context.diagnostics.push(invalidAmbientIdentifierName(tsOriginal, symbol.name));
+    if (isAmbient && checkName(context, symbol.name, tsOriginal)) {
         return true;
     }
 
@@ -84,12 +96,7 @@ export function hasUnsafeIdentifierName(
         }
     }
 
-    if (!isValidLuaIdentifier(identifier.text)) {
-        context.diagnostics.push(invalidAmbientIdentifierName(identifier, identifier.text));
-        return true;
-    }
-
-    return false;
+    return checkName(context, identifier.text, identifier);
 }
 
 const fixInvalidLuaIdentifier = (name: string) =>

@@ -24,7 +24,7 @@ export function transformObjectConstructorCall(
         case "values":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectValues, expression, ...parameters);
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "Object", methodName));
+            context.diagnostics.push(unsupportedProperty(method.name, "Object", methodName));
     }
 }
 

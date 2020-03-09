@@ -61,6 +61,6 @@ export function transformConsoleCall(
             );
             return lua.createCallExpression(lua.createIdentifier("print"), [debugTracebackCall]);
         default:
-            context.diagnostics.push(unsupportedProperty(expression, "console", methodName));
+            context.diagnostics.push(unsupportedProperty(method.name, "console", methodName));
     }
 }

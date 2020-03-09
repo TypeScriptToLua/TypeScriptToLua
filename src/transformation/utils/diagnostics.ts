@@ -97,10 +97,6 @@ export const luaIteratorForbiddenUsage = createDiagnosticFactory(
         "the '@tupleReturn' annotation."
 );
 
-export const unsupportedSyntaxKind = createDiagnosticFactory(
-    (description: string, kind: ts.SyntaxKind) => `Unsupported ${description} kind: ${ts.SyntaxKind[kind]}`
-);
-
 export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
 
 export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(

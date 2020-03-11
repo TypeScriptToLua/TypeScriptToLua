@@ -44,8 +44,8 @@ describe("in function call", () => {
 
     test.each(arrayLiteralCases)("of tuple return", expression => {
         util.testFunction`
-            ${tupleReturnDefinition}
-            return [...tuple(${expression})];
+            function foo(...args: any[]) { return args }
+            return foo(${expression});
         `.expectToMatchJsResult();
     });
 });

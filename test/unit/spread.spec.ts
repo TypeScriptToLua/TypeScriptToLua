@@ -66,7 +66,7 @@ describe("in array literal", () => {
         `.expectToMatchJsResult();
     });
 
-    test("of string literal mixed", () => {
+    test("of string literal", () => {
         util.testExpressionTemplate`[..."spread", ..."string"]`.expectToMatchJsResult();
     });
 

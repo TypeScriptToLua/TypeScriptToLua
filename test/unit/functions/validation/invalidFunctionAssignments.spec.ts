@@ -38,7 +38,10 @@ test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)"
         ${testFunction.definition || ""}
         let fn: typeof ${testFunction.value};
         fn = ${castedFunction};
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot(
+        [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+        true
+    );
 });
 
 test.each(invalidTestFunctionAssignments)(
@@ -68,7 +71,10 @@ test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", 
         ${testFunction.definition || ""}
         declare function takesFunction(fn: typeof ${testFunction.value});
         takesFunction(${castedFunction});
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot(
+        [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+        true
+    );
 });
 
 test.each(invalidTestFunctionAssignments)(
@@ -100,14 +106,22 @@ test.each(invalidTestFunctionAssignments)(
     }
 );
 
-test.each(invalidTestFunctionCasts)("Invalid function return with cast (%p)", (testFunction, castedFunction) => {
-    util.testModule`
-        ${testFunction.definition || ""}
-        function returnsFunction(): typeof ${testFunction.value} {
-            return ${castedFunction};
-        }
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
-});
+test.each(invalidTestFunctionCasts)(
+    "Invalid function return with cast (%p)",
+    (testFunction, castedFunction, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition || ""}
+            function returnsFunction(): typeof ${testFunction.value} {
+                return ${castedFunction};
+            }
+        `.expectDiagnosticsToMatchSnapshot(
+            isSelfConversion
+                ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
+                : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+            true
+        );
+    }
+);
 
 test("Invalid function tuple assignment", () => {
     util.testModule`

@@ -1353,43 +1353,43 @@ exports[`Invalid function return ({"value": "function(this: void, s) { return s;
 exports[`Invalid function return ({"value": "function(this: void, s) { return s; }"}): diagnostics 2`] = `"main.ts(4,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function return with cast ({"definition": "/** @noSelfInFile */ let noSelfInFileFunc: {(s: string): string} = function(s) { return s; };", "value": "noSelfInFileFunc"}): diagnostics 1`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "/** @noSelfInFile */ let noSelfInFileFunc: {(s: string): string} = function(s) { return s; };", "value": "noSelfInFileFunc"}): diagnostics 2`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let selfFunc: {(this: any, s: string): string} = function(s) { return s; };", "value": "selfFunc"}): diagnostics 1`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'.
-main.ts(4,20): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."
+"main.ts(4,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'.
+main.ts(4,24): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let selfFunc: {(this: any, s: string): string} = function(s) { return s; };", "value": "selfFunc"}): diagnostics 2`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'.
-main.ts(4,20): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."
+"main.ts(4,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'.
+main.ts(4,24): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let voidFunc: {(this: void, s: string): string} = function(s) { return s; };", "value": "voidFunc"}): diagnostics 1`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let voidFunc: {(this: void, s: string): string} = function(s) { return s; };", "value": "voidFunc"}): diagnostics 2`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let voidFunc: {(this: void, s: string): string} = function(s) { return s; };", "value": "voidFunc"}): diagnostics 3`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function return with cast ({"definition": "let voidFunc: {(this: void, s: string): string} = function(s) { return s; };", "value": "voidFunc"}): diagnostics 4`] = `
-"main.ts(4,13): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
-main.ts(4,20): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
+"main.ts(4,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'.
+main.ts(4,24): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."
 `;
 
 exports[`Invalid function tuple assignment: diagnostics 1`] = `

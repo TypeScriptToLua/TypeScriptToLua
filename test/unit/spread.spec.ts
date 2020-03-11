@@ -32,7 +32,7 @@ describe("in function call", () => {
         }
     );
 
-    test.each(spreadCases)("of arguments (%p)", expression => {
+    test.each(arrayLiteralCases)("of array literal (%p)", expression => {
         util.testFunction`
             function foo(...args) { return args }
             return foo(${expression});

@@ -40,7 +40,9 @@ export function resolvePlugin(
         }
     }
 
-    const result = require(resolved)[importName];
+    const commonjsModule = require(resolved);
+    const factoryModule = commonjsModule.__esModule ? commonjsModule : { default: commonjsModule };
+    const result = factoryModule[importName];
     if (result === undefined) {
         return { error: diagnosticFactories.shouldHaveAExport(kind, query, importName) };
     }

@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+- Errors reported during transpilation now are created as TypeScript diagnostics, instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
+
+  <!-- prettier-ignore -->
+  ```ts
+  for (var x in []) {}
+  ```
+
+  ```shell
+  # Before
+
+  $ tstl file.ts
+  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
+
+  $ cat file.lua
+  error("Iterating over arrays with 'for ... in' is not allowed.")
+  ```
+
+  ```shell
+  # Now
+
+  $ tstl file.ts
+  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
+  file.ts:1:6 - error TSTL: `var` declarations are not supported. Use `let` or `const` instead.
+
+  $ cat file.lua
+  for x in pairs({}) do
+  end
+  ```
+
 ## 0.31.0
 
 - **Breaking:** The old annotation syntax (`/* !varArg */`) **no longer works**, the only currently supported syntax is:

@@ -64,7 +64,7 @@ export const optionDeclarations: CommandLineOption[] = [
     },
     {
         name: "luaPlugins",
-        description: "TODO",
+        description: "List of TypeScriptToLua plugins.",
         type: "object",
     },
 ];

@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Added `tstl.luaPlugins` option, allowing to specify plugins in a `tsconfig.json` file:
+
+  ```json
+  {
+    "tstl": {
+      "luaPlugins": [{ "plugin": "./plugin.ts" }]
+    }
+  }
+  ```
+
 ## 0.31.0
 
 - **Breaking:** The old annotation syntax (`/* !varArg */`) **no longer works**, the only currently supported syntax is:

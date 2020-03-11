@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import { CompilerOptions } from "../CompilerOptions";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
-import * as diagnosticFactories from "./diagnostics";
 import { getConfigDirectory, resolvePlugin } from "./utils";
 
 export interface Plugin {

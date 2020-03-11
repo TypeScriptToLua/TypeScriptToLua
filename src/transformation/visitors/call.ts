@@ -49,6 +49,7 @@ export function transformContextualCallExpression(
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
     if (
         ts.isPropertyAccessExpression(left) &&
+        ts.isIdentifier(left.name) &&
         !luaKeywords.has(left.name.text) &&
         isValidLuaIdentifier(left.name.text)
     ) {

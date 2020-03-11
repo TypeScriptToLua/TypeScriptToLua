@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
+
 ## 0.31.0
 
 - **Breaking:** The old annotation syntax (`/* !varArg */`) **no longer works**, the only currently supported syntax is:

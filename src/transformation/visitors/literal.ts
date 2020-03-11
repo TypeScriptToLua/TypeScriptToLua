@@ -21,6 +21,8 @@ export function transformPropertyName(context: TransformationContext, node: ts.P
         return context.transformExpression(node.expression);
     } else if (ts.isIdentifier(node)) {
         return lua.createStringLiteral(node.text);
+    } else if (ts.isPrivateIdentifier(node)) {
+        throw new Error("PrivateIdentifier is not supported");
     } else {
         return context.transformExpression(node);
     }
@@ -59,6 +61,16 @@ export function createShorthandIdentifier(
 
     return identifier;
 }
+
+const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = expression => {
+    if (expression.text === "Infinity") {
+        const math = lua.createIdentifier("math");
+        const huge = lua.createStringLiteral("huge");
+        return lua.createTableIndexExpression(math, huge, expression);
+    }
+
+    return lua.createNumericLiteral(Number(expression.text), expression);
+};
 
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
     let properties: lua.TableFieldExpression[] = [];
@@ -142,7 +154,7 @@ export const literalVisitors: Visitors = {
     [ts.SyntaxKind.NullKeyword]: node => lua.createNilLiteral(node),
     [ts.SyntaxKind.TrueKeyword]: node => lua.createBooleanLiteral(true, node),
     [ts.SyntaxKind.FalseKeyword]: node => lua.createBooleanLiteral(false, node),
-    [ts.SyntaxKind.NumericLiteral]: node => lua.createNumericLiteral(Number(node.text), node),
+    [ts.SyntaxKind.NumericLiteral]: transformNumericLiteralExpression,
     [ts.SyntaxKind.StringLiteral]: node => lua.createStringLiteral(node.text, node),
     [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => lua.createStringLiteral(node.text, node),
     [ts.SyntaxKind.ObjectLiteralExpression]: transformObjectLiteralExpression,

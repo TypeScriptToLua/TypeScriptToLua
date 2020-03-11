@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
+
 - Fixed class accessors not working when base class is lacking type information (#725)
 
 - Class extension code has been extracted to lualib

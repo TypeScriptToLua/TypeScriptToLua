@@ -96,7 +96,7 @@ function transformImportSpecifier(
 export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> = (statement, context) => {
     const scope = peekScope(context);
 
-    if (!context.options.noHoisting && !scope.importStatements) {
+    if (!scope.importStatements) {
         scope.importStatements = [];
     }
 

@@ -253,3 +253,43 @@ test("export as specifier shouldn't effect local vars", () => {
         a = 6;
     `.expectToMatchJsResult();
 });
+
+test("export modified in for in loop", () => {
+    util.testModule`
+        export let foo = '';
+        for (foo in { x: true }) {}
+    `
+        .setReturnExport("foo")
+        .expectToMatchJsResult();
+});
+
+test("export dependency modified in for in loop", () => {
+    util.testModule`
+        let foo = '';
+        export { foo as bar };
+        for (foo in { x: true }) {}
+    `
+        .setReturnExport("bar")
+        .expectToEqual("x");
+});
+
+test("export default class with future reference", () => {
+    util.testModule`
+        export default class Default {}
+        const d = new Default();
+        export const result = d.constructor.name;
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
+});
+
+test("export default function with future reference", () => {
+    util.testModule`
+        export default function defaultFunction() {
+            return true;
+        }
+        export const result = defaultFunction();
+    `
+        .setReturnExport("result")
+        .expectToMatchJsResult();
+});

@@ -34,7 +34,7 @@ describe("in function call", () => {
 
     test.each(arrayLiteralCases)("of array literal (%p)", expression => {
         util.testFunction`
-            function foo(...args) { return args }
+            function foo(...args: any[]) { return args }
             return foo(${expression});
         `.expectToMatchJsResult();
     });

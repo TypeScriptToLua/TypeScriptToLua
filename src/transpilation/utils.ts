@@ -1,22 +1,17 @@
+import * as path from "path";
 import * as resolve from "resolve";
 import * as ts from "typescript";
-import * as path from "path";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../cli/diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 
 export const getConfigDirectory = (options: ts.CompilerOptions) =>
     options.configFilePath ? path.dirname(options.configFilePath) : process.cwd();
 
-interface ResolvePluginDiagnostics {
-    couldNotResolveFrom(query: string, base: string): ts.Diagnostic;
-    toLoadItShouldBeTranspiled(query: string): ts.Diagnostic;
-    shouldHaveAExport(query: string, importName: string): ts.Diagnostic;
-}
-
 export function resolvePlugin(
-    diagnostics: ResolvePluginDiagnostics,
-    basedir: string,
+    kind: string,
     optionName: string,
+    basedir: string,
     query: string,
     importName = "default"
 ): { error?: ts.Diagnostic; result?: unknown } {
@@ -29,7 +24,7 @@ export function resolvePlugin(
         resolved = resolve.sync(query, { basedir, extensions: [".js", ".ts", ".tsx"] });
     } catch (err) {
         if (err.code !== "MODULE_NOT_FOUND") throw err;
-        return { error: diagnostics.couldNotResolveFrom(query, basedir) };
+        return { error: diagnosticFactories.couldNotResolveFrom(kind, query, basedir) };
     }
 
     // tslint:disable-next-line: deprecation
@@ -41,13 +36,13 @@ export function resolvePlugin(
             tsNode.register({ transpileOnly: true });
         } catch (err) {
             if (err.code !== "MODULE_NOT_FOUND") throw err;
-            return { error: diagnostics.toLoadItShouldBeTranspiled(query) };
+            return { error: diagnosticFactories.toLoadItShouldBeTranspiled(kind, query) };
         }
     }
 
     const result = require(resolved)[importName];
     if (result === undefined) {
-        return { error: diagnostics.shouldHaveAExport(query, importName) };
+        return { error: diagnosticFactories.shouldHaveAExport(kind, query, importName) };
     }
 
     return { result };

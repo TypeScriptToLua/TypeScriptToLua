@@ -10,23 +10,14 @@ const createDiagnostic = (messageText: string, category = ts.DiagnosticCategory.
     messageText,
 });
 
-export const toLoadPluginItShouldBeTranspiled = (transform: string) =>
-    createDiagnostic(`To load "${transform}" plugin it should be transpiled or "ts-node" should be installed`);
+export const toLoadItShouldBeTranspiled = (kind: string, transform: string) =>
+    createDiagnostic(`To load "${transform}" ${kind} it should be transpiled or "ts-node" should be installed`);
 
-export const couldNotResolvePluginFrom = (transform: string, base: string) =>
-    createDiagnostic(`Could not resolve "${transform}" plugin from "${base}".`);
+export const couldNotResolveFrom = (kind: string, transform: string, base: string) =>
+    createDiagnostic(`Could not resolve "${transform}" ${kind} from "${base}".`);
 
-export const pluginShouldHaveAExport = (transform: string, importName: string) =>
-    createDiagnostic(`"${transform}" plugin should have a "${importName}" export`);
-
-export const toLoadTransformerItShouldBeTranspiled = (transform: string) =>
-    createDiagnostic(`To load "${transform}" transformer it should be transpiled or "ts-node" should be installed`);
-
-export const couldNotResolveTransformerFrom = (transform: string, base: string) =>
-    createDiagnostic(`Could not resolve "${transform}" transformer from "${base}".`);
-
-export const transformerShouldHaveAExport = (transform: string, importName: string) =>
-    createDiagnostic(`"${transform}" transformer should have a "${importName}" export`);
+export const shouldHaveAExport = (kind: string, transform: string, importName: string) =>
+    createDiagnostic(`"${transform}" ${kind} should have a "${importName}" export`);
 
 export const transformerShouldBeATsTransformerFactory = (transform: string) =>
     createDiagnostic(

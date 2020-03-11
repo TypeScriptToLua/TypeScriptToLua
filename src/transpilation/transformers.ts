@@ -68,13 +68,9 @@ function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagno
         const optionName = `compilerOptions.plugins[${index}]`;
 
         const { error: resolveError, result: factory } = resolvePlugin(
-            {
-                couldNotResolveFrom: diagnosticFactories.couldNotResolveTransformerFrom,
-                toLoadItShouldBeTranspiled: diagnosticFactories.toLoadTransformerItShouldBeTranspiled,
-                shouldHaveAExport: diagnosticFactories.transformerShouldHaveAExport,
-            },
-            getConfigDirectory(options),
+            "transformer",
             `${optionName}.transform`,
+            getConfigDirectory(options),
             transformerImport.transform,
             transformerImport.import
         );

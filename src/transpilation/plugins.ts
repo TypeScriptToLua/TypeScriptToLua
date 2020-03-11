@@ -29,13 +29,9 @@ export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], cu
         const optionName = `tstl.luaPlugins[${index}]`;
 
         const { error: resolveError, result: factory } = resolvePlugin(
-            {
-                couldNotResolveFrom: diagnosticFactories.couldNotResolvePluginFrom,
-                toLoadItShouldBeTranspiled: diagnosticFactories.toLoadPluginItShouldBeTranspiled,
-                shouldHaveAExport: diagnosticFactories.pluginShouldHaveAExport,
-            },
-            getConfigDirectory(options),
+            "plugin",
             `${optionName}.plugin`,
+            getConfigDirectory(options),
             pluginOption.plugin,
             pluginOption.import
         );

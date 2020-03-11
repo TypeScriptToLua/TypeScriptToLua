@@ -5,7 +5,7 @@ import * as util from "../util";
 const expectUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
 const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
 
-const spreadCases = [
+const arrayLiteralCases = [
     "1, 2, ...[3, 4, 5]",
     "...[1, 2], 3, 4, 5",
     "1, ...[[2]], 3",

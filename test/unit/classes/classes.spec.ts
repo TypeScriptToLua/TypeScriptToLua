@@ -237,7 +237,7 @@ test("Subclass constructor across merged namespace", () => {
 });
 
 test("super without class", () => {
-    util.testExpression`super()`.expectDiagnosticsToMatchSnapshot();
+    util.testExpression`super()`.expectDiagnosticsToMatchSnapshot([2337]);
 });
 
 test("super in unnamed class", () => {
@@ -853,5 +853,5 @@ test("Class field override in subclass with constructors", () => {
 test("missing declaration name", () => {
     util.testModule`
         class {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([1211]);
 });

@@ -1,3 +1,4 @@
+import { unsupportedVarDeclaration } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
@@ -21,25 +22,25 @@ test.each(["const", "let"])("%s declaration top-level is global", declarationKin
 test("var declaration is disallowed", () => {
     util.testFunction`
         var foo = true;
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
 });
 
 test("var declaration in for loop is disallowed", () => {
     util.testFunction`
         for (var foo = 0;;) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
 });
 
 test("var declaration in for...in loop is disallowed", () => {
     util.testFunction`
         for (var foo in {}) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
 });
 
 test("var declaration in for...of loop is disallowed", () => {
     util.testFunction`
         for (var foo of []) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
 });
 
 test.each(["let myvar;", "const myvar = null;", "const myvar = undefined;"])("Null assignments (%p)", declaration => {

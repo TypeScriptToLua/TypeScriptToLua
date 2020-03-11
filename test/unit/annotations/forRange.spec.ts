@@ -1,3 +1,4 @@
+import { invalidForRangeCall } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const createForRangeDeclaration = (args = "i: number, j: number, k?: number", returns = "number[]") => `
@@ -28,14 +29,14 @@ describe("invalid usage", () => {
         util.testModule`
             /** @forRange */
             function luaRange() {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test.each<[number[]]>([[[]], [[1]], [[1, 2, 3, 4]]])("argument count (%p)", args => {
         util.testModule`
             ${createForRangeDeclaration("...args: number[]")}
             for (const i of luaRange(${args})) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test("non-declared loop variable", () => {
@@ -43,28 +44,28 @@ describe("invalid usage", () => {
             ${createForRangeDeclaration()}
             let i: number;
             for (i of luaRange(1, 10, 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test("argument types", () => {
         util.testModule`
             ${createForRangeDeclaration("i: string, j: number")}
             for (const i of luaRange("foo", 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test("variable destructuring", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "number[][]")}
             for (const [i] of luaRange(1, 10, 2)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test("return type", () => {
         util.testModule`
             ${createForRangeDeclaration(undefined, "string[]")}
             for (const i of luaRange(1, 10)) {}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
     test.each([
@@ -77,6 +78,6 @@ describe("invalid usage", () => {
         util.testModule`
             ${createForRangeDeclaration()}
             ${statement}
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 });

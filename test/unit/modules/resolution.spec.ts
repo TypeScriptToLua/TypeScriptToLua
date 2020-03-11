@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { unresolvableRequirePath } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const requireRegex = /require\("(.*?)"\)/;
@@ -82,7 +83,7 @@ test("doesn't resolve paths out of root dir", () => {
         .setMainFileName("src/main.ts")
         .setOptions({ rootDir: "./src" })
         .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot();
+        .expectDiagnosticsToMatchSnapshot([unresolvableRequirePath.code]);
 });
 
 test.each([

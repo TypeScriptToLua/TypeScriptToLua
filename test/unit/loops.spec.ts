@@ -1,4 +1,5 @@
 import * as tstl from "../../src";
+import { forbiddenForIn, unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test("while", () => {
@@ -215,7 +216,7 @@ test("forin[Array]", () => {
     util.testFunction`
         const array = [];
         for (const key in array) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([forbiddenForIn.code]);
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
@@ -529,7 +530,7 @@ for (const testCase of [
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
-        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot(),
+        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,

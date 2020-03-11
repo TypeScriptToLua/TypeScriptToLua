@@ -111,7 +111,7 @@ export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
 export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
 
 export const unsupportedRightShiftOperator = createDiagnosticFactory(
-    "Right shift operator is not supported. Use `>>>` instead."
+    "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
 );
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);

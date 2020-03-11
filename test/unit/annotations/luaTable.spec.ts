@@ -1,12 +1,20 @@
+import {
+    luaTableCannotBeAccessedDynamically,
+    luaTableCannotBeExtended,
+    luaTableForbiddenUsage,
+    luaTableMustBeAmbient,
+    unsupportedProperty,
+    luaTableInvalidInstanceOf,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const tableLibClass = `
 /** @luaTable */
 declare class Table<K extends {} = {}, V = any> {
     length: number;
-    constructor(notAllowed?: boolean);
-    set(key?: K, value?: V): void;
-    get(key?: K, notAllowed?: K): V;
+    constructor(notAllowed?: any);
+    set(key?: K, value?: V, notAllowed?: any): void;
+    get(key?: K, notAllowed?: any): V;
     other(): void;
 }
 declare let tbl: Table;
@@ -17,31 +25,35 @@ const tableLibInterface = `
 /** @luaTable */
 declare interface Table<K extends {} = {}, V = any> {
     length: number;
-    constructor(notAllowed?: boolean);
-    set(key?: K, value?: V): void;
-    get(key?: K, notAllowed?: K): V;
+    constructor(notAllowed?: any);
+    set(key?: K, value?: V, notAllowed?: any): void;
+    get(key?: K, notAllowed?: any): V;
     other(): void;
 }
 declare let tbl: Table;
 `;
 
 test.each([tableLibClass])("LuaTables cannot be constructed with arguments", tableLib => {
-    util.testModule(tableLib + `const table = new Table(true);`).expectDiagnosticsToMatchSnapshot();
+    util.testModule(tableLib + `const table = new Table(true);`).expectDiagnosticsToMatchSnapshot([
+        luaTableForbiddenUsage.code,
+    ]);
 });
 
 test.each([tableLibClass, tableLibInterface])(
     "LuaTable set() cannot be used in a LuaTable call expression",
     tableLib => {
-        util.testModule(tableLib + `const exp = tbl.set("value", 5)`).expectDiagnosticsToMatchSnapshot();
+        util.testModule(tableLib + `const exp = tbl.set("value", 5)`).expectDiagnosticsToMatchSnapshot([
+            unsupportedProperty.code,
+        ]);
     }
 );
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other members", tableLib => {
-    util.testModule(tableLib + `tbl.other()`).expectDiagnosticsToMatchSnapshot();
+    util.testModule(tableLib + `tbl.other()`).expectDiagnosticsToMatchSnapshot([unsupportedProperty.code]);
 });
 
 test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other members", tableLib => {
-    util.testModule(tableLib + `let x = tbl.other()`).expectDiagnosticsToMatchSnapshot();
+    util.testModule(tableLib + `let x = tbl.other()`).expectDiagnosticsToMatchSnapshot([unsupportedProperty.code]);
 });
 
 test.each([tableLibClass])("LuaTable new", tableLib => {
@@ -56,7 +68,7 @@ test.each([tableLibClass])("LuaTable length", tableLib => {
 });
 
 test.each([tableLibClass, tableLibInterface])("Cannot set LuaTable length", tableLib => {
-    util.testModule(tableLib + `tbl.length = 2;`).expectDiagnosticsToMatchSnapshot();
+    util.testModule(tableLib + `tbl.length = 2;`).expectDiagnosticsToMatchSnapshot([luaTableForbiddenUsage.code]);
 });
 
 test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib => {
@@ -69,7 +81,7 @@ test.each([tableLibClass, tableLibInterface])("Forbidden LuaTable use", tableLib
         'tbl.set(...(["field", 0] as const))',
         'tbl.set("field", ...([0] as const))',
     ])("Forbidden LuaTable use (%p)", invalidCode => {
-        util.testModule(tableLib + invalidCode).expectDiagnosticsToMatchSnapshot();
+        util.testModule(tableLib + invalidCode).expectDiagnosticsToMatchSnapshot([luaTableForbiddenUsage.code]);
     });
 });
 
@@ -77,7 +89,7 @@ test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
     test.each([`class Ext extends Table {}`, `const c = class Ext extends Table {}`])(
         "Cannot extend LuaTable class (%p)",
         code => {
-            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
+            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot([luaTableCannotBeExtended.code]);
         }
     );
 });
@@ -87,12 +99,12 @@ test.each([
     `/** @luaTable */ export class Table {}`,
     `/** @luaTable */ const c = class Table {}`,
 ])("LuaTable classes must be ambient (%p)", code => {
-    util.testModule(code).expectDiagnosticsToMatchSnapshot();
+    util.testModule(code).expectDiagnosticsToMatchSnapshot([luaTableMustBeAmbient.code]);
 });
 
 test.each([tableLibClass])("Cannot extend LuaTable class", tableLib => {
     test.each([`tbl instanceof Table`])("Cannot use instanceof on a LuaTable class (%p)", code => {
-        util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
+        util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot([luaTableInvalidInstanceOf.code]);
     });
 });
 
@@ -100,14 +112,18 @@ test.each([tableLibClass, tableLibInterface])("Cannot use ElementAccessExpressio
     test.each([`tbl["get"]("field")`, `tbl["set"]("field")`, `tbl["length"]`])(
         "Cannot use ElementAccessExpression on a LuaTable (%p)",
         code => {
-            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot();
+            util.testModule(tableLib + code).expectDiagnosticsToMatchSnapshot([
+                luaTableCannotBeAccessedDynamically.code,
+            ]);
         }
     );
 });
 
 test.each([tableLibClass, tableLibInterface])("Cannot isolate LuaTable methods", tableLib => {
     test.each([`set`, `get`])("Cannot isolate LuaTable method (%p)", propertyName => {
-        util.testModule(`${tableLib} let property = tbl.${propertyName}`).expectDiagnosticsToMatchSnapshot();
+        util.testModule(`${tableLib} let property = tbl.${propertyName}`).expectDiagnosticsToMatchSnapshot([
+            unsupportedProperty.code,
+        ]);
     });
 });
 

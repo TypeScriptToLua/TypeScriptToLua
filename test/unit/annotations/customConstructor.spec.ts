@@ -1,3 +1,4 @@
+import { annotationInvalidArgumentCount } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("CustomCreate", () => {
@@ -29,5 +30,5 @@ test("IncorrectUsage", () => {
         class Point2D {}
 
         new Point2D();
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([annotationInvalidArgumentCount.code]);
 });

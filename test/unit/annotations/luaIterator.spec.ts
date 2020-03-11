@@ -1,4 +1,5 @@
 import * as util from "../../util";
+import { luaIteratorForbiddenUsage } from "../../../src/transformation/utils/diagnostics";
 
 test("forof lua iterator", () => {
     const code = `
@@ -143,7 +144,7 @@ test("forof lua iterator tuple-return single variable", () => {
         interface Iter extends Iterable<[string, string]> {}
         declare function luaIter(): Iter;
         for (let x of luaIter()) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([luaIteratorForbiddenUsage.code]);
 });
 
 test("forof lua iterator tuple-return single existing variable", () => {
@@ -156,7 +157,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
         declare function luaIter(): Iter;
         let x: [string, string];
         for (x of luaIter()) {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([luaIteratorForbiddenUsage.code]);
 });
 
 test("forof forwarded lua iterator", () => {

@@ -1,23 +1,37 @@
+import {
+    unsupportedOverloadAssignment,
+    unsupportedNoSelfFunctionConversion,
+    unsupportedSelfFunctionConversion,
+} from "../../../../src/transformation/utils/diagnostics";
 import * as util from "../../../util";
 import { invalidTestFunctionAssignments, invalidTestFunctionCasts } from "./functionPermutations";
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function variable declaration (%p)",
-    (testFunction, functionType) => {
+    (testFunction, functionType, isSelfConversion) => {
         util.testModule`
             ${testFunction.definition || ""}
             const fn: ${functionType} = ${testFunction.value};
-        `.expectDiagnosticsToMatchSnapshot(undefined, true);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
-test.each(invalidTestFunctionAssignments)("Invalid function assignment (%p)", (testFunction, functionType) => {
-    util.testModule`
-        ${testFunction.definition || ""}
-        let fn: ${functionType};
-        fn = ${testFunction.value};
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
-});
+test.each(invalidTestFunctionAssignments)(
+    "Invalid function assignment (%p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition || ""}
+            let fn: ${functionType};
+            fn = ${testFunction.value};
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
 
 test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
@@ -27,20 +41,26 @@ test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)"
     `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
-test.each(invalidTestFunctionAssignments)("Invalid function argument (%p)", (testFunction, functionType) => {
-    util.testModule`
-        ${testFunction.definition || ""}
-        declare function takesFunction(fn: ${functionType});
-        takesFunction(${testFunction.value});
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
-});
+test.each(invalidTestFunctionAssignments)(
+    "Invalid function argument (%p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition || ""}
+            declare function takesFunction(fn: ${functionType});
+            takesFunction(${testFunction.value});
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
 
 test("Invalid lua lib function argument", () => {
     util.testModule`
         declare function foo(this: void, value: string): void;
         declare const a: string[];
         a.forEach(foo);
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot([unsupportedSelfFunctionConversion.code], true);
 });
 
 test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", (testFunction, castedFunction) => {
@@ -51,22 +71,34 @@ test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", 
     `.expectDiagnosticsToMatchSnapshot(undefined, true);
 });
 
-test.each(invalidTestFunctionAssignments)("Invalid function generic argument (%p)", (testFunction, functionType) => {
-    util.testModule`
-        ${testFunction.definition || ""}
-        declare function takesFunction<T extends ${functionType}>(fn: T);
-        takesFunction(${testFunction.value});
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
-});
+test.each(invalidTestFunctionAssignments)(
+    "Invalid function generic argument (%p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition || ""}
+            declare function takesFunction<T extends ${functionType}>(fn: T);
+            takesFunction(${testFunction.value});
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
 
-test.each(invalidTestFunctionAssignments)("Invalid function return (%p)", (testFunction, functionType) => {
-    util.testModule`
-        ${testFunction.definition || ""}
-        function returnsFunction(): ${functionType} {
-            return ${testFunction.value};
-        }
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
-});
+test.each(invalidTestFunctionAssignments)(
+    "Invalid function return (%p)",
+    (testFunction, functionType, isSelfConversion) => {
+        util.testModule`
+            ${testFunction.definition || ""}
+            function returnsFunction(): ${functionType} {
+                return ${testFunction.value};
+            }
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
+    }
+);
 
 test.each(invalidTestFunctionCasts)("Invalid function return with cast (%p)", (testFunction, castedFunction) => {
     util.testModule`
@@ -83,7 +115,7 @@ test("Invalid function tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Meth];
         let [i, f]: [number, Func] = getTuple();
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot([2322, unsupportedNoSelfFunctionConversion.code], true);
 });
 
 test("Invalid method tuple assignment", () => {
@@ -92,7 +124,7 @@ test("Invalid method tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Func];
         let [i, f]: [number, Meth] = getTuple();
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot([unsupportedSelfFunctionConversion.code], true);
 });
 
 test("Invalid interface method assignment", () => {
@@ -101,7 +133,7 @@ test("Invalid interface method assignment", () => {
         interface B { fn(this: void, s: string): string; }
         declare const a: A;
         const b: B = a;
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot([unsupportedNoSelfFunctionConversion.code], true);
 });
 
 test.each([
@@ -117,5 +149,5 @@ test.each([
         }
         declare const o: O;
         let f: ${assignType} = o;
-    `.expectDiagnosticsToMatchSnapshot(undefined, true);
+    `.expectDiagnosticsToMatchSnapshot([unsupportedOverloadAssignment.code], true);
 });

@@ -29,17 +29,17 @@ exports[`Cannot isolate LuaTable method ("get"): code 1`] = `"property = tbl.get
 
 exports[`Cannot isolate LuaTable method ("get"): code 2`] = `"property = tbl.get"`;
 
-exports[`Cannot isolate LuaTable method ("get"): diagnostics 1`] = `"main.ts(11,17): error TSTL: LuaTable.get is unsupported."`;
+exports[`Cannot isolate LuaTable method ("get"): diagnostics 1`] = `"main.ts(11,21): error TSTL: LuaTable.get is unsupported."`;
 
-exports[`Cannot isolate LuaTable method ("get"): diagnostics 2`] = `"main.ts(11,17): error TSTL: LuaTable.get is unsupported."`;
+exports[`Cannot isolate LuaTable method ("get"): diagnostics 2`] = `"main.ts(11,21): error TSTL: LuaTable.get is unsupported."`;
 
 exports[`Cannot isolate LuaTable method ("set"): code 1`] = `"property = tbl.set"`;
 
 exports[`Cannot isolate LuaTable method ("set"): code 2`] = `"property = tbl.set"`;
 
-exports[`Cannot isolate LuaTable method ("set"): diagnostics 1`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
+exports[`Cannot isolate LuaTable method ("set"): diagnostics 1`] = `"main.ts(11,21): error TSTL: LuaTable.set is unsupported."`;
 
-exports[`Cannot isolate LuaTable method ("set"): diagnostics 2`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
+exports[`Cannot isolate LuaTable method ("set"): diagnostics 2`] = `"main.ts(11,21): error TSTL: LuaTable.set is unsupported."`;
 
 exports[`Cannot set LuaTable length: code 1`] = `"tbl.length = 2"`;
 
@@ -108,15 +108,9 @@ exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): cod
 
 exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): code 2`] = `"tbl[table.unpack({\\"field\\", 0})] = nil"`;
 
-exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): diagnostics 1`] = `
-"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 1.
-main.ts(11,9): error TSTL: Invalid @luaTable usage: Arguments cannot be spread."
-`;
+exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): diagnostics 1`] = `"main.ts(11,9): error TSTL: Invalid @luaTable usage: Arguments cannot be spread."`;
 
-exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): diagnostics 2`] = `
-"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 1.
-main.ts(11,9): error TSTL: Invalid @luaTable usage: Arguments cannot be spread."
-`;
+exports[`Forbidden LuaTable use ("tbl.set(...([\\"field\\", 0] as const))"): diagnostics 2`] = `"main.ts(11,9): error TSTL: Invalid @luaTable usage: Arguments cannot be spread."`;
 
 exports[`Forbidden LuaTable use ("tbl.set(\\"field\\")"): code 1`] = `"tbl.field = nil"`;
 
@@ -138,15 +132,9 @@ exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): code 1`] = `"tbl
 
 exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): code 2`] = `"tbl.field = 0"`;
 
-exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): diagnostics 1`] = `
-"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 3.
-main.ts(11,21): error TS2554: Expected 0-2 arguments, but got 3."
-`;
+exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): diagnostics 1`] = `"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 3."`;
 
-exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): diagnostics 2`] = `
-"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 3.
-main.ts(11,21): error TS2554: Expected 0-2 arguments, but got 3."
-`;
+exports[`Forbidden LuaTable use ("tbl.set(\\"field\\", 0, 1)"): diagnostics 2`] = `"main.ts(11,1): error TSTL: Invalid @luaTable usage: Expected 2 arguments, but got 3."`;
 
 exports[`LuaTable classes must be ambient ("/** @luaTable */ class Table {}"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -188,9 +176,9 @@ exports[`LuaTable set() cannot be used in a LuaTable call expression: code 1`] =
 
 exports[`LuaTable set() cannot be used in a LuaTable call expression: code 2`] = `"exp = tbl:set(\\"value\\", 5)"`;
 
-exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 1`] = `"main.ts(11,13): error TSTL: LuaTable.set is unsupported."`;
+exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 1`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
 
-exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 2`] = `"main.ts(11,13): error TSTL: LuaTable.set is unsupported."`;
+exports[`LuaTable set() cannot be used in a LuaTable call expression: diagnostics 2`] = `"main.ts(11,17): error TSTL: LuaTable.set is unsupported."`;
 
 exports[`LuaTables cannot be constructed with arguments: code 1`] = `"____table = {}"`;
 
@@ -204,10 +192,10 @@ exports[`LuaTables cannot have other members: code 3`] = `"x = tbl:other()"`;
 
 exports[`LuaTables cannot have other members: code 4`] = `"x = tbl:other()"`;
 
-exports[`LuaTables cannot have other members: diagnostics 1`] = `"main.ts(11,1): error TSTL: LuaTable.other is unsupported."`;
+exports[`LuaTables cannot have other members: diagnostics 1`] = `"main.ts(11,5): error TSTL: LuaTable.other is unsupported."`;
 
-exports[`LuaTables cannot have other members: diagnostics 2`] = `"main.ts(11,1): error TSTL: LuaTable.other is unsupported."`;
+exports[`LuaTables cannot have other members: diagnostics 2`] = `"main.ts(11,5): error TSTL: LuaTable.other is unsupported."`;
 
-exports[`LuaTables cannot have other members: diagnostics 3`] = `"main.ts(11,9): error TSTL: LuaTable.other is unsupported."`;
+exports[`LuaTables cannot have other members: diagnostics 3`] = `"main.ts(11,13): error TSTL: LuaTable.other is unsupported."`;
 
-exports[`LuaTables cannot have other members: diagnostics 4`] = `"main.ts(11,9): error TSTL: LuaTable.other is unsupported."`;
+exports[`LuaTables cannot have other members: diagnostics 4`] = `"main.ts(11,13): error TSTL: LuaTable.other is unsupported."`;

@@ -1,3 +1,4 @@
+import { extensionCannotConstruct, metaExtensionMissingExtends } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("MetaExtension", () => {
@@ -32,7 +33,7 @@ test("IncorrectUsage", () => {
                 return 5;
             }
         }
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([metaExtensionMissingExtends.code]);
 });
 
 test("DontAllowInstantiation", () => {
@@ -41,5 +42,5 @@ test("DontAllowInstantiation", () => {
         /** @metaExtension */
         class Ext extends _LOADED {}
         const e = new Ext();
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
 });

@@ -500,5 +500,5 @@ test("named function expression reference", () => {
 test("missing declaration name", () => {
     util.testModule`
         function () {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([1003]);
 });

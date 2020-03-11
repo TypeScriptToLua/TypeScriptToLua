@@ -1,3 +1,4 @@
+import { invalidAmbientIdentifierName } from "../../src/transformation/utils/diagnostics";
 import { luaKeywords } from "../../src/transformation/utils/safe-names";
 import * as util from "../util";
 
@@ -81,7 +82,7 @@ test.each([
         local;
     `
         .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot();
+        .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each([
@@ -98,11 +99,7 @@ test.each([
     util.testModule`
         declare ${statement}
         $$$;
-    `.expectDiagnosticsToMatchSnapshot();
-});
-
-test.each(["const x = ;", "({})[]"])("missing expression (%p)", statement => {
-    util.testModule(statement).expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -111,7 +108,7 @@ test.each(validTsInvalidLuaNames)(
         util.testModule`
             declare var ${name}: any;
             const foo = { ${name} };
-        `.expectDiagnosticsToMatchSnapshot();
+        `.expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
     }
 );
 
@@ -120,7 +117,7 @@ test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua ide
         const foo = ${name};
     `
         .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot();
+        .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -130,7 +127,7 @@ test.each(validTsInvalidLuaNames)(
             const foo = { ${name} };
         `
             .disableSemanticCheck()
-            .expectDiagnosticsToMatchSnapshot();
+            .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
     }
 );
 

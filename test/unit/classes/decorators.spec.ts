@@ -1,3 +1,4 @@
+import { decoratorInvalidContext } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("Class decorator with no parameters", () => {
@@ -108,7 +109,7 @@ test("Throws error if decorator function has void context", () => {
 
         @decorator
         class TestClass {}
-    `.expectDiagnosticsToMatchSnapshot();
+    `.expectDiagnosticsToMatchSnapshot([decoratorInvalidContext.code]);
 });
 
 test("Exported class decorator", () => {

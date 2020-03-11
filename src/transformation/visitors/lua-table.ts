@@ -17,6 +17,7 @@ function validateLuaTableCall(
     for (const argument of callArguments) {
         if (ts.isSpreadElement(argument)) {
             context.diagnostics.push(luaTableForbiddenUsage(argument, "Arguments cannot be spread"));
+            return;
         }
     }
 

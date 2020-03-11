@@ -18,7 +18,7 @@ export interface TransformerImport {
 }
 
 export interface LuaPluginImport {
-    plugin: string;
+    name: string;
     import?: string;
 }
 

@@ -29,9 +29,9 @@ export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], cu
 
         const { error: resolveError, result: factory } = resolvePlugin(
             "plugin",
-            `${optionName}.plugin`,
+            `${optionName}.name`,
             getConfigDirectory(options),
-            pluginOption.plugin,
+            pluginOption.name,
             pluginOption.import
         );
 

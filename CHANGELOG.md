@@ -7,7 +7,7 @@
   ```json
   {
     "tstl": {
-      "luaPlugins": [{ "plugin": "./plugin.ts" }]
+      "luaPlugins": [{ "name": "./plugin.ts" }]
     }
   }
   ```

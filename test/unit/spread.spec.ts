@@ -13,6 +13,12 @@ const arrayLiteralCases = [
     "1, 2, ...[3, 4], ...[5, 6]",
 ];
 
+const tupleReturnDefinition = `
+/** @tupleReturn */
+function tuple(...args: any[]) {
+    return args;
+}`;
+
 describe("in function call", () => {
     util.testEachVersion(
         undefined,
@@ -33,9 +39,13 @@ describe("in function call", () => {
     );
 
     test.each(arrayLiteralCases)("of array literal (%p)", expression => {
+        util.testExpression`((...args: any[]) => args)(${expression})`.expectToMatchJsResult();
+    });
+
+    test.each(arrayLiteralCases)("of tuple return", expression => {
         util.testFunction`
-            function foo(...args) { return args }
-            return foo(${expression});
+            ${tupleReturnDefinition}
+            return [...tuple(${expression})];
         `.expectToMatchJsResult();
     });
 });
@@ -48,14 +58,10 @@ describe("in array literal", () => {
         [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
     });
 
-    test("of tuple return call", () => {
+    test.each(arrayLiteralCases)("of tuple return call", expression => {
         util.testFunction`
-            /** @tupleReturn */
-            function tuple(...args) {
-                return args;
-            }
-
-            return [...tuple(1, 2, 3), ...tuple(4, 5, 6)];
+            ${tupleReturnDefinition}
+            return [...tuple(${expression})];
         `.expectToMatchJsResult();
     });
 

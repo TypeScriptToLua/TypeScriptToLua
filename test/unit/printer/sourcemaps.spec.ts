@@ -76,7 +76,7 @@ test.each([
     {
         code: `
             // @ts-ignore
-            class Bar extends Foo() {
+            class Bar extends Foo {
                 constructor() {
                     super();
                 }
@@ -87,7 +87,7 @@ test.each([
             { luaPattern: "Bar = __TS__Class()", typeScriptPattern: "class Bar" },
             { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
             { luaPattern: "__TS__ClassExtends", typeScriptPattern: "extends" },
-            { luaPattern: "Foo(", typeScriptPattern: "Foo(" },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
             { luaPattern: "function Bar.prototype.____constructor", typeScriptPattern: "constructor" },
         ],
     },

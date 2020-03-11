@@ -70,7 +70,7 @@ describe("in array literal", () => {
         util.testExpressionTemplate`[..."spread", ..."string"]`.expectToMatchJsResult();
     });
 
-    test.each(spreadCases)("of array literal (%p)", expression => {
+    test.each(arrayLiteralCases)("of array literal (%p)", expression => {
         util.testExpression`[${expression}]`.expectToMatchJsResult();
     });
 

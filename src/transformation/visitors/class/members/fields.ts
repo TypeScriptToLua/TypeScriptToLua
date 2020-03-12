@@ -27,6 +27,8 @@ export function transformClassInstanceFields(
         statements.push(assignClassField);
     }
 
+    // TODO: Remove when `useDefineForClassFields` would be `true` by default
+
     const getOverrides = classDeclaration.members.filter((m): m is ts.GetAccessorDeclaration =>
         isGetAccessorOverride(context, m, classDeclaration)
     );

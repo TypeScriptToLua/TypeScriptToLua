@@ -453,21 +453,6 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         expect(util.transpileAndExecute(code)).toBe(true);
     });
 
-    test("variable (rawset)", () => {
-        const code = `
-            const rawset = "foobar";
-            class A {
-                prop = "prop";
-            }
-            class B extends A {
-                get prop() { return rawset; }
-            }
-            const b = new B();
-            return b.prop;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
-    });
-
     test("variable (require)", () => {
         const code = `
             const require = "foobar";

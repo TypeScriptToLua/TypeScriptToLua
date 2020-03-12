@@ -136,6 +136,11 @@ export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> =
         return undefined;
     }
 
+    if (ts.isNamespaceExport(node.exportClause)) {
+        // export * as ns from "...";
+        throw new Error("NamespaceExport is not supported");
+    }
+
     const exportSpecifiers = getExported(context, node.exportClause);
 
     // export { ... };

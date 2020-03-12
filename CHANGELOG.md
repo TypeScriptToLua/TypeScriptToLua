@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
+
 - Added `tstl.luaPlugins` option, allowing to specify plugins in a `tsconfig.json` file:
 
   ```json

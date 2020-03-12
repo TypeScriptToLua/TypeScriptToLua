@@ -252,7 +252,8 @@ function transformSpreadAssignment(
     for (const property of properties) {
         if (
             (ts.isShorthandPropertyAssignment(property) || ts.isPropertyAssignment(property)) &&
-            !ts.isComputedPropertyName(property.name)
+            !ts.isComputedPropertyName(property.name) &&
+            !ts.isPrivateIdentifier(property.name)
         ) {
             const name = ts.isIdentifier(property.name)
                 ? lua.createStringLiteral(property.name.text)

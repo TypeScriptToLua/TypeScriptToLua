@@ -32,7 +32,7 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     sourceMapTraceback?: boolean;
     luaPlugins?: LuaPluginImport[];
     plugins?: Array<ts.PluginImport | TransformerImport>;
-    [option: string]: ts.CompilerOptions[string] | LuaPluginImport[] | Array<ts.PluginImport | TransformerImport>;
+    [option: string]: any;
 };
 
 export enum LuaLibImportKind {

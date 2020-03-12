@@ -23,7 +23,7 @@ export function transpileStringsAsProject(
     input: Record<string, string>,
     options: tstl.CompilerOptions = {}
 ): tstl.TranspileResult {
-    const optionsWithDefaults = {
+    const optionsWithDefaults: tstl.CompilerOptions = {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
         skipLibCheck: true,

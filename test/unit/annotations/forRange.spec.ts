@@ -33,10 +33,10 @@ test("invalid non-ambient @forRange function", () => {
     );
 });
 
-test.each([[1], [1, 2, 3, 4]])("invalid @forRange argument count", args => {
+test.each([[1], [1, 2, 3, 4]])("invalid @forRange argument count", (...args) => {
     const code = `
         /** @forRange **/ declare function luaRange(...args: number[]): number[] { return []; }
-        for (const i of luaRange(${args})) {}`;
+        for (const i of luaRange(${util.formatCode(...args)})) {}`;
 
     expect(() => util.transpileString(code)).toThrow(
         InvalidForRangeCall(ts.createEmptyStatement(), "@forRange function must take 2 or 3 arguments.").message

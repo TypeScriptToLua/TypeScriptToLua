@@ -21,6 +21,8 @@ export function transformPropertyName(context: TransformationContext, node: ts.P
         return context.transformExpression(node.expression);
     } else if (ts.isIdentifier(node)) {
         return lua.createStringLiteral(node.text);
+    } else if (ts.isPrivateIdentifier(node)) {
+        throw new Error("PrivateIdentifier is not supported");
     } else {
         return context.transformExpression(node);
     }

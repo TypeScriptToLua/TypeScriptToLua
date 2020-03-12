@@ -63,7 +63,7 @@ test.each([
     ["hello", "test", "bye"],
     ["hello", 42],
     [42, "hello"],
-])("string.concat[+] (%p)", (...elements) => {
+])("string.concat[+] (%p)", (...elements: any[]) => {
     util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
 });
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
+
 - Errors reported during transpilation now are created as TypeScript diagnostics, instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
 
   <!-- prettier-ignore -->

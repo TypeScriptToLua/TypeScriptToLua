@@ -12,7 +12,6 @@ import {
     wrapInTable,
 } from "../utils/lua-ast";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
-import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformGeneratorFunctionBody } from "./generator";
 import { transformIdentifier } from "./identifier";
 import { transformBindingPattern } from "./variable-declaration";
@@ -215,9 +214,13 @@ export function transformFunctionLikeDeclaration(
     if (ts.isFunctionExpression(node) && node.name && scope.referencedSymbols) {
         const symbol = context.checker.getSymbolAtLocation(node.name);
         if (symbol) {
-            const symbolId = getSymbolIdOfSymbol(context, symbol);
+            // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
+            const isReferenced = [...scope.referencedSymbols].some(([, nodes]) =>
+                nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
+            );
+
             // Only wrap if the name is actually referenced inside the function
-            if (symbolId !== undefined && scope.referencedSymbols.has(symbolId)) {
+            if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
                 return createImmediatelyInvokedFunctionExpression(
                     [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],

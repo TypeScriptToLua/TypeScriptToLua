@@ -46,7 +46,7 @@ export function transformContextualCallExpression(
     transformedArguments: lua.Expression[]
 ): lua.Expression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
-    if (ts.isPropertyAccessExpression(left) && isValidLuaIdentifier(left.name.text)) {
+    if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
         // table:name()
         const table = context.transformExpression(left.expression);
 

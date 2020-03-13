@@ -49,6 +49,28 @@ test("null instanceof Class", () => {
     `.expectToMatchJsResult();
 });
 
+test("function instance of Class", () => {
+    util.testFunction`
+        class myClass {}
+        const noop = () => {}
+        return (noop as any) instanceof myClass;
+    `.expectToMatchJsResult();
+});
+
+test("boolean instance of Class", () => {
+    util.testFunction`
+        class myClass {}
+        return (false as any) instanceof myClass;
+    `.expectToMatchJsResult();
+});
+
+test("number instance of Class", () => {
+    util.testFunction`
+        class myClass {}
+        return (5 as any) instanceof myClass;
+    `.expectToMatchJsResult();
+});
+
 test("instanceof export", () => {
     util.testModule`
         export class myClass {}

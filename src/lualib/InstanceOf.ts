@@ -8,7 +8,7 @@ function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: LuaClass)
         return !!classTbl[Symbol.hasInstance](obj);
     }
 
-    if (obj !== undefined) {
+    if (type(obj) === "table") {
         let luaClass = obj.constructor;
         while (luaClass !== undefined) {
             if (luaClass === classTbl) {

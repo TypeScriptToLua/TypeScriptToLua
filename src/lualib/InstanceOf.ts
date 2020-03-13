@@ -1,4 +1,4 @@
-function __TS__InstanceOf(this: void, obj: LuaObject, classTbl: LuaClass): boolean {
+function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: LuaClass): boolean {
     if (typeof classTbl !== "object") {
         // tslint:disable-next-line: no-string-throw
         throw "Right-hand side of 'instanceof' is not an object";

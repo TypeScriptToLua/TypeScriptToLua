@@ -4,6 +4,54 @@
 
 - TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
 
+- Fixed class accessors not working when base class is lacking type information (#725)
+
+- Class extension code has been extracted to lualib
+
+  ```ts
+  class A {}
+  class B extends A {}
+  ```
+
+  ```diff
+  A = __TS__Class()
+  B = __TS__Class()
+  -B.____super = A
+  -setmetatable(B, B.____super)
+  -setmetatable(B.prototype, B.____super.prototype)
+  +__TS__ClassExtends(A, B)
+  ```
+
+- Generated code for class accessors is more dynamic now
+
+  ```ts
+  class A {
+    get a() {
+      return true;
+    }
+  }
+  ```
+
+  ```diff
+  A = __TS__Class()
+  -A.prototype.____getters = {}
+  -A.prototype.__index = __TS__Index(A.prototype)
+  -function A.prototype.____getters.a(self)
+  -  return true
+  -end
+  +__TS__SetDescriptor(
+  +    A.prototype,
+  +    "a",
+  +    {
+  +        get = function(self)
+  +            return true
+  +        end
+  +    }
+  +)
+  ```
+
+  This change simplifies our codebase and opens a path to object accessors implementation
+
 - Errors reported during transpilation now are created as TypeScript diagnostics, instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
 
   <!-- prettier-ignore -->

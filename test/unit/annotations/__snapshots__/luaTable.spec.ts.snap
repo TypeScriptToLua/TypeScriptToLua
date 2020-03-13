@@ -4,9 +4,7 @@ exports[`Cannot extend LuaTable class ("class Ext extends Table {}"): code 1`] =
 "require(\\"lualib_bundle\\");
 Ext = __TS__Class()
 Ext.name = \\"Ext\\"
-Ext.____super = Table
-setmetatable(Ext, Ext.____super)
-setmetatable(Ext.prototype, Ext.____super.prototype)"
+__TS__ClassExtends(Ext, Table)"
 `;
 
 exports[`Cannot extend LuaTable class ("class Ext extends Table {}"): diagnostics 1`] = `"main.ts(11,19): error TSTL: Cannot extend classes with the '@luaTable' annotation."`;
@@ -16,9 +14,7 @@ exports[`Cannot extend LuaTable class ("const c = class Ext extends Table {}"): 
 c = (function()
     local Ext = __TS__Class()
     Ext.name = \\"Ext\\"
-    Ext.____super = Table
-    setmetatable(Ext, Ext.____super)
-    setmetatable(Ext.prototype, Ext.____super.prototype)
+    __TS__ClassExtends(Ext, Table)
     return Ext
 end)()"
 `;

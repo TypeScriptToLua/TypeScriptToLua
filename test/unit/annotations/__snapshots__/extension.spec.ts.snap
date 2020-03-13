@@ -19,9 +19,7 @@ exports[`Class extends extension ("extension"): code 1`] = `
 "require(\\"lualib_bundle\\");
 C = __TS__Class()
 C.name = \\"C\\"
-C.____super = B
-setmetatable(C, C.____super)
-setmetatable(C.prototype, C.____super.prototype)"
+__TS__ClassExtends(C, B)"
 `;
 
 exports[`Class extends extension ("extension"): diagnostics 1`] = `"main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."`;
@@ -31,9 +29,7 @@ exports[`Class extends extension ("metaExtension"): code 1`] = `
 local __meta__A = debug.getregistry().A
 C = __TS__Class()
 C.name = \\"C\\"
-C.____super = B
-setmetatable(C, C.____super)
-setmetatable(C.prototype, C.____super.prototype)"
+__TS__ClassExtends(C, B)"
 `;
 
 exports[`Class extends extension ("metaExtension"): diagnostics 1`] = `"main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."`;

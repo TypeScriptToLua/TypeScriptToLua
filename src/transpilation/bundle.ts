@@ -108,6 +108,5 @@ function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {
 
 type SourceChunk = string | SourceNode;
 function joinSourceChunks(chunks: SourceChunk[]): SourceNode {
-    // tslint:disable-next-line:no-null-keyword
     return new SourceNode(null, null, null, chunks);
 }

@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as util from "./util";
 
 declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R, T> {
             toThrowExactError(error: Error): R;
@@ -43,13 +44,10 @@ expect.extend({
 
         return {
             pass: diagnostics.length > 0,
-            message: () => {
-                return (
-                    matcherHint +
-                    "\n\n" +
-                    (this.isNot ? diagnosticMessages : `Received: ${this.utils.printReceived(diagnostics)}\n`)
-                );
-            },
+            message: () =>
+                matcherHint +
+                "\n\n" +
+                (this.isNot ? diagnosticMessages : `Received: ${this.utils.printReceived(diagnostics)}\n`),
         };
     },
 });

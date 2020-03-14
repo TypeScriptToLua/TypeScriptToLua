@@ -144,28 +144,25 @@ export function transformAssignmentExpression(
 const canBeTransformedToLuaAssignmentStatement = (
     context: TransformationContext,
     node: ts.DestructuringAssignment
-): node is ts.ArrayDestructuringAssignment => {
-    return (
-        ts.isArrayLiteralExpression(node.left) &&
-        node.left.elements.every(element => {
-            if (isArrayLength(context, element)) {
-                return false;
-            }
+): node is ts.ArrayDestructuringAssignment =>
+    ts.isArrayLiteralExpression(node.left) &&
+    node.left.elements.every(element => {
+        if (isArrayLength(context, element)) {
+            return false;
+        }
 
-            if (ts.isPropertyAccessExpression(element) || ts.isElementAccessExpression(element)) {
-                return true;
-            }
+        if (ts.isPropertyAccessExpression(element) || ts.isElementAccessExpression(element)) {
+            return true;
+        }
 
-            if (ts.isIdentifier(element)) {
-                const symbol = context.checker.getSymbolAtLocation(element);
-                if (symbol) {
-                    const aliases = getDependenciesOfSymbol(context, symbol);
-                    return aliases.length === 0;
-                }
+        if (ts.isIdentifier(element)) {
+            const symbol = context.checker.getSymbolAtLocation(element);
+            if (symbol) {
+                const aliases = getDependenciesOfSymbol(context, symbol);
+                return aliases.length === 0;
             }
-        })
-    );
-};
+        }
+    });
 
 export function transformAssignmentStatement(
     context: TransformationContext,

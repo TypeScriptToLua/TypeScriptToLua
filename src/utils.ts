@@ -26,8 +26,9 @@ export function getOrUpdate<K, V>(
     return map.get(key)!;
 }
 
-export function isNonNull<T>(value: T | undefined | null): value is T {
-    return value !== undefined && value !== null;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function isNonNull<T>(value: T | null | undefined): value is T {
+    return value != null;
 }
 
 export function cast<TOriginal, TCast extends TOriginal>(

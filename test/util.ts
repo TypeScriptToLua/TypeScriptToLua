@@ -39,6 +39,7 @@ export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => bool
     return undefined;
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
     expect(subject).toBeDefined();
     expect(subject).not.toBeNull();
@@ -442,7 +443,7 @@ class AccessorTestBuilder extends TestBuilder {
 }
 
 class BundleTestBuilder extends AccessorTestBuilder {
-    public constructor(_tsCode: string) {
+    constructor(_tsCode: string) {
         super(_tsCode);
         this.setOptions({ luaBundle: "main.lua", luaBundleEntry: this.mainFileName });
     }

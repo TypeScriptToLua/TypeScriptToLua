@@ -1,3 +1,3 @@
 export function getNumber(): number {
-    return GetAPIValue();
+    return getAPIValue();
 }

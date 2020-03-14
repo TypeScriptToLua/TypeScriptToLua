@@ -6,7 +6,6 @@ function __TS__ArraySetLength<T>(this: void, arr: T[], length: number): number {
         Math.floor(length) !== length
     ) {
         // non-integer
-        // tslint:disable-next-line:no-string-throw
         throw `invalid array length: ${length}`;
     }
     for (let i = arr.length - 1; i >= length; --i) {

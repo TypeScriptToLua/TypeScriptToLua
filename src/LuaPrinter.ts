@@ -128,7 +128,7 @@ export class LuaPrinter {
     private currentIndent = "";
     private sourceFile: string;
 
-    public constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
+    constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
         this.sourceFile = path.basename(fileName);
     }
 
@@ -233,11 +233,10 @@ export class LuaPrinter {
 
         return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
             ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks, name)
-            : new SourceNode(null, null, this.sourceFile, chunks, name); // tslint:disable-line:no-null-keyword
+            : new SourceNode(null, null, this.sourceFile, chunks, name);
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {
-        // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, chunks);
     }
 
@@ -774,7 +773,6 @@ export class LuaPrinter {
     }
 
     public printOperator(kind: lua.Operator): SourceNode {
-        // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
     }
 

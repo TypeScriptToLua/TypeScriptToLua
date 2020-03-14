@@ -106,10 +106,9 @@ export function transformGeneratorFunctionBody(
     return [block, functionScope];
 }
 
-export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
-    return lua.createCallExpression(
+export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) =>
+    lua.createCallExpression(
         lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
         expression.expression ? [context.transformExpression(expression.expression)] : [],
         expression
     );
-};

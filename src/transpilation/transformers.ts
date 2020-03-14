@@ -135,7 +135,6 @@ function resolveTransformerFactory(
         return { error: diagnosticFactories.couldNotResolveTransformerFrom(transform, basedir) };
     }
 
-    // tslint:disable-next-line: deprecation
     const hasNoRequireHook = require.extensions[".ts"] === undefined;
     if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
         try {

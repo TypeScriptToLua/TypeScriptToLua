@@ -1,7 +1,6 @@
 function __TS__StringPadStart(this: string, maxLength: number, fillString = " "): string {
     if (maxLength !== maxLength) maxLength = 0;
     if (maxLength === -Infinity || maxLength === Infinity) {
-        // tslint:disable-next-line: no-string-throw
         throw "Invalid string length";
     }
 

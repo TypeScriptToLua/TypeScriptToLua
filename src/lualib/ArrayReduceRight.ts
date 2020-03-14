@@ -17,7 +17,6 @@ function __TS__ArrayReduceRight<T>(
         accumulator = arr[k];
         k = k - 1;
     } else {
-        // tslint:disable-next-line: no-string-throw
         throw "Reduce of empty array with no initial value";
     }
 

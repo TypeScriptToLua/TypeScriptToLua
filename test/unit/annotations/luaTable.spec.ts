@@ -20,16 +20,17 @@ declare class Table<K extends {} = {}, V = any> {
 declare let tbl: Table;
 `;
 
-// TODO: `constructor()` is not valid in interfaces
 const tableLibInterface = `
 /** @luaTable */
 declare interface Table<K extends {} = {}, V = any> {
     length: number;
-    constructor(notAllowed?: any);
     set(key?: K, value?: V, notAllowed?: any): void;
     get(key?: K, notAllowed?: any): V;
     other(): void;
 }
+
+/** @luaTable */
+declare const Table: new <K extends {} = {}, V = any>(notAllowed?: any) => Table<K, V>;
 declare let tbl: Table;
 `;
 

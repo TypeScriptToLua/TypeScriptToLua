@@ -17,9 +17,9 @@ export function transformAssignmentLeftHandSideExpression(
     node: ts.Expression
 ): lua.AssignmentLeftHandSideExpression {
     const symbol = context.checker.getSymbolAtLocation(node);
-    const left =
-        (ts.isPropertyAccessExpression(node) && transformLuaTablePropertyAccessInAssignment(context, node)) ||
-        context.transformExpression(node);
+    const left = ts.isPropertyAccessExpression(node)
+        ? transformLuaTablePropertyAccessInAssignment(context, node) ?? context.transformExpression(node)
+        : context.transformExpression(node);
 
     return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
         ? createExportedIdentifier(context, left)

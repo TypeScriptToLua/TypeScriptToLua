@@ -1,5 +1,33 @@
+import * as ts from "typescript";
 import * as nativeAssert from "assert";
 import * as path from "path";
+
+export const createDiagnosticFactoryWithCode = <
+    T extends (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">
+>(
+    code: number,
+    create: T
+) => {
+    return Object.assign(
+        (...args: Parameters<T>): ts.Diagnostic => ({
+            file: undefined,
+            start: undefined,
+            length: undefined,
+            category: ts.DiagnosticCategory.Error,
+            code,
+            source: "typescript-to-lua",
+            ...create(...(args as any)),
+        }),
+        { code }
+    );
+};
+
+let serialDiagnosticCodeCounter = 100000;
+export const createSerialDiagnosticFactory = <
+    T extends (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">
+>(
+    create: T
+) => createDiagnosticFactoryWithCode(serialDiagnosticCodeCounter++, create);
 
 export const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
 export const trimExtension = (filePath: string) => filePath.slice(0, -path.extname(filePath).length);

@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { LuaLibImportKind } from "../../src";
+import * as diagnosticFactories from "../../src/transpilation/diagnostics";
 import * as util from "../util";
 
 test("import module -> main", () => {
@@ -13,8 +14,8 @@ test("import module -> main", () => {
 
 test("bundle file name", () => {
     const { transpiledFiles } = util.testModule`
-    export { value } from "./module";
-`
+        export { value } from "./module";
+    `
         .addExtraFile("module.ts", "export const value = true")
         .setOptions({ luaBundle: "mybundle.lua", luaBundleEntry: "main.ts" })
         .expectToHaveNoDiagnostics()
@@ -90,7 +91,10 @@ test("LuaLibImportKind.Inline generates a warning", () => {
         result.push(3);
     `
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
-        .expectDiagnosticsToMatchSnapshot([0], true)
+        .expectDiagnosticsToMatchSnapshot(
+            [diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode.code],
+            true
+        )
         .expectToEqual({ result: [1, 2, 3] });
 });
 
@@ -113,9 +117,13 @@ test("cyclic imports", () => {
 });
 
 test("no entry point", () => {
-    util.testBundle``.setOptions({ luaBundleEntry: undefined }).expectDiagnosticsToMatchSnapshot([0], true);
+    util.testBundle``
+        .setOptions({ luaBundleEntry: undefined })
+        .expectDiagnosticsToMatchSnapshot([diagnosticFactories.luaBundleEntryIsRequired.code], true);
 });
 
 test("luaEntry doesn't exist", () => {
-    util.testBundle``.setEntryPoint("entry.ts").expectDiagnosticsToMatchSnapshot([0], true);
+    util.testBundle``
+        .setEntryPoint("entry.ts")
+        .expectDiagnosticsToMatchSnapshot([diagnosticFactories.couldNotFindBundleEntryPoint.code], true);
 });

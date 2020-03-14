@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import * as diagnosticFactories from "./transpilation/diagnostics";
 
 type KnownKeys<T> = { [K in keyof T]: string extends K ? never : number extends K ? never : K } extends {
     [_ in keyof T]: infer U;
@@ -47,37 +48,12 @@ export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = [];
 
     if (options.luaBundle && !options.luaBundleEntry) {
-        diagnostics.push(configErrorDiagnostic(`'luaBundleEntry' is required when 'luaBundle' is enabled.`));
+        diagnostics.push(diagnosticFactories.luaBundleEntryIsRequired());
     }
 
     if (options.luaBundle && options.luaLibImport === LuaLibImportKind.Inline) {
-        diagnostics.push(
-            configWarningDiagnostic(
-                `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
-                    `It is recommended to use 'luaLibImport: "require"'`
-            )
-        );
+        diagnostics.push(diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode());
     }
 
     return diagnostics;
 }
-
-const configErrorDiagnostic = (message: string): ts.Diagnostic => ({
-    file: undefined,
-    start: undefined,
-    length: undefined,
-    category: ts.DiagnosticCategory.Error,
-    code: 0,
-    source: "typescript-to-lua",
-    messageText: message,
-});
-
-const configWarningDiagnostic = (message: string): ts.Diagnostic => ({
-    file: undefined,
-    start: undefined,
-    length: undefined,
-    category: ts.DiagnosticCategory.Warning,
-    code: 0,
-    source: "typescript-to-lua",
-    messageText: message,
-});

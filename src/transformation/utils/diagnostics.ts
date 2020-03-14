@@ -1,26 +1,15 @@
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
+import { createSerialDiagnosticFactory } from "../../utils";
 import { AnnotationKind } from "./annotations";
 
-let diagnosticCodeCounter = 100000;
-const createDiagnosticFactory = <TArgs extends any[] = []>(
-    message: string | ((...args: TArgs) => string),
-    category = ts.DiagnosticCategory.Error
-) => {
-    const code = diagnosticCodeCounter++;
-    return Object.assign(
-        (node: ts.Node, ...args: TArgs): ts.Diagnostic => ({
-            file: node.getSourceFile(),
-            start: node.getStart(),
-            length: node.getWidth(),
-            category,
-            code,
-            source: "typescript-to-lua",
-            messageText: typeof message === "string" ? message : message(...args),
-        }),
-        { code }
-    );
-};
+const createDiagnosticFactory = <TArgs extends any[]>(message: string | ((...args: TArgs) => string)) =>
+    createSerialDiagnosticFactory((node: ts.Node, ...args: TArgs) => ({
+        file: node.getSourceFile(),
+        start: node.getStart(),
+        length: node.getWidth(),
+        messageText: typeof message === "string" ? message : message(...args),
+    }));
 
 export const forbiddenForIn = createDiagnosticFactory(`Iterating over arrays with 'for ... in' is not allowed.`);
 

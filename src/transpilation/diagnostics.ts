@@ -1,16 +1,8 @@
 import * as ts from "typescript";
+import { createSerialDiagnosticFactory } from "../utils";
 
-const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) => (
-    ...args: TArgs
-): ts.Diagnostic => ({
-    file: undefined,
-    start: undefined,
-    length: undefined,
-    category: ts.DiagnosticCategory.Error,
-    code: 0,
-    source: "typescript-to-lua",
-    messageText: getMessage(...args),
-});
+const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
+    createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args) }));
 
 export const toLoadTransformerItShouldBeTranspiled = createDiagnosticFactory(
     (transform: string) =>
@@ -33,3 +25,14 @@ export const transformerShouldBeATsTransformerFactory = createDiagnosticFactory(
 export const couldNotFindBundleEntryPoint = createDiagnosticFactory(
     (entryPoint: string) => `Could not find bundle entry point '${entryPoint}'. It should be a file in the project.`
 );
+
+export const luaBundleEntryIsRequired = createDiagnosticFactory(
+    () => "'luaBundleEntry' is required when 'luaBundle' is enabled."
+);
+
+export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDiagnosticFactory(() => ({
+    category: ts.DiagnosticCategory.Warning,
+    messageText:
+        `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
+        `It is recommended to use 'luaLibImport: "require"'.`,
+}));

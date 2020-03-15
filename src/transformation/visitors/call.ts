@@ -15,13 +15,78 @@ import { transformLuaTableCallExpression } from "./lua-table";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
+function getExpressionsBeforeAndAfterFirstSpread(
+    expressions: readonly ts.Expression[]
+): [readonly ts.Expression[], readonly ts.Expression[]] {
+    // [a, b, ...c, d, ...e] --> [a, b] and [...c, d, ...e]
+    const index = expressions.findIndex(ts.isSpreadElement);
+    const hasSpreadElement = index !== -1;
+    const before = hasSpreadElement ? expressions.slice(0, index) : expressions;
+    const after = hasSpreadElement ? expressions.slice(index) : [];
+    return [before, after];
+}
+
+function transformSpreadableExpressionsIntoArrayConcatArguments(
+    context: TransformationContext,
+    expressions: readonly ts.Expression[] | ts.NodeArray<ts.Expression>
+): lua.Expression[] {
+    // [...array, a, b, ...tuple()] --> [ [...array], [a, b], [...tuple()] ]
+    // chunk non-spread arguments together so they don't concat
+    const chunks: ts.Expression[][] = [];
+    for (const [index, expression] of expressions.entries()) {
+        if (ts.isSpreadElement(expression)) {
+            chunks.push([expression]);
+            const next = expressions[index + 1];
+            if (next && !ts.isSpreadElement(next)) {
+                chunks.push([]);
+            }
+        } else {
+            let lastChunk = chunks[chunks.length - 1];
+            if (!lastChunk) {
+                lastChunk = [];
+                chunks.push(lastChunk);
+            }
+            lastChunk.push(expression);
+        }
+    }
+
+    return chunks.map(chunk => wrapInTable(...chunk.map(expression => context.transformExpression(expression))));
+}
+
+export function flattenSpreadExpressions(
+    context: TransformationContext,
+    expressions: readonly ts.Expression[]
+): lua.Expression[] {
+    const [preSpreadExpressions, postSpreadExpressions] = getExpressionsBeforeAndAfterFirstSpread(expressions);
+    const transformedPreSpreadExpressions = preSpreadExpressions.map(a => context.transformExpression(a));
+
+    // Nothing special required
+    if (postSpreadExpressions.length === 0) {
+        return transformedPreSpreadExpressions;
+    }
+
+    // Only one spread element at the end? Will work as expected
+    if (postSpreadExpressions.length === 1) {
+        return [...transformedPreSpreadExpressions, context.transformExpression(postSpreadExpressions[0])];
+    }
+
+    // Use Array.concat and unpack the result of that as the last Expression
+    const concatArguments = transformSpreadableExpressionsIntoArrayConcatArguments(context, postSpreadExpressions);
+    const lastExpression = createUnpackCall(
+        context,
+        transformLuaLibFunction(context, LuaLibFeature.ArrayConcat, undefined, ...concatArguments)
+    );
+
+    return [...transformedPreSpreadExpressions, lastExpression];
+}
+
 export function transformArguments(
     context: TransformationContext,
     params: readonly ts.Expression[],
     signature?: ts.Signature,
     callContext?: ts.Expression
 ): lua.Expression[] {
-    const parameters = params.map(param => context.transformExpression(param));
+    const parameters = flattenSpreadExpressions(context, params);
 
     // Add context as first param if present
     if (callContext) {

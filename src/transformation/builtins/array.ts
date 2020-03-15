@@ -1,14 +1,14 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.CallExpression {
+): lua.CallExpression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -79,7 +79,7 @@ export function transformArrayPrototypeCall(
         case "flatMap":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlatMap, node, caller, ...params);
         default:
-            throw UnsupportedProperty("array", expressionName, node);
+            context.diagnostics.push(unsupportedProperty(expression.name, "array", expressionName));
     }
 }
 

@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Throws error if decorator function has void context: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local function decorator(constructor)
+    end
+    local TestClass = __TS__Class()
+    TestClass.name = \\"TestClass\\"
+    function TestClass.prototype.____constructor(self)
+    end
+    TestClass = __TS__Decorate({decorator}, TestClass)
+end
+return ____exports"
+`;
+
+exports[`Throws error if decorator function has void context: diagnostics 1`] = `"main.ts(4,9): error TSTL: Decorator function cannot have 'this: void'."`;

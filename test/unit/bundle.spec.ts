@@ -1,19 +1,8 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { DiagnosticCategory } from "typescript";
 import { LuaLibImportKind } from "../../src";
-import { couldNotFindBundleEntryPoint } from "../../src/transpilation/diagnostics";
+import * as diagnosticFactories from "../../src/transpilation/diagnostics";
 import * as util from "../util";
-
-test("no entry point", () => {
-    util.testBundle``
-        .setOptions({ luaBundleEntry: undefined })
-        .expectToHaveDiagnostic(
-            d =>
-                d.messageText === `'luaBundleEntry' is required when 'luaBundle' is enabled.` &&
-                d.category === DiagnosticCategory.Error
-        );
-});
 
 test("import module -> main", () => {
     util.testBundle`
@@ -24,14 +13,14 @@ test("import module -> main", () => {
 });
 
 test("bundle file name", () => {
-    const { diagnostics, transpiledFiles } = util.testModule`
-    export { value } from "./module";
-`
+    const { transpiledFiles } = util.testModule`
+        export { value } from "./module";
+    `
         .addExtraFile("module.ts", "export const value = true")
         .setOptions({ luaBundle: "mybundle.lua", luaBundleEntry: "main.ts" })
+        .expectToHaveNoDiagnostics()
         .getLuaResult();
 
-    expect(diagnostics.length).toBe(0);
     expect(transpiledFiles.length).toBe(1);
     expect(transpiledFiles[0].fileName).toBe(
         path.join(ts.sys.getCurrentDirectory(), "mybundle.lua").replace(/\\/g, "/")
@@ -87,35 +76,26 @@ test("entry point in directory", () => {
         .expectToEqual({ value: true });
 });
 
-test.each([LuaLibImportKind.Inline, LuaLibImportKind.Require])("LuaLib %p", lualibOption => {
-    const testBundle = util.testBundle`
+test("LuaLibImportKind.Require", () => {
+    util.testBundle`
         export const result = [1, 2];
         result.push(3);
-    `.setOptions({ luaLibImport: lualibOption });
-
-    if (lualibOption === LuaLibImportKind.Inline) {
-        testBundle.expectToHaveDiagnostic(d => d.category === DiagnosticCategory.Warning);
-    } else {
-        expect(testBundle.getLuaResult().diagnostics).toEqual([]);
-    }
-    expect(testBundle.getLuaExecutionResult()).toEqual({ result: [1, 2, 3] });
+    `
+        .setOptions({ luaLibImport: LuaLibImportKind.Require })
+        .expectToEqual({ result: [1, 2, 3] });
 });
 
-test("LuaBundle and LuaLibImport.Inline generate warning", () => {
-    const testBundle = util.testBundle`
+test("LuaLibImportKind.Inline generates a warning", () => {
+    util.testBundle`
         export const result = [1, 2];
         result.push(3);
     `
         .setOptions({ luaLibImport: LuaLibImportKind.Inline })
-        .expectToHaveDiagnostic(
-            d =>
-                d.category === DiagnosticCategory.Warning &&
-                d.messageText ===
-                    `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
-                        `It is recommended to use 'luaLibImport: "require"'`
-        );
-
-    expect(testBundle.getLuaExecutionResult()).toEqual({ result: [1, 2, 3] }); // Result should still be the same
+        .expectDiagnosticsToMatchSnapshot(
+            [diagnosticFactories.usingLuaBundleWithInlineMightGenerateDuplicateCode.code],
+            true
+        )
+        .expectToEqual({ result: [1, 2, 3] });
 });
 
 test("cyclic imports", () => {
@@ -136,6 +116,14 @@ test("cyclic imports", () => {
         .expectToEqual(new util.ExecutionError("stack overflow"));
 });
 
+test("no entry point", () => {
+    util.testBundle``
+        .setOptions({ luaBundleEntry: undefined })
+        .expectDiagnosticsToMatchSnapshot([diagnosticFactories.luaBundleEntryIsRequired.code], true);
+});
+
 test("luaEntry doesn't exist", () => {
-    util.testBundle``.setEntryPoint("entry.ts").expectToHaveExactDiagnostic(couldNotFindBundleEntryPoint("entry.ts"));
+    util.testBundle``
+        .setEntryPoint("entry.ts")
+        .expectDiagnosticsToMatchSnapshot([diagnosticFactories.couldNotFindBundleEntryPoint.code], true);
 });

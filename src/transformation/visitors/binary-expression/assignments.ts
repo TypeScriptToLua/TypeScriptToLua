@@ -3,12 +3,13 @@ import * as lua from "../../../LuaAST";
 import { cast } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { isTupleReturnCall } from "../../utils/annotations";
-import { validateAssignment, validatePropertyAssignment } from "../../utils/assignment-validation";
+import { validateAssignment } from "../../utils/assignment-validation";
 import { createExportedIdentifier, getDependenciesOfSymbol, isSymbolExported } from "../../utils/export";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { transformElementAccessArgument } from "../access";
+import { transformLuaTablePropertyAccessInAssignment } from "../lua-table";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
 
 export function transformAssignmentLeftHandSideExpression(
@@ -16,7 +17,9 @@ export function transformAssignmentLeftHandSideExpression(
     node: ts.Expression
 ): lua.AssignmentLeftHandSideExpression {
     const symbol = context.checker.getSymbolAtLocation(node);
-    const left = context.transformExpression(node);
+    const left = ts.isPropertyAccessExpression(node)
+        ? transformLuaTablePropertyAccessInAssignment(context, node) ?? context.transformExpression(node)
+        : context.transformExpression(node);
 
     return lua.isIdentifier(left) && symbol && isSymbolExported(context, symbol)
         ? createExportedIdentifier(context, left)
@@ -67,7 +70,7 @@ export function transformAssignment(
 export function transformAssignmentExpression(
     context: TransformationContext,
     expression: ts.AssignmentExpression<ts.EqualsToken>
-): lua.CallExpression | lua.MethodCallExpression {
+): lua.Expression {
     // Validate assignment
     const rightType = context.checker.getTypeAtLocation(expression.right);
     const leftType = context.checker.getTypeAtLocation(expression.left);
@@ -119,6 +122,9 @@ export function transformAssignmentExpression(
         const objExpression = context.transformExpression(expression.left.expression);
         let indexExpression: lua.Expression;
         if (ts.isPropertyAccessExpression(expression.left)) {
+            // Called only for validation
+            transformLuaTablePropertyAccessInAssignment(context, expression.left);
+
             // Property access
             indexExpression = lua.createStringLiteral(expression.left.name.text);
         } else {
@@ -175,7 +181,6 @@ export function transformAssignmentStatement(
     const rightType = context.checker.getTypeAtLocation(expression.right);
     const leftType = context.checker.getTypeAtLocation(expression.left);
     validateAssignment(context, expression.right, rightType, leftType);
-    validatePropertyAssignment(context, expression);
 
     if (isDestructuringAssignment(expression)) {
         if (canBeTransformedToLuaAssignmentStatement(context, expression)) {

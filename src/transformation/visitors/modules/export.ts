@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { InvalidExportDeclaration } from "../../utils/errors";
 import {
     createDefaultExportIdentifier,
     createDefaultExportStringLiteral,
@@ -37,9 +37,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
 };
 
 function transformExportAllFrom(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
-    if (node.moduleSpecifier === undefined) {
-        throw InvalidExportDeclaration(node);
-    }
+    assert(node.moduleSpecifier);
 
     if (!context.resolver.moduleExportsSomeValue(node.moduleSpecifier)) {
         return undefined;

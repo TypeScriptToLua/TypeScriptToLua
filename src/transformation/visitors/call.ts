@@ -4,11 +4,10 @@ import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isInTupleReturnFunction, isTupleReturnCall, isVarArgType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { UnsupportedKind } from "../utils/errors";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
-import { isValidLuaIdentifier, luaKeywords } from "../utils/safe-names";
+import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformIdentifier } from "./identifier";
@@ -47,12 +46,7 @@ export function transformContextualCallExpression(
     transformedArguments: lua.Expression[]
 ): lua.Expression {
     const left = ts.isCallExpression(node) ? node.expression : node.tag;
-    if (
-        ts.isPropertyAccessExpression(left) &&
-        ts.isIdentifier(left.name) &&
-        !luaKeywords.has(left.name.text) &&
-        isValidLuaIdentifier(left.name.text)
-    ) {
+    if (ts.isPropertyAccessExpression(left) && ts.isIdentifier(left.name) && isValidLuaIdentifier(left.name.text)) {
         // table:name()
         const table = context.transformExpression(left.expression);
 
@@ -88,7 +82,7 @@ export function transformContextualCallExpression(
         const expression = context.transformExpression(left);
         return lua.createCallExpression(expression, transformedArguments, node);
     } else {
-        throw UnsupportedKind("Left Hand Side Call Expression", left.kind, left);
+        throw new Error(`Unsupported LeftHandSideExpression kind: ${ts.SyntaxKind[left.kind]}`);
     }
 }
 

@@ -1,29 +1,12 @@
 import * as ts from "typescript";
 import { getOrUpdate } from "../../utils";
 import { TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations } from "./annotations";
 import {
-    ForbiddenLuaTableUseException,
-    UnsupportedNoSelfFunctionConversion,
-    UnsupportedOverloadAssignment,
-    UnsupportedSelfFunctionConversion,
-} from "./errors";
+    unsupportedNoSelfFunctionConversion,
+    unsupportedOverloadAssignment,
+    unsupportedSelfFunctionConversion,
+} from "./diagnostics";
 import { ContextType, getFunctionContextType } from "./function-context";
-
-// TODO: Make validateAssignment check symbols?
-// TODO: Move to LuaTable plugin?
-export function validatePropertyAssignment(
-    context: TransformationContext,
-    node: ts.AssignmentExpression<ts.EqualsToken>
-): void {
-    if (!ts.isPropertyAccessExpression(node.left)) return;
-
-    const leftType = context.checker.getTypeAtLocation(node.left.expression);
-    const annotations = getTypeAnnotations(leftType);
-    if (annotations.has(AnnotationKind.LuaTable) && node.left.name.text === "length") {
-        throw ForbiddenLuaTableUseException(`A LuaTable object's length cannot be re-assigned.`, node);
-    }
-}
 
 // TODO: Clear if types are reused between compilations
 const typeValidationCache = new WeakMap<ts.Type, Set<ts.Type>>();
@@ -114,12 +97,12 @@ function validateFunctionAssignment(
     const toContext = getFunctionContextType(context, toType);
 
     if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
-        throw UnsupportedOverloadAssignment(node, toName);
+        context.diagnostics.push(unsupportedOverloadAssignment(node, toName));
     } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
         if (toContext === ContextType.Void) {
-            throw UnsupportedNoSelfFunctionConversion(node, toName);
+            context.diagnostics.push(unsupportedNoSelfFunctionConversion(node, toName));
         } else {
-            throw UnsupportedSelfFunctionConversion(node, toName);
+            context.diagnostics.push(unsupportedSelfFunctionConversion(node, toName));
         }
     }
 }

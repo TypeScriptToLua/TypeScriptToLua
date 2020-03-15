@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assert } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { UndefinedTypeNode } from "../../utils/errors";
 import {
     createDefaultExportStringLiteral,
     createExportedIdentifier,
@@ -63,10 +63,7 @@ export function createClassSetup(
 
     if (extendsType) {
         const extendedNode = getExtendedNode(context, statement);
-        if (extendedNode === undefined) {
-            throw UndefinedTypeNode(statement);
-        }
-
+        assert(extendedNode);
         result.push(
             lua.createExpressionStatement(
                 transformLuaLibFunction(

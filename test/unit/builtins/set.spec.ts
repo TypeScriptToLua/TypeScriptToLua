@@ -109,7 +109,7 @@ test("set keys", () => {
     util.testFunction`
         let myset = new Set([5, 6, 7]);
         let count = 0;
-        for (var key of myset.keys()) { count += key; }
+        for (const key of myset.keys()) { count += key; }
         return count;
     `.expectToMatchJsResult();
 });
@@ -118,7 +118,7 @@ test("set values", () => {
     util.testFunction`
         let myset = new Set([5, 6, 7]);
         let count = 0;
-        for (var value of myset.values()) { count += value; }
+        for (const value of myset.values()) { count += value; }
         return count;
     `.expectToMatchJsResult();
 });

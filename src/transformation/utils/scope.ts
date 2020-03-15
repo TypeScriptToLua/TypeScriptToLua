@@ -1,9 +1,7 @@
-import * as assert from "assert";
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { getOrUpdate, isNonNull } from "../../utils";
+import { assert, getOrUpdate, isNonNull } from "../../utils";
 import { TransformationContext } from "../context";
-import { UndefinedFunctionDefinition, UndefinedScope } from "./errors";
 import { getSymbolInfo } from "./symbols";
 import { getFirstDeclarationInFile } from "./typescript";
 
@@ -65,9 +63,7 @@ export function markSymbolAsReferencedInCurrentScopes(
 export function peekScope(context: TransformationContext): Scope {
     const scopeStack = getScopeStack(context);
     const scope = scopeStack[scopeStack.length - 1];
-    if (!scope) {
-        throw UndefinedScope();
-    }
+    assert(scope);
 
     return scope;
 }
@@ -90,9 +86,7 @@ export function pushScope(context: TransformationContext, scopeType: ScopeType):
 export function popScope(context: TransformationContext): Scope {
     const scopeStack = getScopeStack(context);
     const scope = scopeStack.pop();
-    if (!scope) {
-        throw UndefinedScope();
-    }
+    assert(scope);
 
     return scope;
 }
@@ -123,9 +117,7 @@ function shouldHoistSymbol(context: TransformationContext, symbolId: lua.SymbolI
 
     if (scope.functionDefinitions) {
         for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
-            if (functionDefinition.definition === undefined) {
-                throw UndefinedFunctionDefinition(functionSymbolId);
-            }
+            assert(functionDefinition.definition);
 
             const { line, column } = lua.getOriginalPos(functionDefinition.definition);
             if (line !== undefined && column !== undefined) {
@@ -196,9 +188,7 @@ function hoistFunctionDefinitions(
     const result = [...statements];
     const hoistedFunctions: Array<lua.VariableDeclarationStatement | lua.AssignmentStatement> = [];
     for (const [functionSymbolId, functionDefinition] of scope.functionDefinitions) {
-        if (functionDefinition.definition === undefined) {
-            throw UndefinedFunctionDefinition(functionSymbolId);
-        }
+        assert(functionDefinition.definition);
 
         if (shouldHoistSymbol(context, functionSymbolId, scope)) {
             const index = result.indexOf(functionDefinition.definition);

@@ -1,16 +1,12 @@
 import * as ts from "typescript";
+import { createSerialDiagnosticFactory, createDiagnosticFactoryWithCode } from "../utils";
 
-export const tstlOptionsAreMovingToTheTstlObject = (tstl: Record<string, any>): ts.Diagnostic => ({
-    file: undefined,
-    start: undefined,
-    length: undefined,
+export const tstlOptionsAreMovingToTheTstlObject = createSerialDiagnosticFactory((tstl: Record<string, any>) => ({
     category: ts.DiagnosticCategory.Warning,
-    code: 0,
-    source: "typescript-to-lua",
     messageText:
         'TSTL options are moving to the "tstl" object. Adjust your tsconfig to look like\n' +
         `"tstl": ${JSON.stringify(tstl, undefined, 4)}`,
-});
+}));
 
 export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
     file: undefined,
@@ -24,16 +20,8 @@ export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
             : `Found ${errorCount} errors. Watching for file changes.`,
 });
 
-const createCommandLineError = <Args extends any[]>(code: number, getMessage: (...args: Args) => string) => (
-    ...args: Args
-): ts.Diagnostic => ({
-    file: undefined,
-    start: undefined,
-    length: undefined,
-    category: ts.DiagnosticCategory.Error,
-    code,
-    messageText: getMessage(...args),
-});
+const createCommandLineError = <TArgs extends any[]>(code: number, getMessage: (...args: TArgs) => string) =>
+    createDiagnosticFactoryWithCode(code, (...args: TArgs) => ({ messageText: getMessage(...args) }));
 
 export const unknownCompilerOption = createCommandLineError(
     5023,

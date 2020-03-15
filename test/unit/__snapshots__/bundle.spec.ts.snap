@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LuaLibImportKind.Inline generates a warning: diagnostics 1`] = `"warning TSTL: Using 'luaBundle' with 'luaLibImport: \\"inline\\"' might generate duplicate code. It is recommended to use 'luaLibImport: \\"require\\"'."`;
+
+exports[`luaEntry doesn't exist: diagnostics 1`] = `"error TSTL: Could not find bundle entry point 'entry.ts'. It should be a file in the project."`;
+
+exports[`no entry point: diagnostics 1`] = `"error TSTL: 'luaBundleEntry' is required when 'luaBundle' is enabled."`;

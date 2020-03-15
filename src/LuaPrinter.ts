@@ -4,7 +4,7 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
-import { isValidLuaIdentifier, luaKeywords } from "./transformation/utils/safe-names";
+import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
 import { trimExtension } from "./utils";
 
@@ -660,11 +660,7 @@ export class LuaPrinter {
         const value = this.printExpression(expression.value);
 
         if (expression.key) {
-            if (
-                lua.isStringLiteral(expression.key) &&
-                isValidLuaIdentifier(expression.key.value) &&
-                !luaKeywords.has(expression.key.value)
-            ) {
+            if (lua.isStringLiteral(expression.key) && isValidLuaIdentifier(expression.key.value)) {
                 chunks.push(expression.key.value, " = ", value);
             } else {
                 chunks.push("[", this.printExpression(expression.key), "] = ", value);
@@ -761,11 +757,7 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         chunks.push(this.printExpressionInParenthesesIfNeeded(expression.table));
-        if (
-            lua.isStringLiteral(expression.index) &&
-            isValidLuaIdentifier(expression.index.value) &&
-            !luaKeywords.has(expression.index.value)
-        ) {
+        if (lua.isStringLiteral(expression.index) && isValidLuaIdentifier(expression.index.value)) {
             chunks.push(".", this.createSourceNode(expression.index, expression.index.value));
         } else {
             chunks.push("[", this.printExpression(expression.index), "]");

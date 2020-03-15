@@ -496,3 +496,9 @@ test("named function expression reference", () => {
         return y();
     `.expectToMatchJsResult();
 });
+
+test("missing declaration name", () => {
+    util.testModule`
+        function () {}
+    `.expectDiagnosticsToMatchSnapshot([1003]);
+});

@@ -1,4 +1,4 @@
-import { InvalidNewExpressionOnExtension, MissingMetaExtension } from "../../../src/transformation/utils/errors";
+import { extensionCannotConstruct, metaExtensionMissingExtends } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("MetaExtension", () => {
@@ -26,26 +26,21 @@ test("MetaExtension", () => {
 });
 
 test("IncorrectUsage", () => {
-    expect(() => {
-        util.transpileString(`
-            /** @metaExtension */
-            class LoadedExt {
-                public static test() {
-                    return 5;
-                }
+    util.testModule`
+        /** @metaExtension */
+        class LoadedExt {
+            public static test() {
+                return 5;
             }
-        `);
-    }).toThrowExactError(MissingMetaExtension(util.nodeStub));
+        }
+    `.expectDiagnosticsToMatchSnapshot([metaExtensionMissingExtends.code]);
 });
 
 test("DontAllowInstantiation", () => {
-    expect(() => {
-        util.transpileString(`
-            declare class _LOADED {}
-            /** @metaExtension */
-            class Ext extends _LOADED {
-            }
-            const e = new Ext();
-        `);
-    }).toThrowExactError(InvalidNewExpressionOnExtension(util.nodeStub));
+    util.testModule`
+        declare class _LOADED {}
+        /** @metaExtension */
+        class Ext extends _LOADED {}
+        const e = new Ext();
+    `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
 });

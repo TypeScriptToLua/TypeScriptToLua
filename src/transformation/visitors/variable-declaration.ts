@@ -1,10 +1,10 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
-import { assertNever } from "../../utils";
+import { assert, assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isTupleReturnCall } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { UnsupportedKind, UnsupportedVarDeclaration } from "../utils/errors";
+import { unsupportedVarDeclaration } from "../utils/diagnostics";
 import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -13,16 +13,19 @@ import { transformPropertyName } from "./literal";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
-    name: ts.ArrayBindingElement | ts.Expression
+    name: ts.ArrayBindingElement
 ): lua.Identifier {
     if (ts.isOmittedExpression(name)) {
         return lua.createAnonymousIdentifier(name);
     } else if (ts.isIdentifier(name)) {
         return transformIdentifier(context, name);
-    } else if (ts.isBindingElement(name) && ts.isIdentifier(name.name)) {
+    } else if (ts.isBindingElement(name)) {
+        // TODO: It should always be true when called from `transformVariableDeclaration`,
+        // but could be false from `transformForOfLuaIteratorStatement`.
+        assert(ts.isIdentifier(name.name));
         return transformIdentifier(context, name.name);
     } else {
-        throw UnsupportedKind("array binding expression", name.kind, name);
+        assertNever(name);
     }
 }
 
@@ -65,7 +68,10 @@ export function transformBindingPattern(
 
         let expression: lua.Expression;
         if (element.dotDotDotToken) {
-            if (index !== pattern.elements.length - 1) continue;
+            if (index !== pattern.elements.length - 1) {
+                // TypeScript error
+                continue;
+            }
 
             if (isObjectBindingPattern) {
                 const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;
@@ -229,13 +235,15 @@ export function transformVariableDeclaration(
     }
 }
 
-export function checkVariableDeclarationList(node: ts.VariableDeclarationList): void {
+export function checkVariableDeclarationList(context: TransformationContext, node: ts.VariableDeclarationList): void {
     if ((node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0) {
-        throw UnsupportedVarDeclaration(node);
+        const token = node.getFirstToken();
+        assert(token);
+        context.diagnostics.push(unsupportedVarDeclaration(token));
     }
 }
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
-    checkVariableDeclarationList(node.declarationList);
+    checkVariableDeclarationList(context, node.declarationList);
     return node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
 };

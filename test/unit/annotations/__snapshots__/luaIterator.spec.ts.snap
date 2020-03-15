@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`forof lua iterator tuple-return single existing variable: code 1`] = `
+"for ____ in luaIter(_G) do
+end"
+`;
+
+exports[`forof lua iterator tuple-return single existing variable: diagnostics 1`] = `"main.ts(9,14): error TSTL: Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. You must use a destructuring statement to catch results from a lua iterator with the '@tupleReturn' annotation."`;
+
+exports[`forof lua iterator tuple-return single variable: code 1`] = `
+"for ____ in luaIter(_G) do
+end"
+`;
+
+exports[`forof lua iterator tuple-return single variable: diagnostics 1`] = `"main.ts(8,18): error TSTL: Unsupported use of lua iterator with '@tupleReturn' annotation in for...of statement. You must use a destructuring statement to catch results from a lua iterator with the '@tupleReturn' annotation."`;

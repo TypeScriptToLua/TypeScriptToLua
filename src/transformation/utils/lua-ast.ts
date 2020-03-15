@@ -1,7 +1,7 @@
-import * as assert from "assert";
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
+import { assert } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType } from "./scope";

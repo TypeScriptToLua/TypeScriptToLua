@@ -1,9 +1,10 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
-import { InvalidAmbientIdentifierName } from "./errors";
-import { isAmbientNode } from "./typescript";
+import { invalidAmbientIdentifierName } from "./diagnostics";
 import { isSymbolExported } from "./export";
+import { isAmbientNode } from "./typescript";
 
+export const isValidLuaIdentifier = (name: string) => !luaKeywords.has(name) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
 export const luaKeywords: ReadonlySet<string> = new Set([
     "and",
     "break",
@@ -29,7 +30,7 @@ export const luaKeywords: ReadonlySet<string> = new Set([
     "while",
 ]);
 
-export const luaBuiltins: ReadonlySet<string> = new Set([
+const luaBuiltins: ReadonlySet<string> = new Set([
     "_G",
     "assert",
     "coroutine",
@@ -41,7 +42,6 @@ export const luaBuiltins: ReadonlySet<string> = new Set([
     "pcall",
     "print",
     "rawget",
-    "rawset",
     "repeat",
     "require",
     "self",
@@ -52,42 +52,50 @@ export const luaBuiltins: ReadonlySet<string> = new Set([
     "unpack",
 ]);
 
-export const isValidLuaIdentifier = (str: string) => /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str);
+export const isUnsafeName = (name: string) => !isValidLuaIdentifier(name) || luaBuiltins.has(name);
 
-export const isUnsafeName = (name: string) =>
-    luaKeywords.has(name) || luaBuiltins.has(name) || !isValidLuaIdentifier(name);
+function checkName(context: TransformationContext, name: string, node: ts.Node): boolean {
+    const isInvalid = !isValidLuaIdentifier(name);
+
+    if (isInvalid) {
+        // Empty identifier is a TypeScript error
+        if (name !== "") {
+            context.diagnostics.push(invalidAmbientIdentifierName(node, name));
+        }
+    }
+
+    return isInvalid;
+}
 
 export function hasUnsafeSymbolName(
     context: TransformationContext,
     symbol: ts.Symbol,
     tsOriginal: ts.Identifier
 ): boolean {
-    const isLuaKeyword = luaKeywords.has(symbol.name);
-    const isInvalidIdentifier = !isValidLuaIdentifier(symbol.name);
     const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
-    if ((isLuaKeyword || isInvalidIdentifier) && isAmbient) {
-        // Catch ambient declarations of identifiers with bad names
-        throw InvalidAmbientIdentifierName(tsOriginal);
+
+    // Catch ambient declarations of identifiers with bad names
+    if (isAmbient && checkName(context, symbol.name, tsOriginal)) {
+        return true;
     }
 
-    if (isUnsafeName(symbol.name)) {
-        // only unsafe when non-ambient and not exported
-        return !isAmbient && !isSymbolExported(context, symbol);
-    }
-
-    return false;
+    // only unsafe when non-ambient and not exported
+    return isUnsafeName(symbol.name) && !isAmbient && !isSymbolExported(context, symbol);
 }
 
-export function hasUnsafeIdentifierName(context: TransformationContext, identifier: ts.Identifier): boolean {
-    const symbol = context.checker.getSymbolAtLocation(identifier);
-
-    if (symbol !== undefined) {
-        return hasUnsafeSymbolName(context, symbol, identifier);
-    } else if (luaKeywords.has(identifier.text) || !isValidLuaIdentifier(identifier.text)) {
-        throw InvalidAmbientIdentifierName(identifier);
+export function hasUnsafeIdentifierName(
+    context: TransformationContext,
+    identifier: ts.Identifier,
+    checkSymbol = true
+): boolean {
+    if (checkSymbol) {
+        const symbol = context.checker.getSymbolAtLocation(identifier);
+        if (symbol) {
+            return hasUnsafeSymbolName(context, symbol, identifier);
+        }
     }
 
-    return false;
+    return checkName(context, identifier.text, identifier);
 }
 
 const fixInvalidLuaIdentifier = (name: string) =>

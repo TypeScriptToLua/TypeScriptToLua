@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { TransformationContext } from "../../context";
-import { InvalidDecoratorContext } from "../../utils/errors";
+import { decoratorInvalidContext } from "../../utils/diagnostics";
 import { addExportToIdentifier } from "../../utils/export";
 import { ContextType, getFunctionContextType } from "../../utils/function-context";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
@@ -26,7 +26,7 @@ export function createConstructorDecorationStatement(
         const type = context.checker.getTypeAtLocation(expression);
         const callContext = getFunctionContextType(context, type);
         if (callContext === ContextType.Void) {
-            throw InvalidDecoratorContext(decorator);
+            context.diagnostics.push(decoratorInvalidContext(decorator));
         }
 
         return context.transformExpression(expression);

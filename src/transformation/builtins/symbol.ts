@@ -1,14 +1,13 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
-// Transpile a Symbol._ property
 export function transformSymbolConstructorCall(
     context: TransformationContext,
     expression: PropertyCallExpression
-): lua.CallExpression {
+): lua.CallExpression | undefined {
     const method = expression.expression;
     const signature = context.checker.getResolvedSignature(expression);
     const parameters = transformArguments(context, expression.arguments, signature);
@@ -21,6 +20,6 @@ export function transformSymbolConstructorCall(
             const functionIdentifier = lua.createIdentifier(`__TS__SymbolRegistry${upperMethodName}`);
             return lua.createCallExpression(functionIdentifier, parameters, expression);
         default:
-            throw UnsupportedProperty("Symbol", methodName, expression);
+            context.diagnostics.push(unsupportedProperty(method.name, "Symbol", methodName));
     }
 }

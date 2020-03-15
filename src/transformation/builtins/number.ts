@@ -1,13 +1,13 @@
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
 export function transformNumberPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
-): lua.Expression {
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -20,14 +20,14 @@ export function transformNumberPrototypeCall(
                 ? lua.createCallExpression(lua.createIdentifier("tostring"), [caller], node)
                 : transformLuaLibFunction(context, LuaLibFeature.NumberToString, node, caller, ...params);
         default:
-            throw UnsupportedProperty("number", expressionName, node);
+            context.diagnostics.push(unsupportedProperty(expression.name, "number", expressionName));
     }
 }
 
 export function transformNumberConstructorCall(
     context: TransformationContext,
     expression: PropertyCallExpression
-): lua.CallExpression {
+): lua.CallExpression | undefined {
     const method = expression.expression;
     const parameters = transformArguments(context, expression.arguments);
     const methodName = method.name.text;
@@ -37,6 +37,6 @@ export function transformNumberConstructorCall(
         case "isFinite":
             return transformLuaLibFunction(context, LuaLibFeature.NumberIsFinite, expression, ...parameters);
         default:
-            throw UnsupportedProperty("Number", methodName, expression);
+            context.diagnostics.push(unsupportedProperty(method.name, "Number", methodName));
     }
 }

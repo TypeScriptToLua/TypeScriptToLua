@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Unknown builtin property access: code 1`] = `
+"local ____exports = {}
+____exports.__result = Math.unknownProperty
+return ____exports"
+`;
+
+exports[`Unknown builtin property access: diagnostics 1`] = `"main.ts(1,30): error TSTL: Math.unknownProperty is unsupported."`;

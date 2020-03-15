@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`IncorrectUsage: code 1`] = `
+"require(\\"lualib_bundle\\");
+local ____exports = {}
+function ____exports.__main(self)
+    local Point2D = __TS__Class()
+    Point2D.name = \\"Point2D\\"
+    function Point2D.prototype.____constructor(self)
+    end
+    __TS__New(Point2D)
+end
+return ____exports"
+`;
+
+exports[`IncorrectUsage: diagnostics 1`] = `"main.ts(5,9): error TSTL: '@customConstructor' expects 1 arguments, but got 0."`;

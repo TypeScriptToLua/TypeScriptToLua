@@ -1,12 +1,58 @@
 import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
-import { TransformationContext } from "../../../context";
+import { AllAccessorDeclarations, TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
+import { importLuaLibFeature, LuaLibFeature } from "../../../utils/lualib";
 import { transformFunctionBody, transformParameters } from "../../function";
-import { transformIdentifier } from "../../identifier";
+import { transformPropertyName } from "../../literal";
 import { getExtendedType, isStaticNode } from "../utils";
 
-// TODO: Inline to `hasMemberInClassOrAncestor`?
+function transformAccessor(context: TransformationContext, node: ts.AccessorDeclaration): lua.FunctionExpression {
+    const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
+    const body = node.body ? transformFunctionBody(context, node.parameters, node.body, restParam)[0] : [];
+    return lua.createFunctionExpression(
+        lua.createBlock(body),
+        params,
+        dot,
+        restParam,
+        lua.FunctionExpressionFlags.Declaration
+    );
+}
+
+export function transformAccessorDeclarations(
+    context: TransformationContext,
+    { firstAccessor, getAccessor, setAccessor }: AllAccessorDeclarations,
+    className: lua.Identifier
+): lua.Statement | undefined {
+    const propertyName = transformPropertyName(context, firstAccessor.name);
+    const descriptor = lua.createTableExpression([]);
+
+    if (getAccessor) {
+        const getterFunction = transformAccessor(context, getAccessor);
+        descriptor.fields.push(lua.createTableFieldExpression(getterFunction, lua.createStringLiteral("get")));
+    }
+
+    if (setAccessor) {
+        const setterFunction = transformAccessor(context, setAccessor);
+        descriptor.fields.push(lua.createTableFieldExpression(setterFunction, lua.createStringLiteral("set")));
+    }
+
+    importLuaLibFeature(context, LuaLibFeature.Descriptors);
+    const call = isStaticNode(firstAccessor)
+        ? lua.createCallExpression(lua.createIdentifier(`__TS__ObjectDefineProperty`), [
+              lua.cloneIdentifier(className),
+              propertyName,
+              descriptor,
+          ])
+        : lua.createCallExpression(lua.createIdentifier(`__TS__SetDescriptor`), [
+              lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
+              propertyName,
+              descriptor,
+          ]);
+
+    return lua.createExpressionStatement(call);
+}
+
 function* classWithAncestors(
     context: TransformationContext,
     classDeclaration: ts.ClassLikeDeclarationBase
@@ -70,35 +116,4 @@ export function isGetAccessorOverride(
         classDeclaration,
         m => ts.isPropertyDeclaration(m) && m.initializer !== undefined && isSamePropertyName(m.name, element.name)
     );
-}
-
-export function transformAccessorDeclaration(
-    context: TransformationContext,
-    node: ts.AccessorDeclaration,
-    className: lua.Identifier
-): lua.Statement | undefined {
-    if (node.body === undefined) {
-        return undefined;
-    }
-
-    const name = transformIdentifier(context, node.name as ts.Identifier);
-
-    const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
-    const [body] = transformFunctionBody(context, node.parameters, node.body, restParam);
-    const accessorFunction = lua.createFunctionExpression(
-        lua.createBlock(body),
-        params,
-        dot,
-        restParam,
-        lua.FunctionExpressionFlags.Declaration
-    );
-
-    const methodTable = isStaticNode(node)
-        ? lua.cloneIdentifier(className)
-        : lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype"));
-
-    const classAccessorsName = ts.isGetAccessorDeclaration(node) ? "____getters" : "____setters";
-    const classAccessors = lua.createTableIndexExpression(methodTable, lua.createStringLiteral(classAccessorsName));
-    const accessorPath = lua.createTableIndexExpression(classAccessors, lua.createStringLiteral(name.text));
-    return lua.createAssignmentStatement(accessorPath, accessorFunction, node);
 }

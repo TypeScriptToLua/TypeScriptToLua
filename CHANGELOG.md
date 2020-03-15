@@ -4,6 +4,83 @@
 
 - TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
 
+- Fixed class accessors not working when base class is lacking type information (#725)
+
+- Class extension code has been extracted to lualib
+
+  ```ts
+  class A {}
+  class B extends A {}
+  ```
+
+  ```diff
+  A = __TS__Class()
+  B = __TS__Class()
+  -B.____super = A
+  -setmetatable(B, B.____super)
+  -setmetatable(B.prototype, B.____super.prototype)
+  +__TS__ClassExtends(A, B)
+  ```
+
+- Generated code for class accessors is more dynamic now
+
+  ```ts
+  class A {
+    get a() {
+      return true;
+    }
+  }
+  ```
+
+  ```diff
+  A = __TS__Class()
+  -A.prototype.____getters = {}
+  -A.prototype.__index = __TS__Index(A.prototype)
+  -function A.prototype.____getters.a(self)
+  -  return true
+  -end
+  +__TS__SetDescriptor(
+  +    A.prototype,
+  +    "a",
+  +    {
+  +        get = function(self)
+  +            return true
+  +        end
+  +    }
+  +)
+  ```
+
+  This change simplifies our codebase and opens a path to object accessors implementation
+
+- Errors reported during transpilation now are created as TypeScript diagnostics, instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
+
+  <!-- prettier-ignore -->
+  ```ts
+  for (var x in []) {}
+  ```
+
+  ```shell
+  # Before
+
+  $ tstl file.ts
+  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
+
+  $ cat file.lua
+  error("Iterating over arrays with 'for ... in' is not allowed.")
+  ```
+
+  ```shell
+  # Now
+
+  $ tstl file.ts
+  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
+  file.ts:1:6 - error TSTL: `var` declarations are not supported. Use `let` or `const` instead.
+
+  $ cat file.lua
+  for x in pairs({}) do
+  end
+  ```
+
 - Added `tstl.luaPlugins` option, allowing to specify plugins in a `tsconfig.json` file:
 
   ```json

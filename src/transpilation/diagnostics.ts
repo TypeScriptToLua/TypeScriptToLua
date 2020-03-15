@@ -4,17 +4,18 @@ import { createSerialDiagnosticFactory } from "../utils";
 const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
     createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args) }));
 
-export const toLoadTransformerItShouldBeTranspiled = createDiagnosticFactory(
-    (transform: string) =>
-        `To load "${transform}" transformer it should be transpiled or "ts-node" should be installed.`
+export const toLoadItShouldBeTranspiled = createDiagnosticFactory(
+    (kind: string, transform: string) =>
+        `To load "${transform}" ${kind} it should be transpiled or "ts-node" should be installed.`
 );
 
-export const couldNotResolveTransformerFrom = createDiagnosticFactory(
-    (transform: string, base: string) => `Could not resolve "${transform}" transformer from "${base}".`
+export const couldNotResolveFrom = createDiagnosticFactory(
+    (kind: string, transform: string, base: string) => `Could not resolve "${transform}" ${kind} from "${base}".`
 );
 
-export const transformerShouldHaveAExport = createDiagnosticFactory(
-    (transform: string, importName: string) => `"${transform}" transformer should have a "${importName}" export.`
+export const shouldHaveAExport = createDiagnosticFactory(
+    (kind: string, transform: string, importName: string) =>
+        `"${transform}" ${kind} should have a "${importName}" export.`
 );
 
 export const transformerShouldBeATsTransformerFactory = createDiagnosticFactory(

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.32.0
+
+- **Deprecated:** The `noHoisting` option has been removed, hoisting will always be done.
 
 - TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
 
@@ -52,26 +54,14 @@
 
   This change simplifies our codebase and opens a path to object accessors implementation
 
-- Errors reported during transpilation now are created as TypeScript diagnostics, instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
+- Errors reported during transpilation now are created as TypeScript diagnostics instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
 
-  <!-- prettier-ignore -->
   ```ts
-  for (var x in []) {}
+  for (var x in []) {
+  }
   ```
 
   ```shell
-  # Before
-
-  $ tstl file.ts
-  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
-
-  $ cat file.lua
-  error("Iterating over arrays with 'for ... in' is not allowed.")
-  ```
-
-  ```shell
-  # Now
-
   $ tstl file.ts
   file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
   file.ts:1:6 - error TSTL: `var` declarations are not supported. Use `let` or `const` instead.
@@ -90,6 +80,28 @@
     }
   }
   ```
+
+- Added support for all valid TS `for ... of` loop variable patterns.
+
+- Fixed a bug where spread expressions in array literals were not correctly translated:
+
+  ```diff
+  - [1, ...[2, 3], 4] // --> { 1, 2, 4 }
+  + [1, ...[2, 3], 4] // --> { 1, 2, 3, 4 }
+
+  - ((...values) => values)(1, ...[2, 3], 4) // --> { 1, 2, 4 }
+  + ((...values) => values)(1, ...[2, 3], 4) // --> { 1, 2, 3, 4 }
+  ```
+
+- Fixed Lua error when left hand side of `instanceof` was not a table type.
+
+- Fixed `sourcemapTraceback` function returning a value different from the standard Lua result in 5.1.
+
+- Fixed missing LuaLib dependency for Error LuaLib function.
+
+- Fixed several issues with exported identifiers breaking `for ... in` loops and some default class code.
+
+- Fixed overflowing numbers transforming to undefined Infinity, instead they are now transformed to `math.huge`.
 
 ## 0.31.0
 

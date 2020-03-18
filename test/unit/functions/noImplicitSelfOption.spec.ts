@@ -1,6 +1,6 @@
 import * as util from "../../util";
 
-test("enables noSelfInFile behaviour for functions", () => {
+test("enables noSelfInFile behavior for functions", () => {
     util.testFunction`
         function fooBar() {}
         const test: (this: void) => void = fooBar;
@@ -9,7 +9,7 @@ test("enables noSelfInFile behaviour for functions", () => {
         .expectToHaveNoDiagnostics();
 });
 
-test("enables noSelfInFile behaviour for methods", () => {
+test("enables noSelfInFile behavior for methods", () => {
     util.testFunction`
         class FooBar {
             fooBar() {}
@@ -22,19 +22,19 @@ test("enables noSelfInFile behaviour for methods", () => {
 });
 
 test("generates declaration files with @noSelfInFile", () => {
-    const builder = util.testModule`
+    const fooBuilder = util.testModule`
         export function bar() {}
     `
         .setOptions({ declaration: true, noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
 
-    const declarationFile = builder.getLuaResult().transpiledFiles.find(f => f.declaration);
-    if (!util.expectToBeDefined(declarationFile) || !util.expectToBeDefined(declarationFile.declaration)) return;
+    const fooDeclaration = fooBuilder.getLuaResult().transpiledFiles.find(f => f.declaration)?.declaration;
+    util.assert(fooDeclaration !== undefined);
 
     util.testModule`
         import { bar } from "./foo.d";
         const test: (this: void) => void = bar;
     `
-        .addExtraFile("foo.d.ts", declarationFile.declaration)
+        .addExtraFile("foo.d.ts", fooDeclaration)
         .expectToHaveNoDiagnostics();
 });

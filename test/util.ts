@@ -1,3 +1,4 @@
+import * as nativeAssert from "assert";
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
@@ -9,7 +10,9 @@ import * as tstl from "../src";
 
 export * from "./legacy-utils";
 
-export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown, 0, 0);
+export function assert(value: any, message?: string | Error): asserts value {
+    nativeAssert(value, message);
+}
 
 export function parseTypeScript(
     typescript: string,
@@ -37,12 +40,6 @@ export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => bool
         }
     }
     return undefined;
-}
-
-export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
-    expect(subject).toBeDefined();
-    expect(subject).not.toBeNull();
-    return true; // If this was false the expect would have thrown an error
 }
 
 export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");

@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { assert, castEach } from "../../../utils";
+import { assert, cast } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
 import { invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
@@ -93,9 +93,8 @@ function transformForOfLuaIteratorStatement(
                 if (identifiers.length > 0) {
                     block.statements.unshift(
                         lua.createAssignmentStatement(
-                            castEach(
-                                statement.initializer.elements.map(e => context.transformExpression(e)),
-                                lua.isAssignmentLeftHandSideExpression
+                            statement.initializer.elements.map(e =>
+                                cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression)
                             ),
                             identifiers
                         )

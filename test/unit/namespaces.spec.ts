@@ -54,7 +54,19 @@ test("context in namespace function", () => {
     `.expectToMatchJsResult();
 });
 
-test("namespace merged with interface", () => {
+test("namespace merging", () => {
+    util.testModule`
+        export namespace Foo {
+            export const a = 1;
+        }
+
+        export namespace Foo {
+            export const b = 2;
+        }
+    `.expectToMatchJsResult();
+});
+
+test("namespace merging with interface", () => {
     util.testModule`
         interface Foo {}
         namespace Foo {
@@ -65,8 +77,8 @@ test("namespace merged with interface", () => {
     `.expectToMatchJsResult();
 });
 
-test("namespace merged across files", () => {
-    const testA = `
+test("namespace merging across files", () => {
+    const a = `
         namespace NS {
             export namespace Inner {
                 export const foo = "foo";
@@ -74,7 +86,7 @@ test("namespace merged across files", () => {
         }
     `;
 
-    const testB = `
+    const b = `
         namespace NS {
             export namespace Inner {
                 export const bar = "bar";
@@ -82,9 +94,18 @@ test("namespace merged across files", () => {
         }
     `;
 
-    const { transpiledFiles } = util.transpileStringsAsProject({ "testA.ts": testA, "testB.ts": testB });
-    const lua = transpiledFiles.map(f => f.lua).join("\n") + "\nreturn NS.Inner.foo .. NS.Inner.bar";
-    expect(util.executeLua(lua)).toBe("foobar");
+    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
+    util.testBundle`
+        // @ts-ignore
+        import './a';
+        // @ts-ignore
+        import './b';
+
+        export const result = NS.Inner;
+    `
+        .addExtraFile("a.ts", a)
+        .addExtraFile("b.ts", b)
+        .expectToEqual({ result: { foo: "foo", bar: "bar" } });
 });
 
 test("declared namespace function call", () => {

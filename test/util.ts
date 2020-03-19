@@ -14,34 +14,6 @@ export function assert(value: any, message?: string | Error): asserts value {
     nativeAssert(value, message);
 }
 
-export function parseTypeScript(
-    typescript: string,
-    target: tstl.LuaTarget = tstl.LuaTarget.Lua53
-): [ts.SourceFile, ts.TypeChecker] {
-    const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
-    const sourceFile = program.getSourceFile("main.ts");
-
-    if (sourceFile === undefined) {
-        throw new Error("Could not find source file main.ts in program.");
-    }
-
-    return [sourceFile, program.getTypeChecker()];
-}
-
-export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined {
-    for (const child of node.getChildren()) {
-        if (predicate(child)) {
-            return child;
-        }
-
-        const childChild = findFirstChild(child, predicate);
-        if (childChild !== undefined) {
-            return childChild;
-        }
-    }
-    return undefined;
-}
-
 export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");
 
 export function testEachVersion<T extends TestBuilder>(
@@ -327,11 +299,11 @@ export abstract class TestBuilder {
     @memoize
     protected getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
-        expect(mainFile).toBeDefined();
+        const code = transpiledFiles.find(x => x.fileName === this.mainFileName)?.js;
+        assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";
-        return header + mainFile!.js!;
+        return header + code;
     }
 
     protected abstract getJsCodeWithWrapper(): string;

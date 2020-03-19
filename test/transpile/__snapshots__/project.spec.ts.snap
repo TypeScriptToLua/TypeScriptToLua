@@ -7,7 +7,7 @@ Array [
     "text": "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]
 local ____exports = {}
 function ____exports.getNumber(self)
-    return GetAPIValue()
+    return getAPIValue()
 end
 return ____exports
 ",
@@ -19,7 +19,7 @@ local ____exports = {}
 local ____otherFile = require(\\"otherFile\\")
 local getNumber = ____otherFile.getNumber
 local myNumber = getNumber(nil)
-SetAPIValue(myNumber * 5)
+setAPIValue(myNumber * 5)
 return ____exports
 ",
   },

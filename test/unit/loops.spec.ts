@@ -539,9 +539,9 @@ test.each([
     expect(() => util.transpileString(loop, lua51)).toThrowExactError(
         UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
     );
-    expect(util.transpileString(loop, lua52).indexOf("::__continue2::") !== -1).toBe(true);
-    expect(util.transpileString(loop, lua53).indexOf("::__continue2::") !== -1).toBe(true);
-    expect(util.transpileString(loop, luajit).indexOf("::__continue2::") !== -1).toBe(true);
+    expect(util.transpileString(loop, lua52)).toMatch("::__continue2::");
+    expect(util.transpileString(loop, lua53)).toMatch("::__continue2::");
+    expect(util.transpileString(loop, luajit)).toMatch("::__continue2::");
 });
 
 test("do...while", () => {

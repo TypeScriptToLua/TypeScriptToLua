@@ -97,7 +97,7 @@ export function getSignatureAnnotations(context: TransformationContext, signatur
 
     // Function properties on interfaces have the JSDoc tags on the parent PropertySignature
     const declaration = signature.getDeclaration();
-    if (declaration && declaration.parent && ts.isPropertySignature(declaration.parent)) {
+    if (declaration?.parent && ts.isPropertySignature(declaration.parent)) {
         const symbol = context.checker.getSymbolAtLocation(declaration.parent.name);
         if (symbol) {
             collectAnnotations(symbol, annotationsMap);
@@ -121,8 +121,7 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
         // Only check function type for directive if it is declared as an interface or type alias
         const declaration = signature.getDeclaration();
         const isInterfaceOrAlias =
-            declaration &&
-            declaration.parent &&
+            declaration?.parent &&
             ((ts.isInterfaceDeclaration(declaration.parent) && ts.isCallSignatureDeclaration(declaration)) ||
                 ts.isTypeAliasDeclaration(declaration.parent));
         if (!isInterfaceOrAlias) {
@@ -158,7 +157,7 @@ export function isInTupleReturnFunction(context: TransformationContext, node: ts
 
     // Check all overloads for directive
     const signatures = functionType.getCallSignatures();
-    if (signatures && signatures.some(s => getSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
+    if (signatures?.some(s => getSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
         return true;
     }
 

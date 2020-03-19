@@ -171,7 +171,7 @@ test("Source map has correct sources", async () => {
     expect(consumer.sources[0]).toBe("main.ts");
 });
 
-test("Source map has correct source root", async () => {
+test("Source map has correct source root", () => {
     const file = util.testModule`
         const foo = "foo"
     `

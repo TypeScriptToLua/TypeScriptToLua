@@ -8,7 +8,7 @@ afterEach(() => {
     testsCleanup = [];
 });
 
-function waitForFileExists(filePath: string): Promise<void> {
+async function waitForFileExists(filePath: string): Promise<void> {
     return new Promise<void>(resolve => {
         const intervalTimerId = setInterval(() => {
             if (fs.existsSync(filePath)) {

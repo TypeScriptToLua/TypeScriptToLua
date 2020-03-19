@@ -64,8 +64,7 @@ function loadTransformersFromOptions(program: ts.Program, allDiagnostics: ts.Dia
     const options = program.getCompilerOptions() as CompilerOptions;
     if (!options.plugins) return customTransformers;
 
-    const configFileName = options.configFilePath as string | undefined;
-    const basedir = configFileName ? path.dirname(configFileName) : process.cwd();
+    const basedir = options.configFileName ? path.dirname(options.configFileName) : process.cwd();
 
     for (const [index, transformerImport] of options.plugins.entries()) {
         if (!("transform" in transformerImport)) continue;

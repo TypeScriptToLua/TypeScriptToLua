@@ -46,8 +46,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
             if (ts.isIdentifier(member.initializer)) {
                 const symbol = context.checker.getSymbolAtLocation(member.initializer);
                 if (
-                    symbol &&
-                    symbol.valueDeclaration &&
+                    symbol?.valueDeclaration &&
                     ts.isEnumMember(symbol.valueDeclaration) &&
                     symbol.valueDeclaration.parent === node
                 ) {

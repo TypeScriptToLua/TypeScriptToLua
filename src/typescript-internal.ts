@@ -1,3 +1,5 @@
+// TODO:
+/* eslint-disable @typescript-eslint/no-unnecessary-qualifier */
 import * as ts from "typescript";
 
 declare module "typescript" {
@@ -17,6 +19,7 @@ declare module "typescript" {
     }
 
     interface CompilerOptions {
+        configFile?: ts.TsConfigSourceFile;
         configFilePath?: string;
     }
 }

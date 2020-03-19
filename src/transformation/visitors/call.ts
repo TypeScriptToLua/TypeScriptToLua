@@ -102,7 +102,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
     }
 
     const parameters = transformArguments(context, node.arguments, signature);
-    const signatureDeclaration = signature && signature.getDeclaration();
+    const signatureDeclaration = signature?.getDeclaration();
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // table:name()
         return transformContextualCallExpression(context, node, parameters);
@@ -118,7 +118,7 @@ function transformPropertyCall(context: TransformationContext, node: PropertyCal
 
 function transformElementCall(context: TransformationContext, node: ts.CallExpression): lua.Expression {
     const signature = context.checker.getResolvedSignature(node);
-    const signatureDeclaration = signature && signature.getDeclaration();
+    const signatureDeclaration = signature?.getDeclaration();
     const parameters = transformArguments(context, node.arguments, signature);
     if (!signatureDeclaration || getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void) {
         // A contextual parameter must be given to this call expression
@@ -175,7 +175,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     }
 
     const callPath = context.transformExpression(node.expression);
-    const signatureDeclaration = signature && signature.getDeclaration();
+    const signatureDeclaration = signature?.getDeclaration();
 
     let parameters: lua.Expression[] = [];
     if (signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) === ContextType.Void) {

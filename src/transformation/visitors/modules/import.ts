@@ -13,7 +13,7 @@ import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
-    relativePath[0] !== "." && options.baseUrl
+    !relativePath.startsWith(".") && options.baseUrl
         ? path.resolve(options.baseUrl, relativePath)
         : path.resolve(directoryPath, relativePath);
 

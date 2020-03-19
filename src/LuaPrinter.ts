@@ -229,10 +229,10 @@ export class LuaPrinter {
     }
 
     protected createSourceNode(node: lua.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
-        const originalPos = lua.getOriginalPos(node);
+        const { line, column } = lua.getOriginalPos(node);
 
-        return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
-            ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks, name)
+        return line !== undefined && column !== undefined
+            ? new SourceNode(line + 1, column, this.sourceFile, chunks, name)
             : new SourceNode(null, null, this.sourceFile, chunks, name);
     }
 

@@ -4,7 +4,7 @@ export function createDiagnosticReporter(pretty: boolean, system = ts.sys): ts.D
     const reporter = ts.createDiagnosticReporter(system, pretty);
     return diagnostic => {
         if (diagnostic.source === "typescript-to-lua") {
-            diagnostic = { ...diagnostic, code: ("TL" + diagnostic.code) as any };
+            diagnostic = { ...diagnostic, code: `TL${diagnostic.code}` as any };
         }
 
         reporter(diagnostic);

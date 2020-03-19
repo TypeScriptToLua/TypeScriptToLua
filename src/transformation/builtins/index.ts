@@ -75,8 +75,7 @@ export function transformBuiltinCallExpression(
 
     if (isStandardLibraryType(context, ownerType, undefined)) {
         const symbol = ownerType.getSymbol();
-        const symbolName = symbol && symbol.name;
-        switch (symbolName) {
+        switch (symbol?.name) {
             case "Console":
                 return transformConsoleCall(context, node);
             case "Math":

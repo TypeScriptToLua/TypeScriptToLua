@@ -147,7 +147,7 @@ export function transformClassDeclaration(
             throw MissingMetaExtension(classDeclaration);
         }
 
-        const extendsName = lua.createStringLiteral(extendedType.symbol.name as string);
+        const extendsName = lua.createStringLiteral(extendedType.symbol.name);
         className = lua.createIdentifier("__meta__" + extendsName.value);
 
         // local className = debug.getregistry()["extendsName"]

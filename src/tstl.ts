@@ -7,11 +7,8 @@ import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 
-function shouldBePretty(options?: ts.CompilerOptions): boolean {
-    return options?.pretty === undefined
-        ? ts.sys.writeOutputIsTTY !== undefined && ts.sys.writeOutputIsTTY()
-        : Boolean(options.pretty);
-}
+const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
+    pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;
 
 let reportDiagnostic = createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {

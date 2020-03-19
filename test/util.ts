@@ -175,7 +175,7 @@ function executeJsModule(code: string): any {
 
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
     const originalFunction = descriptor.value as any;
-    const memoized = new WeakMap<object, any>();
+    const memoized = new WeakMap();
     descriptor.value = function(this: any, ...args: any[]): any {
         if (!memoized.has(this)) {
             memoized.set(this, originalFunction.apply(this, args));
@@ -188,6 +188,8 @@ const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
 
 export class ExecutionError extends Error {
     public name = "ExecutionError";
+    // https://github.com/typescript-eslint/typescript-eslint/issues/1131
+    // eslint-disable-next-line @typescript-eslint/no-useless-constructor
     constructor(message: string) {
         super(message);
     }
@@ -484,12 +486,12 @@ const createTestBuilderFactory = <T extends TestBuilder>(
         expect(serializeSubstitutions).toBe(false);
         tsCode = args[0];
     } else {
-        let [template, ...substitutions] = args;
+        let [raw, ...substitutions] = args;
         if (serializeSubstitutions) {
             substitutions = substitutions.map(s => formatCode(s));
         }
 
-        tsCode = template.map((chunk, index) => (substitutions[index - 1] ?? "") + chunk).join("");
+        tsCode = String.raw(Object.assign([], { raw }), ...substitutions);
     }
 
     return new builder(tsCode);

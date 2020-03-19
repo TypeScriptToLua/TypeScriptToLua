@@ -205,7 +205,6 @@ export function transformFunctionLikeDeclaration(
         lua.createBlock(transformedBody),
         paramNames,
         dotsLiteral,
-        spreadIdentifier,
         flags,
         node
     );

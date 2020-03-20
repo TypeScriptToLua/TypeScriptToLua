@@ -1,6 +1,5 @@
-import * as ts from "typescript";
 import * as tstl from "../../src";
-import { ForbiddenForIn, UnsupportedForTarget } from "../../src/transformation/utils/errors";
+import { forbiddenForIn, unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
 test("while", () => {
@@ -213,15 +212,11 @@ test.each([
     expect(JSON.parse(result)).toEqual(expected);
 });
 
-test.each([{ inp: [1, 2, 3] }])("forin[Array] (%p)", ({ inp }) => {
-    expect(() =>
-        util.transpileString(
-            `let arrTest = ${JSON.stringify(inp)};
-            for (let key in arrTest) {
-                arrTest[key]++;
-            }`
-        )
-    ).toThrowExactError(ForbiddenForIn(util.nodeStub));
+test("forin[Array]", () => {
+    util.testFunction`
+        const array = [];
+        for (const key in array) {}
+    `.expectDiagnosticsToMatchSnapshot([forbiddenForIn.code]);
 });
 
 test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
@@ -524,25 +519,23 @@ describe("for...of empty destructuring", () => {
     describe("assignment", () => declareTests(""));
 });
 
-test.each([
-    "while (a < b) { i++; continue; }",
-    "do { i++; continue; } while (a < b)",
-    "for (let i = 0; i < 3; i++) { continue; }",
-    "for (let a in b) { continue; }",
-    "for (let a of b) { continue; }",
-])("loop continue in different lua versions (%p)", loop => {
-    const lua51 = { luaTarget: tstl.LuaTarget.Lua51 };
-    const lua52 = { luaTarget: tstl.LuaTarget.Lua52 };
-    const lua53 = { luaTarget: tstl.LuaTarget.Lua53 };
-    const luajit = { luaTarget: tstl.LuaTarget.LuaJIT };
+for (const testCase of [
+    "while (false) { continue; }",
+    "do { continue; } while (false)",
+    "for (;;) { continue; }",
+    "for (const a in {}) { continue; }",
+    "for (const a of []) { continue; }",
+]) {
+    const expectContinueGotoLabel: util.TapCallback = builder =>
+        expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
-    expect(() => util.transpileString(loop, lua51)).toThrowExactError(
-        UnsupportedForTarget("Continue statement", tstl.LuaTarget.Lua51, ts.createContinue())
-    );
-    expect(util.transpileString(loop, lua52)).toMatch("::__continue2::");
-    expect(util.transpileString(loop, lua53)).toMatch("::__continue2::");
-    expect(util.transpileString(loop, luajit)).toMatch("::__continue2::");
-});
+    util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
+        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
+        [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
+        [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
+        [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,
+    });
+}
 
 test("do...while", () => {
     util.testFunction`

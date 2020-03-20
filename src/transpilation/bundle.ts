@@ -5,7 +5,7 @@ import { CompilerOptions } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { escapeString } from "../LuaPrinter";
 import { formatPathToLuaPath, normalizeSlashes, trimExtension } from "../utils";
-import { couldNotFindBundleEntryPoint } from "./diagnostics";
+import * as diagnosticFactories from "./diagnostics";
 import { EmitHost, TranspiledFile } from "./transpile";
 
 const createModulePath = (baseDir: string, pathToResolve: string) =>
@@ -33,7 +33,7 @@ export function bundleTranspiledFiles(
     // Resolve source files relative to common source directory.
     const sourceRootDir = program.getCommonSourceDirectory();
     if (!transpiledFiles.some(f => path.resolve(sourceRootDir, f.fileName) === resolvedEntryModule)) {
-        return [[couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
+        return [[diagnosticFactories.couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,

@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isVarArgType } from "../utils/annotations";
-import { MissingFunctionName, UnsupportedFunctionWithoutBody } from "../utils/errors";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import {
@@ -183,7 +182,8 @@ export function transformFunctionLikeDeclaration(
     let flags = lua.FunctionExpressionFlags.None;
 
     if (node.body === undefined) {
-        throw UnsupportedFunctionWithoutBody(node);
+        // This code can be reached only from object methods, which is TypeScript error
+        return lua.createNilLiteral();
     }
 
     let body: ts.Block;
@@ -257,17 +257,15 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
         lua.FunctionExpressionFlags.Declaration
     );
 
-    const name = node.name ? transformIdentifier(context, node.name) : undefined;
-
-    const isDefaultExport = hasDefaultExportModifier(node);
-    if (isDefaultExport) {
+    if (hasDefaultExportModifier(node)) {
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
             transformFunctionLikeDeclaration(node, context)
         );
-    } else if (!name) {
-        throw MissingFunctionName(node);
     }
+
+    // Name being undefined without default export is a TypeScript error
+    const name = node.name ? transformIdentifier(context, node.name) : lua.createAnonymousIdentifier();
 
     // Remember symbols referenced in this function for hoisting later
     if (name.symbolId !== undefined) {

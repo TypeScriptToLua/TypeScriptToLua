@@ -1,54 +1,46 @@
 import * as ts from "typescript";
-import * as util from "./util";
+import * as tstl from "../src";
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         // eslint-disable-next-line @typescript-eslint/generic-type-naming
         interface Matchers<R, T> {
-            toThrowExactError(error: Error): R;
-            toHaveDiagnostics(): R;
+            toHaveDiagnostics(expected?: number[]): R;
         }
     }
 }
 
 expect.extend({
-    toThrowExactError(callback: () => void, error: Error): jest.CustomMatcherResult {
-        if (this.isNot) {
-            return { pass: true, message: () => "Inverted toThrowExactError is not implemented" };
-        }
-
-        let executionError: Error | undefined;
-        try {
-            callback();
-        } catch (err) {
-            executionError = err;
-        }
-
-        // TODO:
-        if (util.expectToBeDefined(executionError)) {
-            expect(executionError.message).toContain(error.message);
-        }
-
-        return { pass: true, message: () => "" };
-    },
-    toHaveDiagnostics(diagnostics: ts.Diagnostic[]): jest.CustomMatcherResult {
+    toHaveDiagnostics(diagnostics: ts.Diagnostic[], expected?: number[]): jest.CustomMatcherResult {
         expect(diagnostics).toBeInstanceOf(Array);
         // @ts-ignore
         const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
 
-        const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(diagnostics, {
-            getCurrentDirectory: () => "",
-            getCanonicalFileName: fileName => fileName,
-            getNewLine: () => "\n",
-        });
+        const diagnosticMessages = ts.formatDiagnosticsWithColorAndContext(
+            diagnostics.map(tstl.prepareDiagnosticForFormatting),
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+        );
+
+        if (this.isNot && expected !== undefined) {
+            throw new Error(`expect(actual).not.toHaveDiagnostics(expected) is not supported`);
+        }
 
         return {
-            pass: diagnostics.length > 0,
-            message: () =>
-                matcherHint +
-                "\n\n" +
-                (this.isNot ? diagnosticMessages : `Received: ${this.utils.printReceived(diagnostics)}\n`),
+            pass: expected
+                ? diagnostics.length === expected.length &&
+                  diagnostics.every((diag, index) => diag.code === expected[index])
+                : diagnostics.length > 0,
+
+            message: () => {
+                const message = this.isNot
+                    ? diagnosticMessages
+                    : expected
+                    ? `Expected:\n${expected.join("\n")}\nReceived:\n${diagnostics.map(diag => diag.code).join("\n")}\n`
+                    : `Received: ${this.utils.printReceived([])}\n`;
+
+                return matcherHint + "\n\n" + message;
+            },
         };
     },
 });

@@ -33,7 +33,22 @@ export function parseAccessExpressionWithEvaluationEffects(
     return [];
 }
 
-const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, ts.BinaryOperator> = {
+// TODO: `as const` doesn't work on enum members
+type CompoundAssignmentToken =
+    | ts.SyntaxKind.BarToken
+    | ts.SyntaxKind.PlusToken
+    | ts.SyntaxKind.CaretToken
+    | ts.SyntaxKind.MinusToken
+    | ts.SyntaxKind.SlashToken
+    | ts.SyntaxKind.PercentToken
+    | ts.SyntaxKind.AsteriskToken
+    | ts.SyntaxKind.AmpersandToken
+    | ts.SyntaxKind.AsteriskAsteriskToken
+    | ts.SyntaxKind.LessThanLessThanToken
+    | ts.SyntaxKind.GreaterThanGreaterThanToken
+    | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+
+const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken> = {
     [ts.SyntaxKind.BarEqualsToken]: ts.SyntaxKind.BarToken,
     [ts.SyntaxKind.PlusEqualsToken]: ts.SyntaxKind.PlusToken,
     [ts.SyntaxKind.CaretEqualsToken]: ts.SyntaxKind.CaretToken,
@@ -51,7 +66,7 @@ const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, ts.Binar
 export const isCompoundAssignmentToken = (token: ts.BinaryOperator): token is ts.CompoundAssignmentOperator =>
     token in compoundToAssignmentTokens;
 
-export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperator) =>
+export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperator): CompoundAssignmentToken =>
     compoundToAssignmentTokens[token];
 
 export function transformCompoundAssignmentExpression(
@@ -60,7 +75,7 @@ export function transformCompoundAssignmentExpression(
     // TODO: Change type to ts.LeftHandSideExpression?
     lhs: ts.Expression,
     rhs: ts.Expression,
-    replacementOperator: ts.BinaryOperator,
+    operator: CompoundAssignmentToken,
     isPostfix: boolean
 ): lua.CallExpression {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
@@ -85,18 +100,12 @@ export function transformCompoundAssignmentExpression(
             // local ____tmp = ____obj[____index];
             // ____obj[____index] = ____tmp ${replacementOperator} ${right};
             tmpDeclaration = lua.createVariableDeclarationStatement(tmp, accessExpression);
-            const operatorExpression = transformBinaryOperation(context, tmp, right, replacementOperator, expression);
+            const operatorExpression = transformBinaryOperation(context, tmp, right, operator, expression);
             assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         } else {
             // local ____tmp = ____obj[____index] ${replacementOperator} ${right};
             // ____obj[____index] = ____tmp;
-            const operatorExpression = transformBinaryOperation(
-                context,
-                accessExpression,
-                right,
-                replacementOperator,
-                expression
-            );
+            const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, expression);
             tmpDeclaration = lua.createVariableDeclarationStatement(tmp, operatorExpression);
             assignStatement = lua.createAssignmentStatement(accessExpression, tmp);
         }
@@ -113,13 +122,7 @@ export function transformCompoundAssignmentExpression(
         // return ____tmp
         const tmpIdentifier = lua.createIdentifier("____tmp");
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, left);
-        const operatorExpression = transformBinaryOperation(
-            context,
-            tmpIdentifier,
-            right,
-            replacementOperator,
-            expression
-        );
+        const operatorExpression = transformBinaryOperation(context, tmpIdentifier, right, operator, expression);
         const assignStatements = transformAssignment(context, lhs, operatorExpression);
         return createImmediatelyInvokedFunctionExpression(
             [tmpDeclaration, ...assignStatements],
@@ -132,7 +135,7 @@ export function transformCompoundAssignmentExpression(
         // ${left} = ____tmp;
         // return ____tmp
         const tmpIdentifier = lua.createIdentifier("____tmp");
-        const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, expression);
+        const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
         const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
         return createImmediatelyInvokedFunctionExpression(
@@ -143,7 +146,7 @@ export function transformCompoundAssignmentExpression(
     } else {
         // Simple expressions
         // ${left} = ${right}; return ${right}
-        const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, expression);
+        const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const assignStatements = transformAssignment(context, lhs, operatorExpression);
         return createImmediatelyInvokedFunctionExpression(assignStatements, left, expression);
     }
@@ -154,7 +157,7 @@ export function transformCompoundAssignmentStatement(
     node: ts.Node,
     lhs: ts.Expression,
     rhs: ts.Expression,
-    replacementOperator: ts.BinaryOperator
+    operator: CompoundAssignmentToken
 ): lua.Statement[] {
     const left = cast(context.transformExpression(lhs), lua.isAssignmentLeftHandSideExpression);
     const right = context.transformExpression(rhs);
@@ -171,20 +174,13 @@ export function transformCompoundAssignmentStatement(
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
         const accessExpression = lua.createTableIndexExpression(obj, index);
-        const operatorExpression = transformBinaryOperation(
-            context,
-            accessExpression,
-            right,
-            replacementOperator,
-            node
-        );
+        const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         return [objAndIndexDeclaration, assignStatement];
     } else {
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
-        const operatorExpression = transformBinaryOperation(context, left, right, replacementOperator, node);
-        const assignmentStatements = transformAssignment(context, lhs, operatorExpression);
-        return assignmentStatements;
+        const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
+        return transformAssignment(context, lhs, operatorExpression);
     }
 }

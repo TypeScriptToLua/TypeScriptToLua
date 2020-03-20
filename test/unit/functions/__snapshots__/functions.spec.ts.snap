@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`missing declaration name: code 1`] = `
+"function ____(self)
+end"
+`;
+
+exports[`missing declaration name: diagnostics 1`] = `"main.ts(2,18): error TS1003: Identifier expected."`;

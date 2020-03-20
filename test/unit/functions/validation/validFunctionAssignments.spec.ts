@@ -144,16 +144,21 @@ test("Valid function tuple assignment", () => {
     expect(result).toBe("foo");
 });
 
-test("Valid method tuple assignment", () => {
-    const code = `interface Foo { method(s: string): string; }
-                  interface Meth { (this: Foo, s: string): string; }
-                  let meth: Meth = s => s;
-                  function getTuple(): [number, Meth] { return [1, meth]; }
-                  let [i, f]: [number, Meth] = getTuple();
-                  let foo: Foo = {method: f};
-                  return foo.method("foo");`;
+test("Interface method assignment", () => {
+    const code = `
+        class Foo {
+            method(s: string): string { return s + "+method"; }
+            lambdaProp: (s: string) => string = s => s + "+lambdaProp";
+        }
+        interface IFoo {
+            method: (s: string) => string;
+            lambdaProp(s: string): string;
+        }
+        const foo: IFoo = new Foo();
+        return foo.method("foo") + "|" + foo.lambdaProp("bar");
+    `;
     const result = util.transpileAndExecute(code);
-    expect(result).toBe("foo");
+    expect(result).toBe("foo+method|bar+lambdaProp");
 });
 
 test("Valid interface method assignment", () => {
@@ -162,6 +167,18 @@ test("Valid interface method assignment", () => {
                   const a: A = { fn(this: void, s) { return s; } };
                   const b: B = a;
                   return b.fn("foo");`;
+    const result = util.transpileAndExecute(code);
+    expect(result).toBe("foo");
+});
+
+test("Valid method tuple assignment", () => {
+    const code = `interface Foo { method(s: string): string; }
+                  interface Meth { (this: Foo, s: string): string; }
+                  let meth: Meth = s => s;
+                  function getTuple(): [number, Meth] { return [1, meth]; }
+                  let [i, f]: [number, Meth] = getTuple();
+                  let foo: Foo = {method: f};
+                  return foo.method("foo");`;
     const result = util.transpileAndExecute(code);
     expect(result).toBe("foo");
 });

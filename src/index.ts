@@ -6,5 +6,4 @@ export * from "./LuaAST";
 export { LuaLibFeature } from "./LuaLib";
 export * from "./LuaPrinter";
 export * from "./transformation/context";
-export { TranspileError } from "./transformation/utils/errors";
 export * from "./transpilation";

@@ -24,6 +24,7 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 }
 
 export class TransformationContext {
+    public readonly diagnostics: ts.Diagnostic[] = [];
     public readonly checker: DiagnosticsProducingTypeChecker = (this
         .program as any).getDiagnosticsProducingTypeChecker();
     public readonly resolver: EmitResolver;
@@ -52,7 +53,7 @@ export class TransformationContext {
 
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
-            throw new Error(`${ts.SyntaxKind[node.kind]} is not supported`);
+            throw new Error(`Unsupported node kind: ${ts.SyntaxKind[node.kind]}.`);
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;

@@ -1,10 +1,9 @@
-import * as path from "path";
-import * as resolve from "resolve";
 import * as ts from "typescript";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../cli/diagnostics";
 import { CompilerOptions, TransformerImport } from "../CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
+import { getConfigDirectory, resolvePlugin } from "./utils";
 
 export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => node => {
     const transformSourceFile: ts.Transformer<ts.SourceFile> = node => {
@@ -18,7 +17,7 @@ export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts
         : transformSourceFile(node);
 };
 
-export function getCustomTransformers(
+export function getTransformers(
     program: ts.Program,
     diagnostics: ts.Diagnostic[],
     customTransformers: ts.CustomTransformers,
@@ -54,7 +53,7 @@ export function getCustomTransformers(
     };
 }
 
-function loadTransformersFromOptions(program: ts.Program, allDiagnostics: ts.Diagnostic[]): ts.CustomTransformers {
+function loadTransformersFromOptions(program: ts.Program, diagnostics: ts.Diagnostic[]): ts.CustomTransformers {
     const customTransformers: Required<ts.CustomTransformers> = {
         before: [],
         after: [],
@@ -64,18 +63,23 @@ function loadTransformersFromOptions(program: ts.Program, allDiagnostics: ts.Dia
     const options = program.getCompilerOptions() as CompilerOptions;
     if (!options.plugins) return customTransformers;
 
-    const basedir = options.configFileName ? path.dirname(options.configFileName) : process.cwd();
-
     for (const [index, transformerImport] of options.plugins.entries()) {
         if (!("transform" in transformerImport)) continue;
         const optionName = `compilerOptions.plugins[${index}]`;
 
-        const { error: resolveError, factory } = resolveTransformerFactory(basedir, optionName, transformerImport);
-        if (resolveError) allDiagnostics.push(resolveError);
+        const { error: resolveError, result: factory } = resolvePlugin(
+            "transformer",
+            `${optionName}.transform`,
+            getConfigDirectory(options),
+            transformerImport.transform,
+            transformerImport.import
+        );
+
+        if (resolveError) diagnostics.push(resolveError);
         if (factory === undefined) continue;
 
         const { error: loadError, transformer } = loadTransformer(optionName, program, factory, transformerImport);
-        if (loadError) allDiagnostics.push(loadError);
+        if (loadError) diagnostics.push(loadError);
         if (transformer === undefined) continue;
 
         if (transformer.before) {
@@ -102,12 +106,6 @@ type CompilerOptionsTransformerFactory = (
 ) => Transformer;
 type TypeCheckerTransformerFactory = (typeChecker: ts.TypeChecker, options: Record<string, any>) => Transformer;
 type RawTransformerFactory = Transformer;
-type TransformerFactory =
-    | ProgramTransformerFactory
-    | ConfigTransformerFactory
-    | CompilerOptionsTransformerFactory
-    | TypeCheckerTransformerFactory
-    | RawTransformerFactory;
 
 type Transformer = GroupTransformer | ts.TransformerFactory<ts.SourceFile>;
 interface GroupTransformer {
@@ -116,47 +114,10 @@ interface GroupTransformer {
     afterDeclarations?: ts.TransformerFactory<ts.SourceFile | ts.Bundle>;
 }
 
-function resolveTransformerFactory(
-    basedir: string,
-    transformerOptionPath: string,
-    { transform, import: importName = "default" }: TransformerImport
-): { error?: ts.Diagnostic; factory?: TransformerFactory } {
-    if (typeof transform !== "string") {
-        const optionName = `${transformerOptionPath}.transform`;
-        return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "string") };
-    }
-
-    let resolved: string;
-    try {
-        resolved = resolve.sync(transform, { basedir, extensions: [".js", ".ts", ".tsx"] });
-    } catch (err) {
-        if (err.code !== "MODULE_NOT_FOUND") throw err;
-        return { error: diagnosticFactories.couldNotResolveTransformerFrom(transform, basedir) };
-    }
-
-    const hasNoRequireHook = require.extensions[".ts"] === undefined;
-    if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
-        try {
-            const tsNode: typeof import("ts-node") = require("ts-node");
-            tsNode.register({ transpileOnly: true });
-        } catch (err) {
-            if (err.code !== "MODULE_NOT_FOUND") throw err;
-            return { error: diagnosticFactories.toLoadTransformerItShouldBeTranspiled(transform) };
-        }
-    }
-
-    const factory: TransformerFactory = require(resolved)[importName];
-    if (factory === undefined) {
-        return { error: diagnosticFactories.transformerShouldHaveAExport(transform, importName) };
-    }
-
-    return { factory };
-}
-
 function loadTransformer(
-    transformerOptionPath: string,
+    optionPath: string,
     program: ts.Program,
-    factory: TransformerFactory,
+    factory: unknown,
     { transform, after = false, afterDeclarations = false, type = "program", ...extraOptions }: TransformerImport
 ): { error?: ts.Diagnostic; transformer?: GroupTransformer } {
     let transformer: Transformer;
@@ -177,18 +138,18 @@ function loadTransformer(
             transformer = (factory as CompilerOptionsTransformerFactory)(program.getCompilerOptions(), extraOptions);
             break;
         default: {
-            const optionName = `--${transformerOptionPath}.type`;
+            const optionName = `--${optionPath}.type`;
             return { error: cliDiagnostics.argumentForOptionMustBe(optionName, "program") };
         }
     }
 
     if (typeof after !== "boolean") {
-        const optionName = `${transformerOptionPath}.after`;
+        const optionName = `${optionPath}.after`;
         return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "boolean") };
     }
 
     if (typeof afterDeclarations !== "boolean") {
-        const optionName = `${transformerOptionPath}.afterDeclarations`;
+        const optionName = `${optionPath}.afterDeclarations`;
         return { error: cliDiagnostics.compilerOptionRequiresAValueOfType(optionName, "boolean") };
     }
 

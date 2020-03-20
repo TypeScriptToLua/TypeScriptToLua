@@ -7,6 +7,7 @@ import { emitTranspiledFiles, OutputFile } from "./emit";
 import { transpile, TranspiledFile, TranspileResult } from "./transpile";
 
 export * from "./emit";
+export { Plugin } from "./plugins";
 export * from "./transpile";
 
 export interface TranspileFilesResult {

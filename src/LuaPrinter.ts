@@ -271,8 +271,6 @@ export class LuaPrinter {
     protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {
         const statementNodes: SourceNode[] = [];
         for (const [index, statement] of statements.entries()) {
-            if (this.isStatementEmpty(statement)) continue;
-
             const node = this.printStatement(statement);
 
             if (
@@ -728,10 +726,6 @@ export class LuaPrinter {
     public printOperator(kind: lua.Operator): SourceNode {
         // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
-    }
-
-    protected isStatementEmpty(statement: lua.Statement): boolean {
-        return lua.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
     }
 
     protected joinChunksWithComma(chunks: SourceChunk[]): SourceChunk[] {

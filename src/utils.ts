@@ -7,8 +7,8 @@ export const createDiagnosticFactoryWithCode = <
 >(
     code: number,
     create: T
-) => {
-    return Object.assign(
+) =>
+    Object.assign(
         (...args: Parameters<T>): ts.Diagnostic => ({
             file: undefined,
             start: undefined,
@@ -20,7 +20,6 @@ export const createDiagnosticFactoryWithCode = <
         }),
         { code }
     );
-};
 
 let serialDiagnosticCodeCounter = 100000;
 export const createSerialDiagnosticFactory = <

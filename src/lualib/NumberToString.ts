@@ -1,4 +1,3 @@
-// tslint:disable-next-line: variable-name
 const ____radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring

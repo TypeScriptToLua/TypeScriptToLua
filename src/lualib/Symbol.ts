@@ -1,4 +1,3 @@
-// tslint:disable-next-line: variable-name
 const ____symbolMetatable = {
     __tostring(this: symbol): string {
         return `Symbol(${this.description || ""})`;

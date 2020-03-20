@@ -24,8 +24,8 @@ export const watchErrorSummary = (errorCount: number): ts.Diagnostic => ({
             : `Found ${errorCount} errors. Watching for file changes.`,
 });
 
-const createCommandLineError = <Args extends any[]>(code: number, getMessage: (...args: Args) => string) => (
-    ...args: Args
+const createCommandLineError = <TArgs extends any[]>(code: number, getMessage: (...args: TArgs) => string) => (
+    ...args: TArgs
 ): ts.Diagnostic => ({
     file: undefined,
     start: undefined,

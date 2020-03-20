@@ -4,6 +4,7 @@ import * as util from "./util";
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
+        // eslint-disable-next-line @typescript-eslint/generic-type-naming
         interface Matchers<R, T> {
             toThrowExactError(error: Error): R;
             toHaveDiagnostics(): R;

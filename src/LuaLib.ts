@@ -68,7 +68,7 @@ export enum LuaLibFeature {
     TypeOf = "TypeOf",
 }
 
-const luaLibDependencies: { [lib in LuaLibFeature]?: LuaLibFeature[] } = {
+const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     Error: [LuaLibFeature.New, LuaLibFeature.Class, LuaLibFeature.FunctionCall],

@@ -26,9 +26,6 @@
         "lint:prettier": "prettier --check \"**/*.{js,ts,yml,json,md}\" || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:tslint": "tslint -p . && tslint -p test && tslint -p src/lualib",
         "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
-        "release-major": "npm version major",
-        "release-minor": "npm version minor",
-        "release-patch": "npm version patch",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags"
     },

@@ -45,7 +45,7 @@ test("var declaration in for...of loop is disallowed", () => {
 
 test.each(["let myvar;", "const myvar = null;", "const myvar = undefined;"])("Null assignments (%p)", declaration => {
     const result = util.transpileAndExecute(declaration + " return myvar;");
-    expect(result).toBe(undefined);
+    expect(result).toBeUndefined();
 });
 
 test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {

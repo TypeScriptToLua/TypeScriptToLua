@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as path from "path";
 import { forkCli } from "./run";
 
@@ -29,9 +29,7 @@ function forkWatchProcess(args: string[]): void {
 const watchedFile = path.join(__dirname, "./watch/watch.ts");
 const watchedFileOut = watchedFile.replace(".ts", ".lua");
 
-afterEach(() => {
-    if (fs.existsSync(watchedFileOut)) fs.unlinkSync(watchedFileOut);
-});
+afterEach(() => fs.removeSync(watchedFileOut));
 
 async function compileChangeAndCompare(filePath: string, content: string): Promise<void> {
     await waitForFileExists(watchedFileOut);

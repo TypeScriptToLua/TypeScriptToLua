@@ -167,7 +167,7 @@ test("Source map has correct sources", async () => {
         .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
-    expect(consumer.sources.length).toBe(1);
+    expect(consumer.sources).toHaveLength(1);
     expect(consumer.sources[0]).toBe("main.ts");
 });
 

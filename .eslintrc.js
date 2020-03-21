@@ -66,6 +66,7 @@ const typescriptBase = {
 };
 
 module.exports = {
+    extends: ["plugin:jest/recommended", "plugin:jest/style"],
     parserOptions: { sourceType: "module", project: ["test/tsconfig.json", "src/lualib/tsconfig.json"] },
     env: { es6: true, node: true },
     plugins: ["import"],
@@ -78,7 +79,6 @@ module.exports = {
         "no-debugger": "error",
         "no-duplicate-case": "error",
         "no-new-wrappers": "error",
-        "no-redeclare": "error",
         "no-restricted-globals": ["error", "parseInt", "parseFloat"],
         "no-unused-labels": "error",
         "no-var": "error",
@@ -136,6 +136,17 @@ module.exports = {
         "no-useless-return": ["error"],
 
         "import/no-default-export": "error",
+
+        "jest/expect-expect": "off",
+        "jest/consistent-test-it": ["error", { fn: "test", withinDescribe: "test" }],
+        "jest/no-expect-resolves": "error",
+        "jest/no-test-return-statement": "error",
+        "jest/no-truthy-falsy": "error",
+        "jest/prefer-spy-on": "error",
+        "jest/prefer-todo": "error",
+        "jest/valid-title": "error",
+        // TODO:
+        // "jest/lowercase-name": "error",
     },
     overrides: [
         {

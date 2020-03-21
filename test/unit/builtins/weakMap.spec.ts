@@ -63,7 +63,7 @@ test("weakMap get missing", () => {
         return mymap.get({});
     `);
 
-    expect(result).toBe(undefined);
+    expect(result).toBeUndefined();
 });
 
 test("weakMap has", () => {
@@ -111,7 +111,7 @@ test("weakMap set", () => {
 });
 
 test("weakMap has no map features (size)", () => {
-    expect(util.transpileAndExecute("return (new WeakMap() as any).size")).toBe(undefined);
+    expect(util.transpileAndExecute("return (new WeakMap() as any).size")).toBeUndefined();
 });
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(

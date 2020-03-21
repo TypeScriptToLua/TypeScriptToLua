@@ -79,7 +79,7 @@ test("map get", () => {
 
 test("map get missing", () => {
     const result = util.transpileAndExecute('let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");');
-    expect(result).toBe(undefined);
+    expect(result).toBeUndefined();
 });
 
 test("map has", () => {

@@ -1,3 +1,4 @@
+/* eslint-disable jest/no-standalone-expect */
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
@@ -8,6 +9,9 @@ import * as vm from "vm";
 import * as tstl from "../src";
 
 export * from "./legacy-utils";
+
+// Using `test` directly makes eslint-plugin-jest consider this file as a test
+const defineTest = test;
 
 export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown, 0, 0);
 
@@ -58,7 +62,7 @@ export function testEachVersion<T extends TestBuilder>(
         if (specialBuilder === false) return;
 
         const testName = name === undefined ? version : `${name} [${version}]`;
-        test(testName, () => {
+        defineTest(testName, () => {
             const builder = common();
             builder.setOptions({ luaTarget: version });
             if (typeof specialBuilder === "function") {

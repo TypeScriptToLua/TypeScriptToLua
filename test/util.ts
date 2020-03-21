@@ -487,7 +487,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     let tsCode: string;
     if (typeof args[0] === "string") {
         expect(serializeSubstitutions).toBe(false);
-        tsCode = args[0];
+        [tsCode] = args;
     } else {
         let [raw, ...substitutions] = args;
         if (serializeSubstitutions) {

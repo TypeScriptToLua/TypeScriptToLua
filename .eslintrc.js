@@ -73,7 +73,6 @@ module.exports = {
         "arrow-body-style": "error",
         curly: ["error", "multi-line"],
         eqeqeq: ["error", "always", { null: "ignore" }],
-        "id-match": "error",
         "no-caller": "error",
         "no-cond-assign": "error",
         "no-debugger": "error",
@@ -87,6 +86,32 @@ module.exports = {
         "prefer-const": ["error", { destructuring: "all" }],
         radix: "error",
         "use-isnan": "error",
+        "object-shorthand": [
+            "error",
+            "always",
+            { avoidQuotes: true, ignoreConstructors: false, avoidExplicitReturnArrows: true },
+        ],
+        "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "SequenceExpression"],
+        "spaced-comment": [
+            "error",
+            "always",
+            {
+                line: { exceptions: ["-", "+"], markers: ["=", "!", "/"] },
+                block: { exceptions: ["-", "+"], markers: ["=", "!", ":", "::"], balanced: true },
+            },
+        ],
+        "no-delete-var": ["error"],
+        "no-label-var": ["error"],
+        yoda: ["error"],
+        "prefer-destructuring": [
+            "error",
+            {
+                VariableDeclarator: { array: false, object: true },
+                AssignmentExpression: { array: false, object: false },
+            },
+            { enforceForRenamedProperties: false },
+        ],
+        "prefer-numeric-literals": ["error"],
 
         "import/no-default-export": "error",
     },
@@ -132,6 +157,7 @@ module.exports = {
         {
             files: "src/lualib/**/*.ts",
             rules: {
+                "no-restricted-syntax": ["error", "LabeledStatement", "SequenceExpression"],
                 "@typescript-eslint/no-throw-literal": "off",
                 "@typescript-eslint/prefer-optional-chain": "off",
             },

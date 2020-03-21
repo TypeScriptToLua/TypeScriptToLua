@@ -18,8 +18,10 @@ const getAbsoluteImportPath = (relativePath: string, directoryPath: string, opti
         : path.resolve(directoryPath, relativePath);
 
 function getImportPath(context: TransformationContext, relativePath: string, node: ts.Node): string {
-    const fileName = context.sourceFile.fileName;
-    const options = context.options;
+    const {
+        options,
+        sourceFile: { fileName },
+    } = context;
     const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
 
     const absoluteImportPath = path.format(

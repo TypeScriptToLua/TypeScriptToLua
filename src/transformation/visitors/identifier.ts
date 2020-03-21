@@ -30,7 +30,7 @@ export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (no
     if (symbol) {
         const exportScope = getSymbolExportScope(context, symbol);
         if (exportScope) {
-            const name = symbol.name;
+            const { name } = symbol;
             const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
             const symbolId = getIdentifierSymbolId(context, node);
             const identifier = lua.createIdentifier(text, node, symbolId, name);

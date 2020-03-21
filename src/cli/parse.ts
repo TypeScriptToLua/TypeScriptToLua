@@ -71,12 +71,12 @@ export const optionDeclarations: CommandLineOption[] = [
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
     let hasRootLevelOptions = false;
-    for (const key in parsedConfigFile.raw) {
-        const option = optionDeclarations.find(option => option.name === key);
+    for (const [name, rawValue] of Object.entries(parsedConfigFile.raw)) {
+        const option = optionDeclarations.find(option => option.name === name);
         if (!option) continue;
 
         if (parsedConfigFile.raw.tstl === undefined) parsedConfigFile.raw.tstl = {};
-        parsedConfigFile.raw.tstl[key] = parsedConfigFile.raw[key];
+        parsedConfigFile.raw.tstl[name] = rawValue;
         hasRootLevelOptions = true;
     }
 
@@ -85,16 +85,16 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
             parsedConfigFile.errors.push(cliDiagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl));
         }
 
-        for (const key in parsedConfigFile.raw.tstl) {
-            const option = optionDeclarations.find(option => option.name === key);
+        for (const [name, rawValue] of Object.entries(parsedConfigFile.raw.tstl)) {
+            const option = optionDeclarations.find(option => option.name === name);
             if (!option) {
-                parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(key));
+                parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(name));
                 continue;
             }
 
-            const { error, value } = readValue(option, parsedConfigFile.raw.tstl[key]);
+            const { error, value } = readValue(option, rawValue);
             if (error) parsedConfigFile.errors.push(error);
-            if (parsedConfigFile.options[key] === undefined) parsedConfigFile.options[key] = value;
+            if (parsedConfigFile.options[name] === undefined) parsedConfigFile.options[name] = value;
         }
     }
 

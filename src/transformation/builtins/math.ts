@@ -34,7 +34,7 @@ export function transformMathCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
+    const { expression } = node;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
 

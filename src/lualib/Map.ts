@@ -23,6 +23,7 @@ Map = class Map<K, V> {
                 if (result.done) {
                     break;
                 }
+                // eslint-disable-next-line prefer-destructuring
                 const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
                 this.set(value[0], value[1]);
             }
@@ -114,8 +115,7 @@ Map = class Map<K, V> {
     }
 
     public entries(): IterableIterator<[K, V]> {
-        const items = this.items;
-        const nextKey = this.nextKey;
+        const { items, nextKey } = this;
         let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[K, V]> {
@@ -130,7 +130,7 @@ Map = class Map<K, V> {
     }
 
     public keys(): IterableIterator<K> {
-        const nextKey = this.nextKey;
+        const { nextKey } = this;
         let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<K> {
@@ -145,8 +145,7 @@ Map = class Map<K, V> {
     }
 
     public values(): IterableIterator<V> {
-        const items = this.items;
-        const nextKey = this.nextKey;
+        const { items, nextKey } = this;
         let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<V> {

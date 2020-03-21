@@ -128,7 +128,7 @@ export function transformContextualCallExpression(
             transformedArguments.unshift(lua.createIdentifier("____self"));
 
             // Cache left-side if it has effects
-            //(function() local ____self = context; return ____self[argument](parameters); end)()
+            // (function() local ____self = context; return ____self[argument](parameters); end)()
             const argument = ts.isElementAccessExpression(left)
                 ? transformElementAccessArgument(context, left)
                 : lua.createStringLiteral(left.name.text);

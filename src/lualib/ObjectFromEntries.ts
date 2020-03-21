@@ -11,6 +11,7 @@ function __TS__ObjectFromEntries<T>(
             const result = iterator.next();
             if (result.done) break;
 
+            // eslint-disable-next-line prefer-destructuring
             const value: [string, T] = result.value;
             obj[value[0]] = value[1];
         }

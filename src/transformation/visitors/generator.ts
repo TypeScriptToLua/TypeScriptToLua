@@ -89,12 +89,12 @@ export function transformGeneratorFunctionBody(
     const block = [
         coroutine,
         iterator,
-        //____it[Symbol.iterator] = {return ____it}
+        // ____it[Symbol.iterator] = {return ____it}
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(itIdentifier, symbolIterator),
             lua.createFunctionExpression(lua.createBlock([lua.createReturnStatement([itIdentifier])]))
         ),
-        //return ____it
+        // return ____it
         lua.createReturnStatement([itIdentifier]),
     ];
 

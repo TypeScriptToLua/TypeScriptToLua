@@ -32,7 +32,7 @@ export function transformObjectPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.Expression | undefined {
-    const expression = node.expression;
+    const { expression } = node;
     const signature = context.checker.getResolvedSignature(node);
 
     const name = expression.name.text;

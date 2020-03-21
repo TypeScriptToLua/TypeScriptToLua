@@ -12,7 +12,7 @@ export function transformGlobalCall(
     const signature = context.checker.getResolvedSignature(node);
     const parameters = transformArguments(context, node.arguments, signature);
     const expressionType = context.checker.getTypeAtLocation(node.expression);
-    const name = expressionType.symbol.name;
+    const { name } = expressionType.symbol;
     switch (name) {
         case "SymbolConstructor":
             return transformLuaLibFunction(context, LuaLibFeature.Symbol, node, ...parameters);

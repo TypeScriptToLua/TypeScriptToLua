@@ -27,7 +27,7 @@ export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression>
         const expression = context.transformExpression(span.expression);
         parts.push(wrapInToStringForConcat(expression));
 
-        const text = span.literal.text;
+        const { text } = span.literal;
         if (text.length > 0) {
             parts.push(lua.createStringLiteral(text, span.literal));
         }

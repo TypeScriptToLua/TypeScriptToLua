@@ -17,6 +17,7 @@ WeakMap = class WeakMap<K extends object, V> {
                 if (result.done) {
                     break;
                 }
+                // eslint-disable-next-line prefer-destructuring
                 const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
                 this.items.set(value[0], value[1]);
             }

@@ -72,9 +72,7 @@ module.exports = {
     rules: {
         "arrow-body-style": "error",
         curly: ["error", "multi-line"],
-        "default-case": "off",
         eqeqeq: ["error", "always", { null: "ignore" }],
-        "guard-for-in": "off",
         "id-match": "error",
         "no-caller": "error",
         "no-cond-assign": "error",
@@ -100,7 +98,6 @@ module.exports = {
                 ...typescriptBase,
                 "@typescript-eslint/array-type": ["error", { default: "array-simple" }],
                 "@typescript-eslint/ban-types": ["error", { types: { null: null } }],
-                // "@typescript-eslint/explicit-function-return-type": ["error", { allowExpressions: true }],
                 "@typescript-eslint/no-namespace": ["error", { allowDeclarations: true }],
                 "@typescript-eslint/no-require-imports": "off",
                 "@typescript-eslint/no-unnecessary-condition": "off",

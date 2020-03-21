@@ -15,9 +15,9 @@ test.each([
             { luaPattern: "abc", typeScriptPattern: "abc" },
             { luaPattern: "def", typeScriptPattern: "def" },
             { luaPattern: "xyz", typeScriptPattern: "xyz" },
-            { luaPattern: `"foo"`, typeScriptPattern: `"foo"` },
-            { luaPattern: `"bar"`, typeScriptPattern: `"bar"` },
-            { luaPattern: `"baz"`, typeScriptPattern: `"baz"` },
+            { luaPattern: '"foo"', typeScriptPattern: '"foo"' },
+            { luaPattern: '"bar"', typeScriptPattern: '"bar"' },
+            { luaPattern: '"baz"', typeScriptPattern: '"baz"' },
         ],
     },
     {
@@ -183,13 +183,13 @@ test("Source map has correct source root", () => {
 });
 
 test.each([
-    { code: `const type = "foobar";`, name: "type" },
-    { code: `const and = "foobar";`, name: "and" },
-    { code: `const $$$ = "foobar";`, name: "$$$" },
-    { code: `const foo = { bar() { this; } };`, name: "this" },
-    { code: `function foo($$$: unknown) {}`, name: "$$$" },
-    { code: `class $$$ {}`, name: "$$$" },
-    { code: `namespace $$$ { const foo = "bar"; }`, name: "$$$" },
+    { code: 'const type = "foobar";', name: "type" },
+    { code: 'const and = "foobar";', name: "and" },
+    { code: 'const $$$ = "foobar";', name: "$$$" },
+    { code: "const foo = { bar() { this; } };", name: "this" },
+    { code: "function foo($$$: unknown) {}", name: "$$$" },
+    { code: "class $$$ {}", name: "$$$" },
+    { code: 'namespace $$$ { const foo = "bar"; }', name: "$$$" },
 ])("Source map has correct name mappings (%p)", async ({ code, name }) => {
     const file = util
         .testModule(code)
@@ -231,7 +231,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
 
     const assertPatterns = [
         { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
-        { luaPattern: `return "foo"`, typeScriptPattern: `return "foo"` },
+        { luaPattern: 'return "foo"', typeScriptPattern: 'return "foo"' },
     ];
 
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {

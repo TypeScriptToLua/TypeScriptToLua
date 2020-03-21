@@ -23,7 +23,7 @@ expect.extend({
         );
 
         if (this.isNot && expected !== undefined) {
-            throw new Error(`expect(actual).not.toHaveDiagnostics(expected) is not supported`);
+            throw new Error("expect(actual).not.toHaveDiagnostics(expected) is not supported");
         }
 
         return {

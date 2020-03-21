@@ -191,7 +191,7 @@ export class LuaPrinter {
         let header = "";
 
         if (!this.options.noHeader) {
-            header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
+            header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
@@ -200,7 +200,7 @@ export class LuaPrinter {
             (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
         ) {
             // Require lualib bundle
-            header += `require("lualib_bundle");\n`;
+            header += 'require("lualib_bundle");\n';
         } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
@@ -443,7 +443,7 @@ export class LuaPrinter {
     public printRepeatStatement(statement: lua.RepeatStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent(`repeat\n`));
+        chunks.push(this.indent("repeat\n"));
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));

@@ -59,7 +59,7 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
             export { foo };
         `
             .disableSemanticCheck()
-            .setLuaHeader(`setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })`)
+            .setLuaHeader('setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })')
             .setReturnExport("foo")
             .expectToEqual("bar");
     }

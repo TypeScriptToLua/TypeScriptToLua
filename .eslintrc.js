@@ -105,8 +105,7 @@ module.exports = {
                 // TODO: https://github.com/typescript-eslint/typescript-eslint/issues/1265
                 // "@typescript-eslint/prefer-nullish-coalescing": "error",
                 "@typescript-eslint/prefer-readonly": "off",
-                // "@typescript-eslint/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: false }],
-                "@typescript-eslint/quotes": "off",
+                "@typescript-eslint/quotes": ["error", "double", { avoidEscape: true, allowTemplateLiterals: false }],
                 "@typescript-eslint/require-array-sort-compare": "off",
                 "@typescript-eslint/camelcase": "off",
 

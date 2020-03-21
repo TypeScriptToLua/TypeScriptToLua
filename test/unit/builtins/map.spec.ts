@@ -1,7 +1,7 @@
 import * as util from "../../util";
 
 test("map constructor", () => {
-    const result = util.transpileAndExecute(`let mymap = new Map(); return mymap.size;`);
+    const result = util.transpileAndExecute("let mymap = new Map(); return mymap.size;");
 
     expect(result).toBe(0);
 });
@@ -25,17 +25,17 @@ test("map iterable constructor map", () => {
 });
 
 test("map clear", () => {
-    const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();`;
-    const size = util.transpileAndExecute(mapTS + `return mymap.size;`);
+    const mapTS = 'let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();';
+    const size = util.transpileAndExecute(mapTS + "return mymap.size;");
     expect(size).toBe(0);
 
-    const contains = util.transpileAndExecute(mapTS + `return !mymap.has("a") && !mymap.has("b");`);
+    const contains = util.transpileAndExecute(mapTS + 'return !mymap.has("a") && !mymap.has("b");');
     expect(contains).toBe(true);
 });
 
 test("map delete", () => {
-    const mapTS = `let mymap = new Map([["a", "c"],["b", "d"]]); mymap.delete("a");`;
-    const contains = util.transpileAndExecute(mapTS + `return mymap.has("b") && !mymap.has("a");`);
+    const mapTS = 'let mymap = new Map([["a", "c"],["b", "d"]]); mymap.delete("a");';
+    const contains = util.transpileAndExecute(mapTS + 'return mymap.has("b") && !mymap.has("a");');
     expect(contains).toBe(true);
 });
 
@@ -72,31 +72,31 @@ test("map foreach keys", () => {
 });
 
 test("map get", () => {
-    const result = util.transpileAndExecute(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("a");`);
+    const result = util.transpileAndExecute('let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("a");');
 
     expect(result).toBe("c");
 });
 
 test("map get missing", () => {
-    const result = util.transpileAndExecute(`let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");`);
+    const result = util.transpileAndExecute('let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");');
     expect(result).toBe(undefined);
 });
 
 test("map has", () => {
-    const contains = util.transpileAndExecute(`let mymap = new Map([["a", "c"]]); return mymap.has("a");`);
+    const contains = util.transpileAndExecute('let mymap = new Map([["a", "c"]]); return mymap.has("a");');
     expect(contains).toBe(true);
 });
 
 test("map has false", () => {
-    const contains = util.transpileAndExecute(`let mymap = new Map(); return mymap.has("a");`);
+    const contains = util.transpileAndExecute('let mymap = new Map(); return mymap.has("a");');
     expect(contains).toBe(false);
 });
 
 test.each([
-    `[["a", null]]`,
-    `[["b", "c"], ["a", null]]`,
-    `[["a", null], ["b", "c"]]`,
-    `[["b", "c"], ["a", null], ["x", "y"]]`,
+    '[["a", null]]',
+    '[["b", "c"], ["a", null]]',
+    '[["a", null], ["b", "c"]]',
+    '[["b", "c"], ["a", null], ["x", "y"]]',
 ])("map (%p) has null", entries => {
     util.testFunction`
         let mymap = new Map(${entries});
@@ -105,10 +105,10 @@ test.each([
 });
 
 test.each([
-    `[["a", undefined]]`,
-    `[["b", "c"], ["a", undefined]]`,
-    `[["a", undefined], ["b", "c"]]`,
-    `[["b", "c"], ["a", undefined], ["x", "y"]]`,
+    '[["a", undefined]]',
+    '[["b", "c"], ["a", undefined]]',
+    '[["a", undefined], ["b", "c"]]',
+    '[["b", "c"], ["a", undefined], ["x", "y"]]',
 ])("map (%p) has undefined", entries => {
     util.testFunction`
         let mymap = new Map(${entries});
@@ -128,11 +128,11 @@ test("map keys", () => {
 });
 
 test("map set", () => {
-    const mapTS = `let mymap = new Map(); mymap.set("a", 5);`;
-    const has = util.transpileAndExecute(mapTS + `return mymap.has("a");`);
+    const mapTS = 'let mymap = new Map(); mymap.set("a", 5);';
+    const has = util.transpileAndExecute(mapTS + 'return mymap.has("a");');
     expect(has).toBe(true);
 
-    const value = util.transpileAndExecute(mapTS + `return mymap.get("a")`);
+    const value = util.transpileAndExecute(mapTS + 'return mymap.get("a")');
     expect(value).toBe(5);
 });
 
@@ -148,11 +148,11 @@ test("map values", () => {
 });
 
 test("map size", () => {
-    expect(util.transpileAndExecute(`let m = new Map(); return m.size;`)).toBe(0);
-    expect(util.transpileAndExecute(`let m = new Map(); m.set(1,3); return m.size;`)).toBe(1);
-    expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); return m.size;`)).toBe(2);
-    expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.clear(); return m.size;`)).toBe(0);
-    expect(util.transpileAndExecute(`let m = new Map([[1,2],[3,4]]); m.delete(3); return m.size;`)).toBe(1);
+    expect(util.transpileAndExecute("let m = new Map(); return m.size;")).toBe(0);
+    expect(util.transpileAndExecute("let m = new Map(); m.set(1,3); return m.size;")).toBe(1);
+    expect(util.transpileAndExecute("let m = new Map([[1,2],[3,4]]); return m.size;")).toBe(2);
+    expect(util.transpileAndExecute("let m = new Map([[1,2],[3,4]]); m.clear(); return m.size;")).toBe(0);
+    expect(util.transpileAndExecute("let m = new Map([[1,2],[3,4]]); m.delete(3); return m.size;")).toBe(1);
 });
 
 const iterationMethods = ["entries", "keys", "values"];

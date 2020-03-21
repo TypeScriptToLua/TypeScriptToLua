@@ -34,6 +34,6 @@ export const luaBundleEntryIsRequired = createDiagnosticFactory(
 export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDiagnosticFactory(() => ({
     category: ts.DiagnosticCategory.Warning,
     messageText:
-        `Using 'luaBundle' with 'luaLibImport: "inline"' might generate duplicate code. ` +
-        `It is recommended to use 'luaLibImport: "require"'.`,
+        "Using 'luaBundle' with 'luaLibImport: \"inline\"' might generate duplicate code. " +
+        "It is recommended to use 'luaLibImport: \"require\"'.",
 }));

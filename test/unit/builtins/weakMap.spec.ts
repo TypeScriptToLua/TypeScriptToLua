@@ -103,15 +103,15 @@ test("weakMap set", () => {
         mymap.set(ref, 5);
     `;
 
-    const has = util.transpileAndExecute(init + `return mymap.has(ref);`);
+    const has = util.transpileAndExecute(init + "return mymap.has(ref);");
     expect(has).toBe(true);
 
-    const value = util.transpileAndExecute(init + `return mymap.get(ref)`);
+    const value = util.transpileAndExecute(init + "return mymap.get(ref)");
     expect(value).toBe(5);
 });
 
 test("weakMap has no map features (size)", () => {
-    expect(util.transpileAndExecute(`return (new WeakMap() as any).size`)).toBe(undefined);
+    expect(util.transpileAndExecute("return (new WeakMap() as any).size")).toBe(undefined);
 });
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(

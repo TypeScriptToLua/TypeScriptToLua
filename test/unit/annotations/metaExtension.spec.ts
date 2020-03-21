@@ -16,7 +16,7 @@ test("MetaExtension", () => {
     `;
 
     const result = util.transpileAndExecute(
-        `return debug.getregistry()["_LOADED"].test();`,
+        'return debug.getregistry()["_LOADED"].test();',
         undefined,
         undefined,
         tsHeader

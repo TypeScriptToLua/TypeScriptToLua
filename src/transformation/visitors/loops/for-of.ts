@@ -88,6 +88,7 @@ function transformForOfLuaIteratorStatement(
             // Variables NOT declared in for loop - catch iterator values in temps and assign
             // for ____value0 in ${iterable} do
             //     ${initializer} = ____value0
+            // eslint-disable-next-line no-lonely-if
             if (ts.isArrayLiteralExpression(statement.initializer)) {
                 identifiers = statement.initializer.elements.map((_, i) => lua.createIdentifier(`____value${i}`));
                 if (identifiers.length > 0) {

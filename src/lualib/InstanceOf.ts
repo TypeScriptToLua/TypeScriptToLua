@@ -4,6 +4,7 @@ function __TS__InstanceOf(this: void, obj: LuaClassInstance, classTbl: LuaClass)
     }
 
     if (classTbl[Symbol.hasInstance] !== undefined) {
+        // eslint-disable-next-line no-implicit-coercion
         return !!classTbl[Symbol.hasInstance](obj);
     }
 

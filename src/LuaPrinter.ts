@@ -31,7 +31,7 @@ export const escapeString = (value: string) => `"${value.replace(escapeStringReg
  * `foo.bar` => passes (`function foo.bar()` is valid)
  * `getFoo().bar` => fails (`function getFoo().bar()` would be illegal)
  */
-const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_\.]+$/.test(str);
+const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_.]+$/.test(str);
 
 /**
  * Returns true if expression contains no function calls.
@@ -217,7 +217,7 @@ export class LuaPrinter {
     }
 
     protected pushIndent(): void {
-        this.currentIndent = this.currentIndent + "    ";
+        this.currentIndent += "    ";
     }
 
     protected popIndent(): void {

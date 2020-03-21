@@ -15,7 +15,7 @@ function __TS__ArrayReduceRight<T>(
         accumulator = select(1, ...initial);
     } else if (len > 0) {
         accumulator = arr[k];
-        k = k - 1;
+        k -= 1;
     } else {
         throw "Reduce of empty array with no initial value";
     }

@@ -94,7 +94,7 @@ function transpileJs(program: ts.Program): TranspileJsResult {
         for (const sourceFile of sourceFiles) {
             const isJs = fileName.endsWith(".js");
             const isSourceMap = fileName.endsWith(".js.map");
-            if (isJs || isSourceMap) {
+            if (isJs) {
                 updateTranspiledFile(sourceFile.fileName, { js: data });
             } else if (isSourceMap) {
                 updateTranspiledFile(sourceFile.fileName, { sourceMap: data });

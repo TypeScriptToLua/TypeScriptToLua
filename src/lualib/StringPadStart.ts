@@ -8,7 +8,7 @@ function __TS__StringPadStart(this: string, maxLength: number, fillString = " ")
         return this;
     }
 
-    maxLength = maxLength - this.length;
+    maxLength -= this.length;
     if (maxLength > fillString.length) {
         fillString += fillString.repeat(maxLength / fillString.length);
     }

@@ -42,7 +42,6 @@ Map = class Map<K, V> {
         this.firstKey = undefined;
         this.lastKey = undefined;
         this.size = 0;
-        return;
     }
 
     public delete(key: K): boolean {
@@ -79,7 +78,6 @@ Map = class Map<K, V> {
         for (const key of this.keys()) {
             callback(this.items.get(key), key, this);
         }
-        return;
     }
 
     public get(key: K): V | undefined {

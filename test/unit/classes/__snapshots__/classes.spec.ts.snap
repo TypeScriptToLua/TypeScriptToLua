@@ -3,7 +3,7 @@
 exports[`missing declaration name: code 1`] = `
 "require(\\"lualib_bundle\\");
 ____ = __TS__Class()
-____.name = \\"____\\"
+____.name = \\"\\"
 function ____.prototype.____constructor(self)
 end"
 `;

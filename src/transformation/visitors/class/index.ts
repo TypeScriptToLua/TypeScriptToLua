@@ -83,7 +83,6 @@ export function transformClassDeclaration(
     } else {
         // TypeScript error
         className = lua.createAnonymousIdentifier();
-        classNameText = className.text;
     }
 
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));

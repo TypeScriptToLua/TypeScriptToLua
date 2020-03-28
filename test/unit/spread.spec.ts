@@ -14,17 +14,8 @@ const arrayLiteralCases = [
     "1, 2, ...[3, 4], ...[5, 6]",
 ];
 
-const tupleReturnDefinition = `
-/** @tupleReturn */
-function tuple(...args: any[]) {
-    return args;
-}`;
-
 describe.each(["function call", "array literal"] as const)("in %s", kind => {
-    // prettier-ignore
-    const factory = (code: string) => kind === "function call"
-        ? `((...args: any[]) => args)(${code})`
-        : `[${code}]`;
+    const factory = (code: string) => (kind === "function call" ? `((...args: any[]) => args)(${code})` : `[${code}]`);
 
     test.each(arrayLiteralCases)("of array literal (%p)", expression => {
         util.testExpression(factory(expression)).expectToMatchJsResult();
@@ -32,7 +23,11 @@ describe.each(["function call", "array literal"] as const)("in %s", kind => {
 
     test.each(arrayLiteralCases)("of tuple return call (%p)", expression => {
         util.testFunction`
-            ${tupleReturnDefinition}
+            /** @tupleReturn */
+            function tuple(...args: any[]) {
+                return args;
+            }
+
             return ${factory(`...tuple(${expression})`)};
         `.expectToMatchJsResult();
     });

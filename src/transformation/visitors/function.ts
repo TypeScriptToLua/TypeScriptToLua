@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isVarArgType } from "../utils/annotations";
+import { isVarargType } from "../utils/annotations";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import {
@@ -48,7 +48,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
         return false;
     }
     // Ignore references to @vararg types in spread elements
-    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarArgType(context, r));
+    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
 }
 
 export function transformFunctionBodyStatements(context: TransformationContext, body: ts.Block): lua.Statement[] {
@@ -205,7 +205,6 @@ export function transformFunctionLikeDeclaration(
         lua.createBlock(transformedBody),
         paramNames,
         dotsLiteral,
-        spreadIdentifier,
         flags,
         node
     );
@@ -253,7 +252,6 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
         block,
         params,
         dotsLiteral,
-        restParamName,
         lua.FunctionExpressionFlags.Declaration
     );
 

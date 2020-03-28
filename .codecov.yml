@@ -1,4 +1,4 @@
-comment: off
+comment: false
 
 coverage:
   status:
@@ -7,5 +7,5 @@ coverage:
         target: 90
         threshold: null
         base: auto
-    changes: off
-    patch: off
+    changes: false
+    patch: false

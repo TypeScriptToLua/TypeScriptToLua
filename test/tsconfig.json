@@ -1,18 +1,10 @@
 {
+    "extends": "../tsconfig.json",
     "compilerOptions": {
-        "baseUrl": ".",
-        "paths": { "*": ["types/*"] },
-        "strict": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "newLine": "LF",
-        "target": "es2019",
-        "lib": ["es2019"],
+        "rootDir": "..",
         "types": ["node", "jest"],
-        "experimentalDecorators": true,
-
-        "noEmit": true,
-        "module": "commonjs"
+        "baseUrl": ".",
+        "paths": { "*": ["types/*"] }
     },
     "include": [".", "../src"],
     "exclude": [

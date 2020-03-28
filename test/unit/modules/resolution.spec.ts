@@ -4,10 +4,8 @@ import * as util from "../../util";
 
 const requireRegex = /require\("(.*?)"\)/;
 const expectToRequire = (expected: string): util.TapCallback => builder => {
-    const match = requireRegex.exec(builder.getMainLuaCodeChunk());
-    if (util.expectToBeDefined(match)) {
-        expect(match[1]).toBe(expected);
-    }
+    const [, requiredPath] = builder.getMainLuaCodeChunk().match(requireRegex) ?? [];
+    expect(requiredPath).toBe(expected);
 };
 
 test.each([

@@ -67,18 +67,19 @@ export function validateAssignment(
         fromType.symbol.members
     ) {
         // Recurse into interfaces
-        toType.symbol.members.forEach((toMember, memberName) => {
+        toType.symbol.members.forEach((toMember, escapedMemberName) => {
             if (fromType.symbol.members) {
-                const fromMember = fromType.symbol.members.get(memberName);
+                const fromMember = fromType.symbol.members.get(escapedMemberName);
                 if (fromMember) {
                     const toMemberType = context.checker.getTypeOfSymbolAtLocation(toMember, node);
                     const fromMemberType = context.checker.getTypeOfSymbolAtLocation(fromMember, node);
+                    const memberName = ts.unescapeLeadingUnderscores(escapedMemberName);
                     validateAssignment(
                         context,
                         node,
                         fromMemberType,
                         toMemberType,
-                        toName ? `${toName}.${memberName}` : memberName.toString()
+                        toName ? `${toName}.${memberName}` : memberName
                     );
                 }
             }
@@ -99,10 +100,10 @@ function validateFunctionAssignment(
     if (fromContext === ContextType.Mixed || toContext === ContextType.Mixed) {
         context.diagnostics.push(unsupportedOverloadAssignment(node, toName));
     } else if (fromContext !== toContext && fromContext !== ContextType.None && toContext !== ContextType.None) {
-        if (toContext === ContextType.Void) {
-            context.diagnostics.push(unsupportedNoSelfFunctionConversion(node, toName));
-        } else {
-            context.diagnostics.push(unsupportedSelfFunctionConversion(node, toName));
-        }
+        context.diagnostics.push(
+            toContext === ContextType.Void
+                ? unsupportedNoSelfFunctionConversion(node, toName)
+                : unsupportedSelfFunctionConversion(node, toName)
+        );
     }
 }

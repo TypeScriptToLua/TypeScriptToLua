@@ -20,7 +20,7 @@ export function getHelpString(): string {
     result += "Options:\n";
     for (const option of optionDeclarations) {
         const aliasStrings = (option.aliases ?? []).map(a => "-" + a);
-        const optionString = aliasStrings.concat(["--" + option.name]).join("|");
+        const optionString = [...aliasStrings, "--" + option.name].join("|");
 
         const valuesHint = option.type === "enum" ? option.choices.join("|") : option.type;
         const spacing = " ".repeat(Math.max(1, 45 - optionString.length - valuesHint.length));

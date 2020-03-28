@@ -10,13 +10,7 @@ import { getExtendedType, isStaticNode } from "../utils";
 function transformAccessor(context: TransformationContext, node: ts.AccessorDeclaration): lua.FunctionExpression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
     const body = node.body ? transformFunctionBody(context, node.parameters, node.body, restParam)[0] : [];
-    return lua.createFunctionExpression(
-        lua.createBlock(body),
-        params,
-        dot,
-        restParam,
-        lua.FunctionExpressionFlags.Declaration
-    );
+    return lua.createFunctionExpression(lua.createBlock(body), params, dot, lua.FunctionExpressionFlags.Declaration);
 }
 
 export function transformAccessorDeclarations(

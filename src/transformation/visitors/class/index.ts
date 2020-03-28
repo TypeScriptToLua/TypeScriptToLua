@@ -266,7 +266,6 @@ export function transformClassDeclaration(
                 lua.createBlock(constructorBody),
                 [createSelfIdentifier()],
                 lua.createDotsLiteral(),
-                undefined,
                 lua.FunctionExpressionFlags.Declaration
             );
             result.push(

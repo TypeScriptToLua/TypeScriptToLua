@@ -1,5 +1,5 @@
 import * as tstl from "../../../src";
-import { UnsupportedProperty } from "../../../src/transformation/utils/errors";
+import { unsupportedProperty } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 describe("luaLibImport", () => {
@@ -42,6 +42,6 @@ describe("Unknown builtin property", () => {
     test("access", () => {
         util.testExpression`Math.unknownProperty`
             .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(UnsupportedProperty("Math", "unknownProperty", util.nodeStub));
+            .expectDiagnosticsToMatchSnapshot([unsupportedProperty.code]);
     });
 });

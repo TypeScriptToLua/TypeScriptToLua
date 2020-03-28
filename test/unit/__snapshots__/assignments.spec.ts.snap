@@ -1,0 +1,47 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`var is disallowed for loop: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    do
+        local foo = 0
+        while true do
+        end
+    end
+end
+return ____exports"
+`;
+
+exports[`var is disallowed for loop: diagnostics 1`] = `"main.ts(2,18): error TSTL: \`var\` declarations are not supported. Use \`let\` or \`const\` instead."`;
+
+exports[`var is disallowed for...in loop: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    for foo in pairs({}) do
+    end
+end
+return ____exports"
+`;
+
+exports[`var is disallowed for...in loop: diagnostics 1`] = `"main.ts(2,18): error TSTL: \`var\` declarations are not supported. Use \`let\` or \`const\` instead."`;
+
+exports[`var is disallowed for...of loop: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    for ____, foo in ipairs({}) do
+    end
+end
+return ____exports"
+`;
+
+exports[`var is disallowed for...of loop: diagnostics 1`] = `"main.ts(2,18): error TSTL: \`var\` declarations are not supported. Use \`let\` or \`const\` instead."`;
+
+exports[`var is disallowed var declaration: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local foo = true
+end
+return ____exports"
+`;
+
+exports[`var is disallowed var declaration: diagnostics 1`] = `"main.ts(2,13): error TSTL: \`var\` declarations are not supported. Use \`let\` or \`const\` instead."`;

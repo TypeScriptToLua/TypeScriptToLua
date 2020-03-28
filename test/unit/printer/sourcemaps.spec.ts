@@ -86,9 +86,8 @@ test.each([
         assertPatterns: [
             { luaPattern: "Bar = __TS__Class()", typeScriptPattern: "class Bar" },
             { luaPattern: "Bar.name =", typeScriptPattern: "class Bar" },
-            { luaPattern: "Bar.____super = Foo", typeScriptPattern: "Foo {" },
-            { luaPattern: "setmetatable(Bar,", typeScriptPattern: "Foo {" },
-            { luaPattern: "setmetatable(Bar.prototype,", typeScriptPattern: "Foo {" },
+            { luaPattern: "__TS__ClassExtends", typeScriptPattern: "extends" },
+            { luaPattern: "Foo", typeScriptPattern: "Foo" },
             { luaPattern: "function Bar.prototype.____constructor", typeScriptPattern: "constructor" },
         ],
     },
@@ -263,11 +262,10 @@ test("Inline sourcemaps", () => {
         .expectToMatchJsResult()
         .getMainLuaFileResult();
 
-    const inlineSourceMapMatch = file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/);
-    if (util.expectToBeDefined(inlineSourceMapMatch)) {
-        const inlineSourceMap = Buffer.from(inlineSourceMapMatch[1], "base64").toString();
-        expect(file.sourceMap).toBe(inlineSourceMap);
-    }
+    const [, inlineSourceMapMatch] =
+        file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/) ?? [];
+    const inlineSourceMap = Buffer.from(inlineSourceMapMatch, "base64").toString();
+    expect(file.sourceMap).toBe(inlineSourceMap);
 });
 
 // Helper functions

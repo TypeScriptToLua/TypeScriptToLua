@@ -1,7 +1,7 @@
-import * as assert from "assert";
 import * as ts from "typescript";
 import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
+import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType } from "./scope";
@@ -9,13 +9,7 @@ import { isFunctionType } from "./typescript";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
 export function unwrapVisitorResult<T extends lua.Node>(result: OneToManyVisitorResult<T>): T[] {
-    if (result === undefined || result === null) {
-        return [];
-    } else if (Array.isArray(result)) {
-        return result;
-    } else {
-        return [result];
-    }
+    return result === undefined ? [] : castArray(result);
 }
 
 export function createSelfIdentifier(tsOriginal?: ts.Node): lua.Identifier {
@@ -41,8 +35,6 @@ export function createExpressionPlusOne(expression: lua.Expression): lua.Express
         ) {
             return expression.left;
         }
-
-        expression = lua.createParenthesizedExpression(expression);
     }
 
     return lua.createBinaryExpression(expression, lua.createNumericLiteral(1), lua.SyntaxKind.AdditionOperator);
@@ -53,11 +45,10 @@ export function createImmediatelyInvokedFunctionExpression(
     result: lua.Expression | lua.Expression[],
     tsOriginal?: ts.Node
 ): lua.CallExpression {
-    const body = statements ? statements.slice(0) : [];
-    body.push(lua.createReturnStatement(Array.isArray(result) ? result : [result]));
+    const body = [...statements, lua.createReturnStatement(castArray(result))];
     const flags = statements.length === 0 ? lua.FunctionExpressionFlags.Inline : lua.FunctionExpressionFlags.None;
-    const iife = lua.createFunctionExpression(lua.createBlock(body), undefined, undefined, undefined, flags);
-    return lua.createCallExpression(lua.createParenthesizedExpression(iife), [], tsOriginal);
+    const iife = lua.createFunctionExpression(lua.createBlock(body), undefined, undefined, flags);
+    return lua.createCallExpression(iife, [], tsOriginal);
 }
 
 export function createUnpackCall(
@@ -73,9 +64,9 @@ export function createUnpackCall(
     return lua.createCallExpression(unpack, [expression], tsOriginal);
 }
 
-export function wrapInTable(...expressions: lua.Expression[]): lua.ParenthesizedExpression {
+export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {
     const fields = expressions.map(e => lua.createTableFieldExpression(e));
-    return lua.createParenthesizedExpression(lua.createTableExpression(fields));
+    return lua.createTableExpression(fields);
 }
 
 export function wrapInToStringForConcat(expression: lua.Expression): lua.Expression {
@@ -97,7 +88,7 @@ export function createHoistableVariableDeclarationStatement(
     tsOriginal?: ts.Node
 ): lua.AssignmentStatement | lua.VariableDeclarationStatement {
     const declaration = lua.createVariableDeclarationStatement(identifier, initializer, tsOriginal);
-    if (!context.options.noHoisting && identifier.symbolId) {
+    if (identifier.symbolId !== undefined) {
         const scope = peekScope(context);
         assert(scope.type !== ScopeType.Switch);
 
@@ -123,7 +114,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
 
     const isFunctionDeclaration = tsOriginal !== undefined && ts.isFunctionDeclaration(tsOriginal);
 
-    const identifiers = Array.isArray(lhs) ? lhs : [lhs];
+    const identifiers = castArray(lhs);
     if (identifiers.length === 0) {
         return [];
     }
@@ -160,17 +151,15 @@ export function createLocalOrExportedOrGlobalDeclaration(
                 declaration = lua.createVariableDeclarationStatement(lhs, rhs, tsOriginal);
             }
 
-            if (!context.options.noHoisting) {
-                // Remember local variable declarations for hoisting later
-                if (!scope.variableDeclarations) {
-                    scope.variableDeclarations = [];
-                }
+            // Remember local variable declarations for hoisting later
+            if (!scope.variableDeclarations) {
+                scope.variableDeclarations = [];
+            }
 
-                scope.variableDeclarations.push(declaration);
+            scope.variableDeclarations.push(declaration);
 
-                if (scope.type === ScopeType.Switch) {
-                    declaration = undefined;
-                }
+            if (scope.type === ScopeType.Switch) {
+                declaration = undefined;
             }
         } else if (rhs) {
             // global
@@ -180,7 +169,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
         }
     }
 
-    if (!context.options.noHoisting && isFunctionDeclaration) {
+    if (isFunctionDeclaration) {
         // Remember function definitions for hoisting later
         const functionSymbolId = (lhs as lua.Identifier).symbolId;
         const scope = peekScope(context);

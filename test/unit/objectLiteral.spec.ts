@@ -57,7 +57,7 @@ test("undefined as object key", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([`({x: "foobar"}.x)`, `({x: "foobar"}["x"])`, `({x: () => "foobar"}.x())`, `({x: () => "foobar"}["x"]())`])(
+test.each([`{x: "foobar"}.x`, `{x: "foobar"}["x"]`, `{x: () => "foobar"}.x()`, `{x: () => "foobar"}["x"]()`])(
     "object literal property access (%p)",
     expression => {
         util.testExpression(expression).expectToMatchJsResult();

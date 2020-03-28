@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`missing declaration name: code 1`] = `
+"require(\\"lualib_bundle\\");
+____ = __TS__Class()
+____.name = \\"____\\"
+function ____.prototype.____constructor(self)
+end"
+`;
+
+exports[`missing declaration name: diagnostics 1`] = `"main.ts(2,9): error TS1211: A class declaration without the 'default' modifier must have a name."`;
+
+exports[`super without class: code 1`] = `
+"local ____exports = {}
+____exports.__result = ____.____constructor(self)
+return ____exports"
+`;
+
+exports[`super without class: diagnostics 1`] = `"main.ts(1,25): error TS2337: Super calls are not permitted outside constructors or in nested functions inside constructors."`;

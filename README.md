@@ -63,6 +63,8 @@ The real power of this transpiler is usage together with good declarations for t
 - [Dota 2 Modding](https://github.com/ModDota/API/tree/master/declarations/server)
 - [Defold Game Engine Scripting](https://github.com/dasannikov/DefoldTypeScript/blob/master/defold.d.ts)
 - [LÖVE 2D Game Development](https://github.com/hazzard993/love-typescript-definitions)
+- [World of Warcraft - Addon Development](https://github.com/wartoshika/wow-declarations)
+- [World of Warcraft Classic - Addon Development](https://github.com/wartoshika/wow-classic-declarations)
 
 ## Sublime Text integration
 

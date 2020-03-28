@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`doesn't resolve paths out of root dir: code 1`] = `
+"local ____exports = {}
+local module = require(\\"../module\\")
+local ____ = module
+return ____exports"
+`;
+
+exports[`doesn't resolve paths out of root dir: diagnostics 1`] = `"src/main.ts(2,33): error TSTL: Cannot create require path. Module '../module' does not exist within --rootDir."`;

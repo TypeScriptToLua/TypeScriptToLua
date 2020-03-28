@@ -1,14 +1,23 @@
 import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
+import { castArray } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+
+export interface AllAccessorDeclarations {
+    firstAccessor: ts.AccessorDeclaration;
+    secondAccessor: ts.AccessorDeclaration | undefined;
+    getAccessor: ts.GetAccessorDeclaration | undefined;
+    setAccessor: ts.SetAccessorDeclaration | undefined;
+}
 
 export interface EmitResolver {
     isValueAliasDeclaration(node: ts.Node): boolean;
     isReferencedAliasDeclaration(node: ts.Node, checkChildren?: boolean): boolean;
     isTopLevelValueImportEqualsWithEntityName(node: ts.ImportEqualsDeclaration): boolean;
     moduleExportsSomeValue(moduleReferenceExpression: ts.Expression): boolean;
+    getAllAccessorDeclarations(declaration: ts.AccessorDeclaration): AllAccessorDeclarations;
 }
 
 export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
@@ -16,6 +25,7 @@ export interface DiagnosticsProducingTypeChecker extends ts.TypeChecker {
 }
 
 export class TransformationContext {
+    public readonly diagnostics: ts.Diagnostic[] = [];
     public readonly checker: DiagnosticsProducingTypeChecker = (this
         .program as any).getDiagnosticsProducingTypeChecker();
     public readonly resolver: EmitResolver;
@@ -44,7 +54,7 @@ export class TransformationContext {
 
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
-            throw new Error(`${ts.SyntaxKind[node.kind]} is not supported`);
+            throw new Error(`Unsupported node kind: ${ts.SyntaxKind[node.kind]}.`);
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;
@@ -78,16 +88,10 @@ export class TransformationContext {
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return Array.isArray(node)
-            ? node.flatMap(n => this.transformStatements(n))
-            : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.transformNode(node as StatementLikeNode) as lua.Statement[]);
+        return castArray(node).flatMap(n => this.transformNode(n) as lua.Statement[]);
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return Array.isArray(node)
-            ? node.flatMap(n => this.superTransformStatements(n))
-            : // TODO: https://github.com/microsoft/TypeScript/pull/28916
-              (this.superTransformNode(node as StatementLikeNode) as lua.Statement[]);
+        return castArray(node).flatMap(n => this.superTransformNode(n) as lua.Statement[]);
     }
 }

@@ -1,67 +1,60 @@
 import {
-    UnsupportedNoSelfFunctionConversion,
-    UnsupportedOverloadAssignment,
-    UnsupportedSelfFunctionConversion,
-} from "../../../../src/transformation/utils/errors";
+    unsupportedOverloadAssignment,
+    unsupportedNoSelfFunctionConversion,
+    unsupportedSelfFunctionConversion,
+} from "../../../../src/transformation/utils/diagnostics";
 import * as util from "../../../util";
 import { invalidTestFunctionAssignments, invalidTestFunctionCasts } from "./functionPermutations";
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function variable declaration (%p)",
     (testFunction, functionType, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub)
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub);
-
         util.testModule`
             ${testFunction.definition || ""}
             const fn: ${functionType} = ${testFunction.value};
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function assignment (%p)",
     (testFunction, functionType, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub)
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub);
-
         util.testModule`
             ${testFunction.definition || ""}
             let fn: ${functionType};
             fn = ${testFunction.value};
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
-test.each(invalidTestFunctionCasts)(
-    "Invalid function assignment with cast (%p)",
-    (testFunction, castedFunction, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub)
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub);
-
-        util.testModule`
-            ${testFunction.definition || ""}
-            let fn: typeof ${testFunction.value};
-            fn = ${castedFunction};
-        `.expectToHaveDiagnosticOfError(expectedError);
-    }
-);
+test.each(invalidTestFunctionCasts)("Invalid function assignment with cast (%p)", (testFunction, castedFunction) => {
+    util.testModule`
+        ${testFunction.definition || ""}
+        let fn: typeof ${testFunction.value};
+        fn = ${castedFunction};
+    `.expectDiagnosticsToMatchSnapshot(
+        [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+        true
+    );
+});
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function argument (%p)",
     (testFunction, functionType, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
-
         util.testModule`
             ${testFunction.definition || ""}
             declare function takesFunction(fn: ${functionType});
             takesFunction(${testFunction.value});
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
@@ -70,92 +63,65 @@ test("Invalid lua lib function argument", () => {
         declare function foo(this: void, value: string): void;
         declare const a: string[];
         a.forEach(foo);
-    `.expectToHaveDiagnosticOfError(UnsupportedSelfFunctionConversion(util.nodeStub, "callbackfn"));
+    `.expectDiagnosticsToMatchSnapshot([unsupportedSelfFunctionConversion.code], true);
 });
 
-test.each(invalidTestFunctionCasts)(
-    "Invalid function argument with cast (%p)",
-    (testFunction, castedFunction, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedNoSelfFunctionConversion(util.nodeStub)
-            : UnsupportedSelfFunctionConversion(util.nodeStub);
-
-        // TODO: Changed in #705 because of order change in `transformArguments`.
-        // After #412 both errors should be reported.
-        util.testModule`
-            ${testFunction.definition || ""}
-            declare function takesFunction(fn: typeof ${testFunction.value});
-            takesFunction(${castedFunction});
-        `.expectToHaveDiagnosticOfError(expectedError);
-    }
-);
+test.each(invalidTestFunctionCasts)("Invalid function argument with cast (%p)", (testFunction, castedFunction) => {
+    util.testModule`
+        ${testFunction.definition || ""}
+        declare function takesFunction(fn: typeof ${testFunction.value});
+        takesFunction(${castedFunction});
+    `.expectDiagnosticsToMatchSnapshot(
+        [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+        true
+    );
+});
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function generic argument (%p)",
     (testFunction, functionType, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub, "fn")
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn");
-
         util.testModule`
             ${testFunction.definition || ""}
             declare function takesFunction<T extends ${functionType}>(fn: T);
             takesFunction(${testFunction.value});
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
 test.each(invalidTestFunctionAssignments)(
     "Invalid function return (%p)",
     (testFunction, functionType, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub)
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub);
-
         util.testModule`
             ${testFunction.definition || ""}
             function returnsFunction(): ${functionType} {
                 return ${testFunction.value};
             }
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            [isSelfConversion ? unsupportedSelfFunctionConversion.code : unsupportedNoSelfFunctionConversion.code],
+            true
+        );
     }
 );
 
 test.each(invalidTestFunctionCasts)(
     "Invalid function return with cast (%p)",
     (testFunction, castedFunction, isSelfConversion) => {
-        const expectedError = isSelfConversion
-            ? UnsupportedSelfFunctionConversion(util.nodeStub)
-            : UnsupportedNoSelfFunctionConversion(util.nodeStub);
-
         util.testModule`
             ${testFunction.definition || ""}
             function returnsFunction(): typeof ${testFunction.value} {
                 return ${castedFunction};
             }
-        `.expectToHaveDiagnosticOfError(expectedError);
+        `.expectDiagnosticsToMatchSnapshot(
+            isSelfConversion
+                ? [unsupportedSelfFunctionConversion.code, unsupportedNoSelfFunctionConversion.code]
+                : [unsupportedNoSelfFunctionConversion.code, unsupportedSelfFunctionConversion.code],
+            true
+        );
     }
 );
-
-test("Interface method assignment", () => {
-    util.testFunction`
-        class Foo {
-            method(s: string): string { return s + "+method"; }
-            lambdaProp: (s: string) => string = s => s + "+lambdaProp";
-        }
-        const foo: IFoo = new Foo();
-        return foo.method("foo") + "|" + foo.lambdaProp("bar");
-    `
-        .setTsHeader(
-            `
-        interface IFoo {
-            method: (s: string) => string;
-            lambdaProp(s: string): string;
-        }
-    `
-        )
-        .expectToMatchJsResult();
-});
 
 test("Invalid function tuple assignment", () => {
     util.testModule`
@@ -163,9 +129,7 @@ test("Invalid function tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Meth];
         let [i, f]: [number, Func] = getTuple();
-    `
-        .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(UnsupportedNoSelfFunctionConversion(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([2322, unsupportedNoSelfFunctionConversion.code], true);
 });
 
 test("Invalid method tuple assignment", () => {
@@ -174,7 +138,7 @@ test("Invalid method tuple assignment", () => {
         interface Meth { (this: {}, s: string): string; }
         declare function getTuple(): [number, Func];
         let [i, f]: [number, Meth] = getTuple();
-    `.expectToHaveDiagnosticOfError(UnsupportedSelfFunctionConversion(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([unsupportedSelfFunctionConversion.code], true);
 });
 
 test("Invalid interface method assignment", () => {
@@ -183,7 +147,7 @@ test("Invalid interface method assignment", () => {
         interface B { fn(this: void, s: string): string; }
         declare const a: A;
         const b: B = a;
-    `.expectToHaveDiagnosticOfError(UnsupportedNoSelfFunctionConversion(util.nodeStub, "fn"));
+    `.expectDiagnosticsToMatchSnapshot([unsupportedNoSelfFunctionConversion.code], true);
 });
 
 test.each([
@@ -199,5 +163,5 @@ test.each([
         }
         declare const o: O;
         let f: ${assignType} = o;
-    `.expectToHaveDiagnosticOfError(UnsupportedOverloadAssignment(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([unsupportedOverloadAssignment.code], true);
 });

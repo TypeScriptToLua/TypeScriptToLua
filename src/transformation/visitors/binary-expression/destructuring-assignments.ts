@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
-import { UnsupportedKind } from "../../utils/errors";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isAssignmentPattern } from "../../utils/typescript";
 import { transformPropertyName } from "../literal";
@@ -38,20 +38,20 @@ export function transformDestructuringAssignment(
     node: ts.DestructuringAssignment,
     root: lua.Expression
 ): lua.Statement[] {
-    switch (node.left.kind) {
-        case ts.SyntaxKind.ObjectLiteralExpression:
-            return transformObjectDestructuringAssignment(context, node as ts.ObjectDestructuringAssignment, root);
-        case ts.SyntaxKind.ArrayLiteralExpression:
-            return transformArrayDestructuringAssignment(context, node as ts.ArrayDestructuringAssignment, root);
-    }
+    return transformAssignmentPattern(context, node.left, root);
 }
 
-function transformArrayDestructuringAssignment(
+export function transformAssignmentPattern(
     context: TransformationContext,
-    node: ts.ArrayDestructuringAssignment,
+    node: ts.AssignmentPattern,
     root: lua.Expression
 ): lua.Statement[] {
-    return transformArrayLiteralAssignmentPattern(context, node.left, root);
+    switch (node.kind) {
+        case ts.SyntaxKind.ObjectLiteralExpression:
+            return transformObjectLiteralAssignmentPattern(context, node, root);
+        case ts.SyntaxKind.ArrayLiteralExpression:
+            return transformArrayLiteralAssignmentPattern(context, node, root);
+    }
 }
 
 function transformArrayLiteralAssignmentPattern(
@@ -113,7 +113,10 @@ function transformArrayLiteralAssignmentPattern(
             case ts.SyntaxKind.ElementAccessExpression:
                 return transformAssignment(context, element, indexedRoot);
             case ts.SyntaxKind.SpreadElement:
-                if (index !== node.elements.length - 1) return [];
+                if (index !== node.elements.length - 1) {
+                    // TypeScript error
+                    return [];
+                }
 
                 const restElements = transformLuaLibFunction(
                     context,
@@ -127,17 +130,10 @@ function transformArrayLiteralAssignmentPattern(
             case ts.SyntaxKind.OmittedExpression:
                 return [];
             default:
-                throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
+                // TypeScript error
+                return [];
         }
     });
-}
-
-function transformObjectDestructuringAssignment(
-    context: TransformationContext,
-    node: ts.ObjectDestructuringAssignment,
-    root: lua.Expression
-): lua.Statement[] {
-    return transformObjectLiteralAssignmentPattern(context, node.left, root);
 }
 
 function transformObjectLiteralAssignmentPattern(
@@ -158,8 +154,13 @@ function transformObjectLiteralAssignmentPattern(
             case ts.SyntaxKind.SpreadAssignment:
                 result.push(...transformSpreadAssignment(context, property, root, node.properties));
                 break;
+            case ts.SyntaxKind.MethodDeclaration:
+            case ts.SyntaxKind.GetAccessor:
+            case ts.SyntaxKind.SetAccessor:
+                // TypeScript error
+                break;
             default:
-                throw UnsupportedKind("Object Destructure Property", property.kind, property);
+                assertNever(property);
         }
     }
 
@@ -260,7 +261,8 @@ function transformSpreadAssignment(
     for (const property of properties) {
         if (
             (ts.isShorthandPropertyAssignment(property) || ts.isPropertyAssignment(property)) &&
-            !ts.isComputedPropertyName(property.name)
+            !ts.isComputedPropertyName(property.name) &&
+            !ts.isPrivateIdentifier(property.name)
         ) {
             const name = ts.isIdentifier(property.name)
                 ? lua.createStringLiteral(property.name.text)

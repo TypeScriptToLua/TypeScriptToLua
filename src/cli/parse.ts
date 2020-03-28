@@ -17,15 +17,11 @@ interface CommandLineOptionOfEnum extends CommandLineOptionBase {
     choices: string[];
 }
 
-interface CommandLineOptionOfBoolean extends CommandLineOptionBase {
-    type: "boolean";
+interface CommandLineOptionOfPrimitive extends CommandLineOptionBase {
+    type: "boolean" | "string" | "object";
 }
 
-interface CommandLineOptionOfString extends CommandLineOptionBase {
-    type: "string";
-}
-
-type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfBoolean | CommandLineOptionOfString;
+type CommandLineOption = CommandLineOptionOfEnum | CommandLineOptionOfPrimitive;
 
 export const optionDeclarations: CommandLineOption[] = [
     {
@@ -62,14 +58,14 @@ export const optionDeclarations: CommandLineOption[] = [
         type: "boolean",
     },
     {
-        name: "noHoisting",
-        description: "Disables hoisting.",
-        type: "boolean",
-    },
-    {
         name: "sourceMapTraceback",
         description: "Applies the source map to show source TS files and lines in error tracebacks.",
         type: "boolean",
+    },
+    {
+        name: "luaPlugins",
+        description: "List of TypeScriptToLua plugins.",
+        type: "object",
     },
 ];
 
@@ -178,8 +174,9 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
     if (value === null) return { value };
 
     switch (option.type) {
+        case "boolean":
         case "string":
-        case "boolean": {
+        case "object": {
             if (typeof value !== option.type) {
                 return {
                     value: undefined,

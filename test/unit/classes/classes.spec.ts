@@ -204,6 +204,26 @@ test("Subclass constructor across merged namespace", () => {
         .expectToMatchJsResult();
 });
 
+test("super without class", () => {
+    util.testExpression`super()`.expectDiagnosticsToMatchSnapshot([2337]);
+});
+
+test("super in unnamed class", () => {
+    util.testFunction`
+        class Foo {
+            public x = true;
+        }
+
+        const Bar = (class extends (Foo) {
+            constructor() {
+                super();
+            }
+        });
+
+        return new Bar().x;
+    `.expectToMatchJsResult();
+});
+
 test("classSuper", () => {
     util.testFunction`
         class a {
@@ -740,4 +760,10 @@ test("Class field override in subclass with constructors", () => {
         }
         return (new Foo()).field + (new Bar()).field;
     `.expectToMatchJsResult();
+});
+
+test("missing declaration name", () => {
+    util.testModule`
+        class {}
+    `.expectDiagnosticsToMatchSnapshot([1211]);
 });

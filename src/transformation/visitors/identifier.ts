@@ -3,8 +3,8 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { InvalidForRangeCall } from "../utils/errors";
-import { createExportedIdentifier, getIdentifierExportScope } from "../utils/export";
+import { invalidForRangeCall } from "../utils/diagnostics";
+import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
@@ -13,9 +13,8 @@ export function transformIdentifier(context: TransformationContext, identifier: 
     if (isForRangeType(context, identifier)) {
         const callExpression = findFirstNodeAbove(identifier, ts.isCallExpression);
         if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {
-            throw InvalidForRangeCall(
-                identifier,
-                "@forRange function can only be used as an iterable in a for...of loop."
+            context.diagnostics.push(
+                invalidForRangeCall(identifier, "can be used only as an iterable in a for...of loop")
             );
         }
     }
@@ -27,12 +26,16 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 }
 
 export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (node, context) => {
-    // TODO: Move below to avoid extra transforms?
-    const identifier = transformIdentifier(context, node);
-
-    const exportScope = getIdentifierExportScope(context, identifier);
-    if (exportScope) {
-        return createExportedIdentifier(context, identifier, exportScope);
+    const symbol = context.checker.getSymbolAtLocation(node);
+    if (symbol) {
+        const exportScope = getSymbolExportScope(context, symbol);
+        if (exportScope) {
+            const name = symbol.name;
+            const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
+            const symbolId = getIdentifierSymbolId(context, node);
+            const identifier = lua.createIdentifier(text, node, symbolId, name);
+            return createExportedIdentifier(context, identifier, exportScope);
+        }
     }
 
     if (node.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword) {
@@ -44,5 +47,5 @@ export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (no
         return builtinResult;
     }
 
-    return identifier;
+    return transformIdentifier(context, node);
 };

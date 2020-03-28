@@ -4,20 +4,22 @@ import * as lua from "../../../LuaAST";
 import { formatPathToLuaPath } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
-import { UnresolvableRequirePath } from "../../utils/errors";
 import { createDefaultExportStringLiteral } from "../../utils/export";
 import { createHoistableVariableDeclarationStatement } from "../../utils/lua-ast";
 import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
+import { unresolvableRequirePath } from "../../utils/diagnostics";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
     relativePath[0] !== "." && options.baseUrl
         ? path.resolve(options.baseUrl, relativePath)
         : path.resolve(directoryPath, relativePath);
 
-function getImportPath(fileName: string, relativePath: string, node: ts.Node, options: ts.CompilerOptions): string {
+function getImportPath(context: TransformationContext, relativePath: string, node: ts.Node): string {
+    const fileName = context.sourceFile.fileName;
+    const options = context.options;
     const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
 
     const absoluteImportPath = path.format(
@@ -27,11 +29,8 @@ function getImportPath(fileName: string, relativePath: string, node: ts.Node, op
     if (absoluteImportPath.includes(absoluteRootDirPath)) {
         return formatPathToLuaPath(absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
     } else {
-        throw UnresolvableRequirePath(
-            node,
-            `Cannot create require path. Module does not exist within --rootDir`,
-            relativePath
-        );
+        context.diagnostics.push(unresolvableRequirePath(node, relativePath));
+        return relativePath;
     }
 }
 
@@ -39,7 +38,7 @@ function shouldResolveModulePath(context: TransformationContext, moduleSpecifier
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
     if (!moduleOwnerSymbol) return true;
 
-    const annotations = getSymbolAnnotations(context, moduleOwnerSymbol);
+    const annotations = getSymbolAnnotations(moduleOwnerSymbol);
     return !annotations.has(AnnotationKind.NoResolution);
 }
 
@@ -51,12 +50,7 @@ export function createModuleRequire(
     const params: lua.Expression[] = [];
     if (ts.isStringLiteral(moduleSpecifier)) {
         const modulePath = shouldResolveModulePath(context, moduleSpecifier)
-            ? getImportPath(
-                  context.sourceFile.fileName,
-                  moduleSpecifier.text.replace(/"/g, ""),
-                  moduleSpecifier,
-                  context.options
-              )
+            ? getImportPath(context, moduleSpecifier.text.replace(/"/g, ""), moduleSpecifier)
             : moduleSpecifier.text;
 
         params.push(lua.createStringLiteral(modulePath));
@@ -66,7 +60,7 @@ export function createModuleRequire(
 }
 
 function shouldBeImported(context: TransformationContext, importNode: ts.ImportClause | ts.ImportSpecifier): boolean {
-    const annotations = getTypeAnnotations(context, context.checker.getTypeAtLocation(importNode));
+    const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(importNode));
 
     return (
         context.resolver.isReferencedAliasDeclaration(importNode) &&
@@ -96,7 +90,7 @@ function transformImportSpecifier(
 export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> = (statement, context) => {
     const scope = peekScope(context);
 
-    if (!context.options.noHoisting && !scope.importStatements) {
+    if (!scope.importStatements) {
         scope.importStatements = [];
     }
 

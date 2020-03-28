@@ -28,24 +28,22 @@ export function transformBuiltinPropertyAccessExpression(
     context: TransformationContext,
     node: ts.PropertyAccessExpression
 ): lua.Expression | undefined {
-    const type = context.checker.getTypeAtLocation(node.expression);
-    if (isStringType(context, type)) {
+    const ownerType = context.checker.getTypeAtLocation(node.expression);
+
+    if (isStringType(context, ownerType)) {
         return transformStringProperty(context, node);
-    } else if (isArrayType(context, type)) {
-        const arrayPropertyAccess = transformArrayProperty(context, node);
-        if (arrayPropertyAccess) {
-            return arrayPropertyAccess;
-        }
     }
 
-    if (ts.isIdentifier(node.expression)) {
-        const ownerType = context.checker.getTypeAtLocation(node.expression);
+    if (isArrayType(context, ownerType)) {
+        return transformArrayProperty(context, node);
+    }
 
-        if (isStandardLibraryType(context, ownerType, "Math")) {
-            return transformMathProperty(node);
-        } else if (isStandardLibraryType(context, ownerType, "Symbol")) {
-            // Pull in Symbol lib
-            importLuaLibFeature(context, LuaLibFeature.Symbol);
+    if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
+        switch (node.expression.text) {
+            case "Math":
+                return transformMathProperty(context, node);
+            case "Symbol":
+                importLuaLibFeature(context, LuaLibFeature.Symbol);
         }
     }
 }
@@ -120,13 +118,11 @@ export function transformBuiltinIdentifierExpression(
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
-            return lua.createParenthesizedExpression(
-                lua.createBinaryExpression(
-                    lua.createNumericLiteral(0),
-                    lua.createNumericLiteral(0),
-                    lua.SyntaxKind.DivisionOperator,
-                    node
-                )
+            return lua.createBinaryExpression(
+                lua.createNumericLiteral(0),
+                lua.createNumericLiteral(0),
+                lua.SyntaxKind.DivisionOperator,
+                node
             );
 
         case "Infinity":

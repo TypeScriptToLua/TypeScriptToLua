@@ -1,5 +1,124 @@
 # Changelog
 
+## 0.32.0
+
+- **Deprecated:** The `noHoisting` option has been removed, hoisting will always be done.
+
+- TypeScript has been updated to 3.8. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html) for details.
+
+- Fixed class accessors not working when base class is lacking type information (#725)
+
+- Class extension code has been extracted to lualib
+
+  ```ts
+  class A {}
+  class B extends A {}
+  ```
+
+  ```diff
+  A = __TS__Class()
+  B = __TS__Class()
+  -B.____super = A
+  -setmetatable(B, B.____super)
+  -setmetatable(B.prototype, B.____super.prototype)
+  +__TS__ClassExtends(A, B)
+  ```
+
+- Generated code for class accessors is more dynamic now
+
+  ```ts
+  class A {
+    get a() {
+      return true;
+    }
+  }
+  ```
+
+  ```diff
+  A = __TS__Class()
+  -A.prototype.____getters = {}
+  -A.prototype.__index = __TS__Index(A.prototype)
+  -function A.prototype.____getters.a(self)
+  -  return true
+  -end
+  +__TS__SetDescriptor(
+  +    A.prototype,
+  +    "a",
+  +    {
+  +        get = function(self)
+  +            return true
+  +        end
+  +    }
+  +)
+  ```
+
+  This change simplifies our codebase and opens a path to object accessors implementation
+
+- Errors reported during transpilation now are created as TypeScript diagnostics instead of being thrown as JavaScript errors. This makes TypeScriptToLua always try to generate valid code (even in presence of errors) and allows multiple errors to be reported in a single file:
+
+  ```ts
+  for (var x in []) {
+  }
+  ```
+
+  ```shell
+  $ tstl file.ts
+  file.ts:1:1 - error TSTL: Iterating over arrays with 'for ... in' is not allowed.
+  file.ts:1:6 - error TSTL: `var` declarations are not supported. Use `let` or `const` instead.
+
+  $ cat file.lua
+  for x in pairs({}) do
+  end
+  ```
+
+- Added `tstl.luaPlugins` option, allowing to specify plugins in a `tsconfig.json` file:
+
+  ```json
+  {
+    "tstl": {
+      "luaPlugins": [{ "name": "./plugin.ts" }]
+    }
+  }
+  ```
+
+- Added support for all valid TS `for ... of` loop variable patterns.
+
+- Fixed a bug where spread expressions in array literals were not correctly translated:
+
+  ```diff
+  - [1, ...[2, 3], 4] // --> { 1, 2, 4 }
+  + [1, ...[2, 3], 4] // --> { 1, 2, 3, 4 }
+
+  - ((...values) => values)(1, ...[2, 3], 4) // --> { 1, 2, 4 }
+  + ((...values) => values)(1, ...[2, 3], 4) // --> { 1, 2, 3, 4 }
+  ```
+
+- Fixed Lua error when left hand side of `instanceof` was not a table type.
+
+- Fixed `sourcemapTraceback` function returning a value different from the standard Lua result in 5.1.
+
+- Fixed missing LuaLib dependency for Error LuaLib function.
+
+- Fixed several issues with exported identifiers breaking `for ... in` loops and some default class code.
+
+- Fixed overflowing numbers transforming to undefined Infinity, instead they are now transformed to `math.huge`.
+
+## 0.31.0
+
+- **Breaking:** The old annotation syntax (`/* !varArg */`) **no longer works**, the only currently supported syntax is:
+
+  `/** @varArg */`.
+
+- **Breaking:** Fixed some cases where variables were **incorrectly** not labeled `local`. The only variables that are implicitly put in the global context are _top-level variables in non-module files, without any imports or exports in their file_.
+
+- Moved handling of parentheses out of the transformers and unified this logic in the printer. This might result in some more parentheses in the generated code, but also makes it more correct and fixes some related bugs.
+
+- Added support for `array.includes`.
+
+- Fixed a bug breaking global augmentation.
+
+- Fixed hoisting breaking if there were synthetic nodes in the AST (i.e. when a TS transformer modified the AST).
+
 ## 0.30.0
 
 - **Breaking:** We dropped support for `var` variables. If you still have any `var` variable declarations, please use `let` or `const` instead.

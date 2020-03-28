@@ -2,10 +2,13 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { LuaTarget } from "../../CompilerOptions";
 import { TransformationContext } from "../context";
-import { UnsupportedProperty } from "../utils/errors";
+import { unsupportedProperty } from "../utils/diagnostics";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
-export function transformMathProperty(node: ts.PropertyAccessExpression): lua.Expression {
+export function transformMathProperty(
+    context: TransformationContext,
+    node: ts.PropertyAccessExpression
+): lua.Expression | undefined {
     const name = node.name.text;
     switch (name) {
         case "PI":
@@ -23,11 +26,14 @@ export function transformMathProperty(node: ts.PropertyAccessExpression): lua.Ex
             return lua.createNumericLiteral(Math[name], node);
 
         default:
-            throw UnsupportedProperty("Math", name, node);
+            context.diagnostics.push(unsupportedProperty(node.name, "Math", name));
     }
 }
 
-export function transformMathCall(context: TransformationContext, node: PropertyCallExpression): lua.Expression {
+export function transformMathCall(
+    context: TransformationContext,
+    node: PropertyCallExpression
+): lua.Expression | undefined {
     const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
@@ -50,8 +56,7 @@ export function transformMathCall(context: TransformationContext, node: Property
             const log1 = lua.createTableIndexExpression(math, lua.createStringLiteral("log"));
             const logCall1 = lua.createCallExpression(log1, params);
             const e = lua.createNumericLiteral(expressionName === "log10" ? Math.LN10 : Math.LN2);
-            const div = lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator);
-            return lua.createParenthesizedExpression(div, node);
+            return lua.createBinaryExpression(logCall1, e, lua.SyntaxKind.DivisionOperator, node);
         }
 
         // math.log(1 + x)
@@ -94,6 +99,6 @@ export function transformMathCall(context: TransformationContext, node: Property
         }
 
         default:
-            throw UnsupportedProperty("Math", expressionName, expression);
+            context.diagnostics.push(unsupportedProperty(expression.name, "Math", expressionName));
     }
 }

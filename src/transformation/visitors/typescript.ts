@@ -22,4 +22,5 @@ export const typescriptVisitors: Visitors = {
     [ts.SyntaxKind.NonNullExpression]: (node, context) => context.transformExpression(node.expression),
     [ts.SyntaxKind.AsExpression]: transformAssertionExpression,
     [ts.SyntaxKind.TypeAssertionExpression]: transformAssertionExpression,
+    [ts.SyntaxKind.NotEmittedStatement]: () => undefined,
 };

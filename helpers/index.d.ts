@@ -1,1 +1,1 @@
-import './multi';
+import "./multi";

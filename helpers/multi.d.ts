@@ -1,9 +1,3 @@
-declare global {
-    export type MultiReturn<T extends any[]> = T & {
-        readonly " __multiBrand": unique symbol;
-    };
+function multi<T extends any[]>(...values: T): MultiReturn<T>;
 
-    export function multi<T extends any[]>(...values: T): MultiReturn<T>;
-}
-
-export {};
+type MultiReturn<T extends any[]> = T & { readonly " __multiBrand": unique symbol; };

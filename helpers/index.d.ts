@@ -1,1 +1,1 @@
-export * from "./multi";
+import './multi';

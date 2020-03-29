@@ -12,6 +12,7 @@ import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignmen
 import { transformElementAccessArgument } from "./access";
 import { transformIdentifier } from "./identifier";
 import { transformLuaTableCallExpression } from "./lua-table";
+import { isMultiReturnCall } from "./helpers/multi";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -251,9 +252,8 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 // TODO: Currently it's also used as an array member
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     const innerExpression = context.transformExpression(node.expression);
-    if (isTupleReturnCall(context, node.expression)) {
-        return innerExpression;
-    }
+    if (isTupleReturnCall(context, node.expression)) return innerExpression;
+    if (isMultiReturnCall(context, node.expression)) return innerExpression;
 
     if (ts.isIdentifier(node.expression) && isVarargType(context, node.expression)) {
         return lua.createDotsLiteral(node);

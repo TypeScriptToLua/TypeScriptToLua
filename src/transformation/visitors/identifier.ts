@@ -13,6 +13,7 @@ import { isMultiHelperNode } from "./helpers/multi";
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiHelperNode(context, identifier)) {
         context.diagnostics.push(invalidMultiHelperFunctionUse(identifier));
+        return lua.createAnonymousIdentifier(identifier);
     }
 
     if (isForRangeType(context, identifier)) {

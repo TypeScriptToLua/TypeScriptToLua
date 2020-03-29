@@ -22,8 +22,12 @@ function isMultiHelperCallSignature(context: TransformationContext, expression: 
     return type.symbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
 }
 
-function isMultiReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
-    const signature = context.checker.getResolvedSignature(expression);
+export function isMultiReturnCall(context: TransformationContext, node: ts.Node): node is ts.CallExpression {
+    if (!ts.isCallExpression(node)) {
+        return false;
+    }
+
+    const signature = context.checker.getResolvedSignature(node);
     return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
 }
 
@@ -60,8 +64,7 @@ export function transformMultiHelperVariableDeclaration(
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
     if (!declaration.initializer) return;
-    if (!ts.isCallExpression(declaration.initializer)) return;
-    if (!isMultiReturningCallExpression(context, declaration.initializer)) return;
+    if (!isMultiReturnCall(context, declaration.initializer)) return;
 
     if (!ts.isArrayBindingPattern(declaration.name) || declaration.name.elements.length < 1) {
         context.diagnostics.push(invalidMultiHelperFunctionUse(declaration.name));
@@ -92,8 +95,7 @@ export function transformMultiHelperDestructuringAssignmentStatement(
 ): lua.Statement[] | undefined {
     if (!ts.isBinaryExpression(statement.expression)) return;
     if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
-    if (!ts.isCallExpression(statement.expression.right)) return;
-    if (!isMultiReturningCallExpression(context, statement.expression.right)) return;
+    if (!isMultiReturnCall(context, statement.expression.right)) return;
 
     if (
         !ts.isArrayLiteralExpression(statement.expression.left) ||

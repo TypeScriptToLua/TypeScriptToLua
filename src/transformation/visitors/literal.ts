@@ -68,6 +68,7 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
         violations.forEach(element => {
             context.diagnostics.push(invalidMultiHelperFunctionUse(element));
         });
+        return lua.createNilLiteral(expression);
     }
 
     let properties: lua.TableFieldExpression[] = [];

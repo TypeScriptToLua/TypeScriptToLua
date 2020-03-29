@@ -496,3 +496,20 @@ test("named function expression reference", () => {
         return y();
     `.expectToMatchJsResult();
 });
+
+test("missing declaration name", () => {
+    util.testModule`
+        function () {}
+    `.expectDiagnosticsToMatchSnapshot([1003]);
+});
+
+test("top-level function declaration is global", () => {
+    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
+    util.testBundle`
+        // @ts-ignore
+        import './a';
+        export const result = foo();
+    `
+        .addExtraFile("a.ts", `function foo() { return "foo" }`)
+        .expectToEqual({ result: "foo" });
+});

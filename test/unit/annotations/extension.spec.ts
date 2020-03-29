@@ -1,28 +1,26 @@
 import {
-    InvalidExtendsExtension,
-    InvalidInstanceOfExtension,
-    InvalidNewExpressionOnExtension,
-} from "../../../src/transformation/utils/errors";
+    extensionCannotConstruct,
+    extensionCannotExtend,
+    extensionInvalidInstanceOf,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test.each(["extension", "metaExtension"])("Class extends extension (%p)", extensionType => {
-    const code = `
+    util.testModule`
         declare class A {}
         /** @${extensionType} **/
         class B extends A {}
         class C extends B {}
-    `;
-    expect(() => util.transpileString(code)).toThrowExactError(InvalidExtendsExtension(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([extensionCannotExtend.code]);
 });
 
 test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
-    const code = `
+    util.testModule`
         declare class A {}
         /** @${extensionType} **/
         class B extends A {}
         const b = new B();
-    `;
-    expect(() => util.transpileString(code)).toThrowExactError(InvalidNewExpressionOnExtension(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
 });
 
 test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
@@ -32,5 +30,5 @@ test.each(["extension", "metaExtension"])("instanceof extension (%p)", extension
         class B extends A {}
         declare const foo: any;
         const result = foo instanceof B;
-    `.expectToHaveDiagnosticOfError(InvalidInstanceOfExtension(util.nodeStub));
+    `.expectDiagnosticsToMatchSnapshot([extensionInvalidInstanceOf.code]);
 });

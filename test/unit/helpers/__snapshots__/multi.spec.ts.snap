@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`invalid multi call (([a] = multi(1)) => {}): code 1`] = `
+"local function ____(____, ____bindingPattern0)
+    if ____bindingPattern0 == nil then
+        ____bindingPattern0 = multi(_G, 1)
+    end
+    local a = ____bindingPattern0[1]
+end"
+`;
+
+exports[`invalid multi call (([a] = multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (({ multi });): code 1`] = `"local ____ = {multi = multi}"`;
+
+exports[`invalid multi call (({ multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call ([] = multi()): code 1`] = `""`;
+
+exports[`invalid multi call ([] = multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (const [] = multi();): code 1`] = `""`;
+
+exports[`invalid multi call (const [] = multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (const {} = multi();): code 1`] = `""`;
+
+exports[`invalid multi call (const {} = multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (const a = multi();): code 1`] = `""`;
+
+exports[`invalid multi call (const a = multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (multi()): code 1`] = `"multi(_G)"`;
+
+exports[`invalid multi call (multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: Invalid multi() function use."`;
+
+exports[`invalid multi call (multi): code 1`] = `"local ____ = multi"`;
+
+exports[`invalid multi call (multi): diagnostics 1`] = `"main.ts(2,9): error TSTL: Invalid multi() function use."`;

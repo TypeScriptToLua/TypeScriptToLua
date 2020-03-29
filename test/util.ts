@@ -1,3 +1,4 @@
+import * as nativeAssert from "assert";
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
@@ -9,40 +10,8 @@ import * as tstl from "../src";
 
 export * from "./legacy-utils";
 
-export const nodeStub = ts.createNode(ts.SyntaxKind.Unknown);
-
-export function parseTypeScript(
-    typescript: string,
-    target: tstl.LuaTarget = tstl.LuaTarget.Lua53
-): [ts.SourceFile, ts.TypeChecker] {
-    const program = tstl.createVirtualProgram({ "main.ts": typescript }, { luaTarget: target });
-    const sourceFile = program.getSourceFile("main.ts");
-
-    if (sourceFile === undefined) {
-        throw new Error("Could not find source file main.ts in program.");
-    }
-
-    return [sourceFile, program.getTypeChecker()];
-}
-
-export function findFirstChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined {
-    for (const child of node.getChildren()) {
-        if (predicate(child)) {
-            return child;
-        }
-
-        const childChild = findFirstChild(child, predicate);
-        if (childChild !== undefined) {
-            return childChild;
-        }
-    }
-    return undefined;
-}
-
-export function expectToBeDefined<T>(subject: T | null | undefined): subject is T {
-    expect(subject).toBeDefined();
-    expect(subject).not.toBeNull();
-    return true; // If this was false the expect would have thrown an error
+export function assert(value: any, message?: string | Error): asserts value {
+    nativeAssert(value, message);
 }
 
 export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");
@@ -50,17 +19,19 @@ export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)
 export function testEachVersion<T extends TestBuilder>(
     name: string | undefined,
     common: () => T,
-    special: Record<tstl.LuaTarget, ((builder: T) => T) | false>
+    special?: Record<tstl.LuaTarget, ((builder: T) => void) | boolean>
 ): void {
     for (const version of Object.values(tstl.LuaTarget) as tstl.LuaTarget[]) {
-        const specialBuilder = special[version];
+        const specialBuilder = special?.[version];
         if (specialBuilder === false) return;
 
         const testName = name === undefined ? version : `${name} [${version}]`;
         test(testName, () => {
             const builder = common();
             builder.setOptions({ luaTarget: version });
-            specialBuilder(builder);
+            if (typeof specialBuilder === "function") {
+                specialBuilder(builder);
+            }
         });
     }
 }
@@ -194,7 +165,6 @@ export class ExecutionError extends Error {
 
 export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
-export type DiagnosticMatcher = (diagnostic: ts.Diagnostic) => boolean;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}
 
@@ -242,6 +212,8 @@ export abstract class TestBuilder {
         skipLibCheck: true,
         target: ts.ScriptTarget.ES2017,
         lib: ["lib.esnext.d.ts"],
+        moduleResolution: ts.ModuleResolutionKind.NodeJs,
+        resolveJsonModule: true,
         experimentalDecorators: true,
     };
     public setOptions(options: tstl.CompilerOptions = {}): this {
@@ -327,11 +299,11 @@ export abstract class TestBuilder {
     @memoize
     protected getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const mainFile = transpiledFiles.find(x => x.fileName === this.mainFileName);
-        expect(mainFile).toBeDefined();
+        const code = transpiledFiles.find(x => x.fileName === this.mainFileName)?.js;
+        assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";
-        return header + mainFile!.js!;
+        return header + code;
     }
 
     protected abstract getJsCodeWithWrapper(): string;
@@ -357,30 +329,20 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectToHaveDiagnostic(matcher: DiagnosticMatcher): this {
-        expect(this.getLuaDiagnostics().find(matcher)).toBeDefined();
-        return this;
-    }
+    private diagnosticsChecked = false;
 
-    public expectToHaveExactDiagnostic(diagnostic: ts.Diagnostic): this {
-        expect(this.getLuaDiagnostics()).toContainEqual(diagnostic);
-        return this;
-    }
+    public expectToHaveDiagnostics(expected?: number[]): this {
+        if (this.diagnosticsChecked) return this;
+        this.diagnosticsChecked = true;
 
-    public expectToHaveDiagnostics(): this {
-        expect(this.getLuaDiagnostics()).toHaveDiagnostics();
-        return this;
-    }
-
-    public expectToHaveDiagnosticOfError(error: Error): this {
-        this.expectToHaveDiagnostics();
-        expect(this.getLuaDiagnostics()).toHaveLength(1);
-        const firstDiagnostic = this.getLuaDiagnostics()[0];
-        expect(firstDiagnostic).toMatchObject({ messageText: error.message });
+        expect(this.getLuaDiagnostics()).toHaveDiagnostics(expected);
         return this;
     }
 
     public expectToHaveNoDiagnostics(): this {
+        if (this.diagnosticsChecked) return this;
+        this.diagnosticsChecked = true;
+
         expect(this.getLuaDiagnostics()).not.toHaveDiagnostics();
         return this;
     }
@@ -418,9 +380,19 @@ export abstract class TestBuilder {
         return this;
     }
 
-    public expectResultToMatchSnapshot(): this {
-        this.expectToHaveNoDiagnostics();
-        expect(this.getLuaExecutionResult()).toMatchSnapshot();
+    public expectDiagnosticsToMatchSnapshot(expected?: number[], diagnosticsOnly = false): this {
+        this.expectToHaveDiagnostics(expected);
+
+        const diagnosticMessages = ts.formatDiagnostics(
+            this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
+        );
+
+        expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
+        if (!diagnosticsOnly) {
+            expect(this.getMainLuaCodeChunk()).toMatchSnapshot("code");
+        }
+
         return this;
     }
 

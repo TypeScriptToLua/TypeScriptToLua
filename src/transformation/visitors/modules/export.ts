@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
+import { assert } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
-import { InvalidExportDeclaration } from "../../utils/errors";
 import {
     createDefaultExportIdentifier,
     createDefaultExportStringLiteral,
@@ -37,9 +37,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
 };
 
 function transformExportAllFrom(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
-    if (node.moduleSpecifier === undefined) {
-        throw InvalidExportDeclaration(node);
-    }
+    assert(node.moduleSpecifier);
 
     if (!context.resolver.moduleExportsSomeValue(node.moduleSpecifier)) {
         return undefined;
@@ -134,6 +132,11 @@ export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> =
 
     if (!context.resolver.isValueAliasDeclaration(node)) {
         return undefined;
+    }
+
+    if (ts.isNamespaceExport(node.exportClause)) {
+        // export * as ns from "...";
+        throw new Error("NamespaceExport is not supported");
     }
 
     const exportSpecifiers = getExported(context, node.exportClause);

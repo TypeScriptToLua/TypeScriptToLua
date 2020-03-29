@@ -7,6 +7,7 @@ import { emitTranspiledFiles, OutputFile } from "./emit";
 import { transpile, TranspiledFile, TranspileResult } from "./transpile";
 
 export * from "./emit";
+export { Plugin } from "./plugins";
 export * from "./transpile";
 
 export interface TranspileFilesResult {
@@ -62,8 +63,9 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
                 filePath = path.join(typeScriptDir, filename);
             }
 
-            if (filename.includes("typescript-to-lua/helpers")) {
-                filePath = path.resolve(__dirname, "../../helpers/multi.d.ts");
+            if (filename.includes("helpers")) {
+                const dtsName = filename.replace(/(\.d)?(\.ts)$/, ".d.ts");
+                filePath = path.resolve(dtsName);
             }
 
             if (filePath !== undefined) {

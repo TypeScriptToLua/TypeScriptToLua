@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { InvalidAnnotationArgumentNumber, InvalidNewExpressionOnExtension } from "../../utils/errors";
+import { annotationInvalidArgumentCount, extensionCannotConstruct } from "../../utils/diagnostics";
 import { importLuaLibFeature, LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { transformArguments } from "../call";
 import { transformLuaTableNewExpression } from "../lua-table";
@@ -66,20 +66,27 @@ export const transformNewExpression: FunctionVisitor<ts.NewExpression> = (node, 
     const annotations = getTypeAnnotations(type);
 
     if (annotations.has(AnnotationKind.Extension) || annotations.has(AnnotationKind.MetaExtension)) {
-        throw InvalidNewExpressionOnExtension(node);
+        context.diagnostics.push(extensionCannotConstruct(node));
     }
 
     const customConstructorAnnotation = annotations.get(AnnotationKind.CustomConstructor);
     if (customConstructorAnnotation) {
-        if (customConstructorAnnotation.args[0] === undefined) {
-            throw InvalidAnnotationArgumentNumber("@customConstructor", 0, 1, node);
+        if (customConstructorAnnotation.args.length === 1) {
+            return lua.createCallExpression(
+                lua.createIdentifier(customConstructorAnnotation.args[0]),
+                transformArguments(context, node.arguments ?? []),
+                node
+            );
+        } else {
+            context.diagnostics.push(
+                annotationInvalidArgumentCount(
+                    node,
+                    AnnotationKind.CustomConstructor,
+                    customConstructorAnnotation.args.length,
+                    1
+                )
+            );
         }
-
-        return lua.createCallExpression(
-            lua.createIdentifier(customConstructorAnnotation.args[0]),
-            transformArguments(context, node.arguments ?? []),
-            node
-        );
     }
 
     return transformLuaLibFunction(context, LuaLibFeature.New, node, name, ...params);

@@ -1,8 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isVarArgType } from "../utils/annotations";
-import { MissingFunctionName, UnsupportedFunctionWithoutBody } from "../utils/errors";
+import { isVarargType } from "../utils/annotations";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import {
@@ -13,7 +12,6 @@ import {
     wrapInTable,
 } from "../utils/lua-ast";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
-import { getSymbolIdOfSymbol } from "../utils/symbols";
 import { transformGeneratorFunctionBody } from "./generator";
 import { transformIdentifier } from "./identifier";
 import { transformBindingPattern } from "./variable-declaration";
@@ -50,7 +48,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
         return false;
     }
     // Ignore references to @vararg types in spread elements
-    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarArgType(context, r));
+    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
 }
 
 export function transformFunctionBodyStatements(context: TransformationContext, body: ts.Block): lua.Statement[] {
@@ -184,7 +182,8 @@ export function transformFunctionLikeDeclaration(
     let flags = lua.FunctionExpressionFlags.None;
 
     if (node.body === undefined) {
-        throw UnsupportedFunctionWithoutBody(node);
+        // This code can be reached only from object methods, which is TypeScript error
+        return lua.createNilLiteral();
     }
 
     let body: ts.Block;
@@ -206,7 +205,6 @@ export function transformFunctionLikeDeclaration(
         lua.createBlock(transformedBody),
         paramNames,
         dotsLiteral,
-        spreadIdentifier,
         flags,
         node
     );
@@ -215,9 +213,13 @@ export function transformFunctionLikeDeclaration(
     if (ts.isFunctionExpression(node) && node.name && scope.referencedSymbols) {
         const symbol = context.checker.getSymbolAtLocation(node.name);
         if (symbol) {
-            const symbolId = getSymbolIdOfSymbol(context, symbol);
+            // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
+            const isReferenced = [...scope.referencedSymbols].some(([, nodes]) =>
+                nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
+            );
+
             // Only wrap if the name is actually referenced inside the function
-            if (symbolId !== undefined && scope.referencedSymbols.has(symbolId)) {
+            if (isReferenced) {
                 const nameIdentifier = transformIdentifier(context, node.name);
                 return createImmediatelyInvokedFunctionExpression(
                     [lua.createVariableDeclarationStatement(nameIdentifier, functionExpression)],
@@ -250,21 +252,18 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
         block,
         params,
         dotsLiteral,
-        restParamName,
         lua.FunctionExpressionFlags.Declaration
     );
 
-    const name = node.name ? transformIdentifier(context, node.name) : undefined;
-
-    const isDefaultExport = hasDefaultExportModifier(node);
-    if (isDefaultExport) {
+    if (hasDefaultExportModifier(node)) {
         return lua.createAssignmentStatement(
             lua.createTableIndexExpression(createExportsIdentifier(), createDefaultExportStringLiteral(node)),
             transformFunctionLikeDeclaration(node, context)
         );
-    } else if (!name) {
-        throw MissingFunctionName(node);
     }
+
+    // Name being undefined without default export is a TypeScript error
+    const name = node.name ? transformIdentifier(context, node.name) : lua.createAnonymousIdentifier();
 
     // Remember symbols referenced in this function for hoisting later
     if (name.symbolId !== undefined) {

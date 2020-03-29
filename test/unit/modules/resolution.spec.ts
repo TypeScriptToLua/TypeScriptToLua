@@ -1,12 +1,11 @@
 import * as ts from "typescript";
+import { unresolvableRequirePath } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 const requireRegex = /require\("(.*?)"\)/;
 const expectToRequire = (expected: string): util.TapCallback => builder => {
-    const match = requireRegex.exec(builder.getMainLuaCodeChunk());
-    if (util.expectToBeDefined(match)) {
-        expect(match[1]).toBe(expected);
-    }
+    const [, requiredPath] = builder.getMainLuaCodeChunk().match(requireRegex) ?? [];
+    expect(requiredPath).toBe(expected);
 };
 
 test.each([
@@ -82,7 +81,7 @@ test("doesn't resolve paths out of root dir", () => {
         .setMainFileName("src/main.ts")
         .setOptions({ rootDir: "./src" })
         .disableSemanticCheck()
-        .expectToHaveDiagnostics();
+        .expectDiagnosticsToMatchSnapshot([unresolvableRequirePath.code]);
 });
 
 test.each([

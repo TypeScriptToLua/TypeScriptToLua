@@ -1,5 +1,4 @@
-import * as ts from "typescript";
-import { InvalidAmbientIdentifierName } from "../../src/transformation/utils/errors";
+import { invalidAmbientIdentifierName } from "../../src/transformation/utils/diagnostics";
 import { luaKeywords } from "../../src/transformation/utils/safe-names";
 import * as util from "../util";
 
@@ -83,7 +82,7 @@ test.each([
         local;
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("local")));
+        .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each([
@@ -100,7 +99,7 @@ test.each([
     util.testModule`
         declare ${statement}
         $$$;
-    `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier("$$$")));
+    `.expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -109,7 +108,7 @@ test.each(validTsInvalidLuaNames)(
         util.testModule`
             declare var ${name}: any;
             const foo = { ${name} };
-        `.expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        `.expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
     }
 );
 
@@ -118,7 +117,7 @@ test.each(validTsInvalidLuaNames)("undeclared identifier must be a valid lua ide
         const foo = ${name};
     `
         .disableSemanticCheck()
-        .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+        .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
 });
 
 test.each(validTsInvalidLuaNames)(
@@ -128,7 +127,7 @@ test.each(validTsInvalidLuaNames)(
             const foo = { ${name} };
         `
             .disableSemanticCheck()
-            .expectToHaveDiagnosticOfError(InvalidAmbientIdentifierName(ts.createIdentifier(name)));
+            .expectDiagnosticsToMatchSnapshot([invalidAmbientIdentifierName.code]);
     }
 );
 
@@ -451,21 +450,6 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             return rawget.hasOwnProperty("foobar");`;
 
         expect(util.transpileAndExecute(code)).toBe(true);
-    });
-
-    test("variable (rawset)", () => {
-        const code = `
-            const rawset = "foobar";
-            class A {
-                prop = "prop";
-            }
-            class B extends A {
-                get prop() { return rawset; }
-            }
-            const b = new B();
-            return b.prop;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
     });
 
     test("variable (require)", () => {

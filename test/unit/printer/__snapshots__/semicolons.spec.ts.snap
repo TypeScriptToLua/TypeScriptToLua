@@ -1,0 +1,63 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`semicolon insertion ("{}") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result = \\"\\"
+    local function foo(self)
+        result = \\"foo\\"
+    end
+    do
+    end
+    (nil or foo)(nil)
+    return result
+end
+return ____exports"
+`;
+
+exports[`semicolon insertion ("const a = 1; const b = a;") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result = \\"\\"
+    local function foo(self)
+        result = \\"foo\\"
+    end
+    local a = 1
+    local b = a;
+    (nil or foo)(nil)
+    return result
+end
+return ____exports"
+`;
+
+exports[`semicolon insertion ("const a = 1; let b: number; b = a;") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result = \\"\\"
+    local function foo(self)
+        result = \\"foo\\"
+    end
+    local a = 1
+    local b
+    b = a;
+    (nil or foo)(nil)
+    return result
+end
+return ____exports"
+`;
+
+exports[`semicolon insertion ("function bar() {} bar();") 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local result = \\"\\"
+    local function foo(self)
+        result = \\"foo\\"
+    end
+    local function bar(self)
+    end
+    bar(nil);
+    (nil or foo)(nil)
+    return result
+end
+return ____exports"
+`;

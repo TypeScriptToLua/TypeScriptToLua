@@ -1,5 +1,11 @@
+import * as path from "path";
 import * as util from "../../util";
-import { InvalidMultiHelperFunctionUse } from "../../../src/transformation/utils/errors";
+import * as tstl from "../../../src";
+import { invalidMultiHelperFunctionUse } from "../../../src/transformation/utils/diagnostics";
+
+const multiProjectOptions: tstl.CompilerOptions = {
+    types: [path.resolve(__dirname, "../../../helpers")],
+};
 
 test.each<[string, any]>([
     ["let a; [a] = multi();", undefined],
@@ -14,7 +20,7 @@ test.each<[string, any]>([
         ${statement}
         export { a };
     `
-        .setOptions({ types: ["typescript-to-lua/helpers"] })
+        .setOptions(multiProjectOptions)
         .setReturnExport("a")
         .expectToEqual(result);
 });
@@ -32,8 +38,8 @@ test.each([
     util.testModule`
         ${statement}
     `
-        .setOptions({ types: ["typescript-to-lua/helpers"] })
-        .expectToHaveDiagnosticOfError(InvalidMultiHelperFunctionUse(util.nodeStub));
+        .setOptions(multiProjectOptions)
+        .expectDiagnosticsToMatchSnapshot([invalidMultiHelperFunctionUse.code]);
 });
 
 test.each<[string, any]>([
@@ -45,7 +51,7 @@ test.each<[string, any]>([
             ${statement}
         })();
     `
-        .setOptions({ types: ["typescript-to-lua/helpers"] })
+        .setOptions(multiProjectOptions)
         .setReturnExport("a")
         .expectToEqual(result);
 });
@@ -56,7 +62,7 @@ test("multi helper call with destructuring assignment side effects", () => {
         export { a };
         [a] = multi(1);
     `
-        .setOptions({ types: ["typescript-to-lua/helpers"] })
+        .setOptions(multiProjectOptions)
         .setReturnExport("a")
         .expectToEqual(1);
 });

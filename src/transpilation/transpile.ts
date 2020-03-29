@@ -7,7 +7,7 @@ import { createVisitorMap, transformSourceFile } from "../transformation";
 import { isNonNull } from "../utils";
 import { bundleTranspiledFiles } from "./bundle";
 import { getPlugins, Plugin } from "./plugins";
-import { getCustomTransformers } from "./transformers";
+import { getTransformers } from "./transformers";
 
 export interface TranspiledFile {
     fileName: string;
@@ -42,7 +42,7 @@ export function transpile({
     program,
     sourceFiles: targetSourceFiles,
     customTransformers = {},
-    plugins: pluginsFromOptions = [],
+    plugins: customPlugins = [],
     emitHost = ts.sys,
 }: TranspileOptions): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
@@ -85,7 +85,7 @@ export function transpile({
         }
     }
 
-    const plugins = getPlugins(program, diagnostics, pluginsFromOptions);
+    const plugins = getPlugins(program, diagnostics, customPlugins);
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
@@ -107,7 +107,7 @@ export function transpile({
         }
     };
 
-    const transformers = getCustomTransformers(program, diagnostics, customTransformers, processSourceFile);
+    const transformers = getTransformers(program, diagnostics, customTransformers, processSourceFile);
 
     const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
         for (const sourceFile of sourceFiles) {

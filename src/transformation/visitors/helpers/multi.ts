@@ -1,31 +1,35 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import * as utils from "../../utils/helpers";
+import { isNonNull } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformAssignmentLeftHandSideExpression } from "../binary-expression/assignments";
 import { transformIdentifier } from "../identifier";
 import { transformArguments } from "../call";
-import { InvalidMultiHelperFunctionUse, UnsupportedKind } from "../../utils/errors";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
+import {
+    invalidMultiHelperFunctionUse,
+    unsupportedMultiFunctionAssignment,
+} from "../../../transformation/utils/diagnostics";
 
-function isMultiHelperDeclaration(declaration: ts.Declaration): boolean {
-    return utils.getHelperFileKind(declaration.getSourceFile()) === utils.HelperKind.Multi;
-}
+const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean => {
+    return utils.getHelperFileKind(context, declaration.getSourceFile()) === utils.HelperKind.Multi;
+};
 
 function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
 }
 
 function isMultiReturningCallExpression(context: TransformationContext, expression: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(expression);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
 }
 
 export function isMultiHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
 }
 
 export function transformMultiHelperReturnStatement(
@@ -33,15 +37,15 @@ export function transformMultiHelperReturnStatement(
     statement: ts.ReturnStatement
 ): lua.Statement | undefined {
     if (!statement.expression) {
-        return undefined;
+        return;
     }
 
     if (!ts.isCallExpression(statement.expression)) {
-        return undefined;
+        return;
     }
 
     if (!isMultiHelperCallSignature(context, statement.expression)) {
-        return undefined;
+        return;
     }
 
     const expressions = transformArguments(context, statement.expression.arguments);
@@ -64,36 +68,42 @@ export function transformMultiHelperVariableDeclaration(
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
     if (!declaration.initializer) {
-        return undefined;
+        return;
     }
 
     if (!ts.isCallExpression(declaration.initializer)) {
-        return undefined;
+        return;
     }
 
     if (!isMultiReturningCallExpression(context, declaration.initializer)) {
-        return undefined;
+        return;
     }
 
     if (!ts.isArrayBindingPattern(declaration.name)) {
-        throw InvalidMultiHelperFunctionUse(declaration.name);
+        context.diagnostics.push(invalidMultiHelperFunctionUse(declaration.name));
+        return [];
     }
 
     if (declaration.name.elements.length < 1) {
-        throw InvalidMultiHelperFunctionUse(declaration.name);
+        context.diagnostics.push(invalidMultiHelperFunctionUse(declaration.name));
+        return [];
     }
 
-    const leftIdentifiers = declaration.name.elements.map(element => {
-        if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
-            return transformIdentifier(context, element.name);
-        }
+    const leftIdentifiers = declaration.name.elements
+        .map(element => {
+            if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+                return transformIdentifier(context, element.name);
+            }
 
-        if (ts.isOmittedExpression(element)) {
-            return lua.createAnonymousIdentifier(element);
-        }
+            if (ts.isOmittedExpression(element)) {
+                return lua.createAnonymousIdentifier(element);
+            }
 
-        throw UnsupportedKind("Array Destructure Assignment Element", element.kind, element);
-    });
+            context.diagnostics.push(unsupportedMultiFunctionAssignment(element));
+            return undefined;
+        })
+        .filter(isNonNull);
+
     const rightExpressions = transformMultiHelperCallArguments(context, declaration.initializer);
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
@@ -103,31 +113,34 @@ export function transformMultiHelperDestructuringAssignmentStatement(
     statement: ts.ExpressionStatement
 ): lua.Statement[] | undefined {
     if (!ts.isBinaryExpression(statement.expression)) {
-        return undefined;
+        return;
     }
 
     if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
-        return undefined;
+        return;
     }
 
     if (!ts.isCallExpression(statement.expression.right)) {
-        return undefined;
+        return;
     }
 
     if (!isMultiReturningCallExpression(context, statement.expression.right)) {
-        return undefined;
+        return;
     }
 
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
-        throw InvalidMultiHelperFunctionUse(statement.expression.left);
+        context.diagnostics.push(invalidMultiHelperFunctionUse(statement.expression.left));
+        return [];
     }
 
     if (statement.expression.left.elements.length < 1) {
-        throw InvalidMultiHelperFunctionUse(statement.expression.left);
+        context.diagnostics.push(invalidMultiHelperFunctionUse(statement.expression.left));
+        return [];
     }
 
     if (statement.expression.left.elements.some(ts.isBinaryExpression)) {
-        throw InvalidMultiHelperFunctionUse(statement.expression.left);
+        context.diagnostics.push(invalidMultiHelperFunctionUse(statement.expression.left));
+        return [];
     }
 
     const transformLeft = (expression: ts.Expression): lua.AssignmentLeftHandSideExpression => {
@@ -154,17 +167,21 @@ export function transformMultiHelperDestructuringAssignmentStatement(
     return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }
 
-export function validateMultiHelperFunctionNotAssignedWithin(
+export function findMultiHelperAssignmentViolations(
     context: TransformationContext,
     node: ts.ObjectLiteralExpression
-): void {
-    node.properties.filter(ts.isShorthandPropertyAssignment).forEach(element => {
-        const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-        if (valueSymbol) {
-            const declaration = valueSymbol.valueDeclaration;
-            if (declaration && isMultiHelperDeclaration(declaration)) {
-                throw InvalidMultiHelperFunctionUse(element);
+): ts.Node[] {
+    return node.properties
+        .filter(ts.isShorthandPropertyAssignment)
+        .map(element => {
+            const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
+            if (valueSymbol) {
+                const declaration = valueSymbol.valueDeclaration;
+                if (declaration && isMultiHelperDeclaration(context)(declaration)) {
+                    context.diagnostics.push(invalidMultiHelperFunctionUse(element));
+                    return element;
+                }
             }
-        }
-    });
+        })
+        .filter(isNonNull);
 }

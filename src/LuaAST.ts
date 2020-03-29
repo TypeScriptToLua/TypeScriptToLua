@@ -5,6 +5,7 @@
 // because we don't create the AST from text
 
 import * as ts from "typescript";
+import { castArray } from "./utils";
 
 export enum SyntaxKind {
     Block,
@@ -236,14 +237,8 @@ export function createVariableDeclarationStatement(
     tsOriginal?: ts.Node
 ): VariableDeclarationStatement {
     const statement = createNode(SyntaxKind.VariableDeclarationStatement, tsOriginal) as VariableDeclarationStatement;
-    statement.left = Array.isArray(left) ? left : [left];
-
-    if (Array.isArray(right)) {
-        statement.right = right;
-    } else if (right) {
-        statement.right = [right];
-    }
-
+    statement.left = castArray(left);
+    if (right) statement.right = castArray(right);
     return statement;
 }
 
@@ -264,14 +259,8 @@ export function createAssignmentStatement(
     tsOriginal?: ts.Node
 ): AssignmentStatement {
     const statement = createNode(SyntaxKind.AssignmentStatement, tsOriginal) as AssignmentStatement;
-    statement.left = Array.isArray(left) ? left : [left];
-
-    if (Array.isArray(right)) {
-        statement.right = right;
-    } else {
-        statement.right = right ? [right] : [];
-    }
-
+    statement.left = castArray(left);
+    statement.right = right ? castArray(right) : [];
     return statement;
 }
 
@@ -429,14 +418,14 @@ export function createLabelStatement(name: string, tsOriginal?: ts.Node): LabelS
 
 export interface ReturnStatement extends Statement {
     kind: SyntaxKind.ReturnStatement;
-    expressions?: Expression[];
+    expressions: Expression[];
 }
 
 export function isReturnStatement(node: Node): node is ReturnStatement {
     return node.kind === SyntaxKind.ReturnStatement;
 }
 
-export function createReturnStatement(expressions?: Expression[], tsOriginal?: ts.Node): ReturnStatement {
+export function createReturnStatement(expressions: Expression[], tsOriginal?: ts.Node): ReturnStatement {
     const statement = createNode(SyntaxKind.ReturnStatement, tsOriginal) as ReturnStatement;
     statement.expressions = expressions;
     return statement;
@@ -496,11 +485,7 @@ export function isBooleanLiteral(node: Node): node is BooleanLiteral {
 }
 
 export function createBooleanLiteral(value: boolean, tsOriginal?: ts.Node): BooleanLiteral {
-    if (value) {
-        return createNode(SyntaxKind.TrueKeyword, tsOriginal) as BooleanLiteral;
-    } else {
-        return createNode(SyntaxKind.FalseKeyword, tsOriginal) as BooleanLiteral;
-    }
+    return createNode(value ? SyntaxKind.TrueKeyword : SyntaxKind.FalseKeyword, tsOriginal) as BooleanLiteral;
 }
 
 // TODO Call this DotsLiteral or DotsKeyword?
@@ -518,7 +503,7 @@ export function createDotsLiteral(tsOriginal?: ts.Node): DotsLiteral {
 
 // StringLiteral / NumberLiteral
 // TODO TS uses the export interface "LiteralLikeNode" with a "text: string" member
-// but since we dont parse from text i think we can simplify by just having a value member
+// but since we don't parse from text I think we can simplify by just having a value member
 
 // TODO NumericLiteral or NumberLiteral?
 export interface NumericLiteral extends Expression {
@@ -552,16 +537,15 @@ export function createStringLiteral(value: string, tsOriginal?: ts.Node): String
 }
 
 export enum FunctionExpressionFlags {
-    None = 0x0,
-    Inline = 0x1, // Keep function on same line
-    Declaration = 0x2, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
+    None = 1 << 0,
+    Inline = 1 << 1, // Keep function body on same line
+    Declaration = 1 << 2, // Prefer declaration syntax `function foo()` over assignment syntax `foo = function()`
 }
 
 export interface FunctionExpression extends Expression {
     kind: SyntaxKind.FunctionExpression;
     params?: Identifier[];
     dots?: DotsLiteral;
-    restParamName?: Identifier;
     body: Block;
     flags: FunctionExpressionFlags;
 }
@@ -574,7 +558,6 @@ export function createFunctionExpression(
     body: Block,
     params?: Identifier[],
     dots?: DotsLiteral,
-    restParamName?: Identifier,
     flags = FunctionExpressionFlags.None,
     tsOriginal?: ts.Node
 ): FunctionExpression {
@@ -582,7 +565,6 @@ export function createFunctionExpression(
     expression.body = body;
     expression.params = params;
     expression.dots = dots;
-    expression.restParamName = restParamName;
     expression.flags = flags;
     return expression;
 }
@@ -671,7 +653,7 @@ export function createBinaryExpression(
 export interface CallExpression extends Expression {
     kind: SyntaxKind.CallExpression;
     expression: Expression;
-    params?: Expression[];
+    params: Expression[];
 }
 
 export function isCallExpression(node: Node): node is CallExpression {
@@ -680,7 +662,7 @@ export function isCallExpression(node: Node): node is CallExpression {
 
 export function createCallExpression(
     expression: Expression,
-    params?: Expression[],
+    params: Expression[],
     tsOriginal?: ts.Node
 ): CallExpression {
     const callExpression = createNode(SyntaxKind.CallExpression, tsOriginal) as CallExpression;
@@ -693,7 +675,7 @@ export interface MethodCallExpression extends Expression {
     kind: SyntaxKind.MethodCallExpression;
     prefixExpression: Expression;
     name: Identifier;
-    params?: Expression[];
+    params: Expression[];
 }
 
 export function isMethodCallExpression(node: Node): node is MethodCallExpression {
@@ -703,7 +685,7 @@ export function isMethodCallExpression(node: Node): node is MethodCallExpression
 export function createMethodCallExpression(
     prefixExpression: Expression,
     name: Identifier,
-    params?: Expression[],
+    params: Expression[],
     tsOriginal?: ts.Node
 ): MethodCallExpression {
     const callExpression = createNode(SyntaxKind.MethodCallExpression, tsOriginal) as MethodCallExpression;

@@ -1,0 +1,241 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ambient identifier cannot be a lua keyword ("class local {}"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("class local {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("const foo: any, bar: any, local: any;"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("const foo: any, bar: any, local: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("const local: any;"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("const local: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("enum local {}"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("enum local {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("function local() {}"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("function local() {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("let local: any;"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("let local: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("module local { export const bar: any; }"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("module local { export const bar: any; }"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("namespace local { export const bar: any; }"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("namespace local { export const bar: any; }"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier cannot be a lua keyword ("var local: any;"): code 1`] = `"local ____ = ____local"`;
+
+exports[`ambient identifier cannot be a lua keyword ("var local: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("class $$ {}"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("class $$ {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("const $$: any;"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("const $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("const foo: any, bar: any, $$: any;"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("const foo: any, bar: any, $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("enum $$ {}"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("enum $$ {}"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("function $$();"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("function $$();"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("let $$: any;"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("let $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("module $$ { export const bar: any; }"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("module $$ { export const bar: any; }"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("namespace $$ { export const bar: any; }"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("namespace $$ { export const bar: any; }"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier ("var $$: any;"): code 1`] = `"local ____ = _____24_24_24"`;
+
+exports[`ambient identifier must be a valid lua identifier ("var $$: any;"): diagnostics 1`] = `"main.ts(3,9): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {[\\"$$$\\"] = _____24_24_24}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("$$"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {[\\"_̀ः٠‿\\"] = ______300_903_660_203F}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name '_̀ः٠‿'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {[\\"and\\"] = ____and}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("and"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'and'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {[\\"elseif\\"] = ____elseif}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("elseif"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'elseif'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {[\\"end\\"] = ____end}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("end"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'end'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {[\\"goto\\"] = ____goto}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("goto"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'goto'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {[\\"local\\"] = ____local}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("local"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {[\\"nil\\"] = ____nil}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("nil"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'nil'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {[\\"not\\"] = ____not}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("not"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'not'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {[\\"or\\"] = ____or}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("or"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'or'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {[\\"repeat\\"] = ____repeat}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("repeat"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'repeat'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {[\\"then\\"] = ____then}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("then"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'then'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {[\\"until\\"] = ____until}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("until"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'until'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {[\\"ɥɣɎɌͼƛಠ\\"] = _____265_263_24E_24C_37C_19B_CA0}"`;
+
+exports[`ambient identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(3,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("$$"): code 1`] = `"foo = _____24_24_24"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("$$"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("_̀ः٠‿"): code 1`] = `"foo = ______300_903_660_203F"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("_̀ः٠‿"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name '_̀ः٠‿'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("and"): code 1`] = `"foo = ____and"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("and"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'and'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("elseif"): code 1`] = `"foo = ____elseif"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("elseif"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'elseif'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("end"): code 1`] = `"foo = ____end"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("end"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'end'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("goto"): code 1`] = `"foo = ____goto"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("goto"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'goto'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("local"): code 1`] = `"foo = ____local"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("local"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("nil"): code 1`] = `"foo = ____nil"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("nil"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'nil'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("not"): code 1`] = `"foo = ____not"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("not"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'not'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("or"): code 1`] = `"foo = ____or"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("or"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'or'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("repeat"): code 1`] = `"foo = ____repeat"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("repeat"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'repeat'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("then"): code 1`] = `"foo = ____then"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("then"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'then'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("until"): code 1`] = `"foo = ____until"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("until"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'until'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = _____265_263_24E_24C_37C_19B_CA0"`;
+
+exports[`undeclared identifier must be a valid lua identifier ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,21): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("$$"): code 1`] = `"foo = {[\\"$$$\\"] = _____24_24_24}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("$$"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name '$$$'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): code 1`] = `"foo = {[\\"_̀ः٠‿\\"] = ______300_903_660_203F}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("_̀ः٠‿"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name '_̀ः٠‿'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("and"): code 1`] = `"foo = {[\\"and\\"] = ____and}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("and"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'and'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("elseif"): code 1`] = `"foo = {[\\"elseif\\"] = ____elseif}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("elseif"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'elseif'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("end"): code 1`] = `"foo = {[\\"end\\"] = ____end}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("end"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'end'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("goto"): code 1`] = `"foo = {[\\"goto\\"] = ____goto}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("goto"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'goto'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("local"): code 1`] = `"foo = {[\\"local\\"] = ____local}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("local"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'local'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("nil"): code 1`] = `"foo = {[\\"nil\\"] = ____nil}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("nil"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'nil'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("not"): code 1`] = `"foo = {[\\"not\\"] = ____not}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("not"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'not'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("or"): code 1`] = `"foo = {[\\"or\\"] = ____or}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("or"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'or'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("repeat"): code 1`] = `"foo = {[\\"repeat\\"] = ____repeat}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("repeat"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'repeat'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("then"): code 1`] = `"foo = {[\\"then\\"] = ____then}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("then"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'then'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("until"): code 1`] = `"foo = {[\\"until\\"] = ____until}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("until"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'until'. Ambient identifiers must be valid lua identifiers."`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): code 1`] = `"foo = {[\\"ɥɣɎɌͼƛಠ\\"] = _____265_263_24E_24C_37C_19B_CA0}"`;
+
+exports[`undeclared identifier must be a valid lua identifier (object literal shorthand) ("ɥɣɎɌͼƛಠ"): diagnostics 1`] = `"main.ts(2,27): error TSTL: Invalid ambient identifier name 'ɥɣɎɌͼƛಠ'. Ambient identifiers must be valid lua identifiers."`;

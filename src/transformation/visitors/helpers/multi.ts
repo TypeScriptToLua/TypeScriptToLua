@@ -9,8 +9,13 @@ import { transformArguments } from "../call";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import {
-    invalidMultiHelperFunctionUse,
+    invalidMultiReturnArrayBindingPatternElementInitializer,
+    invalidMultiReturnArrayLiteralElementInitializer,
+    invalidMultiReturnToEmptyPatternOrArrayLiteral,
+    invalidMultiReturnToNonArrayBindingPattern,
+    invalidMultiReturnToNonArrayLiteral,
     unsupportedMultiFunctionAssignment,
+    unsupportedMultiHelperFunctionPosition,
 } from "../../../transformation/utils/diagnostics";
 
 const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean => {
@@ -52,11 +57,15 @@ function transformMultiHelperCallArguments(
     context: TransformationContext,
     expression: ts.CallExpression
 ): lua.Expression[] | lua.Expression {
-    return isMultiHelperCallSignature(context, expression)
-        ? expression.arguments.length > 0
-            ? expression.arguments.map(e => context.transformExpression(e))
-            : lua.createNilLiteral(expression)
-        : context.transformExpression(expression);
+    if (!isMultiHelperCallSignature(context, expression)) {
+        return context.transformExpression(expression);
+    }
+
+    if (expression.arguments.length < 1) {
+        return lua.createNilLiteral(expression);
+    }
+
+    return expression.arguments.map(e => context.transformExpression(e));
 }
 
 export function transformMultiHelperVariableDeclaration(
@@ -66,24 +75,41 @@ export function transformMultiHelperVariableDeclaration(
     if (!declaration.initializer) return;
     if (!isMultiReturnCall(context, declaration.initializer)) return;
 
-    if (!ts.isArrayBindingPattern(declaration.name) || declaration.name.elements.length < 1) {
-        context.diagnostics.push(invalidMultiHelperFunctionUse(declaration.name));
+    if (!ts.isArrayBindingPattern(declaration.name)) {
+        context.diagnostics.push(invalidMultiReturnToNonArrayBindingPattern(declaration.name));
         return [];
     }
 
-    const leftIdentifiers = declaration.name.elements
-        .map(element => {
-            if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
-                return transformIdentifier(context, element.name);
-            }
+    if (declaration.name.elements.length < 1) {
+        context.diagnostics.push(invalidMultiReturnToEmptyPatternOrArrayLiteral(declaration.name));
+        return [];
+    }
 
-            if (ts.isOmittedExpression(element)) {
-                return lua.createAnonymousIdentifier(element);
-            }
+    const leftIdentifiers: lua.Identifier[] = [];
 
+    for (const element of declaration.name.elements) {
+        let expression: lua.Identifier | undefined;
+
+        if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+            if (element.initializer) {
+                context.diagnostics.push(invalidMultiReturnArrayBindingPatternElementInitializer(element));
+                continue;
+            } else {
+                expression = transformIdentifier(context, element.name);
+            }
+        }
+
+        if (ts.isOmittedExpression(element)) {
+            expression = lua.createAnonymousIdentifier(element);
+        }
+
+        if (!expression) {
             context.diagnostics.push(unsupportedMultiFunctionAssignment(element));
-        })
-        .filter(isNonNull);
+            continue;
+        }
+
+        leftIdentifiers.push(expression);
+    }
 
     const rightExpressions = transformMultiHelperCallArguments(context, declaration.initializer);
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
@@ -97,12 +123,18 @@ export function transformMultiHelperDestructuringAssignmentStatement(
     if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
     if (!isMultiReturnCall(context, statement.expression.right)) return;
 
-    if (
-        !ts.isArrayLiteralExpression(statement.expression.left) ||
-        statement.expression.left.elements.length < 1 ||
-        statement.expression.left.elements.some(ts.isBinaryExpression)
-    ) {
-        context.diagnostics.push(invalidMultiHelperFunctionUse(statement.expression.left));
+    if (!ts.isArrayLiteralExpression(statement.expression.left)) {
+        context.diagnostics.push(invalidMultiReturnToNonArrayLiteral(statement.expression.left));
+        return [];
+    }
+
+    if (statement.expression.left.elements.some(ts.isBinaryExpression)) {
+        context.diagnostics.push(invalidMultiReturnArrayLiteralElementInitializer(statement.expression.left));
+        return [];
+    }
+
+    if (statement.expression.left.elements.length < 1) {
+        context.diagnostics.push(invalidMultiReturnToEmptyPatternOrArrayLiteral(statement.expression.left));
         return [];
     }
 
@@ -141,7 +173,7 @@ export function findMultiHelperAssignmentViolations(
             if (valueSymbol) {
                 const declaration = valueSymbol.valueDeclaration;
                 if (declaration && isMultiHelperDeclaration(context)(declaration)) {
-                    context.diagnostics.push(invalidMultiHelperFunctionUse(element));
+                    context.diagnostics.push(unsupportedMultiHelperFunctionPosition(element));
                     return element;
                 }
             }

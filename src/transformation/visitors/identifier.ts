@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { invalidForRangeCall, invalidMultiHelperFunctionUse } from "../utils/diagnostics";
+import { invalidForRangeCall, unsupportedMultiHelperFunctionPosition } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
@@ -12,7 +12,7 @@ import { isMultiHelperNode } from "./helpers/multi";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiHelperNode(context, identifier)) {
-        context.diagnostics.push(invalidMultiHelperFunctionUse(identifier));
+        context.diagnostics.push(unsupportedMultiHelperFunctionPosition(identifier));
         return lua.createAnonymousIdentifier(identifier);
     }
 

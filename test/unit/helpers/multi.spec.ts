@@ -1,7 +1,12 @@
 import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
-import { invalidMultiHelperFunctionUse } from "../../../src/transformation/utils/diagnostics";
+import {
+    unsupportedMultiHelperFunctionPosition,
+    invalidMultiReturnToNonArrayBindingPattern,
+    invalidMultiReturnArrayBindingPatternElementInitializer,
+    invalidMultiReturnToEmptyPatternOrArrayLiteral,
+} from "../../../src/transformation/utils/diagnostics";
 
 const multiProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../helpers")],
@@ -25,21 +30,22 @@ test.each<[string, any]>([
         .expectToEqual(result);
 });
 
-test.each([
-    "$multi",
-    "$multi()",
-    "({ $multi });",
-    "[] = $multi()",
-    "const [] = $multi();",
-    "const a = $multi();",
-    "const {} = $multi();",
-    "([a] = $multi(1)) => {}",
-])("invalid $multi call (%s)", statement => {
+test.each<[string, number[]]>([
+    ["$multi", [unsupportedMultiHelperFunctionPosition.code]],
+    ["$multi()", [unsupportedMultiHelperFunctionPosition.code]],
+    ["({ $multi });", [unsupportedMultiHelperFunctionPosition.code]],
+    ["[] = $multi()", [invalidMultiReturnToEmptyPatternOrArrayLiteral.code]],
+    ["const [] = $multi();", [invalidMultiReturnToEmptyPatternOrArrayLiteral.code]],
+    ["const a = $multi();", [invalidMultiReturnToNonArrayBindingPattern.code]],
+    ["const {} = $multi();", [invalidMultiReturnToNonArrayBindingPattern.code]],
+    ["([a] = $multi(1)) => {}", [unsupportedMultiHelperFunctionPosition.code]],
+    ["const [a = 0] = $multi()", [invalidMultiReturnArrayBindingPatternElementInitializer.code]],
+])("invalid $multi call (%s)", (statement, diagnostics) => {
     util.testModule`
         ${statement}
     `
         .setOptions(multiProjectOptions)
-        .expectDiagnosticsToMatchSnapshot([invalidMultiHelperFunctionUse.code]);
+        .expectDiagnosticsToMatchSnapshot(diagnostics);
 });
 
 test.each<[string, any]>([

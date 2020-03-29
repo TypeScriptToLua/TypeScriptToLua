@@ -127,7 +127,27 @@ export const unsupportedVarDeclaration = createDiagnosticFactory(
 
 export const unknownHelperKind = createDiagnosticFactory((kind: string) => `Unknown helper kind "${kind}".`);
 
-export const invalidMultiHelperFunctionUse = createDiagnosticFactory("Invalid $multi() function use.");
+export const unsupportedMultiHelperFunctionPosition = createDiagnosticFactory(
+    "The $multi() function cannot be used here."
+);
+
+export const invalidMultiReturnToNonArrayBindingPattern = createDiagnosticFactory(
+    "Expected an array destructuring pattern."
+);
+
+export const invalidMultiReturnToNonArrayLiteral = createDiagnosticFactory("Expected an array literal.");
+
+export const invalidMultiReturnToEmptyPatternOrArrayLiteral = createDiagnosticFactory(
+    "There must be one or more elements specified here."
+);
+
+export const invalidMultiReturnArrayBindingPatternElementInitializer = createDiagnosticFactory(
+    "This array binding pattern cannot have initializers."
+);
+
+export const invalidMultiReturnArrayLiteralElementInitializer = createDiagnosticFactory(
+    "This array literal pattern cannot have initializers."
+);
 
 export const unsupportedMultiFunctionAssignment = createDiagnosticFactory(
     "Omitted expressions and BindingElements are expected here."

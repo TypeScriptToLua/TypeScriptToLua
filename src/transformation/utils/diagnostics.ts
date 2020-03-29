@@ -127,7 +127,7 @@ export const unsupportedVarDeclaration = createDiagnosticFactory(
 
 export const unknownHelperKind = createDiagnosticFactory((kind: string) => `Unknown helper kind "${kind}".`);
 
-export const invalidMultiHelperFunctionUse = createDiagnosticFactory("Invalid multi() function use.");
+export const invalidMultiHelperFunctionUse = createDiagnosticFactory("Invalid $multi() function use.");
 
 export const unsupportedMultiFunctionAssignment = createDiagnosticFactory(
     "Omitted expressions and BindingElements are expected here."

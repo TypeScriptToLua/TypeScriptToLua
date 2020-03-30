@@ -61,7 +61,7 @@ function transformMultiHelperCallArguments(
         return context.transformExpression(expression);
     }
 
-    if (expression.arguments.length < 1) {
+    if (expression.arguments.length === 0) {
         return lua.createNilLiteral(expression);
     }
 
@@ -88,27 +88,17 @@ export function transformMultiHelperVariableDeclaration(
     const leftIdentifiers: lua.Identifier[] = [];
 
     for (const element of declaration.name.elements) {
-        let expression: lua.Identifier | undefined;
-
-        if (ts.isBindingElement(element) && ts.isIdentifier(element.name)) {
+        if (ts.isBindingElement(element)) {
             if (element.initializer) {
                 context.diagnostics.push(invalidMultiReturnArrayBindingPatternElementInitializer(element));
-                continue;
+            } else if (ts.isIdentifier(element.name)) {
+                leftIdentifiers.push(transformIdentifier(context, element.name));
             } else {
-                expression = transformIdentifier(context, element.name);
+                context.diagnostics.push(unsupportedMultiFunctionAssignment(element));
             }
+        } else if (ts.isOmittedExpression(element)) {
+            leftIdentifiers.push(lua.createAnonymousIdentifier(element));
         }
-
-        if (ts.isOmittedExpression(element)) {
-            expression = lua.createAnonymousIdentifier(element);
-        }
-
-        if (!expression) {
-            context.diagnostics.push(unsupportedMultiFunctionAssignment(element));
-            continue;
-        }
-
-        leftIdentifiers.push(expression);
     }
 
     const rightExpressions = transformMultiHelperCallArguments(context, declaration.initializer);
@@ -138,13 +128,10 @@ export function transformMultiHelperDestructuringAssignmentStatement(
         return [];
     }
 
-    const transformLeft = (expression: ts.Expression): lua.AssignmentLeftHandSideExpression => {
-        if (ts.isOmittedExpression(expression)) {
-            return lua.createAnonymousIdentifier(expression);
-        } else {
-            return transformAssignmentLeftHandSideExpression(context, expression);
-        }
-    };
+    const transformLeft = (expression: ts.Expression): lua.AssignmentLeftHandSideExpression =>
+        ts.isOmittedExpression(expression)
+            ? lua.createAnonymousIdentifier(expression)
+            : transformAssignmentLeftHandSideExpression(context, expression);
 
     const leftIdentifiers = statement.expression.left.elements.map(transformLeft);
 

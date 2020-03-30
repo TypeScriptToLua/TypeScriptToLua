@@ -65,9 +65,7 @@ const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = ex
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
     const violations = findMultiHelperAssignmentViolations(context, expression);
     if (violations.length > 0) {
-        violations.forEach(element => {
-            context.diagnostics.push(unsupportedMultiHelperFunctionPosition(element));
-        });
+        context.diagnostics.push(...violations.map(e => unsupportedMultiHelperFunctionPosition(e)));
         return lua.createNilLiteral(expression);
     }
 

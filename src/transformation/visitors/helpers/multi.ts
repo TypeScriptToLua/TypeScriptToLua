@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import * as utils from "../../utils/helpers";
+import * as helpers from "../../utils/helpers";
 import { isNonNull } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformAssignmentLeftHandSideExpression } from "../binary-expression/assignments";
@@ -19,7 +19,7 @@ import {
 } from "../../../transformation/utils/diagnostics";
 
 const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean => {
-    return utils.getHelperFileKind(context, declaration.getSourceFile()) === utils.HelperKind.Multi;
+    return helpers.getHelperFileKind(context, declaration.getSourceFile()) === helpers.HelperKind.Multi;
 };
 
 function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {

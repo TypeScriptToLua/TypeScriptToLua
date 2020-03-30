@@ -66,7 +66,6 @@ export function transformConstructorDeclaration(
 
     // Add in instance field declarations
     for (const declaration of constructorFieldsDeclarations) {
-        // TypeScript error: A parameter property may not be declared using a binding pattern
         if (ts.isIdentifier(declaration.name)) {
             // self.declarationName = declarationName
             const assignment = lua.createAssignmentStatement(
@@ -75,6 +74,7 @@ export function transformConstructorDeclaration(
             );
             bodyWithFieldInitializers.push(assignment);
         }
+        // else { TypeScript error: A parameter property may not be declared using a binding pattern }
     }
 
     bodyWithFieldInitializers.push(...classInstanceFields);

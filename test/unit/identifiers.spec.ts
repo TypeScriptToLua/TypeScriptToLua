@@ -784,7 +784,5 @@ test("lua keyword as in constructor assignment", () => {
         }
         
         export const result = new A("42").error;
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });

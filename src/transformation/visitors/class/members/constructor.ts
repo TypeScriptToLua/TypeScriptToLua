@@ -70,7 +70,7 @@ export function transformConstructorDeclaration(
             // self.declarationName = declarationName
             const assignment = lua.createAssignmentStatement(
                 lua.createTableIndexExpression(createSelfIdentifier(), lua.createStringLiteral(declaration.name.text)),
-                transformIdentifier(context, declaration.name as ts.Identifier)
+                transformIdentifier(context, declaration.name)
             );
             bodyWithFieldInitializers.push(assignment);
         }

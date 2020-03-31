@@ -758,31 +758,33 @@ test("exported variable with lua keyword as name is not renamed", () => {
     expect(util.transpileExecuteAndReturnExport(code, "print")).toBe("foobar");
 });
 
-// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/846
-test("lua keyword as class method", () => {
-    util.testModule`
-        class MyClass {
-            error() { return "Error!"; }
-        }
-        export const result = new MyClass().error();
-    `.expectToMatchJsResult();
-});
+describe.each(["error", ...invalidLuaCharNames])("risky variable name %s", variableName => {
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/846
+    test("as class method", () => {
+        util.testModule`
+            class MyClass {
+                ${variableName}() { return "Error!"; }
+            }
+            export const result = new MyClass().${variableName}();
+        `.expectToMatchJsResult();
+    });
 
-// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/833
-test("lua keyword as object method", () => {
-    util.testModule`
-        const obj = { error: () => "Error!" };
-        export const result = obj.error();
-    `.expectToMatchJsResult();
-});
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/833
+    test("as object method", () => {
+        util.testModule`
+            const obj = { ${variableName}: () => "Error!" };
+            export const result = obj.${variableName}();
+        `.expectToMatchJsResult();
+    });
 
-// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/789
-test("lua keyword as in constructor assignment", () => {
-    util.testModule`
-        class A {
-            constructor(public error: string){}
-        }
-        
-        export const result = new A("42").error;
-    `.expectToMatchJsResult();
+    // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/789
+    test("in constructor assignment", () => {
+        util.testModule`
+            class A {
+                constructor(public ${variableName}: string){}
+            }
+            
+            export const result = new A("42").${variableName};
+        `.debug().expectToMatchJsResult();
+    });
 });

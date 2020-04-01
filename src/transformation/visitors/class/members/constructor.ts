@@ -1,11 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
-import { createSelfIdentifier } from "../../../utils/lua-ast";
-import { transformParameters, transformFunctionBodyStatements, transformFunctionBodyHeader } from "../../function";
 import { TransformationContext } from "../../../context";
+import { createSelfIdentifier } from "../../../utils/lua-ast";
+import { popScope, pushScope, ScopeType } from "../../../utils/scope";
+import { transformFunctionBodyHeader, transformFunctionBodyStatements, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
-import { pushScope, ScopeType, popScope } from "../../../utils/scope";
 
 export function createConstructorName(className: lua.Identifier): lua.TableIndexExpression {
     return lua.createTableIndexExpression(
@@ -66,13 +66,15 @@ export function transformConstructorDeclaration(
 
     // Add in instance field declarations
     for (const declaration of constructorFieldsDeclarations) {
-        const declarationName = transformIdentifier(context, declaration.name as ts.Identifier);
-        // self.declarationName = declarationName
-        const assignment = lua.createAssignmentStatement(
-            lua.createTableIndexExpression(createSelfIdentifier(), lua.createStringLiteral(declarationName.text)),
-            declarationName
-        );
-        bodyWithFieldInitializers.push(assignment);
+        if (ts.isIdentifier(declaration.name)) {
+            // self.declarationName = declarationName
+            const assignment = lua.createAssignmentStatement(
+                lua.createTableIndexExpression(createSelfIdentifier(), lua.createStringLiteral(declaration.name.text)),
+                transformIdentifier(context, declaration.name)
+            );
+            bodyWithFieldInitializers.push(assignment);
+        }
+        // else { TypeScript error: A parameter property may not be declared using a binding pattern }
     }
 
     bodyWithFieldInitializers.push(...classInstanceFields);

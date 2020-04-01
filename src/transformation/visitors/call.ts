@@ -10,7 +10,6 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { transformIdentifier } from "./identifier";
 import { transformLuaTableCallExpression } from "./lua-table";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
@@ -117,7 +116,7 @@ export function transformContextualCallExpression(
 
         return lua.createMethodCallExpression(
             table,
-            transformIdentifier(context, left.name),
+            lua.createIdentifier(left.name.text, left.name),
             transformedArguments,
             node
         );

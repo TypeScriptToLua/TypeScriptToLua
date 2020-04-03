@@ -40,23 +40,28 @@ import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
-    context: TransformationContext,
-    isDefaultExport = false
+    context: TransformationContext
 ): lua.Expression {
-    let className: lua.Identifier;
-    if (expression.name) {
-        className = transformIdentifier(context, expression.name);
-    } else if (isDefaultExport) {
-        className = createDefaultExportIdentifier(expression);
-    } else {
-        className = lua.createAnonymousIdentifier();
-    }
-
     pushScope(context, ScopeType.Function);
-    const classDeclaration = unwrapVisitorResult(transformClassDeclaration(expression, context, className));
+    const { statements, name } = transformClassLikeDeclaration(expression, context);
     popScope(context);
 
-    return createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
+    return createImmediatelyInvokedFunctionExpression(unwrapVisitorResult(statements), name, expression);
+}
+
+export function transformClassDeclaration(
+    declaration: ts.ClassLikeDeclaration,
+    context: TransformationContext
+): OneToManyVisitorResult<lua.Statement> {
+    // If declaration is a default export, transform to export variable assignment instead
+    if (hasDefaultExportModifier(declaration)) {
+        const left = createExportedIdentifier(context, createDefaultExportIdentifier(declaration));
+        const right = transformClassAsExpression(declaration, context);
+        return lua.createAssignmentStatement(left, right, declaration);
+    }
+
+    const { statements } = transformClassLikeDeclaration(declaration, context);
+    return statements;
 }
 
 const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
@@ -65,21 +70,16 @@ interface ClassSuperInfo {
     extendedTypeNode?: ts.ExpressionWithTypeArguments;
 }
 
-export function transformClassDeclaration(
+function transformClassLikeDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
     nameOverride?: lua.Identifier
-): OneToManyVisitorResult<lua.Statement> {
+): { statements: OneToManyVisitorResult<lua.Statement>; name: lua.Identifier } {
     let className: lua.Identifier;
     if (nameOverride !== undefined) {
         className = nameOverride;
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
-    } else if (hasDefaultExportModifier(classDeclaration)) {
-        const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
-        const right = transformClassAsExpression(classDeclaration, context, true);
-
-        return lua.createAssignmentStatement(left, right, classDeclaration);
     } else {
         // TypeScript error
         className = lua.createAnonymousIdentifier();
@@ -320,7 +320,7 @@ export function transformClassDeclaration(
 
     superInfo.pop();
 
-    return result;
+    return { statements: result, name: className };
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {

@@ -768,20 +768,30 @@ test("missing declaration name", () => {
     `.expectDiagnosticsToMatchSnapshot([1211]);
 });
 
+test("default exported name class has correct name property", () => {
+    util.testModule`
+        export default class Test { static method() { return true; } }
+    `
+        .setReturnExport("default.name")
+        .expectToMatchJsResult();
+});
+
+test("default exported anonymous class has 'default' name property", () => {
+    util.testModule`
+        export default class { static method() { return true; } }
+    `
+        .setReturnExport("default.name")
+        .expectToEqual("default");
+});
+
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/584
 test("constructor class name available with constructor", () => {
     util.testModule`
-        function Numbers(...message_type_args: number[]) {
-            return <T extends new(...args: any[]) => {}>(constructor: T) => {
-                return class extends constructor {
-                    protected numbers = message_type_args;
-                };
-            };
-        }
+        const decorator = <T extends new (...args: any[]) => any>(constructor: T) => class extends constructor {};
         
-        @Numbers(10, 20)
+        @decorator
         class MyClass {}
-        
-        export const result = new MyClass().constructor.name;
+
+        export const className = new MyClass().constructor.name;
     `.expectToMatchJsResult();
 });

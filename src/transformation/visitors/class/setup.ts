@@ -17,7 +17,6 @@ export function createClassSetup(
     statement: ts.ClassLikeDeclarationBase,
     className: lua.Identifier,
     localClassName: lua.Identifier,
-    classNameText: string,
     extendsType?: ts.Type
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
@@ -56,7 +55,7 @@ export function createClassSetup(
     result.push(
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), lua.createStringLiteral("name")),
-            lua.createStringLiteral(classNameText),
+            getReflectionClassName(context, statement, className),
             statement
         )
     );
@@ -78,4 +77,24 @@ export function createClassSetup(
     }
 
     return result;
+}
+
+export function getReflectionClassName(
+    context: TransformationContext,
+    declaration: ts.ClassLikeDeclarationBase,
+    className: lua.Identifier
+): lua.Expression {
+    if (declaration.name) {
+        return lua.createStringLiteral(declaration.name.text);
+    } else if (ts.isVariableDeclaration(declaration.parent) && ts.isIdentifier(declaration.parent.name)) {
+        return lua.createStringLiteral(declaration.parent.name.text);
+    } else if (hasDefaultExportModifier(declaration)) {
+        return lua.createStringLiteral("default");
+    }
+
+    if (getExtendedNode(context, declaration)) {
+        return lua.createTableIndexExpression(className, lua.createStringLiteral("name"));
+    }
+
+    return lua.createStringLiteral("");
 }

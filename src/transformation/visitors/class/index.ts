@@ -34,7 +34,7 @@ import { createConstructorName, transformConstructorDeclaration } from "./member
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
-import { createClassSetup, getReflectionClassName } from "./setup";
+import { createClassSetup } from "./setup";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 
 export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
@@ -190,16 +190,7 @@ function transformClassLikeDeclaration(
     }
 
     if (!isExtension && !isMetaExtension) {
-        result.push(
-            ...createClassSetup(
-                context,
-                classDeclaration,
-                className,
-                localClassName,
-                getReflectionClassName(classDeclaration, className, context),
-                extendedType
-            )
-        );
+        result.push(...createClassSetup(context, classDeclaration, className, localClassName, extendedType));
     } else {
         for (const f of instanceFields) {
             const fieldName = transformPropertyName(context, f.name);

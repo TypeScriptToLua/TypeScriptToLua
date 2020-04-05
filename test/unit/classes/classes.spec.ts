@@ -767,3 +767,21 @@ test("missing declaration name", () => {
         class {}
     `.expectDiagnosticsToMatchSnapshot([1211]);
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/584
+test("constructor class name available with constructor", () => {
+    util.testModule`
+        function Numbers(...message_type_args: number[]) {
+            return <T extends new(...args: any[]) => {}>(constructor: T) => {
+                return class extends constructor {
+                    protected numbers = message_type_args;
+                };
+            };
+        }
+        
+        @Numbers(10, 20)
+        class MyClass {}
+        
+        export const result = new MyClass().constructor.name;
+    `.expectToMatchJsResult();
+});

@@ -7,9 +7,9 @@ import {
     extensionAndMetaExtensionConflict,
     extensionCannotExport,
     extensionCannotExtend,
-    metaExtensionMissingExtends,
-    luaTableMustBeAmbient,
     luaTableCannotBeExtended,
+    luaTableMustBeAmbient,
+    metaExtensionMissingExtends,
 } from "../../utils/diagnostics";
 import {
     createDefaultExportIdentifier,
@@ -21,7 +21,6 @@ import {
 import {
     createImmediatelyInvokedFunctionExpression,
     createSelfIdentifier,
-    OneToManyVisitorResult,
     unwrapVisitorResult,
 } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
@@ -35,8 +34,22 @@ import { createConstructorName, transformConstructorDeclaration } from "./member
 import { transformClassInstanceFields } from "./members/fields";
 import { transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
-import { createClassSetup } from "./setup";
+import { createClassSetup, getReflectionClassName } from "./setup";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
+
+export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
+    // If declaration is a default export, transform to export variable assignment instead
+    if (hasDefaultExportModifier(declaration)) {
+        const left = createExportedIdentifier(context, createDefaultExportIdentifier(declaration));
+        const right = transformClassAsExpression(declaration, context);
+        return [lua.createAssignmentStatement(left, right, declaration)];
+    }
+
+    const { statements } = transformClassLikeDeclaration(declaration, context);
+    return statements;
+};
+
+export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
@@ -49,21 +62,6 @@ export function transformClassAsExpression(
     return createImmediatelyInvokedFunctionExpression(unwrapVisitorResult(statements), name, expression);
 }
 
-export function transformClassDeclaration(
-    declaration: ts.ClassLikeDeclaration,
-    context: TransformationContext
-): OneToManyVisitorResult<lua.Statement> {
-    // If declaration is a default export, transform to export variable assignment instead
-    if (hasDefaultExportModifier(declaration)) {
-        const left = createExportedIdentifier(context, createDefaultExportIdentifier(declaration));
-        const right = transformClassAsExpression(declaration, context);
-        return lua.createAssignmentStatement(left, right, declaration);
-    }
-
-    const { statements } = transformClassLikeDeclaration(declaration, context);
-    return statements;
-}
-
 const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
 interface ClassSuperInfo {
     className: lua.Identifier;
@@ -74,7 +72,7 @@ function transformClassLikeDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
     nameOverride?: lua.Identifier
-): { statements: OneToManyVisitorResult<lua.Statement>; name: lua.Identifier } {
+): { statements: lua.Statement[]; name: lua.Identifier } {
     let className: lua.Identifier;
     if (nameOverride !== undefined) {
         className = nameOverride;
@@ -198,7 +196,7 @@ function transformClassLikeDeclaration(
                 classDeclaration,
                 className,
                 localClassName,
-                getReflectionClassName(classDeclaration),
+                getReflectionClassName(classDeclaration, className, context),
                 extendedType
             )
         );
@@ -348,17 +346,3 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
 
     return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
 };
-
-export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
-
-function getReflectionClassName(declaration: ts.ClassLikeDeclaration): string {
-    if (declaration.name) {
-        return declaration.name.text;
-    } else if (ts.isVariableDeclaration(declaration.parent) && ts.isIdentifier(declaration.parent.name)) {
-        return declaration.parent.name.text;
-    } else if (hasDefaultExportModifier(declaration)) {
-        return "default";
-    } else {
-        return "";
-    }
-}

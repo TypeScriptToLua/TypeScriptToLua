@@ -50,7 +50,7 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
 
 // It's also used directly in class transform to add descriptors to the prototype
 function __TS__SetDescriptor(this: void, metatable: Metatable, prop: string, descriptor: PropertyDescriptor): void {
-    if (!metatable._descriptors) metatable._descriptors = {};
+    if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
     metatable._descriptors[prop] = descriptor;
 
     if (descriptor.get) metatable.__index = ____descriptorIndex;

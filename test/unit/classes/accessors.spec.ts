@@ -66,6 +66,26 @@ test("get accessor override accessor", () => {
     `.expectToMatchJsResult();
 });
 
+test("get accessor override accessor (multiple)", () => {
+    util.testFunction`
+        class Foo {
+            _foo = "foo";
+            get foo() { return this._foo; }
+        }
+        class Bar extends Foo {
+            _bar = "bar";
+            get foo() { return this._bar; }
+        }
+        class Baz extends Foo {
+            _baz = "baz";
+            get foo() { return this._baz; }
+        }
+        const bar = new Bar();
+        const baz = new Baz();
+        return bar.foo + baz.foo;
+    `.expectToMatchJsResult();
+});
+
 test("get accessor from interface", () => {
     util.testFunction`
         class Foo {

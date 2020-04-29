@@ -129,7 +129,27 @@ export class LuaPrinter {
     private sourceFile: string;
 
     public constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
-        this.sourceFile = path.basename(fileName);
+        // Determine file name used in source map
+        const fileNameOnly = path.basename(fileName);
+        if (options.outDir) {
+            const fileDir = path.dirname(fileName);
+            const relativeFileDir = path.relative(this.options.rootDir || process.cwd(), fileDir);
+            if (options.sourceRoot) {
+                // When sourceRoot is specified, just use relative path inside rootDir
+                this.sourceFile = path.join(relativeFileDir, fileNameOnly);
+            } else {
+                // Calculate relative path from rootDir to outDir
+                const absoluteOutDir = path.resolve(options.outDir, relativeFileDir);
+                const relativeOutDir = path.relative(absoluteOutDir, fileDir);
+                this.sourceFile = path.join(relativeOutDir, fileNameOnly);
+            }
+            if (path.sep !== "/") {
+                // We want forward slashes, even in windows
+                this.sourceFile = this.sourceFile.replace(new RegExp(`\\${path.sep}`, "g"), "/");
+            }
+        } else {
+            this.sourceFile = fileNameOnly; // File will be in same dir as source
+        }
     }
 
     public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): PrintResult {
@@ -138,10 +158,10 @@ export class LuaPrinter {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
-        const sourceRoot =
-            this.options.sourceRoot ||
-            (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
-
+        const sourceRoot = this.options.sourceRoot
+            ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
+              this.options.sourceRoot.replace(/[\\\/]+$/, "") + "/"
+            : "";
         const rootSourceNode = this.printImplementation(block, luaLibFeatures);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
 

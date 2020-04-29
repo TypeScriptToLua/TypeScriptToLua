@@ -29,16 +29,16 @@ Large projects written in Lua can become hard to maintain and make it easy to ma
 
 ## Getting Started
 
-To install TypeScriptToLua add a `typescript-to-lua` npm package:
+To install TypeScriptToLua add the `typescript-to-lua` npm package:
 
 ```bash
 $ npm install -D typescript-to-lua
 ```
 
-This package includes a `tstl` command line application, which can be used similarly to `tsc`:
+This package includes the `tstl` command line application, which can be used similarly to `tsc`:
 
 ```
 $ npx tstl
 ```
 
-For more information, check out [Getting Started](https://typescripttolua.github.io/docs/getting-started) page in our documentation.
+For more information, check out [Getting Started](https://typescripttolua.github.io/docs/getting-started) in our documentation.

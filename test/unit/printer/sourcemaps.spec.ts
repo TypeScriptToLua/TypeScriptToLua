@@ -164,8 +164,8 @@ test.each([
     {
         fileName: "/proj/src/foo.ts",
         config: { outDir: "/proj/dst" },
-        mapSource: "foo.ts",
-        fullSource: "foo.ts",
+        mapSource: "../src/foo.ts",
+        fullSource: "../src/foo.ts",
     },
     {
         fileName: "/proj/src/foo.ts",

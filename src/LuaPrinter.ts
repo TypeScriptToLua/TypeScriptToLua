@@ -6,7 +6,7 @@ import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
-import { intersperse, trimExtension } from "./utils";
+import { intersperse, trimExtension, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -87,8 +87,7 @@ export interface PrintResult {
 
 export function createPrinter(printers: Printer[]): Printer {
     if (printers.length === 0) {
-        return (program, emitHost, fileName, ...args) =>
-            new LuaPrinter(program.getCompilerOptions(), emitHost, fileName).print(...args);
+        return (program, emitHost, fileName, ...args) => new LuaPrinter(emitHost, program, fileName).print(...args);
     } else if (printers.length === 1) {
         return printers[0];
     } else {
@@ -127,28 +126,25 @@ export class LuaPrinter {
 
     private currentIndent = "";
     private sourceFile: string;
+    private options: CompilerOptions;
 
-    public constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
-        // Determine file name used in source map
-        const fileNameOnly = path.basename(fileName);
-        if (options.outDir) {
-            const fileDir = path.dirname(fileName);
-            const relativeFileDir = path.relative(this.options.rootDir || process.cwd(), fileDir);
-            if (options.sourceRoot) {
+    public constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
+        this.options = program.getCompilerOptions();
+
+        if (this.options.outDir) {
+            const relativeFileName = path.relative(program.getCommonSourceDirectory(), fileName);
+            if (this.options.sourceRoot) {
                 // When sourceRoot is specified, just use relative path inside rootDir
-                this.sourceFile = path.join(relativeFileDir, fileNameOnly);
+                this.sourceFile = relativeFileName;
             } else {
                 // Calculate relative path from rootDir to outDir
-                const absoluteOutDir = path.resolve(options.outDir, relativeFileDir);
-                const relativeOutDir = path.relative(absoluteOutDir, fileDir);
-                this.sourceFile = path.join(relativeOutDir, fileNameOnly);
+                const outputPath = path.resolve(this.options.outDir, relativeFileName);
+                this.sourceFile = path.relative(path.dirname(outputPath), fileName);
             }
-            if (path.sep !== "/") {
-                // We want forward slashes, even in windows
-                this.sourceFile = this.sourceFile.replace(new RegExp(`\\${path.sep}`, "g"), "/");
-            }
+            // We want forward slashes, even in windows
+            this.sourceFile = normalizeSlashes(this.sourceFile);
         } else {
-            this.sourceFile = fileNameOnly; // File will be in same dir as source
+            this.sourceFile = path.basename(fileName); // File will be in same dir as source
         }
     }
 

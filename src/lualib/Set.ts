@@ -102,7 +102,7 @@ Set = class Set<T> {
     }
 
     public entries(): IterableIterator<[T, T]> {
-        const { nextKey } = this;
+        const nextKey = this.nextKey;
         let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[T, T]> {
@@ -117,7 +117,7 @@ Set = class Set<T> {
     }
 
     public keys(): IterableIterator<T> {
-        const { nextKey } = this;
+        const nextKey = this.nextKey;
         let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {
@@ -132,7 +132,7 @@ Set = class Set<T> {
     }
 
     public values(): IterableIterator<T> {
-        const { nextKey } = this;
+        const nextKey = this.nextKey;
         let key: T = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<T> {

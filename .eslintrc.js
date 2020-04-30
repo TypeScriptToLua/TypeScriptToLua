@@ -103,14 +103,6 @@ module.exports = {
         "no-delete-var": ["error"],
         "no-label-var": ["error"],
         yoda: ["error"],
-        "prefer-destructuring": [
-            "error",
-            {
-                VariableDeclarator: { array: false, object: true },
-                AssignmentExpression: { array: false, object: false },
-            },
-            { enforceForRenamedProperties: false },
-        ],
         "prefer-numeric-literals": ["error"],
         "no-lonely-if": ["error"],
         "prefer-rest-params": ["error"],

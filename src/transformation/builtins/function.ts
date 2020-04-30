@@ -9,7 +9,7 @@ export function transformFunctionPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.CallExpression | undefined {
-    const { expression } = node;
+    const expression = node.expression;
     const callerType = context.checker.getTypeAtLocation(expression.expression);
     if (getFunctionContextType(context, callerType) === ContextType.Void) {
         context.diagnostics.push(unsupportedSelfFunctionConversion(node));

@@ -76,7 +76,7 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
 
     if (sourceFile.statements.length > 0) {
         // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
-        const { jsDoc } = sourceFile.statements[0];
+        const jsDoc = sourceFile.statements[0].jsDoc;
         if (jsDoc) {
             for (const tag of jsDoc.flatMap(x => x.tags ?? [])) {
                 const tagName = tag.tagName.text;

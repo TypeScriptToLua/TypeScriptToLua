@@ -9,7 +9,7 @@ export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression
 ): lua.CallExpression | undefined {
-    const { expression } = node;
+    const expression = node.expression;
     const signature = context.checker.getResolvedSignature(node);
     const params = transformArguments(context, node.arguments, signature);
     const caller = context.transformExpression(expression.expression);

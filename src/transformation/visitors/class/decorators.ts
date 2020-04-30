@@ -16,13 +16,13 @@ export function createConstructorDecorationStatement(
             ? addExportToIdentifier(context, transformIdentifier(context, declaration.name))
             : lua.createAnonymousIdentifier();
 
-    const { decorators } = declaration;
+    const decorators = declaration.decorators;
     if (!decorators) {
         return undefined;
     }
 
     const decoratorExpressions = decorators.map(decorator => {
-        const { expression } = decorator;
+        const expression = decorator.expression;
         const type = context.checker.getTypeAtLocation(expression);
         const callContext = getFunctionContextType(context, type);
         if (callContext === ContextType.Void) {

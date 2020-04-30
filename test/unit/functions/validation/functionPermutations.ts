@@ -191,6 +191,12 @@ export const noSelfTestFunctions: TestFunction[] = [
         definition: `/** @noSelf */ namespace NoSelfFuncNs { export function noSelfNsFunc(s: string) { return s; } }`,
     },
     {
+        value: "NoSelfFuncNs.noSelfNsFunc",
+        definition: `namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }`,
+    },
+    {
         value: "NoSelfFuncNestedNs.NestedNs.noSelfNestedNsFunc",
         definition: `/** @noSelf */ namespace NoSelfFuncNestedNs {
                 export namespace NestedNs { export function noSelfNestedNsFunc(s: string) { return s; } }
@@ -211,6 +217,14 @@ export const noSelfTestFunctions: TestFunction[] = [
     {
         value: "noSelfMethodClass.noSelfMethod",
         definition: `/** @noSelf */ class NoSelfMethodClass { noSelfMethod(s: string): string { return s; } }
+            const noSelfMethodClass = new NoSelfMethodClass();`,
+    },
+    {
+        value: "noSelfMethodClass.noSelfMethod",
+        definition: `class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
             const noSelfMethodClass = new NoSelfMethodClass();`,
     },
     {
@@ -251,6 +265,16 @@ export const noSelfTestFunctions: TestFunction[] = [
     {
         value: "noSelfMethodInterface.noSelfMethod",
         definition: `/** @noSelf */ interface NoSelfMethodInterface { noSelfMethod(s: string): string; }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };`,
+    },
+    {
+        value: "noSelfMethodInterface.noSelfMethod",
+        definition: `interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
             const noSelfMethodInterface: NoSelfMethodInterface = {
                 noSelfMethod: function(s: string): string { return s; }
             };`,

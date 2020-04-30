@@ -179,6 +179,18 @@ exports[`Invalid function argument ({"definition": "class NoSelfAnonFuncNSMerged
 exports[`Invalid function argument ({"definition": "class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedClass.nsFunc"}): diagnostics 2`] = `"main.ts(5,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
+exports[`Invalid function argument ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 1`] = `"main.ts(8,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function argument ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 2`] = `"main.ts(8,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
 exports[`Invalid function argument ({"definition": "class StaticFuncPropClass {
                 static staticFuncProp: (this: any, s: string) => string = s => s;
             }", "value": "StaticFuncPropClass.staticFuncProp"}): diagnostics 1`] = `"main.ts(6,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -236,6 +248,22 @@ exports[`Invalid function argument ({"definition": "interface FuncPropInterface 
 
 exports[`Invalid function argument ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
             const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+
+exports[`Invalid function argument ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 1`] = `"main.ts(10,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function argument ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 2`] = `"main.ts(10,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function argument ({"definition": "interface VoidFuncPropInterface {
                 voidFuncProp: (this: void, s: string) => string;
@@ -300,6 +328,14 @@ exports[`Invalid function argument ({"definition": "namespace NoSelfAnonFuncNSMe
 
 exports[`Invalid function argument ({"definition": "namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf"}): diagnostics 2`] = `"main.ts(5,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function argument ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 1`] = `"main.ts(6,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function argument ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 2`] = `"main.ts(6,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function argument ({"definition": "namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -535,6 +571,18 @@ exports[`Invalid function assignment ({"definition": "class NoSelfAnonFuncNSMerg
 exports[`Invalid function assignment ({"definition": "class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedClass.nsFunc"}): diagnostics 2`] = `"main.ts(5,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
+exports[`Invalid function assignment ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 1`] = `"main.ts(8,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function assignment ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 2`] = `"main.ts(8,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
 exports[`Invalid function assignment ({"definition": "class StaticFuncPropClass {
                 static staticFuncProp: (this: any, s: string) => string = s => s;
             }", "value": "StaticFuncPropClass.staticFuncProp"}): diagnostics 1`] = `"main.ts(6,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -592,6 +640,22 @@ exports[`Invalid function assignment ({"definition": "interface FuncPropInterfac
 
 exports[`Invalid function assignment ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
             const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+
+exports[`Invalid function assignment ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 1`] = `"main.ts(10,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function assignment ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 2`] = `"main.ts(10,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function assignment ({"definition": "interface VoidFuncPropInterface {
                 voidFuncProp: (this: void, s: string) => string;
@@ -656,6 +720,14 @@ exports[`Invalid function assignment ({"definition": "namespace NoSelfAnonFuncNS
 
 exports[`Invalid function assignment ({"definition": "namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf"}): diagnostics 2`] = `"main.ts(5,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function assignment ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 1`] = `"main.ts(6,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function assignment ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 2`] = `"main.ts(6,18): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function assignment ({"definition": "namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf"}): diagnostics 1`] = `"main.ts(5,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -891,6 +963,18 @@ exports[`Invalid function generic argument ({"definition": "class NoSelfAnonFunc
 exports[`Invalid function generic argument ({"definition": "class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedClass.nsFunc"}): diagnostics 2`] = `"main.ts(5,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
+exports[`Invalid function generic argument ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 1`] = `"main.ts(8,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function generic argument ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 2`] = `"main.ts(8,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
 exports[`Invalid function generic argument ({"definition": "class StaticFuncPropClass {
                 static staticFuncProp: (this: any, s: string) => string = s => s;
             }", "value": "StaticFuncPropClass.staticFuncProp"}): diagnostics 1`] = `"main.ts(6,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -948,6 +1032,22 @@ exports[`Invalid function generic argument ({"definition": "interface FuncPropIn
 
 exports[`Invalid function generic argument ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
             const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+
+exports[`Invalid function generic argument ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 1`] = `"main.ts(10,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function generic argument ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 2`] = `"main.ts(10,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function generic argument ({"definition": "interface VoidFuncPropInterface {
                 voidFuncProp: (this: void, s: string) => string;
@@ -1012,6 +1112,14 @@ exports[`Invalid function generic argument ({"definition": "namespace NoSelfAnon
 
 exports[`Invalid function generic argument ({"definition": "namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf"}): diagnostics 2`] = `"main.ts(5,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function generic argument ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 1`] = `"main.ts(6,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function generic argument ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 2`] = `"main.ts(6,27): error TSTL: Unable to convert function with no 'this' parameter to function 'fn' with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function generic argument ({"definition": "namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -1215,6 +1323,18 @@ exports[`Invalid function return ({"definition": "class NoSelfAnonFuncNSMergedCl
 exports[`Invalid function return ({"definition": "class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedClass.nsFunc"}): diagnostics 2`] = `"main.ts(5,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
+exports[`Invalid function return ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 1`] = `"main.ts(8,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function return ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 2`] = `"main.ts(8,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
 exports[`Invalid function return ({"definition": "class StaticFuncPropClass {
                 static staticFuncProp: (this: any, s: string) => string = s => s;
             }", "value": "StaticFuncPropClass.staticFuncProp"}): diagnostics 1`] = `"main.ts(6,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -1272,6 +1392,22 @@ exports[`Invalid function return ({"definition": "interface FuncPropInterface { 
 
 exports[`Invalid function return ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
             const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+
+exports[`Invalid function return ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 1`] = `"main.ts(10,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function return ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 2`] = `"main.ts(10,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function return ({"definition": "interface VoidFuncPropInterface {
                 voidFuncProp: (this: void, s: string) => string;
@@ -1336,6 +1472,14 @@ exports[`Invalid function return ({"definition": "namespace NoSelfAnonFuncNSMerg
 
 exports[`Invalid function return ({"definition": "namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf"}): diagnostics 2`] = `"main.ts(5,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function return ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 1`] = `"main.ts(6,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function return ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 2`] = `"main.ts(6,17): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function return ({"definition": "namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf"}): diagnostics 1`] = `"main.ts(5,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -1579,6 +1723,18 @@ exports[`Invalid function variable declaration ({"definition": "class NoSelfAnon
 exports[`Invalid function variable declaration ({"definition": "class NoSelfAnonFuncNSMergedClass { method(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedClass { export function nsFunc(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedClass.nsFunc"}): diagnostics 2`] = `"main.ts(4,58): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
+exports[`Invalid function variable declaration ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 1`] = `"main.ts(7,47): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function variable declaration ({"definition": "class NoSelfMethodClass { 
+                /** @noSelf */
+                noSelfMethod(s: string): string { return s; } 
+            }
+            const noSelfMethodClass = new NoSelfMethodClass();", "value": "noSelfMethodClass.noSelfMethod"}): diagnostics 2`] = `"main.ts(7,58): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
 exports[`Invalid function variable declaration ({"definition": "class StaticFuncPropClass {
                 static staticFuncProp: (this: any, s: string) => string = s => s;
             }", "value": "StaticFuncPropClass.staticFuncProp"}): diagnostics 1`] = `"main.ts(5,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
@@ -1636,6 +1792,22 @@ exports[`Invalid function variable declaration ({"definition": "interface FuncPr
 
 exports[`Invalid function variable declaration ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
             const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(4,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+
+exports[`Invalid function variable declaration ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 1`] = `"main.ts(9,47): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function variable declaration ({"definition": "interface NoSelfMethodInterface { 
+                /** @noSelf */ 
+                noSelfMethod(s: string): string;
+            }
+            const noSelfMethodInterface: NoSelfMethodInterface = {
+                noSelfMethod: function(s: string): string { return s; }
+            };", "value": "noSelfMethodInterface.noSelfMethod"}): diagnostics 2`] = `"main.ts(9,58): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function variable declaration ({"definition": "interface VoidFuncPropInterface {
                 voidFuncProp: (this: void, s: string) => string;
@@ -1700,6 +1872,14 @@ exports[`Invalid function variable declaration ({"definition": "namespace NoSelf
 
 exports[`Invalid function variable declaration ({"definition": "namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace NoSelfAnonFuncNSMergedSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "NoSelfAnonFuncNSMergedSelfNS.nsFuncNoSelf"}): diagnostics 2`] = `"main.ts(4,58): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function variable declaration ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 1`] = `"main.ts(5,47): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
+
+exports[`Invalid function variable declaration ({"definition": "namespace NoSelfFuncNs {
+            /** @noSelf */
+            export function noSelfNsFunc(s: string) { return s; } }", "value": "NoSelfFuncNs.noSelfNsFunc"}): diagnostics 2`] = `"main.ts(5,58): error TSTL: Unable to convert function with no 'this' parameter to function with 'this'. To fix, wrap in an arrow function, or declare with 'this: any'."`;
 
 exports[`Invalid function variable declaration ({"definition": "namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncSelf(s: string): string { return s; } }
         /** @noSelf */ namespace SelfAnonFuncNSMergedNoSelfNS { export function nsFuncNoSelf(s: string) { return s; } }", "value": "SelfAnonFuncNSMergedNoSelfNS.nsFuncSelf"}): diagnostics 1`] = `"main.ts(4,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;

@@ -4,10 +4,10 @@ const methodHolders = ["class", "interface"];
 
 test("@noSelf on declared function removes context argument", () => {
     util.testModule`
-    /** @noSelf */
-    declare function myFunction(): void;
-    myFunction();
-`.expectLuaToMatchSnapshot();
+        /** @noSelf */
+        declare function myFunction(): void;
+        myFunction();
+    `.expectLuaToMatchSnapshot();
 });
 
 test.each(methodHolders)("@noSelf on method inside %s declaration removes context argument", holderType => {

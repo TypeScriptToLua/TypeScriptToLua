@@ -47,7 +47,11 @@ export class TransformationContext {
     }
 
     private currentNodeVisitors: Array<ObjectVisitor<ts.Node>> = [];
-    public transformNode(node: ts.Node): lua.Node[] {
+
+    public transformNode(node: ts.Node): lua.Node[];
+    /** @internal */
+    public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[];
+    public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[] {
         // TODO: Move to visitors?
         if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
@@ -56,7 +60,7 @@ export class TransformationContext {
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
             this.diagnostics.push(unsupportedNodeKind(node, node.kind));
-            return [];
+            return isExpression ? [lua.createNilLiteral()] : [];
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;
@@ -80,8 +84,13 @@ export class TransformationContext {
     }
 
     public transformExpression(node: ExpressionLikeNode): lua.Expression {
-        const result = this.transformNode(node)[0] as lua.Expression | undefined;
-        return result ?? lua.createNilLiteral();
+        const [result] = this.transformNode(node, true);
+
+        if (result === undefined) {
+            throw new Error(`Expression visitor for node type ${ts.SyntaxKind[node.kind]} did not return any result.`);
+        }
+
+        return result as lua.Expression;
     }
 
     public superTransformExpression(node: ExpressionLikeNode): lua.Expression {

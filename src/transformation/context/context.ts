@@ -2,10 +2,9 @@ import * as ts from "typescript";
 import { CompilerOptions, LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { castArray } from "../../utils";
+import { unsupportedNodeKind } from "../utils/diagnostics";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
-import { unsupportedNodeKind } from "../utils/diagnostics";
-import { isStatement } from "../utils/typescript";
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
@@ -57,7 +56,7 @@ export class TransformationContext {
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
             this.diagnostics.push(unsupportedNodeKind(node, node.kind));
-            return isStatement(node) ? [] : [lua.createNilLiteral()];
+            return [];
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;
@@ -81,8 +80,8 @@ export class TransformationContext {
     }
 
     public transformExpression(node: ExpressionLikeNode): lua.Expression {
-        const [result] = this.transformNode(node);
-        return result as lua.Expression;
+        const result = this.transformNode(node)[0] as lua.Expression | undefined;
+        return result ?? lua.createNilLiteral();
     }
 
     public superTransformExpression(node: ExpressionLikeNode): lua.Expression {

@@ -1,5 +1,9 @@
 import * as ts from "typescript";
 
+export function isStatement(node: ts.Node): node is ts.Statement {
+    return node.kind >= ts.SyntaxKind.FirstStatement && node.kind <= ts.SyntaxKind.LastStatement;
+}
+
 export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
     return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
 }

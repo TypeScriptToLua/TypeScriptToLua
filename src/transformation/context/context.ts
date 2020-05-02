@@ -5,6 +5,7 @@ import { castArray } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
 import { unsupportedNodeKind } from "../utils/diagnostics";
+import { isStatement } from "../utils/typescript";
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
@@ -56,7 +57,7 @@ export class TransformationContext {
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
             this.diagnostics.push(unsupportedNodeKind(node, node.kind));
-            return [];
+            return isStatement(node) ? [] : [lua.createNilLiteral()];
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;

@@ -11,6 +11,10 @@ const createDiagnosticFactory = <TArgs extends any[]>(message: string | ((...arg
         messageText: typeof message === "string" ? message : message(...args),
     }));
 
+export const unsupportedNodeKind = createDiagnosticFactory(
+    (kind: ts.SyntaxKind) => `Unsupported node kind ${ts.SyntaxKind[kind]}`
+);
+
 export const forbiddenForIn = createDiagnosticFactory(`Iterating over arrays with 'for ... in' is not allowed.`);
 
 export const unsupportedNoSelfFunctionConversion = createDiagnosticFactory((name?: string) => {

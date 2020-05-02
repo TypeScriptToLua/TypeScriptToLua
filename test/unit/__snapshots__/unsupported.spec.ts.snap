@@ -1,0 +1,8 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Unsupported node adds diagnostic: code 1`] = `
+"a = function()
+end"
+`;
+
+exports[`Unsupported node adds diagnostic: diagnostics 1`] = `"main.ts(3,13): error TSTL: Unsupported node kind LabeledStatement"`;

@@ -4,6 +4,7 @@ import * as lua from "../../LuaAST";
 import { castArray } from "../../utils";
 import { unwrapVisitorResult } from "../utils/lua-ast";
 import { ExpressionLikeNode, ObjectVisitor, StatementLikeNode, VisitorMap } from "./visitors";
+import { unsupportedNodeKind } from "../utils/diagnostics";
 
 export interface AllAccessorDeclarations {
     firstAccessor: ts.AccessorDeclaration;
@@ -54,7 +55,8 @@ export class TransformationContext {
 
         const nodeVisitors = this.visitorMap.get(node.kind);
         if (!nodeVisitors || nodeVisitors.length === 0) {
-            throw new Error(`Unsupported node kind: ${ts.SyntaxKind[node.kind]}.`);
+            this.diagnostics.push(unsupportedNodeKind(node, node.kind));
+            return [];
         }
 
         const previousNodeVisitors = this.currentNodeVisitors;

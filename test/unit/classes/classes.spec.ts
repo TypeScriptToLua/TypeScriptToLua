@@ -788,10 +788,12 @@ test("default exported anonymous class has 'default' name property", () => {
 test("constructor class name available with constructor", () => {
     util.testModule`
         const decorator = <T extends new (...args: any[]) => any>(constructor: T) => class extends constructor {};
-        
+
         @decorator
         class MyClass {}
 
         export const className = new MyClass().constructor.name;
-    `.expectToMatchJsResult();
+    `
+        .setReturnExport("className")
+        .expectToEqual("MyClass");
 });

@@ -1,13 +1,9 @@
 {
     "compilerOptions": {
         "target": "esnext",
-        "lib": [
-            "esnext"
-        ],
+        "lib": ["esnext"],
         // Dev types are JIT
-        "types": [
-            "lua-types/jit"
-        ],
+        "types": ["lua-types/jit"],
         "moduleResolution": "node",
         "strict": true,
         "outDir": "dist"

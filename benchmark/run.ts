@@ -13,9 +13,7 @@ function benchmark() {
     // even if there was no previous one
 
     // Memory tests
-    const memoryBenchmarkInput: (() => void)[] = [
-        detectCyleBenchmark
-    ];
+    const memoryBenchmarkInput: (() => void)[] = [detectCyleBenchmark];
 
     const memoryUpdatedResults = memoryBenchmarkInput.map(runMemoryBenchmark);
 
@@ -38,18 +36,18 @@ function benchmark() {
         print(jsonInfo);
     } else {
         // No master yet, just write the current results to disk and output empty info
-        print(json.encode({ summary: "new benchmark (no results yet)", text: "" }))
+        print(json.encode({ summary: "new benchmark (no results yet)", text: "" }));
     }
 
     // Only update baseline if we are on master branch
     if (arg[1] && string.find(arg[1], "master")[0]) {
-        const updatedMasterFile = io.open(arg[0], "w+")[0] as LuaFile
+        const updatedMasterFile = io.open(arg[0], "w+")[0] as LuaFile;
         updatedMasterFile.write(json.encode(updatedResults));
     }
 }
 benchmark();
 
-function loadMasterBenchmarkData(): (string | undefined) {
+function loadMasterBenchmarkData(): string | undefined {
     const masterFileOpen = io.open(arg[0], "rb");
 
     if (masterFileOpen && masterFileOpen[0]) {
@@ -58,8 +56,7 @@ function loadMasterBenchmarkData(): (string | undefined) {
         if (_VERSION == "Lua 5.3") {
             // @ts-ignore
             masterContent = masterFile.read("a");
-        }
-        else {
+        } else {
             // JIT
             // @ts-ignore
             masterContent = masterFile.read("*a");
@@ -71,4 +68,3 @@ function loadMasterBenchmarkData(): (string | undefined) {
         }
     }
 }
-

@@ -26,8 +26,8 @@ import myBenchmark from "./memory_benchmarks/myBenchmark";
 // ...
 
 const memoryBenchmarkInput: (() => void)[] = [
-    // ...
-    myBenchmark
+  // ...
+  myBenchmark,
 ];
 ```
 

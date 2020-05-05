@@ -21,7 +21,7 @@ export default function detectCyleBenchmark() {
 function detectCycle<T>(graph: Graph<T>): boolean {
     const visited: Map<T, boolean> = new Map();
 
-    return [...graph.keys()].some((current) => {
+    return [...graph.keys()].some(current => {
         if (!visited.get(current)) {
             return _detectCycle(graph, current, visited, undefined);
         }
@@ -37,7 +37,7 @@ function _detectCycle<T>(graph: Graph<T>, current: T, visited: Map<T, boolean>, 
         throw "Err invalid graph format";
     }
 
-    return neighbours.some((neighbour) => {
+    return neighbours.some(neighbour => {
         if (!visited.get(neighbour)) {
             // If an adjacent is not visited, then recur for that adjacent
             return _detectCycle(graph, neighbour, visited, current);

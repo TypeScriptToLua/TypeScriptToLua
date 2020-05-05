@@ -1,9 +1,7 @@
 {
     "extends": "./tsconfig.json",
     "compilerOptions": {
-        "types": [
-            "lua-types/jit"
-        ]
+        "types": ["lua-types/jit"]
     },
     "tstl": {
         "luaTarget": "JIT"

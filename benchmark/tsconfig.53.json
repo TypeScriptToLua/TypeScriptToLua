@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "types": [
+            "lua-types/5.3"
+        ]
+    },
+    "tstl": {
+        "luaTarget": "5.3"
+    }
+}

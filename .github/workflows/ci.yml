@@ -64,13 +64,15 @@ jobs:
       - name: Ensure benchmark data dir exists
         run: mkdir -p ./benchmark/data
       - name: Build benchmark Lua 5.3
-        run: node dist/tstl.js -p benchmark/tsconfig.53.json
+        run: node ../dist/tstl.js -p tsconfig.53.json
+        working-directory: benchmark
       - name: Run benchmark Lua 5.3
         id: benchmark-lua
         run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_master_53.json ${{github.ref}}`
         working-directory: benchmark/dist
       - name: Build benchmark LuaJIT
-        run: node dist/tstl.js -p benchmark/tsconfig.jit.json
+        run: node ../dist/tstl.js -p tsconfig.jit.json
+        working-directory: benchmark
       - name: Run benchmark LuaJIT
         id: benchmark-jit
         run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_master_jit.json ${{github.ref}}`

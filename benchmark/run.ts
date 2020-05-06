@@ -1,7 +1,6 @@
 import { runMemoryBenchmark, compareMemoryBenchmarks } from "./memory_benchmark";
-import { isMemoryBenchmarkResult, BenchmarkResult } from "./benchmark_types";
-import detectCyleBenchmark from "./memory_benchmarks/graph_cylce";
-import { json } from "./util";
+import { isMemoryBenchmarkResult, BenchmarkResult, BenchmarkFunction } from "./benchmark_types";
+import { json, readAll, readDir, loadBenchmarksFromDirectory } from "./util";
 
 // CLI arguments
 // arg[0]: path to baseline benchmark data (required because this is also the output path)
@@ -13,8 +12,7 @@ function benchmark() {
     // even if there was no previous one
 
     // Memory tests
-    const memoryBenchmarkInput: (() => void)[] = [detectCyleBenchmark];
-
+    const memoryBenchmarkInput = loadBenchmarksFromDirectory("memory_benchmarks");
     const memoryUpdatedResults = memoryBenchmarkInput.map(runMemoryBenchmark);
 
     // run future benchmarks types here
@@ -52,19 +50,11 @@ function loadMasterBenchmarkData(): string | undefined {
 
     if (masterFileOpen && masterFileOpen[0]) {
         const masterFile = masterFileOpen[0];
-        let masterContent: (string | undefined)[];
-        if (_VERSION == "Lua 5.3") {
-            // @ts-ignore
-            masterContent = masterFile.read("a");
-        } else {
-            // JIT
-            // @ts-ignore
-            masterContent = masterFile.read("*a");
-        }
+        let masterContent = readAll(masterFile);
         masterFile.close();
 
-        if (masterContent[0]) {
-            return masterContent[0];
+        if (masterContent) {
+            return masterContent;
         }
     }
 }

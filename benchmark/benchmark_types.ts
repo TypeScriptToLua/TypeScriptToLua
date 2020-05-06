@@ -6,6 +6,8 @@ export interface BenchmarkResult {
     kind: BenchmarkKind;
 }
 
+export type BenchmarkFunction = () => void;
+
 export interface MemoryBenchmarkResult extends BenchmarkResult {
     kind: BenchmarkKind.Memory;
     benchmarkName: string;

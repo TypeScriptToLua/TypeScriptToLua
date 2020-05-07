@@ -2,11 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import {
-    extensionInvalidInstanceOf,
-    luaTableInvalidInstanceOf,
-    unsupportedNullishCoalescing,
-} from "../../utils/diagnostics";
+import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf } from "../../utils/diagnostics";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType } from "../../utils/typescript";
@@ -137,13 +133,38 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
         }
 
         case ts.SyntaxKind.QuestionQuestionToken: {
-            context.diagnostics.push(unsupportedNullishCoalescing(node.operatorToken));
-            return lua.createBinaryExpression(
-                context.transformExpression(node.left),
-                context.transformExpression(node.right),
-                lua.SyntaxKind.OrOperator,
-                node
-            );
+            const lhsType = context.checker.getTypeAtLocation(node.left);
+            // Check if we can take a shortcut to 'lhs or rhs' if the left-hand side cannot be 'false'.
+            if (
+                lhsType.flags & (ts.TypeFlags.Any | ts.TypeFlags.Unknown | ts.TypeFlags.Boolean) ||
+                node.left.kind === ts.SyntaxKind.FalseKeyword
+            ) {
+                const lhsIdentifier = lua.createIdentifier("lhs");
+                const nilComparison = lua.createBinaryExpression(
+                    lua.cloneIdentifier(lhsIdentifier),
+                    lua.createNilLiteral(),
+                    lua.SyntaxKind.EqualityOperator
+                );
+                // if ____ == nil then return rhs else return ____ end
+                const ifStatement = lua.createIfStatement(
+                    nilComparison,
+                    lua.createBlock([lua.createReturnStatement([context.transformExpression(node.right)])]),
+                    lua.createBlock([lua.createReturnStatement([lua.cloneIdentifier(lhsIdentifier)])])
+                );
+                // (function(lhs') if lhs' == nil then return rhs else return lhs' end)(lhs)
+                return lua.createCallExpression(
+                    lua.createFunctionExpression(lua.createBlock([ifStatement]), [lhsIdentifier]),
+                    [context.transformExpression(node.left)]
+                );
+            } else {
+                // lhs or rhs
+                return lua.createBinaryExpression(
+                    context.transformExpression(node.left),
+                    context.transformExpression(node.right),
+                    lua.SyntaxKind.OrOperator,
+                    node
+                );
+            }
         }
 
         default:

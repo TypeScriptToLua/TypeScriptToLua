@@ -27,7 +27,7 @@ export function readAll(file: LuaFile): string | undefined {
 
 export function readDir(dir = ""): string[] | undefined {
     let isWindows = false;
-    let [success, findHandle] = pcall(() => io.popen(`find '${dir}' -type f -depth 1`));
+    let [success, findHandle] = pcall(() => io.popen(`find '${dir}' -maxdepth 1 -type f | sed "s|^\./||"`));
 
     if (!success) {
         [success, findHandle] = pcall(() => io.popen(`dir /A-D /B ${dir}`));

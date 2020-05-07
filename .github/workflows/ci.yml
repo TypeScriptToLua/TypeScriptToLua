@@ -45,43 +45,69 @@ jobs:
     steps:
       - name: Lua Install
         run: sudo apt-get install lua5.3 luajit
-      - uses: actions/checkout@v2
+      # Checkout master & commit
+      - name: Checkout master
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          path: master
+      - name: Checkout commit
+        uses: actions/checkout@v2
+        with:
+          path: commit
       - name: Use Node.js 12.13.1
         uses: actions/setup-node@v1
         with:
           node-version: 12.13.1
-      - run: npm ci
-      - run: npm run build
-      # This will never result in a direct cache hit.
-      # Teherefore benchmark data is always updated.
-      - name: Cache benchmark data
-        id: cache-benchmark
-        uses: actions/cache@v1
-        with:
-          path: ./benchmark/data
-          key: ${{ runner.os }}-master-benchmark-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-master-benchmark-
+      # NPM
+      - name: NPM master
+        # TODO Lua types is only added manually to test the benchmark PR this can be removed again once the PR is merged
+        run: npm ci && npm run build && npm install -D lua-types
+        working-directory: master
+      - name: NPM commit
+        run: npm ci && npm run build
+        working-directory: commit
+      # Benchmark estup
       - name: Ensure benchmark data dir exists
         run: mkdir -p ./benchmark/data
-      - name: Build benchmark Lua 5.3
+        working-directory: commit
+      - name: Copy commit benchmark to master
+        run: rm -rf ./master/benchmark && cp -rf ./commit/benchmark ./master/benchmark
+      # Run master benchmark first and output to commit benchmark data
+      - name: Build benchmark Lua 5.3 master
         run: node ../dist/tstl.js -p tsconfig.53.json
-        working-directory: benchmark
-      - name: Run benchmark Lua 5.3
-        id: benchmark-lua
-        run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_master_53.json ${{github.ref}}`
-        working-directory: benchmark/dist
-      - name: Build benchmark LuaJIT
+        working-directory: master/benchmark
+      - name: Run benchmark Lua 5.3 master
+        id: benchmark-lua-master
+        run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_53.json
+        working-directory: master/benchmark/dist
+      - name: Build benchmark LuaJIT master
         run: node ../dist/tstl.js -p tsconfig.jit.json
-        working-directory: benchmark
+        working-directory: master/benchmark
       - name: Run benchmark LuaJIT
-        id: benchmark-jit
-        run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_master_jit.json ${{github.ref}}`
-        working-directory: benchmark/dist
+        id: benchmark-jit-master
+        run: luajit -- run.lua ../../../commit/benchmark/data/benchmark_jit.json
+        working-directory: master/benchmark/dist
+      # Run commit benchmark and compare with master
+      - name: Build benchmark Lua 5.3 commit
+        run: node ../dist/tstl.js -p tsconfig.53.json
+        working-directory: commit/benchmark
+      - name: Run benchmark Lua 5.3 commit
+        id: benchmark-lua-commit
+        run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_53.json`
+        working-directory: commit/benchmark/dist
+      - name: Build benchmark LuaJIT commit
+        run: node ../dist/tstl.js -p tsconfig.jit.json
+        working-directory: commit/benchmark
+      - name: Run benchmark LuaJIT
+        id: benchmark-jit-commit
+        run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_jit.json`
+        working-directory: commit/benchmark/dist
       - name: Create benchmark check
         uses: actions/github-script@0.9.0
         with:
-          benchmark-info-lua: ${{steps.benchmark-lua.outputs.info}}
-          benchmark-info-jit: ${{steps.benchmark-jit.outputs.info}}
+          benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
+          benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
           script: |
             const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
             const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));

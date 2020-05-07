@@ -37,11 +37,8 @@ function benchmark() {
         print(json.encode({ summary: "new benchmark (no results yet)", text: "" }));
     }
 
-    // Only update baseline if we are on master branch
-    if (arg[1] && string.find(arg[1], "master")[0]) {
-        const updatedMasterFile = io.open(arg[0], "w+")[0] as LuaFile;
-        updatedMasterFile.write(json.encode(updatedResults));
-    }
+    const updatedMasterFile = io.open(arg[0], "w+")[0] as LuaFile;
+    updatedMasterFile.write(json.encode(updatedResults));
 }
 benchmark();
 

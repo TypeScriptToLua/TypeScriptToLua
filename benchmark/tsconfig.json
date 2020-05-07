@@ -3,7 +3,7 @@
         "target": "esnext",
         "lib": ["esnext"],
         // Dev types are JIT
-        "types": ["lua-types/5.3"],
+        "types": ["lua-types/jit"],
         "moduleResolution": "node",
         "outDir": "dist",
         "rootDir": "src",

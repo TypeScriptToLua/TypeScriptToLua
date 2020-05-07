@@ -50,11 +50,7 @@ export function readFile(path: string): Result<string, string> {
         const readAllResult = readAll(fileHandle);
         fileHandle.close();
 
-        if (readAllResult.isOk()) {
-            return ok(readAllResult);
-        } else {
-            return readAllResult;
-        }
+        return readAllResult;
     }
     return err(`Can't open file ${path}`);
 }
@@ -88,7 +84,7 @@ export function readDir(dir: string): Result<string[], string> {
         }
         return ok(files.filter(p => p !== ""));
     } else {
-        return findReadAllResult;
+        return err(findReadAllResult.error);
     }
 }
 
@@ -96,7 +92,7 @@ export function loadBenchmarksFromDirectory(benchmarkDir: string): Result<Benchm
     const readBenchmarkDirResult = readDir(benchmarkDir);
 
     if (readBenchmarkDirResult.isError()) {
-        return readBenchmarkDirResult;
+        return err(readBenchmarkDirResult.error);
     }
 
     return ok(

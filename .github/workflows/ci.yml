@@ -84,7 +84,7 @@ jobs:
       - name: Build benchmark LuaJIT master
         run: node ../dist/tstl.js -p tsconfig.jit.json
         working-directory: master/benchmark
-      - name: Run benchmark LuaJIT
+      - name: Run benchmark LuaJIT master
         id: benchmark-jit-master
         run: luajit -- run.lua ../../../commit/benchmark/data/benchmark_jit.json
         working-directory: master/benchmark/dist
@@ -99,7 +99,7 @@ jobs:
       - name: Build benchmark LuaJIT commit
         run: node ../dist/tstl.js -p tsconfig.jit.json
         working-directory: commit/benchmark
-      - name: Run benchmark LuaJIT
+      - name: Run benchmark LuaJIT commit
         id: benchmark-jit-commit
         run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_jit.json`
         working-directory: commit/benchmark/dist

@@ -5,7 +5,8 @@ function range(start: number, end: number): number[] {
     return [start, ...range(start + 1, end)];
 }
 
-export default function detectCyleBenchmark() {
+// tslint:disable-next-line:no-default-export
+export default function detectCyleBenchmark(): void {
     const n = 500;
     const benchmarkGraph = new Map<number, number[]>();
     // build a graph with n nodes and no cycle
@@ -34,7 +35,7 @@ function _detectCycle<T>(graph: Graph<T>, current: T, visited: Map<T, boolean>, 
     const neighbours = graph.get(current);
 
     if (!neighbours) {
-        throw "Err invalid graph format";
+        throw Error("Err invalid graph format");
     }
 
     return neighbours.some(neighbour => {

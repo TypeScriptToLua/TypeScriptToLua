@@ -1,6 +1,6 @@
 import { runMemoryBenchmark, compareMemoryBenchmarks } from "./memory_benchmark";
-import { isMemoryBenchmarkResult, BenchmarkResult } from "./benchmark_types";
-import { json, readAll, readDir, loadBenchmarksFromDirectory, readFile } from "./util";
+import { isMemoryBenchmarkResult, BenchmarkResult, MemoryBenchmarkResult, ComparisonInfo } from "./benchmark_types";
+import { json, loadBenchmarksFromDirectory, readFile } from "./util";
 
 // CLI arguments
 // arg[0]: output path for benchmark data
@@ -8,31 +8,41 @@ import { json, readAll, readDir, loadBenchmarksFromDirectory, readFile } from ".
 // arg[2]: path to result markdown file (optional)
 declare const arg: [string | undefined, string | undefined, string | undefined];
 
-function benchmark() {
+function benchmark(): void {
     // Memory tests
-    const memoryBenchmarkInput = loadBenchmarksFromDirectory("memory_benchmarks");
-    const memoryUpdatedResults = memoryBenchmarkInput.map(runMemoryBenchmark);
+    let memoryUpdatedResults: MemoryBenchmarkResult[] = [];
+
+    const loadPreviousMemoryBenchmarksResult = loadBenchmarksFromDirectory("memory_benchmarks");
+
+    if (loadPreviousMemoryBenchmarksResult.isOk()) {
+        memoryUpdatedResults = loadPreviousMemoryBenchmarksResult.value.map(runMemoryBenchmark);
+    } else {
+        print(loadPreviousMemoryBenchmarksResult.error);
+        os.exit(1);
+    }
 
     // run future benchmarks types here
 
-    const updatedResults = [...memoryUpdatedResults];
+    const benchmarkResults = [...memoryUpdatedResults];
 
     // Try to read the baseline benchmark result
-    let previousResults: BenchmarkResult[] = [];
-    const inputContent = arg[1] && readFile(arg[1]);
-    if (inputContent) {
-        previousResults = json.decode(inputContent) as BenchmarkResult[];
+    let previousBenchmarkResults: BenchmarkResult[] = [];
+    if (arg[1]) {
+        const readPreviousFileResult = readFile(arg[1]);
+        if (readPreviousFileResult.isOk()) {
+            previousBenchmarkResults = json.decode(readPreviousFileResult.value) as BenchmarkResult[];
+        }
     }
 
     // Compare results
-    const comparisonInfo = compareResults(previousResults, updatedResults);
+    const comparisonInfo = compareBenchmarks(previousBenchmarkResults, benchmarkResults);
 
     // Output comparison info
-    outputResults(comparisonInfo, updatedResults);
+    outputBenchmarkData(comparisonInfo, benchmarkResults);
 }
 benchmark();
 
-function compareResults(previousResults: BenchmarkResult[], updatedResults: BenchmarkResult[]) {
+function compareBenchmarks(previousResults: BenchmarkResult[], updatedResults: BenchmarkResult[]): ComparisonInfo {
     const previousResultsMemory = previousResults.filter(isMemoryBenchmarkResult);
     const updatedResultsMemory = updatedResults.filter(isMemoryBenchmarkResult);
 
@@ -41,18 +51,21 @@ function compareResults(previousResults: BenchmarkResult[], updatedResults: Benc
     return { summary: memoryComparisonInfo[0], text: memoryComparisonInfo[1] };
 }
 
-function outputResults(comparisonInfo: { summary: string; text: string }, updatedResults: BenchmarkResult[]) {
+function outputBenchmarkData(
+    comparisonInfo: { summary: string; text: string },
+    updatedResults: BenchmarkResult[]
+): void {
     if (!arg[2]) {
         // Output to stdout as json by default, this is used by the CI to retrieve the info
         print(json.encode(comparisonInfo));
     } else {
         // Output to file as markdown if arg[2] is set, this is useful for local development
-        const updatedResultsFile = io.open(arg[2], "w+")[0] as LuaFile;
-        updatedResultsFile.write(comparisonInfo.summary + comparisonInfo.text);
+        const markdownDataFile = io.open(arg[2], "w+")[0]!;
+        markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
     }
     // Output benchmark results to json
     if (arg[0]) {
-        const updatedResultsFile = io.open(arg[0], "w+")[0] as LuaFile;
-        updatedResultsFile.write(json.encode(updatedResults));
+        const jsonDataFile = io.open(arg[0], "w+")[0]!;
+        jsonDataFile.write(json.encode(updatedResults));
     }
 }

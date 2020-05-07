@@ -1,8 +1,8 @@
 import { BenchmarkKind, MemoryBenchmarkResult } from "./benchmark_types";
-import { round, json } from "./util";
+import { toFixed, json } from "./util";
 
 export function runMemoryBenchmark(benchmarkFunction: Function): MemoryBenchmarkResult {
-    let result: MemoryBenchmarkResult = {
+    const result: MemoryBenchmarkResult = {
         kind: BenchmarkKind.Memory,
         benchmarkName: "NO_NAME",
         preExecMemoryUsage: 0,
@@ -35,18 +35,18 @@ export function compareMemoryBenchmarks(
 ): [string, string] {
     let comparisonTable = "| name | master (MB) | commit (MB) | change (MB) | change (%) |\n| - | - | - | - | - |\n";
 
-    const formatMemory = (memInKB: number) => round(memInKB / 1024, 3);
+    const formatMemory = (memInKB: number) => toFixed(memInKB / 1024, 3);
 
     // we group by the new results in case benchmarks have been added
     updatedResults.forEach(newResult => {
-        const masterResult = oldResults.find(r => r.benchmarkName == newResult.benchmarkName);
+        const masterResult = oldResults.find(r => r.benchmarkName === newResult.benchmarkName);
         if (masterResult) {
             const percentageChange = (newResult.memoryUsedForExec / masterResult.memoryUsedForExec) * 100 - 100;
             comparisonTable += `| ${newResult.benchmarkName} | ${formatMemory(
                 masterResult.memoryUsedForExec
             )} | ${formatMemory(newResult.memoryUsedForExec)} | ${formatMemory(
                 newResult.memoryUsedForExec - masterResult.memoryUsedForExec
-            )} | ${round(percentageChange, 2)} |\n`;
+            )} | ${toFixed(percentageChange, 2)} |\n`;
         } else {
             // No master found => new benchmark
             comparisonTable += `| ${newResult.benchmarkName}(new) | / | ${formatMemory(

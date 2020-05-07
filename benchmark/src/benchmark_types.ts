@@ -2,13 +2,11 @@ export enum BenchmarkKind {
     Memory = "memory",
 }
 
-export interface BenchmarkResult {
-    kind: BenchmarkKind;
-}
-
 export type BenchmarkFunction = () => void;
 
-export interface MemoryBenchmarkResult extends BenchmarkResult {
+export type BenchmarkResult = MemoryBenchmarkResult;
+
+export interface MemoryBenchmarkResult {
     kind: BenchmarkKind.Memory;
     benchmarkName: string;
     preExecMemoryUsage: number;
@@ -18,5 +16,10 @@ export interface MemoryBenchmarkResult extends BenchmarkResult {
 }
 
 export function isMemoryBenchmarkResult(result: BenchmarkResult): result is MemoryBenchmarkResult {
-    return result.kind == BenchmarkKind.Memory;
+    return result.kind === BenchmarkKind.Memory;
+}
+
+export interface ComparisonInfo {
+    summary: string;
+    text: string;
 }

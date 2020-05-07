@@ -58,7 +58,9 @@ export function compareMemoryBenchmarks(
 
     const markdownSummary = `**Memory:**\n${comparisonTable}`;
 
-    const markdownText = `**master:**\n${json.encode(oldResults)}\n**commit:**\n${json.encode(updatedResults)}`;
+    const markdownText = `**master:**\n\`\`\`json\n${json.encode(
+        oldResults
+    )}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(updatedResults)}\n\`\`\``;
 
     return [markdownSummary, markdownText];
 }

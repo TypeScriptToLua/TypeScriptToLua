@@ -9,6 +9,20 @@ export const json: {
     encode: (this: void, val: any) => string;
 } = require("json");
 
+export function readFile(path: string): string | undefined {
+    const fileOpenArray = io.open(path, "rb");
+
+    if (fileOpenArray && fileOpenArray[0]) {
+        const fileHandle = fileOpenArray[0];
+        let fileContent = readAll(fileHandle);
+        fileHandle.close();
+
+        if (fileContent) {
+            return fileContent;
+        }
+    }
+}
+
 export function readAll(file: LuaFile): string | undefined {
     let content: (string | undefined)[];
     if (_VERSION == "Lua 5.3") {

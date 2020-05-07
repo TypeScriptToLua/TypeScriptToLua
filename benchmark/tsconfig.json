@@ -6,6 +6,7 @@
         "types": ["lua-types/jit"],
         "moduleResolution": "node",
         "strict": true,
-        "outDir": "dist"
+        "outDir": "dist",
+        "rootDir": "src"
     }
 }

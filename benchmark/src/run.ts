@@ -10,51 +10,48 @@ declare const arg: [string | undefined, string | undefined, string | undefined];
 
 function benchmark(): void {
     // Memory tests
-    let memoryUpdatedResults: MemoryBenchmarkResult[] = [];
+    let memoryBenchmarkNewResults: MemoryBenchmarkResult[] = [];
 
-    const loadPreviousMemoryBenchmarksResult = loadBenchmarksFromDirectory("memory_benchmarks");
+    const memoryBenchmarks = loadBenchmarksFromDirectory("memory_benchmarks");
 
-    if (loadPreviousMemoryBenchmarksResult.isOk()) {
-        memoryUpdatedResults = loadPreviousMemoryBenchmarksResult.value.map(runMemoryBenchmark);
+    if (memoryBenchmarks.isOk()) {
+        memoryBenchmarkNewResults = memoryBenchmarks.value.map(runMemoryBenchmark);
     } else {
-        print(loadPreviousMemoryBenchmarksResult.error);
+        print(memoryBenchmarks.error);
         os.exit(1);
     }
 
     // run future benchmarks types here
 
-    const benchmarkResults = [...memoryUpdatedResults];
+    const newBenchmarkResults = [...memoryBenchmarkNewResults];
 
     // Try to read the baseline benchmark result
-    let previousBenchmarkResults: BenchmarkResult[] = [];
+    let oldBenchmarkResults: BenchmarkResult[] = [];
     if (arg[1]) {
-        const readPreviousFileResult = readFile(arg[1]);
-        if (readPreviousFileResult.isOk()) {
-            previousBenchmarkResults = json.decode(readPreviousFileResult.value) as BenchmarkResult[];
+        const oldBenchmarkData = readFile(arg[1]);
+        if (oldBenchmarkData.isOk()) {
+            oldBenchmarkResults = json.decode(oldBenchmarkData.value) as BenchmarkResult[];
         }
     }
 
     // Compare results
-    const comparisonInfo = compareBenchmarks(previousBenchmarkResults, benchmarkResults);
+    const comparisonInfo = compareBenchmarks(oldBenchmarkResults, newBenchmarkResults);
 
     // Output comparison info
-    outputBenchmarkData(comparisonInfo, benchmarkResults);
+    outputBenchmarkData(comparisonInfo, newBenchmarkResults);
 }
 benchmark();
 
-function compareBenchmarks(previousResults: BenchmarkResult[], updatedResults: BenchmarkResult[]): ComparisonInfo {
-    const previousResultsMemory = previousResults.filter(isMemoryBenchmarkResult);
-    const updatedResultsMemory = updatedResults.filter(isMemoryBenchmarkResult);
+function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): ComparisonInfo {
+    const oldResultsMemory = oldResults.filter(isMemoryBenchmarkResult);
+    const newResultsMemory = newResults.filter(isMemoryBenchmarkResult);
 
-    const memoryComparisonInfo = compareMemoryBenchmarks(previousResultsMemory, updatedResultsMemory);
+    const memoryComparisonInfo = compareMemoryBenchmarks(oldResultsMemory, newResultsMemory);
 
-    return { summary: memoryComparisonInfo[0], text: memoryComparisonInfo[1] };
+    return { summary: memoryComparisonInfo.summary, text: memoryComparisonInfo.text };
 }
 
-function outputBenchmarkData(
-    comparisonInfo: { summary: string; text: string },
-    updatedResults: BenchmarkResult[]
-): void {
+function outputBenchmarkData(comparisonInfo: { summary: string; text: string }, newResults: BenchmarkResult[]): void {
     if (!arg[2]) {
         // Output to stdout as json by default, this is used by the CI to retrieve the info
         print(json.encode(comparisonInfo));
@@ -66,6 +63,6 @@ function outputBenchmarkData(
     // Output benchmark results to json
     if (arg[0]) {
         const jsonDataFile = io.open(arg[0], "w+")[0]!;
-        jsonDataFile.write(json.encode(updatedResults));
+        jsonDataFile.write(json.encode(newResults));
     }
 }

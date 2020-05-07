@@ -1,4 +1,4 @@
-import { BenchmarkKind, MemoryBenchmarkResult } from "./benchmark_types";
+import { BenchmarkKind, MemoryBenchmarkResult, ComparisonInfo } from "./benchmark_types";
 import { toFixed, json } from "./util";
 
 export function runMemoryBenchmark(benchmarkFunction: Function): MemoryBenchmarkResult {
@@ -31,21 +31,21 @@ export function runMemoryBenchmark(benchmarkFunction: Function): MemoryBenchmark
 
 export function compareMemoryBenchmarks(
     oldResults: MemoryBenchmarkResult[],
-    updatedResults: MemoryBenchmarkResult[]
-): [string, string] {
+    newResults: MemoryBenchmarkResult[]
+): ComparisonInfo {
     let comparisonTable = "| name | master (MB) | commit (MB) | change (MB) | change (%) |\n| - | - | - | - | - |\n";
 
     const formatMemory = (memInKB: number) => toFixed(memInKB / 1024, 3);
 
     // we group by the new results in case benchmarks have been added
-    updatedResults.forEach(newResult => {
-        const masterResult = oldResults.find(r => r.benchmarkName === newResult.benchmarkName);
-        if (masterResult) {
-            const percentageChange = (newResult.memoryUsedForExec / masterResult.memoryUsedForExec) * 100 - 100;
+    newResults.forEach(newResult => {
+        const oldResult = oldResults.find(r => r.benchmarkName === newResult.benchmarkName);
+        if (oldResult) {
+            const percentageChange = (newResult.memoryUsedForExec / oldResult.memoryUsedForExec) * 100 - 100;
             comparisonTable += `| ${newResult.benchmarkName} | ${formatMemory(
-                masterResult.memoryUsedForExec
+                oldResult.memoryUsedForExec
             )} | ${formatMemory(newResult.memoryUsedForExec)} | ${formatMemory(
-                newResult.memoryUsedForExec - masterResult.memoryUsedForExec
+                newResult.memoryUsedForExec - oldResult.memoryUsedForExec
             )} | ${toFixed(percentageChange, 2)} |\n`;
         } else {
             // No master found => new benchmark
@@ -55,11 +55,11 @@ export function compareMemoryBenchmarks(
         }
     });
 
-    const markdownSummary = `**Memory:**\n${comparisonTable}`;
+    const summary = `**Memory:**\n${comparisonTable}`;
 
-    const markdownText = `**master:**\n\`\`\`json\n${json.encode(
-        oldResults
-    )}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(updatedResults)}\n\`\`\``;
+    const text = `**master:**\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(
+        newResults
+    )}\n\`\`\``;
 
-    return [markdownSummary, markdownText];
+    return { summary, text };
 }

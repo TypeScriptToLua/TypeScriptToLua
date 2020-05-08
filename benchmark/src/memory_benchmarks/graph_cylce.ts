@@ -6,14 +6,14 @@ function range(start: number, end: number): number[] {
 }
 
 // tslint:disable-next-line:no-default-export
-export default function detectCyleBenchmark(): void {
+export default function detectCyleBenchmark(): boolean {
     const n = 500;
     const benchmarkGraph = new Map<number, number[]>();
     // build a graph with n nodes and no cycle
     for (let i = 0; i < n; i++) {
         benchmarkGraph.set(i, range(i, n - 1));
     }
-    detectCycle(benchmarkGraph);
+    return detectCycle(benchmarkGraph);
 }
 
 /**

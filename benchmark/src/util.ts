@@ -6,6 +6,10 @@ export function toFixed(num: number, decimalPlaces = 0): string {
     return string.format(`%.${decimalPlaces}f`, num);
 }
 
+export function calculatePercentageChange(oldValue: number, newValue: number): number {
+    return (newValue / oldValue) * 100 - 100;
+}
+
 // @ts-ignore
 export const isWindows = package.config.sub(1, 1) === "\\";
 

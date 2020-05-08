@@ -13,10 +13,11 @@ class B extends A {
 }
 
 // tslint:disable-next-line:no-default-export
-export default function classCreation(): void {
+export default function classCreation(): B[] {
     const arr1 = [];
-    const n = 500;
+    const n = 10000;
     for (let i = 0; i < n; i++) {
         arr1.push(new B(i));
     }
+    return arr1;
 }

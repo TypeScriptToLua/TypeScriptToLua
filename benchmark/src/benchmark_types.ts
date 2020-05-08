@@ -6,13 +6,15 @@ export type BenchmarkFunction = () => void;
 
 export type BenchmarkResult = MemoryBenchmarkResult;
 
+export enum MemoryBenchmarkCategory {
+    TotalMemory = "totalMemory",
+    Garbage = "garbage",
+}
+
 export interface MemoryBenchmarkResult {
     kind: BenchmarkKind.Memory;
+    categories: Record<MemoryBenchmarkCategory, number>;
     benchmarkName: string;
-    preExecMemoryUsage: number;
-    postExecMemoryUsage: number;
-    memoryUsedForExec: number;
-    memoryAfterGC: number;
 }
 
 export function isMemoryBenchmarkResult(result: BenchmarkResult): result is MemoryBenchmarkResult {

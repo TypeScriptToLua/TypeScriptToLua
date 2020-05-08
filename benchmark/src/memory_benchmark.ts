@@ -14,12 +14,13 @@ export function runMemoryBenchmark(benchmarkFunction: Function): MemoryBenchmark
     // collect before running benchmark
     collectgarbage("collect");
 
-    // sop automatic gc
+    // stop automatic gc
     collectgarbage("stop");
 
     const preExecMemoryUsage = collectgarbage("count");
 
-    // Store return value this allows benchmark to preent data from being garbage collected
+    // store return value this allows benchmark functions
+    // to prevent "useful" result data from being garbage collected
     let temp = benchmarkFunction();
 
     const postExecMemoryUsage = collectgarbage("count");
@@ -48,7 +49,7 @@ export function compareMemoryBenchmarks(
     oldResults: MemoryBenchmarkResult[],
     newResults: MemoryBenchmarkResult[]
 ): ComparisonInfo {
-    // Cant use Object.values because we want a fixed order.
+    // Can not use Object.values because we want a fixed order.
     const categories = [MemoryBenchmarkCategory.TotalMemory, MemoryBenchmarkCategory.Garbage];
 
     const summary = categories
@@ -71,8 +72,10 @@ function compareCategory(
 ): string {
     let comparisonTable = makeMarkdownTableRow(["name", "master (mb)", "commit (mb)", "change (mb)", "change (%)"]);
     comparisonTable += makeMarkdownTableRow(["-", "-", "-", "-", "-"]);
+
     let oldValueSum = 0;
     let newValueSum = 0;
+
     newResults.forEach(newResult => {
         const oldResult = oldResults.find(r => r.benchmarkName === newResult.benchmarkName);
         if (oldResult) {
@@ -99,6 +102,7 @@ function compareCategory(
             comparisonTable += makeMarkdownTableRow(row);
         }
     });
+
     const sumPercentageChange = calculatePercentageChange(oldValueSum, newValueSum);
     comparisonTable += makeMarkdownTableRow([
         makeBold("sum"),

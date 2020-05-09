@@ -342,7 +342,6 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], start: 3, deleteCount: 2, newElements: [3, 4, 5] },
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: 9, newElements: [10, 11] },
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: undefined, newElements: [10, 11] },
-    // tslint:disable-next-line:no-null-keyword
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: null, newElements: [10, 11] },
 
     // Remove
@@ -352,7 +351,6 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], start: 2, deleteCount: 2 },
     { array: [0, 1, 2, 3, 4, 5], start: -3, deleteCount: 2 },
     { array: [0, 1, 2, 3], start: 1, deleteCount: undefined },
-    // tslint:disable-next-line:no-null-keyword
     { array: [0, 1, 2, 3], start: 1, deleteCount: null },
 ])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
     util.testFunction`
@@ -456,7 +454,6 @@ test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) =>
 
 test.each([
     { array: [1, 2, 3], expected: [3, 2] },
-    // tslint:disable-next-line: no-null-keyword
     { array: [1, 2, 3, null], expected: [3, 2] },
 ])("array.pop (%p)", ({ array, expected }) => {
     util.testFunction`

@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { OneToManyVisitorResult } from "../utils/lua-ast";
 import { TransformationContext } from "./context";
 
-type NodesBySyntaxKind = {
+interface NodesBySyntaxKind {
     // Copied from is* type guards, with JSDoc and TypeNodes removed
     [ts.SyntaxKind.NumericLiteral]: ts.NumericLiteral;
     [ts.SyntaxKind.BigIntLiteral]: ts.BigIntLiteral;
@@ -134,7 +134,7 @@ type NodesBySyntaxKind = {
     [ts.SyntaxKind.SuperKeyword]: ts.SuperExpression;
     [ts.SyntaxKind.ThisKeyword]: ts.ThisExpression;
     [ts.SyntaxKind.NotEmittedStatement]: ts.NotEmittedStatement;
-};
+}
 
 export type ExpressionLikeNode = ts.Expression | ts.QualifiedName | ts.ExternalModuleReference;
 export type StatementLikeNode = ts.Statement;
@@ -148,7 +148,7 @@ export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
 
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;
 export type FunctionVisitor<T extends ts.Node> = (node: T, context: TransformationContext) => VisitorResult<T>;
-export type ObjectVisitor<T extends ts.Node> = {
+export interface ObjectVisitor<T extends ts.Node> {
     transform: FunctionVisitor<T>;
 
     /**
@@ -159,7 +159,7 @@ export type ObjectVisitor<T extends ts.Node> = {
      * Standard visitors have the lowest (`-Infinity`) priority.
      */
     priority?: number;
-};
+}
 
 export type Visitors = { [P in keyof NodesBySyntaxKind]?: Visitor<NodesBySyntaxKind[P]> };
 export type VisitorMap = Map<ts.SyntaxKind, Array<ObjectVisitor<ts.Node>>>;

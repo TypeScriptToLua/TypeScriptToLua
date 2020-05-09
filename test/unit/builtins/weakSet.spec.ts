@@ -68,7 +68,7 @@ test("weakSet delete", () => {
 });
 
 test("weakSet has no set features (size)", () => {
-    expect(util.transpileAndExecute(`return (new WeakSet() as any).size`)).toBe(undefined);
+    expect(util.transpileAndExecute("return (new WeakSet() as any).size")).toBeUndefined();
 });
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(

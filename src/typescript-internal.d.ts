@@ -1,15 +1,15 @@
-import * as ts from "typescript";
+export {};
 
 declare module "typescript" {
-    function createDiagnosticReporter(system: ts.System, pretty?: boolean): ts.DiagnosticReporter;
-    function createWatchStatusReporter(system: ts.System, pretty?: boolean): ts.WatchStatusReporter;
+    function createDiagnosticReporter(system: System, pretty?: boolean): DiagnosticReporter;
+    function createWatchStatusReporter(system: System, pretty?: boolean): WatchStatusReporter;
 
     interface System {
         setBlocking?(): void;
     }
 
     interface Statement {
-        jsDoc?: ts.JSDoc[];
+        jsDoc?: JSDoc[];
     }
 
     interface Program {
@@ -17,6 +17,7 @@ declare module "typescript" {
     }
 
     interface CompilerOptions {
+        configFile?: TsConfigSourceFile;
         configFilePath?: string;
     }
 }

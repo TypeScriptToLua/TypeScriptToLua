@@ -15,7 +15,7 @@ test("symbol uniqueness", () => {
 
 test("Symbol.for", () => {
     // TODO: Supported since node 11
-    util.testExpression(`Symbol.for("name").description`).expectToEqual("name");
+    util.testExpression('Symbol.for("name").description').expectToEqual("name");
 });
 
 test("Symbol.for non-uniqueness", () => {

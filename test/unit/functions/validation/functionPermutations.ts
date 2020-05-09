@@ -6,19 +6,19 @@ export interface TestFunction {
 export const selfTestFunctions: TestFunction[] = [
     {
         value: "selfFunc",
-        definition: `let selfFunc: {(this: any, s: string): string} = function(s) { return s; };`,
+        definition: "let selfFunc: {(this: any, s: string): string} = function(s) { return s; };",
     },
     {
         value: "selfLambda",
-        definition: `let selfLambda: (this: any, s: string) => string = s => s;`,
+        definition: "let selfLambda: (this: any, s: string) => string = s => s;",
     },
     {
         value: "anonFunc",
-        definition: `let anonFunc: {(s: string): string} = function(s) { return s; };`,
+        definition: "let anonFunc: {(s: string): string} = function(s) { return s; };",
     },
     {
         value: "anonLambda",
-        definition: `let anonLambda: (s: string) => string = s => s;`,
+        definition: "let anonLambda: (s: string) => string = s => s;",
     },
     {
         value: "methodClass.method",
@@ -48,7 +48,7 @@ export const selfTestFunctions: TestFunction[] = [
     },
     {
         value: "AnonStaticMethodClass.anonStaticMethod",
-        definition: `class AnonStaticMethodClass { static anonStaticMethod(s: string): string { return s; } }`,
+        definition: "class AnonStaticMethodClass { static anonStaticMethod(s: string): string { return s; } }",
     },
     {
         value: "StaticFuncPropClass.staticFuncProp",
@@ -64,7 +64,7 @@ export const selfTestFunctions: TestFunction[] = [
     },
     {
         value: "FuncNs.nsFunc",
-        definition: `namespace FuncNs { export function nsFunc(s: string) { return s; } }`,
+        definition: "namespace FuncNs { export function nsFunc(s: string) { return s; } }",
     },
     {
         value: "FuncNestedNs.NestedNs.nestedNsFunc",
@@ -154,11 +154,11 @@ export const selfTestFunctions: TestFunction[] = [
 export const noSelfTestFunctions: TestFunction[] = [
     {
         value: "voidFunc",
-        definition: `let voidFunc: {(this: void, s: string): string} = function(s) { return s; };`,
+        definition: "let voidFunc: {(this: void, s: string): string} = function(s) { return s; };",
     },
     {
         value: "voidLambda",
-        definition: `let voidLambda: (this: void, s: string) => string = s => s;`,
+        definition: "let voidLambda: (this: void, s: string) => string = s => s;",
     },
     {
         value: "voidMethodClass.voidMethod",
@@ -188,7 +188,7 @@ export const noSelfTestFunctions: TestFunction[] = [
     },
     {
         value: "NoSelfFuncNs.noSelfNsFunc",
-        definition: `/** @noSelf */ namespace NoSelfFuncNs { export function noSelfNsFunc(s: string) { return s; } }`,
+        definition: "/** @noSelf */ namespace NoSelfFuncNs { export function noSelfNsFunc(s: string) { return s; } }",
     },
     {
         value: "NoSelfFuncNs.noSelfNsFunc",
@@ -324,11 +324,11 @@ export const noSelfTestFunctions: TestFunction[] = [
 const noSelfInFileTestFunctions: TestFunction[] = [
     {
         value: "noSelfInFileFunc",
-        definition: `/** @noSelfInFile */ let noSelfInFileFunc: {(s: string): string} = function(s) { return s; };`,
+        definition: "/** @noSelfInFile */ let noSelfInFileFunc: {(s: string): string} = function(s) { return s; };",
     },
     {
         value: "noSelfInFileLambda",
-        definition: `/** @noSelfInFile */ let noSelfInFileLambda: (s: string) => string = s => s;`,
+        definition: "/** @noSelfInFile */ let noSelfInFileLambda: (s: string) => string = s => s;",
     },
     {
         value: "NoSelfInFileFuncNs.noSelfInFileNsFunc",
@@ -352,20 +352,20 @@ const noSelfInFileTestFunctions: TestFunction[] = [
 ];
 
 export const anonTestFunctionExpressions: TestFunction[] = [
-    { value: `s => s` },
-    { value: `(s => s)` },
-    { value: `function(s) { return s; }` },
-    { value: `(function(s) { return s; })` },
+    { value: "s => s" },
+    { value: "(s => s)" },
+    { value: "function(s) { return s; }" },
+    { value: "(function(s) { return s; })" },
 ];
 
 export const selfTestFunctionExpressions: TestFunction[] = [
-    { value: `function(this: any, s) { return s; }` },
-    { value: `(function(this: any, s) { return s; })` },
+    { value: "function(this: any, s) { return s; }" },
+    { value: "(function(this: any, s) { return s; })" },
 ];
 
 export const noSelfTestFunctionExpressions: TestFunction[] = [
-    { value: `function(this: void, s) { return s; }` },
-    { value: `(function(this: void, s) { return s; })` },
+    { value: "function(this: void, s) { return s; }" },
+    { value: "(function(this: void, s) { return s; })" },
 ];
 
 export const anonTestFunctionType = "(s: string) => string";

@@ -11,7 +11,7 @@ function __TS__ArrayFind<T>(
         if (predicate(elem, k, arr)) {
             return elem;
         }
-        k = k + 1;
+        k += 1;
     }
 
     return undefined;

@@ -38,7 +38,7 @@ export class TransformationContext {
         (this.options.alwaysStrict ?? this.options.strict) ||
         (this.isModule && this.options.target !== undefined && this.options.target >= ts.ScriptTarget.ES2015);
 
-    public constructor(public program: ts.Program, public sourceFile: ts.SourceFile, private visitorMap: VisitorMap) {
+    constructor(public program: ts.Program, public sourceFile: ts.SourceFile, private visitorMap: VisitorMap) {
         // Use `getParseTreeNode` to get original SourceFile node, before it was substituted by custom transformers.
         // It's required because otherwise `getEmitResolver` won't use cached diagnostics, produced in `emitWorker`
         // and would try to re-analyze the file, which would fail because of replaced nodes.
@@ -50,6 +50,7 @@ export class TransformationContext {
 
     public transformNode(node: ts.Node): lua.Node[];
     /** @internal */
+    // eslint-disable-next-line @typescript-eslint/unified-signatures
     public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[];
     public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[] {
         // TODO: Move to visitors?

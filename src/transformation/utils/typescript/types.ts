@@ -2,22 +2,57 @@ import * as ts from "typescript";
 import { TransformationContext } from "../../context";
 
 export function isTypeWithFlags(context: TransformationContext, type: ts.Type, flags: ts.TypeFlags): boolean {
-    if (type.symbol) {
-        const baseConstraint = context.checker.getBaseConstraintOfType(type);
-        if (baseConstraint && baseConstraint !== type) {
-            return isTypeWithFlags(context, baseConstraint, flags);
+    const predicate = (type: ts.Type) => {
+        if (type.symbol) {
+            const baseConstraint = context.checker.getBaseConstraintOfType(type);
+            if (baseConstraint && baseConstraint !== type) {
+                return isTypeWithFlags(context, baseConstraint, flags);
+            }
         }
+        return (type.flags & flags) !== 0;
+    };
+
+    return typeAlwaysSatisfies(context, type, predicate);
+}
+
+export function typeAlwaysSatisfies(
+    context: TransformationContext,
+    type: ts.Type,
+    predicate: (type: ts.Type) => boolean
+): boolean {
+    if (predicate(type)) {
+        return true;
     }
 
     if (type.isUnion()) {
-        return type.types.every(t => isTypeWithFlags(context, t, flags));
+        return type.types.every(t => typeAlwaysSatisfies(context, t, predicate));
     }
 
     if (type.isIntersection()) {
-        return type.types.some(t => isTypeWithFlags(context, t, flags));
+        return type.types.some(t => typeAlwaysSatisfies(context, t, predicate));
     }
 
-    return (type.flags & flags) !== 0;
+    return false;
+}
+
+export function typeCanSatisfy(
+    context: TransformationContext,
+    type: ts.Type,
+    predicate: (type: ts.Type) => boolean
+): boolean {
+    if (predicate(type)) {
+        return true;
+    }
+
+    if (type.isUnion()) {
+        return type.types.some(t => typeCanSatisfy(context, t, predicate));
+    }
+
+    if (type.isIntersection()) {
+        return type.types.some(t => typeCanSatisfy(context, t, predicate));
+    }
+
+    return false;
 }
 
 export function isStringType(context: TransformationContext, type: ts.Type): boolean {
@@ -52,7 +87,7 @@ function isExplicitArrayType(context: TransformationContext, type: ts.Type): boo
 /**
  * Iterate over a type and its bases until the callback returns true.
  */
-function forTypeOrAnySupertype(
+export function forTypeOrAnySupertype(
     context: TransformationContext,
     type: ts.Type,
     predicate: (type: ts.Type) => boolean

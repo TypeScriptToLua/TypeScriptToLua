@@ -71,12 +71,12 @@ export const optionDeclarations: CommandLineOption[] = [
 
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
     let hasRootLevelOptions = false;
-    for (const key in parsedConfigFile.raw) {
-        const option = optionDeclarations.find(option => option.name === key);
+    for (const [name, rawValue] of Object.entries(parsedConfigFile.raw)) {
+        const option = optionDeclarations.find(option => option.name === name);
         if (!option) continue;
 
         if (parsedConfigFile.raw.tstl === undefined) parsedConfigFile.raw.tstl = {};
-        parsedConfigFile.raw.tstl[key] = parsedConfigFile.raw[key];
+        parsedConfigFile.raw.tstl[name] = rawValue;
         hasRootLevelOptions = true;
     }
 
@@ -85,16 +85,16 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
             parsedConfigFile.errors.push(cliDiagnostics.tstlOptionsAreMovingToTheTstlObject(parsedConfigFile.raw.tstl));
         }
 
-        for (const key in parsedConfigFile.raw.tstl) {
-            const option = optionDeclarations.find(option => option.name === key);
+        for (const [name, rawValue] of Object.entries(parsedConfigFile.raw.tstl)) {
+            const option = optionDeclarations.find(option => option.name === name);
             if (!option) {
-                parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(key));
+                parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(name));
                 continue;
             }
 
-            const { error, value } = readValue(option, parsedConfigFile.raw.tstl[key]);
+            const { error, value } = readValue(option, rawValue);
             if (error) parsedConfigFile.errors.push(error);
-            if (parsedConfigFile.options[key] === undefined) parsedConfigFile.options[key] = value;
+            if (parsedConfigFile.options[name] === undefined) parsedConfigFile.options[name] = value;
         }
     }
 
@@ -123,12 +123,9 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
         if (option) {
             // Ignore errors caused by tstl specific compiler options
             const tsInvalidCompilerOptionErrorCode = 5023;
-            parsedCommandLine.errors = parsedCommandLine.errors.filter(error => {
-                return !(
-                    error.code === tsInvalidCompilerOptionErrorCode &&
-                    String(error.messageText).endsWith(`'${args[i]}'.`)
-                );
-            });
+            parsedCommandLine.errors = parsedCommandLine.errors.filter(
+                e => !(e.code === tsInvalidCompilerOptionErrorCode && String(e.messageText).endsWith(`'${args[i]}'.`))
+            );
 
             const { error, value, increment } = readCommandLineArgument(option, args[i + 1]);
             if (error) parsedCommandLine.errors.push(error);

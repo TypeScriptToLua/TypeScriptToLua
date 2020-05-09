@@ -1,6 +1,6 @@
 import * as util from "../util";
 
-test.each([`{ a: 3, b: "4" }`, `{ "a": 3, b: "4" }`, `{ ["a"]: 3, b: "4" }`, `{ ["a" + 123]: 3, b: "4" }`])(
+test.each(['{ a: 3, b: "4" }', '{ "a": 3, b: "4" }', '{ ["a"]: 3, b: "4" }', '{ ["a" + 123]: 3, b: "4" }'])(
     "Object Literal (%p)",
     inp => {
         util.testExpression(inp).expectToMatchJsResult();
@@ -36,8 +36,8 @@ describe("property shorthand", () => {
 
     test("should support _G shorthand", () => {
         util.testExpression`({ _G })._G.foobar`
-            .setTsHeader(`declare const _G: any;`)
-            .setLuaHeader(`foobar = "foobar"`)
+            .setTsHeader("declare const _G: any;")
+            .setLuaHeader('foobar = "foobar"')
             .expectToEqual("foobar");
     });
 
@@ -57,7 +57,7 @@ test("undefined as object key", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([`{x: "foobar"}.x`, `{x: "foobar"}["x"]`, `{x: () => "foobar"}.x()`, `{x: () => "foobar"}["x"]()`])(
+test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '{x: () => "foobar"}["x"]()'])(
     "object literal property access (%p)",
     expression => {
         util.testExpression(expression).expectToMatchJsResult();

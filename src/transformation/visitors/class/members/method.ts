@@ -33,7 +33,6 @@ export function transformMethodDeclaration(
         lua.createBlock(body),
         paramNames,
         dots,
-        restParamName,
         lua.FunctionExpressionFlags.Declaration,
         node.body
     );

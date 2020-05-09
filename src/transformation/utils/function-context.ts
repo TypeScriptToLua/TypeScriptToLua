@@ -46,6 +46,11 @@ export function getDeclarationContextType(
             : ContextType.NonVoid;
     }
 
+    // noSelf declaration on function signature
+    if (getNodeAnnotations(signatureDeclaration).has(AnnotationKind.NoSelf)) {
+        return ContextType.Void;
+    }
+
     if (
         ts.isMethodSignature(signatureDeclaration) ||
         ts.isMethodDeclaration(signatureDeclaration) ||

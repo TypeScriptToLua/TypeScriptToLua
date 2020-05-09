@@ -15,7 +15,7 @@ export enum AnnotationKind {
     LuaTable = "luaTable",
     NoSelf = "noSelf",
     NoSelfInFile = "noSelfInFile",
-    VarArg = "varArg",
+    Vararg = "vararg",
     ForRange = "forRange",
 }
 
@@ -169,9 +169,9 @@ export function isLuaIteratorType(context: TransformationContext, node: ts.Node)
     return getTypeAnnotations(type).has(AnnotationKind.LuaIterator);
 }
 
-export function isVarArgType(context: TransformationContext, node: ts.Node): boolean {
+export function isVarargType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return getTypeAnnotations(type).has(AnnotationKind.VarArg);
+    return getTypeAnnotations(type).has(AnnotationKind.Vararg);
 }
 
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {

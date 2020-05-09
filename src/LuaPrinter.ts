@@ -6,7 +6,7 @@ import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
-import { trimExtension } from "./utils";
+import { intersperse, trimExtension, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -87,8 +87,7 @@ export interface PrintResult {
 
 export function createPrinter(printers: Printer[]): Printer {
     if (printers.length === 0) {
-        return (program, emitHost, fileName, ...args) =>
-            new LuaPrinter(program.getCompilerOptions(), emitHost, fileName).print(...args);
+        return (program, emitHost, fileName, ...args) => new LuaPrinter(emitHost, program, fileName).print(...args);
     } else if (printers.length === 1) {
         return printers[0];
     } else {
@@ -127,9 +126,26 @@ export class LuaPrinter {
 
     private currentIndent = "";
     private sourceFile: string;
+    private options: CompilerOptions;
 
-    constructor(private options: CompilerOptions, private emitHost: EmitHost, fileName: string) {
-        this.sourceFile = path.basename(fileName);
+    constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
+        this.options = program.getCompilerOptions();
+
+        if (this.options.outDir) {
+            const relativeFileName = path.relative(program.getCommonSourceDirectory(), fileName);
+            if (this.options.sourceRoot) {
+                // When sourceRoot is specified, just use relative path inside rootDir
+                this.sourceFile = relativeFileName;
+            } else {
+                // Calculate relative path from rootDir to outDir
+                const outputPath = path.resolve(this.options.outDir, relativeFileName);
+                this.sourceFile = path.relative(path.dirname(outputPath), fileName);
+            }
+            // We want forward slashes, even in windows
+            this.sourceFile = normalizeSlashes(this.sourceFile);
+        } else {
+            this.sourceFile = path.basename(fileName); // File will be in same dir as source
+        }
     }
 
     public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): PrintResult {
@@ -138,10 +154,10 @@ export class LuaPrinter {
             luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
-        const sourceRoot =
-            this.options.sourceRoot ||
-            (this.options.outDir ? path.relative(this.options.outDir, this.options.rootDir || process.cwd()) : ".");
-
+        const sourceRoot = this.options.sourceRoot
+            ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
+              this.options.sourceRoot.replace(/[\\/]+$/, "") + "/"
+            : "";
         const rootSourceNode = this.printImplementation(block, luaLibFeatures);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
 
@@ -270,8 +286,6 @@ export class LuaPrinter {
     protected printStatementArray(statements: lua.Statement[]): SourceChunk[] {
         const statementNodes: SourceNode[] = [];
         for (const [index, statement] of statements.entries()) {
-            if (this.isStatementEmpty(statement)) continue;
-
             const node = this.printStatement(statement);
 
             if (
@@ -287,7 +301,7 @@ export class LuaPrinter {
             if (lua.isReturnStatement(statement)) break;
         }
 
-        return statementNodes.length > 0 ? [...this.joinChunks("\n", statementNodes), "\n"] : [];
+        return statementNodes.length > 0 ? [...intersperse<SourceChunk>(statementNodes, "\n"), "\n"] : [];
     }
 
     public printStatement(statement: lua.Statement): SourceNode {
@@ -344,21 +358,11 @@ export class LuaPrinter {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
             chunks.push(this.printFunctionDefinition(statement));
         } else {
-            chunks.push(
-                ...this.joinChunks(
-                    ", ",
-                    statement.left.map(e => this.printExpression(e))
-                )
-            );
+            chunks.push(...this.joinChunksWithComma(statement.left.map(e => this.printExpression(e))));
 
             if (statement.right) {
                 chunks.push(" = ");
-                chunks.push(
-                    ...this.joinChunks(
-                        ", ",
-                        statement.right.map(e => this.printExpression(e))
-                    )
-                );
+                chunks.push(...this.joinChunksWithComma(statement.right.map(e => this.printExpression(e))));
             }
         }
 
@@ -382,19 +386,9 @@ export class LuaPrinter {
             }
         }
 
-        chunks.push(
-            ...this.joinChunks(
-                ", ",
-                statement.left.map(e => this.printExpression(e))
-            )
-        );
+        chunks.push(...this.joinChunksWithComma(statement.left.map(e => this.printExpression(e))));
         chunks.push(" = ");
-        chunks.push(
-            ...this.joinChunks(
-                ", ",
-                statement.right.map(e => this.printExpression(e))
-            )
-        );
+        chunks.push(...this.joinChunksWithComma(statement.right.map(e => this.printExpression(e))));
 
         return this.createSourceNode(statement, chunks);
     }
@@ -478,14 +472,8 @@ export class LuaPrinter {
     }
 
     public printForInStatement(statement: lua.ForInStatement): SourceNode {
-        const names = this.joinChunks(
-            ", ",
-            statement.names.map(i => this.printIdentifier(i))
-        );
-        const expressions = this.joinChunks(
-            ", ",
-            statement.expressions.map(e => this.printExpression(e))
-        );
+        const names = this.joinChunksWithComma(statement.names.map(i => this.printIdentifier(i)));
+        const expressions = this.joinChunksWithComma(statement.expressions.map(e => this.printExpression(e)));
 
         const chunks: SourceChunk[] = [];
 
@@ -508,18 +496,13 @@ export class LuaPrinter {
     }
 
     public printReturnStatement(statement: lua.ReturnStatement): SourceNode {
-        if (!statement.expressions || statement.expressions.length === 0) {
+        if (statement.expressions.length === 0) {
             return this.createSourceNode(statement, this.indent("return"));
         }
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push(
-            ...this.joinChunks(
-                ", ",
-                statement.expressions.map(e => this.printExpression(e))
-            )
-        );
+        chunks.push(...this.joinChunksWithComma(statement.expressions.map(e => this.printExpression(e))));
 
         return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
     }
@@ -586,23 +569,17 @@ export class LuaPrinter {
     }
 
     public printBooleanLiteral(expression: lua.BooleanLiteral): SourceNode {
-        if (expression.kind === lua.SyntaxKind.TrueKeyword) {
-            return this.createSourceNode(expression, "true");
-        } else {
-            return this.createSourceNode(expression, "false");
-        }
+        return this.createSourceNode(expression, expression.kind === lua.SyntaxKind.TrueKeyword ? "true" : "false");
     }
 
     private printFunctionParameters(expression: lua.FunctionExpression): SourceChunk[] {
-        const parameterChunks: SourceNode[] = expression.params
-            ? expression.params.map(i => this.printIdentifier(i))
-            : [];
+        const parameterChunks = (expression.params ?? []).map(i => this.printIdentifier(i));
 
         if (expression.dots) {
             parameterChunks.push(this.printDotsLiteral(expression.dots));
         }
 
-        return this.joinChunks(", ", parameterChunks);
+        return this.joinChunksWithComma(parameterChunks);
     }
 
     public printFunctionExpression(expression: lua.FunctionExpression): SourceNode {
@@ -617,10 +594,7 @@ export class LuaPrinter {
             chunks.push(" ");
             const returnNode: SourceChunk[] = [
                 "return ",
-                ...this.joinChunks(
-                    ", ",
-                    returnStatement.expressions.map(e => this.printExpression(e))
-                ),
+                ...this.joinChunksWithComma(returnStatement.expressions.map(e => this.printExpression(e))),
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
             chunks.push(this.createSourceNode(expression, " end"));
@@ -768,38 +742,22 @@ export class LuaPrinter {
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
     }
 
-    protected isStatementEmpty(statement: lua.Statement): boolean {
-        return lua.isDoStatement(statement) && (!statement.statements || statement.statements.length === 0);
-    }
-
-    protected joinChunks(separator: string, chunks: SourceChunk[]): SourceChunk[] {
-        const result = [];
-        for (let i = 0; i < chunks.length; i++) {
-            result.push(chunks[i]);
-            if (i < chunks.length - 1) {
-                result.push(separator);
-            }
-        }
-        return result;
+    protected joinChunksWithComma(chunks: SourceChunk[]): SourceChunk[] {
+        return intersperse(chunks, ", ");
     }
 
     protected printExpressionList(expressions: lua.Expression[]): SourceChunk[] {
         const chunks: SourceChunk[] = [];
 
         if (expressions.every(isSimpleExpression)) {
-            chunks.push(
-                ...this.joinChunks(
-                    ", ",
-                    expressions.map(e => this.printExpression(e))
-                )
-            );
+            chunks.push(...this.joinChunksWithComma(expressions.map(e => this.printExpression(e))));
         } else {
             chunks.push("\n");
             this.pushIndent();
-            expressions.forEach((p, i) => {
-                const tail = i < expressions.length - 1 ? ",\n" : "\n";
-                chunks.push(this.indent(), this.printExpression(p), tail);
-            });
+            for (const [index, expression] of expressions.entries()) {
+                const tail = index < expressions.length - 1 ? ",\n" : "\n";
+                chunks.push(this.indent(), this.printExpression(expression), tail);
+            }
             this.popIndent();
             chunks.push(this.indent());
         }

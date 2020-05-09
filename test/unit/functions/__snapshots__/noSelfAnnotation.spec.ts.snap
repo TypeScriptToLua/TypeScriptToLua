@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@noSelf on declared function removes context argument 1`] = `"myFunction()"`;
+
+exports[`@noSelf on method inside class declaration removes context argument 1`] = `"holder.myMethod()"`;
+
+exports[`@noSelf on method inside interface declaration removes context argument 1`] = `"holder.myMethod()"`;
+
+exports[`@noSelf on method inside namespace declaration removes context argument 1`] = `"MyNamespace.myMethod()"`;
+
+exports[`@noSelf on parent class declaration removes context argument 1`] = `"holder.myMethod()"`;
+
+exports[`@noSelf on parent interface declaration removes context argument 1`] = `"holder.myMethod()"`;
+
+exports[`@noSelf on parent namespace declaration removes context argument 1`] = `"MyNamespace.myMethod()"`;

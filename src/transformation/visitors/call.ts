@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall, isVarArgType } from "../utils/annotations";
+import { isInTupleReturnFunction, isTupleReturnCall, isVarargType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -10,7 +10,6 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
-import { transformIdentifier } from "./identifier";
 import { transformLuaTableCallExpression } from "./lua-table";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
@@ -117,7 +116,7 @@ export function transformContextualCallExpression(
 
         return lua.createMethodCallExpression(
             table,
-            transformIdentifier(context, left.name),
+            lua.createIdentifier(left.name.text, left.name),
             transformedArguments,
             node
         );
@@ -255,7 +254,7 @@ export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, 
         return innerExpression;
     }
 
-    if (ts.isIdentifier(node.expression) && isVarArgType(context, node.expression)) {
+    if (ts.isIdentifier(node.expression) && isVarargType(context, node.expression)) {
         return lua.createDotsLiteral(node);
     }
 

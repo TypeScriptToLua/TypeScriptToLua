@@ -7,46 +7,56 @@ test.each(["const", "let"])("%s declaration not top-level is not global", declar
             ${declarationKind} foo = true;
         }
         // @ts-ignore
-        return (globalThis as any).foo;
-    `.expectToEqual(undefined);
+        return "foo" in globalThis;
+    `.expectToEqual(false);
 });
 
-test.each(["const", "let"])("%s declaration top-level is global", declarationKind => {
-    util.testModule`
-        ${declarationKind} foo = true;
+test.each(["const", "let"])("top-level %s declaration is global", declarationKind => {
+    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
+    util.testBundle`
         // @ts-ignore
-        return (globalThis as any).foo;
-    `.expectToEqual(true);
+        import './a';
+        export const result = foo;
+    `
+        .addExtraFile("a.ts", `${declarationKind} foo = true;`)
+        .expectToEqual({ result: true });
 });
 
-test("var declaration is disallowed", () => {
-    util.testFunction`
-        var foo = true;
-    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
+describe("var is disallowed", () => {
+    test("var declaration", () => {
+        util.testFunction`
+            var foo = true;
+        `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
+    });
+
+    test("for loop", () => {
+        util.testFunction`
+            for (var foo = 0;;) {}
+        `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
+    });
+
+    test("for...in loop", () => {
+        util.testFunction`
+            for (var foo in {}) {}
+        `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
+    });
+
+    test("for...of loop", () => {
+        util.testFunction`
+            for (var foo of []) {}
+        `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
+    });
 });
 
-test("var declaration in for loop is disallowed", () => {
-    util.testFunction`
-        for (var foo = 0;;) {}
-    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
-});
-
-test("var declaration in for...in loop is disallowed", () => {
-    util.testFunction`
-        for (var foo in {}) {}
-    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
-});
-
-test("var declaration in for...of loop is disallowed", () => {
-    util.testFunction`
-        for (var foo of []) {}
-    `.expectDiagnosticsToMatchSnapshot([unsupportedVarDeclaration.code]);
-});
-
-test.each(["let myvar;", "const myvar = null;", "const myvar = undefined;"])("Null assignments (%p)", declaration => {
-    const result = util.transpileAndExecute(declaration + " return myvar;");
-    expect(result).toBeUndefined();
-});
+test.each(["let result;", "const result = null;", "const result = undefined;"])(
+    "Null assignments (%p)",
+    declaration => {
+        util.testFunction`
+            ${declaration}
+            return result;
+        `.expectToEqual(undefined);
+    }
+);
 
 test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {
     util.testFunction`

@@ -34,7 +34,6 @@ function wrapInFunctionCall(expression: lua.Expression): lua.FunctionExpression 
         lua.createBlock([returnStatement]),
         undefined,
         undefined,
-        undefined,
         lua.FunctionExpressionFlags.Inline
     );
 }

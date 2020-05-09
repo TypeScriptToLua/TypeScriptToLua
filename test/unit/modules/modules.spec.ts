@@ -175,24 +175,6 @@ test("Export Default Function", () => {
     expect(result).toBe(true);
 });
 
-test.each([
-    ["Test", "export default class Test { static method() { return true; } }"],
-    ["default", "export default class { static method() { return true; } }"],
-])("Export Default Class Name (%p)", (expectedClassName, classDeclarationStatement) => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport from "./module";
-                export const value = defaultExport.name;
-            `,
-            "module.ts": classDeclarationStatement,
-        },
-        "value"
-    );
-
-    expect(result).toBe(expectedClassName);
-});
-
 test("Export Equals", () => {
     const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {

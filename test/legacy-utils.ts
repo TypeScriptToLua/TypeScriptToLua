@@ -19,7 +19,7 @@ export function transpileString(
     return file.lua!.trim();
 }
 
-export function transpileStringsAsProject(
+function transpileStringsAsProject(
     input: Record<string, string>,
     options: tstl.CompilerOptions = {}
 ): tstl.TranspileResult {
@@ -36,7 +36,7 @@ export function transpileStringsAsProject(
     return tstl.transpileVirtualProject(input, optionsWithDefaults);
 }
 
-export function transpileStringResult(
+function transpileStringResult(
     input: string | Record<string, string>,
     options: tstl.CompilerOptions = {}
 ): Required<tstl.TranspileStringResult> {

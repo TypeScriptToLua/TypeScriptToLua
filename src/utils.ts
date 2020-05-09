@@ -2,12 +2,17 @@ import * as ts from "typescript";
 import * as nativeAssert from "assert";
 import * as path from "path";
 
-export const createDiagnosticFactoryWithCode = <
-    T extends (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">
->(
-    code: number,
-    create: T
-) =>
+export function castArray<T>(value: T | T[]): T[];
+export function castArray<T>(value: T | readonly T[]): readonly T[];
+export function castArray<T>(value: T | readonly T[]): readonly T[] {
+    return Array.isArray(value) ? value : [value];
+}
+
+export const intersperse = <T>(values: T[], separator: T): T[] =>
+    values.flatMap((value, index) => (index === 0 ? [value] : [separator, value]));
+
+type DiagnosticFactory = (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">;
+export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) =>
     Object.assign(
         (...args: Parameters<T>): ts.Diagnostic => ({
             file: undefined,
@@ -22,11 +27,8 @@ export const createDiagnosticFactoryWithCode = <
     );
 
 let serialDiagnosticCodeCounter = 100000;
-export const createSerialDiagnosticFactory = <
-    T extends (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">
->(
-    create: T
-) => createDiagnosticFactoryWithCode(serialDiagnosticCodeCounter++, create);
+export const createSerialDiagnosticFactory = <T extends DiagnosticFactory>(create: T) =>
+    createDiagnosticFactoryWithCode(serialDiagnosticCodeCounter++, create);
 
 export const normalizeSlashes = (filePath: string) => filePath.replace(/\\/g, "/");
 export const trimExtension = (filePath: string) => filePath.slice(0, -path.extname(filePath).length);
@@ -67,17 +69,6 @@ export function cast<TOriginal, TCast extends TOriginal>(
         return item;
     } else {
         throw new Error(`Failed to cast value to expected type using ${cast.name}.`);
-    }
-}
-
-export function castEach<TOriginal, TCast extends TOriginal>(
-    items: TOriginal[],
-    cast: (item: TOriginal) => item is TCast
-): TCast[] {
-    if (items.every(cast)) {
-        return items as TCast[];
-    } else {
-        throw new Error(`Failed to cast all elements to expected type using ${cast.name}.`);
     }
 }
 

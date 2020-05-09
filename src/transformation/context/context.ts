@@ -95,6 +95,11 @@ export class TransformationContext {
 
     public superTransformExpression(node: ExpressionLikeNode): lua.Expression {
         const [result] = this.superTransformNode(node);
+
+        if (result === undefined) {
+            throw new Error(`Expression visitor for node type ${ts.SyntaxKind[node.kind]} did not return any result.`);
+        }
+
         return result as lua.Expression;
     }
 

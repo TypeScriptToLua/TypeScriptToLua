@@ -104,7 +104,6 @@ module.exports = {
         "no-label-var": ["error"],
         yoda: ["error"],
         "prefer-numeric-literals": ["error"],
-        "no-lonely-if": ["error"],
         "prefer-rest-params": ["error"],
         "prefer-spread": ["error"],
         "no-useless-computed-key": ["error"],

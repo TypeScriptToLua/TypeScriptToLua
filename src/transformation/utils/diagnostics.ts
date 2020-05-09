@@ -97,8 +97,6 @@ export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
     "Accessors in object literal are not supported."
 );
 
-export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
-
 export const unsupportedRightShiftOperator = createDiagnosticFactory(
     "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."
 );

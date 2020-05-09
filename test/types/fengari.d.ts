@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/explicit-member-accessibility, @typescript-eslint/class-name-casing */
+
 export const FENGARI_AUTHORS: string;
 export const FENGARI_COPYRIGHT: string;
 export const FENGARI_RELEASE: string;

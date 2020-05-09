@@ -1,4 +1,4 @@
 import { getNumber } from "./otherFile";
 
 const myNumber = getNumber();
-SetAPIValue(myNumber * 5);
+setAPIValue(myNumber * 5);

@@ -90,7 +90,7 @@ test.each([
             /** @noResolution */
             declare module "fake" {}
         `,
-        mainCode: `import "fake";`,
+        mainCode: 'import "fake";',
         expectedPath: "fake",
     },
     {
@@ -98,7 +98,7 @@ test.each([
             /** @noResolution */
             declare module "fake" {}
         `,
-        mainCode: `import * as fake from "fake"; fake;`,
+        mainCode: 'import * as fake from "fake"; fake;',
         expectedPath: "fake",
     },
     {
@@ -108,7 +108,7 @@ test.each([
                 export const x: number;
             }
         `,
-        mainCode: `import { x } from "fake"; x;`,
+        mainCode: 'import { x } from "fake"; x;',
         expectedPath: "fake",
     },
     {
@@ -122,7 +122,7 @@ test.each([
                 export const y: number;
             }
         `,
-        mainCode: `import { y } from "fake"; y;`,
+        mainCode: 'import { y } from "fake"; y;',
         expectedPath: "fake",
     },
 ])("noResolution prevents any module path resolution behavior", ({ declarationStatement, mainCode, expectedPath }) => {

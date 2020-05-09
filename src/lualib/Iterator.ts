@@ -12,7 +12,7 @@ function __TS__Iterator<T>(this: void, iterable: Iterable<T>): (this: void) => T
     } else {
         let i = 0;
         return () => {
-            i = i + 1;
+            i += 1;
             return iterable[i];
         };
     }

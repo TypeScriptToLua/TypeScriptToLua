@@ -3,7 +3,7 @@ import * as tstl from "../../../src";
 
 const plugin: tstl.Plugin = {
     visitors: {
-        [ts.SyntaxKind.StringLiteral]: (node, context) => {
+        [ts.SyntaxKind.StringLiteral](node, context) {
             const result = context.superTransformExpression(node);
 
             if (tstl.isStringLiteral(result)) {
@@ -15,5 +15,5 @@ const plugin: tstl.Plugin = {
     },
 };
 
-// tslint:disable-next-line: no-default-export
+// eslint-disable-next-line import/no-default-export
 export default plugin;

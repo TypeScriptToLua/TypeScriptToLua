@@ -3,7 +3,7 @@ function __TS__ArrayReduceRight<T>(
     this: void,
     arr: T[],
     callbackFn: (accumulator: T, currentValue: T, index: number, array: T[]) => T,
-    ...initial: Vararg<T>
+    ...initial: Vararg<T[]>
 ): T {
     const len = arr.length;
 
@@ -15,9 +15,8 @@ function __TS__ArrayReduceRight<T>(
         accumulator = select(1, ...initial);
     } else if (len > 0) {
         accumulator = arr[k];
-        k = k - 1;
+        k -= 1;
     } else {
-        // tslint:disable-next-line: no-string-throw
         throw "Reduce of empty array with no initial value";
     }
 

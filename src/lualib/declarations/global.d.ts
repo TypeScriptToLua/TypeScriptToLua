@@ -1,3 +1,4 @@
+/* eslint-disable no-var */
 /** @noSelfInFile */
 
 declare var __TS__sourcemap: Record<number, number> | undefined;

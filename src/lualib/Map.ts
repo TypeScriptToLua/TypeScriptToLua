@@ -23,6 +23,7 @@ Map = class Map<K, V> {
                 if (result.done) {
                     break;
                 }
+
                 const value: [K, V] = result.value; // Ensures index is offset when tuple is accessed
                 this.set(value[0], value[1]);
             }
@@ -41,7 +42,6 @@ Map = class Map<K, V> {
         this.firstKey = undefined;
         this.lastKey = undefined;
         this.size = 0;
-        return;
     }
 
     public delete(key: K): boolean {
@@ -78,7 +78,6 @@ Map = class Map<K, V> {
         for (const key of this.keys()) {
             callback(this.items.get(key), key, this);
         }
-        return;
     }
 
     public get(key: K): V | undefined {
@@ -114,8 +113,7 @@ Map = class Map<K, V> {
     }
 
     public entries(): IterableIterator<[K, V]> {
-        const items = this.items;
-        const nextKey = this.nextKey;
+        const { items, nextKey } = this;
         let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<[K, V]> {
@@ -145,8 +143,7 @@ Map = class Map<K, V> {
     }
 
     public values(): IterableIterator<V> {
-        const items = this.items;
-        const nextKey = this.nextKey;
+        const { items, nextKey } = this;
         let key = this.firstKey;
         return {
             [Symbol.iterator](): IterableIterator<V> {

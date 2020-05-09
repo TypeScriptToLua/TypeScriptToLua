@@ -53,7 +53,7 @@ const equalityComparisonCases: ComparisonCase[] = [
     { expression: "() => {}", operator: "===", compareTo: "function" },
     { expression: "1", operator: "===", compareTo: "number" },
     { expression: "true", operator: "===", compareTo: "boolean" },
-    { expression: `"foo"`, operator: "===", compareTo: "string" },
+    { expression: '"foo"', operator: "===", compareTo: "string" },
 ];
 
 const relationalComparisonCases: ComparisonCase[] = [

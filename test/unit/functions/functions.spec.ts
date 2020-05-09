@@ -510,6 +510,6 @@ test("top-level function declaration is global", () => {
         import './a';
         export const result = foo();
     `
-        .addExtraFile("a.ts", `function foo() { return "foo" }`)
+        .addExtraFile("a.ts", 'function foo() { return "foo" }')
         .expectToEqual({ result: "foo" });
 });

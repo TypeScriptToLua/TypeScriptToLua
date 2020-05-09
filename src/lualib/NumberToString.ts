@@ -1,4 +1,3 @@
-// tslint:disable-next-line: variable-name
 const ____radixChars = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 // https://www.ecma-international.org/ecma-262/10.0/index.html#sec-number.prototype.tostring
@@ -9,7 +8,6 @@ function __TS__NumberToString(this: number, radix?: number): string {
 
     radix = Math.floor(radix);
     if (radix < 2 || radix > 36) {
-        // tslint:disable-next-line: no-string-throw
         throw "toString() radix argument must be between 2 and 36";
     }
 

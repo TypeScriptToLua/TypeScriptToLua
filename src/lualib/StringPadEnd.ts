@@ -1,7 +1,6 @@
 function __TS__StringPadEnd(this: string, maxLength: number, fillString = " "): string {
     if (maxLength !== maxLength) maxLength = 0;
     if (maxLength === -Infinity || maxLength === Infinity) {
-        // tslint:disable-next-line: no-string-throw
         throw "Invalid string length";
     }
 
@@ -9,7 +8,7 @@ function __TS__StringPadEnd(this: string, maxLength: number, fillString = " "): 
         return this;
     }
 
-    maxLength = maxLength - this.length;
+    maxLength -= this.length;
     if (maxLength > fillString.length) {
         fillString += fillString.repeat(maxLength / fillString.length);
     }

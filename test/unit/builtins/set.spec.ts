@@ -124,11 +124,11 @@ test("set values", () => {
 });
 
 test.each([
-    `let m = new Set()`,
-    `let m = new Set(); m.add(1)`,
-    `let m = new Set([1, 2])`,
-    `let m = new Set([1, 2]); m.clear()`,
-    `let m = new Set([1, 2]); m.delete(2)`,
+    "let m = new Set()",
+    "let m = new Set(); m.add(1)",
+    "let m = new Set([1, 2])",
+    "let m = new Set([1, 2]); m.clear()",
+    "let m = new Set([1, 2]); m.delete(2)",
 ])("set size (%p)", code => {
     util.testFunction`${code}; return m.size`.expectToMatchJsResult();
 });

@@ -21,7 +21,7 @@ test("bundle file name", () => {
         .expectToHaveNoDiagnostics()
         .getLuaResult();
 
-    expect(transpiledFiles.length).toBe(1);
+    expect(transpiledFiles).toHaveLength(1);
     expect(transpiledFiles[0].fileName).toBe(
         path.join(ts.sys.getCurrentDirectory(), "mybundle.lua").replace(/\\/g, "/")
     );

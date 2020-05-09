@@ -74,38 +74,39 @@ function transformForOfLuaIteratorStatement(
 
     if (tupleReturn) {
         // LuaIterator + TupleReturn
+
         if (ts.isVariableDeclarationList(statement.initializer)) {
             // Variables declared in for loop
             // for ${initializer} in ${iterable} do
-            const binding = getVariableDeclarationBinding(context, statement.initializer);
 
+            const binding = getVariableDeclarationBinding(context, statement.initializer);
             if (ts.isArrayBindingPattern(binding)) {
                 identifiers = binding.elements.map(e => transformArrayBindingElement(context, e));
             } else {
                 context.diagnostics.push(luaIteratorForbiddenUsage(binding));
             }
-        } else {
+        } else if (ts.isArrayLiteralExpression(statement.initializer)) {
             // Variables NOT declared in for loop - catch iterator values in temps and assign
             // for ____value0 in ${iterable} do
             //     ${initializer} = ____value0
-            if (ts.isArrayLiteralExpression(statement.initializer)) {
-                identifiers = statement.initializer.elements.map((_, i) => lua.createIdentifier(`____value${i}`));
-                if (identifiers.length > 0) {
-                    block.statements.unshift(
-                        lua.createAssignmentStatement(
-                            statement.initializer.elements.map(e =>
-                                cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression)
-                            ),
-                            identifiers
-                        )
-                    );
-                }
-            } else {
-                context.diagnostics.push(luaIteratorForbiddenUsage(statement.initializer));
+
+            identifiers = statement.initializer.elements.map((_, i) => lua.createIdentifier(`____value${i}`));
+            if (identifiers.length > 0) {
+                block.statements.unshift(
+                    lua.createAssignmentStatement(
+                        statement.initializer.elements.map(e =>
+                            cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression)
+                        ),
+                        identifiers
+                    )
+                );
             }
+        } else {
+            context.diagnostics.push(luaIteratorForbiddenUsage(statement.initializer));
         }
     } else {
         // LuaIterator (no TupleReturn)
+
         identifiers.push(transformForInitializer(context, statement.initializer, block));
     }
 

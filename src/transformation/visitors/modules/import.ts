@@ -13,13 +13,13 @@ import { transformPropertyName } from "../literal";
 import { unresolvableRequirePath } from "../../utils/diagnostics";
 
 const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
-    relativePath[0] !== "." && options.baseUrl
+    !relativePath.startsWith(".") && options.baseUrl
         ? path.resolve(options.baseUrl, relativePath)
         : path.resolve(directoryPath, relativePath);
 
 function getImportPath(context: TransformationContext, relativePath: string, node: ts.Node): string {
-    const fileName = context.sourceFile.fileName;
-    const options = context.options;
+    const { options, sourceFile } = context;
+    const { fileName } = sourceFile;
     const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
 
     const absoluteImportPath = path.format(

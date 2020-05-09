@@ -1,8 +1,9 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as ts from "typescript";
-import * as tstl from "./src";
-import { loadLuaLibFeatures } from "./src/LuaLib";
+require("ts-node/register/transpile-only");
+const fs = require("fs");
+const path = require("path");
+const ts = require("typescript");
+const tstl = require("./src");
+const { loadLuaLibFeatures } = require("./src/LuaLib");
 
 const configFileName = path.resolve(__dirname, "src/lualib/tsconfig.json");
 const { emitResult, diagnostics } = tstl.transpileProject(configFileName);

@@ -31,7 +31,7 @@ export const escapeString = (value: string) => `"${value.replace(escapeStringReg
  * `foo.bar` => passes (`function foo.bar()` is valid)
  * `getFoo().bar` => fails (`function getFoo().bar()` would be illegal)
  */
-const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_\.]+$/.test(str);
+const isValidLuaFunctionDeclarationName = (str: string) => /^[a-zA-Z0-9_.]+$/.test(str);
 
 /**
  * Returns true if expression contains no function calls.
@@ -128,7 +128,7 @@ export class LuaPrinter {
     private sourceFile: string;
     private options: CompilerOptions;
 
-    public constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
+    constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
 
         if (this.options.outDir) {
@@ -156,7 +156,7 @@ export class LuaPrinter {
 
         const sourceRoot = this.options.sourceRoot
             ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
-              this.options.sourceRoot.replace(/[\\\/]+$/, "") + "/"
+              this.options.sourceRoot.replace(/[\\/]+$/, "") + "/"
             : "";
         const rootSourceNode = this.printImplementation(block, luaLibFeatures);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
@@ -207,7 +207,7 @@ export class LuaPrinter {
         let header = "";
 
         if (!this.options.noHeader) {
-            header += `--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n`;
+            header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
@@ -216,7 +216,7 @@ export class LuaPrinter {
             (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
         ) {
             // Require lualib bundle
-            header += `require("lualib_bundle");\n`;
+            header += 'require("lualib_bundle");\n';
         } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
@@ -233,7 +233,7 @@ export class LuaPrinter {
     }
 
     protected pushIndent(): void {
-        this.currentIndent = this.currentIndent + "    ";
+        this.currentIndent += "    ";
     }
 
     protected popIndent(): void {
@@ -245,15 +245,14 @@ export class LuaPrinter {
     }
 
     protected createSourceNode(node: lua.Node, chunks: SourceChunk | SourceChunk[], name?: string): SourceNode {
-        const originalPos = lua.getOriginalPos(node);
+        const { line, column } = lua.getOriginalPos(node);
 
-        return originalPos !== undefined && originalPos.line !== undefined && originalPos.column !== undefined
-            ? new SourceNode(originalPos.line + 1, originalPos.column, this.sourceFile, chunks, name)
-            : new SourceNode(null, null, this.sourceFile, chunks, name); // tslint:disable-line:no-null-keyword
+        return line !== undefined && column !== undefined
+            ? new SourceNode(line + 1, column, this.sourceFile, chunks, name)
+            : new SourceNode(null, null, this.sourceFile, chunks, name);
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {
-        // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, chunks);
     }
 
@@ -438,7 +437,7 @@ export class LuaPrinter {
     public printRepeatStatement(statement: lua.RepeatStatement): SourceNode {
         const chunks: SourceChunk[] = [];
 
-        chunks.push(this.indent(`repeat\n`));
+        chunks.push(this.indent("repeat\n"));
 
         this.pushIndent();
         chunks.push(this.printBlock(statement.body));
@@ -740,7 +739,6 @@ export class LuaPrinter {
     }
 
     public printOperator(kind: lua.Operator): SourceNode {
-        // tslint:disable-next-line:no-null-keyword
         return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
     }
 

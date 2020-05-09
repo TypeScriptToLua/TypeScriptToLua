@@ -151,7 +151,7 @@ export function transformBinaryExpressionStatement(
     context: TransformationContext,
     node: ts.ExpressionStatement
 ): lua.Statement[] | lua.Statement | undefined {
-    const { expression } = node;
+    const expression = node.expression;
     if (!ts.isBinaryExpression(expression)) return;
     const operator = expression.operatorToken.kind;
 

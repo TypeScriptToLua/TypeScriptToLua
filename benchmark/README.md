@@ -10,7 +10,7 @@ and **default** export a function with the following type: `() => void`.
 For example (memory_benchmarks/my_benchmark.ts):
 
 ```ts
-export default myBenchmark() {
+export default function myBenchmark() {
     const n = 123;
     for (let i = 0; i < n; i++) {
         // Do something memory instensive

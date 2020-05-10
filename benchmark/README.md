@@ -6,15 +6,19 @@ These benchmarks are written in typescript and transpiled to lua by using tstl.
 
 To add a new benchmark add a new file to `memory_benchmarks`
 and **default** export a function with the following type: `() => void`.
+To prevent the benchmark from reporting "useful" results of your benchmark function as garbage, simply return the result.
+The memory used by the returned result wont count towards the total garbage amount.
 
 For example (memory_benchmarks/my_benchmark.ts):
 
 ```ts
 export default function myBenchmark() {
   const n = 123;
+  const result = [];
   for (let i = 0; i < n; i++) {
     // Do something memory instensive
   }
+  return result; // Return results so they wont be counted as garbage
 }
 ```
 

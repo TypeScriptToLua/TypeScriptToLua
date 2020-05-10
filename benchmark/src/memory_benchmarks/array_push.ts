@@ -1,4 +1,3 @@
-// tslint:disable-next-line:no-default-export
 export default function arrayPush(): number[] {
     const n = 10000;
     const numberList: number[] = [];

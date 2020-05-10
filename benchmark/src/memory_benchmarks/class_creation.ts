@@ -8,7 +8,6 @@ class A {
 
 class B extends A {}
 
-// tslint:disable-next-line:no-default-export
 export default function classCreation(): B[] {
     const arr1 = [];
     const n = 10000;

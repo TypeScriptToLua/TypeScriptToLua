@@ -1,4 +1,3 @@
-// tslint:disable-next-line:no-default-export
 export default function arrayEvery(): boolean {
     const arr = [];
     const n = 10000;

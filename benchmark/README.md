@@ -11,10 +11,10 @@ For example (memory_benchmarks/my_benchmark.ts):
 
 ```ts
 export default function myBenchmark() {
-    const n = 123;
-    for (let i = 0; i < n; i++) {
-        // Do something memory instensive
-    }
+  const n = 123;
+  for (let i = 0; i < n; i++) {
+    // Do something memory instensive
+  }
 }
 ```
 

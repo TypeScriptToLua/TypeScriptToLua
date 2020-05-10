@@ -5,7 +5,6 @@ function range(start: number, end: number): number[] {
     return [start, ...range(start + 1, end)];
 }
 
-// tslint:disable-next-line:no-default-export
 export default function detectCyleBenchmark(): boolean {
     const n = 500;
     const benchmarkGraph = new Map<number, number[]>();

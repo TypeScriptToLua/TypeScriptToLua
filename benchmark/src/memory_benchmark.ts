@@ -53,9 +53,7 @@ export function compareMemoryBenchmarks(
     const categories = [MemoryBenchmarkCategory.TotalMemory, MemoryBenchmarkCategory.Garbage];
 
     const summary = categories
-        .map(category => {
-            return `${makeBold(category)}\n${compareCategory(newResults, oldResults, category)}`;
-        })
+        .map(category => `${makeBold(category)}\n${compareCategory(newResults, oldResults, category)}`)
         .join("\n");
 
     const text = `**master:**\n\`\`\`json\n${json.encode(oldResults)}\n\`\`\`\n**commit:**\n\`\`\`json\n${json.encode(

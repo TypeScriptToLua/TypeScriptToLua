@@ -67,7 +67,7 @@ jobs:
       - name: NPM commit
         run: npm ci && npm run build
         working-directory: commit
-      # Benchmark estup
+      # Benchmark directory setup
       - name: Ensure benchmark data dir exists
         run: mkdir -p ./benchmark/data
         working-directory: commit

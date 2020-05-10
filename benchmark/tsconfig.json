@@ -10,5 +10,6 @@
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true
-    }
+    },
+    "include": ["src"]
 }

@@ -6,11 +6,7 @@ class A {
     public z: number;
 }
 
-class B extends A {
-    constructor(y: number) {
-        super(y);
-    }
-}
+class B extends A {}
 
 // tslint:disable-next-line:no-default-export
 export default function classCreation(): B[] {

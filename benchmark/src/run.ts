@@ -14,12 +14,7 @@ function benchmark(): void {
 
     const memoryBenchmarks = loadBenchmarksFromDirectory("memory_benchmarks");
 
-    if (memoryBenchmarks.success) {
-        memoryBenchmarkNewResults = memoryBenchmarks.value.map(runMemoryBenchmark);
-    } else {
-        print(memoryBenchmarks.error);
-        os.exit(1);
-    }
+    memoryBenchmarkNewResults = memoryBenchmarks.map(runMemoryBenchmark);
 
     // run future benchmarks types here
 
@@ -29,9 +24,7 @@ function benchmark(): void {
     let oldBenchmarkResults: BenchmarkResult[] = [];
     if (arg[1]) {
         const oldBenchmarkData = readFile(arg[1]);
-        if (oldBenchmarkData.success) {
-            oldBenchmarkResults = json.decode(oldBenchmarkData.value) as BenchmarkResult[];
-        }
+        oldBenchmarkResults = json.decode(oldBenchmarkData) as BenchmarkResult[];
     }
 
     // Compare results

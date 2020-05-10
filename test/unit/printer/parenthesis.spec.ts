@@ -19,7 +19,7 @@ test.each([
     "(<unknown>x as any).foo;",
     "((x as unknown) as any).foo;",
     "((<unknown>x) as any).foo;",
-])("'as' type assertion should strip parenthesis (%p)", expression => {
+])("'as' type assertion should strip parenthesis (%p)", (expression) => {
     const code = `
         declare let x: unknown;
         declare let y: { x: unknown; z(this: void): unknown; };
@@ -44,7 +44,7 @@ test.each([
     "((!x as unknown) as any).foo;",
     "(<unknown>!x as any).foo;",
     "((<unknown>!x) as any).foo;",
-])("'as' type assertion should not strip parenthesis (%p)", expression => {
+])("'as' type assertion should not strip parenthesis (%p)", (expression) => {
     const code = `
         declare let x: number;
         declare let y: {};

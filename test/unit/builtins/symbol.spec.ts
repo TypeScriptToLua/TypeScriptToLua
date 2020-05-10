@@ -1,10 +1,10 @@
 import * as util from "../../util";
 
-test.each([undefined, 1, "name"])("symbol.toString() (%p)", description => {
+test.each([undefined, 1, "name"])("symbol.toString() (%p)", (description) => {
     util.testExpression`Symbol(${util.formatCode(description)}).toString()`.expectToMatchJsResult();
 });
 
-test.each([undefined, 1, "name"])("symbol.description (%p)", description => {
+test.each([undefined, 1, "name"])("symbol.description (%p)", (description) => {
     // TODO: Supported since node 11
     util.testExpression`Symbol(${util.formatCode(description)}).description`.expectToEqual(description);
 });

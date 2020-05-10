@@ -80,7 +80,7 @@ export const hasMemberInClassOrAncestor = (
     context: TransformationContext,
     classDeclaration: ts.ClassLikeDeclarationBase,
     callback: (m: ts.ClassElement) => boolean
-) => [...classWithAncestors(context, classDeclaration)].some(c => c.members.some(callback));
+) => [...classWithAncestors(context, classDeclaration)].some((c) => c.members.some(callback));
 
 function getPropertyName(propertyName: ts.PropertyName): string | number | undefined {
     if (ts.isIdentifier(propertyName) || ts.isStringLiteral(propertyName) || ts.isNumericLiteral(propertyName)) {
@@ -108,6 +108,6 @@ export function isGetAccessorOverride(
     return hasMemberInClassOrAncestor(
         context,
         classDeclaration,
-        m => ts.isPropertyDeclaration(m) && m.initializer !== undefined && isSamePropertyName(m.name, element.name)
+        (m) => ts.isPropertyDeclaration(m) && m.initializer !== undefined && isSamePropertyName(m.name, element.name)
     );
 }

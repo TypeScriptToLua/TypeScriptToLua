@@ -59,7 +59,7 @@ describe("command line", () => {
     });
 
     describe("boolean options", () => {
-        test.each([true, false])("should parse booleans (%p)", value => {
+        test.each([true, false])("should parse booleans (%p)", (value) => {
             const result = tstl.parseCommandLine(["--noHeader", value.toString()]);
 
             expect(result.errors).not.toHaveDiagnostics();
@@ -188,7 +188,7 @@ describe("tsconfig", () => {
     });
 
     describe("boolean options", () => {
-        test.each([true, false])("should parse booleans (%p)", value => {
+        test.each([true, false])("should parse booleans (%p)", (value) => {
             const result = parseConfigFileContent({ tstl: { noHeader: value } });
 
             expect(result.errors).not.toHaveDiagnostics();

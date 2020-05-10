@@ -54,7 +54,7 @@ export class TransformationContext {
     public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[];
     public transformNode(node: ts.Node, isExpression?: boolean): lua.Node[] {
         // TODO: Move to visitors?
-        if (node.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
+        if (node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DeclareKeyword)) {
             return [];
         }
 
@@ -105,10 +105,10 @@ export class TransformationContext {
     }
 
     public transformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.transformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap((n) => this.transformNode(n) as lua.Statement[]);
     }
 
     public superTransformStatements(node: StatementLikeNode | readonly StatementLikeNode[]): lua.Statement[] {
-        return castArray(node).flatMap(n => this.superTransformNode(n) as lua.Statement[]);
+        return castArray(node).flatMap((n) => this.superTransformNode(n) as lua.Statement[]);
     }
 }

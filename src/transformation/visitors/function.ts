@@ -48,7 +48,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
         return false;
     }
     // Ignore references to @vararg types in spread elements
-    return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
+    return references.some((r) => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
 }
 
 export function transformFunctionBodyStatements(context: TransformationContext, body: ts.Block): lua.Statement[] {
@@ -215,7 +215,7 @@ export function transformFunctionLikeDeclaration(
         if (symbol) {
             // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
             const isReferenced = [...scope.referencedSymbols].some(([, nodes]) =>
-                nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
+                nodes.some((n) => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
             );
 
             // Only wrap if the name is actually referenced inside the function

@@ -4,12 +4,12 @@ import { forkCli } from "./run";
 
 let testsCleanup: Array<() => void> = [];
 afterEach(() => {
-    testsCleanup.forEach(x => x());
+    testsCleanup.forEach((x) => x());
     testsCleanup = [];
 });
 
 async function waitForFileExists(filePath: string): Promise<void> {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
         const intervalTimerId = setInterval(() => {
             if (fs.existsSync(filePath)) {
                 clearInterval(intervalTimerId);

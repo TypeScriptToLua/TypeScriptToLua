@@ -6,7 +6,7 @@ test("throwString", () => {
     `.expectToEqual(new util.ExecutionError("Some Error"));
 });
 
-test.skip.each([0, 1, 2])("re-throw (%p)", i => {
+test.skip.each([0, 1, 2])("re-throw (%p)", (i) => {
     util.testFunction`
         const i: number = ${i};
         function foo() {
@@ -295,7 +295,7 @@ test.each([
     "undefined",
     '{ x: "error object" }',
     '() => "error function"',
-])("throw and catch %s", error => {
+])("throw and catch %s", (error) => {
     util.testFunction`
         try {
             throw ${error};
@@ -311,14 +311,14 @@ test.each([
 
 const builtinErrors = ["Error", "RangeError", "ReferenceError", "SyntaxError", "TypeError", "URIError"];
 
-test.each([...builtinErrors, ...builtinErrors.map(type => `new ${type}`)])("%s properties", errorType => {
+test.each([...builtinErrors, ...builtinErrors.map((type) => `new ${type}`)])("%s properties", (errorType) => {
     util.testFunction`
         const error = ${errorType}();
         return { name: error.name, message: error.message, string: error.toString() };
     `.expectToMatchJsResult();
 });
 
-test.each([...builtinErrors, "CustomError"])("get stack from %s", errorType => {
+test.each([...builtinErrors, "CustomError"])("get stack from %s", (errorType) => {
     const stack = util.testFunction`
         class CustomError extends Error {
             public name = "CustomError";

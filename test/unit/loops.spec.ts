@@ -526,11 +526,11 @@ for (const testCase of [
     "for (const a in {}) { continue; }",
     "for (const a of []) { continue; }",
 ]) {
-    const expectContinueGotoLabel: util.TapCallback = builder =>
+    const expectContinueGotoLabel: util.TapCallback = (builder) =>
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
-        [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
+        [tstl.LuaTarget.Lua51]: (builder) => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,
         [tstl.LuaTarget.LuaJIT]: expectContinueGotoLabel,

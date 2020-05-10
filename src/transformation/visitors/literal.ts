@@ -51,7 +51,7 @@ export function createShorthandIdentifier(
     return identifier;
 }
 
-const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = expression => {
+const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = (expression) => {
     if (expression.text === "Infinity") {
         const math = lua.createIdentifier("math");
         const huge = lua.createStringLiteral("huge");
@@ -129,21 +129,21 @@ const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpressi
 };
 
 const transformArrayLiteralExpression: FunctionVisitor<ts.ArrayLiteralExpression> = (expression, context) => {
-    const filteredElements = expression.elements.map(e =>
+    const filteredElements = expression.elements.map((e) =>
         ts.isOmittedExpression(e) ? ts.createIdentifier("undefined") : e
     );
-    const values = flattenSpreadExpressions(context, filteredElements).map(e => lua.createTableFieldExpression(e));
+    const values = flattenSpreadExpressions(context, filteredElements).map((e) => lua.createTableFieldExpression(e));
 
     return lua.createTableExpression(values, expression);
 };
 
 export const literalVisitors: Visitors = {
-    [ts.SyntaxKind.NullKeyword]: node => lua.createNilLiteral(node),
-    [ts.SyntaxKind.TrueKeyword]: node => lua.createBooleanLiteral(true, node),
-    [ts.SyntaxKind.FalseKeyword]: node => lua.createBooleanLiteral(false, node),
+    [ts.SyntaxKind.NullKeyword]: (node) => lua.createNilLiteral(node),
+    [ts.SyntaxKind.TrueKeyword]: (node) => lua.createBooleanLiteral(true, node),
+    [ts.SyntaxKind.FalseKeyword]: (node) => lua.createBooleanLiteral(false, node),
     [ts.SyntaxKind.NumericLiteral]: transformNumericLiteralExpression,
-    [ts.SyntaxKind.StringLiteral]: node => lua.createStringLiteral(node.text, node),
-    [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: node => lua.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.StringLiteral]: (node) => lua.createStringLiteral(node.text, node),
+    [ts.SyntaxKind.NoSubstitutionTemplateLiteral]: (node) => lua.createStringLiteral(node.text, node),
     [ts.SyntaxKind.ObjectLiteralExpression]: transformObjectLiteralExpression,
     [ts.SyntaxKind.ArrayLiteralExpression]: transformArrayLiteralExpression,
 };

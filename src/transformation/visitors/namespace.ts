@@ -37,7 +37,7 @@ function moduleHasEmittedBody(
     if (node.body) {
         if (ts.isModuleBlock(node.body)) {
             // Ignore if body has no emitted statements
-            return node.body.statements.some(s => !ts.isInterfaceDeclaration(s) && !ts.isTypeAliasDeclaration(s));
+            return node.body.statements.some((s) => !ts.isInterfaceDeclaration(s) && !ts.isTypeAliasDeclaration(s));
         } else if (ts.isModuleDeclaration(node.body)) {
             return true;
         }
@@ -74,7 +74,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
     // - declared as a class or function at all (TS requires these to be before module, unless module is empty)
     const isFirstDeclaration =
         symbol === undefined ||
-        (!symbol.declarations.some(d => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) &&
+        (!symbol.declarations.some((d) => ts.isClassLike(d) || ts.isFunctionDeclaration(d)) &&
             node === symbol.declarations.find(ts.isModuleDeclaration));
 
     if (isNonModuleMergeable) {

@@ -23,7 +23,8 @@ const escapeStringMap: Record<string, string> = {
     "\0": "\\0",
 };
 
-export const escapeString = (value: string) => `"${value.replace(escapeStringRegExp, char => escapeStringMap[char])}"`;
+export const escapeString = (value: string) =>
+    `"${value.replace(escapeStringRegExp, (char) => escapeStringMap[char])}"`;
 
 /**
  * Checks that a name is valid for use in lua function declaration syntax:
@@ -45,7 +46,7 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
         case lua.SyntaxKind.TableExpression:
             const tableExpression = expression as lua.TableExpression;
-            return tableExpression.fields.every(e => isSimpleExpression(e));
+            return tableExpression.fields.every((e) => isSimpleExpression(e));
 
         case lua.SyntaxKind.TableFieldExpression:
             const fieldExpression = expression as lua.TableFieldExpression;
@@ -271,7 +272,7 @@ export class LuaPrinter {
 
     private nodeStartsWithParenthesis(sourceNode: SourceNode): boolean {
         let result: boolean | undefined;
-        sourceNode.walk(chunk => {
+        sourceNode.walk((chunk) => {
             if (result === undefined) {
                 chunk = chunk.trimLeft(); // Ignore leading whitespace
 
@@ -358,11 +359,11 @@ export class LuaPrinter {
             // Print all local functions as `local function foo()` instead of `local foo = function` to allow recursion
             chunks.push(this.printFunctionDefinition(statement));
         } else {
-            chunks.push(...this.joinChunksWithComma(statement.left.map(e => this.printExpression(e))));
+            chunks.push(...this.joinChunksWithComma(statement.left.map((e) => this.printExpression(e))));
 
             if (statement.right) {
                 chunks.push(" = ");
-                chunks.push(...this.joinChunksWithComma(statement.right.map(e => this.printExpression(e))));
+                chunks.push(...this.joinChunksWithComma(statement.right.map((e) => this.printExpression(e))));
             }
         }
 
@@ -386,9 +387,9 @@ export class LuaPrinter {
             }
         }
 
-        chunks.push(...this.joinChunksWithComma(statement.left.map(e => this.printExpression(e))));
+        chunks.push(...this.joinChunksWithComma(statement.left.map((e) => this.printExpression(e))));
         chunks.push(" = ");
-        chunks.push(...this.joinChunksWithComma(statement.right.map(e => this.printExpression(e))));
+        chunks.push(...this.joinChunksWithComma(statement.right.map((e) => this.printExpression(e))));
 
         return this.createSourceNode(statement, chunks);
     }
@@ -472,8 +473,8 @@ export class LuaPrinter {
     }
 
     public printForInStatement(statement: lua.ForInStatement): SourceNode {
-        const names = this.joinChunksWithComma(statement.names.map(i => this.printIdentifier(i)));
-        const expressions = this.joinChunksWithComma(statement.expressions.map(e => this.printExpression(e)));
+        const names = this.joinChunksWithComma(statement.names.map((i) => this.printIdentifier(i)));
+        const expressions = this.joinChunksWithComma(statement.expressions.map((e) => this.printExpression(e)));
 
         const chunks: SourceChunk[] = [];
 
@@ -502,7 +503,7 @@ export class LuaPrinter {
 
         const chunks: SourceChunk[] = [];
 
-        chunks.push(...this.joinChunksWithComma(statement.expressions.map(e => this.printExpression(e))));
+        chunks.push(...this.joinChunksWithComma(statement.expressions.map((e) => this.printExpression(e))));
 
         return this.createSourceNode(statement, [this.indent(), "return ", ...chunks]);
     }
@@ -573,7 +574,7 @@ export class LuaPrinter {
     }
 
     private printFunctionParameters(expression: lua.FunctionExpression): SourceChunk[] {
-        const parameterChunks = (expression.params ?? []).map(i => this.printIdentifier(i));
+        const parameterChunks = (expression.params ?? []).map((i) => this.printIdentifier(i));
 
         if (expression.dots) {
             parameterChunks.push(this.printDotsLiteral(expression.dots));
@@ -594,7 +595,7 @@ export class LuaPrinter {
             chunks.push(" ");
             const returnNode: SourceChunk[] = [
                 "return ",
-                ...this.joinChunksWithComma(returnStatement.expressions.map(e => this.printExpression(e))),
+                ...this.joinChunksWithComma(returnStatement.expressions.map((e) => this.printExpression(e))),
             ];
             chunks.push(this.createSourceNode(returnStatement, returnNode));
             chunks.push(this.createSourceNode(expression, " end"));
@@ -750,7 +751,7 @@ export class LuaPrinter {
         const chunks: SourceChunk[] = [];
 
         if (expressions.every(isSimpleExpression)) {
-            chunks.push(...this.joinChunksWithComma(expressions.map(e => this.printExpression(e))));
+            chunks.push(...this.joinChunksWithComma(expressions.map((e) => this.printExpression(e))));
         } else {
             chunks.push("\n");
             this.pushIndent();

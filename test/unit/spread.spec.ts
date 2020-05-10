@@ -3,8 +3,9 @@ import * as util from "../util";
 import { formatCode } from "../util";
 
 // TODO: Make some utils for testing other targets
-const expectUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
-const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
+const expectUnpack: util.TapCallback = (builder) => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
+const expectTableUnpack: util.TapCallback = (builder) =>
+    expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
 
 const arrayLiteralCases = [
     "1, 2, ...[3, 4, 5]",
@@ -14,14 +15,14 @@ const arrayLiteralCases = [
     "1, 2, ...[3, 4], ...[5, 6]",
 ];
 
-describe.each(["function call", "array literal"] as const)("in %s", kind => {
+describe.each(["function call", "array literal"] as const)("in %s", (kind) => {
     const factory = (code: string) => (kind === "function call" ? `((...args: any[]) => args)(${code})` : `[${code}]`);
 
-    test.each(arrayLiteralCases)("of array literal (%p)", expression => {
+    test.each(arrayLiteralCases)("of array literal (%p)", (expression) => {
         util.testExpression(factory(expression)).expectToMatchJsResult();
     });
 
-    test.each(arrayLiteralCases)("of tuple return call (%p)", expression => {
+    test.each(arrayLiteralCases)("of tuple return call (%p)", (expression) => {
         util.testFunction`
             /** @tupleReturn */
             function tuple(...args: any[]) {
@@ -36,7 +37,7 @@ describe.each(["function call", "array literal"] as const)("in %s", kind => {
         util.testExpression(factory('..."spread", ..."string"')).expectToMatchJsResult();
     });
 
-    test.each(["", "string", "string with spaces", "string 1 2 3"])("of string literal (%p)", str => {
+    test.each(["", "string", "string with spaces", "string 1 2 3"])("of string literal (%p)", (str) => {
         util.testExpression(factory(`...${formatCode(str)}`)).expectToMatchJsResult();
     });
 
@@ -72,20 +73,20 @@ describe("in function call", () => {
             return foo(...array);
         `,
         {
-            [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
-            [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
-            [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
-            [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+            [tstl.LuaTarget.LuaJIT]: (builder) => builder.tap(expectUnpack),
+            [tstl.LuaTarget.Lua51]: (builder) => builder.tap(expectUnpack),
+            [tstl.LuaTarget.Lua52]: (builder) => builder.tap(expectTableUnpack),
+            [tstl.LuaTarget.Lua53]: (builder) => builder.tap(expectTableUnpack).expectToMatchJsResult(),
         }
     );
 });
 
 describe("in array literal", () => {
     util.testEachVersion(undefined, () => util.testExpression`[...[0, 1, 2]]`, {
-        [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
-        [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
-        [tstl.LuaTarget.Lua53]: builder => builder.tap(expectTableUnpack).expectToMatchJsResult(),
+        [tstl.LuaTarget.LuaJIT]: (builder) => builder.tap(expectUnpack),
+        [tstl.LuaTarget.Lua51]: (builder) => builder.tap(expectUnpack),
+        [tstl.LuaTarget.Lua52]: (builder) => builder.tap(expectTableUnpack),
+        [tstl.LuaTarget.Lua53]: (builder) => builder.tap(expectTableUnpack).expectToMatchJsResult(),
     });
 
     test("of array literal /w OmittedExpression", () => {
@@ -103,7 +104,7 @@ describe("in object literal", () => {
         "{ ...{ x: true }, ...{ y: true, z: true } }",
         "{ ...{ x: false }, x: true }",
         "{ ...{ x: false }, x: false, ...{ x: true } }",
-    ])("of object literal (%p)", expression => {
+    ])("of object literal (%p)", (expression) => {
         util.testExpression(expression).expectToMatchJsResult();
     });
 

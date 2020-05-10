@@ -48,9 +48,9 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
         // Expressions are in the string.
         strings.push(expression.template.head.text);
         rawStrings.push(getRawLiteral(expression.template.head));
-        strings.push(...expression.template.templateSpans.map(span => span.literal.text));
-        rawStrings.push(...expression.template.templateSpans.map(span => getRawLiteral(span.literal)));
-        expressions.push(...expression.template.templateSpans.map(span => span.expression));
+        strings.push(...expression.template.templateSpans.map((span) => span.literal.text));
+        rawStrings.push(...expression.template.templateSpans.map((span) => getRawLiteral(span.literal)));
+        expressions.push(...expression.template.templateSpans.map((span) => span.expression));
     } else {
         // No expressions are in the string.
         strings.push(expression.template.text);
@@ -60,11 +60,11 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
     // Construct table with strings and literal strings
 
     const rawStringsTable = lua.createTableExpression(
-        rawStrings.map(text => lua.createTableFieldExpression(lua.createStringLiteral(text)))
+        rawStrings.map((text) => lua.createTableFieldExpression(lua.createStringLiteral(text)))
     );
 
     const stringTableLiteral = lua.createTableExpression([
-        ...strings.map(partialString => lua.createTableFieldExpression(lua.createStringLiteral(partialString))),
+        ...strings.map((partialString) => lua.createTableFieldExpression(lua.createStringLiteral(partialString))),
         lua.createTableFieldExpression(rawStringsTable, lua.createStringLiteral("raw")),
     ]);
 

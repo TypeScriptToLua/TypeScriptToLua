@@ -95,10 +95,10 @@ describe("initializers", () => {
 });
 
 describe("const enum", () => {
-    const expectToBeConst: util.TapCallback = builder =>
+    const expectToBeConst: util.TapCallback = (builder) =>
         expect(builder.getMainLuaCodeChunk()).not.toContain("TestEnum");
 
-    test.each(["", "declare "])("%swithout initializer", modifier => {
+    test.each(["", "declare "])("%swithout initializer", (modifier) => {
         util.testModule`
             ${modifier} const enum TestEnum {
                 A,

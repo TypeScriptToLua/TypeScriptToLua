@@ -156,8 +156,8 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
     // local c = __module.c
     if (statement.importClause.namedBindings && ts.isNamedImports(statement.importClause.namedBindings)) {
         const assignmentStatements = statement.importClause.namedBindings.elements
-            .filter(importSpecifier => shouldBeImported(context, importSpecifier))
-            .map(importSpecifier => transformImportSpecifier(context, importSpecifier, importUniqueName));
+            .filter((importSpecifier) => shouldBeImported(context, importSpecifier))
+            .map((importSpecifier) => transformImportSpecifier(context, importSpecifier, importUniqueName));
 
         if (assignmentStatements.length > 0) {
             usingRequireStatement = true;

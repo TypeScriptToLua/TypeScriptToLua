@@ -14,7 +14,7 @@ function __TS__StringReplace(
         const [result] = string.gsub(
             source,
             searchValue,
-            match => (replaceValue as (substring: string) => string)(match),
+            (match) => (replaceValue as (substring: string) => string)(match),
             1
         );
         return result;

@@ -2,7 +2,7 @@ import * as util from "../util";
 
 test.each(['{ a: 3, b: "4" }', '{ "a": 3, b: "4" }', '{ ["a"]: 3, b: "4" }', '{ ["a" + 123]: 3, b: "4" }'])(
     "Object Literal (%p)",
-    inp => {
+    (inp) => {
         util.testExpression(inp).expectToMatchJsResult();
     }
 );
@@ -30,7 +30,7 @@ describe("property shorthand", () => {
         `.expectToMatchJsResult();
     });
 
-    test.each([NaN, Infinity])("should support %p shorthand", identifier => {
+    test.each([NaN, Infinity])("should support %p shorthand", (identifier) => {
         util.testExpression`({ ${identifier} }).${identifier}`.expectToMatchJsResult();
     });
 
@@ -59,7 +59,7 @@ test("undefined as object key", () => {
 
 test.each(['{x: "foobar"}.x', '{x: "foobar"}["x"]', '{x: () => "foobar"}.x()', '{x: () => "foobar"}["x"]()'])(
     "object literal property access (%p)",
-    expression => {
+    (expression) => {
         util.testExpression(expression).expectToMatchJsResult();
     }
 );

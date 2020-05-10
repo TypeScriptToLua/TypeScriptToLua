@@ -56,7 +56,7 @@ export function createConfigFileUpdater(
     optionsToExtend: CompilerOptions
 ): (options: ts.CompilerOptions) => ts.Diagnostic[] {
     const configFileMap = new WeakMap<ts.TsConfigSourceFile, ts.ParsedCommandLine>();
-    return options => {
+    return (options) => {
         const { configFile, configFilePath } = options;
         if (!configFile || !configFilePath) return [];
 

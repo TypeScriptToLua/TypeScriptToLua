@@ -5,7 +5,7 @@ import {
 } from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
-test.each(["extension", "metaExtension"])("Class extends extension (%p)", extensionType => {
+test.each(["extension", "metaExtension"])("Class extends extension (%p)", (extensionType) => {
     util.testModule`
         declare class A {}
         /** @${extensionType} **/
@@ -14,7 +14,7 @@ test.each(["extension", "metaExtension"])("Class extends extension (%p)", extens
     `.expectDiagnosticsToMatchSnapshot([extensionCannotExtend.code]);
 });
 
-test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
+test.each(["extension", "metaExtension"])("Class construct extension (%p)", (extensionType) => {
     util.testModule`
         declare class A {}
         /** @${extensionType} **/
@@ -23,7 +23,7 @@ test.each(["extension", "metaExtension"])("Class construct extension (%p)", exte
     `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
 });
 
-test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
+test.each(["extension", "metaExtension"])("instanceof extension (%p)", (extensionType) => {
     util.testModule`
         declare class A {}
         /** @${extensionType} **/

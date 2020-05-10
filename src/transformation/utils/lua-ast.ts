@@ -65,7 +65,7 @@ export function createUnpackCall(
 }
 
 export function wrapInTable(...expressions: lua.Expression[]): lua.TableExpression {
-    const fields = expressions.map(e => lua.createTableFieldExpression(e));
+    const fields = expressions.map((e) => lua.createTableFieldExpression(e));
     return lua.createTableExpression(fields);
 }
 
@@ -126,7 +126,7 @@ export function createLocalOrExportedOrGlobalDeclaration(
             return [];
         } else {
             assignment = lua.createAssignmentStatement(
-                identifiers.map(identifier => createExportedIdentifier(context, identifier, exportScope)),
+                identifiers.map((identifier) => createExportedIdentifier(context, identifier, exportScope)),
                 rhs,
                 tsOriginal
             );

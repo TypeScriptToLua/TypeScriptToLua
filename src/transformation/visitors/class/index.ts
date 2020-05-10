@@ -49,7 +49,7 @@ export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration>
     return statements;
 };
 
-export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
+export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = (node) => createSelfIdentifier(node);
 
 export function transformClassAsExpression(
     expression: ts.ClassLikeDeclaration,
@@ -131,11 +131,11 @@ function transformClassLikeDeclaration(
     }
 
     // Get all properties with value
-    const properties = classDeclaration.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
+    const properties = classDeclaration.members.filter(ts.isPropertyDeclaration).filter((member) => member.initializer);
 
     // Divide properties into static and non-static
     const staticFields = properties.filter(isStaticNode);
-    const instanceFields = properties.filter(prop => !isStaticNode(prop));
+    const instanceFields = properties.filter((prop) => !isStaticNode(prop));
 
     const result: lua.Statement[] = [];
 
@@ -237,7 +237,7 @@ function transformClassLikeDeclaration(
             if (constructorResult) result.push(constructorResult);
         } else if (
             instanceFields.length > 0 ||
-            classDeclaration.members.some(m => isGetAccessorOverride(context, m, classDeclaration))
+            classDeclaration.members.some((m) => isGetAccessorOverride(context, m, classDeclaration))
         ) {
             // Generate a constructor if none was defined in a class with instance fields that need initialization
             // localClassName.prototype.____constructor = function(self, ...)
@@ -286,7 +286,7 @@ function transformClassLikeDeclaration(
     result.push(
         ...classDeclaration.members
             .filter(ts.isMethodDeclaration)
-            .map(m => transformMethodDeclaration(context, m, localClassName, isExtension || isMetaExtension))
+            .map((m) => transformMethodDeclaration(context, m, localClassName, isExtension || isMetaExtension))
             .filter(isNonNull)
     );
 

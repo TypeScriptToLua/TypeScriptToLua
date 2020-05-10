@@ -1,7 +1,7 @@
 import { unsupportedVarDeclaration } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
-test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
+test.each(["const", "let"])("%s declaration not top-level is not global", (declarationKind) => {
     util.testModule`
         {
             ${declarationKind} foo = true;
@@ -11,7 +11,7 @@ test.each(["const", "let"])("%s declaration not top-level is not global", declar
     `.expectToEqual(false);
 });
 
-test.each(["const", "let"])("top-level %s declaration is global", declarationKind => {
+test.each(["const", "let"])("top-level %s declaration is global", (declarationKind) => {
     // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
         // @ts-ignore
@@ -50,7 +50,7 @@ describe("var is disallowed", () => {
 
 test.each(["let result;", "const result = null;", "const result = undefined;"])(
     "Null assignments (%p)",
-    declaration => {
+    (declaration) => {
         util.testFunction`
             ${declaration}
             return result;
@@ -58,7 +58,7 @@ test.each(["let result;", "const result = null;", "const result = undefined;"])(
     }
 );
 
-test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {
+test.each(["x = y", "x += y"])("Assignment expressions (%p)", (expression) => {
     util.testFunction`
         let x = "x";
         let y = "y";
@@ -66,7 +66,7 @@ test.each(["x = y", "x += y"])("Assignment expressions (%p)", expression => {
     `.expectToMatchJsResult();
 });
 
-test.each(["x = o.p", "x = a[0]", "x = y = o.p", "x = o.p"])("Assignment expressions using temp (%p)", expression => {
+test.each(["x = o.p", "x = a[0]", "x = y = o.p", "x = o.p"])("Assignment expressions using temp (%p)", (expression) => {
     util.testFunction`
         let x = "x";
         let y = "y";
@@ -78,7 +78,7 @@ test.each(["x = o.p", "x = a[0]", "x = y = o.p", "x = o.p"])("Assignment express
 
 test.each(["o.p = x", "a[0] = x", "o.p = a[0]", "o.p = a[0] = x"])(
     "Property assignment expressions (%p)",
-    expression => {
+    (expression) => {
         util.testFunction`
             let x = "x";
             let o = {p: "o"};
@@ -95,7 +95,7 @@ test.each([
     "[x[1], x[0]] = tr()",
     "x = [y[1], y[0]]",
     "[x[0], x[1]] = [y[1], y[0]]",
-])("Tuple assignment expressions (%p)", expression => {
+])("Tuple assignment expressions (%p)", (expression) => {
     util.testFunction`
         let x: [string, string] = ["x0", "x1"];
         let y: [string, string] = ["y0", "y1"];
@@ -123,7 +123,7 @@ test.each([
     "x ^= y",
     "x <<= y",
     "x >>>= y",
-])("Operator assignment statements (%p)", statement => {
+])("Operator assignment statements (%p)", (statement) => {
     util.testFunction`
         let x = 3;
         let y = 6;
@@ -148,7 +148,7 @@ test.each([
     "o.p ^= a[0]",
     "o.p <<= a[0]",
     "o.p >>>= a[0]",
-])("Operator assignment to simple property statements (%p)", statement => {
+])("Operator assignment to simple property statements (%p)", (statement) => {
     util.testFunction`
         let o = { p: 3 };
         let a = [6];
@@ -173,7 +173,7 @@ test.each([
     "o.p.d ^= a[0][0]",
     "o.p.d <<= a[0][0]",
     "o.p.d >>>= a[0][0]",
-])("Operator assignment to deep property statements (%p)", statement => {
+])("Operator assignment to deep property statements (%p)", (statement) => {
     util.testFunction`
         let o = { p: { d: 3 } };
         let a = [[6,11], [7,13]];
@@ -198,7 +198,7 @@ test.each([
     "of().p ^= af()[i()]",
     "of().p <<= af()[i()]",
     "of().p >>>= af()[i()]",
-])("Operator assignment to complex property statements (%p)", statement => {
+])("Operator assignment to complex property statements (%p)", (statement) => {
     util.testFunction`
         let o = { p: 3 };
         let a = [6];
@@ -226,7 +226,7 @@ test.each([
     "of().p.d ^= af()[i()][i()]",
     "of().p.d <<= af()[i()][i()]",
     "of().p.d >>>= af()[i()][i()]",
-])("Operator assignment to complex deep property statements (%p)", statement => {
+])("Operator assignment to complex deep property statements (%p)", (statement) => {
     util.testFunction`
         let o = { p: { d: 3 } };
         let a = [[7, 6], [11, 13]];
@@ -258,7 +258,7 @@ test.each([
     "x + (y += 7)",
     "x + (y += 7)",
     "x++ + (y += 7)",
-])("Operator assignment expressions (%p)", expression => {
+])("Operator assignment expressions (%p)", (expression) => {
     util.testFunction`
         let x = 3;
         let y = 6;
@@ -286,7 +286,7 @@ test.each([
     "o.p + (a[0] += 7)",
     "o.p += (a[0] += 7)",
     "o.p++ + (a[0] += 7)",
-])("Operator assignment to simple property expressions (%p)", expression => {
+])("Operator assignment to simple property expressions (%p)", (expression) => {
     util.testFunction`
         let o = { p: 3 };
         let a = [6];
@@ -314,7 +314,7 @@ test.each([
     "of().p + (af()[i()] += 7)",
     "of().p += (af()[i()] += 7)",
     "of().p++ + (af()[i()] += 7)",
-])("Operator assignment to complex property expressions (%p)", expression => {
+])("Operator assignment to complex property expressions (%p)", (expression) => {
     util.testFunction`
         let o = { p: 3 };
         let a = [6];

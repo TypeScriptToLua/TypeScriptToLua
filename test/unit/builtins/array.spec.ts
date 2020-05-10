@@ -156,11 +156,11 @@ describe("array.length", () => {
             `.expectToEqual(newLength);
         });
 
-        test.each([0, 1, 7])("returns right-hand side value", length => {
+        test.each([0, 1, 7])("returns right-hand side value", (length) => {
             util.testExpression`[1, 2, 3].length = ${length}`.expectToEqual(length);
         });
 
-        test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("throws on invalid values (%p)", length => {
+        test.each([-1, -7, 0.1, NaN, Infinity, -Infinity])("throws on invalid values (%p)", (length) => {
             util.testFunction`
                 [1, 2, 3].length = ${length};
             `.expectToEqual(new util.ExecutionError(`invalid array length: ${length}`));
@@ -538,7 +538,7 @@ test.each([
     util.testExpressionTemplate`${array}.flatMap(${map})`.expectToMatchJsResult();
 });
 
-describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
+describe.each(["reduce", "reduceRight"])("array.%s", (reduce) => {
     test.each<[[(total: number, currentItem: number, index: number, array: number[]) => number, number?]]>([
         [[(total, currentItem) => total + currentItem]],
         [[(total, currentItem) => total * currentItem]],
@@ -546,7 +546,7 @@ describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
         [[(total, currentItem) => total * currentItem, 10]],
         [[(total, _, index, array) => total + array[index]]],
         [[(a, b) => a + b]],
-    ])("usage (%p)", args => {
+    ])("usage (%p)", (args) => {
         util.testExpression`[1, 3, 5, 7].${reduce}(${util.formatCode(...args)})`.expectToMatchJsResult();
     });
 
@@ -576,7 +576,7 @@ const genericChecks = [
     "function generic<T extends number[] & {}>(array: T)",
 ];
 
-test.each(genericChecks)("array constrained generic foreach (%p)", signature => {
+test.each(genericChecks)("array constrained generic foreach (%p)", (signature) => {
     const code = `
             ${signature}: number {
                 let sum = 0;
@@ -592,7 +592,7 @@ test.each(genericChecks)("array constrained generic foreach (%p)", signature => 
     expect(util.transpileAndExecute(code)).toBe(6);
 });
 
-test.each(genericChecks)("array constrained generic length (%p)", signature => {
+test.each(genericChecks)("array constrained generic length (%p)", (signature) => {
     const code = `
             ${signature}: number {
                 return array.length;

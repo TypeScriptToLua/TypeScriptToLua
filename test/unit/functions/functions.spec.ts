@@ -14,7 +14,7 @@ test("Returning arrow function from arrow function", () => {
     `.expectToMatchJsResult();
 });
 
-test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", lambda => {
+test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", (lambda) => {
     util.testFunction`
         let i = 10;
         [1,2,3,4,5].forEach(() => ${lambda});
@@ -24,7 +24,7 @@ test.each(["i++", "i--", "++i", "--i"])("Arrow function unary expression (%p)", 
 
 test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /= b", "b => a **= b", "b => a %= b"])(
     "Arrow function assignment (%p)",
-    lambda => {
+    (lambda) => {
         util.testFunction`
             let a = 10;
             let lambda = ${lambda};
@@ -351,7 +351,7 @@ test("Complex element access call statement", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([1, 2])("Generator functions value (%p)", iterations => {
+test.each([1, 2])("Generator functions value (%p)", (iterations) => {
     util.testFunction`
         function* seq(value: number) {
             let a = yield value + 1;
@@ -366,7 +366,7 @@ test.each([1, 2])("Generator functions value (%p)", iterations => {
     `.expectToMatchJsResult();
 });
 
-test.each([1, 2])("Generator functions done (%p)", iterations => {
+test.each([1, 2])("Generator functions done (%p)", (iterations) => {
     util.testFunction`
         function* seq(value: number) {
             let a = yield value + 1;
@@ -473,7 +473,7 @@ test("Function rest parameter (unreferenced)", () => {
         }
         return foo("A", "B", "C", "D");
     `
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("{...}"))
+        .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toMatch("{...}"))
         .expectToMatchJsResult();
 });
 

@@ -13,7 +13,7 @@ export function transpileString(
     const { diagnostics, file } = transpileStringResult(str, options);
     expect(file.lua).toBeDefined();
 
-    const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
+    const errors = diagnostics.filter((d) => !ignoreDiagnostics || d.source === "typescript-to-lua");
     expect(errors).not.toHaveDiagnostics();
 
     return file.lua!.trim();
@@ -83,7 +83,7 @@ export function executeLua(luaStr: string, withLib = true): any {
         // Throw a JS error with the message, retrieved by reading a string from the stack.
 
         // Filter control characters out of string which are in there because ????
-        throw new Error("LUA ERROR: " + to_jsstring(lua.lua_tostring(L, -1).filter(c => c >= 20)));
+        throw new Error("LUA ERROR: " + to_jsstring(lua.lua_tostring(L, -1).filter((c) => c >= 20)));
     }
 }
 
@@ -117,14 +117,14 @@ export function transpileAndExecuteProjectReturningMainExport(
     exportName: string,
     options: tstl.CompilerOptions = {}
 ): [any, string] {
-    const mainFile = Object.keys(typeScriptFiles).find(typeScriptFileName => typeScriptFileName === "main.ts");
+    const mainFile = Object.keys(typeScriptFiles).find((typeScriptFileName) => typeScriptFileName === "main.ts");
     if (!mainFile) {
         throw new Error("An entry point file needs to be specified. This should be called main.ts");
     }
 
     const joinedTranspiledFiles = Object.keys(typeScriptFiles)
-        .filter(typeScriptFileName => typeScriptFileName !== "main.ts")
-        .map(typeScriptFileName => {
+        .filter((typeScriptFileName) => typeScriptFileName !== "main.ts")
+        .map((typeScriptFileName) => {
             const modulePath = getExportPath(typeScriptFileName, options);
             const tsCode = typeScriptFiles[typeScriptFileName];
             const luaCode = transpileString(tsCode, options);

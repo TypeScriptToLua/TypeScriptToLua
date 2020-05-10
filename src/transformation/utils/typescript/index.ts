@@ -7,7 +7,7 @@ export * from "./types";
 // TODO: Move to separate files?
 
 export function hasExportEquals(sourceFile: ts.SourceFile): boolean {
-    return sourceFile.statements.some(node => ts.isExportAssignment(node) && node.isExportEquals);
+    return sourceFile.statements.some((node) => ts.isExportAssignment(node) && node.isExportEquals);
 }
 
 /**
@@ -26,7 +26,7 @@ export function findFirstNodeAbove<T extends ts.Node>(node: ts.Node, callback: (
 
 export function getFirstDeclarationInFile(symbol: ts.Symbol, sourceFile: ts.SourceFile): ts.Declaration | undefined {
     const originalSourceFile = ts.getParseTreeNode(sourceFile) ?? sourceFile;
-    const declarations = (symbol.getDeclarations() ?? []).filter(d => d.getSourceFile() === originalSourceFile);
+    const declarations = (symbol.getDeclarations() ?? []).filter((d) => d.getSourceFile() === originalSourceFile);
 
     return declarations.length > 0 ? declarations.reduce((p, c) => (p.pos < c.pos ? p : c)) : undefined;
 }

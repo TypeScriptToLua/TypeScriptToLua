@@ -88,7 +88,7 @@ test.each(assignmentTestCases)("in assignment expression (%p)", ({ binding, valu
     `.expectToMatchJsResult();
 });
 
-test.each(["[]", "{}"])("empty binding pattern", bindingPattern => {
+test.each(["[]", "{}"])("empty binding pattern", (bindingPattern) => {
     util.testFunction`
         let i = 1;
         const ${bindingPattern} = [i++];
@@ -133,7 +133,7 @@ describe("array destructuring optimization", () => {
             const [a, b, c] = array;
             return { a, b, c };
         `
-            .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
+            .tap((builder) => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
             .expectToMatchJsResult();
     });
 
@@ -142,7 +142,7 @@ describe("array destructuring optimization", () => {
             const [a, b, c] = [3, 5, 1];
             return { a, b, c };
         `
-            .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack"))
+            .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack"))
             .expectToMatchJsResult();
     });
 
@@ -153,7 +153,7 @@ describe("array destructuring optimization", () => {
             const [head] = ["foo", set()];
             return { head, called };
         `
-            .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack"))
+            .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack"))
             .expectToMatchJsResult();
     });
 
@@ -164,7 +164,7 @@ describe("array destructuring optimization", () => {
             [x] = array;
             return x;
         `
-            .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
+            .tap((builder) => expect(builder.getMainLuaCodeChunk()).toContain("unpack"))
             .expectToMatchJsResult();
     });
 });

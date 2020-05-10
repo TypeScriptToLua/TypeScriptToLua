@@ -40,7 +40,7 @@ export function transformConstructorDeclaration(
     const bodyWithFieldInitializers = transformFunctionBodyHeader(context, scope, statement.parameters, restParamName);
 
     // Check for field declarations in constructor
-    const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
+    const constructorFieldsDeclarations = statement.parameters.filter((p) => p.modifiers !== undefined);
 
     const classInstanceFields = transformClassInstanceFields(context, classDeclaration, instanceFields);
 

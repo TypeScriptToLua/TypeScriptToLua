@@ -21,7 +21,7 @@ function canBeFalsy(context: TransformationContext, type: ts.Type): boolean {
     } else if (!strictNullChecks && !type.isLiteral()) {
         return true;
     } else if (type.isUnion()) {
-        return type.types.some(subType => canBeFalsy(context, subType));
+        return type.types.some((subType) => canBeFalsy(context, subType));
     } else {
         return false;
     }

@@ -72,7 +72,7 @@ export const optionDeclarations: CommandLineOption[] = [
 export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): ParsedCommandLine {
     let hasRootLevelOptions = false;
     for (const [name, rawValue] of Object.entries(parsedConfigFile.raw)) {
-        const option = optionDeclarations.find(option => option.name === name);
+        const option = optionDeclarations.find((option) => option.name === name);
         if (!option) continue;
 
         if (parsedConfigFile.raw.tstl === undefined) parsedConfigFile.raw.tstl = {};
@@ -86,7 +86,7 @@ export function updateParsedConfigFile(parsedConfigFile: ts.ParsedCommandLine): 
         }
 
         for (const [name, rawValue] of Object.entries(parsedConfigFile.raw.tstl)) {
-            const option = optionDeclarations.find(option => option.name === name);
+            const option = optionDeclarations.find((option) => option.name === name);
             if (!option) {
                 parsedConfigFile.errors.push(cliDiagnostics.unknownCompilerOption(name));
                 continue;
@@ -111,10 +111,10 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
 
         const isShorthand = !args[i].startsWith("--");
         const argumentName = args[i].substr(isShorthand ? 1 : 2);
-        const option = optionDeclarations.find(option => {
+        const option = optionDeclarations.find((option) => {
             if (option.name.toLowerCase() === argumentName.toLowerCase()) return true;
             if (isShorthand && option.aliases) {
-                return option.aliases.some(a => a.toLowerCase() === argumentName.toLowerCase());
+                return option.aliases.some((a) => a.toLowerCase() === argumentName.toLowerCase());
             }
 
             return false;
@@ -124,7 +124,7 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
             // Ignore errors caused by tstl specific compiler options
             const tsInvalidCompilerOptionErrorCode = 5023;
             parsedCommandLine.errors = parsedCommandLine.errors.filter(
-                e => !(e.code === tsInvalidCompilerOptionErrorCode && String(e.messageText).endsWith(`'${args[i]}'.`))
+                (e) => !(e.code === tsInvalidCompilerOptionErrorCode && String(e.messageText).endsWith(`'${args[i]}'.`))
             );
 
             const { error, value, increment } = readCommandLineArgument(option, args[i + 1]);
@@ -192,7 +192,7 @@ function readValue(option: CommandLineOption, value: unknown): ReadValueResult {
                 };
             }
 
-            const enumValue = option.choices.find(c => c.toLowerCase() === value.toLowerCase());
+            const enumValue = option.choices.find((c) => c.toLowerCase() === value.toLowerCase());
             if (enumValue === undefined) {
                 const optionChoices = option.choices.join(", ");
                 return {

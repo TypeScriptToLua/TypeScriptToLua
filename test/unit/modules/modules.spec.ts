@@ -9,7 +9,7 @@ describe("module import/export elision", () => {
         }
     `;
 
-    const expectToElideImport: util.TapCallback = builder => {
+    const expectToElideImport: util.TapCallback = (builder) => {
         builder.addExtraFile("module.d.ts", moduleDeclaration).setOptions({ module: ts.ModuleKind.CommonJS });
         expect(builder.getLuaExecutionResult()).not.toBeInstanceOf(util.ExecutionError);
     };
@@ -53,7 +53,7 @@ describe("module import/export elision", () => {
 
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
     "Import module names with invalid lua identifier characters (%p)",
-    name => {
+    (name) => {
         util.testModule`
             import { foo } from "./${name}";
             export { foo };
@@ -65,7 +65,7 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
     }
 );
 
-test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
+test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", (exportStatement) => {
     const [result] = util.transpileAndExecuteProjectReturningMainExport(
         {
             "main.ts": `
@@ -203,7 +203,7 @@ const reassignmentTestCases = [
     "({ x = 1 } = { x: undefined })",
 ];
 
-test.each(reassignmentTestCases)("export specifier with reassignment afterwards (%p)", reassignment => {
+test.each(reassignmentTestCases)("export specifier with reassignment afterwards (%p)", (reassignment) => {
     util.testModule`
         let x = 0;
         export { x };
@@ -211,7 +211,7 @@ test.each(reassignmentTestCases)("export specifier with reassignment afterwards 
     `.expectToMatchJsResult();
 });
 
-test.each(reassignmentTestCases)("export specifier fork (%p)", reassignment => {
+test.each(reassignmentTestCases)("export specifier fork (%p)", (reassignment) => {
     util.testModule`
         let x = 0;
         export { x as a };

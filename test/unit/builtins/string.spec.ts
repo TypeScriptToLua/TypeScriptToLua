@@ -64,7 +64,7 @@ test.each([
     ["hello", 42],
     [42, "hello"],
 ])("string.concat[+] (%p)", (...elements: any[]) => {
-    util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
+    util.testExpression(elements.map((e) => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
 });
 
 test.each([
@@ -148,15 +148,15 @@ test.each([
     expect(result).toBe(inp.substr(start, end));
 });
 
-test.each(["", "h", "hello"])("string.length (%p)", input => {
+test.each(["", "h", "hello"])("string.length (%p)", (input) => {
     util.testExpressionTemplate`${input}.length`.expectToMatchJsResult();
 });
 
-test.each(["hello TEST"])("string.toLowerCase (%p)", inp => {
+test.each(["hello TEST"])("string.toLowerCase (%p)", (inp) => {
     util.testExpressionTemplate`${inp}.toLowerCase()`.expectToMatchJsResult();
 });
 
-test.each(["hello test"])("string.toUpperCase (%p)", inp => {
+test.each(["hello test"])("string.toUpperCase (%p)", (inp) => {
     util.testExpressionTemplate`${inp}.toUpperCase()`.expectToMatchJsResult();
 });
 
@@ -249,7 +249,7 @@ test.each(padCases)("string.padEnd (%p)", ({ inp, args }) => {
 test.each([
     "function generic<T extends string>(string: T)",
     "type StringType = string; function generic<T extends StringType>(string: T)",
-])("string constrained generic foreach (%p)", signature => {
+])("string constrained generic foreach (%p)", (signature) => {
     const code = `
             ${signature}: number {
                 return string.length;
@@ -275,8 +275,8 @@ const trimTestCases = [
     "\r\nfoo\n\r\n",
     "\r\nfoo\nbar\n\r\n",
 ];
-describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", trim => {
-    test.each(trimTestCases)("matches JS result (%p)", testString => {
+describe.each(["trim", "trimEnd", "trimRight", "trimStart", "trimLeft"])("string.%s", (trim) => {
+    test.each(trimTestCases)("matches JS result (%p)", (testString) => {
         util.testExpression`${util.formatCode(testString)}.${trim}()`.expectToMatchJsResult();
     });
 });

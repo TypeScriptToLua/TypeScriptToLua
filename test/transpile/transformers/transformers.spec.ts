@@ -24,7 +24,7 @@ test("transformer resolution error", () => {
 });
 
 describe("factory types", () => {
-    test.each(["program", "config", "checker", "raw", "compilerOptions"] as const)("%s", type => {
+    test.each(["program", "config", "checker", "raw", "compilerOptions"] as const)("%s", (type) => {
         util.testFunction`
             return false;
         `

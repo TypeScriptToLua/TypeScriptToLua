@@ -49,7 +49,7 @@ function transformSpreadableExpressionsIntoArrayConcatArguments(
         }
     }
 
-    return chunks.map(chunk => wrapInTable(...chunk.map(expression => context.transformExpression(expression))));
+    return chunks.map((chunk) => wrapInTable(...chunk.map((expression) => context.transformExpression(expression))));
 }
 
 export function flattenSpreadExpressions(
@@ -57,7 +57,7 @@ export function flattenSpreadExpressions(
     expressions: readonly ts.Expression[]
 ): lua.Expression[] {
     const [preSpreadExpressions, postSpreadExpressions] = getExpressionsBeforeAndAfterFirstSpread(expressions);
-    const transformedPreSpreadExpressions = preSpreadExpressions.map(a => context.transformExpression(a));
+    const transformedPreSpreadExpressions = preSpreadExpressions.map((a) => context.transformExpression(a));
 
     // Nothing special required
     if (postSpreadExpressions.length === 0) {

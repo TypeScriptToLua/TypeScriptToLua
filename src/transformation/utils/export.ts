@@ -7,7 +7,7 @@ import { getSymbolInfo } from "./symbols";
 import { findFirstNodeAbove } from "./typescript";
 
 export function hasDefaultExportModifier(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some(modifier => modifier.kind === ts.SyntaxKind.DefaultKeyword);
+    return (node.modifiers ?? []).some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword);
 }
 
 export const createDefaultExportIdentifier = (original: ts.Node): lua.Identifier =>
@@ -19,7 +19,7 @@ export const createDefaultExportStringLiteral = (original: ts.Node): lua.StringL
 export function getExportedSymbolDeclaration(symbol: ts.Symbol): ts.Declaration | undefined {
     const declarations = symbol.getDeclarations();
     if (declarations) {
-        return declarations.find(d => (ts.getCombinedModifierFlags(d) & ts.ModifierFlags.Export) !== 0);
+        return declarations.find((d) => (ts.getCombinedModifierFlags(d) & ts.ModifierFlags.Export) !== 0);
     }
 }
 
@@ -94,7 +94,7 @@ export function getExportedSymbolsFromScope(
 }
 
 export function getDependenciesOfSymbol(context: TransformationContext, originalSymbol: ts.Symbol): ts.Symbol[] {
-    return getExportedSymbolsFromScope(context, context.sourceFile).filter(exportSymbol =>
+    return getExportedSymbolsFromScope(context, context.sourceFile).filter((exportSymbol) =>
         exportSymbol.declarations
             .filter(ts.isExportSpecifier)
             .map(context.checker.getExportSpecifierLocalTargetSymbol)

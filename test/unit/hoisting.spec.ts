@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as util from "../util";
 
-test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
+test.each(["let", "const"])("Let/Const Hoisting (%p)", (varType) => {
     const code = `
         let bar: string;
         function setBar() { bar = foo; }
@@ -13,7 +13,7 @@ test.each(["let", "const"])("Let/Const Hoisting (%p)", varType => {
     expect(result).toBe("foo");
 });
 
-test.each(["let", "const"])("Exported Let/Const Hoisting (%p)", varType => {
+test.each(["let", "const"])("Exported Let/Const Hoisting (%p)", (varType) => {
     const code = `
         let bar: string;
         function setBar() { bar = foo; }
@@ -115,7 +115,7 @@ test("Hoisting with synthetic source file node", () => {
     `
         .setCustomTransformers({
             before: [
-                () => sourceFile =>
+                () => (sourceFile) =>
                     ts.updateSourceFileNode(
                         sourceFile,
                         [ts.createNotEmittedStatement(undefined!), ...sourceFile.statements],

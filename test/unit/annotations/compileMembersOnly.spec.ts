@@ -12,7 +12,7 @@ test("@compileMembersOnly", () => {
 
         return { A: TestEnum.A, B: TestEnum.B, C: TestEnum.C, D: TestEnum.D };
     `
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("TestEnum"))
+        .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toContain("TestEnum"))
         .expectToMatchJsResult();
 });
 
@@ -29,6 +29,6 @@ test("@compileMembersOnly in a namespace", () => {
         export const A = Test.TestEnum.A;
     `
         .setReturnExport("A")
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("Test.A"))
+        .tap((builder) => expect(builder.getMainLuaCodeChunk()).toContain("Test.A"))
         .expectToEqual("A");
 });

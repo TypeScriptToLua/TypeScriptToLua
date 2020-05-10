@@ -3,7 +3,7 @@ import { unresolvableRequirePath } from "../../../src/transformation/utils/diagn
 import * as util from "../../util";
 
 const requireRegex = /require\("(.*?)"\)/;
-const expectToRequire = (expected: string): util.TapCallback => builder => {
+const expectToRequire = (expected: string): util.TapCallback => (builder) => {
     const [, requiredPath] = builder.getMainLuaCodeChunk().match(requireRegex) ?? [];
     expect(requiredPath).toBe(expected);
 };

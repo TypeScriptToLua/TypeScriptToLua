@@ -30,7 +30,7 @@ function hasNoSelfAncestor(declaration: ts.Declaration): boolean {
 
 function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration): ts.ParameterDeclaration | undefined {
     return signatureDeclaration.parameters.find(
-        param => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword
+        (param) => ts.isIdentifier(param.name) && param.name.originalKeywordKind === ts.SyntaxKind.ThisKeyword
     );
 }
 
@@ -111,7 +111,7 @@ function getSignatureDeclarations(
     context: TransformationContext,
     signatures: readonly ts.Signature[]
 ): ts.SignatureDeclaration[] {
-    return signatures.flatMap(signature => {
+    return signatures.flatMap((signature) => {
         const signatureDeclaration = signature.getDeclaration();
         if (
             (ts.isFunctionExpression(signatureDeclaration) || ts.isArrowFunction(signatureDeclaration)) &&
@@ -122,7 +122,7 @@ function getSignatureDeclarations(
             if (inferredType) {
                 const inferredSignatures = getAllCallSignatures(inferredType);
                 if (inferredSignatures.length > 0) {
-                    return inferredSignatures.map(s => s.getDeclaration());
+                    return inferredSignatures.map((s) => s.getDeclaration());
                 }
             }
         }
@@ -137,7 +137,7 @@ export function getFunctionContextType(context: TransformationContext, type: ts.
     }
 
     if (type.isUnion()) {
-        return reduceContextTypes(type.types.map(t => getFunctionContextType(context, t)));
+        return reduceContextTypes(type.types.map((t) => getFunctionContextType(context, t)));
     }
 
     const signatures = context.checker.getSignaturesOfType(type, ts.SignatureKind.Call);
@@ -146,5 +146,5 @@ export function getFunctionContextType(context: TransformationContext, type: ts.
     }
 
     const signatureDeclarations = getSignatureDeclarations(context, signatures);
-    return reduceContextTypes(signatureDeclarations.map(s => getDeclarationContextType(context, s)));
+    return reduceContextTypes(signatureDeclarations.map((s) => getDeclarationContextType(context, s)));
 }

@@ -10,21 +10,21 @@ test.each([
     util.testExpression`Object.assign(${util.formatCode(initial)}, ${argsString})`.expectToMatchJsResult();
 });
 
-test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.entries (%p)", obj => {
+test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.entries (%p)", (obj) => {
     util.testExpressionTemplate`Object.entries(${obj})`.expectToMatchJsResult();
 });
 
-test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.keys (%p)", obj => {
+test.each([{}, { abc: 3 }, { abc: 3, def: "xyz" }])("Object.keys (%p)", (obj) => {
     util.testExpressionTemplate`Object.keys(${obj})`.expectToMatchJsResult();
 });
 
-test.each([{}, { abc: "def" }, { abc: 3, def: "xyz" }])("Object.values (%p)", obj => {
+test.each([{}, { abc: "def" }, { abc: 3, def: "xyz" }])("Object.values (%p)", (obj) => {
     util.testExpressionTemplate`Object.values(${obj})`.expectToMatchJsResult();
 });
 
 test.each(["[]", '[["a", 1], ["b", 2]]', '[["a", 1], ["a", 2]]', 'new Map([["foo", "bar"]])'])(
     "Object.fromEntries(%s)",
-    entries => {
+    (entries) => {
         util.testExpression`Object.fromEntries(${entries})`.expectToMatchJsResult();
     }
 );

@@ -1,7 +1,7 @@
 /** @noSelfInFile */
 
 /** @vararg */
-interface Vararg<T> extends Array<T> {}
+type Vararg<T extends unknown[]> = T & { __luaVararg?: never };
 
 /** @forRange */
 declare function forRange(start: number, limit: number, step?: number): number[];

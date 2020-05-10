@@ -64,8 +64,7 @@ export function hasStandardLibrarySignature(
     callExpression: ts.CallExpression
 ): boolean {
     const signature = context.checker.getResolvedSignature(callExpression);
-
-    return signature && signature.declaration ? isStandardLibraryDeclaration(context, signature.declaration) : false;
+    return signature?.declaration ? isStandardLibraryDeclaration(context, signature.declaration) : false;
 }
 
 export function inferAssignedType(context: TransformationContext, expression: ts.Expression): ts.Type {

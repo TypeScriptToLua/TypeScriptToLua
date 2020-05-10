@@ -2,15 +2,6 @@ import * as tstl from "../../src";
 import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
-// TODO:
-test("Block statement", () => {
-    util.testFunction`
-        let a = 4;
-        { let a = 42; }
-        return a;
-    `.expectToMatchJsResult();
-});
-
 test.each([
     "i++",
     "++i",

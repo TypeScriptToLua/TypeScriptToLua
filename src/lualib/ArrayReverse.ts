@@ -5,8 +5,8 @@ function __TS__ArrayReverse(this: void, arr: any[]): any[] {
         const temp = arr[j];
         arr[j] = arr[i];
         arr[i] = temp;
-        i = i + 1;
-        j = j - 1;
+        i += 1;
+        j -= 1;
     }
     return arr;
 }

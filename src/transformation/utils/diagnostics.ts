@@ -11,13 +11,17 @@ const createDiagnosticFactory = <TArgs extends any[]>(message: string | ((...arg
         messageText: typeof message === "string" ? message : message(...args),
     }));
 
-export const forbiddenForIn = createDiagnosticFactory(`Iterating over arrays with 'for ... in' is not allowed.`);
+export const unsupportedNodeKind = createDiagnosticFactory(
+    (kind: ts.SyntaxKind) => `Unsupported node kind ${ts.SyntaxKind[kind]}`
+);
+
+export const forbiddenForIn = createDiagnosticFactory("Iterating over arrays with 'for ... in' is not allowed.");
 
 export const unsupportedNoSelfFunctionConversion = createDiagnosticFactory((name?: string) => {
     const nameReference = name ? ` '${name}'` : "";
     return (
         `Unable to convert function with a 'this' parameter to function${nameReference} with no 'this'. ` +
-        `To fix, wrap in an arrow function, or declare with 'this: void'.`
+        "To fix, wrap in an arrow function, or declare with 'this: void'."
     );
 });
 
@@ -25,7 +29,7 @@ export const unsupportedSelfFunctionConversion = createDiagnosticFactory((name?:
     const nameReference = name ? ` '${name}'` : "";
     return (
         `Unable to convert function with no 'this' parameter to function${nameReference} with 'this'. ` +
-        `To fix, wrap in an arrow function, or declare with 'this: any'.`
+        "To fix, wrap in an arrow function, or declare with 'this: any'."
     );
 });
 
@@ -37,7 +41,7 @@ export const unsupportedOverloadAssignment = createDiagnosticFactory((name?: str
     );
 });
 
-export const decoratorInvalidContext = createDiagnosticFactory(`Decorator function cannot have 'this: void'.`);
+export const decoratorInvalidContext = createDiagnosticFactory("Decorator function cannot have 'this: void'.");
 
 export const annotationInvalidArgumentCount = createDiagnosticFactory(
     (kind: AnnotationKind, got: number, expected: number) => `'@${kind}' expects ${expected} arguments, but got ${got}.`
@@ -48,23 +52,23 @@ export const extensionCannotConstruct = createDiagnosticFactory(
 );
 
 export const extensionCannotExtend = createDiagnosticFactory(
-    `Cannot extend classes with '@extension' or '@metaExtension' annotation.`
+    "Cannot extend classes with '@extension' or '@metaExtension' annotation."
 );
 
 export const extensionCannotExport = createDiagnosticFactory(
-    `Cannot export classes with '@extension' or '@metaExtension' annotation.`
+    "Cannot export classes with '@extension' or '@metaExtension' annotation."
 );
 
 export const extensionInvalidInstanceOf = createDiagnosticFactory(
-    `Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation.`
+    "Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."
 );
 
 export const extensionAndMetaExtensionConflict = createDiagnosticFactory(
-    `Cannot use both '@extension' and '@metaExtension' annotations on the same class.`
+    "Cannot use both '@extension' and '@metaExtension' annotations on the same class."
 );
 
 export const metaExtensionMissingExtends = createDiagnosticFactory(
-    `'@metaExtension' annotation requires the extension of the metatable class.`
+    "'@metaExtension' annotation requires the extension of the metatable class."
 );
 
 export const invalidForRangeCall = createDiagnosticFactory((message: string) => `Invalid @forRange call: ${message}.`);
@@ -96,8 +100,6 @@ export const luaIteratorForbiddenUsage = createDiagnosticFactory(
 export const unsupportedAccessorInObjectLiteral = createDiagnosticFactory(
     "Accessors in object literal are not supported."
 );
-
-export const unsupportedNullishCoalescing = createDiagnosticFactory("Nullish coalescing is not supported.");
 
 export const unsupportedRightShiftOperator = createDiagnosticFactory(
     "Right shift operator is not supported for target Lua 5.3. Use `>>>` instead."

@@ -12,8 +12,8 @@ export const intersperse = <T>(values: T[], separator: T): T[] =>
     values.flatMap((value, index) => (index === 0 ? [value] : [separator, value]));
 
 type DiagnosticFactory = (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">;
-export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) => {
-    return Object.assign(
+export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) =>
+    Object.assign(
         (...args: Parameters<T>): ts.Diagnostic => ({
             file: undefined,
             start: undefined,
@@ -25,7 +25,6 @@ export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(cod
         }),
         { code }
     );
-};
 
 let serialDiagnosticCodeCounter = 100000;
 export const createSerialDiagnosticFactory = <T extends DiagnosticFactory>(create: T) =>
@@ -57,8 +56,9 @@ export function getOrUpdate<K, V>(
     return map.get(key)!;
 }
 
-export function isNonNull<T>(value: T | undefined | null): value is T {
-    return value !== undefined && value !== null;
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function isNonNull<T>(value: T | null | undefined): value is T {
+    return value != null;
 }
 
 export function cast<TOriginal, TCast extends TOriginal>(

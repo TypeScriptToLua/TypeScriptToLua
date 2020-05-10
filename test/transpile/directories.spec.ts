@@ -14,7 +14,7 @@ test.each<DirectoryTestCase>([
     { name: "basic", options: { rootDir: "src" } },
     { name: "basic", options: { rootDir: "src", outDir: "out" } },
     { name: "baseurl", options: { baseUrl: "./src/lib", rootDir: ".", outDir: "./out" } },
-])("should be able to resolve (%p)", async ({ name, options: compilerOptions }) => {
+])("should be able to resolve (%p)", ({ name, options: compilerOptions }) => {
     const projectPath = path.join(__dirname, "directories", name);
     jest.spyOn(process, "cwd").mockReturnValue(projectPath);
 

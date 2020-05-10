@@ -142,7 +142,7 @@ export function transformParameters(
         const paramName =
             ts.isObjectBindingPattern(param.name) || ts.isArrayBindingPattern(param.name)
                 ? lua.createIdentifier(`____bindingPattern${identifierIndex++}`)
-                : transformIdentifier(context, param.name as ts.Identifier);
+                : transformIdentifier(context, param.name);
 
         // This parameter is a spread parameter (...param)
         if (!param.dotDotDotToken) {

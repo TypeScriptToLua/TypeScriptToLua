@@ -3,13 +3,12 @@ import * as lua from "../../../LuaAST";
 import { FunctionVisitor } from "../../context";
 import { transformLoopBody } from "./utils";
 
-export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) => {
-    return lua.createWhileStatement(
+export const transformWhileStatement: FunctionVisitor<ts.WhileStatement> = (statement, context) =>
+    lua.createWhileStatement(
         lua.createBlock(transformLoopBody(context, statement)),
         context.transformExpression(statement.expression),
         statement
     );
-};
 
 export const transformDoStatement: FunctionVisitor<ts.DoStatement> = (statement, context) => {
     const body = lua.createDoStatement(transformLoopBody(context, statement));

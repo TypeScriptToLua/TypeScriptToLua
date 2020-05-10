@@ -287,14 +287,14 @@ test("return from nested finally", () => {
 });
 
 test.each([
-    `"error string"`,
-    `42`,
-    `3.141`,
-    `true`,
-    `false`,
-    `undefined`,
-    `{ x: "error object" }`,
-    `() => "error function"`,
+    '"error string"',
+    "42",
+    "3.141",
+    "true",
+    "false",
+    "undefined",
+    '{ x: "error object" }',
+    '() => "error function"',
 ])("throw and catch %s", error => {
     util.testFunction`
         try {

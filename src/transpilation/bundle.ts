@@ -42,7 +42,7 @@ export function bundleTranspiledFiles(
     );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
-    const lualibRequired = transpiledFiles.some(f => f.lua?.includes(`require("lualib_bundle")`));
+    const lualibRequired = transpiledFiles.some(f => f.lua?.includes('require("lualib_bundle")'));
     if (lualibRequired) {
         moduleTableEntries.push(`["lualib_bundle"] = function() ${getLuaLibBundle(emitHost)} end,\n`);
     }
@@ -90,7 +90,7 @@ end\n`;
 
 function moduleSourceNode(transpiledFile: TranspiledFile, modulePath: string): SourceNode {
     const tableEntryHead = `[${modulePath}] = function() `;
-    const tableEntryTail = `end,\n`;
+    const tableEntryTail = "end,\n";
 
     if (transpiledFile.lua && transpiledFile.sourceMapNode) {
         return joinSourceChunks([tableEntryHead, transpiledFile.sourceMapNode, tableEntryTail]);
@@ -100,14 +100,13 @@ function moduleSourceNode(transpiledFile: TranspiledFile, modulePath: string): S
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {
-    const tableHead = `____modules = {\n`;
-    const tableEnd = `}\n`;
+    const tableHead = "____modules = {\n";
+    const tableEnd = "}\n";
 
     return joinSourceChunks([tableHead, ...fileChunks, tableEnd]);
 }
 
 type SourceChunk = string | SourceNode;
 function joinSourceChunks(chunks: SourceChunk[]): SourceNode {
-    // tslint:disable-next-line:no-null-keyword
     return new SourceNode(null, null, null, chunks);
 }

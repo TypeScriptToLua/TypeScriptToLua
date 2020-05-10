@@ -49,9 +49,9 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
         readFile: () => "",
         getNewLine: () => "\n",
         useCaseSensitiveFileNames: () => false,
-        writeFile: () => {},
+        writeFile() {},
 
-        getSourceFile: filename => {
+        getSourceFile(filename) {
             if (filename in input) {
                 return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
             }

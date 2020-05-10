@@ -68,12 +68,12 @@ describe("inferred", () => {
     });
 
     test("not found", () => {
-        expect(locate(undefined)).toBe(undefined);
+        expect(locate(undefined)).toBeUndefined();
     });
 
     test("does not attempt when has files", async () => {
         await fs.outputFile("tsconfig.json", "");
-        expect(locate(undefined, [""])).toBe(undefined);
+        expect(locate(undefined, [""])).toBeUndefined();
     });
 });
 

@@ -124,7 +124,7 @@ export function transformLuaTablePropertyAccessInAssignment(
 
     const [luaTable, propertyName] = parseLuaTableExpression(context, node);
     if (propertyName === "length") {
-        context.diagnostics.push(luaTableForbiddenUsage(node, `A LuaTable object's length cannot be re-assigned`));
+        context.diagnostics.push(luaTableForbiddenUsage(node, "A LuaTable object's length cannot be re-assigned"));
         return lua.createTableIndexExpression(luaTable, lua.createStringLiteral(propertyName), node);
     }
 

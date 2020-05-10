@@ -15,7 +15,7 @@ test("global scoping", () => {
         "return a.foo();",
         undefined,
         undefined,
-        `namespace a { export function foo() { return "bar"; } }`
+        'namespace a { export function foo() { return "bar"; } }'
     );
 
     expect(result).toBe("bar");

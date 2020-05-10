@@ -89,12 +89,12 @@ export function transformGeneratorFunctionBody(
     const block = [
         coroutine,
         iterator,
-        //____it[Symbol.iterator] = {return ____it}
+        // ____it[Symbol.iterator] = {return ____it}
         lua.createAssignmentStatement(
             lua.createTableIndexExpression(itIdentifier, symbolIterator),
             lua.createFunctionExpression(lua.createBlock([lua.createReturnStatement([itIdentifier])]))
         ),
-        //return ____it
+        // return ____it
         lua.createReturnStatement([itIdentifier]),
     ];
 
@@ -106,10 +106,9 @@ export function transformGeneratorFunctionBody(
     return [block, functionScope];
 }
 
-export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
-    return lua.createCallExpression(
+export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) =>
+    lua.createCallExpression(
         lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
         expression.expression ? [context.transformExpression(expression.expression)] : [],
         expression
     );
-};

@@ -33,12 +33,12 @@ export function transformAccessorDeclarations(
 
     importLuaLibFeature(context, LuaLibFeature.Descriptors);
     const call = isStaticNode(firstAccessor)
-        ? lua.createCallExpression(lua.createIdentifier(`__TS__ObjectDefineProperty`), [
+        ? lua.createCallExpression(lua.createIdentifier("__TS__ObjectDefineProperty"), [
               lua.cloneIdentifier(className),
               propertyName,
               descriptor,
           ])
-        : lua.createCallExpression(lua.createIdentifier(`__TS__SetDescriptor`), [
+        : lua.createCallExpression(lua.createIdentifier("__TS__SetDescriptor"), [
               lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
               propertyName,
               descriptor,

@@ -197,8 +197,8 @@ test("for scope", () => {
 
 test.each([
     {
-        inp: { ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 },
-        expected: { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 },
+        inp: { test1: 0, test2: 1, test3: 2 },
+        expected: { test1: 1, test2: 2, test3: 3 },
     },
 ])("forin[Object] (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(

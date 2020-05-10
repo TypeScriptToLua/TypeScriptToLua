@@ -9,7 +9,7 @@ export function calculatePercentageChange(oldValue: number, newValue: number): n
 }
 
 // @ts-ignore
-export const isWindows = package.config.sub(1, 1) === "\\";
+export const isWindows = package.config.startsWith("\\");
 
 export const json: {
     decode: (this: void, str: string) => {};
@@ -17,16 +17,16 @@ export const json: {
 } = require("json");
 
 export function readFile(path: string): string {
-    const fileOpenArray = io.open(path, "rb");
+    const [fileHandle] = io.open(path, "rb");
 
-    if (fileOpenArray?.[0]) {
-        const fileHandle = fileOpenArray[0];
-        const fileContent = readAll(fileHandle);
-        fileHandle.close();
-
-        return fileContent;
+    if (!fileHandle) {
+        throw Error(`Can't open file ${path}`);
     }
-    throw Error(`Can't open file ${path}`);
+
+    const fileContent = readAll(fileHandle);
+    fileHandle.close();
+
+    return fileContent;
 }
 
 export function readAll(file: LuaFile): string {
@@ -39,7 +39,7 @@ export function readAll(file: LuaFile): string {
 }
 
 export function readDir(dir: string): string[] {
-    const findHandle = isWindows ? io.popen(`dir /A-D /B ${dir}`) : io.popen(`find '${dir}' -maxdepth 1 -type f`);
+    const findHandle = io.popen(isWindows ? `dir /A-D /B ${dir}` : `find '${dir}' -maxdepth 1 -type f`);
     const findResult = readAll(findHandle);
 
     if (!findHandle.close()) {

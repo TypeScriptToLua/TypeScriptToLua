@@ -150,7 +150,7 @@ function executeJsModule(code: string): any {
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
     const originalFunction = descriptor.value as any;
     const memoized = new WeakMap();
-    descriptor.value = function(this: any, ...args: any[]): any {
+    descriptor.value = function (this: any, ...args: any[]): any {
         if (!memoized.has(this)) {
             memoized.set(this, originalFunction.apply(this, args));
         }

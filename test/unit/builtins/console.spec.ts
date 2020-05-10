@@ -9,9 +9,7 @@ test.each([
     'console.log("Hello %%s", "there")',
     'console.log("Hello", "There")',
 ])("console.log (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -21,9 +19,7 @@ test.each([
     'console.info("Hello %%s", "there")',
     'console.info("Hello", "There")',
 ])("console.info (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -33,9 +29,7 @@ test.each([
     'console.error("Hello %%s", "there")',
     'console.error("Hello", "There")',
 ])("console.error (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -45,9 +39,7 @@ test.each([
     'console.warn("Hello %%s", "there")',
     'console.warn("Hello", "There")',
 ])("console.warn (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -57,9 +49,7 @@ test.each([
     'console.trace("Hello %%s", "there")',
     'console.trace("Hello", "there")',
 ])("console.trace (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test.each([
@@ -69,9 +59,7 @@ test.each([
     'console.assert(false, "message %%s", "info")',
     'console.assert(false, "message", "more")',
 ])("console.assert (%p)", (code) => {
-    util.testFunction(code)
-        .setOptions(compilerOptions)
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).setOptions(compilerOptions).expectLuaToMatchSnapshot();
 });
 
 test("console.differentiation", () => {

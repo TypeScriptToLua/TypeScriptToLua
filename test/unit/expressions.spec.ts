@@ -15,9 +15,7 @@ test.each([
     "let a = delete tbl.test",
     "delete tbl.test",
 ])("Unary expressions basic (%p)", (input) => {
-    util.testFunction(input)
-        .disableSemanticCheck()
-        .expectLuaToMatchSnapshot();
+    util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
 test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", (input) => {

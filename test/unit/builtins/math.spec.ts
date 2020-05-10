@@ -14,9 +14,7 @@ test.each([
     "Math.PI",
 ])("%s", (code) => {
     // TODO: Remove?
-    util.testFunction(code)
-        .disableSemanticCheck()
-        .expectLuaToMatchSnapshot();
+    util.testFunction(code).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
 test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math.%s", (constant) => {

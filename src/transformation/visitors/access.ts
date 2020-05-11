@@ -37,8 +37,11 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
         return transformStringIndex(context, expression);
     }
 
-    const table = context.transformExpression(expression.expression);
-    return lua.createTableIndexExpression(table, transformElementAccessArgument(context, expression), expression);
+    return lua.createTableIndexExpression(
+        context.transformExpression(expression.expression),
+        transformElementAccessArgument(context, expression),
+        expression
+    );
 };
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (

@@ -41,6 +41,14 @@ test.each([
     util.testExpressionTemplate`${input}[${index}]`.expectToMatchJsResult();
 });
 
+test("string index with side effect", () => {
+    util.testFunction`
+        let i = 0;
+        const mystring = "abc";
+        return mystring[i++];
+    `.expectToMatchJsResult();
+});
+
 test.each([
     { inp: "hello test", searchValue: "", replaceValue: "" },
     { inp: "hello test", searchValue: " ", replaceValue: "" },

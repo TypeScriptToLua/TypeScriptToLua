@@ -33,11 +33,11 @@ To avoid crashes in the CI your benchmark should not use more than 500MB of memo
 
 **Running locally**
 
-1. Create a benchmark baseline called "benchmark_baseilne.json":  
-   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_baseilne.json`
+1. Create a benchmark baseline called "benchmark_baseline.json":  
+   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_baseline.json`
 2. Make some changes to tstl.
 3. Create an updated benchmark and compare with the baseline:  
-   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_updated.json benchmark_baseilne.json`
+   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_updated.json benchmark_baseline.json`
 4. The above command will output comparison data as json to stdout.
    If you provide a path as third argument the comparison data will be written to that path instead.  
-   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_updated.json benchmark_baseilne.json result.md`
+   `tstl -p tsconfig.53.json && cd dist && lua -- run.lua benchmark_updated.json benchmark_baseline.json result.md`

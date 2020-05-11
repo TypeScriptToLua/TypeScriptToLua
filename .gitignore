@@ -6,3 +6,7 @@ yarn.lock
 .vscode
 .idea
 .DS_Store
+
+benchmark/data/*
+benchmark/dist/*
+!benchmark/dist/json.lua

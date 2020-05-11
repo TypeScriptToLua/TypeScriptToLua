@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.33.0
+
+- Added support for nullish coalescing `A ?? B`.
+- Annotation `/** @noSelf */` now also works directly on function declarations, not only on classes/interfaces.
+- Fixed incorrect file paths in source maps.
+- Fixed unknown node kind throwing an error instead of diagnostic.
+- Fixed string index with side-effects being evaluated twice.
+- Added check for node.js version when running tstl.
+- Fixed some issues with reflection class names.
+
+- Fixed incorrectly escaped variable names.
+
+Under the hood:
+
+- Switched from TSLint to ESLint.
+- Added benchmarking capability for garbage collection.
+
 ## 0.32.0
 
 - **Deprecated:** The `noHoisting` option has been removed, hoisting will always be done.

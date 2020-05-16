@@ -12,9 +12,7 @@ test.each(["const", "let"])("%s declaration not top-level is not global", declar
 });
 
 test.each(["const", "let"])("top-level %s declaration is global", declarationKind => {
-    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
-        // @ts-ignore
         import './a';
         export const result = foo;
     `

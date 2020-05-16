@@ -194,9 +194,10 @@ test.each(validTsInvalidLuaNames)("class with invalid lua name has correct name 
 
 test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name => {
     util.testFunction`
-        function decorator<T extends any>(c: T): T {
-            c.bar = "foobar";
-            return c;
+        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+            return class extends Class {
+                public bar = "foobar";
+            };
         }
 
         @decorator
@@ -206,17 +207,18 @@ test.each(validTsInvalidLuaNames)("decorated class with invalid lua name", name 
 });
 
 test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua name", name => {
-    const code = `
-        function decorator<T extends any>(c: T): T {
-            c.bar = "foobar";
-            return c;
+    util.testModule`
+        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+            return class extends Class {
+                public bar = "foobar";
+            };
         }
 
         @decorator
-        export class ${name} {}`;
-
-    const lua = util.transpileString(code);
-    expect(util.executeLua(`return (function() ${lua} end)()["${name}"].bar`)).toBe("foobar");
+        export class ${name} {}
+    `
+        .setReturnExport(name, "bar")
+        .expectToMatchJsResult();
 });
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
@@ -782,7 +784,7 @@ test("lua built-in as in constructor assignment", () => {
         class A {
             constructor(public error: string){}
         }
-        
+
         export const result = new A("42").error;
     `.expectToMatchJsResult();
 });

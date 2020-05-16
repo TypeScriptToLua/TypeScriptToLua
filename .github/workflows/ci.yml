@@ -133,12 +133,6 @@ jobs:
                 }
               });
             } else {
-              // Fallback to posting the report to gist and printing the url.
-              const gist = github.gists.create({
-                files: { 
-                  ["summary.md"]: summary,
-                  ["benchmark_results.md"]: text,
-                }
-              });
-              console.log(`Benchmark results: ${gist.url}`);
+              console.log(summary);
+              console.log(text);
             }

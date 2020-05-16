@@ -117,7 +117,7 @@ jobs:
             const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
 
             const pull_request = context.payload.pull_request;
-            if (pull_request.head.repo.url === pull_request.base.repo.url) {
+            if (!pull_request || pull_request.head.repo.url === pull_request.base.repo.url) {
               // This only works if not in a fork.
               github.checks.create({
                 owner: context.repo.owner,

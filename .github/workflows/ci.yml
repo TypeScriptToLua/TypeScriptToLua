@@ -117,12 +117,7 @@ jobs:
             const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
 
             const pull_request = context.payload.pull_request;
-            console.log(pull_request.head);
-            console.log(pull_request.base);
-            console.log(pull_request.head.url, pull_request.base.url);
-            console.log(pull_request.head.url, context.repo.url);
-            if (pull_request.head.url === pull_request.base.url) {
-              console.log("Creating check");
+            if (pull_request.head.repo.url === pull_request.base.repo.url) {
               // This only works if not in a fork.
               github.checks.create({
                 owner: context.repo.owner,
@@ -138,6 +133,7 @@ jobs:
                 }
               });
             } else {
+              // Fallback to posting the report to gist and printing the url.
               const gist = github.gists.create({
                 files: { 
                   ["summary.md"]: summary,

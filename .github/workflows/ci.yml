@@ -116,10 +116,9 @@ jobs:
 
             const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
 
-            console.log(context.payload.pull_request);
-            console.log(context.payload.pull_request.head);
-            console.log(Object.keys(context.payload.pull_request.head));
-            if (context.repo.owner === "TypeScriptToLua") {
+            const pull_request = context.payload.pull_request;
+            if (pull_request.head.url === context.repo.url) {
+              // This only works if not in a fork.
               github.checks.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -133,4 +132,12 @@ jobs:
                   text: text
                 }
               });
+            } else {
+              const gist = github.gists.create({
+                files: { 
+                  ["summary.md"]: summary,
+                  ["benchmark_results.md"]: text,
+                }
+              });
+              console.log(`Benchmark results: ${gist.url}`);
             }

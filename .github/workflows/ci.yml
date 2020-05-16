@@ -116,7 +116,8 @@ jobs:
 
             const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
 
-            if (context.repo) {
+            console.log(context.repo.owner);
+            if (context.repo.owner === "TypeScriptToLua") {
               github.checks.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,

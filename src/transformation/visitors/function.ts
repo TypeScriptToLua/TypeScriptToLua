@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
+import { assert } from "../../utils";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isVarargType } from "../utils/annotations";
 import { createDefaultExportStringLiteral, hasDefaultExportModifier } from "../utils/export";
@@ -11,8 +12,8 @@ import {
     createSelfIdentifier,
     wrapInTable,
 } from "../utils/lua-ast";
+import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
-import { transformGeneratorFunctionBody } from "./generator";
 import { transformIdentifier } from "./identifier";
 import { transformBindingPattern } from "./variable-declaration";
 
@@ -157,12 +158,13 @@ export function transformParameters(
     return [paramNames, dotsLiteral, restParamName];
 }
 
-export function transformFunctionLikeDeclaration(
-    node: ts.FunctionLikeDeclaration,
-    context: TransformationContext
-): lua.Expression {
-    const type = context.checker.getTypeAtLocation(node);
+export function transformFunctionToExpression(
+    context: TransformationContext,
+    node: ts.FunctionLikeDeclaration
+): [lua.Expression, Scope] {
+    assert(node.body);
 
+    const type = context.checker.getTypeAtLocation(node);
     let functionContext: lua.Identifier | undefined;
     if (getFunctionContextType(context, type) !== ContextType.Void) {
         if (ts.isArrowFunction(node)) {
@@ -176,15 +178,9 @@ export function transformFunctionLikeDeclaration(
         }
     }
 
-    // Build parameter string
-    const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);
-
     let flags = lua.FunctionExpressionFlags.None;
-
-    if (node.body === undefined) {
-        // This code can be reached only from object methods, which is TypeScript error
-        return lua.createNilLiteral();
-    }
+    if (!ts.isBlock(node.body)) flags |= lua.FunctionExpressionFlags.Inline;
+    if (ts.isFunctionDeclaration(node)) flags |= lua.FunctionExpressionFlags.Declaration;
 
     let body: ts.Block;
     if (ts.isBlock(node.body)) {
@@ -193,14 +189,11 @@ export function transformFunctionLikeDeclaration(
         const returnExpression = ts.createReturn(node.body);
         body = ts.createBlock([returnExpression]);
         returnExpression.parent = body;
-        if (node.body) {
-            body.parent = node.body.parent;
-        }
-        flags |= lua.FunctionExpressionFlags.Inline;
+        if (node.body) body.parent = node.body.parent;
     }
 
-    const [transformedBody, scope] = transformFunctionBody(context, node.parameters, body, spreadIdentifier);
-
+    const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);
+    const [transformedBody, functionScope] = transformFunctionBody(context, node.parameters, body, spreadIdentifier);
     const functionExpression = lua.createFunctionExpression(
         lua.createBlock(transformedBody),
         paramNames,
@@ -209,12 +202,31 @@ export function transformFunctionLikeDeclaration(
         node
     );
 
+    return [
+        node.asteriskToken
+            ? transformLuaLibFunction(context, LuaLibFeature.Generator, undefined, functionExpression)
+            : functionExpression,
+        functionScope,
+    ];
+}
+
+export function transformFunctionLikeDeclaration(
+    node: ts.FunctionLikeDeclaration,
+    context: TransformationContext
+): lua.Expression {
+    if (node.body === undefined) {
+        // This code can be reached only from object methods, which is TypeScript error
+        return lua.createNilLiteral();
+    }
+
+    const [functionExpression, functionScope] = transformFunctionToExpression(context, node);
+
     // Handle named function expressions which reference themselves
-    if (ts.isFunctionExpression(node) && node.name && scope.referencedSymbols) {
+    if (ts.isFunctionExpression(node) && node.name && functionScope.referencedSymbols) {
         const symbol = context.checker.getSymbolAtLocation(node.name);
         if (symbol) {
             // TODO: Not using symbol ids because of https://github.com/microsoft/TypeScript/issues/37131
-            const isReferenced = [...scope.referencedSymbols].some(([, nodes]) =>
+            const isReferenced = [...functionScope.referencedSymbols].some(([, nodes]) =>
                 nodes.some(n => context.checker.getSymbolAtLocation(n)?.valueDeclaration === symbol.valueDeclaration)
             );
 
@@ -234,26 +246,9 @@ export function transformFunctionLikeDeclaration(
 
 export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaration> = (node, context) => {
     // Don't transform functions without body (overload declarations)
-    if (!node.body) {
+    if (node.body === undefined) {
         return undefined;
     }
-
-    const type = context.checker.getTypeAtLocation(node);
-    const functionContext =
-        getFunctionContextType(context, type) !== ContextType.Void ? createSelfIdentifier() : undefined;
-    const [params, dotsLiteral, restParamName] = transformParameters(context, node.parameters, functionContext);
-
-    const [body, functionScope] = node.asteriskToken
-        ? transformGeneratorFunctionBody(context, node.parameters, node.body, restParamName)
-        : transformFunctionBody(context, node.parameters, node.body, restParamName);
-
-    const block = lua.createBlock(body);
-    const functionExpression = lua.createFunctionExpression(
-        block,
-        params,
-        dotsLiteral,
-        lua.FunctionExpressionFlags.Declaration
-    );
 
     if (hasDefaultExportModifier(node)) {
         return lua.createAssignmentStatement(
@@ -261,6 +256,8 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
             transformFunctionLikeDeclaration(node, context)
         );
     }
+
+    const [functionExpression, functionScope] = transformFunctionToExpression(context, node);
 
     // Name being undefined without default export is a TypeScript error
     const name = node.name ? transformIdentifier(context, node.name) : lua.createAnonymousIdentifier();
@@ -278,3 +275,10 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
 
     return createLocalOrExportedOrGlobalDeclaration(context, name, functionExpression, node);
 };
+
+export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) =>
+    lua.createCallExpression(
+        lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
+        expression.expression ? [context.transformExpression(expression.expression)] : [],
+        expression
+    );

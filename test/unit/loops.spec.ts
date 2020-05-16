@@ -530,6 +530,7 @@ for (const testCase of [
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
+        [tstl.LuaTarget.Universal]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,

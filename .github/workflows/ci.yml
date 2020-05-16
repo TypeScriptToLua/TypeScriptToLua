@@ -116,16 +116,18 @@ jobs:
 
             const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
 
-            github.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "Benchmark results",
-              head_sha: context.sha,
-              status: "completed",
-              conclusion: "neutral",
-              output: {
-                title: "Benchmark results",
-                summary: summary,
-                text: text
-              }
-            });
+            if (context.repo) {
+              github.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "Benchmark results",
+                head_sha: context.sha,
+                status: "completed",
+                conclusion: "neutral",
+                output: {
+                  title: "Benchmark results",
+                  summary: summary,
+                  text: text
+                }
+              });
+            }

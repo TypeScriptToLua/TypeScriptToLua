@@ -112,11 +112,10 @@ jobs:
             const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
             const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
 
-            const Buffer = require('buffer').Buffer;
             const zlib = require('zlib');
             const buffer = Buffer.from(core.getInput('benchmark-info-lua', { required: true }));
-            const compressed = zlib.deflate(buffer);
-            console.log(btoa(compressed));
+            const compressed = zlib.deflateSync(buffer);
+            console.log(compressed.toString('base64'));
 
             const summary = `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
 

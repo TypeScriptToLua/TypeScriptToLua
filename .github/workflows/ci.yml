@@ -103,8 +103,6 @@ jobs:
         id: benchmark-jit-commit
         run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
         working-directory: commit/benchmark/dist
-      - name: Install lzstring
-        run: npm install -D lz-string
       - name: Create benchmark check
         uses: actions/github-script@0.9.0
         with:
@@ -114,9 +112,11 @@ jobs:
             const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
             const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
 
-            const lzstring = require('lz-string');
-            const compressed = lzstring.compressToEncodedURIComponent(core.getInput('benchmark-info-lua', { required: true }));
-            console.log(compressed);
+            const Buffer = require('buffer').Buffer;
+            const zlib = require('zlib');
+            const buffer = Buffer.from(core.getInput('benchmark-info-lua', { required: true }));
+            const compressed = zlib.deflate(buffer);
+            console.log(btoa(compressed));
 
             const summary = `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
 

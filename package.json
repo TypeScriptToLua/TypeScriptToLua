@@ -57,10 +57,8 @@
         "jest": "^25.1.0",
         "jest-circus": "^25.1.0",
         "lua-types": "^2.8.0",
-        "lz-string": "^1.4.4",
         "prettier": "^1.19.1",
         "ts-jest": "^25.2.1",
-        "ts-node": "^8.6.2",
-        "zlib": "^1.0.5"
+        "ts-node": "^8.6.2"
     }
 }

@@ -62,7 +62,7 @@ jobs:
       # NPM
       - name: NPM master
         # TODO Lua types is only added manually to test the benchmark PR this can be removed again once the PR is merged
-        run: npm ci && npm run build && npm install -D lua-types
+        run: npm ci && npm run build
         working-directory: master
       - name: NPM commit
         run: npm ci && npm run build
@@ -112,10 +112,9 @@ jobs:
             const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
             const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
 
-            const zlib = require('zlib');
-            const buffer = new Buffer(core.getInput('benchmark-info-lua', { required: true }));
-            const compressed = zlib.deflate(buffer);
-            console.log(btoa(compressed));
+            const lzstring = require('lz-string');
+            const compressed = lzstring.compressToEncodedURIComponent(core.getInput('benchmark-info-lua', { required: true }));
+            console.log(compressed);
 
             const summary = `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
 

@@ -103,6 +103,8 @@ jobs:
         id: benchmark-jit-commit
         run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
         working-directory: commit/benchmark/dist
+      - name: Install lzstring
+        run: npm install -D lz-string
       - name: Create benchmark check
         uses: actions/github-script@0.9.0
         with:

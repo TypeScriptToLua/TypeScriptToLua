@@ -115,7 +115,7 @@ jobs:
             const zlib = require('zlib');
             const buffer = Buffer.from(core.getInput('benchmark-info-lua', { required: true }));
             const compressed = zlib.deflateSync(buffer);
-            console.log(`https://typescripttolua.github.io/benchviz?d={compressed.toString('base64')}`);
+            console.log(`https://typescripttolua.github.io/benchviz?d=${compressed.toString('base64')}`);
 
             const summary = `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
 

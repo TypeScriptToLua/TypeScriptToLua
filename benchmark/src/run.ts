@@ -27,11 +27,15 @@ function benchmark(): void {
         oldBenchmarkResults = json.decode(oldBenchmarkData) as BenchmarkResult[];
     }
 
-    // Compare results
-    const comparisonInfo = compareBenchmarks(oldBenchmarkResults, newBenchmarkResults);
+    if (!arg[2]) {
+        print(json.encode({ new: newBenchmarkResults, old: oldBenchmarkResults }));
+    } else {
+        // Compare results
+        const comparisonInfo = compareBenchmarks(oldBenchmarkResults, newBenchmarkResults);
 
-    // Output comparison info
-    outputBenchmarkData(comparisonInfo, newBenchmarkResults);
+        // Output comparison info
+        outputBenchmarkData(comparisonInfo, newBenchmarkResults);
+    }
 }
 benchmark();
 

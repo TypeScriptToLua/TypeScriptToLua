@@ -26,12 +26,14 @@ test(".next()", () => {
 test(".next() with parameters", () => {
     util.testFunction`
         function* generator() {
-            return yield 1;
+            return yield 0;
         }
 
         const it = generator();
-        return [it.next(2), it.next()];
-    `.expectToMatchJsResult();
+        return [it.next(1), it.next(2), it.next(3)];
+    `
+        .debug()
+        .expectToMatchJsResult();
 });
 
 test("for..of", () => {
@@ -48,9 +50,7 @@ test("for..of", () => {
             results.push({ value });
         }
         return results;
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("function expression", () => {

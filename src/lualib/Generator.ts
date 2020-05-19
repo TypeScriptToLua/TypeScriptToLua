@@ -8,11 +8,11 @@ function __TS__GeneratorIterator(this: GeneratorIterator) {
     return this;
 }
 
-function __TS__GeneratorNext(this: GeneratorIterator) {
+function __TS__GeneratorNext(this: GeneratorIterator, ...args: Vararg<any[]>) {
     const co = this.____coroutine;
     if (coroutine.status(co) === "dead") return { done: true };
 
-    const [status, value] = coroutine.resume(co);
+    const [status, value] = coroutine.resume(co, ...args);
     if (!status) throw value;
 
     return { value, done: coroutine.status(co) === "dead" };

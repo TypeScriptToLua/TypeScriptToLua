@@ -94,11 +94,8 @@ test("namespace merging across files", () => {
         }
     `;
 
-    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
-        // @ts-ignore
         import './a';
-        // @ts-ignore
         import './b';
 
         export const result = NS.Inner;

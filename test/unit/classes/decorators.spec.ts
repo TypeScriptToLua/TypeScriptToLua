@@ -114,14 +114,15 @@ test("Throws error if decorator function has void context", () => {
 
 test("Exported class decorator", () => {
     util.testModule`
-        function decorator<T extends any>(c: T): T {
-            c.bar = "foobar";
-            return c;
+        function decorator<T extends new (...args: any[]) => any>(Class: T): T {
+            return class extends Class {
+                public bar = "foobar";
+            };
         }
 
         @decorator
         export class Foo {}
     `
-        .setReturnExport("Foo.bar")
+        .setReturnExport("Foo", "bar")
         .expectToMatchJsResult();
 });

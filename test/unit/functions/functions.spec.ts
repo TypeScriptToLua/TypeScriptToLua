@@ -449,9 +449,7 @@ test("missing declaration name", () => {
 });
 
 test("top-level function declaration is global", () => {
-    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
-        // @ts-ignore
         import './a';
         export const result = foo();
     `

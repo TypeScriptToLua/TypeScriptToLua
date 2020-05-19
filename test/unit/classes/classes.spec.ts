@@ -772,7 +772,7 @@ test("default exported name class has correct name property", () => {
     util.testModule`
         export default class Test { static method() { return true; } }
     `
-        .setReturnExport("default.name")
+        .setReturnExport("default", "name")
         .expectToMatchJsResult();
 });
 
@@ -780,7 +780,7 @@ test("default exported anonymous class has 'default' name property", () => {
     util.testModule`
         export default class { static method() { return true; } }
     `
-        .setReturnExport("default.name")
+        .setReturnExport("default", "name")
         .expectToEqual("default");
 });
 

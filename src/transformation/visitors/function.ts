@@ -180,7 +180,9 @@ export function transformFunctionToExpression(
 
     let flags = lua.FunctionExpressionFlags.None;
     if (!ts.isBlock(node.body)) flags |= lua.FunctionExpressionFlags.Inline;
-    if (ts.isFunctionDeclaration(node)) flags |= lua.FunctionExpressionFlags.Declaration;
+    if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node)) {
+        flags |= lua.FunctionExpressionFlags.Declaration;
+    }
 
     let body: ts.Block;
     if (ts.isBlock(node.body)) {

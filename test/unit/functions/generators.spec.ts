@@ -31,9 +31,7 @@ test(".next() with parameters", () => {
 
         const it = generator();
         return [it.next(1), it.next(2), it.next(3)];
-    `
-        .debug()
-        .expectToMatchJsResult();
+    `.expectToMatchJsResult();
 });
 
 test("for..of", () => {

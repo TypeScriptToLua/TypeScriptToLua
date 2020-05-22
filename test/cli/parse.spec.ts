@@ -9,10 +9,11 @@ describe("command line", () => {
     });
 
     test("should support standard typescript options", () => {
-        const commandLine = "--project tsconfig.json --noHeader -t es3 -lt 5.3";
+        const commandLine = "main.ts --project tsconfig.json --noHeader -t es3 -lt 5.3";
         const result = tstl.parseCommandLine(commandLine.split(" "));
 
         expect(result.errors).not.toHaveDiagnostics();
+        expect(result.fileNames).toEqual(["main.ts"]);
         expect(result.options).toEqual({
             project: "tsconfig.json",
             noHeader: true,

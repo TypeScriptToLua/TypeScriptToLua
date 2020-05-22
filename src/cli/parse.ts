@@ -127,10 +127,14 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
                 e => !(e.code === tsInvalidCompilerOptionErrorCode && String(e.messageText).endsWith(`'${args[i]}'.`))
             );
 
-            const { error, value, increment } = readCommandLineArgument(option, args[i + 1]);
+            const { error, value, consumed } = readCommandLineArgument(option, args[i + 1]);
             if (error) parsedCommandLine.errors.push(error);
             parsedCommandLine.options[option.name] = value;
-            i += increment;
+            if (consumed) {
+                i += 1;
+                // Values of custom options are parsed as a file name, exclude them
+                parsedCommandLine.fileNames = parsedCommandLine.fileNames.filter(f => f !== value);
+            }
         }
     }
 
@@ -138,7 +142,7 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
 }
 
 interface CommandLineArgument extends ReadValueResult {
-    increment: number;
+    consumed: boolean;
 }
 
 function readCommandLineArgument(option: CommandLineOption, value: any): CommandLineArgument {
@@ -147,7 +151,7 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
             value = value === "true";
         } else {
             // Set boolean arguments without supplied value to true
-            return { value: true, increment: 0 };
+            return { value: true, consumed: false };
         }
     }
 
@@ -155,11 +159,11 @@ function readCommandLineArgument(option: CommandLineOption, value: any): Command
         return {
             error: cliDiagnostics.compilerOptionExpectsAnArgument(option.name),
             value: undefined,
-            increment: 0,
+            consumed: false,
         };
     }
 
-    return { ...readValue(option, value), increment: 1 };
+    return { ...readValue(option, value), consumed: true };
 }
 
 interface ReadValueResult {

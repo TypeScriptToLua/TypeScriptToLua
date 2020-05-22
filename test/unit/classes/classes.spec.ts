@@ -352,15 +352,29 @@ test("ClassComputedMethodCall", () => {
     `.expectToMatchJsResult();
 });
 
-test("ClassToString", () => {
+test(".toString()", () => {
     util.testFunction`
-        class a {
-            public toString(): string {
-                return "instance of a";
+        class A {
+            public toString() {
+                return "A";
             }
         }
-        let inst = new a();
-        return inst.toString();
+
+        return new A().toString();
+    `.expectToMatchJsResult();
+});
+
+test(".toString() with inheritance", () => {
+    util.testFunction`
+        class A {
+            public toString() {
+                return "A";
+            }
+        }
+
+        class B extends A {}
+
+        return new B().toString();
     `.expectToMatchJsResult();
 });
 

@@ -5,6 +5,7 @@
 <!-- TODO: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html doesn't seem to work now -->
 
 - TypeScript has been updated to 3.9. See [release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-3-9/) for details. This update includes some fixes specific to our API usage:
+
   - Importing a non-module using `import "./file"` produced a TS2307 error [#35973](https://github.com/microsoft/TypeScript/issues/35973)
   - TypeScript now tries to find a call signature even in presence of type errors (#36665)(https://github.com/microsoft/TypeScript/pull/36665):
     ```ts
@@ -17,6 +18,8 @@
     -- 3.9
     foo(1)
     ```
+
+- Fixed extending a class not keeping `toString` implementation from a super class
 
 ## 0.33.0
 

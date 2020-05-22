@@ -2,6 +2,7 @@ import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
+import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -21,11 +22,15 @@ export function transformFunctionPrototypeCall(
     const expressionName = expression.name.text;
     switch (expressionName) {
         case "apply":
-            return transformLuaLibFunction(context, LuaLibFeature.FunctionApply, node, caller, ...params);
+            return lua.createCallExpression(
+                caller,
+                [params[0], createUnpackCall(context, params[1], node.arguments[1])],
+                node
+            );
         case "bind":
             return transformLuaLibFunction(context, LuaLibFeature.FunctionBind, node, caller, ...params);
         case "call":
-            return transformLuaLibFunction(context, LuaLibFeature.FunctionCall, node, caller, ...params);
+            return lua.createCallExpression(caller, params, node);
         default:
             context.diagnostics.push(unsupportedProperty(expression.name, "function", expressionName));
     }

@@ -30,9 +30,7 @@ export enum LuaLibFeature {
     Decorate = "Decorate",
     Descriptors = "Descriptors",
     Error = "Error",
-    FunctionApply = "FunctionApply",
     FunctionBind = "FunctionBind",
-    FunctionCall = "FunctionCall",
     InstanceOf = "InstanceOf",
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
@@ -71,7 +69,7 @@ export enum LuaLibFeature {
 const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
-    Error: [LuaLibFeature.New, LuaLibFeature.Class, LuaLibFeature.FunctionCall],
+    Error: [LuaLibFeature.New, LuaLibFeature.Class],
     InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
     ObjectFromEntries: [LuaLibFeature.Iterator, LuaLibFeature.Symbol],

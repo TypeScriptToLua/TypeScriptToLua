@@ -122,9 +122,8 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
 
         if (option) {
             // Ignore errors caused by tstl specific compiler options
-            const tsInvalidCompilerOptionErrorCode = 5023;
             parsedCommandLine.errors = parsedCommandLine.errors.filter(
-                e => !(e.code === tsInvalidCompilerOptionErrorCode && String(e.messageText).endsWith(`'${args[i]}'.`))
+                e => !((e.code === 5023 || e.code === 5025) && String(e.messageText).includes(`'${args[i]}'.`))
             );
 
             const { error, value, consumed } = readCommandLineArgument(option, args[i + 1]);

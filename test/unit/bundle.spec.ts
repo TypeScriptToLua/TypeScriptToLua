@@ -1,5 +1,3 @@
-import * as path from "path";
-import * as ts from "typescript";
 import { LuaLibImportKind } from "../../src";
 import * as diagnosticFactories from "../../src/transpilation/diagnostics";
 import * as util from "../util";
@@ -10,21 +8,6 @@ test("import module -> main", () => {
     `
         .addExtraFile("module.ts", "export const value = true")
         .expectToEqual({ value: true });
-});
-
-test("bundle file name", () => {
-    const { transpiledFiles } = util.testModule`
-        export { value } from "./module";
-    `
-        .addExtraFile("module.ts", "export const value = true")
-        .setOptions({ luaBundle: "mybundle.lua", luaBundleEntry: "main.ts" })
-        .expectToHaveNoDiagnostics()
-        .getLuaResult();
-
-    expect(transpiledFiles).toHaveLength(1);
-    expect(transpiledFiles[0].fileName).toBe(
-        path.join(ts.sys.getCurrentDirectory(), "mybundle.lua").replace(/\\/g, "/")
-    );
 });
 
 test("import chain export -> reexport -> main", () => {

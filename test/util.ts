@@ -278,7 +278,8 @@ export abstract class TestBuilder {
     @memoize
     protected getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const code = transpiledFiles.find(x => x.sourceFiles.some(f => f.fileName === this.mainFileName))?.js;
+        const code = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName))
+            ?.js;
         assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";

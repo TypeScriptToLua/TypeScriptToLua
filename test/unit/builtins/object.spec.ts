@@ -28,3 +28,96 @@ test.each(["[]", '[["a", 1], ["b", 2]]', '[["a", 1], ["a", 2]]', 'new Map([["foo
         util.testExpression`Object.fromEntries(${entries})`.expectToMatchJsResult();
     }
 );
+
+describe(".toString()", () => {
+    const toStringDeclaration = `
+        function toString(value: object) {
+            const result = value.toString();
+            return result === "[object Object]" || result.startsWith("table: ") ? "table" : result;
+        }
+    `;
+
+    test("class override", () => {
+        util.testFunction`
+            ${toStringDeclaration}
+            class A {
+                public toString() {
+                    return "A";
+                }
+            }
+
+            return toString(new A());
+        `.expectToMatchJsResult();
+    });
+
+    test("inherited class override", () => {
+        util.testFunction`
+            ${toStringDeclaration}
+            class A {
+                public toString() {
+                    return "A";
+                }
+            }
+
+            class B extends A {}
+
+            return { A: toString(new A()), B: toString(new B()) };
+        `.expectToMatchJsResult();
+    });
+
+    test("don't affect inherited class", () => {
+        util.testFunction`
+            ${toStringDeclaration}
+            class A {}
+
+            class B extends A {
+                public toString() {
+                    return "B";
+                }
+            }
+
+            return { A: toString(new A()), B: toString(new B()) };
+        `.expectToMatchJsResult();
+    });
+
+    test("override inherited class override", () => {
+        util.testFunction`
+            ${toStringDeclaration}
+            class A {
+                public toString() {
+                    return "A";
+                }
+            }
+
+            class B extends A {
+                public toString() {
+                    return "B";
+                }
+            }
+
+            return { A: toString(new A()), B: toString(new B()) };
+        `.expectToMatchJsResult();
+    });
+});
+
+describe(".hasOwnProperty()", () => {
+    test("class field", () => {
+        util.testFunction`
+            class A {
+                public field = true;
+            }
+
+            return new A().hasOwnProperty("field");
+        `.expectToMatchJsResult();
+    });
+
+    test("class method", () => {
+        util.testFunction`
+            class A {
+                public method() {}
+            }
+
+            return new A().hasOwnProperty("method");
+        `.expectToMatchJsResult();
+    });
+});

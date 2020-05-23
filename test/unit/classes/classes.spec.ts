@@ -352,56 +352,6 @@ test("ClassComputedMethodCall", () => {
     `.expectToMatchJsResult();
 });
 
-test(".toString()", () => {
-    util.testFunction`
-        class A {
-            public toString() {
-                return "A";
-            }
-        }
-
-        return new A().toString();
-    `.expectToMatchJsResult();
-});
-
-test(".toString() with inheritance", () => {
-    util.testFunction`
-        class A {
-            public toString() {
-                return "A";
-            }
-        }
-
-        class B extends A {}
-
-        return new B().toString();
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty true", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("prop");
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty false", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("test");
-    `.expectToMatchJsResult();
-});
-
 test("CastClassMethodCall", () => {
     util.testFunction`
         interface result

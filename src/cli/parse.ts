@@ -123,6 +123,8 @@ function updateParsedCommandLine(parsedCommandLine: ts.ParsedCommandLine, args: 
         if (option) {
             // Ignore errors caused by tstl specific compiler options
             parsedCommandLine.errors = parsedCommandLine.errors.filter(
+                // TS5023: Unknown compiler option '{0}'.
+                // TS5025: Unknown compiler option '{0}'. Did you mean '{1}'?
                 e => !((e.code === 5023 || e.code === 5025) && String(e.messageText).includes(`'${args[i]}'.`))
             );
 

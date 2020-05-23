@@ -27,6 +27,6 @@ function __TS__Iterator<T>(
         const iterator = iterable[Symbol.iterator]();
         return [__TS__IteratorIteratorStep, iterator];
     } else {
-        return ipairs(iterable as readonly T[]);
+        return ipairs(iterable as readonly T[]) as any;
     }
 }

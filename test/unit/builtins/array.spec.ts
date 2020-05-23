@@ -424,8 +424,17 @@ test.each([
     { array: ["test1", "test2"] },
     { array: ["test1", "test2"], separator: ";" },
     { array: ["test1", "test2"], separator: "" },
+    { array: [1, "2"] },
 ])("array.join (%p)", ({ array, separator }) => {
     util.testExpression`${util.formatCode(array)}.join(${util.formatCode(separator)})`.expectToMatchJsResult();
+});
+
+test('array.join (1, "2", {})', () => {
+    util.testExpression`[1, "2", {}].join()`.expectToEqual("1,2,table: 0x168");
+});
+
+test('array.join (1, "2", Symbol("foo"))', () => {
+    util.testExpression`[1, "2", Symbol("foo")].join()`.expectToEqual("1,2,Symbol(foo)");
 });
 
 test("array.join without separator argument", () => {

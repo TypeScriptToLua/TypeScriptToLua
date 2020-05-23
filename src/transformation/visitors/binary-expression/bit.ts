@@ -64,7 +64,7 @@ export function transformBinaryBitOperation(
     switch (context.luaTarget) {
         case LuaTarget.Universal:
         case LuaTarget.Lua51:
-            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", context.luaTarget));
+            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", LuaTarget.Lua51));
 
         case LuaTarget.LuaJIT:
             return transformBinaryBitLibOperation(node, left, right, operator, "bit");
@@ -108,7 +108,7 @@ export function transformUnaryBitOperation(
     switch (context.luaTarget) {
         case LuaTarget.Universal:
         case LuaTarget.Lua51:
-            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", context.luaTarget));
+            context.diagnostics.push(unsupportedForTarget(node, "Bitwise operations", LuaTarget.Lua51));
 
         case LuaTarget.LuaJIT:
             return transformUnaryBitLibOperation(node, expression, operator, "bit");

@@ -1,3 +1,4 @@
+import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, validateOptions } from "../CompilerOptions";
 import { createPrinter } from "../LuaPrinter";
@@ -68,7 +69,9 @@ export function transpile(
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
             const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
-            transpiledFiles.push({ sourceFiles: [sourceFile], fileName: sourceFile.fileName, luaAst, ...printResult });
+            const sourceRootDir = program.getCommonSourceDirectory();
+            const fileName = path.resolve(sourceRootDir, sourceFile.fileName);
+            transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
         }
     };
 

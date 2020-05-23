@@ -51,13 +51,11 @@ export function getBundleResult(
 
     // Resolve project settings relative to project file.
     const resolvedEntryModule = path.resolve(projectRootDir, entryModule);
-    const entryModuleIdentifier = createModulePath(outDir, resolvedEntryModule);
-    const resolvedBundleFile = path.resolve(projectRootDir, bundleFile);
+    const outputPath = normalizeSlashes(path.resolve(projectRootDir, bundleFile));
 
-    // Resolve source files relative to common source directory.
     if (!files.some(f => f.fileName === resolvedEntryModule)) {
         diagnostics.push(couldNotFindBundleEntryPoint(entryModule));
-        return [diagnostics, { outputPath: bundleFile, code: "" }];
+        return [diagnostics, { outputPath, code: "" }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
@@ -67,7 +65,7 @@ export function getBundleResult(
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${entryModuleIdentifier})\n`;
+    const entryPoint = `return require(${createModulePath(outDir, resolvedEntryModule)})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();
@@ -75,7 +73,7 @@ export function getBundleResult(
     return [
         diagnostics,
         {
-            outputPath: normalizeSlashes(resolvedBundleFile),
+            outputPath,
             code,
             sourceMap: map.toString(),
             sourceFiles: files.flatMap(x => x.sourceFiles ?? []),

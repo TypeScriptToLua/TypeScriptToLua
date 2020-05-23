@@ -132,7 +132,7 @@ export class ExecutionError extends Error {
     }
 }
 
-export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
+export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; luaSourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}

@@ -149,7 +149,7 @@ test.each([
         .expectToHaveNoDiagnostics()
         .getMainLuaFileResult();
 
-    const consumer = await new SourceMapConsumer(file.sourceMap);
+    const consumer = await new SourceMapConsumer(file.luaSourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
         const luaPosition = lineAndColumnOf(file.lua, luaPattern);
         const mappedPosition = consumer.originalPositionFor(luaPosition);
@@ -193,11 +193,11 @@ test.each([
         .setMainFileName(fileName)
         .getMainLuaFileResult();
 
-    const sourceMap = JSON.parse(file.sourceMap);
+    const sourceMap = JSON.parse(file.luaSourceMap);
     expect(sourceMap.sources).toHaveLength(1);
     expect(sourceMap.sources[0]).toBe(mapSource);
 
-    const consumer = await new SourceMapConsumer(file.sourceMap);
+    const consumer = await new SourceMapConsumer(file.luaSourceMap);
     expect(consumer.sources).toHaveLength(1);
     expect(consumer.sources[0]).toBe(fullSource);
 });
@@ -215,7 +215,7 @@ test.each([
         .expectToHaveNoDiagnostics()
         .getMainLuaFileResult();
 
-    const sourceMap = JSON.parse(file.sourceMap);
+    const sourceMap = JSON.parse(file.luaSourceMap);
     expect(sourceMap.sourceRoot).toBe(mapSourceRoot);
 });
 
@@ -233,7 +233,7 @@ test.each([
         .expectToHaveNoDiagnostics()
         .getMainLuaFileResult();
 
-    const consumer = await new SourceMapConsumer(file.sourceMap);
+    const consumer = await new SourceMapConsumer(file.luaSourceMap);
     const typescriptPosition = lineAndColumnOf(code, name);
     let mappedName: string | undefined;
     consumer.eachMapping(mapping => {
@@ -296,13 +296,14 @@ test("Inline sourcemaps", () => {
     const file = util
         .testFunction(code)
         .setOptions({ inlineSourceMap: true })
+        .disableSemanticCheck() // TS5053: Option 'sourceMap' cannot be specified with option 'inlineSourceMap'.
         .expectToMatchJsResult()
         .getMainLuaFileResult();
 
     const [, inlineSourceMapMatch] =
         file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/) ?? [];
     const inlineSourceMap = Buffer.from(inlineSourceMapMatch, "base64").toString();
-    expect(file.sourceMap).toBe(inlineSourceMap);
+    expect(file.luaSourceMap).toBe(inlineSourceMap);
 });
 
 // Helper functions

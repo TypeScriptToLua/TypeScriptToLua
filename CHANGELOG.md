@@ -19,6 +19,12 @@
     foo(1)
     ```
 
+- Reduced memory consumption and optimized performance of generators and iterators
+
+- Fixed generator syntax being ignored on methods (`*foo() {}`) and function expressions (`function*() {}`)
+
+- Fixed iteration over generators stopping at first yielded `nil` value
+
 - Fixed extending a class not keeping `toString` implementation from a super class
 
 ## 0.33.0

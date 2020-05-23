@@ -1,63 +1,33 @@
-import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, validateOptions } from "../CompilerOptions";
-import { Block } from "../LuaAST";
 import { createPrinter } from "../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../transformation";
 import { isNonNull } from "../utils";
-import { bundleTranspiledFiles } from "./bundle";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
-
-export interface TranspiledFile {
-    fileName: string;
-    luaAst?: Block;
-    lua?: string;
-    sourceMap?: string;
-    declaration?: string;
-    declarationMap?: string;
-    /** @internal */
-    sourceMapNode?: SourceNode;
-}
-
-export interface TranspileResult {
-    diagnostics: ts.Diagnostic[];
-    transpiledFiles: TranspiledFile[];
-}
+import { EmitHost, ProcessedFile } from "./utils";
 
 export interface TranspileOptions {
     program: ts.Program;
     sourceFiles?: ts.SourceFile[];
     customTransformers?: ts.CustomTransformers;
     plugins?: Plugin[];
-    emitHost?: EmitHost;
 }
 
-export interface EmitHost {
-    getCurrentDirectory(): string;
-    readFile(path: string): string | undefined;
+export interface TranspileResult {
+    diagnostics: ts.Diagnostic[];
+    transpiledFiles: ProcessedFile[];
 }
 
-export function transpile({
-    program,
-    sourceFiles: targetSourceFiles,
-    customTransformers = {},
-    plugins: customPlugins = [],
-    emitHost = ts.sys,
-}: TranspileOptions): TranspileResult {
+export function transpile(
+    emitHost: EmitHost,
+    writeFileResult: ts.WriteFileCallback,
+    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
+): TranspileResult {
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const diagnostics = validateOptions(options);
-    let transpiledFiles: TranspiledFile[] = [];
-
-    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
-        const file = transpiledFiles.find(f => f.fileName === fileName);
-        if (file) {
-            Object.assign(file, update);
-        } else {
-            transpiledFiles.push({ fileName, ...update });
-        }
-    };
+    let transpiledFiles: ProcessedFile[] = [];
 
     if (options.noEmitOnError) {
         const preEmitDiagnostics = [
@@ -94,41 +64,30 @@ export function transpile({
             sourceFile,
             visitorMap
         );
+
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const { code, sourceMap, sourceMapNode } = printer(
-                program,
-                emitHost,
-                sourceFile.fileName,
-                luaAst,
-                luaLibFeatures
-            );
-            updateTranspiledFile(sourceFile.fileName, { luaAst, lua: code, sourceMap, sourceMapNode });
+            const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
+            transpiledFiles.push({ sourceFiles: [sourceFile], fileName: sourceFile.fileName, luaAst, ...printResult });
         }
     };
 
     const transformers = getTransformers(program, diagnostics, customTransformers, processSourceFile);
-
-    const writeFile: ts.WriteFileCallback = (fileName, data, _bom, _onError, sourceFiles = []) => {
-        for (const sourceFile of sourceFiles) {
-            const isDeclaration = fileName.endsWith(".d.ts");
-            const isDeclarationMap = fileName.endsWith(".d.ts.map");
-            if (isDeclaration) {
-                updateTranspiledFile(sourceFile.fileName, { declaration: data });
-            } else if (isDeclarationMap) {
-                updateTranspiledFile(sourceFile.fileName, { declarationMap: data });
-            }
-        }
-    };
 
     const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
         sourceFile.flags & ts.NodeFlags.JsonFile &&
         !options.emitDeclarationOnly &&
         !program.isSourceFileFromExternalLibrary(sourceFile);
 
-    // We always have to emit to get transformer diagnostics
+    // We always have to run transformers to get diagnostics
     const oldNoEmit = options.noEmit;
     options.noEmit = false;
+
+    const writeFile: ts.WriteFileCallback = (fileName, ...rest) => {
+        if (!fileName.endsWith(".js") && !fileName.endsWith(".js.map")) {
+            writeFileResult(fileName, ...rest);
+        }
+    };
 
     if (targetSourceFiles) {
         for (const file of targetSourceFiles) {
@@ -152,18 +111,6 @@ export function transpile({
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
         transpiledFiles = [];
-    }
-
-    if (options.luaBundle && options.luaBundleEntry) {
-        const [bundleDiagnostics, bundle] = bundleTranspiledFiles(
-            options.luaBundle,
-            options.luaBundleEntry,
-            transpiledFiles,
-            program,
-            emitHost
-        );
-        diagnostics.push(...bundleDiagnostics);
-        transpiledFiles = [bundle];
     }
 
     return { diagnostics, transpiledFiles };

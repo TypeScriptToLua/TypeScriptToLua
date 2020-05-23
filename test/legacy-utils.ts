@@ -19,11 +19,8 @@ export function transpileString(
     return file.lua!.trim();
 }
 
-function transpileStringsAsProject(
-    input: Record<string, string>,
-    options: tstl.CompilerOptions = {}
-): tstl.TranspileResult {
-    const optionsWithDefaults: tstl.CompilerOptions = {
+function transpileStringsAsProject(input: Record<string, string>, options: tstl.CompilerOptions = {}) {
+    return tstl.transpileVirtualProject(input, {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
         skipLibCheck: true,
@@ -31,9 +28,7 @@ function transpileStringsAsProject(
         lib: ["lib.esnext.d.ts"],
         experimentalDecorators: true,
         ...options,
-    };
-
-    return tstl.transpileVirtualProject(input, optionsWithDefaults);
+    });
 }
 
 function transpileStringResult(
@@ -45,7 +40,7 @@ function transpileStringResult(
         options
     );
 
-    const file = transpiledFiles.find(({ fileName }) => /\bmain\.[a-z]+$/.test(fileName));
+    const file = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => /\bmain\.[a-z]+$/.test(f.fileName)));
     if (file === undefined) {
         throw new Error('Program should have a file named "main"');
     }

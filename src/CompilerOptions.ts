@@ -50,6 +50,9 @@ export enum LuaTarget {
     LuaJIT = "JIT",
 }
 
+export const isBundleEnabled = (options: CompilerOptions) =>
+    options.luaBundle !== undefined && options.luaBundleEntry !== undefined;
+
 export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = [];
 

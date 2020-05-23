@@ -6,6 +6,7 @@ import { getHelpString, versionString } from "./cli/information";
 import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
+import { isBundleEnabled } from "./CompilerOptions";
 
 const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
     pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;
@@ -101,21 +102,18 @@ function performCompilation(
         configFileParsingDiagnostics,
     });
 
-    const { transpiledFiles, diagnostics: transpileDiagnostics } = tstl.transpile({ program });
+    const { diagnostics: transpileDiagnostics, emitSkipped } = new tstl.Transpiler().emit({ program });
 
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,
     ]);
 
-    const emitResult = tstl.emitTranspiledFiles(program, transpiledFiles);
-    emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
-
     diagnostics.forEach(reportDiagnostic);
     const exitCode =
         diagnostics.length === 0
             ? ts.ExitStatus.Success
-            : transpiledFiles.length === 0
+            : emitSkipped
             ? ts.ExitStatus.DiagnosticsPresent_OutputsSkipped
             : ts.ExitStatus.DiagnosticsPresent_OutputsGenerated;
 
@@ -154,16 +152,17 @@ function updateWatchCompilationHost(
     host: ts.WatchCompilerHost<ts.SemanticDiagnosticsBuilderProgram>,
     optionsToExtend: tstl.CompilerOptions
 ): void {
-    let fullRecompile = true;
+    let hadErrorLastTime = true;
     const updateConfigFile = createConfigFileUpdater(optionsToExtend);
 
+    const transpiler = new tstl.Transpiler();
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
         const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
         const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
 
         let sourceFiles: ts.SourceFile[] | undefined;
-        if (!fullRecompile) {
+        if (!isBundleEnabled(options) && !hadErrorLastTime) {
             sourceFiles = [];
             while (true) {
                 const currentFile = builderProgram.getSemanticDiagnosticsOfNextAffectedFile();
@@ -177,10 +176,7 @@ function updateWatchCompilationHost(
             }
         }
 
-        const { diagnostics: emitDiagnostics, transpiledFiles } = tstl.transpile({ program, sourceFiles });
-
-        const emitResult = tstl.emitTranspiledFiles(program, transpiledFiles);
-        emitResult.forEach(({ name, text }) => ts.sys.writeFile(name, text));
+        const { diagnostics: emitDiagnostics } = transpiler.emit({ program, sourceFiles });
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...configFileParsingDiagnostics,
@@ -194,8 +190,7 @@ function updateWatchCompilationHost(
         diagnostics.forEach(reportDiagnostic);
 
         const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
-        // do a full recompile after an error
-        fullRecompile = errors.length > 0;
+        hadErrorLastTime = errors.length > 0;
 
         host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
     };

@@ -5,7 +5,7 @@ import { formatCode } from "../util";
 // TODO: Make some utils for testing other targets
 const expectUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch(/[^.]unpack\(/);
 const expectTableUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("table.unpack");
-const expectTsUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("__TS__Unpack");
+const expectLualibUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("__TS__Unpack");
 
 const arrayLiteralCases = [
     "1, 2, ...[3, 4, 5]",
@@ -73,7 +73,7 @@ describe("in function call", () => {
             return foo(...array);
         `,
         {
-            [tstl.LuaTarget.Universal]: builder => builder.tap(expectTsUnpack),
+            [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack),
             [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
             [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
             [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),
@@ -84,7 +84,7 @@ describe("in function call", () => {
 
 describe("in array literal", () => {
     util.testEachVersion(undefined, () => util.testExpression`[...[0, 1, 2]]`, {
-        [tstl.LuaTarget.Universal]: builder => builder.tap(expectTsUnpack),
+        [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibUnpack),
         [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectUnpack),
         [tstl.LuaTarget.Lua51]: builder => builder.tap(expectUnpack),
         [tstl.LuaTarget.Lua52]: builder => builder.tap(expectTableUnpack),

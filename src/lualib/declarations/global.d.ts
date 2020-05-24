@@ -29,4 +29,6 @@ declare function select<T>(index: "#", ...args: T[]): number;
  * @luaIterator
  * @tupleReturn
  */
-declare function ipairs<T>(t: Record<number, T>): LuaTupleIterable<[number, T]>;
+type LuaTupleIterator<T extends any[]> = Iterable<T> & { " LuaTupleIterator": never };
+
+declare function ipairs<T>(t: Record<number, T>): LuaTupleIterator<[number, T]>;

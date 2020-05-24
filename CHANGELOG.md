@@ -25,6 +25,8 @@
 
 - Fixed iteration over generators stopping at first yielded `nil` value
 
+- Fixed `Array.prototype.join` throwing an error when array contains anything other than strings and numbers
+
 - Fixed extending a class not keeping `toString` implementation from a super class
 
 ## 0.33.0

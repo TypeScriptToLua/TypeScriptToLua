@@ -352,42 +352,6 @@ test("ClassComputedMethodCall", () => {
     `.expectToMatchJsResult();
 });
 
-test("ClassToString", () => {
-    util.testFunction`
-        class a {
-            public toString(): string {
-                return "instance of a";
-            }
-        }
-        let inst = new a();
-        return inst.toString();
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty true", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("prop");
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty false", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("test");
-    `.expectToMatchJsResult();
-});
-
 test("CastClassMethodCall", () => {
     util.testFunction`
         interface result
@@ -772,7 +736,7 @@ test("default exported name class has correct name property", () => {
     util.testModule`
         export default class Test { static method() { return true; } }
     `
-        .setReturnExport("default.name")
+        .setReturnExport("default", "name")
         .expectToMatchJsResult();
 });
 
@@ -780,7 +744,7 @@ test("default exported anonymous class has 'default' name property", () => {
     util.testModule`
         export default class { static method() { return true; } }
     `
-        .setReturnExport("default.name")
+        .setReturnExport("default", "name")
         .expectToEqual("default");
 });
 

@@ -67,7 +67,10 @@ const typescriptBase = {
 
 module.exports = {
     extends: ["plugin:jest/recommended", "plugin:jest/style"],
-    parserOptions: { sourceType: "module", project: ["test/tsconfig.json", "src/lualib/tsconfig.json"] },
+    parserOptions: {
+        sourceType: "module",
+        project: ["test/tsconfig.json", "src/lualib/tsconfig.json", "benchmark/tsconfig.json"],
+    },
     env: { es6: true, node: true },
     plugins: ["import"],
     rules: {
@@ -184,6 +187,12 @@ module.exports = {
                 "no-restricted-syntax": ["error", "LabeledStatement", "SequenceExpression"],
                 "@typescript-eslint/no-throw-literal": "off",
                 "@typescript-eslint/prefer-optional-chain": "off",
+            },
+        },
+        {
+            files: "benchmark/src/memory_benchmarks/**/*.ts",
+            rules: {
+                "import/no-default-export": "off",
             },
         },
     ],

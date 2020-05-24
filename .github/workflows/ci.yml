@@ -38,3 +38,101 @@ jobs:
           CI: true
       - if: matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v1
+
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lua Install
+        run: sudo apt-get install lua5.3 luajit
+      # Checkout master & commit
+      - name: Checkout master
+        uses: actions/checkout@v2
+        with:
+          ref: master
+          path: master
+      - name: Checkout commit
+        uses: actions/checkout@v2
+        with:
+          path: commit
+      - name: Use Node.js 12.13.1
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.13.1
+      # NPM
+      - name: NPM master
+        # TODO Lua types is only added manually to test the benchmark PR this can be removed again once the PR is merged
+        run: npm ci && npm run build && npm install -D lua-types
+        working-directory: master
+      - name: NPM commit
+        run: npm ci && npm run build
+        working-directory: commit
+      # Benchmark directory setup
+      - name: Ensure benchmark data dir exists
+        run: mkdir -p ./benchmark/data
+        working-directory: commit
+      - name: Copy commit benchmark to master
+        run: rm -rf ./master/benchmark && cp -rf ./commit/benchmark ./master/benchmark
+      # Run master benchmark first and output to commit benchmark data
+      - name: Build benchmark Lua 5.3 master
+        run: node ../dist/tstl.js -p tsconfig.53.json
+        working-directory: master/benchmark
+      - name: Run benchmark Lua 5.3 master
+        id: benchmark-lua-master
+        run: lua5.3 -- run.lua ../../../commit/benchmark/data/benchmark_master_53.json
+        working-directory: master/benchmark/dist
+      - name: Build benchmark LuaJIT master
+        run: node ../dist/tstl.js -p tsconfig.jit.json
+        working-directory: master/benchmark
+      - name: Run benchmark LuaJIT master
+        id: benchmark-jit-master
+        run: luajit -- run.lua ../../../commit/benchmark/data/benchmark_master_jit.json
+        working-directory: master/benchmark/dist
+      # Run commit benchmark and compare with master
+      - name: Build benchmark Lua 5.3 commit
+        run: node ../dist/tstl.js -p tsconfig.53.json
+        working-directory: commit/benchmark
+      - name: Run benchmark Lua 5.3 commit
+        id: benchmark-lua-commit
+        run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_commit_53.json ../data/benchmark_master_53.json`
+        working-directory: commit/benchmark/dist
+      - name: Build benchmark LuaJIT commit
+        run: node ../dist/tstl.js -p tsconfig.jit.json
+        working-directory: commit/benchmark
+      - name: Run benchmark LuaJIT commit
+        id: benchmark-jit-commit
+        run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
+        working-directory: commit/benchmark/dist
+      - name: Create benchmark check
+        uses: actions/github-script@0.9.0
+        with:
+          benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
+          benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
+          script: |
+            const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
+            const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
+
+            const summary = `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
+
+            const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
+
+            const pull_request = context.payload.pull_request;
+            if (!pull_request || pull_request.head.repo.url === pull_request.base.repo.url) {
+              // This only works if not in a fork.
+              github.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: "Benchmark results",
+                head_sha: context.sha,
+                status: "completed",
+                conclusion: "neutral",
+                output: {
+                  title: "Benchmark results",
+                  summary: summary,
+                  text: text
+                }
+              });
+            } else {
+              console.log(summary);
+              console.log(text);
+            }

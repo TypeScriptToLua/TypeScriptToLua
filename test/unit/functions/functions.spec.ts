@@ -34,20 +34,11 @@ test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /=
     }
 );
 
-test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Arrow Default Values (%p)", ({ inp }) => {
-    // Default value is 3 for v1
-    const v1 = inp.length > 0 ? inp[0] : 3;
-    // Default value is 4 for v2
-    const v2 = inp.length > 1 ? inp[1] : 4;
-
-    const callArgs = inp.join(",");
-
-    const result = util.transpileAndExecute(
-        `let add = (a: number = 3, b: number = 4) => a+b;
-        return add(${callArgs});`
-    );
-
-    expect(result).toBe(v1 + v2);
+test.each([{ args: [] }, { args: [1] }, { args: [1, 2] }])("Arrow default values (%p)", ({ args }) => {
+    util.testFunction`
+        const add = (a = 3, b = 4) => a + b;
+        return add(${util.formatCode(...args)});
+    `.expectToMatchJsResult();
 });
 
 test("Function Expression", () => {
@@ -351,52 +342,6 @@ test("Complex element access call statement", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([1, 2])("Generator functions value (%p)", iterations => {
-    util.testFunction`
-        function* seq(value: number) {
-            let a = yield value + 1;
-            return 42;
-        }
-        const gen = seq(0);
-        let ret: number;
-        for(let i = 0; i < ${iterations}; ++i) {
-            ret = gen.next(i).value;
-        }
-        return ret;
-    `.expectToMatchJsResult();
-});
-
-test.each([1, 2])("Generator functions done (%p)", iterations => {
-    util.testFunction`
-        function* seq(value: number) {
-            let a = yield value + 1;
-            return 42;
-        }
-        const gen = seq(0);
-        let ret: boolean;
-        for(let i = 0; i < ${iterations}; ++i) {
-            ret = gen.next(i).done;
-        }
-        return ret;
-    `.expectToMatchJsResult();
-});
-
-test("Generator for..of", () => {
-    util.testFunction`
-        function* seq() {
-            yield(1);
-            yield(2);
-            yield(3);
-            return 4;
-        }
-        let result = 0;
-        for(let i of seq()) {
-            result = result * 10 + i;
-        }
-        return result
-    `.expectToMatchJsResult();
-});
-
 test("Function local overriding export", () => {
     util.testModule`
         export const foo = 5;
@@ -504,9 +449,7 @@ test("missing declaration name", () => {
 });
 
 test("top-level function declaration is global", () => {
-    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
-        // @ts-ignore
         import './a';
         export const result = foo();
     `

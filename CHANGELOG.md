@@ -1,5 +1,54 @@
 # Changelog
 
+## Unreleased
+
+- Added new `"luaTarget"` option value - `"universal"`. Choosing this target would make TypeScriptToLua generate code compatible with all supported Lua targets.
+  - **BREAKING CHANGE:** This is a new default target. If you have been depending on LuaJIT being chosen implicitly, now you have to enable it explicitly with `"luaTarget": "JIT"` in the `tsconfig.json` file.
+
+<!-- TODO: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html doesn't seem to work now -->
+
+- TypeScript has been updated to 3.9. See [release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-3-9/) for details. This update includes some fixes specific to our API usage:
+
+  - Importing a non-module using `import "./file"` produced a TS2307 error [#35973](https://github.com/microsoft/TypeScript/issues/35973)
+  - TypeScript now tries to find a call signature even in presence of type errors (#36665)(https://github.com/microsoft/TypeScript/pull/36665):
+    ```ts
+    function foo(this: void, x: string) {}
+    foo(1);
+    ```
+    ```lua
+    -- 3.8
+    foo(nil, 1)
+    -- 3.9
+    foo(1)
+    ```
+
+- Reduced memory consumption and optimized performance of generators and iterators
+
+- Fixed generator syntax being ignored on methods (`*foo() {}`) and function expressions (`function*() {}`)
+
+- Fixed iteration over generators stopping at first yielded `nil` value
+
+- Fixed `Array.prototype.join` throwing an error when array contains anything other than strings and numbers
+
+- Fixed extending a class not keeping `toString` implementation from a super class
+
+## 0.33.0
+
+- Added support for nullish coalescing `A ?? B`.
+- Annotation `/** @noSelf */` now also works directly on function declarations, not only on classes/interfaces.
+- Fixed incorrect file paths in source maps.
+- Fixed unknown node kind throwing an error instead of diagnostic.
+- Fixed string index with side-effects being evaluated twice.
+- Added check for node.js version when running tstl.
+- Fixed some issues with reflection class names.
+
+- Fixed incorrectly escaped variable names.
+
+Under the hood:
+
+- Switched from TSLint to ESLint.
+- Added benchmarking capability for garbage collection.
+
 ## 0.32.0
 
 - **Deprecated:** The `noHoisting` option has been removed, hoisting will always be done.

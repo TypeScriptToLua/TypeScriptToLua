@@ -9,10 +9,11 @@ describe("command line", () => {
     });
 
     test("should support standard typescript options", () => {
-        const commandLine = "--project tsconfig.json --noHeader -t es3 -lt 5.3";
+        const commandLine = "main.ts --project tsconfig.json --noHeader -t es3 -lt 5.3";
         const result = tstl.parseCommandLine(commandLine.split(" "));
 
         expect(result.errors).not.toHaveDiagnostics();
+        expect(result.fileNames).toEqual(["main.ts"]);
         expect(result.options).toEqual({
             project: "tsconfig.json",
             noHeader: true,
@@ -109,6 +110,7 @@ describe("command line", () => {
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
 
+            ["luaTarget", "universal", { luaTarget: tstl.LuaTarget.Universal }],
             ["luaTarget", "5.1", { luaTarget: tstl.LuaTarget.Lua51 }],
             ["luaTarget", "5.2", { luaTarget: tstl.LuaTarget.Lua52 }],
             ["luaTarget", "5.3", { luaTarget: tstl.LuaTarget.Lua53 }],
@@ -215,6 +217,7 @@ describe("tsconfig", () => {
             ["luaLibImport", "inline", { luaLibImport: tstl.LuaLibImportKind.Inline }],
             ["luaLibImport", "require", { luaLibImport: tstl.LuaLibImportKind.Require }],
 
+            ["luaTarget", "universal", { luaTarget: tstl.LuaTarget.Universal }],
             ["luaTarget", "5.1", { luaTarget: tstl.LuaTarget.Lua51 }],
             ["luaTarget", "5.2", { luaTarget: tstl.LuaTarget.Lua52 }],
             ["luaTarget", "5.3", { luaTarget: tstl.LuaTarget.Lua53 }],

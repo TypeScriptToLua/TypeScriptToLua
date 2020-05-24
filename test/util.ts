@@ -431,9 +431,9 @@ class BundleTestBuilder extends AccessorTestBuilder {
 }
 
 class ModuleTestBuilder extends AccessorTestBuilder {
-    public setReturnExport(name: string): this {
+    public setReturnExport(...names: string[]): this {
         expect(this.hasProgram).toBe(false);
-        this.accessor = `.${name}`;
+        this.accessor = names.map(n => `[${tstl.escapeString(n)}]`).join("");
         return this;
     }
 }

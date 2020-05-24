@@ -32,7 +32,7 @@ export class TransformationContext {
     public readonly resolver: EmitResolver;
 
     public readonly options: CompilerOptions = this.program.getCompilerOptions();
-    public readonly luaTarget = this.options.luaTarget ?? LuaTarget.LuaJIT;
+    public readonly luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
     public readonly isModule = ts.isExternalModule(this.sourceFile);
     public readonly isStrict =
         (this.options.alwaysStrict ?? this.options.strict) ||

@@ -32,7 +32,7 @@ describe("invalid usage", () => {
         `.expectDiagnosticsToMatchSnapshot([invalidForRangeCall.code]);
     });
 
-    test.each<[number[]]>([[[]], [[1]], [[1, 2, 3, 4]]])("argument count (%p)", (args) => {
+    test.each<[number[]]>([[[]], [[1]], [[1, 2, 3, 4]]])("argument count (%p)", args => {
         util.testModule`
             ${createForRangeDeclaration("...args: number[]")}
             for (const i of luaRange(${args})) {}
@@ -74,7 +74,7 @@ describe("invalid usage", () => {
         "let array = [0, luaRange, 1];",
         "const call = undefined as any; call(luaRange);",
         "for (const i of [...luaRange(1, 10)]) {}",
-    ])("reference (%p)", (statement) => {
+    ])("reference (%p)", statement => {
         util.testModule`
             ${createForRangeDeclaration()}
             ${statement}

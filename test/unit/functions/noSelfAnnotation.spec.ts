@@ -10,7 +10,7 @@ test("@noSelf on declared function removes context argument", () => {
     `.expectLuaToMatchSnapshot();
 });
 
-test.each(methodHolders)("@noSelf on method inside %s declaration removes context argument", (holderType) => {
+test.each(methodHolders)("@noSelf on method inside %s declaration removes context argument", holderType => {
     util.testModule`
         declare ${holderType} MethodHolder {
             /** @noSelf */
@@ -21,7 +21,7 @@ test.each(methodHolders)("@noSelf on method inside %s declaration removes contex
     `.expectLuaToMatchSnapshot();
 });
 
-test.each(methodHolders)("@noSelf on parent %s declaration removes context argument", (holderType) => {
+test.each(methodHolders)("@noSelf on parent %s declaration removes context argument", holderType => {
     util.testModule`
         /** @noSelf */
         declare ${holderType} MethodHolder {

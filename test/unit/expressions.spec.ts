@@ -14,22 +14,22 @@ test.each([
     "delete tbl['test']",
     "let a = delete tbl.test",
     "delete tbl.test",
-])("Unary expressions basic (%p)", (input) => {
+])("Unary expressions basic (%p)", input => {
     util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
-test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", (input) => {
+test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", input => {
     util.testExpression(input).expectToMatchJsResult();
 });
 
 test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1", "1||1"])(
     "Binary expressions basic boolean (%p)",
-    (input) => {
+    input => {
         util.testExpression(input).expectToMatchJsResult();
     }
 );
 
-test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", (input) => {
+test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", input => {
     const tsHeader = "declare var obj: any;";
     const tsSource = `return ${input}`;
     const luaHeader = "obj = { existingKey = 1 }";
@@ -38,22 +38,19 @@ test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Bin
     expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
 });
 
-test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])(
-    "Binary expressions overridden operators (%p)",
-    (input) => {
-        util.testFunction`
+test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions overridden operators (%p)", input => {
+    util.testFunction`
         let a = 5;
         let b = 3;
         ${input};
         return a;
     `.expectToMatchJsResult();
-    }
-);
+});
 
 const supportedInAll = ["~a", "a&b", "a&=b", "a|b", "a|=b", "a^b", "a^=b", "a<<b", "a<<=b", "a>>>b", "a>>>=b"];
 const unsupportedIn53 = ["a>>b", "a>>=b"];
 const allBinaryOperators = [...supportedInAll, ...unsupportedIn53];
-test.each(allBinaryOperators)("Bitop [5.1] (%p)", (input) => {
+test.each(allBinaryOperators)("Bitop [5.1] (%p)", input => {
     // Bit operations not supported in 5.1, expect an exception
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua51, luaLibImport: tstl.LuaLibImportKind.None })
@@ -61,28 +58,28 @@ test.each(allBinaryOperators)("Bitop [5.1] (%p)", (input) => {
         .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
-test.each(allBinaryOperators)("Bitop [JIT] (%p)", (input) => {
+test.each(allBinaryOperators)("Bitop [JIT] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.LuaJIT, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
-test.each(allBinaryOperators)("Bitop [5.2] (%p)", (input) => {
+test.each(allBinaryOperators)("Bitop [5.2] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua52, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
-test.each(supportedInAll)("Bitop [5.3] (%p)", (input) => {
+test.each(supportedInAll)("Bitop [5.3] (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
         .expectLuaToMatchSnapshot();
 });
 
-test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", (input) => {
+test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", input => {
     util.testExpression(input)
         .setOptions({ luaTarget: tstl.LuaTarget.Lua53, luaLibImport: tstl.LuaLibImportKind.None })
         .disableSemanticCheck()
@@ -91,7 +88,7 @@ test.each(unsupportedIn53)("Unsupported bitop 5.3 (%p)", (input) => {
 
 test.each(["1+1", "-1+1", "1*30+4", "1*(3+4)", "1*(3+4*2)", "10-(4+5)"])(
     "Binary expressions ordering parentheses (%p)",
-    (input) => {
+    input => {
         util.testExpression(input).expectLuaToMatchSnapshot();
     }
 );
@@ -104,7 +101,7 @@ test("Assignment order of operations is preserved", () => {
     `.expectToMatchJsResult();
 });
 
-test.each(["bar(),foo()", "foo(),bar()", "foo(),bar(),baz()"])("Binary Comma (%p)", (input) => {
+test.each(["bar(),foo()", "foo(),bar()", "foo(),bar(),baz()"])("Binary Comma (%p)", input => {
     util.testFunction`
         function foo() { return 1; }
         function bar() { return 2; };
@@ -129,7 +126,7 @@ test("Undefined Expression", () => {
     expect(util.transpileString("undefined")).toBe("local ____ = nil");
 });
 
-test.each(["i++", "i--", "++i", "--i"])("Incrementor value (%p)", (expression) => {
+test.each(["i++", "i--", "++i", "--i"])("Incrementor value (%p)", expression => {
     util.testFunction`
         let i = 10;
         return ${expression};
@@ -160,7 +157,7 @@ test.each([
     "Math.log2(2)",
     "Math.log10(2)",
     '"".indexOf("")',
-])("Expression statements (%p)", (input) => {
+])("Expression statements (%p)", input => {
     util.testFunction`
         function foo() { return 17; }
         const bar = { foo };

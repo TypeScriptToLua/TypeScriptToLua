@@ -73,7 +73,7 @@ test("weakSet has no set features (size)", () => {
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
     "weakSet has no set features (%p)",
-    (call) => {
+    call => {
         expect(() => util.transpileAndExecute(`(new WeakSet() as any).${call}`)).toThrow();
     }
 );

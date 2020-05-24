@@ -1,6 +1,6 @@
 import * as util from "../util";
 
-test.each([0, "", [], [1, "2", []], { a: "b" }, { a: { b: "c" } }])("JSON (%p)", (json) => {
+test.each([0, "", [], [1, "2", []], { a: "b" }, { a: { b: "c" } }])("JSON (%p)", json => {
     util.testModule(JSON.stringify(json)).setMainFileName("main.json").expectToEqual(json);
 });
 

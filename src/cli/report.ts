@@ -5,5 +5,5 @@ export const prepareDiagnosticForFormatting = (diagnostic: ts.Diagnostic) =>
 
 export function createDiagnosticReporter(pretty: boolean, system = ts.sys): ts.DiagnosticReporter {
     const reporter = ts.createDiagnosticReporter(system, pretty);
-    return (diagnostic) => reporter(prepareDiagnosticForFormatting(diagnostic));
+    return diagnostic => reporter(prepareDiagnosticForFormatting(diagnostic));
 }

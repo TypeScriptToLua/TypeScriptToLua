@@ -230,7 +230,7 @@ test.each([
     const consumer = await new SourceMapConsumer(file.sourceMap);
     const typescriptPosition = lineAndColumnOf(code, name);
     let mappedName: string | undefined;
-    consumer.eachMapping((mapping) => {
+    consumer.eachMapping(mapping => {
         if (mapping.originalLine === typescriptPosition.line && mapping.originalColumn === typescriptPosition.column) {
             mappedName = mapping.name;
         }
@@ -307,7 +307,7 @@ function lineAndColumnOf(text: string, pattern: string): Position {
         return { line: -1, column: -1 };
     }
 
-    const lineLengths = text.split("\n").map((s) => s.length);
+    const lineLengths = text.split("\n").map(s => s.length);
 
     let totalPos = 0;
     for (let line = 1; line <= lineLengths.length; line++) {

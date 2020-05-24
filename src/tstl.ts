@@ -36,7 +36,7 @@ function executeCommandLine(args: string[]): void {
 
     // TODO: ParsedCommandLine.errors isn't meant to contain warnings. Once root-level options
     // support would be dropped it should be changed to `commandLine.errors.length > 0`.
-    if (commandLine.errors.some((e) => e.category === ts.DiagnosticCategory.Error)) {
+    if (commandLine.errors.some(e => e.category === ts.DiagnosticCategory.Error)) {
         commandLine.errors.forEach(reportDiagnostic);
         return ts.sys.exit(ts.ExitStatus.DiagnosticsPresent_OutputsSkipped);
     }
@@ -157,7 +157,7 @@ function updateWatchCompilationHost(
     let fullRecompile = true;
     const updateConfigFile = createConfigFileUpdater(optionsToExtend);
 
-    host.afterProgramCreate = (builderProgram) => {
+    host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
         const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
         const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
@@ -193,7 +193,7 @@ function updateWatchCompilationHost(
 
         diagnostics.forEach(reportDiagnostic);
 
-        const errors = diagnostics.filter((d) => d.category === ts.DiagnosticCategory.Error);
+        const errors = diagnostics.filter(d => d.category === ts.DiagnosticCategory.Error);
         // do a full recompile after an error
         fullRecompile = errors.length > 0;
 

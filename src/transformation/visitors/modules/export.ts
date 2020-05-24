@@ -93,7 +93,7 @@ function transformExportSpecifiersFrom(
     // First transpile as import clause
     const importClause = ts.createImportClause(
         undefined,
-        ts.createNamedImports(exportSpecifiers.map((s) => ts.createImportSpecifier(s.propertyName, s.name)))
+        ts.createNamedImports(exportSpecifiers.map(s => ts.createImportSpecifier(s.propertyName, s.name)))
     );
 
     const importDeclaration = ts.createImportDeclaration(
@@ -122,7 +122,7 @@ function transformExportSpecifiersFrom(
 }
 
 export const getExported = (context: TransformationContext, exportSpecifiers: ts.NamedExports) =>
-    exportSpecifiers.elements.filter((exportSpecifier) => context.resolver.isValueAliasDeclaration(exportSpecifier));
+    exportSpecifiers.elements.filter(exportSpecifier => context.resolver.isValueAliasDeclaration(exportSpecifier));
 
 export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
     if (!node.exportClause) {
@@ -143,7 +143,7 @@ export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> =
 
     // export { ... };
     if (!node.moduleSpecifier) {
-        return exportSpecifiers.map((exportSpecifier) => transformExportSpecifier(context, exportSpecifier));
+        return exportSpecifiers.map(exportSpecifier => transformExportSpecifier(context, exportSpecifier));
     }
 
     // export { ... } from "...";

@@ -69,7 +69,7 @@ export function peekScope(context: TransformationContext): Scope {
 }
 
 export function findScope(context: TransformationContext, scopeTypes: ScopeType): Scope | undefined {
-    return [...getScopeStack(context)].reverse().find((s) => scopeTypes & s.type);
+    return [...getScopeStack(context)].reverse().find(s => scopeTypes & s.type);
 }
 
 const scopeIdCounters = new WeakMap<TransformationContext, number>();
@@ -149,8 +149,8 @@ function hoistVariableDeclarations(
     const result = [...statements];
     const hoistedLocals: lua.Identifier[] = [];
     for (const declaration of scope.variableDeclarations) {
-        const symbols = declaration.left.map((i) => i.symbolId).filter(isNonNull);
-        if (symbols.some((s) => shouldHoistSymbol(context, s, scope))) {
+        const symbols = declaration.left.map(i => i.symbolId).filter(isNonNull);
+        if (symbols.some(s => shouldHoistSymbol(context, s, scope))) {
             const index = result.indexOf(declaration);
             assert(index > -1);
 

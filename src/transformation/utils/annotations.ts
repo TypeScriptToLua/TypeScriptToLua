@@ -25,7 +25,7 @@ export interface Annotation {
 }
 
 function createAnnotation(name: string, args: string[]): Annotation | undefined {
-    const kind = Object.values(AnnotationKind).find((k) => k.toLowerCase() === name.toLowerCase());
+    const kind = Object.values(AnnotationKind).find(k => k.toLowerCase() === name.toLowerCase());
     if (kind !== undefined) {
         return { kind, args };
     }
@@ -78,7 +78,7 @@ export function getFileAnnotations(sourceFile: ts.SourceFile): AnnotationsMap {
         // Manually collect jsDoc because `getJSDocTags` includes tags only from closest comment
         const jsDoc = sourceFile.statements[0].jsDoc;
         if (jsDoc) {
-            for (const tag of jsDoc.flatMap((x) => x.tags ?? [])) {
+            for (const tag of jsDoc.flatMap(x => x.tags ?? [])) {
                 const tagName = tag.tagName.text;
                 const annotation = createAnnotation(tagName, tag.comment ? tag.comment.split(" ") : []);
                 if (annotation) {
@@ -157,7 +157,7 @@ export function isInTupleReturnFunction(context: TransformationContext, node: ts
 
     // Check all overloads for directive
     const signatures = functionType.getCallSignatures();
-    if (signatures?.some((s) => getSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
+    if (signatures?.some(s => getSignatureAnnotations(context, s).has(AnnotationKind.TupleReturn))) {
         return true;
     }
 

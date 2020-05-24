@@ -2,7 +2,7 @@ import * as tstl from "../../src";
 import { unsupportedForTarget } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
-test.each([0, 1])("if (%p)", (inp) => {
+test.each([0, 1])("if (%p)", inp => {
     util.testFunction`
         let input: number = ${inp};
         if (input === 0) {
@@ -12,7 +12,7 @@ test.each([0, 1])("if (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1])("ifelse (%p)", (inp) => {
+test.each([0, 1])("ifelse (%p)", inp => {
     util.testFunction`
         let input: number = ${inp};
         if (input === 0) {
@@ -23,7 +23,7 @@ test.each([0, 1])("ifelse (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("ifelseif (%p)", (inp) => {
+test.each([0, 1, 2, 3])("ifelseif (%p)", inp => {
     util.testFunction`
         let input: number = ${inp};
         if (input === 0) {
@@ -37,7 +37,7 @@ test.each([0, 1, 2, 3])("ifelseif (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("ifelseifelse (%p)", (inp) => {
+test.each([0, 1, 2, 3])("ifelseifelse (%p)", inp => {
     util.testFunction`
         let input: number = ${inp};
         if (input === 0) {
@@ -52,7 +52,7 @@ test.each([0, 1, 2, 3])("ifelseifelse (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switch (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switch (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -71,7 +71,7 @@ test.each([0, 1, 2, 3])("switch (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchdefault (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switchdefault (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -93,7 +93,7 @@ test.each([0, 1, 2, 3])("switchdefault (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 0, 2, 3, 4, 5, 7])("switchfallthrough (%p)", (inp) => {
+test.each([0, 0, 2, 3, 4, 5, 7])("switchfallthrough (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -125,7 +125,7 @@ test.each([0, 0, 2, 3, 4, 5, 7])("switchfallthrough (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("nestedSwitch (%p)", (inp) => {
+test.each([0, 1, 2, 3])("nestedSwitch (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -196,7 +196,7 @@ test("switch using variable re-declared in cases", () => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2])("switch with block statement scope (%p)", (inp) => {
+test.each([0, 1, 2])("switch with block statement scope (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -220,7 +220,7 @@ test.each([0, 1, 2])("switch with block statement scope (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchReturn (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switchReturn (%p)", inp => {
     util.testFunction`
         switch (<number>${inp}) {
             case 0:
@@ -237,7 +237,7 @@ test.each([0, 1, 2, 3])("switchReturn (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchWithBrackets (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switchWithBrackets (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -259,7 +259,7 @@ test.each([0, 1, 2, 3])("switchWithBrackets (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -282,7 +282,7 @@ test.each([0, 1, 2, 3])("switchWithBracketsBreakInConditional (%p)", (inp) => {
     `.expectToMatchJsResult();
 });
 
-test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", (inp) => {
+test.each([0, 1, 2, 3])("switchWithBracketsBreakInInternalLoop (%p)", inp => {
     util.testFunction`
         let result: number = -1;
 
@@ -391,7 +391,7 @@ test.each([
     util.testExpressionTemplate`${condition} ? ${lhs} : ${rhs}`.expectToMatchJsResult();
 });
 
-test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", (condition) => {
+test.each(["true", "false", "a < 4", "a == 8"])("Ternary Conditional Delayed (%p)", condition => {
     util.testFunction`
         let a = 3;
         let delay = () => ${condition} ? a + 3 : a + 5;

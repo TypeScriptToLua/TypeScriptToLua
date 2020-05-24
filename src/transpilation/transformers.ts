@@ -5,8 +5,8 @@ import { CompilerOptions, TransformerImport } from "../CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
 import { getConfigDirectory, resolvePlugin } from "./utils";
 
-export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => (node) => {
-    const transformSourceFile: ts.Transformer<ts.SourceFile> = (node) => {
+export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts.Bundle> = () => node => {
+    const transformSourceFile: ts.Transformer<ts.SourceFile> = node => {
         const empty = ts.createNotEmittedStatement(undefined!);
         ts.addSyntheticLeadingComment(empty, ts.SyntaxKind.MultiLineCommentTrivia, "* @noSelfInFile ", true);
         return ts.updateSourceFileNode(node, [empty, ...node.statements], node.isDeclarationFile);
@@ -23,7 +23,7 @@ export function getTransformers(
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
-    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => (sourceFile) => {
+    const luaTransformer: ts.TransformerFactory<ts.SourceFile> = () => sourceFile => {
         onSourceFile(sourceFile);
         return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
     };

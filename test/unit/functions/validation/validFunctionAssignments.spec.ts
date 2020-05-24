@@ -180,7 +180,7 @@ test.each([
                   }
                   const o: O = (s1: string, s2?: string) => s1 + (s2 || "bar");
                   let f: ${assignType} = o;
-                  return f(${args.map((a) => '"' + a + '"').join(", ")});`;
+                  return f(${args.map(a => '"' + a + '"').join(", ")});`;
     const result = util.transpileAndExecute(code);
     expect(result).toBe(expectResult);
 });

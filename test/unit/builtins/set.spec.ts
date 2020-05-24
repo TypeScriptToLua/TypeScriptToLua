@@ -129,12 +129,12 @@ test.each([
     "let m = new Set([1, 2])",
     "let m = new Set([1, 2]); m.clear()",
     "let m = new Set([1, 2]); m.delete(2)",
-])("set size (%p)", (code) => {
+])("set size (%p)", code => {
     util.testFunction`${code}; return m.size`.expectToMatchJsResult();
 });
 
 const iterationMethods = ["entries", "keys", "values"];
-describe.each(iterationMethods)("set.%s() preserves insertion order", (iterationMethod) => {
+describe.each(iterationMethods)("set.%s() preserves insertion order", iterationMethod => {
     test("basic", () => {
         util.testFunction`
             const myset = new Set();

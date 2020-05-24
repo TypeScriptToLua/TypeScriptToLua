@@ -51,7 +51,7 @@ export function transpile({
     let transpiledFiles: TranspiledFile[] = [];
 
     const updateTranspiledFile = (fileName: string, update: Omit<TranspiledFile, "fileName">) => {
-        const file = transpiledFiles.find((f) => f.fileName === fileName);
+        const file = transpiledFiles.find(f => f.fileName === fileName);
         if (file) {
             Object.assign(file, update);
         } else {
@@ -86,8 +86,8 @@ export function transpile({
     }
 
     const plugins = getPlugins(program, diagnostics, customPlugins);
-    const visitorMap = createVisitorMap(plugins.map((p) => p.visitors).filter(isNonNull));
-    const printer = createPrinter(plugins.map((p) => p.printer).filter(isNonNull));
+    const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
+    const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
             program,

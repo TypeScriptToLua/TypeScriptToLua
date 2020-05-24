@@ -97,7 +97,7 @@ test.each([
     '[["b", "c"], ["a", null]]',
     '[["a", null], ["b", "c"]]',
     '[["b", "c"], ["a", null], ["x", "y"]]',
-])("map (%p) has null", (entries) => {
+])("map (%p) has null", entries => {
     util.testFunction`
         let mymap = new Map(${entries});
         return mymap.has("a");
@@ -109,7 +109,7 @@ test.each([
     '[["b", "c"], ["a", undefined]]',
     '[["a", undefined], ["b", "c"]]',
     '[["b", "c"], ["a", undefined], ["x", "y"]]',
-])("map (%p) has undefined", (entries) => {
+])("map (%p) has undefined", entries => {
     util.testFunction`
         let mymap = new Map(${entries});
         return mymap.has("a");
@@ -156,7 +156,7 @@ test("map size", () => {
 });
 
 const iterationMethods = ["entries", "keys", "values"];
-describe.each(iterationMethods)("map.%s() preserves insertion order", (iterationMethod) => {
+describe.each(iterationMethods)("map.%s() preserves insertion order", iterationMethod => {
     test("basic", () => {
         util.testFunction`
             const mymap = new Map();

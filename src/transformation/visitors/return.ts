@@ -33,7 +33,7 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
             // Parent function is a TupleReturn function
             if (ts.isArrayLiteralExpression(statement.expression)) {
                 // If return expression is an array literal, leave out brackets.
-                results = statement.expression.elements.map((e) => context.transformExpression(e));
+                results = statement.expression.elements.map(e => context.transformExpression(e));
             } else if (!isTupleReturnCall(context, statement.expression) && isArrayType(context, expressionType)) {
                 // If return expression is an array-type and not another TupleReturn call, unpack it
                 results = [

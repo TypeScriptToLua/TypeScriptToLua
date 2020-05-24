@@ -1,6 +1,6 @@
 import * as util from "../../../util";
 
-test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", (noSelfTag) => {
+test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", noSelfTag => {
     const header = `
         /** @${noSelfTag} */ namespace NS {
             export class C {
@@ -29,7 +29,7 @@ test("noSelfInFile works when first statement has other annotations", () => {
 
 test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(
     "Function expression type inference in binary operator (%p)",
-    (funcType) => {
+    funcType => {
         const header = `declare const undefinedFunc: ${funcType};`;
         const code = `
         let func: ${funcType} = s => s;
@@ -42,7 +42,7 @@ test.each(["(this: void, s: string) => string", "(this: any, s: string) => strin
 
 test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { return s; })"])(
     "Function expression type inference in class (%p)",
-    (funcExp) => {
+    funcExp => {
         const code = `
             class Foo {
                 func: (this: void, s: string) => string = ${funcExp};

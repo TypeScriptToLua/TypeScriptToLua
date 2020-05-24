@@ -155,7 +155,7 @@ test.each([
     "(this: void, s1: string, s2: string) => string",
     "{(this: void, s: string): string}",
     "{(this: any, s1: string, s2: string): string}",
-])("Invalid function overload assignment (%p)", (assignType) => {
+])("Invalid function overload assignment (%p)", assignType => {
     util.testModule`
         interface O {
             (this: any, s1: string, s2: string): string;

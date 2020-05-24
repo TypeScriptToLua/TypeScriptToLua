@@ -3,11 +3,11 @@ import { TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 
 export function isStaticNode(node: ts.Node): boolean {
-    return (node.modifiers ?? []).some((m) => m.kind === ts.SyntaxKind.StaticKeyword);
+    return (node.modifiers ?? []).some(m => m.kind === ts.SyntaxKind.StaticKeyword);
 }
 
 export function getExtendsClause(node: ts.ClassLikeDeclarationBase): ts.HeritageClause | undefined {
-    return (node.heritageClauses ?? []).find((clause) => clause.token === ts.SyntaxKind.ExtendsKeyword);
+    return (node.heritageClauses ?? []).find(clause => clause.token === ts.SyntaxKind.ExtendsKeyword);
 }
 
 export function getExtendedNode(

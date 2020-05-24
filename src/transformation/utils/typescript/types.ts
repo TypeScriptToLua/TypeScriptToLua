@@ -25,11 +25,11 @@ export function typeAlwaysSatisfies(
     }
 
     if (type.isUnion()) {
-        return type.types.every((t) => typeAlwaysSatisfies(context, t, predicate));
+        return type.types.every(t => typeAlwaysSatisfies(context, t, predicate));
     }
 
     if (type.isIntersection()) {
-        return type.types.some((t) => typeAlwaysSatisfies(context, t, predicate));
+        return type.types.some(t => typeAlwaysSatisfies(context, t, predicate));
     }
 
     return false;
@@ -45,11 +45,11 @@ export function typeCanSatisfy(
     }
 
     if (type.isUnion()) {
-        return type.types.some((t) => typeCanSatisfy(context, t, predicate));
+        return type.types.some(t => typeCanSatisfy(context, t, predicate));
     }
 
     if (type.isIntersection()) {
-        return type.types.some((t) => typeCanSatisfy(context, t, predicate));
+        return type.types.some(t => typeCanSatisfy(context, t, predicate));
     }
 
     return false;
@@ -72,7 +72,7 @@ function isExplicitArrayType(context: TransformationContext, type: ts.Type): boo
     }
 
     if (type.isUnionOrIntersection()) {
-        return type.types.some((t) => isExplicitArrayType(context, t));
+        return type.types.some(t => isExplicitArrayType(context, t));
     }
 
     const flags = ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.AllowEmptyTuple;
@@ -100,11 +100,11 @@ export function forTypeOrAnySupertype(
         type = context.checker.getDeclaredTypeOfSymbol(type.symbol);
     }
 
-    return (type.getBaseTypes() ?? []).some((superType) => forTypeOrAnySupertype(context, superType, predicate));
+    return (type.getBaseTypes() ?? []).some(superType => forTypeOrAnySupertype(context, superType, predicate));
 }
 
 export function isArrayType(context: TransformationContext, type: ts.Type): boolean {
-    return forTypeOrAnySupertype(context, type, (t) => isExplicitArrayType(context, t));
+    return forTypeOrAnySupertype(context, type, t => isExplicitArrayType(context, t));
 }
 
 export function isFunctionType(context: TransformationContext, type: ts.Type): boolean {

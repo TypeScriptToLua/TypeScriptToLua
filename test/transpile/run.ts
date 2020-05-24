@@ -13,7 +13,7 @@ export function buildVirtualProject(rootNames: string[], options: tstl.CompilerO
     options.types = [];
 
     const { diagnostics, emitResult } = tstl.transpileFiles(rootNames, options);
-    const emittedFiles = emitResult.map((result) => path.relative(__dirname, result.name).replace(/\\/g, "/")).sort();
+    const emittedFiles = emitResult.map(result => path.relative(__dirname, result.name).replace(/\\/g, "/")).sort();
 
     return { diagnostics, emitResult, emittedFiles };
 }

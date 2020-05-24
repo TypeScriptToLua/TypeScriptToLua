@@ -25,7 +25,7 @@ export async function runCli(args: string[]): Promise<CliResult> {
     child.stdout!.on("data", (data: Buffer) => (output += data.toString()));
     child.stderr!.on("data", (data: Buffer) => (output += data.toString()));
 
-    return new Promise((resolve) => {
-        child.on("close", (exitCode) => resolve({ exitCode, output }));
+    return new Promise(resolve => {
+        child.on("close", exitCode => resolve({ exitCode, output }));
     });
 }

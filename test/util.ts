@@ -18,7 +18,7 @@ export function assert(value: any, message?: string | Error): asserts value {
     nativeAssert(value, message);
 }
 
-export const formatCode = (...values: unknown[]) => values.map((e) => stringify(e)).join(", ");
+export const formatCode = (...values: unknown[]) => values.map(e => stringify(e)).join(", ");
 
 export function testEachVersion<T extends TestBuilder>(
     name: string | undefined,
@@ -54,7 +54,7 @@ interface TranspileJsResult {
 function transpileJs(program: ts.Program): TranspileJsResult {
     const transpiledFiles: TranspiledJsFile[] = [];
     const updateTranspiledFile = (fileName: string, update: Omit<TranspiledJsFile, "fileName">) => {
-        const file = transpiledFiles.find((f) => f.fileName === fileName);
+        const file = transpiledFiles.find(f => f.fileName === fileName);
         if (file) {
             Object.assign(file, update);
         } else {
@@ -92,7 +92,7 @@ function executeLua(code: string): any {
         }
     } else {
         // Filter out control characters appearing on some systems
-        const luaStackString = lua.lua_tostring(L, -1).filter((c) => c >= 20);
+        const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
         const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
         return new ExecutionError(message);
     }
@@ -279,7 +279,7 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         const mainFile = this.options.luaBundle
             ? transpiledFiles[0]
-            : transpiledFiles.find((x) => x.fileName === this.mainFileName);
+            : transpiledFiles.find(x => x.fileName === this.mainFileName);
         expect(mainFile).toMatchObject({ lua: expect.any(String), sourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
@@ -305,7 +305,7 @@ export abstract class TestBuilder {
     @memoize
     protected getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const code = transpiledFiles.find((x) => x.fileName === this.mainFileName)?.js;
+        const code = transpiledFiles.find(x => x.fileName === this.mainFileName)?.js;
         assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";
@@ -323,7 +323,7 @@ export abstract class TestBuilder {
 
     private getLuaDiagnostics(): ts.Diagnostic[] {
         const { diagnostics } = this.getLuaResult();
-        return diagnostics.filter((d) => this.semanticCheck || d.source === "typescript-to-lua");
+        return diagnostics.filter(d => this.semanticCheck || d.source === "typescript-to-lua");
     }
 
     // Actions
@@ -391,7 +391,7 @@ export abstract class TestBuilder {
 
         const diagnosticMessages = ts.formatDiagnostics(
             this.getLuaDiagnostics().map(tstl.prepareDiagnosticForFormatting),
-            { getCurrentDirectory: () => "", getCanonicalFileName: (fileName) => fileName, getNewLine: () => "\n" }
+            { getCurrentDirectory: () => "", getCanonicalFileName: fileName => fileName, getNewLine: () => "\n" }
         );
 
         expect(diagnosticMessages.trim()).toMatchSnapshot("diagnostics");
@@ -463,7 +463,7 @@ const createTestBuilderFactory = <T extends TestBuilder>(
     } else {
         let [raw, ...substitutions] = args;
         if (serializeSubstitutions) {
-            substitutions = substitutions.map((s) => formatCode(s));
+            substitutions = substitutions.map(s => formatCode(s));
         }
 
         tsCode = String.raw(Object.assign([], { raw }), ...substitutions);

@@ -666,7 +666,7 @@ test("Exported class super call", () => {
         .expectToMatchJsResult();
 });
 
-test.each(["(new Foo())", "Foo"])("Class method name collision (%p)", (input) => {
+test.each(["(new Foo())", "Foo"])("Class method name collision (%p)", input => {
     util.testFunction`
         class Foo {
             public method() { return "foo"; }

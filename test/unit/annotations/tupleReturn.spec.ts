@@ -1,6 +1,6 @@
 import * as util from "../../util";
 
-const expectNoUnpack: util.TapCallback = (builder) => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack");
+const expectNoUnpack: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).not.toContain("unpack");
 
 test("Tuple Return Access", () => {
     util.testFunction`

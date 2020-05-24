@@ -28,7 +28,7 @@ test("generates declaration files with @noSelfInFile", () => {
         .setOptions({ declaration: true, noImplicitSelf: true })
         .expectToHaveNoDiagnostics();
 
-    const fooDeclaration = fooBuilder.getLuaResult().transpiledFiles.find((f) => f.declaration)?.declaration;
+    const fooDeclaration = fooBuilder.getLuaResult().transpiledFiles.find(f => f.declaration)?.declaration;
     util.assert(fooDeclaration !== undefined);
 
     util.testModule`

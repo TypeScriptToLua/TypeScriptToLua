@@ -17,8 +17,8 @@ test("@vararg", () => {
         }
         return bar("A", "B", "C", "D");
     `
-        .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toMatch("b = "))
-        .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("b = "))
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
         .expectToMatchJsResult();
 });
 
@@ -39,7 +39,7 @@ test("@vararg global", () => {
         declare const arg: LuaVararg<string[]>;
         export const result = [...arg].join("");
     `
-        .setLuaFactory((code) => `return (function(...) ${code} end)("A", "B", "C", "D")`)
-        .tap((builder) => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
+        .setLuaFactory(code => `return (function(...) ${code} end)("A", "B", "C", "D")`)
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toMatch("unpack"))
         .expectToEqual({ result: "ABCD" });
 });

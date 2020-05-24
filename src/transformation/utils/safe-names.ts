@@ -72,7 +72,7 @@ export function hasUnsafeSymbolName(
     symbol: ts.Symbol,
     tsOriginal: ts.Identifier
 ): boolean {
-    const isAmbient = symbol.declarations && symbol.declarations.some((d) => isAmbientNode(d));
+    const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
 
     // Catch ambient declarations of identifiers with bad names
     if (isAmbient && checkName(context, symbol.name, tsOriginal)) {
@@ -99,6 +99,6 @@ export function hasUnsafeIdentifierName(
 }
 
 const fixInvalidLuaIdentifier = (name: string) =>
-    name.replace(/[^a-zA-Z0-9_]/g, (c) => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
+    name.replace(/[^a-zA-Z0-9_]/g, c => `_${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
 export const createSafeName = (name: string) => "____" + fixInvalidLuaIdentifier(name);

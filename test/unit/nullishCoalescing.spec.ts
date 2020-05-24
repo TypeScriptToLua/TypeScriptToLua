@@ -1,14 +1,14 @@
 import * as util from "../util";
 
-test.each(["null", "undefined"])("nullish-coalesing operator returns rhs", (nullishValue) => {
+test.each(["null", "undefined"])("nullish-coalesing operator returns rhs", nullishValue => {
     util.testExpression`${nullishValue} ?? "Hello, World!"`.expectToMatchJsResult();
 });
 
-test.each([3, "foo", {}, [], true, false])("nullish-coalesing operator returns lhs", (value) => {
+test.each([3, "foo", {}, [], true, false])("nullish-coalesing operator returns lhs", value => {
     util.testExpression`${util.formatCode(value)} ?? "Hello, World!"`.expectToMatchJsResult();
 });
 
-test.each(["any", "unknown"])("nullish-coalesing operator with any/unknown type", (type) => {
+test.each(["any", "unknown"])("nullish-coalesing operator with any/unknown type", type => {
     util.testFunction`
         const unknownType = false as ${type};
         return unknownType ?? "This should not be returned!";
@@ -17,7 +17,7 @@ test.each(["any", "unknown"])("nullish-coalesing operator with any/unknown type"
 
 test.each(["boolean | string", "number | false", "undefined | true"])(
     "nullish-coalesing operator with union type",
-    (unionType) => {
+    unionType => {
         util.testFunction`
             const unknownType = false as ${unionType};
             return unknownType ?? "This should not be returned!";

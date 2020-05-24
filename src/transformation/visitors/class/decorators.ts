@@ -21,7 +21,7 @@ export function createConstructorDecorationStatement(
         return undefined;
     }
 
-    const decoratorExpressions = decorators.map((decorator) => {
+    const decoratorExpressions = decorators.map(decorator => {
         const expression = decorator.expression;
         const type = context.checker.getTypeAtLocation(expression);
         const callContext = getFunctionContextType(context, type);
@@ -33,7 +33,7 @@ export function createConstructorDecorationStatement(
     });
 
     const decoratorTable = lua.createTableExpression(
-        decoratorExpressions.map((expression) => lua.createTableFieldExpression(expression))
+        decoratorExpressions.map(expression => lua.createTableFieldExpression(expression))
     );
 
     return lua.createAssignmentStatement(

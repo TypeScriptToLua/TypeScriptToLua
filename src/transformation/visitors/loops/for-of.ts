@@ -25,7 +25,7 @@ function transformForRangeStatement(
         );
     }
 
-    if (statement.expression.arguments.some((a) => !isNumberType(context, context.checker.getTypeAtLocation(a)))) {
+    if (statement.expression.arguments.some(a => !isNumberType(context, context.checker.getTypeAtLocation(a)))) {
         context.diagnostics.push(invalidForRangeCall(statement.expression, "arguments must be numbers"));
     }
 
@@ -81,7 +81,7 @@ function transformForOfLuaIteratorStatement(
 
             const binding = getVariableDeclarationBinding(context, statement.initializer);
             if (ts.isArrayBindingPattern(binding)) {
-                identifiers = binding.elements.map((e) => transformArrayBindingElement(context, e));
+                identifiers = binding.elements.map(e => transformArrayBindingElement(context, e));
             } else {
                 context.diagnostics.push(luaIteratorForbiddenUsage(binding));
             }
@@ -94,7 +94,7 @@ function transformForOfLuaIteratorStatement(
             if (identifiers.length > 0) {
                 block.statements.unshift(
                     lua.createAssignmentStatement(
-                        statement.initializer.elements.map((e) =>
+                        statement.initializer.elements.map(e =>
                             cast(context.transformExpression(e), lua.isAssignmentLeftHandSideExpression)
                         ),
                         identifiers

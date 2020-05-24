@@ -75,7 +75,7 @@ export function transformBindingPattern(
 
             if (isObjectBindingPattern) {
                 const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;
-                const usedProperties = elements.map((e) =>
+                const usedProperties = elements.map(e =>
                     lua.createTableFieldExpression(
                         lua.createBooleanLiteral(true),
                         lua.createStringLiteral(
@@ -156,7 +156,7 @@ export function transformBindingVariableDeclaration(
 
     const vars =
         bindingPattern.elements.length > 0
-            ? bindingPattern.elements.map((e) => transformArrayBindingElement(context, e))
+            ? bindingPattern.elements.map(e => transformArrayBindingElement(context, e))
             : lua.createAnonymousIdentifier();
 
     if (initializer) {
@@ -174,7 +174,7 @@ export function transformBindingVariableDeclaration(
             // Don't unpack array literals
             const values =
                 initializer.elements.length > 0
-                    ? initializer.elements.map((e) => context.transformExpression(e))
+                    ? initializer.elements.map(e => context.transformExpression(e))
                     : lua.createNilLiteral();
             statements.push(...createLocalOrExportedOrGlobalDeclaration(context, vars, values, initializer));
         } else {
@@ -245,7 +245,5 @@ export function checkVariableDeclarationList(context: TransformationContext, nod
 
 export const transformVariableStatement: FunctionVisitor<ts.VariableStatement> = (node, context) => {
     checkVariableDeclarationList(context, node.declarationList);
-    return node.declarationList.declarations.flatMap((declaration) =>
-        transformVariableDeclaration(context, declaration)
-    );
+    return node.declarationList.declarations.flatMap(declaration => transformVariableDeclaration(context, declaration));
 };

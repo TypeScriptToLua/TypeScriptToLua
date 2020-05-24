@@ -32,17 +32,17 @@ export function bundleTranspiledFiles(
 
     // Resolve source files relative to common source directory.
     const sourceRootDir = program.getCommonSourceDirectory();
-    if (!transpiledFiles.some((f) => path.resolve(sourceRootDir, f.fileName) === resolvedEntryModule)) {
+    if (!transpiledFiles.some(f => path.resolve(sourceRootDir, f.fileName) === resolvedEntryModule)) {
         return [[diagnosticFactories.couldNotFindBundleEntryPoint(entryModule)], { fileName: bundleFile }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries: SourceChunk[] = transpiledFiles.map((f) =>
+    const moduleTableEntries: SourceChunk[] = transpiledFiles.map(f =>
         moduleSourceNode(f, createModulePath(sourceRootDir, f.fileName))
     );
 
     // If any of the modules contains a require for lualib_bundle, add it to the module table.
-    const lualibRequired = transpiledFiles.some((f) => f.lua?.includes('require("lualib_bundle")'));
+    const lualibRequired = transpiledFiles.some(f => f.lua?.includes('require("lualib_bundle")'));
     if (lualibRequired) {
         moduleTableEntries.push(`["lualib_bundle"] = function() ${getLuaLibBundle(emitHost)} end,\n`);
     }

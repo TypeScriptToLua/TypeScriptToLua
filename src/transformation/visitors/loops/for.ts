@@ -11,7 +11,7 @@ export const transformForStatement: FunctionVisitor<ts.ForStatement> = (statemen
         if (ts.isVariableDeclarationList(statement.initializer)) {
             checkVariableDeclarationList(context, statement.initializer);
             // local initializer = value
-            result.push(...statement.initializer.declarations.flatMap((d) => transformVariableDeclaration(context, d)));
+            result.push(...statement.initializer.declarations.flatMap(d => transformVariableDeclaration(context, d)));
         } else {
             result.push(...context.transformStatements(ts.createExpressionStatement(statement.initializer)));
         }

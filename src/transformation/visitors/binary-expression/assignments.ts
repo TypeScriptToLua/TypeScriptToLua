@@ -59,7 +59,7 @@ export function transformAssignment(
 
     return [
         rootAssignment,
-        ...dependentSymbols.map((symbol) => {
+        ...dependentSymbols.map(symbol => {
             const [left] = rootAssignment.left;
             const identifierToAssign = createExportedIdentifier(context, lua.createIdentifier(symbol.name));
             return lua.createAssignmentStatement(identifierToAssign, left);
@@ -152,7 +152,7 @@ const canBeTransformedToLuaAssignmentStatement = (
     node: ts.DestructuringAssignment
 ): node is ts.ArrayDestructuringAssignment =>
     ts.isArrayLiteralExpression(node.left) &&
-    node.left.elements.every((element) => {
+    node.left.elements.every(element => {
         if (isArrayLength(context, element)) {
             return false;
         }
@@ -188,7 +188,7 @@ export function transformAssignmentStatement(
                 right = createUnpackCall(context, right, expression.right);
             }
 
-            const left = expression.left.elements.map((e) => transformAssignmentLeftHandSideExpression(context, e));
+            const left = expression.left.elements.map(e => transformAssignmentLeftHandSideExpression(context, e));
 
             return [lua.createAssignmentStatement(left, right, expression)];
         }

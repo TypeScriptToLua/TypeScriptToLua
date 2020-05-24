@@ -1,5 +1,6 @@
 {
     "printWidth": 120,
     "tabWidth": 4,
+    "arrowParens": "avoid",
     "overrides": [{ "files": ["**/*.md", "**/*.yml"], "options": { "tabWidth": 2 } }]
 }

@@ -1,18 +1,18 @@
 import * as util from "../util";
 
-test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", (inp) => {
+test.each(["0", "30", "30_000", "30.00"])("typeof number (%p)", inp => {
     util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
-test.each(['"abc"', "`abc`"])("typeof string (%p)", (inp) => {
+test.each(['"abc"', "`abc`"])("typeof string (%p)", inp => {
     util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
-test.each(["false", "true"])("typeof boolean (%p)", (inp) => {
+test.each(["false", "true"])("typeof boolean (%p)", inp => {
     util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
-test.each(["{}", "[]"])("typeof object literal (%p)", (inp) => {
+test.each(["{}", "[]"])("typeof object literal (%p)", inp => {
     util.testExpression`typeof ${inp}`.expectToMatchJsResult();
 });
 
@@ -34,7 +34,7 @@ test("typeof function", () => {
     util.testExpression`typeof (() => 3)`.expectToMatchJsResult();
 });
 
-test.each(["null", "undefined"])("typeof %s", (inp) => {
+test.each(["null", "undefined"])("typeof %s", inp => {
     util.testExpression`typeof ${inp}`.expectToEqual("undefined");
 });
 
@@ -63,8 +63,8 @@ const relationalComparisonCases: ComparisonCase[] = [
     { expression: "undefined", operator: ">", compareTo: "object" },
 ];
 
-const expectTypeOfHelper: util.TapCallback = (builder) => expect(builder.getMainLuaCodeChunk()).toMatch("__TS__TypeOf");
-const expectNoTypeOfHelper: util.TapCallback = (builder) =>
+const expectTypeOfHelper: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toMatch("__TS__TypeOf");
+const expectNoTypeOfHelper: util.TapCallback = builder =>
     expect(builder.getMainLuaCodeChunk()).not.toMatch("__TS__TypeOf");
 
 test.each(equalityComparisonCases)("typeof literal equality comparison (%p)", ({ expression, operator, compareTo }) => {

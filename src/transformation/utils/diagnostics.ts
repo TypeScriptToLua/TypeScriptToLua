@@ -107,7 +107,7 @@ export const unsupportedRightShiftOperator = createDiagnosticFactory(
 
 const getLuaTargetName = (version: LuaTarget) => (version === LuaTarget.LuaJIT ? "LuaJIT" : `Lua ${version}`);
 export const unsupportedForTarget = createDiagnosticFactory(
-    (functionality: string, version: LuaTarget) =>
+    (functionality: string, version: Exclude<LuaTarget, LuaTarget.Universal>) =>
         `${functionality} is/are not supported for target ${getLuaTargetName(version)}.`
 );
 

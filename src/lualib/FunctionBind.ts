@@ -8,6 +8,6 @@ function __TS__FunctionBind(
         for (let i = 0; i < boundArgs.length; ++i) {
             table.insert(args, i + 1, boundArgs[i]);
         }
-        return fn(thisArg, (unpack || table.unpack)(args));
+        return fn(thisArg, ...args);
     };
 }

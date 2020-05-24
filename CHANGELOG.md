@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added new `"luaTarget"` option value - `"universal"`. Choosing this target would make TypeScriptToLua generate code compatible with all supported Lua targets.
+  - **BREAKING CHANGE:** This is a new default target. If you have been depending on LuaJIT being chosen implicitly, now you have to enable it explicitly with `"luaTarget": "JIT"` in the `tsconfig.json` file.
+
 <!-- TODO: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html doesn't seem to work now -->
 
 - TypeScript has been updated to 3.9. See [release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-3-9/) for details. This update includes some fixes specific to our API usage:

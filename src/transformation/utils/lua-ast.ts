@@ -6,6 +6,8 @@ import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType } from "./scope";
 import { isFunctionType } from "./typescript";
+import { transformLuaLibFunction } from "./lualib";
+import { LuaLibFeature } from "../../LuaLib";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
 export function unwrapVisitorResult<T extends lua.Node>(result: OneToManyVisitorResult<T>): T[] {
@@ -56,6 +58,10 @@ export function createUnpackCall(
     expression: lua.Expression,
     tsOriginal?: ts.Node
 ): lua.Expression {
+    if (context.luaTarget === LuaTarget.Universal) {
+        return transformLuaLibFunction(context, LuaLibFeature.Unpack, tsOriginal, expression);
+    }
+
     const unpack =
         context.luaTarget === LuaTarget.Lua51 || context.luaTarget === LuaTarget.LuaJIT
             ? lua.createIdentifier("unpack")

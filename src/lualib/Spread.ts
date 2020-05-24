@@ -10,5 +10,5 @@ function __TS__Spread<T>(this: void, iterable: string | Iterable<T>): T[] {
             arr[arr.length] = item;
         }
     }
-    return (table.unpack || unpack)(arr);
+    return __TS__Unpack(arr);
 }

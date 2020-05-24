@@ -6,7 +6,7 @@ import { unsupportedForTarget } from "../utils/diagnostics";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 
 export const transformSwitchStatement: FunctionVisitor<ts.SwitchStatement> = (statement, context) => {
-    if (context.luaTarget === LuaTarget.Lua51) {
+    if (context.luaTarget === LuaTarget.Universal || context.luaTarget === LuaTarget.Lua51) {
         context.diagnostics.push(unsupportedForTarget(statement, "Switch statements", LuaTarget.Lua51));
     }
 

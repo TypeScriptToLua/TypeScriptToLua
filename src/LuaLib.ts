@@ -39,6 +39,7 @@ export enum LuaLibFeature {
     InstanceOfObject = "InstanceOfObject",
     Iterator = "Iterator",
     Map = "Map",
+    MathAtan2 = "MathAtan2",
     New = "New",
     Number = "Number",
     NumberIsFinite = "NumberIsFinite",
@@ -68,12 +69,16 @@ export enum LuaLibFeature {
     Symbol = "Symbol",
     SymbolRegistry = "SymbolRegistry",
     TypeOf = "TypeOf",
+    Unpack = "Unpack",
 }
 
 const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     Error: [LuaLibFeature.New, LuaLibFeature.Class, LuaLibFeature.FunctionCall],
+    FunctionApply: [LuaLibFeature.Unpack],
+    FunctionBind: [LuaLibFeature.Unpack],
+    FunctionCall: [LuaLibFeature.Unpack],
     Generator: [LuaLibFeature.Symbol],
     InstanceOf: [LuaLibFeature.Symbol],
     Iterator: [LuaLibFeature.Symbol],
@@ -82,7 +87,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     Set: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakMap: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
     WeakSet: [LuaLibFeature.InstanceOf, LuaLibFeature.Iterator, LuaLibFeature.Symbol],
-    Spread: [LuaLibFeature.Iterator],
+    Spread: [LuaLibFeature.Iterator, LuaLibFeature.Unpack],
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 

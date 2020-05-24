@@ -27,8 +27,11 @@ test.each(["E", "LN10", "LN2", "LOG10E", "LOG2E", "SQRT1_2", "SQRT2"])("Math.%s"
 
 const expectMathAtan2: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("math.atan2(");
 const expectMathAtan: util.TapCallback = builder => expect(builder.getMainLuaCodeChunk()).toContain("math.atan(");
+const expectLualibMathAtan2: util.TapCallback = builder =>
+    expect(builder.getMainLuaCodeChunk()).toContain("__TS__MathAtan2(");
 
 util.testEachVersion("Math.atan2", () => util.testExpression`Math.atan2(4, 5)`, {
+    [tstl.LuaTarget.Universal]: builder => builder.tap(expectLualibMathAtan2),
     [tstl.LuaTarget.LuaJIT]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua51]: builder => builder.tap(expectMathAtan2),
     [tstl.LuaTarget.Lua52]: builder => builder.tap(expectMathAtan2),

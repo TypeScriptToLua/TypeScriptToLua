@@ -430,11 +430,12 @@ test.each([
 });
 
 test('array.join (1, "2", {})', () => {
-    util.testExpression`[1, "2", {}].join()`.expectToEqual("1,2,table: 0x168");
+    const result = util.testExpression`[1, "2", {}].join()`.getLuaExecutionResult();
+    expect(result).toMatch(/^1,2,table: 0x\d+$/);
 });
 
 test('array.join (1, "2", Symbol("foo"))', () => {
-    util.testExpression`[1, "2", Symbol("foo")].join()`.expectToEqual("1,2,Symbol(foo)");
+    util.testExpression`[1, "2", Symbol("foo")].join(", ")`.expectToEqual("1, 2, Symbol(foo)");
 });
 
 test("array.join without separator argument", () => {

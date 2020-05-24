@@ -4,6 +4,7 @@ import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
+import { isStringType, isNumberType } from "../utils/typescript";
 
 export function transformArrayPrototypeCall(
     context: TransformationContext,
@@ -61,19 +62,25 @@ export function transformArrayPrototypeCall(
         case "splice":
             return transformLuaLibFunction(context, LuaLibFeature.ArraySplice, node, caller, ...params);
         case "join":
-            const defaultSeparatorLiteral = lua.createStringLiteral(",");
-            const parameters = [
-                caller,
-                node.arguments.length === 0
-                    ? defaultSeparatorLiteral
-                    : lua.createBinaryExpression(params[0], defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
-            ];
+            const callerType = context.checker.getTypeAtLocation(expression.expression);
+            const elementType = context.checker.getElementTypeOfArrayType(callerType);
+            if (elementType && (isStringType(context, elementType) || isNumberType(context, elementType))) {
+                const defaultSeparatorLiteral = lua.createStringLiteral(",");
+                const parameters = [
+                    caller,
+                    node.arguments.length === 0
+                        ? defaultSeparatorLiteral
+                        : lua.createBinaryExpression(params[0], defaultSeparatorLiteral, lua.SyntaxKind.OrOperator),
+                ];
 
-            return lua.createCallExpression(
-                lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
-                parameters,
-                node
-            );
+                return lua.createCallExpression(
+                    lua.createTableIndexExpression(lua.createIdentifier("table"), lua.createStringLiteral("concat")),
+                    parameters,
+                    node
+                );
+            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayJoin, node, caller, ...params);
         case "flat":
             return transformLuaLibFunction(context, LuaLibFeature.ArrayFlat, node, caller, ...params);
         case "flatMap":

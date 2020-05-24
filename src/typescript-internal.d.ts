@@ -20,4 +20,8 @@ declare module "typescript" {
         configFile?: TsConfigSourceFile;
         configFilePath?: string;
     }
+
+    interface TypeChecker {
+        getElementTypeOfArrayType(type: Type): Type | undefined;
+    }
 }

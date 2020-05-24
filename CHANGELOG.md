@@ -27,6 +27,8 @@
 
 - Fixed `Array.prototype.join` throwing an error when array contains anything other than strings and numbers
 
+- Fixed extending a class not keeping `toString` implementation from a super class
+
 ## 0.33.0
 
 - Added support for nullish coalescing `A ?? B`.

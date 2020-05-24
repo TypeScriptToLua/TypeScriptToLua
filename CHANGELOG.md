@@ -25,6 +25,8 @@
 
 - Fixed iteration over generators stopping at first yielded `nil` value
 
+- Fixed extending a class not keeping `toString` implementation from a super class
+
 ## 0.33.0
 
 - Added support for nullish coalescing `A ?? B`.

@@ -352,42 +352,6 @@ test("ClassComputedMethodCall", () => {
     `.expectToMatchJsResult();
 });
 
-test("ClassToString", () => {
-    util.testFunction`
-        class a {
-            public toString(): string {
-                return "instance of a";
-            }
-        }
-        let inst = new a();
-        return inst.toString();
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty true", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("prop");
-    `.expectToMatchJsResult();
-});
-
-test("HasOwnProperty false", () => {
-    util.testFunction`
-        class a {
-            public test(): void {
-            }
-        }
-        let inst = new a();
-        inst["prop"] = 17;
-        return inst.hasOwnProperty("test");
-    `.expectToMatchJsResult();
-});
-
 test("CastClassMethodCall", () => {
     util.testFunction`
         interface result

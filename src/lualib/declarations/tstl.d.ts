@@ -10,6 +10,7 @@ interface Metatable {
     _descriptors?: Record<string, PropertyDescriptor>;
     __index?: any;
     __newindex?: any;
+    __tostring?: any;
 }
 
 interface LuaClass extends Metatable {

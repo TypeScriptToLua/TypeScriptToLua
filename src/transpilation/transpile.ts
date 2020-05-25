@@ -142,10 +142,7 @@ export function transpile({
         diagnostics.push(...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics);
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
-        program
-            .getSourceFiles()
-            .filter(isEmittableJsonFile)
-            .forEach(processSourceFile);
+        program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);
     }
 
     options.noEmit = oldNoEmit;

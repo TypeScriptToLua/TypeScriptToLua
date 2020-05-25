@@ -23,9 +23,9 @@
         "pretest": "npm run lint && npm run build-lualib",
         "test": "jest",
         "lint": "npm run lint:eslint && npm run lint:prettier",
-        "lint:prettier": "prettier --check \"**/*.{js,ts,yml,json,md}\" || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
+        "lint:prettier": "prettier --check . || (echo 'Run `npm run fix:prettier` to fix it.' && exit 1)",
         "lint:eslint": "eslint . --ext .js,.ts",
-        "fix:prettier": "prettier --check --write \"**/*.{js,ts,yml,json,md}\"",
+        "fix:prettier": "prettier --write .",
         "preversion": "npm run build && npm test",
         "postversion": "git push && git push --tags"
     },
@@ -57,7 +57,7 @@
         "jest": "^25.1.0",
         "jest-circus": "^25.1.0",
         "lua-types": "^2.8.0",
-        "prettier": "^1.19.1",
+        "prettier": "^2.0.5",
         "ts-jest": "^25.2.1",
         "ts-node": "^8.6.2"
     }

@@ -144,10 +144,7 @@ test.each([
         ],
     },
 ])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
-    const file = util
-        .testModule(code)
-        .expectToHaveNoDiagnostics()
-        .getMainLuaFileResult();
+    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
@@ -228,10 +225,7 @@ test.each([
     { code: "class $$$ {}", name: "$$$" },
     { code: 'namespace $$$ { const foo = "bar"; }', name: "$$$" },
 ])("Source map has correct name mappings (%p)", async ({ code, name }) => {
-    const file = util
-        .testModule(code)
-        .expectToHaveNoDiagnostics()
-        .getMainLuaFileResult();
+    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     const typescriptPosition = lineAndColumnOf(code, name);

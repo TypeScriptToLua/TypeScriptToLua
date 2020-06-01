@@ -1,4 +1,6 @@
+import * as tstl from "../../../src";
 import * as util from "../../util";
+import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 
 test("Arrow Function Expression", () => {
     util.testFunction`
@@ -199,6 +201,15 @@ test.each([
         ${declaration}
         return fn.length;
     `.expectToMatchJsResult();
+});
+
+test.each([tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal])("function.length unsupported (%p)", luaTarget => {
+    util.testFunction`
+        function fn() {}
+        return fn.length;
+    `
+        .setOptions({ luaTarget })
+        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
 test("Recursive function definition", () => {

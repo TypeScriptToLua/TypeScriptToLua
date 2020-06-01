@@ -1,7 +1,8 @@
 import * as ts from "typescript";
+import { LuaTarget } from "../../CompilerOptions";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
-import { unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
+import { unsupportedForTarget, unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
 import { ContextType, getFunctionContextType } from "../utils/function-context";
 import { createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -43,6 +44,10 @@ export function transformFunctionProperty(
 ): lua.Expression | undefined {
     switch (node.name.text) {
         case "length":
+            if (context.luaTarget === LuaTarget.Lua51 || context.luaTarget === LuaTarget.Universal) {
+                context.diagnostics.push(unsupportedForTarget(node, "function.length", LuaTarget.Lua51));
+            }
+
             // debug.getinfo(fn)
             const getInfoCall = lua.createCallExpression(
                 lua.createTableIndexExpression(lua.createIdentifier("debug"), lua.createStringLiteral("getinfo")),

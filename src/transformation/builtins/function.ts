@@ -1,3 +1,4 @@
+import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty, unsupportedSelfFunctionConversion } from "../utils/diagnostics";
@@ -33,5 +34,29 @@ export function transformFunctionPrototypeCall(
             return lua.createCallExpression(caller, params, node);
         default:
             context.diagnostics.push(unsupportedProperty(expression.name, "function", expressionName));
+    }
+}
+
+export function transformFunctionProperty(
+    context: TransformationContext,
+    node: ts.PropertyAccessExpression
+): lua.Expression | undefined {
+    switch (node.name.text) {
+        case "length":
+            // debug.getinfo(fn)
+            const getInfoCall = lua.createCallExpression(
+                lua.createTableIndexExpression(lua.createIdentifier("debug"), lua.createStringLiteral("getinfo")),
+                [context.transformExpression(node.expression)]
+            );
+
+            const nparams = lua.createTableIndexExpression(getInfoCall, lua.createStringLiteral("nparams"));
+
+            const contextType = getFunctionContextType(context, context.checker.getTypeAtLocation(node.expression));
+            return contextType === ContextType.NonVoid
+                ? lua.createBinaryExpression(nparams, lua.createNumericLiteral(1), lua.SyntaxKind.SubtractionOperator)
+                : nparams;
+
+        default:
+            context.diagnostics.push(unsupportedProperty(node.name, "function", node.name.text));
     }
 }

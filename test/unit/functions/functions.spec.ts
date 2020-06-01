@@ -185,6 +185,22 @@ test("Function call", () => {
     `.expectToMatchJsResult();
 });
 
+test.each([
+    "function fn() {}",
+    "function fn(x, y, z) {}",
+    "function fn(x, y, z, ...args) {}",
+    "function fn(...args) {}",
+    "function fn(this: void) {}",
+    "function fn(this: void, x, y, z) {}",
+    "function fnReference(x, y, z) {} const fn = fnReference;",
+    "const wrap = (fn: (...args: any[]) => any) => (...args: any[]) => fn(...args); const fn = wrap((x, y, z) => {});",
+])("function.length (%p)", declaration => {
+    util.testFunction`
+        ${declaration}
+        return fn.length;
+    `.expectToMatchJsResult();
+});
+
 test("Recursive function definition", () => {
     util.testFunction`
         function f() { return typeof f; };

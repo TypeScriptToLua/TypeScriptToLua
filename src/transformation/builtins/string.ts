@@ -30,13 +30,19 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringReplace, node, caller, ...params);
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.StringConcat, node, caller, ...params);
-        case "indexOf":
+
+        case "indexOf": {
             const stringExpression = createStringCall(
                 "find",
                 node,
                 caller,
                 params[0],
-                params[1] ? createExpressionPlusOne(params[1]) : lua.createNilLiteral(),
+                params[1]
+                    ? lua.createCallExpression(
+                          lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
+                          [createExpressionPlusOne(params[1]), lua.createNumericLiteral(1)]
+                      )
+                    : lua.createNilLiteral(),
                 lua.createBooleanLiteral(true)
             );
 
@@ -46,6 +52,8 @@ export function transformStringPrototypeCall(
                 lua.SyntaxKind.SubtractionOperator,
                 node
             );
+        }
+
         case "substr":
             return transformLuaLibFunction(context, LuaLibFeature.StringSubstr, node, caller, ...params);
         case "substring":

@@ -1,6 +1,7 @@
 export { version } from "./cli/information";
 export { parseCommandLine, ParsedCommandLine, updateParsedConfigFile } from "./cli/parse";
 export * from "./cli/report";
+export { parseConfigFileWithSystem } from "./cli/tsconfig";
 export * from "./CompilerOptions";
 export * from "./LuaAST";
 export { LuaLibFeature } from "./LuaLib";

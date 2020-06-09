@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Strings now can be iterated over
+- `Function.length` is supported now
 
 ## 0.34.0
 

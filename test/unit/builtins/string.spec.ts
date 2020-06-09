@@ -33,15 +33,19 @@ test.each([
 });
 
 test.each([
-    { input: "abcd", index: 3 },
-    { input: "abcde", index: 3 },
-    { input: "abcde", index: 0 },
-    { input: "a", index: 0 },
+    { input: "01234", index: 0 },
+    { input: "01234", index: 1 },
+    { input: "01234", index: 4 },
+    { input: "01234", index: 5 },
+    { input: "01234", index: -1 },
+    { input: "01234", index: 100 },
+    { input: "01234", index: NaN },
+    { input: "", index: 0 },
 ])("string index (%p)", ({ input, index }) => {
     util.testExpressionTemplate`${input}[${index}]`.expectToMatchJsResult();
 });
 
-test("string index with side effect", () => {
+test("string index (side effect)", () => {
     util.testFunction`
         let i = 0;
         const mystring = "abc";

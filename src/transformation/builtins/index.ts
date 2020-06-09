@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assume } from "../../utils";
 import { TransformationContext } from "../context";
+import { createNaN } from "../utils/lua-ast";
 import { importLuaLibFeature, LuaLibFeature } from "../utils/lualib";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import {
@@ -121,12 +122,7 @@ export function transformBuiltinIdentifierExpression(
 ): lua.Expression | undefined {
     switch (node.text) {
         case "NaN":
-            return lua.createBinaryExpression(
-                lua.createNumericLiteral(0),
-                lua.createNumericLiteral(0),
-                lua.SyntaxKind.DivisionOperator,
-                node
-            );
+            return createNaN(node);
 
         case "Infinity":
             const math = lua.createIdentifier("math");

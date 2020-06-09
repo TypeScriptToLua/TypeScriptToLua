@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { createExpressionPlusOne, getNumberLiteralValue, modifyNumericExpression } from "../utils/lua-ast";
+import { createExpressionPlusOne, createNaN, getNumberLiteralValue, modifyNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -89,13 +89,30 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringTrimStart, node, caller);
         case "split":
             return transformLuaLibFunction(context, LuaLibFeature.StringSplit, node, caller, ...params);
-        case "charAt":
-            const firstParamPlusOne = createExpressionPlusOne(params[0]);
-            return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
-        case "charCodeAt": {
-            const firstParamPlusOne = createExpressionPlusOne(params[0]);
-            return createStringCall("byte", node, caller, firstParamPlusOne);
+
+        case "charAt": {
+            const literalValue = getNumberLiteralValue(params[0]);
+            if (literalValue !== undefined && literalValue >= 0) {
+                const firstParamPlusOne = createExpressionPlusOne(params[0]);
+                return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
+            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringCharAt, node, caller, ...params);
         }
+
+        case "charCodeAt": {
+            const literalValue = getNumberLiteralValue(params[0]);
+            if (literalValue !== undefined && literalValue >= 0) {
+                return lua.createBinaryExpression(
+                    createStringCall("byte", node, caller, createExpressionPlusOne(params[0])),
+                    createNaN(),
+                    lua.SyntaxKind.OrOperator
+                );
+            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringCharCodeAt, node, caller, ...params);
+        }
+
         case "startsWith":
             return transformLuaLibFunction(context, LuaLibFeature.StringStartsWith, node, caller, ...params);
         case "endsWith":

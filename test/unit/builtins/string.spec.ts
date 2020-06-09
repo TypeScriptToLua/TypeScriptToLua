@@ -185,18 +185,29 @@ test.each([
 });
 
 test.each([
+    { inp: "hello test", index: 0 },
     { inp: "hello test", index: 1 },
     { inp: "hello test", index: 2 },
     { inp: "hello test", index: 3 },
     { inp: "hello test", index: 99 },
+    { inp: "hello test", index: -1 },
+    { inp: "hello test", index: -5 },
+    { inp: "hello test", index: -99 },
+    { inp: "hello test", index: NaN },
 ])("string.charAt (%p)", ({ inp, index }) => {
     util.testExpressionTemplate`${inp}.charAt(${index})`.expectToMatchJsResult();
 });
 
 test.each([
+    { inp: "hello test", index: 0 },
     { inp: "hello test", index: 1 },
     { inp: "hello test", index: 2 },
     { inp: "hello test", index: 3 },
+    { inp: "hello test", index: 99 },
+    { inp: "hello test", index: -1 },
+    { inp: "hello test", index: -5 },
+    { inp: "hello test", index: -99 },
+    { inp: "hello test", index: NaN },
 ])("string.charCodeAt (%p)", ({ inp, index }) => {
     util.testExpressionTemplate`${inp}.charCodeAt(${index})`.expectToMatchJsResult();
 });

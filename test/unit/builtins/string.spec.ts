@@ -56,11 +56,13 @@ test.each([
     { inp: "hello test", searchValue: "test", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "world" },
     { inp: "hello test", searchValue: "test", replaceValue: "%world" },
-    { inp: "hello test", searchValue: " test", replaceValue: "." },
+    { inp: "hello test", searchValue: "test", replaceValue: "." },
     { inp: "hello %test", searchValue: "test", replaceValue: "world" },
     { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
+    { inp: "hello test.", searchValue: ".", replaceValue: "$" },
     { inp: "hello test", searchValue: "test", replaceValue: () => "a" },
     { inp: "hello test", searchValue: "test", replaceValue: () => "%a" },
+    { inp: "aaa", searchValue: "a", replaceValue: "b" },
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
     util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();
 });

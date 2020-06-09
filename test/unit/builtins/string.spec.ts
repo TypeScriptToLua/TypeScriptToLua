@@ -110,22 +110,31 @@ test.each([
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.expectToMatchJsResult();
 });
 
-test.each([
-    { inp: "hello test", args: [] },
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.slice (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
-});
+const stringPartCases = [
+    { inp: "0123456789", args: [0] },
+    { inp: "0123456789", args: [0, 0] },
+    { inp: "0123456789", args: [1] },
+    { inp: "0123456789", args: [1, 1] },
+    { inp: "0123456789", args: [1, 5] },
+    { inp: "0123456789", args: [5, 1] },
+    { inp: "0123456789", args: [1, 100] },
+    { inp: "0123456789", args: [100, 1] },
+    { inp: "0123456789", args: [100, 101] },
+    { inp: "0123456789", args: [-3] },
+    { inp: "0123456789", args: [1, -1] },
+    { inp: "0123456789", args: [-5, -2] },
+    { inp: "0123456789", args: [NaN, 3] },
+    { inp: "0123456789", args: [3, NaN] },
+];
 
-test.each([
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.substring (%p)", ({ inp, args }) => {
+test.each([{ inp: "0123456789", args: [] }, { inp: "0123456789", args: [undefined, 5] }, ...stringPartCases])(
+    "string.slice (%p)",
+    ({ inp, args }) => {
+        util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
+    }
+);
+
+test.each(stringPartCases)("string.substring (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".substring(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
@@ -137,12 +146,7 @@ test.each([
     util.testExpression`"${inp}".substring(${paramStr})`.expectToMatchJsResult();
 });
 
-test.each([
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.substr (%p)", ({ inp, args }) => {
+test.each(stringPartCases)("string.substr (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".substr(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 

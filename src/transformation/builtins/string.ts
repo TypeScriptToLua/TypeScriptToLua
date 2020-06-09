@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { createExpressionPlusOne } from "../utils/lua-ast";
+import { createExpressionPlusOne, getNumberLiteralValue, modifyNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -47,34 +47,34 @@ export function transformStringPrototypeCall(
                 node
             );
         case "substr":
-            if (node.arguments.length === 1) {
-                const argument = context.transformExpression(node.arguments[0]);
-                const arg1 = createExpressionPlusOne(argument);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const sumArg = lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.AdditionOperator);
-                return createStringCall("sub", node, caller, createExpressionPlusOne(params[0]), sumArg);
-            }
+            return transformLuaLibFunction(context, LuaLibFeature.StringSubstr, node, caller, ...params);
         case "substring":
-            if (node.arguments.length === 1) {
-                const arg1 = createExpressionPlusOne(params[0]);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const arg1 = createExpressionPlusOne(params[0]);
-                const arg2 = params[1];
-                return createStringCall("sub", node, caller, arg1, arg2);
+            return transformLuaLibFunction(context, LuaLibFeature.StringSubstring, node, caller, ...params);
+
+        case "slice": {
+            const literalArg1 = getNumberLiteralValue(params[0]);
+            if (params[0] && literalArg1 !== undefined) {
+                let stringSubArgs: lua.Expression[] | undefined = [
+                    modifyNumericExpression(params[0], literalArg1 < 0 ? 0 : 1),
+                ];
+
+                if (params[1]) {
+                    const literalArg2 = getNumberLiteralValue(params[1]);
+                    if (literalArg2 !== undefined) {
+                        stringSubArgs.push(modifyNumericExpression(params[1], literalArg2 < 0 ? -1 : 0));
+                    } else {
+                        stringSubArgs = undefined;
+                    }
+                }
+
+                if (stringSubArgs) {
+                    return createStringCall("sub", node, caller, ...stringSubArgs);
+                }
             }
-        case "slice":
-            if (node.arguments.length === 0) {
-                return caller;
-            } else if (node.arguments.length === 1) {
-                const arg1 = createExpressionPlusOne(params[0]);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const arg1 = createExpressionPlusOne(params[0]);
-                const arg2 = params[1];
-                return createStringCall("sub", node, caller, arg1, arg2);
-            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringSlice, node, caller, ...params);
+        }
+
         case "toLowerCase":
             return createStringCall("lower", node, caller);
         case "toUpperCase":

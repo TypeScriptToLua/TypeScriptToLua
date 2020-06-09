@@ -22,24 +22,41 @@ export function createExportsIdentifier(): lua.Identifier {
     return lua.createIdentifier("____exports");
 }
 
-export function createExpressionPlusOne(expression: lua.Expression): lua.Expression {
-    if (lua.isNumericLiteral(expression)) {
-        const newNode = lua.cloneNode(expression);
-        newNode.value += 1;
+export const createExpressionPlusOne = (expression: lua.Expression) => modifyNumericExpression(expression, 1);
+export function modifyNumericExpression(expression: lua.Expression, change: number): lua.Expression {
+    if (change === 0) return expression;
+
+    const literalValue = getNumberLiteralValue(expression);
+    if (literalValue !== undefined) {
+        const newNode = lua.createNumericLiteral(literalValue + change);
+        lua.setNodePosition(newNode, expression);
         return newNode;
     }
 
     if (lua.isBinaryExpression(expression)) {
         if (
-            expression.operator === lua.SyntaxKind.SubtractionOperator &&
             lua.isNumericLiteral(expression.right) &&
-            expression.right.value === 1
+            ((expression.operator === lua.SyntaxKind.SubtractionOperator && expression.right.value === change) ||
+                (expression.operator === lua.SyntaxKind.AdditionOperator && expression.right.value === -change))
         ) {
             return expression.left;
         }
     }
 
-    return lua.createBinaryExpression(expression, lua.createNumericLiteral(1), lua.SyntaxKind.AdditionOperator);
+    return change > 0
+        ? lua.createBinaryExpression(expression, lua.createNumericLiteral(change), lua.SyntaxKind.AdditionOperator)
+        : lua.createBinaryExpression(expression, lua.createNumericLiteral(-change), lua.SyntaxKind.SubtractionOperator);
+}
+
+export function getNumberLiteralValue(expression?: lua.Expression) {
+    if (!expression) return undefined;
+    return lua.isNumericLiteral(expression)
+        ? expression.value
+        : lua.isUnaryExpression(expression) &&
+          expression.operator === lua.SyntaxKind.NegationOperator &&
+          lua.isNumericLiteral(expression.operand)
+        ? -expression.operand.value
+        : undefined;
 }
 
 export function createImmediatelyInvokedFunctionExpression(
@@ -197,3 +214,11 @@ export function createLocalOrExportedOrGlobalDeclaration(
         return [];
     }
 }
+
+export const createNaN = (tsOriginal?: ts.Node) =>
+    lua.createBinaryExpression(
+        lua.createNumericLiteral(0),
+        lua.createNumericLiteral(0),
+        lua.SyntaxKind.DivisionOperator,
+        tsOriginal
+    );

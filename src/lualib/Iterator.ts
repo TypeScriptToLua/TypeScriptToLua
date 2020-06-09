@@ -17,15 +17,24 @@ function __TS__IteratorIteratorStep<T>(this: Iterator<T>): [true, T] | [] {
 }
 
 /** @tupleReturn */
+function __TS__IteratorStringStep(this: string, index: number): [number, string] | [] {
+    index += 1;
+    if (index > this.length) return [];
+    return [index, string.sub(this, index, index)];
+}
+
+/** @tupleReturn */
 function __TS__Iterator<T>(
     this: void,
     iterable: Iterable<T> | GeneratorIterator | readonly T[]
-): [(...args: any[]) => [any, T] | [], ...any[]] {
+): [(...args: any[]) => [any, any] | [], ...any[]] {
     if ("____coroutine" in iterable) {
         return [__TS__IteratorGeneratorStep, iterable];
     } else if (iterable[Symbol.iterator]) {
         const iterator = iterable[Symbol.iterator]();
         return [__TS__IteratorIteratorStep, iterator];
+    } else if (typeof iterable === "string") {
+        return [__TS__IteratorStringStep, iterable, 0];
     } else {
         return ipairs(iterable as readonly T[]) as any;
     }

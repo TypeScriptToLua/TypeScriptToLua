@@ -442,6 +442,16 @@ test("forof with array typed as iterable", () => {
     `.expectToMatchJsResult();
 });
 
+test.each(["", "abc", "a\0c"])("forof string (%p)", string => {
+    util.testFunctionTemplate`
+        const results: string[] = [];
+        for (const x of ${string}) {
+            results.push(x);
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
 describe("for...of empty destructuring", () => {
     const declareTests = (destructuringPrefix: string) => {
         test("array", () => {

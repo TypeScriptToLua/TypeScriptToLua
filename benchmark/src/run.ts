@@ -44,7 +44,7 @@ function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkR
 function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {
     if (!arg[2]) {
         // Output to stdout as json by default, this is used by the CI to retrieve the info
-        print(json.encode({old: oldResults, new: newResults}));
+        print(json.encode({ old: oldResults, new: newResults }));
     } else {
         // Output to file as markdown if arg[2] is set, this is useful for local development
         // Compare results

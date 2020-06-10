@@ -1,4 +1,6 @@
+import * as tstl from "../../../src";
 import * as util from "../../util";
+import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 
 test("Arrow Function Expression", () => {
     util.testFunction`
@@ -183,6 +185,31 @@ test("Function call", () => {
         const abc = function (this: { a: number }, a: string) { return this.a + a; }
         return abc.call({ a: 4 }, "b");
     `.expectToMatchJsResult();
+});
+
+test.each([
+    "function fn() {}",
+    "function fn(x, y, z) {}",
+    "function fn(x, y, z, ...args) {}",
+    "function fn(...args) {}",
+    "function fn(this: void) {}",
+    "function fn(this: void, x, y, z) {}",
+    "function fnReference(x, y, z) {} const fn = fnReference;",
+    "const wrap = (fn: (...args: any[]) => any) => (...args: any[]) => fn(...args); const fn = wrap((x, y, z) => {});",
+])("function.length (%p)", declaration => {
+    util.testFunction`
+        ${declaration}
+        return fn.length;
+    `.expectToMatchJsResult();
+});
+
+test.each([tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal])("function.length unsupported (%p)", luaTarget => {
+    util.testFunction`
+        function fn() {}
+        return fn.length;
+    `
+        .setOptions({ luaTarget })
+        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
 test("Recursive function definition", () => {

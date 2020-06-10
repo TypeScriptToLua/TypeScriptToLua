@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- `Function.length` is supported now
+
 - Fixed `string.replace` incorrectly escaping some `replaceValue` characters (`().+-*?[^$`)
 
 ## 0.34.0

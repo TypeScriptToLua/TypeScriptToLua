@@ -1,4 +1,6 @@
+import * as tstl from "../../../src";
 import * as util from "../../util";
+import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 
 test("Arrow Function Expression", () => {
     util.testFunction`
@@ -34,20 +36,11 @@ test.each(["b => a = b", "b => a += b", "b => a -= b", "b => a *= b", "b => a /=
     }
 );
 
-test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Arrow Default Values (%p)", ({ inp }) => {
-    // Default value is 3 for v1
-    const v1 = inp.length > 0 ? inp[0] : 3;
-    // Default value is 4 for v2
-    const v2 = inp.length > 1 ? inp[1] : 4;
-
-    const callArgs = inp.join(",");
-
-    const result = util.transpileAndExecute(
-        `let add = (a: number = 3, b: number = 4) => a+b;
-        return add(${callArgs});`
-    );
-
-    expect(result).toBe(v1 + v2);
+test.each([{ args: [] }, { args: [1] }, { args: [1, 2] }])("Arrow default values (%p)", ({ args }) => {
+    util.testFunction`
+        const add = (a = 3, b = 4) => a + b;
+        return add(${util.formatCode(...args)});
+    `.expectToMatchJsResult();
 });
 
 test("Function Expression", () => {
@@ -192,6 +185,31 @@ test("Function call", () => {
         const abc = function (this: { a: number }, a: string) { return this.a + a; }
         return abc.call({ a: 4 }, "b");
     `.expectToMatchJsResult();
+});
+
+test.each([
+    "function fn() {}",
+    "function fn(x, y, z) {}",
+    "function fn(x, y, z, ...args) {}",
+    "function fn(...args) {}",
+    "function fn(this: void) {}",
+    "function fn(this: void, x, y, z) {}",
+    "function fnReference(x, y, z) {} const fn = fnReference;",
+    "const wrap = (fn: (...args: any[]) => any) => (...args: any[]) => fn(...args); const fn = wrap((x, y, z) => {});",
+])("function.length (%p)", declaration => {
+    util.testFunction`
+        ${declaration}
+        return fn.length;
+    `.expectToMatchJsResult();
+});
+
+test.each([tstl.LuaTarget.Lua51, tstl.LuaTarget.Universal])("function.length unsupported (%p)", luaTarget => {
+    util.testFunction`
+        function fn() {}
+        return fn.length;
+    `
+        .setOptions({ luaTarget })
+        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
 test("Recursive function definition", () => {
@@ -348,52 +366,6 @@ test("Complex element access call statement", () => {
         function getC() { return new C(); }
         getC()['method']("foo");
         return foo;
-    `.expectToMatchJsResult();
-});
-
-test.each([1, 2])("Generator functions value (%p)", iterations => {
-    util.testFunction`
-        function* seq(value: number) {
-            let a = yield value + 1;
-            return 42;
-        }
-        const gen = seq(0);
-        let ret: number;
-        for(let i = 0; i < ${iterations}; ++i) {
-            ret = gen.next(i).value;
-        }
-        return ret;
-    `.expectToMatchJsResult();
-});
-
-test.each([1, 2])("Generator functions done (%p)", iterations => {
-    util.testFunction`
-        function* seq(value: number) {
-            let a = yield value + 1;
-            return 42;
-        }
-        const gen = seq(0);
-        let ret: boolean;
-        for(let i = 0; i < ${iterations}; ++i) {
-            ret = gen.next(i).done;
-        }
-        return ret;
-    `.expectToMatchJsResult();
-});
-
-test("Generator for..of", () => {
-    util.testFunction`
-        function* seq() {
-            yield(1);
-            yield(2);
-            yield(3);
-            return 4;
-        }
-        let result = 0;
-        for(let i of seq()) {
-            result = result * 10 + i;
-        }
-        return result
     `.expectToMatchJsResult();
 });
 

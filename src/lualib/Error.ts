@@ -21,7 +21,7 @@ function __TS__GetErrorStack(constructor: Function): string {
 }
 
 function __TS__WrapErrorToString<T extends Error>(getDescription: (this: T) => string): (this: T) => string {
-    return function(this: Error): string {
+    return function (this: Error): string {
         const description = getDescription.call(this);
         const caller = debug.getinfo(3, "f");
         if (_VERSION === "Lua 5.1" || (caller && caller.func !== error)) {

@@ -2,21 +2,41 @@
 
 ## Unreleased
 
-<!-- TODO: https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html doesn't seem to work now -->
+- `Function.length` is supported now
 
-- TypeScript has been updated to 3.9. See [release notes](https://devblogs.microsoft.com/typescript/announcing-typescript-3-9/) for details. This update includes some fixes specific to our API usage:
+## 0.34.0
+
+- Added new `"luaTarget"` option value - `"universal"`. Choosing this target makes TypeScriptToLua generate code compatible with all supported Lua targets.
+
+  - **BREAKING CHANGE:** This is a new default target. If you have been depending on LuaJIT being chosen implicitly, you now have to enable it explicitly with `"luaTarget": "JIT"` in the `tsconfig.json` file.
+
+- TypeScript has been updated to **3.9**. See [release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html) for details. This update includes some fixes specific to our API usage:
+
   - Importing a non-module using `import "./file"` produced a TS2307 error [#35973](https://github.com/microsoft/TypeScript/issues/35973)
-  - TypeScript now tries to find a call signature even in presence of type errors (#36665)(https://github.com/microsoft/TypeScript/pull/36665):
+  - TypeScript now tries to find a call signature even in presence of type errors [#36665](https://github.com/microsoft/TypeScript/pull/36665):
     ```ts
     function foo(this: void, x: string) {}
     foo(1);
     ```
     ```lua
-    -- 3.8
+    -- Before: with 3.8 (this: void ignored due to signature mismatch)
     foo(nil, 1)
-    -- 3.9
+    -- Now: with 3.9
     foo(1)
     ```
+
+- Reduced memory consumption and optimized performance of generators and iterators
+- Fixed generator syntax being ignored on methods (`*foo() {}`) and function expressions (`function*() {}`)
+- Fixed iteration over generators stopping at first yielded `nil` value
+- Fixed `Array.prototype.join` throwing an error when array contains anything other than strings and numbers
+- Fixed extending a class not keeping `toString` implementation from a super class
+
+- Fixed issue where CLI arguments were incorrectly removed.
+- Fixed issue where class accessors threw an error due to a missing dependency.
+
+Under the hood:
+
+- Upgraded to Prettier 2.0
 
 ## 0.33.0
 

@@ -143,7 +143,7 @@ function transformForOfIteratorStatement(
         context.transformExpression(statement.expression)
     );
 
-    return lua.createForInStatement(block, [valueVariable], [iterable], statement);
+    return lua.createForInStatement(block, [lua.createAnonymousIdentifier(), valueVariable], [iterable], statement);
 }
 
 export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {

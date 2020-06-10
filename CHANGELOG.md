@@ -4,6 +4,8 @@
 
 - `Function.length` is supported now
 
+- Fixed `string.replace` incorrectly escaping some `replaceValue` characters (`().+-*?[^$`)
+
 ## 0.34.0
 
 - Added new `"luaTarget"` option value - `"universal"`. Choosing this target makes TypeScriptToLua generate code compatible with all supported Lua targets.

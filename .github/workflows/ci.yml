@@ -61,7 +61,6 @@ jobs:
           node-version: 12.13.1
       # NPM
       - name: NPM master
-        # TODO Lua types is only added manually to test the benchmark PR this can be removed again once the PR is merged
         run: npm ci && npm run build
         working-directory: master
       - name: NPM commit

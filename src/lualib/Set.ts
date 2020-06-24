@@ -56,7 +56,6 @@ Set = class Set<T> {
         this.firstKey = undefined;
         this.lastKey = undefined;
         this.size = 0;
-        return;
     }
 
     public delete(value: T): boolean {

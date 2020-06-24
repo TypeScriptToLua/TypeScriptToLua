@@ -120,21 +120,6 @@ test.each(validTestFunctionCasts)("Valid function return with cast (%p)", (testF
     expect(util.transpileAndExecute(code, undefined, undefined, testFunction.definition)).toBe("foobar");
 });
 
-test("Interface method assignment", () => {
-    const code = `class Foo {
-                      method(s: string): string { return s + "+method"; }
-                      lambdaProp: (s: string) => string = s => s + "+lambdaProp";
-                  }
-                  interface IFoo {
-                      method: (s: string) => string;
-                      lambdaProp(s: string): string;
-                  }
-                  const foo: IFoo = new Foo();
-                  return foo.method("foo") + "|" + foo.lambdaProp("bar");`;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("foo+method|bar+lambdaProp");
-});
-
 test("Valid function tuple assignment", () => {
     const code = `interface Func { (this: void, s: string): string; }
                   function getTuple(): [number, Func] { return [1, s => s]; }

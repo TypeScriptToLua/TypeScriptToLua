@@ -70,7 +70,7 @@ export const transformTaggedTemplateExpression: FunctionVisitor<ts.TaggedTemplat
 
     // Evaluate if there is a self parameter to be used.
     const signature = context.checker.getResolvedSignature(expression);
-    const signatureDeclaration = signature && signature.getDeclaration();
+    const signatureDeclaration = signature?.getDeclaration();
     const useSelfParameter =
         signatureDeclaration && getDeclarationContextType(context, signatureDeclaration) !== ContextType.Void;
 

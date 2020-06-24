@@ -27,7 +27,6 @@ export function resolvePlugin(
         return { error: diagnosticFactories.couldNotResolveFrom(kind, query, basedir) };
     }
 
-    // tslint:disable-next-line: deprecation
     const hasNoRequireHook = require.extensions[".ts"] === undefined;
     if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
         try {

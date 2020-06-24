@@ -41,6 +41,14 @@ test.each([
     util.testExpressionTemplate`${input}[${index}]`.expectToMatchJsResult();
 });
 
+test("string index with side effect", () => {
+    util.testFunction`
+        let i = 0;
+        const mystring = "abc";
+        return mystring[i++];
+    `.expectToMatchJsResult();
+});
+
 test.each([
     { inp: "hello test", searchValue: "", replaceValue: "" },
     { inp: "hello test", searchValue: " ", replaceValue: "" },
@@ -48,10 +56,12 @@ test.each([
     { inp: "hello test", searchValue: "test", replaceValue: "" },
     { inp: "hello test", searchValue: "test", replaceValue: "world" },
     { inp: "hello test", searchValue: "test", replaceValue: "%world" },
+    { inp: "hello test", searchValue: "test", replaceValue: "." },
     { inp: "hello %test", searchValue: "test", replaceValue: "world" },
     { inp: "hello %test", searchValue: "%test", replaceValue: "world" },
-    { inp: "hello test", searchValue: "test", replaceValue: (): string => "a" },
-    { inp: "hello test", searchValue: "test", replaceValue: (): string => "%a" },
+    { inp: "hello test.", searchValue: ".", replaceValue: "$" },
+    { inp: "hello test", searchValue: "test", replaceValue: () => "a" },
+    { inp: "hello test", searchValue: "test", replaceValue: () => "%a" },
     { inp: "aaa", searchValue: "a", replaceValue: "b" },
 ])("string.replace (%p)", ({ inp, searchValue, replaceValue }) => {
     util.testExpression`"${inp}".replace(${util.formatCode(searchValue, replaceValue)})`.expectToMatchJsResult();

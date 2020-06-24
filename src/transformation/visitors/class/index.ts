@@ -7,9 +7,9 @@ import {
     extensionAndMetaExtensionConflict,
     extensionCannotExport,
     extensionCannotExtend,
-    metaExtensionMissingExtends,
-    luaTableMustBeAmbient,
     luaTableCannotBeExtended,
+    luaTableMustBeAmbient,
+    metaExtensionMissingExtends,
 } from "../../utils/diagnostics";
 import {
     createDefaultExportIdentifier,
@@ -21,7 +21,6 @@ import {
 import {
     createImmediatelyInvokedFunctionExpression,
     createSelfIdentifier,
-    OneToManyVisitorResult,
     unwrapVisitorResult,
 } from "../../utils/lua-ast";
 import { createSafeName, isUnsafeName } from "../../utils/safe-names";
@@ -38,25 +37,29 @@ import { checkForLuaLibType } from "./new";
 import { createClassSetup } from "./setup";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
 
-export function transformClassAsExpression(
-    expression: ts.ClassLikeDeclaration,
-    context: TransformationContext,
-    isDefaultExport = false
-): lua.Expression {
-    let className: lua.Identifier;
-    if (expression.name) {
-        className = transformIdentifier(context, expression.name);
-    } else if (isDefaultExport) {
-        className = createDefaultExportIdentifier(expression);
-    } else {
-        className = lua.createAnonymousIdentifier();
+export const transformClassDeclaration: FunctionVisitor<ts.ClassLikeDeclaration> = (declaration, context) => {
+    // If declaration is a default export, transform to export variable assignment instead
+    if (hasDefaultExportModifier(declaration)) {
+        const left = createExportedIdentifier(context, createDefaultExportIdentifier(declaration));
+        const right = transformClassAsExpression(declaration, context);
+        return [lua.createAssignmentStatement(left, right, declaration)];
     }
 
+    const { statements } = transformClassLikeDeclaration(declaration, context);
+    return statements;
+};
+
+export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);
+
+export function transformClassAsExpression(
+    expression: ts.ClassLikeDeclaration,
+    context: TransformationContext
+): lua.Expression {
     pushScope(context, ScopeType.Function);
-    const classDeclaration = unwrapVisitorResult(transformClassDeclaration(expression, context, className));
+    const { statements, name } = transformClassLikeDeclaration(expression, context);
     popScope(context);
 
-    return createImmediatelyInvokedFunctionExpression(classDeclaration, className, expression);
+    return createImmediatelyInvokedFunctionExpression(unwrapVisitorResult(statements), name, expression);
 }
 
 const classSuperInfos = new WeakMap<TransformationContext, ClassSuperInfo[]>();
@@ -65,28 +68,19 @@ interface ClassSuperInfo {
     extendedTypeNode?: ts.ExpressionWithTypeArguments;
 }
 
-export function transformClassDeclaration(
+function transformClassLikeDeclaration(
     classDeclaration: ts.ClassLikeDeclaration,
     context: TransformationContext,
     nameOverride?: lua.Identifier
-): OneToManyVisitorResult<lua.Statement> {
+): { statements: lua.Statement[]; name: lua.Identifier } {
     let className: lua.Identifier;
-    let classNameText: string;
     if (nameOverride !== undefined) {
         className = nameOverride;
-        classNameText = nameOverride.text;
     } else if (classDeclaration.name !== undefined) {
         className = transformIdentifier(context, classDeclaration.name);
-        classNameText = classDeclaration.name.text;
-    } else if (hasDefaultExportModifier(classDeclaration)) {
-        const left = createExportedIdentifier(context, createDefaultExportIdentifier(classDeclaration));
-        const right = transformClassAsExpression(classDeclaration, context, true);
-
-        return lua.createAssignmentStatement(left, right, classDeclaration);
     } else {
         // TypeScript error
         className = lua.createAnonymousIdentifier();
-        classNameText = className.text;
     }
 
     const annotations = getTypeAnnotations(context.checker.getTypeAtLocation(classDeclaration));
@@ -196,9 +190,7 @@ export function transformClassDeclaration(
     }
 
     if (!isExtension && !isMetaExtension) {
-        result.push(
-            ...createClassSetup(context, classDeclaration, className, localClassName, classNameText, extendedType)
-        );
+        result.push(...createClassSetup(context, classDeclaration, className, localClassName, extendedType));
     } else {
         for (const f of instanceFields) {
             const fieldName = transformPropertyName(context, f.name);
@@ -317,7 +309,7 @@ export function transformClassDeclaration(
 
     superInfo.pop();
 
-    return result;
+    return { statements: result, name: className };
 }
 
 export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (expression, context) => {
@@ -345,5 +337,3 @@ export const transformSuperExpression: FunctionVisitor<ts.SuperExpression> = (ex
 
     return lua.createTableIndexExpression(baseClassName, lua.createStringLiteral("prototype"));
 };
-
-export const transformThisExpression: FunctionVisitor<ts.ThisExpression> = node => createSelfIdentifier(node);

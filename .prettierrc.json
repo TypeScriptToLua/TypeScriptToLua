@@ -1,7 +1,6 @@
 {
     "printWidth": 120,
     "tabWidth": 4,
-    "trailingComma": "es5",
-    "endOfLine": "lf",
+    "arrowParens": "avoid",
     "overrides": [{ "files": ["**/*.md", "**/*.yml"], "options": { "tabWidth": 2 } }]
 }

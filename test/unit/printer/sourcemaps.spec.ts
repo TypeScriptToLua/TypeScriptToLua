@@ -15,9 +15,9 @@ test.each([
             { luaPattern: "abc", typeScriptPattern: "abc" },
             { luaPattern: "def", typeScriptPattern: "def" },
             { luaPattern: "xyz", typeScriptPattern: "xyz" },
-            { luaPattern: `"foo"`, typeScriptPattern: `"foo"` },
-            { luaPattern: `"bar"`, typeScriptPattern: `"bar"` },
-            { luaPattern: `"baz"`, typeScriptPattern: `"baz"` },
+            { luaPattern: '"foo"', typeScriptPattern: '"foo"' },
+            { luaPattern: '"bar"', typeScriptPattern: '"bar"' },
+            { luaPattern: '"baz"', typeScriptPattern: '"baz"' },
         ],
     },
     {
@@ -144,10 +144,7 @@ test.each([
         ],
     },
 ])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
-    const file = util
-        .testModule(code)
-        .expectToHaveNoDiagnostics()
-        .getMainLuaFileResult();
+    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {
@@ -159,42 +156,76 @@ test.each([
     }
 });
 
-test("Source map has correct sources", async () => {
+test.each([
+    { fileName: "/proj/foo.ts", config: {}, mapSource: "foo.ts", fullSource: "foo.ts" },
+    {
+        fileName: "/proj/src/foo.ts",
+        config: { outDir: "/proj/dst" },
+        mapSource: "../src/foo.ts",
+        fullSource: "../src/foo.ts",
+    },
+    {
+        fileName: "/proj/src/foo.ts",
+        config: { rootDir: "/proj/src", outDir: "/proj/dst" },
+        mapSource: "../src/foo.ts",
+        fullSource: "../src/foo.ts",
+    },
+    {
+        fileName: "/proj/src/sub/foo.ts",
+        config: { rootDir: "/proj/src", outDir: "/proj/dst" },
+        mapSource: "../../src/sub/foo.ts",
+        fullSource: "../../src/sub/foo.ts",
+    },
+    {
+        fileName: "/proj/src/sub/main.ts",
+        config: { rootDir: "/proj/src", outDir: "/proj/dst", sourceRoot: "bin" },
+        mapSource: "sub/main.ts",
+        fullSource: "bin/sub/main.ts",
+    },
+])("Source map has correct sources (%p)", async ({ fileName, config, mapSource, fullSource }) => {
     const file = util.testModule`
         const foo = "foo"
     `
-        .expectToHaveNoDiagnostics()
+        .setOptions(config)
+        .setMainFileName(fileName)
         .getMainLuaFileResult();
 
+    const sourceMap = JSON.parse(file.sourceMap);
+    expect(sourceMap.sources).toHaveLength(1);
+    expect(sourceMap.sources[0]).toBe(mapSource);
+
     const consumer = await new SourceMapConsumer(file.sourceMap);
-    expect(consumer.sources.length).toBe(1);
-    expect(consumer.sources[0]).toBe("main.ts");
+    expect(consumer.sources).toHaveLength(1);
+    expect(consumer.sources[0]).toBe(fullSource);
 });
 
-test("Source map has correct source root", async () => {
+test.each([
+    { configSourceRoot: undefined, mapSourceRoot: "" },
+    { configSourceRoot: "src", mapSourceRoot: "src/" },
+    { configSourceRoot: "src/", mapSourceRoot: "src/" },
+    { configSourceRoot: "src\\", mapSourceRoot: "src/" },
+])("Source map has correct source root (%p)", ({ configSourceRoot, mapSourceRoot }) => {
     const file = util.testModule`
         const foo = "foo"
     `
+        .setOptions({ sourceMap: true, sourceRoot: configSourceRoot })
         .expectToHaveNoDiagnostics()
         .getMainLuaFileResult();
 
     const sourceMap = JSON.parse(file.sourceMap);
-    expect(sourceMap.sourceRoot).toBe(".");
+    expect(sourceMap.sourceRoot).toBe(mapSourceRoot);
 });
 
 test.each([
-    { code: `const type = "foobar";`, name: "type" },
-    { code: `const and = "foobar";`, name: "and" },
-    { code: `const $$$ = "foobar";`, name: "$$$" },
-    { code: `const foo = { bar() { this; } };`, name: "this" },
-    { code: `function foo($$$: unknown) {}`, name: "$$$" },
-    { code: `class $$$ {}`, name: "$$$" },
-    { code: `namespace $$$ { const foo = "bar"; }`, name: "$$$" },
+    { code: 'const type = "foobar";', name: "type" },
+    { code: 'const and = "foobar";', name: "and" },
+    { code: 'const $$$ = "foobar";', name: "$$$" },
+    { code: "const foo = { bar() { this; } };", name: "this" },
+    { code: "function foo($$$: unknown) {}", name: "$$$" },
+    { code: "class $$$ {}", name: "$$$" },
+    { code: 'namespace $$$ { const foo = "bar"; }', name: "$$$" },
 ])("Source map has correct name mappings (%p)", async ({ code, name }) => {
-    const file = util
-        .testModule(code)
-        .expectToHaveNoDiagnostics()
-        .getMainLuaFileResult();
+    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.sourceMap);
     const typescriptPosition = lineAndColumnOf(code, name);
@@ -231,7 +262,7 @@ test("sourceMapTraceback saves sourcemap in _G", () => {
 
     const assertPatterns = [
         { luaPattern: "function abc(", typeScriptPattern: "function abc() {" },
-        { luaPattern: `return "foo"`, typeScriptPattern: `return "foo"` },
+        { luaPattern: 'return "foo"', typeScriptPattern: 'return "foo"' },
     ];
 
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {

@@ -342,7 +342,6 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], start: 3, deleteCount: 2, newElements: [3, 4, 5] },
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: 9, newElements: [10, 11] },
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: undefined, newElements: [10, 11] },
-    // tslint:disable-next-line:no-null-keyword
     { array: [0, 1, 2, 3, 4, 5, 6, 7, 8], start: 5, deleteCount: null, newElements: [10, 11] },
 
     // Remove
@@ -352,7 +351,6 @@ test.each([
     { array: [0, 1, 2, 3, 4, 5], start: 2, deleteCount: 2 },
     { array: [0, 1, 2, 3, 4, 5], start: -3, deleteCount: 2 },
     { array: [0, 1, 2, 3], start: 1, deleteCount: undefined },
-    // tslint:disable-next-line:no-null-keyword
     { array: [0, 1, 2, 3], start: 1, deleteCount: null },
 ])("array.splice (%p)", ({ array, start, deleteCount, newElements = [] }) => {
     util.testFunction`
@@ -426,8 +424,18 @@ test.each([
     { array: ["test1", "test2"] },
     { array: ["test1", "test2"], separator: ";" },
     { array: ["test1", "test2"], separator: "" },
+    { array: [1, "2"] },
 ])("array.join (%p)", ({ array, separator }) => {
     util.testExpression`${util.formatCode(array)}.join(${util.formatCode(separator)})`.expectToMatchJsResult();
+});
+
+test('array.join (1, "2", {})', () => {
+    const result = util.testExpression`[1, "2", {}].join()`.getLuaExecutionResult();
+    expect(result).toMatch(/^1,2,table: 0x\d+$/);
+});
+
+test('array.join (1, "2", Symbol("foo"))', () => {
+    util.testExpression`[1, "2", Symbol("foo")].join(", ")`.expectToEqual("1, 2, Symbol(foo)");
 });
 
 test("array.join without separator argument", () => {
@@ -456,7 +464,6 @@ test.each([{ args: [1] }, { args: [1, 2, 3] }])("array.push (%p)", ({ args }) =>
 
 test.each([
     { array: [1, 2, 3], expected: [3, 2] },
-    // tslint:disable-next-line: no-null-keyword
     { array: [1, 2, 3, null], expected: [3, 2] },
 ])("array.pop (%p)", ({ array, expected }) => {
     util.testFunction`
@@ -573,7 +580,6 @@ describe.each(["reduce", "reduceRight"])("array.%s", reduce => {
 const genericChecks = [
     "function generic<T extends number[]>(array: T)",
     "function generic<T extends [...number[]]>(array: T)",
-    "function generic<T extends any>(array: T[])",
     "type ArrayType = number[]; function generic<T extends ArrayType>(array: T)",
     "function generic<T extends number[]>(array: T & {})",
     "function generic<T extends number[] & {}>(array: T)",

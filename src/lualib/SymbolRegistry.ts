@@ -1,4 +1,3 @@
-// tslint:disable-next-line: variable-name
 const ____symbolRegistry: Record<string, symbol> = {};
 
 function __TS__SymbolRegistryFor(this: void, key: string): symbol {

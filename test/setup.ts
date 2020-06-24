@@ -1,8 +1,11 @@
+import * as assert from "assert";
 import * as ts from "typescript";
 import * as tstl from "../src";
 
 declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
+        // eslint-disable-next-line @typescript-eslint/generic-type-naming
         interface Matchers<R, T> {
             toHaveDiagnostics(expected?: number[]): R;
         }
@@ -11,7 +14,7 @@ declare global {
 
 expect.extend({
     toHaveDiagnostics(diagnostics: ts.Diagnostic[], expected?: number[]): jest.CustomMatcherResult {
-        expect(diagnostics).toBeInstanceOf(Array);
+        assert(Array.isArray(diagnostics));
         // @ts-ignore
         const matcherHint = this.utils.matcherHint("toHaveDiagnostics", undefined, "", this);
 
@@ -21,7 +24,7 @@ expect.extend({
         );
 
         if (this.isNot && expected !== undefined) {
-            throw new Error(`expect(actual).not.toHaveDiagnostics(expected) is not supported`);
+            throw new Error("expect(actual).not.toHaveDiagnostics(expected) is not supported");
         }
 
         return {

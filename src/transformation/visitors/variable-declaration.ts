@@ -63,7 +63,7 @@ export function transformBindingPattern(
         );
 
         // The identifier of the new variable
-        const variableName = transformIdentifier(context, element.name as ts.Identifier);
+        const variableName = transformIdentifier(context, element.name);
         // The field to extract
         const propertyName = transformPropertyName(context, element.propertyName ?? element.name);
 

@@ -16,7 +16,7 @@ import { PropertyCallExpression } from "../visitors/call";
 import { checkForLuaLibType } from "../visitors/class/new";
 import { transformArrayProperty, transformArrayPrototypeCall } from "./array";
 import { transformConsoleCall } from "./console";
-import { transformFunctionPrototypeCall } from "./function";
+import { transformFunctionPrototypeCall, transformFunctionProperty } from "./function";
 import { transformGlobalCall } from "./global";
 import { transformMathCall, transformMathProperty } from "./math";
 import { transformNumberConstructorCall, transformNumberPrototypeCall } from "./number";
@@ -36,6 +36,10 @@ export function transformBuiltinPropertyAccessExpression(
 
     if (isArrayType(context, ownerType)) {
         return transformArrayProperty(context, node);
+    }
+
+    if (isFunctionType(context, ownerType)) {
+        return transformFunctionProperty(context, node);
     }
 
     if (ts.isIdentifier(node.expression) && isStandardLibraryType(context, ownerType, undefined)) {
@@ -73,8 +77,7 @@ export function transformBuiltinCallExpression(
 
     if (isStandardLibraryType(context, ownerType, undefined)) {
         const symbol = ownerType.getSymbol();
-        const symbolName = symbol && symbol.name;
-        switch (symbolName) {
+        switch (symbol?.name) {
             case "Console":
                 return transformConsoleCall(context, node);
             case "Math":

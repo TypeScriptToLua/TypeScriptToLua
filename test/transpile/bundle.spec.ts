@@ -9,7 +9,7 @@ test("should transpile into one file", () => {
     const transpileResult = transpileProject(inputProject);
 
     expect(transpileResult.diagnostics).not.toHaveDiagnostics();
-    expect(transpileResult.emitResult.length).toBe(1);
+    expect(transpileResult.emitResult).toHaveLength(1);
 
     const { name, text } = transpileResult.emitResult[0];
     // Verify the name is as specified in tsconfig

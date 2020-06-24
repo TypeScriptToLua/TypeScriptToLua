@@ -19,7 +19,7 @@ test("CustomCreate", () => {
         }
     `;
 
-    const result = util.transpileAndExecute(`return new Point2D(1, 2).x;`, undefined, luaHeader, tsHeader);
+    const result = util.transpileAndExecute("return new Point2D(1, 2).x;", undefined, luaHeader, tsHeader);
 
     expect(result).toBe(1);
 });

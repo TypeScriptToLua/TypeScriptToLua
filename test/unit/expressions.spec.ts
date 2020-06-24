@@ -2,15 +2,6 @@ import * as tstl from "../../src";
 import { unsupportedForTarget, unsupportedRightShiftOperator } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
-// TODO:
-test("Block statement", () => {
-    util.testFunction`
-        let a = 4;
-        { let a = 42; }
-        return a;
-    `.expectToMatchJsResult();
-});
-
 test.each([
     "i++",
     "++i",
@@ -24,9 +15,7 @@ test.each([
     "let a = delete tbl.test",
     "delete tbl.test",
 ])("Unary expressions basic (%p)", input => {
-    util.testFunction(input)
-        .disableSemanticCheck()
-        .expectLuaToMatchSnapshot();
+    util.testFunction(input).disableSemanticCheck().expectLuaToMatchSnapshot();
 });
 
 test.each(["3+4", "5-2", "6*3", "6**3", "20/5", "15/10", "15%3"])("Binary expressions basic numeric (%p)", input => {

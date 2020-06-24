@@ -1,3 +1,3 @@
 /** @noSelfInFile */
-declare function GetAPIValue(): number;
-declare function SetAPIValue(n: number): void;
+declare function getAPIValue(): number;
+declare function setAPIValue(n: number): void;

@@ -197,8 +197,8 @@ test("for scope", () => {
 
 test.each([
     {
-        inp: { ["test1"]: 0, ["test2"]: 1, ["test3"]: 2 },
-        expected: { ["test1"]: 1, ["test2"]: 2, ["test3"]: 3 },
+        inp: { test1: 0, test2: 1, test3: 2 },
+        expected: { test1: 1, test2: 2, test3: 3 },
     },
 ])("forin[Object] (%p)", ({ inp, expected }) => {
     const result = util.transpileAndExecute(
@@ -442,6 +442,16 @@ test("forof with array typed as iterable", () => {
     `.expectToMatchJsResult();
 });
 
+test.each(["", "abc", "a\0c"])("forof string (%p)", string => {
+    util.testFunctionTemplate`
+        const results: string[] = [];
+        for (const x of ${string}) {
+            results.push(x);
+        }
+        return results;
+    `.expectToMatchJsResult();
+});
+
 describe("for...of empty destructuring", () => {
     const declareTests = (destructuringPrefix: string) => {
         test("array", () => {
@@ -530,6 +540,7 @@ for (const testCase of [
         expect(builder.getMainLuaCodeChunk()).toMatch("::__continue2::");
 
     util.testEachVersion(`loop continue (${testCase})`, () => util.testModule(testCase), {
+        [tstl.LuaTarget.Universal]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua51]: builder => builder.expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]),
         [tstl.LuaTarget.Lua52]: expectContinueGotoLabel,
         [tstl.LuaTarget.Lua53]: expectContinueGotoLabel,

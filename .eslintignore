@@ -1,0 +1,6 @@
+/dist
+/test/translation/transformation
+/test/cli/errors
+/test/cli/watch
+/test/transpile/directories
+/test/transpile/outFile

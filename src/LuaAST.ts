@@ -146,7 +146,7 @@ export function createNode(kind: SyntaxKind, tsOriginal?: ts.Node): Node {
 }
 
 export function cloneNode<T extends Node>(node: T): T {
-    return Object.assign({}, node);
+    return { ...node };
 }
 
 export function setNodePosition<T extends Node>(node: T, position: TextRange): T {

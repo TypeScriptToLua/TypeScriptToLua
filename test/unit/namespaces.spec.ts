@@ -15,7 +15,7 @@ test("global scoping", () => {
         "return a.foo();",
         undefined,
         undefined,
-        `namespace a { export function foo() { return "bar"; } }`
+        'namespace a { export function foo() { return "bar"; } }'
     );
 
     expect(result).toBe("bar");
@@ -94,11 +94,8 @@ test("namespace merging across files", () => {
         }
     `;
 
-    // TODO [typescript@>=3.9]: Remove `@ts-ignore` comments before module imports
     util.testBundle`
-        // @ts-ignore
         import './a';
-        // @ts-ignore
         import './b';
 
         export const result = NS.Inner;

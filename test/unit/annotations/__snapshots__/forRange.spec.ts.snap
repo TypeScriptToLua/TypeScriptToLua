@@ -70,10 +70,7 @@ exports[`invalid usage reference ("let array = [0, luaRange, 1];"): code 1`] = `
 
 exports[`invalid usage reference ("let array = [0, luaRange, 1];"): diagnostics 1`] = `"main.ts(6,29): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 
-exports[`invalid usage reference ("luaRange.call(null, 0, 0, 0);"): code 1`] = `
-"require(\\"lualib_bundle\\");
-__TS__FunctionCall(luaRange, nil, 0, 0, 0)"
-`;
+exports[`invalid usage reference ("luaRange.call(null, 0, 0, 0);"): code 1`] = `"luaRange(nil, 0, 0, 0)"`;
 
 exports[`invalid usage reference ("luaRange.call(null, 0, 0, 0);"): diagnostics 1`] = `"main.ts(6,13): error TSTL: Invalid @forRange call: can be used only as an iterable in a for...of loop."`;
 

@@ -7,7 +7,7 @@ function __TS__StringReplace(
     [searchValue] = string.gsub(searchValue, "[%%%(%)%.%+%-%*%?%[%^%$]", "%%%1");
 
     if (typeof replaceValue === "string") {
-        [replaceValue] = string.gsub(replaceValue, "[%%%(%)%.%+%-%*%?%[%^%$]", "%%%1");
+        [replaceValue] = string.gsub(replaceValue, "%%", "%%%%");
         const [result] = string.gsub(source, searchValue, replaceValue, 1);
         return result;
     } else {

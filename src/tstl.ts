@@ -7,11 +7,8 @@ import { parseCommandLine } from "./cli/parse";
 import { createDiagnosticReporter } from "./cli/report";
 import { createConfigFileUpdater, locateConfigFile, parseConfigFileWithSystem } from "./cli/tsconfig";
 
-function shouldBePretty(options?: ts.CompilerOptions): boolean {
-    return options?.pretty === undefined
-        ? ts.sys.writeOutputIsTTY !== undefined && ts.sys.writeOutputIsTTY()
-        : Boolean(options.pretty);
-}
+const shouldBePretty = ({ pretty }: ts.CompilerOptions = {}) =>
+    pretty !== undefined ? (pretty as boolean) : ts.sys.writeOutputIsTTY?.() ?? false;
 
 let reportDiagnostic = createDiagnosticReporter(false);
 function updateReportDiagnostic(options?: ts.CompilerOptions): void {
@@ -203,6 +200,17 @@ function updateWatchCompilationHost(
         host.onWatchStatusChange!(cliDiagnostics.watchErrorSummary(errors.length), host.getNewLine(), options);
     };
 }
+
+function checkNodeVersion(): void {
+    const [major, minor] = process.version.slice(1).split(".").map(Number);
+    const isValid = major > 12 || (major === 12 && minor >= 13);
+    if (!isValid) {
+        console.error(`TypeScriptToLua requires Node.js >=12.13.0, the current version is ${process.version}`);
+        process.exit(1);
+    }
+}
+
+checkNodeVersion();
 
 if (ts.sys.setBlocking) {
     ts.sys.setBlocking();

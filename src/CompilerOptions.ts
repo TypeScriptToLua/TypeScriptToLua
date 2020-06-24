@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as diagnosticFactories from "./transpilation/diagnostics";
 
 type KnownKeys<T> = { [K in keyof T]: string extends K ? never : number extends K ? never : K } extends {
-    [_ in keyof T]: infer U;
+    [K in keyof T]: infer U;
 }
     ? U
     : never;
@@ -44,6 +44,7 @@ export enum LuaLibImportKind {
 }
 
 export enum LuaTarget {
+    Universal = "universal",
     Lua51 = "5.1",
     Lua52 = "5.2",
     Lua53 = "5.3",

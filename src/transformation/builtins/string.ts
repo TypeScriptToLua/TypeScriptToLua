@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { addToNumericExpression, createExpressionPlusOne, createNaN, getNumberLiteralValue } from "../utils/lua-ast";
+import { addToNumericExpression, createNaN, getNumberLiteralValue } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -41,7 +41,7 @@ export function transformStringPrototypeCall(
                     ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
                       lua.createCallExpression(
                           lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
-                          [createExpressionPlusOne(params[1]), lua.createNumericLiteral(1)]
+                          [addToNumericExpression(params[1], 1), lua.createNumericLiteral(1)]
                       )
                     : lua.createNilLiteral(),
                 lua.createBooleanLiteral(true)
@@ -104,7 +104,7 @@ export function transformStringPrototypeCall(
             const literalValue = getNumberLiteralValue(params[0]);
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
-                const firstParamPlusOne = createExpressionPlusOne(params[0]);
+                const firstParamPlusOne = addToNumericExpression(params[0], 1);
                 return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
             }
 
@@ -116,7 +116,7 @@ export function transformStringPrototypeCall(
             // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
                 return lua.createBinaryExpression(
-                    createStringCall("byte", node, caller, createExpressionPlusOne(params[0])),
+                    createStringCall("byte", node, caller, addToNumericExpression(params[0], 1)),
                     createNaN(),
                     lua.SyntaxKind.OrOperator
                 );

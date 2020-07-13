@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { createExpressionPlusOne } from "../utils/lua-ast";
+import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
@@ -18,7 +18,7 @@ export function transformElementAccessArgument(
     const type = context.checker.getTypeAtLocation(node.expression);
     const argumentType = context.checker.getTypeAtLocation(node.argumentExpression);
     if (isArrayType(context, type) && isNumberType(context, argumentType)) {
-        return createExpressionPlusOne(index);
+        return addToNumericExpression(index, 1);
     }
 
     return index;

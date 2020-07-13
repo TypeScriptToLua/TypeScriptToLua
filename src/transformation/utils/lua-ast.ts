@@ -22,7 +22,6 @@ export function createExportsIdentifier(): lua.Identifier {
     return lua.createIdentifier("____exports");
 }
 
-export const createExpressionPlusOne = (expression: lua.Expression) => addToNumericExpression(expression, 1);
 export function addToNumericExpression(expression: lua.Expression, change: number): lua.Expression {
     if (change === 0) return expression;
 

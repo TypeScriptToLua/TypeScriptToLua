@@ -8,8 +8,13 @@ export function castArray<T>(value: T | readonly T[]): readonly T[] {
     return Array.isArray(value) ? value : [value];
 }
 
-export const intersperse = <T>(values: T[], separator: T): T[] =>
+export const intersperse = <T>(values: readonly T[], separator: T): T[] =>
     values.flatMap((value, index) => (index === 0 ? [value] : [separator, value]));
+
+export const union = <T>(...values: Array<Iterable<T>>): T[] => [...new Set(...values)];
+
+export const intersection = <T>(first: readonly T[], ...rest: Array<readonly T[]>): T[] =>
+    union(first).filter(x => rest.every(r => r.includes(x)));
 
 type DiagnosticFactory = (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">;
 export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) =>

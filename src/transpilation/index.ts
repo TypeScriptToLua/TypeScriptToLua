@@ -3,38 +3,41 @@ import * as path from "path";
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "../cli/tsconfig";
 import { CompilerOptions } from "../CompilerOptions";
-import { emitTranspiledFiles, OutputFile } from "./emit";
-import { transpile, TranspiledFile, TranspileResult } from "./transpile";
+import { createEmitOutputCollector, TranspiledFile } from "./output-collector";
+import { EmitResult, Transpiler } from "./transpiler";
 
-export * from "./emit";
 export { Plugin } from "./plugins";
 export * from "./transpile";
+export * from "./transpiler";
+export { EmitHost } from "./utils";
+export { TranspiledFile };
 
-export interface TranspileFilesResult {
-    diagnostics: ts.Diagnostic[];
-    emitResult: OutputFile[];
-}
-
-export function transpileFiles(rootNames: string[], options: CompilerOptions = {}): TranspileFilesResult {
+export function transpileFiles(
+    rootNames: string[],
+    options: CompilerOptions = {},
+    writeFile?: ts.WriteFileCallback
+): EmitResult {
     const program = ts.createProgram(rootNames, options);
-    const { transpiledFiles, diagnostics: transpileDiagnostics } = transpile({ program });
-    const emitResult = emitTranspiledFiles(program, transpiledFiles);
-
+    const { diagnostics: transpileDiagnostics, emitSkipped } = new Transpiler().emit({ program, writeFile });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,
     ]);
 
-    return { diagnostics: [...diagnostics], emitResult };
+    return { diagnostics: [...diagnostics], emitSkipped };
 }
 
-export function transpileProject(configFileName: string, optionsToExtend?: CompilerOptions): TranspileFilesResult {
+export function transpileProject(
+    configFileName: string,
+    optionsToExtend?: CompilerOptions,
+    writeFile?: ts.WriteFileCallback
+): EmitResult {
     const parseResult = parseConfigFileWithSystem(configFileName, optionsToExtend);
     if (parseResult.errors.length > 0) {
-        return { diagnostics: parseResult.errors, emitResult: [] };
+        return { diagnostics: parseResult.errors, emitSkipped: true };
     }
 
-    return transpileFiles(parseResult.fileNames, parseResult.options);
+    return transpileFiles(parseResult.fileNames, parseResult.options, writeFile);
 }
 
 const libCache: { [key: string]: ts.SourceFile } = {};
@@ -51,20 +54,20 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
         useCaseSensitiveFileNames: () => false,
         writeFile() {},
 
-        getSourceFile(filename) {
-            if (filename in input) {
-                return ts.createSourceFile(filename, input[filename], ts.ScriptTarget.Latest, false);
+        getSourceFile(fileName) {
+            if (fileName in input) {
+                return ts.createSourceFile(fileName, input[fileName], ts.ScriptTarget.Latest, false);
             }
 
-            if (filename.startsWith("lib.")) {
-                if (libCache[filename]) return libCache[filename];
+            if (fileName.startsWith("lib.")) {
+                if (libCache[fileName]) return libCache[fileName];
                 const typeScriptDir = path.dirname(require.resolve("typescript"));
-                const filePath = path.join(typeScriptDir, filename);
+                const filePath = path.join(typeScriptDir, fileName);
                 const content = fs.readFileSync(filePath, "utf8");
 
-                libCache[filename] = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, false);
+                libCache[fileName] = ts.createSourceFile(fileName, content, ts.ScriptTarget.Latest, false);
 
-                return libCache[filename];
+                return libCache[fileName];
             }
         },
     };
@@ -72,12 +75,24 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
     return ts.createProgram(Object.keys(input), options, compilerHost);
 }
 
-export function transpileVirtualProject(files: Record<string, string>, options: CompilerOptions = {}): TranspileResult {
-    const program = createVirtualProgram(files, options);
-    const result = transpile({ program });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([...ts.getPreEmitDiagnostics(program), ...result.diagnostics]);
+export interface TranspileVirtualProjectResult {
+    diagnostics: ts.Diagnostic[];
+    transpiledFiles: TranspiledFile[];
+}
 
-    return { ...result, diagnostics: [...diagnostics] };
+export function transpileVirtualProject(
+    files: Record<string, string>,
+    options: CompilerOptions = {}
+): TranspileVirtualProjectResult {
+    const program = createVirtualProgram(files, options);
+    const collector = createEmitOutputCollector();
+    const { diagnostics: transpileDiagnostics } = new Transpiler().emit({ program, writeFile: collector.writeFile });
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([
+        ...ts.getPreEmitDiagnostics(program),
+        ...transpileDiagnostics,
+    ]);
+
+    return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
 }
 
 export interface TranspileStringResult {
@@ -87,5 +102,8 @@ export interface TranspileStringResult {
 
 export function transpileString(main: string, options: CompilerOptions = {}): TranspileStringResult {
     const { diagnostics, transpiledFiles } = transpileVirtualProject({ "main.ts": main }, options);
-    return { diagnostics, file: transpiledFiles.find(({ fileName }) => fileName === "main.ts") };
+    return {
+        diagnostics,
+        file: transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === "main.ts")),
+    };
 }

@@ -1,9 +1,34 @@
 import * as path from "path";
 import * as resolve from "resolve";
+import { SourceNode } from "source-map";
 import * as ts from "typescript";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../cli/diagnostics";
+import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
+
+export interface EmitHost {
+    getCurrentDirectory(): string;
+    readFile(path: string): string | undefined;
+    writeFile: ts.WriteFileCallback;
+}
+
+interface BaseFile {
+    code: string;
+    sourceMap?: string;
+    sourceFiles?: ts.SourceFile[];
+}
+
+export interface ProcessedFile extends BaseFile {
+    fileName: string;
+    luaAst?: lua.Block;
+    /** @internal */
+    sourceMapNode?: SourceNode;
+}
+
+export interface EmitFile extends BaseFile {
+    outputPath: string;
+}
 
 export const getConfigDirectory = (options: ts.CompilerOptions) =>
     options.configFilePath ? path.dirname(options.configFilePath) : process.cwd();

@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { buildVirtualProject } from "./run";
+import { transpileFilesResult } from "./run";
 
 interface DirectoryTestCase {
     name: string;
@@ -27,7 +27,7 @@ test.each<DirectoryTestCase>([
         ts.parseJsonConfigFileContent(config, ts.sys, projectPath)
     );
 
-    const { diagnostics, emittedFiles } = buildVirtualProject(fileNames, options);
+    const { diagnostics, emittedFiles } = transpileFilesResult(fileNames, options);
     expect(diagnostics).not.toHaveDiagnostics();
-    expect(emittedFiles).toMatchSnapshot();
+    expect(emittedFiles.map(f => f.name).sort()).toMatchSnapshot();
 });

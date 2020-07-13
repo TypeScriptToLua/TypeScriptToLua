@@ -8,6 +8,7 @@ import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
+import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
 export * from "./legacy-utils";
 
@@ -38,43 +39,6 @@ export function testEachVersion<T extends TestBuilder>(
             }
         });
     }
-}
-
-interface TranspiledJsFile {
-    fileName: string;
-    js?: string;
-    sourceMap?: string;
-}
-
-interface TranspileJsResult {
-    diagnostics: ts.Diagnostic[];
-    transpiledFiles: TranspiledJsFile[];
-}
-
-function transpileJs(program: ts.Program): TranspileJsResult {
-    const transpiledFiles: TranspiledJsFile[] = [];
-    const updateTranspiledFile = (fileName: string, update: Omit<TranspiledJsFile, "fileName">) => {
-        const file = transpiledFiles.find(f => f.fileName === fileName);
-        if (file) {
-            Object.assign(file, update);
-        } else {
-            transpiledFiles.push({ fileName, ...update });
-        }
-    };
-
-    const { diagnostics } = program.emit(undefined, (fileName, data, _bom, _onError, sourceFiles = []) => {
-        for (const sourceFile of sourceFiles) {
-            const isJs = fileName.endsWith(".js");
-            const isSourceMap = fileName.endsWith(".js.map");
-            if (isJs) {
-                updateTranspiledFile(sourceFile.fileName, { js: data });
-            } else if (isSourceMap) {
-                updateTranspiledFile(sourceFile.fileName, { sourceMap: data });
-            }
-        }
-    });
-
-    return { transpiledFiles, diagnostics: [...diagnostics] };
 }
 
 function executeLua(code: string): any {
@@ -169,7 +133,7 @@ export class ExecutionError extends Error {
     }
 }
 
-export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; sourceMap: string };
+export type ExecutableTranspiledFile = tstl.TranspiledFile & { lua: string; luaSourceMap: string };
 export type TapCallback = (builder: TestBuilder) => void;
 export abstract class TestBuilder {
     constructor(protected _tsCode: string) {}
@@ -221,6 +185,7 @@ export abstract class TestBuilder {
         moduleResolution: ts.ModuleResolutionKind.NodeJs,
         resolveJsonModule: true,
         experimentalDecorators: true,
+        sourceMap: true,
     };
     public setOptions(options: tstl.CompilerOptions = {}): this {
         expect(this.hasProgram).toBe(false);
@@ -263,15 +228,21 @@ export abstract class TestBuilder {
     }
 
     @memoize
-    public getLuaResult(): tstl.TranspileResult {
+    public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
-        const result = tstl.transpile({ program, customTransformers: this.customTransformers });
+        const collector = createEmitOutputCollector();
+        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler().emit({
+            program,
+            customTransformers: this.customTransformers,
+            writeFile: collector.writeFile,
+        });
+
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...ts.getPreEmitDiagnostics(program),
-            ...result.diagnostics,
+            ...transpileDiagnostics,
         ]);
 
-        return { ...result, diagnostics: [...diagnostics] };
+        return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
     }
 
     @memoize
@@ -279,8 +250,8 @@ export abstract class TestBuilder {
         const { transpiledFiles } = this.getLuaResult();
         const mainFile = this.options.luaBundle
             ? transpiledFiles[0]
-            : transpiledFiles.find(x => x.fileName === this.mainFileName);
-        expect(mainFile).toMatchObject({ lua: expect.any(String), sourceMap: expect.any(String) });
+            : transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName));
+        expect(mainFile).toMatchObject({ lua: expect.any(String), luaSourceMap: expect.any(String) });
         return mainFile as ExecutableTranspiledFile;
     }
 
@@ -296,16 +267,20 @@ export abstract class TestBuilder {
     }
 
     @memoize
-    public getJsResult(): TranspileJsResult {
+    public getJsResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
         program.getCompilerOptions().module = ts.ModuleKind.CommonJS;
-        return transpileJs(program);
+
+        const collector = createEmitOutputCollector();
+        const { diagnostics } = program.emit(undefined, collector.writeFile);
+        return { transpiledFiles: collector.files, diagnostics: [...diagnostics] };
     }
 
     @memoize
     protected getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
-        const code = transpiledFiles.find(x => x.fileName === this.mainFileName)?.js;
+        const code = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName))
+            ?.js;
         assert(code !== undefined);
 
         const header = this.jsHeader ? `${this.jsHeader.trimRight()}\n` : "";

@@ -22,8 +22,8 @@ export function createExportsIdentifier(): lua.Identifier {
     return lua.createIdentifier("____exports");
 }
 
-export const createExpressionPlusOne = (expression: lua.Expression) => modifyNumericExpression(expression, 1);
-export function modifyNumericExpression(expression: lua.Expression, change: number): lua.Expression {
+export const createExpressionPlusOne = (expression: lua.Expression) => addToNumericExpression(expression, 1);
+export function addToNumericExpression(expression: lua.Expression, change: number): lua.Expression {
     if (change === 0) return expression;
 
     const literalValue = getNumberLiteralValue(expression);
@@ -50,13 +50,18 @@ export function modifyNumericExpression(expression: lua.Expression, change: numb
 
 export function getNumberLiteralValue(expression?: lua.Expression) {
     if (!expression) return undefined;
-    return lua.isNumericLiteral(expression)
-        ? expression.value
-        : lua.isUnaryExpression(expression) &&
-          expression.operator === lua.SyntaxKind.NegationOperator &&
-          lua.isNumericLiteral(expression.operand)
-        ? -expression.operand.value
-        : undefined;
+
+    if (lua.isNumericLiteral(expression)) return expression.value;
+
+    if (
+        lua.isUnaryExpression(expression) &&
+        expression.operator === lua.SyntaxKind.NegationOperator &&
+        lua.isNumericLiteral(expression.operand)
+    ) {
+        return -expression.operand.value;
+    }
+
+    return undefined;
 }
 
 export function createImmediatelyInvokedFunctionExpression(

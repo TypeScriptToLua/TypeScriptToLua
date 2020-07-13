@@ -103,8 +103,9 @@ test.each([
     { inp: "hello test", searchValue: "t", offset: 6 },
     { inp: "hello test", searchValue: "t", offset: 7 },
     { inp: "hello test", searchValue: "h", offset: 4 },
-    { inp: "hello test", searchValue: "o", offset: -1 },
-    { inp: "hello test", searchValue: "h", offset: -8 },
+    { inp: "00100", searchValue: "1", offset: -1 },
+    { inp: "00100", searchValue: "1", offset: -2 },
+    { inp: "01010", searchValue: "1", offset: -3 },
 ])("string.indexOf with offset (%p)", ({ inp, searchValue, offset }) => {
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, ${offset})`.expectToMatchJsResult();
 });

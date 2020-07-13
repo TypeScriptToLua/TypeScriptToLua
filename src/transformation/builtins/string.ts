@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { createExpressionPlusOne, createNaN, getNumberLiteralValue, modifyNumericExpression } from "../utils/lua-ast";
+import { addToNumericExpression, createExpressionPlusOne, createNaN, getNumberLiteralValue } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -38,7 +38,8 @@ export function transformStringPrototypeCall(
                 caller,
                 params[0],
                 params[1]
-                    ? lua.createCallExpression(
+                    ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
+                      lua.createCallExpression(
                           lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
                           [createExpressionPlusOne(params[1]), lua.createNumericLiteral(1)]
                       )
@@ -63,18 +64,19 @@ export function transformStringPrototypeCall(
             const literalArg1 = getNumberLiteralValue(params[0]);
             if (params[0] && literalArg1 !== undefined) {
                 let stringSubArgs: lua.Expression[] | undefined = [
-                    modifyNumericExpression(params[0], literalArg1 < 0 ? 0 : 1),
+                    addToNumericExpression(params[0], literalArg1 < 0 ? 0 : 1),
                 ];
 
                 if (params[1]) {
                     const literalArg2 = getNumberLiteralValue(params[1]);
                     if (literalArg2 !== undefined) {
-                        stringSubArgs.push(modifyNumericExpression(params[1], literalArg2 < 0 ? -1 : 0));
+                        stringSubArgs.push(addToNumericExpression(params[1], literalArg2 < 0 ? -1 : 0));
                     } else {
                         stringSubArgs = undefined;
                     }
                 }
 
+                // Inline string.sub call if we know that both parameters are pure and aren't negative
                 if (stringSubArgs) {
                     return createStringCall("sub", node, caller, ...stringSubArgs);
                 }
@@ -100,6 +102,7 @@ export function transformStringPrototypeCall(
 
         case "charAt": {
             const literalValue = getNumberLiteralValue(params[0]);
+            // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
                 const firstParamPlusOne = createExpressionPlusOne(params[0]);
                 return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
@@ -110,6 +113,7 @@ export function transformStringPrototypeCall(
 
         case "charCodeAt": {
             const literalValue = getNumberLiteralValue(params[0]);
+            // Inline string.sub call if we know that parameter is pure and isn't negative
             if (literalValue !== undefined && literalValue >= 0) {
                 return lua.createBinaryExpression(
                     createStringCall("byte", node, caller, createExpressionPlusOne(params[0])),

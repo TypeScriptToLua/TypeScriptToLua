@@ -8,6 +8,7 @@ import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
+import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
 export * from "./legacy-utils";
 
@@ -229,7 +230,7 @@ export abstract class TestBuilder {
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
         const program = this.getProgram();
-        const collector = tstl.createEmitOutputCollector();
+        const collector = createEmitOutputCollector();
         const { diagnostics: transpileDiagnostics } = new tstl.Transpiler().emit({
             program,
             customTransformers: this.customTransformers,
@@ -270,7 +271,7 @@ export abstract class TestBuilder {
         const program = this.getProgram();
         program.getCompilerOptions().module = ts.ModuleKind.CommonJS;
 
-        const collector = tstl.createEmitOutputCollector();
+        const collector = createEmitOutputCollector();
         const { diagnostics } = program.emit(undefined, collector.writeFile);
         return { transpiledFiles: collector.files, diagnostics: [...diagnostics] };
     }

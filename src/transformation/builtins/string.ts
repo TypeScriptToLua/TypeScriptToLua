@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { TransformationContext } from "../context";
 import { unsupportedProperty } from "../utils/diagnostics";
-import { createExpressionPlusOne } from "../utils/lua-ast";
+import { addToNumericExpression, createNaN, getNumberLiteralValue } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 
@@ -30,13 +30,20 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringReplace, node, caller, ...params);
         case "concat":
             return transformLuaLibFunction(context, LuaLibFeature.StringConcat, node, caller, ...params);
-        case "indexOf":
+
+        case "indexOf": {
             const stringExpression = createStringCall(
                 "find",
                 node,
                 caller,
                 params[0],
-                params[1] ? createExpressionPlusOne(params[1]) : lua.createNilLiteral(),
+                params[1]
+                    ? // string.find handles negative indexes by making it relative to string end, but for indexOf it's the same as 0
+                      lua.createCallExpression(
+                          lua.createTableIndexExpression(lua.createIdentifier("math"), lua.createStringLiteral("max")),
+                          [addToNumericExpression(params[1], 1), lua.createNumericLiteral(1)]
+                      )
+                    : lua.createNilLiteral(),
                 lua.createBooleanLiteral(true)
             );
 
@@ -46,35 +53,38 @@ export function transformStringPrototypeCall(
                 lua.SyntaxKind.SubtractionOperator,
                 node
             );
+        }
+
         case "substr":
-            if (node.arguments.length === 1) {
-                const argument = context.transformExpression(node.arguments[0]);
-                const arg1 = createExpressionPlusOne(argument);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const sumArg = lua.createBinaryExpression(params[0], params[1], lua.SyntaxKind.AdditionOperator);
-                return createStringCall("sub", node, caller, createExpressionPlusOne(params[0]), sumArg);
-            }
+            return transformLuaLibFunction(context, LuaLibFeature.StringSubstr, node, caller, ...params);
         case "substring":
-            if (node.arguments.length === 1) {
-                const arg1 = createExpressionPlusOne(params[0]);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const arg1 = createExpressionPlusOne(params[0]);
-                const arg2 = params[1];
-                return createStringCall("sub", node, caller, arg1, arg2);
+            return transformLuaLibFunction(context, LuaLibFeature.StringSubstring, node, caller, ...params);
+
+        case "slice": {
+            const literalArg1 = getNumberLiteralValue(params[0]);
+            if (params[0] && literalArg1 !== undefined) {
+                let stringSubArgs: lua.Expression[] | undefined = [
+                    addToNumericExpression(params[0], literalArg1 < 0 ? 0 : 1),
+                ];
+
+                if (params[1]) {
+                    const literalArg2 = getNumberLiteralValue(params[1]);
+                    if (literalArg2 !== undefined) {
+                        stringSubArgs.push(addToNumericExpression(params[1], literalArg2 < 0 ? -1 : 0));
+                    } else {
+                        stringSubArgs = undefined;
+                    }
+                }
+
+                // Inline string.sub call if we know that both parameters are pure and aren't negative
+                if (stringSubArgs) {
+                    return createStringCall("sub", node, caller, ...stringSubArgs);
+                }
             }
-        case "slice":
-            if (node.arguments.length === 0) {
-                return caller;
-            } else if (node.arguments.length === 1) {
-                const arg1 = createExpressionPlusOne(params[0]);
-                return createStringCall("sub", node, caller, arg1);
-            } else {
-                const arg1 = createExpressionPlusOne(params[0]);
-                const arg2 = params[1];
-                return createStringCall("sub", node, caller, arg1, arg2);
-            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringSlice, node, caller, ...params);
+        }
+
         case "toLowerCase":
             return createStringCall("lower", node, caller);
         case "toUpperCase":
@@ -89,13 +99,32 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringTrimStart, node, caller);
         case "split":
             return transformLuaLibFunction(context, LuaLibFeature.StringSplit, node, caller, ...params);
-        case "charAt":
-            const firstParamPlusOne = createExpressionPlusOne(params[0]);
-            return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
-        case "charCodeAt": {
-            const firstParamPlusOne = createExpressionPlusOne(params[0]);
-            return createStringCall("byte", node, caller, firstParamPlusOne);
+
+        case "charAt": {
+            const literalValue = getNumberLiteralValue(params[0]);
+            // Inline string.sub call if we know that parameter is pure and isn't negative
+            if (literalValue !== undefined && literalValue >= 0) {
+                const firstParamPlusOne = addToNumericExpression(params[0], 1);
+                return createStringCall("sub", node, caller, firstParamPlusOne, firstParamPlusOne);
+            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringCharAt, node, caller, ...params);
         }
+
+        case "charCodeAt": {
+            const literalValue = getNumberLiteralValue(params[0]);
+            // Inline string.sub call if we know that parameter is pure and isn't negative
+            if (literalValue !== undefined && literalValue >= 0) {
+                return lua.createBinaryExpression(
+                    createStringCall("byte", node, caller, addToNumericExpression(params[0], 1)),
+                    createNaN(),
+                    lua.SyntaxKind.OrOperator
+                );
+            }
+
+            return transformLuaLibFunction(context, LuaLibFeature.StringCharCodeAt, node, caller, ...params);
+        }
+
         case "startsWith":
             return transformLuaLibFunction(context, LuaLibFeature.StringStartsWith, node, caller, ...params);
         case "endsWith":

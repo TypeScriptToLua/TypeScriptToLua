@@ -13,5 +13,5 @@ function __TS__StringPadStart(this: string, maxLength: number, fillString = " ")
         fillString += fillString.repeat(maxLength / fillString.length);
     }
 
-    return fillString.slice(0, Math.floor(maxLength)) + this;
+    return string.sub(fillString, 1, Math.floor(maxLength)) + this;
 }

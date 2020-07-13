@@ -33,15 +33,19 @@ test.each([
 });
 
 test.each([
-    { input: "abcd", index: 3 },
-    { input: "abcde", index: 3 },
-    { input: "abcde", index: 0 },
-    { input: "a", index: 0 },
+    { input: "01234", index: 0 },
+    { input: "01234", index: 1 },
+    { input: "01234", index: 4 },
+    { input: "01234", index: 5 },
+    { input: "01234", index: -1 },
+    { input: "01234", index: 100 },
+    { input: "01234", index: NaN },
+    { input: "", index: 0 },
 ])("string index (%p)", ({ input, index }) => {
     util.testExpressionTemplate`${input}[${index}]`.expectToMatchJsResult();
 });
 
-test("string index with side effect", () => {
+test("string index (side effect)", () => {
     util.testFunction`
         let i = 0;
         const mystring = "abc";
@@ -73,7 +77,7 @@ test.each([
     ["hello", "test", "bye"],
     ["hello", 42],
     [42, "hello"],
-])("string.concat[+] (%p)", (...elements: any[]) => {
+])("string + (%p)", (...elements: any[]) => {
     util.testExpression(elements.map(e => util.formatCode(e)).join(" + ")).expectToMatchJsResult();
 });
 
@@ -82,7 +86,7 @@ test.each([
     { str: "hello", args: ["test"] },
     { str: "hello", args: [] },
     { str: "hello", args: ["test", "bye"] },
-])("string.concatFct (%p)", ({ str, args }) => {
+])("string.concat (%p)", ({ str, args }) => {
     util.testExpression`"${str}".concat(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
@@ -101,6 +105,9 @@ test.each([
     { inp: "hello test", searchValue: "t", offset: 6 },
     { inp: "hello test", searchValue: "t", offset: 7 },
     { inp: "hello test", searchValue: "h", offset: 4 },
+    { inp: "00100", searchValue: "1", offset: -1 },
+    { inp: "00100", searchValue: "1", offset: -2 },
+    { inp: "01010", searchValue: "1", offset: -3 },
 ])("string.indexOf with offset (%p)", ({ inp, searchValue, offset }) => {
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, ${offset})`.expectToMatchJsResult();
 });
@@ -112,22 +119,31 @@ test.each([
     util.testExpressionTemplate`${inp}.indexOf(${searchValue}, 2 > 1 && ${x} || ${y})`.expectToMatchJsResult();
 });
 
-test.each([
-    { inp: "hello test", args: [] },
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.slice (%p)", ({ inp, args }) => {
-    util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
-});
+const stringPartCases = [
+    { inp: "0123456789", args: [0] },
+    { inp: "0123456789", args: [0, 0] },
+    { inp: "0123456789", args: [1] },
+    { inp: "0123456789", args: [1, 1] },
+    { inp: "0123456789", args: [1, 5] },
+    { inp: "0123456789", args: [5, 1] },
+    { inp: "0123456789", args: [1, 100] },
+    { inp: "0123456789", args: [100, 1] },
+    { inp: "0123456789", args: [100, 101] },
+    { inp: "0123456789", args: [-3] },
+    { inp: "0123456789", args: [1, -1] },
+    { inp: "0123456789", args: [-5, -2] },
+    { inp: "0123456789", args: [NaN, 3] },
+    { inp: "0123456789", args: [3, NaN] },
+];
 
-test.each([
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.substring (%p)", ({ inp, args }) => {
+test.each([{ inp: "0123456789", args: [] }, { inp: "0123456789", args: [undefined, 5] }, ...stringPartCases])(
+    "string.slice (%p)",
+    ({ inp, args }) => {
+        util.testExpression`"${inp}".slice(${util.formatCode(...args)})`.expectToMatchJsResult();
+    }
+);
+
+test.each(stringPartCases)("string.substring (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".substring(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
@@ -139,12 +155,7 @@ test.each([
     util.testExpression`"${inp}".substring(${paramStr})`.expectToMatchJsResult();
 });
 
-test.each([
-    { inp: "hello test", args: [0] },
-    { inp: "hello test", args: [1] },
-    { inp: "hello test", args: [1, 2] },
-    { inp: "hello test", args: [1, 5] },
-])("string.substr (%p)", ({ inp, args }) => {
+test.each(stringPartCases)("string.substr (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".substr(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
@@ -183,18 +194,29 @@ test.each([
 });
 
 test.each([
+    { inp: "hello test", index: 0 },
     { inp: "hello test", index: 1 },
     { inp: "hello test", index: 2 },
     { inp: "hello test", index: 3 },
     { inp: "hello test", index: 99 },
+    { inp: "hello test", index: -1 },
+    { inp: "hello test", index: -5 },
+    { inp: "hello test", index: -99 },
+    { inp: "hello test", index: NaN },
 ])("string.charAt (%p)", ({ inp, index }) => {
     util.testExpressionTemplate`${inp}.charAt(${index})`.expectToMatchJsResult();
 });
 
 test.each([
+    { inp: "hello test", index: 0 },
     { inp: "hello test", index: 1 },
     { inp: "hello test", index: 2 },
     { inp: "hello test", index: 3 },
+    { inp: "hello test", index: 99 },
+    { inp: "hello test", index: -1 },
+    { inp: "hello test", index: -5 },
+    { inp: "hello test", index: -99 },
+    { inp: "hello test", index: NaN },
 ])("string.charCodeAt (%p)", ({ inp, index }) => {
     util.testExpressionTemplate`${inp}.charCodeAt(${index})`.expectToMatchJsResult();
 });

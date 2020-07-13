@@ -20,7 +20,7 @@ export interface TranspileResult {
     transpiledFiles: ProcessedFile[];
 }
 
-export function transpile(
+export function getProgramTranspileResult(
     emitHost: EmitHost,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions

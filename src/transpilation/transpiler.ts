@@ -4,7 +4,7 @@ import { isBundleEnabled } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
-import { transpile, TranspileOptions } from "./transpile";
+import { getProgramTranspileResult, TranspileOptions } from "./transpile";
 import { EmitFile, EmitHost, ProcessedFile } from "./utils";
 
 export interface TranspilerOptions {
@@ -28,7 +28,11 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.emitHost.writeFile } = emitOptions;
-        const { diagnostics, transpiledFiles: freshFiles } = transpile(this.emitHost, writeFile, emitOptions);
+        const { diagnostics, transpiledFiles: freshFiles } = getProgramTranspileResult(
+            this.emitHost,
+            writeFile,
+            emitOptions
+        );
         const { emitPlan } = this.getEmitPlan(program, diagnostics, freshFiles);
 
         const options = program.getCompilerOptions();

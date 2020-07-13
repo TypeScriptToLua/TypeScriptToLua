@@ -7,6 +7,7 @@ import { intersection, union } from "../utils";
 import { EmitResult, Transpiler } from "./transpiler";
 
 export { Plugin } from "./plugins";
+export * from "./transpile";
 export * from "./transpiler";
 export { EmitHost } from "./utils";
 

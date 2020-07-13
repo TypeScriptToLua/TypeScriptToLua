@@ -295,7 +295,7 @@ test("Inline sourcemaps", () => {
 
     const file = util
         .testFunction(code)
-        .setOptions({ inlineSourceMap: true })
+        .setOptions({ inlineSourceMap: true }) // We can't disable 'sourceMap' option because it's used for comparison
         .disableSemanticCheck() // TS5053: Option 'sourceMap' cannot be specified with option 'inlineSourceMap'.
         .expectToMatchJsResult()
         .getMainLuaFileResult();
@@ -303,7 +303,7 @@ test("Inline sourcemaps", () => {
     const [, inlineSourceMapMatch] =
         file.lua.match(/--# sourceMappingURL=data:application\/json;base64,([A-Za-z0-9+/=]+)/) ?? [];
     const inlineSourceMap = Buffer.from(inlineSourceMapMatch, "base64").toString();
-    expect(file.luaSourceMap).toBe(inlineSourceMap);
+    expect(inlineSourceMap).toBe(file.luaSourceMap);
 });
 
 // Helper functions

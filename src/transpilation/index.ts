@@ -10,6 +10,7 @@ export { Plugin } from "./plugins";
 export * from "./transpile";
 export * from "./transpiler";
 export { EmitHost } from "./utils";
+export { TranspiledFile };
 
 export function transpileFiles(
     rootNames: string[],

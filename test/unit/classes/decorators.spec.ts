@@ -126,3 +126,60 @@ test("Exported class decorator", () => {
         .setReturnExport("Foo", "bar")
         .expectToMatchJsResult();
 });
+
+test.each([
+    ["method() {}"],
+    ["property;"],
+    ["propertyWithInitializer = () => {};"],
+    ["['evaluated property'];"],
+    ["get getter() { return 5 }"],
+    ["set setter(value) {}"],
+    ["static method() {}"],
+    ["static property;"],
+    ["static propertyWithInitializer = () => {}"],
+    ["static get getter() { return 5 }"],
+    ["static set setter(value) {}"],
+    ["static ['evaluated property'];"],
+])("Decorate class member (%p)", memberStatement => {
+    util.testFunction`
+        let decoratorTarget: any | undefined;
+        let decoratorTargetKey: string | undefined;
+
+        const decorator = (target, key) => {
+            decoratorTarget = target;
+            decoratorTargetKey = key;
+        };
+
+        class Foo {
+            @decorator
+            ${memberStatement}
+        }
+
+        const targetKind = decoratorTarget === Foo.prototype ? "prototype" : "class";
+        return [targetKind, decoratorTargetKey];
+    `.expectToMatchJsResult();
+});
+
+test.each([["method(@decorator a) {}"], ["static method(@decorator a) {}"]])(
+    "Decorate method parameter (%p)",
+    methodStatement => {
+        util.testFunction`
+            let decoratorTarget;
+            let decoratorTargetKey;
+            let decoratorTargetKeyIndex;
+
+            const decorator = (target, key, index) => {
+                decoratorTarget = target;
+                decoratorTargetKey = key;
+                decoratorTargetKeyIndex = index;
+            };
+
+            class Foo {
+                ${methodStatement}
+            }
+
+            const targetKind = decoratorTarget === Foo.prototype ? "prototype" : "class";
+            return [targetKind, decoratorTargetKey, decoratorTargetKeyIndex];
+        `.expectToMatchJsResult();
+    }
+);

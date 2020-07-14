@@ -28,11 +28,15 @@ import { popScope, pushScope, ScopeType } from "../../utils/scope";
 import { isAmbientNode } from "../../utils/typescript";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { createConstructorDecorationStatement } from "./decorators";
+import { createDecoratingExpression, transformDecoratorExpression } from "./decorators";
 import { isGetAccessorOverride, transformAccessorDeclarations } from "./members/accessors";
 import { createConstructorName, transformConstructorDeclaration } from "./members/constructor";
-import { transformClassInstanceFields } from "./members/fields";
-import { transformMethodDeclaration } from "./members/method";
+import {
+    createPropertyDecoratingExpression,
+    transformClassInstanceFields,
+    transformStaticPropertyDeclaration,
+} from "./members/fields";
+import { createMethodDecoratingExpression, transformMethodDeclaration } from "./members/method";
 import { checkForLuaLibType } from "./new";
 import { createClassSetup } from "./setup";
 import { getExtendedNode, getExtendedType, isStaticNode } from "./utils";
@@ -134,7 +138,6 @@ function transformClassLikeDeclaration(
     const properties = classDeclaration.members.filter(ts.isPropertyDeclaration).filter(member => member.initializer);
 
     // Divide properties into static and non-static
-    const staticFields = properties.filter(isStaticNode);
     const instanceFields = properties.filter(prop => !isStaticNode(prop));
 
     const result: lua.Statement[] = [];
@@ -282,29 +285,61 @@ function transformClassLikeDeclaration(
         }
     }
 
+    const noPrototype = isExtension || isMetaExtension;
+
+    // Decorate accessors
+    result.push(
+        ...classDeclaration.members
+            .filter(ts.isAccessor)
+            .map(p => createPropertyDecoratingExpression(context, p, localClassName, noPrototype))
+            .filter(isNonNull)
+            .map(e => lua.createExpressionStatement(e))
+    );
+
     // Transform methods
     result.push(
         ...classDeclaration.members
             .filter(ts.isMethodDeclaration)
-            .map(m => transformMethodDeclaration(context, m, localClassName, isExtension || isMetaExtension))
+            .map(m => transformMethodDeclaration(context, m, localClassName, noPrototype))
             .filter(isNonNull)
     );
 
-    // Add static declarations
-    for (const field of staticFields) {
-        const fieldName = transformPropertyName(context, field.name);
-        const value = field.initializer ? context.transformExpression(field.initializer) : undefined;
+    // Decorate methods
+    result.push(
+        ...classDeclaration.members
+            .filter(ts.isMethodDeclaration)
+            .filter(m => m.body)
+            .flatMap(m => createMethodDecoratingExpression(context, m, localClassName, noPrototype))
+            .filter(isNonNull)
+    );
 
-        const classField = lua.createTableIndexExpression(lua.cloneIdentifier(localClassName), fieldName);
+    // Transform properties
+    result.push(
+        ...classDeclaration.members
+            .filter(ts.isPropertyDeclaration)
+            .filter(isStaticNode)
+            .map(p => transformStaticPropertyDeclaration(context, p, localClassName))
+            .filter(isNonNull)
+    );
 
-        const fieldAssign = lua.createAssignmentStatement(classField, value);
+    // Decorate properties
+    result.push(
+        ...classDeclaration.members
+            .filter(ts.isPropertyDeclaration)
+            .map(p => createPropertyDecoratingExpression(context, p, localClassName, noPrototype))
+            .filter(isNonNull)
+            .map(e => lua.createExpressionStatement(e))
+    );
 
-        result.push(fieldAssign);
-    }
-
-    const decorationStatement = createConstructorDecorationStatement(context, classDeclaration);
-    if (decorationStatement) {
-        result.push(decorationStatement);
+    // Decorate the class
+    if (classDeclaration.decorators) {
+        const decoratingExpression = createDecoratingExpression(
+            context,
+            classDeclaration.decorators.map(d => transformDecoratorExpression(context, d)),
+            localClassName
+        );
+        const decoratingStatement = lua.createAssignmentStatement(localClassName, decoratingExpression);
+        result.push(decoratingStatement);
     }
 
     superInfo.pop();

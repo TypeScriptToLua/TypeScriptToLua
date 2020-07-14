@@ -29,6 +29,7 @@ export enum LuaLibFeature {
     Class = "Class",
     ClassExtends = "ClassExtends",
     Decorate = "Decorate",
+    DecorateParam = "DecorateParam",
     Descriptors = "Descriptors",
     Error = "Error",
     FunctionBind = "FunctionBind",

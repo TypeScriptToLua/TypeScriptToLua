@@ -1,22 +1,25 @@
-function __TS__CloneDescriptor(this: void, desc: Readonly<PropertyDescriptor>): PropertyDescriptor {
+function __TS__CloneDescriptor(
+    this: void,
+    { enumerable, configurable, get, set, writable, value }: Readonly<PropertyDescriptor>
+): PropertyDescriptor {
     const descriptor: PropertyDescriptor = {
-        enumerable: desc.enumerable === true,
-        configurable: desc.configurable === true,
+        enumerable: enumerable === true,
+        configurable: configurable === true,
     };
 
-    const hasGetterOrSetter = desc.get !== undefined || desc.set !== undefined;
-    const hasValueOrWritableAttribute = desc.writable !== undefined || desc.value !== undefined;
+    const hasGetterOrSetter = get !== undefined || set !== undefined;
+    const hasValueOrWritableAttribute = writable !== undefined || value !== undefined;
 
     if (hasGetterOrSetter && hasValueOrWritableAttribute) {
         throw `Invalid property descriptor. Cannot both specify accessors and a value or writable attribute, ${this}.`;
     }
 
-    if (desc.get || desc.set) {
-        descriptor.get = desc.get;
-        descriptor.set = desc.set;
+    if (get || set) {
+        descriptor.get = get;
+        descriptor.set = set;
     } else {
-        descriptor.value = desc.value;
-        descriptor.writable = desc.writable !== undefined && desc.writable !== false;
+        descriptor.value = value;
+        descriptor.writable = writable === true;
     }
 
     return descriptor;

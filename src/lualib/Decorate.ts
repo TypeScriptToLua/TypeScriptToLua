@@ -1,13 +1,7 @@
 /**
  * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
  */
-function __TS__Decorate(
-    this: void,
-    decorators: Function[],
-    target: Record<any, any>,
-    key?: string,
-    desc?: boolean | string
-): {} {
+function __TS__Decorate(this: void, decorators: Function[], target: any, key?: string, desc?: any): {} {
     let result = target;
 
     for (let i = decorators.length; i >= 0; i--) {

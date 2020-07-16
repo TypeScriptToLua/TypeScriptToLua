@@ -6,6 +6,7 @@ import { transformLuaLibFunction, LuaLibFeature } from "../../../utils/lualib";
 import { transformFunctionBody, transformParameters } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { getExtendedType, isStaticNode } from "../utils";
+import { createPrototypeName } from "./constructor";
 
 function transformAccessor(context: TransformationContext, node: ts.AccessorDeclaration): lua.FunctionExpression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
@@ -31,27 +32,10 @@ export function transformAccessorDeclarations(
         descriptor.fields.push(lua.createTableFieldExpression(setterFunction, lua.createStringLiteral("set")));
     }
 
-    let call: lua.CallExpression;
-    if (isStaticNode(firstAccessor)) {
-        call = transformLuaLibFunction(
-            context,
-            LuaLibFeature.ObjectDefineProperty,
-            undefined,
-            lua.cloneIdentifier(className),
-            propertyName,
-            descriptor
-        );
-    } else {
-        call = transformLuaLibFunction(
-            context,
-            LuaLibFeature.SetDescriptor,
-            undefined,
-            lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
-            propertyName,
-            descriptor
-        );
-    }
-
+    const isStatic = isStaticNode(firstAccessor);
+    const target = isStatic ? lua.cloneIdentifier(className) : createPrototypeName(className);
+    const feature = isStatic ? LuaLibFeature.ObjectDefineProperty : LuaLibFeature.SetDescriptor;
+    const call = transformLuaLibFunction(context, feature, undefined, target, propertyName, descriptor);
     return lua.createExpressionStatement(call);
 }
 

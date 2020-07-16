@@ -86,6 +86,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     ArrayFlat: [LuaLibFeature.ArrayConcat],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat],
     Decorate: [LuaLibFeature.CloneDescriptor],
+    Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors],
     Error: [LuaLibFeature.New, LuaLibFeature.Class],
     FunctionBind: [LuaLibFeature.Unpack],
     Generator: [LuaLibFeature.Symbol],

@@ -1,15 +1,5 @@
 function __TS__Delete(this: void, target: object, prop: string): boolean {
-    const metatable = getmetatable(target) as Metatable | undefined;
-    if (!metatable) {
-        if (target[prop] !== undefined) {
-            target[prop] = undefined;
-            return true;
-        }
-
-        return false;
-    }
-
-    const descriptors = rawget(metatable, "_descriptors");
+    const descriptors = __TS__ObjectGetOwnPropertyDescriptors(target);
     if (descriptors) {
         const descriptor = descriptors[prop];
         if (descriptor) {
@@ -18,6 +8,11 @@ function __TS__Delete(this: void, target: object, prop: string): boolean {
             }
 
             descriptors[prop] = undefined;
+            return true;
+        }
+    } else {
+        if (target[prop] !== undefined) {
+            target[prop] = undefined;
             return true;
         }
     }

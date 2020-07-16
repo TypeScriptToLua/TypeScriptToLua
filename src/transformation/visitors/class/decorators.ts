@@ -24,20 +24,15 @@ export function createDecoratingExpression(
     targetFieldExpression?: lua.Expression
 ): lua.Expression {
     const decoratorTable = lua.createTableExpression(decorators.map(e => lua.createTableFieldExpression(e)));
-    const trailingExpressions: lua.Expression[] = [decoratorTable, targetTableName];
+    const trailingExpressions = [decoratorTable, targetTableName];
 
     if (targetFieldExpression) {
         trailingExpressions.push(targetFieldExpression);
-
-        if (
+        const isMethodOrAccessor =
             kind === ts.SyntaxKind.MethodDeclaration ||
             kind === ts.SyntaxKind.GetAccessor ||
-            kind === ts.SyntaxKind.SetAccessor
-        ) {
-            trailingExpressions.push(lua.createBooleanLiteral(true));
-        } else {
-            trailingExpressions.push(lua.createBooleanLiteral(false));
-        }
+            kind === ts.SyntaxKind.SetAccessor;
+        trailingExpressions.push(lua.createBooleanLiteral(isMethodOrAccessor));
     }
 
     return transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, ...trailingExpressions);

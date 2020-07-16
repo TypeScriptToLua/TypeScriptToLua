@@ -11,9 +11,7 @@ export const transformDeleteExpression: FunctionVisitor<ts.DeleteExpression> = (
     let propertyExpression: lua.Expression | undefined;
 
     if (ts.isPropertyAccessExpression(node.expression)) {
-        if (ts.isPrivateIdentifier(node.expression.name)) {
-            throw new Error("PrivateIdentifier is not supported");
-        }
+        if (ts.isPrivateIdentifier(node.expression.name)) throw new Error("PrivateIdentifier is not supported");
         ownerExpression = context.transformExpression(node.expression.expression);
         propertyExpression = lua.createStringLiteral(node.expression.name.text);
     } else if (ts.isElementAccessExpression(node.expression)) {

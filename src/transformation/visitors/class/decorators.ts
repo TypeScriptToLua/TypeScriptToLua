@@ -18,22 +18,27 @@ export function transformDecoratorExpression(context: TransformationContext, dec
 
 export function createDecoratingExpression(
     context: TransformationContext,
+    kind: ts.SyntaxKind,
     decorators: lua.Expression[],
     targetTableName: lua.Expression,
     targetFieldExpression?: lua.Expression
 ): lua.Expression {
     const decoratorTable = lua.createTableExpression(decorators.map(e => lua.createTableFieldExpression(e)));
+    const trailingExpressions: lua.Expression[] = [decoratorTable, targetTableName];
 
     if (targetFieldExpression) {
-        return transformLuaLibFunction(
-            context,
-            LuaLibFeature.Decorate,
-            undefined,
-            decoratorTable,
-            targetTableName,
-            targetFieldExpression
-        );
+        trailingExpressions.push(targetFieldExpression);
+
+        if (
+            kind === ts.SyntaxKind.MethodDeclaration ||
+            kind === ts.SyntaxKind.GetAccessor ||
+            kind === ts.SyntaxKind.SetAccessor
+        ) {
+            trailingExpressions.push(lua.createBooleanLiteral(true));
+        } else {
+            trailingExpressions.push(lua.createBooleanLiteral(false));
+        }
     }
 
-    return transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, decoratorTable, targetTableName);
+    return transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, ...trailingExpressions);
 }

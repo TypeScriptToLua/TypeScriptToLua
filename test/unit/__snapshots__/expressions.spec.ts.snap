@@ -472,17 +472,19 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("delete tbl.test") 1`] = `
-"local ____exports = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    tbl.test = nil
+    __TS__Delete(tbl, \\"test\\")
 end
 return ____exports"
 `;
 
 exports[`Unary expressions basic ("delete tbl['test']") 1`] = `
-"local ____exports = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    tbl.test = nil
+    __TS__Delete(tbl, \\"test\\")
 end
 return ____exports"
 `;
@@ -504,23 +506,19 @@ return ____exports"
 `;
 
 exports[`Unary expressions basic ("let a = delete tbl.test") 1`] = `
-"local ____exports = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    local a = (function()
-        tbl.test = nil
-        return true
-    end)()
+    local a = __TS__Delete(tbl, \\"test\\")
 end
 return ____exports"
 `;
 
 exports[`Unary expressions basic ("let a = delete tbl['test']") 1`] = `
-"local ____exports = {}
+"require(\\"lualib_bundle\\");
+local ____exports = {}
 function ____exports.__main(self)
-    local a = (function()
-        tbl.test = nil
-        return true
-    end)()
+    local a = __TS__Delete(tbl, \\"test\\")
 end
 return ____exports"
 `;

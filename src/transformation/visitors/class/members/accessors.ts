@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
 import { AllAccessorDeclarations, TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
-import { importLuaLibFeature, LuaLibFeature } from "../../../utils/lualib";
+import { transformLuaLibFunction, LuaLibFeature } from "../../../utils/lualib";
 import { transformFunctionBody, transformParameters } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { getExtendedType, isStaticNode } from "../utils";
@@ -31,18 +31,26 @@ export function transformAccessorDeclarations(
         descriptor.fields.push(lua.createTableFieldExpression(setterFunction, lua.createStringLiteral("set")));
     }
 
-    importLuaLibFeature(context, LuaLibFeature.Descriptors);
-    const call = isStaticNode(firstAccessor)
-        ? lua.createCallExpression(lua.createIdentifier("__TS__ObjectDefineProperty"), [
-              lua.cloneIdentifier(className),
-              propertyName,
-              descriptor,
-          ])
-        : lua.createCallExpression(lua.createIdentifier("__TS__SetDescriptor"), [
-              lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
-              propertyName,
-              descriptor,
-          ]);
+    let call: lua.CallExpression;
+    if (isStaticNode(firstAccessor)) {
+        call = transformLuaLibFunction(
+            context,
+            LuaLibFeature.ObjectDefineProperty,
+            undefined,
+            lua.cloneIdentifier(className),
+            propertyName,
+            descriptor
+        );
+    } else {
+        call = transformLuaLibFunction(
+            context,
+            LuaLibFeature.SetDescriptor,
+            undefined,
+            lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
+            propertyName,
+            descriptor
+        );
+    }
 
     return lua.createExpressionStatement(call);
 }

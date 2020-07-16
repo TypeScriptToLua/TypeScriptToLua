@@ -15,10 +15,26 @@ export function transformObjectConstructorCall(
     switch (methodName) {
         case "assign":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...parameters);
+        case "defineProperty":
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectDefineProperty, expression, ...parameters);
         case "entries":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, expression, ...parameters);
         case "fromEntries":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectFromEntries, expression, ...parameters);
+        case "getOwnPropertyDescriptor":
+            return transformLuaLibFunction(
+                context,
+                LuaLibFeature.ObjectGetOwnPropertyDescriptor,
+                expression,
+                ...parameters
+            );
+        case "getOwnPropertyDescriptors":
+            return transformLuaLibFunction(
+                context,
+                LuaLibFeature.ObjectGetOwnPropertyDescriptors,
+                expression,
+                ...parameters
+            );
         case "keys":
             return transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, expression, ...parameters);
         case "values":

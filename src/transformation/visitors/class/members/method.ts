@@ -73,6 +73,7 @@ export function createMethodDecoratingExpression(
     if (methodDecorators.length > 0 || parameterDecorators.length > 0) {
         const decorateMethod = createDecoratingExpression(
             context,
+            node.kind,
             [...methodDecorators, ...parameterDecorators],
             methodTable,
             methodName

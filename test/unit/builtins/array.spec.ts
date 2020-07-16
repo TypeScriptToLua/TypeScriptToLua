@@ -209,19 +209,11 @@ describe("delete", () => {
         `.expectToMatchJsResult();
     });
 
-    test("returns true when element exists", () => {
+    test("returns true when deletion is successful", () => {
         util.testFunction`
             const array = [1, 2, 3, 4];
-            const exists = delete array[2];
-            return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
-        `.expectToMatchJsResult();
-    });
-
-    test("returns false when element not exists", () => {
-        util.testFunction`
-            const array = [1, 2, 3, 4];
-            const exists = delete array[4];
-            return { exists, a: array[0], b: array[1], c: array[2], d: array[3] };
+            const success = delete array[2];
+            return { success, a: array[0], b: array[1], c: array[2], d: array[3] };
         `.expectToMatchJsResult();
     });
 });

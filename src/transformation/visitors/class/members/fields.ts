@@ -18,6 +18,7 @@ export function createPropertyDecoratingExpression(
     const propertyOwnerTable = transformMemberExpressionOwnerName(node, className, noPrototype);
     return createDecoratingExpression(
         context,
+        node.kind,
         node.decorators.map(d => transformDecoratorExpression(context, d)),
         propertyOwnerTable,
         propertyName

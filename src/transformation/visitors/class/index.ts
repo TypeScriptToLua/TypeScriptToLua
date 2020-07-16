@@ -335,6 +335,7 @@ function transformClassLikeDeclaration(
     if (classDeclaration.decorators) {
         const decoratingExpression = createDecoratingExpression(
             context,
+            classDeclaration.kind,
             classDeclaration.decorators.map(d => transformDecoratorExpression(context, d)),
             localClassName
         );

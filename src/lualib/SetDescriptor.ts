@@ -54,25 +54,19 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
 }
 
 // It's also used directly in class transform to add descriptors to the prototype
-function __TS__SetDescriptor(
-    this: void,
-    target: any,
-    prop: string,
-    desc: PropertyDescriptor,
-    isPrototype = false
-): void {
+function __TS__SetDescriptor(this: void, target: any, key: any, desc: PropertyDescriptor, isPrototype = false): void {
     let metatable = isPrototype ? target : getmetatable(target);
     if (!metatable) {
         metatable = {};
         setmetatable(target, metatable);
     }
 
-    const value = rawget(target, prop);
-    if (value !== undefined) rawset(target, prop, undefined);
+    const value = rawget(target, key);
+    if (value !== undefined) rawset(target, key, undefined);
 
     if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
-    const [descriptor] = __TS__CloneDescriptor(desc);
-    metatable._descriptors[prop] = descriptor;
+    const descriptor = __TS__CloneDescriptor(desc);
+    metatable._descriptors[key] = descriptor;
     metatable.__index = ____descriptorIndex;
     metatable.__newindex = ____descriptorNewindex;
 }

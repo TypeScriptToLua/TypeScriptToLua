@@ -1,18 +1,18 @@
-function __TS__Delete(this: void, target: object, prop: string): boolean {
+function __TS__Delete(this: void, target: any, key: any): boolean {
     const descriptors = __TS__ObjectGetOwnPropertyDescriptors(target);
     if (descriptors) {
-        const descriptor = descriptors[prop];
+        const descriptor = descriptors[key];
         if (descriptor) {
             if (!descriptor.configurable) {
-                throw `Cannot delete property ${prop} of ${target}.`;
+                throw `Cannot delete property ${key} of ${target}.`;
             }
 
-            descriptors[prop] = undefined;
+            descriptors[key] = undefined;
             return true;
         }
     } else {
-        if (target[prop] !== undefined) {
-            target[prop] = undefined;
+        if (target[key] !== undefined) {
+            target[key] = undefined;
             return true;
         }
     }

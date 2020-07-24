@@ -1,8 +1,7 @@
-/** @tupleReturn */
 function __TS__CloneDescriptor(
     this: void,
     { enumerable, configurable, get, set, writable, value }: PropertyDescriptor
-): [PropertyDescriptor, boolean] {
+): PropertyDescriptor {
     const descriptor: PropertyDescriptor = {
         enumerable: enumerable === true,
         configurable: configurable === true,
@@ -23,5 +22,5 @@ function __TS__CloneDescriptor(
         descriptor.writable = writable === true;
     }
 
-    return [descriptor, hasGetterOrSetter];
+    return descriptor;
 }

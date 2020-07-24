@@ -1,7 +1,7 @@
 /**
  * SEE: https://github.com/Microsoft/TypeScript/blob/master/src/compiler/transformers/ts.ts#L3598
  */
-function __TS__Decorate(this: void, decorators: Function[], target: any, key?: string, desc?: any): {} {
+function __TS__Decorate(this: void, decorators: Function[], target: any, key?: any, desc?: any): {} {
     let result = target;
 
     for (let i = decorators.length; i >= 0; i--) {
@@ -17,7 +17,7 @@ function __TS__Decorate(this: void, decorators: Function[], target: any, key?: s
                 if (value === undefined) {
                     descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key);
                 } else {
-                    [descriptor] = __TS__CloneDescriptor({ configurable: true, writable: true, value });
+                    descriptor = __TS__CloneDescriptor({ configurable: true, writable: true, value });
                 }
                 __TS__SetDescriptor(target, key, { ...descriptor, ...decorator(target, key, descriptor) });
             } else if (desc === false) {

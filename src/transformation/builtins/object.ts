@@ -9,36 +9,26 @@ export function transformObjectConstructorCall(
     expression: PropertyCallExpression
 ): lua.Expression | undefined {
     const method = expression.expression;
-    const parameters = transformArguments(context, expression.arguments);
+    const args = transformArguments(context, expression.arguments);
     const methodName = method.name.text;
 
     switch (methodName) {
         case "assign":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectAssign, expression, ...args);
         case "defineProperty":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectDefineProperty, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectDefineProperty, expression, ...args);
         case "entries":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectEntries, expression, ...args);
         case "fromEntries":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectFromEntries, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectFromEntries, expression, ...args);
         case "getOwnPropertyDescriptor":
-            return transformLuaLibFunction(
-                context,
-                LuaLibFeature.ObjectGetOwnPropertyDescriptor,
-                expression,
-                ...parameters
-            );
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectGetOwnPropertyDescriptor, expression, ...args);
         case "getOwnPropertyDescriptors":
-            return transformLuaLibFunction(
-                context,
-                LuaLibFeature.ObjectGetOwnPropertyDescriptors,
-                expression,
-                ...parameters
-            );
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectGetOwnPropertyDescriptors, expression, ...args);
         case "keys":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectKeys, expression, ...args);
         case "values":
-            return transformLuaLibFunction(context, LuaLibFeature.ObjectValues, expression, ...parameters);
+            return transformLuaLibFunction(context, LuaLibFeature.ObjectValues, expression, ...args);
         default:
             context.diagnostics.push(unsupportedProperty(method.name, "Object", methodName));
     }

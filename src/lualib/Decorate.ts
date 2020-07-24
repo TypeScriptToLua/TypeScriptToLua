@@ -17,7 +17,7 @@ function __TS__Decorate(this: void, decorators: Function[], target: any, key?: a
                 if (value === undefined) {
                     descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key);
                 } else {
-                    descriptor = __TS__CloneDescriptor({ configurable: true, writable: true, value });
+                    descriptor = { configurable: true, writable: true, value };
                 }
                 __TS__SetDescriptor(target, key, { ...descriptor, ...decorator(target, key, descriptor) });
             } else if (desc === false) {

@@ -17,11 +17,9 @@ function __TS__Decorate(this: void, decorators: Function[], target: any, key?: s
                 if (value === undefined) {
                     descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key);
                 } else {
-                    descriptor = __TS__CloneDescriptor({ value });
-                    rawset(target, key, undefined);
+                    [descriptor] = __TS__CloneDescriptor({ configurable: true, writable: true, value });
                 }
-                result = decorator(target, key, descriptor);
-                __TS__SetDescriptor(target, key, descriptor);
+                __TS__SetDescriptor(target, key, { ...descriptor, ...decorator(target, key, descriptor) });
             } else if (desc === false) {
                 result = decorator(target, key, desc);
             } else {

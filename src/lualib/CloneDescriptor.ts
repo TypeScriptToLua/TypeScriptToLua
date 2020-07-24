@@ -1,7 +1,8 @@
+/** @tupleReturn */
 function __TS__CloneDescriptor(
     this: void,
-    { enumerable, configurable, get, set, writable, value }: Readonly<PropertyDescriptor>
-): PropertyDescriptor {
+    { enumerable, configurable, get, set, writable, value }: PropertyDescriptor
+): [PropertyDescriptor, boolean] {
     const descriptor: PropertyDescriptor = {
         enumerable: enumerable === true,
         configurable: configurable === true,
@@ -11,7 +12,7 @@ function __TS__CloneDescriptor(
     const hasValueOrWritableAttribute = writable !== undefined || value !== undefined;
 
     if (hasGetterOrSetter && hasValueOrWritableAttribute) {
-        throw `Invalid property descriptor. Cannot both specify accessors and a value or writable attribute, ${this}.`;
+        throw "Invalid property descriptor. Cannot both specify accessors and a value or writable attribute.";
     }
 
     if (get || set) {
@@ -22,5 +23,5 @@ function __TS__CloneDescriptor(
         descriptor.writable = writable === true;
     }
 
-    return descriptor;
+    return [descriptor, hasGetterOrSetter];
 }

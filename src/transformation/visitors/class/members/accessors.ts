@@ -35,7 +35,9 @@ export function transformAccessorDeclarations(
     const isStatic = isStaticNode(firstAccessor);
     const target = isStatic ? lua.cloneIdentifier(className) : createPrototypeName(className);
     const feature = isStatic ? LuaLibFeature.ObjectDefineProperty : LuaLibFeature.SetDescriptor;
-    const call = transformLuaLibFunction(context, feature, undefined, target, propertyName, descriptor);
+    const parameters: lua.Expression[] = [target, propertyName, descriptor];
+    if (!isStatic) parameters.push(lua.createBooleanLiteral(true));
+    const call = transformLuaLibFunction(context, feature, undefined, ...parameters);
     return lua.createExpressionStatement(call);
 }
 

@@ -1,12 +1,14 @@
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions, validateOptions } from "../CompilerOptions";
-import { createPrinter } from "../LuaPrinter";
-import { createVisitorMap, transformSourceFile } from "../transformation";
-import { isNonNull } from "../utils";
+import { CompilerOptions, validateOptions } from "../../CompilerOptions";
+import { createPrinter } from "../../LuaPrinter";
+import { createVisitorMap, transformSourceFile } from "../../transformation";
+import { isNonNull } from "../../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
-import { EmitHost, ProcessedFile } from "./utils";
+import { EmitHost, ProcessedFile } from "../utils";
+
+export { Plugin };
 
 export interface TranspileOptions {
     program: ts.Program;

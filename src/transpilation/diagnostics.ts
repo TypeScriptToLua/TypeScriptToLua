@@ -37,3 +37,7 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
         "Using 'luaBundle' with 'luaLibImport: \"inline\"' might generate duplicate code. " +
         "It is recommended to use 'luaLibImport: \"require\"'.",
 }));
+
+export const unresolvableRequirePath = createDiagnosticFactory(
+    (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
+);

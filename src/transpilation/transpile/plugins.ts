@@ -1,8 +1,8 @@
 import * as ts from "typescript";
-import { CompilerOptions } from "../CompilerOptions";
-import { Printer } from "../LuaPrinter";
-import { Visitors } from "../transformation/context";
-import { getConfigDirectory, resolvePlugin } from "./utils";
+import { CompilerOptions } from "../../CompilerOptions";
+import { Printer } from "../../LuaPrinter";
+import { Visitors } from "../../transformation/context";
+import { getConfigDirectory, resolvePlugin } from "../utils";
 
 export interface Plugin {
     /**

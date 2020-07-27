@@ -1,7 +1,6 @@
 import * as path from "path";
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { formatPathToLuaPath } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getSymbolAnnotations, getTypeAnnotations } from "../../utils/annotations";
 import { createDefaultExportStringLiteral } from "../../utils/export";
@@ -10,29 +9,6 @@ import { createSafeName } from "../../utils/safe-names";
 import { peekScope } from "../../utils/scope";
 import { transformIdentifier } from "../identifier";
 import { transformPropertyName } from "../literal";
-import { unresolvableRequirePath } from "../../utils/diagnostics";
-
-const getAbsoluteImportPath = (relativePath: string, directoryPath: string, options: ts.CompilerOptions): string =>
-    !relativePath.startsWith(".") && options.baseUrl
-        ? path.resolve(options.baseUrl, relativePath)
-        : path.resolve(directoryPath, relativePath);
-
-function getImportPath(context: TransformationContext, relativePath: string, node: ts.Node): string {
-    const { options, sourceFile } = context;
-    const { fileName } = sourceFile;
-    const rootDir = options.rootDir ? path.resolve(options.rootDir) : path.resolve(".");
-
-    const absoluteImportPath = path.format(
-        path.parse(getAbsoluteImportPath(relativePath, path.dirname(fileName), options))
-    );
-    const absoluteRootDirPath = path.format(path.parse(rootDir));
-    if (absoluteImportPath.includes(absoluteRootDirPath)) {
-        return formatPathToLuaPath(absoluteImportPath.replace(absoluteRootDirPath, "").slice(1));
-    } else {
-        context.diagnostics.push(unresolvableRequirePath(node, relativePath));
-        return relativePath;
-    }
-}
 
 function shouldResolveModulePath(context: TransformationContext, moduleSpecifier: ts.Expression): boolean {
     const moduleOwnerSymbol = context.checker.getSymbolAtLocation(moduleSpecifier);
@@ -49,11 +25,12 @@ export function createModuleRequire(
 ): lua.CallExpression {
     const params: lua.Expression[] = [];
     if (ts.isStringLiteral(moduleSpecifier)) {
-        const modulePath = shouldResolveModulePath(context, moduleSpecifier)
-            ? getImportPath(context, moduleSpecifier.text.replace(/"/g, ""), moduleSpecifier)
-            : moduleSpecifier.text;
-
-        params.push(lua.createStringLiteral(modulePath));
+        const module = lua.createStringLiteral(moduleSpecifier.text);
+        params.push(
+            shouldResolveModulePath(context, moduleSpecifier)
+                ? lua.createCallExpression(lua.createIdentifier("__TS__Resolve"), [module])
+                : module
+        );
     }
 
     return lua.createCallExpression(lua.createIdentifier("require"), params, tsOriginal);
@@ -110,9 +87,7 @@ export const transformImportDeclaration: FunctionVisitor<ts.ImportDeclaration> =
         }
     }
 
-    const importPath = ts.isStringLiteral(statement.moduleSpecifier)
-        ? statement.moduleSpecifier.text.replace(/"/g, "")
-        : "module";
+    const importPath = ts.isStringLiteral(statement.moduleSpecifier) ? statement.moduleSpecifier.text : "module";
 
     // Create the require statement to extract values.
     // local ____module = require("module")

@@ -119,10 +119,6 @@ export const invalidAmbientIdentifierName = createDiagnosticFactory(
     (text: string) => `Invalid ambient identifier name '${text}'. Ambient identifiers must be valid lua identifiers.`
 );
 
-export const unresolvableRequirePath = createDiagnosticFactory(
-    (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
-);
-
 export const unsupportedVarDeclaration = createDiagnosticFactory(
     "`var` declarations are not supported. Use `let` or `const` instead."
 );

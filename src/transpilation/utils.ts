@@ -7,11 +7,7 @@ import * as cliDiagnostics from "../cli/diagnostics";
 import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
 
-export interface EmitHost {
-    getCurrentDirectory(): string;
-    readFile(path: string): string | undefined;
-    writeFile: ts.WriteFileCallback;
-}
+export type EmitHost = Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile">;
 
 interface BaseFile {
     code: string;

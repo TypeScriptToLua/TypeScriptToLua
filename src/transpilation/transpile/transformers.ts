@@ -1,9 +1,9 @@
 import * as ts from "typescript";
 // TODO: Don't depend on CLI?
-import * as cliDiagnostics from "../cli/diagnostics";
-import { CompilerOptions, TransformerImport } from "../CompilerOptions";
-import * as diagnosticFactories from "./diagnostics";
-import { getConfigDirectory, resolvePlugin } from "./utils";
+import * as cliDiagnostics from "../../cli/diagnostics";
+import { CompilerOptions, TransformerImport } from "../../CompilerOptions";
+import * as diagnosticFactories from "../diagnostics";
+import { getConfigDirectory, resolvePlugin } from "../utils";
 
 export function getTransformers(
     program: ts.Program,

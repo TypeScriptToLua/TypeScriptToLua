@@ -6,7 +6,6 @@ import { CompilerOptions } from "../CompilerOptions";
 import { createEmitOutputCollector, TranspiledFile } from "./output-collector";
 import { EmitResult, Transpiler } from "./transpiler";
 
-export { Plugin } from "./plugins";
 export * from "./transpile";
 export * from "./transpiler";
 export { EmitHost } from "./utils";

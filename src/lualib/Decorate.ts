@@ -13,13 +13,18 @@ function __TS__Decorate(this: void, decorators: Function[], target: any, key?: a
                 result = decorator(result);
             } else if (desc === true) {
                 const value = rawget(target, key);
-                let descriptor: PropertyDescriptor;
-                if (value === undefined) {
-                    descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key);
+                const descriptor = __TS__ObjectGetOwnPropertyDescriptor(target, key) || {
+                    configurable: true,
+                    writable: true,
+                    value,
+                };
+                const desc = decorator(target, key, descriptor) || descriptor;
+                const isSimpleValue = desc.configurable === true && desc.writable === true && !desc.get && !desc.set;
+                if (isSimpleValue) {
+                    rawset(target, key, desc.value);
                 } else {
-                    descriptor = { configurable: true, writable: true, value };
+                    __TS__SetDescriptor(target, key, { ...descriptor, ...desc });
                 }
-                __TS__SetDescriptor(target, key, { ...descriptor, ...decorator(target, key, descriptor) });
             } else if (desc === false) {
                 result = decorator(target, key, desc);
             } else {

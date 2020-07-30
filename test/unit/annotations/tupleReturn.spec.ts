@@ -441,3 +441,204 @@ test("TupleReturn in expression", () => {
 
     expect(result).toBe("a3");
 });
+
+test("TupleReturn Cast", () => {
+    const code = `
+        /** @tupleReturn */
+        function foo() {
+            return ["a", "b", "c"] as [string, string, string];
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Assertion", () => {
+    const code = `
+        /** @tupleReturn */
+        function foo() {
+            return <[string, string, string]>["a", "b", "c"];
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn as const", () => {
+    const code = `
+        /** @tupleReturn */
+        function foo() {
+            return ["a", "b", "c"] as const;
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Explicit Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo(): TupleReturn<[string, string, string]> {
+            return ["a", "b", "c"];
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Implicit Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        const tup: TupleReturn<[string, string, string]> = ["a", "b", "c"];
+
+        function foo() {
+            return tup;
+        }
+
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).toContain("unpack(tup)");
+    expect(lua).not.toMatch(/unpack\(\s*foo\(nil\)\s*\)/);
+});
+
+test("TupleReturn Type Forward Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo(): TupleReturn<[string, string, string]> {
+            return ["a", "b", "c"];
+        }
+
+        function bar() {
+            return foo();
+        }
+
+        const [a, b, c] = bar();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Cast Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo() {
+            return ["a", "b", "c"] as TupleReturn<[string, string, string]>;
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Type Assertion Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo() {
+            return <TupleReturn<[string, string, string]>>["a", "b", "c"];
+        }
+        const [a, b, c] = foo();
+        return b;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Wrap Return", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo(): TupleReturn<number[]> {
+            return [9, 8, 7];
+        }
+        const bar = foo();
+        return bar[1];
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).toMatch(/{\s*foo\(nil\)\s*}/);
+});
+
+test("TupleReturn Type Infer Parameter", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo<A extends unknown[]>(cb: () => TupleReturn<A>) {
+            const [a, b, c] = cb();
+            return b;
+        }
+        const bar = foo(() => ["a", "b", "c"]);
+        return bar;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toContain("unpack");
+});
+
+test("TupleReturn Type Overload", () => {
+    const code = `
+        /** @tupleReturn */
+        type TupleReturn<A extends unknown[]> = A & { __tupleReturn?: never };
+
+        function foo<R extends unknown[]>(cb: () => TupleReturn<R>): TupleReturn<R>;
+        function foo<R>(cb: () => R): R;
+        function foo<R>(cb: () => R): R {
+            return cb();
+        }
+
+        const arr: () => number[] = () => [1, 2, 3];
+        const bar = foo(arr);
+
+        const tup: () => TupleReturn<number[]> = () => [4, 5, 6, 7];
+        const [a, b, c, d] = foo(tup);
+
+        bar.push(c);
+        return bar;
+    `;
+    util.testFunction(code).expectToMatchJsResult();
+
+    const lua = util.testFunction(code).getMainLuaCodeChunk();
+    expect(lua).not.toMatch(/{\s*foo\(nil, arr\)\s*}/);
+    expect(lua).not.toContain("unpack");
+});

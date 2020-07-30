@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall } from "../utils/annotations";
+import { isInTupleReturnFunction, isTupleReturnCall, isTupleReturnType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
@@ -29,16 +29,20 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
             validateAssignment(context, statement, expressionType, returnType);
         }
 
-        if (isInTupleReturnFunction(context, statement)) {
+        if (isInTupleReturnFunction(context, statement) || isTupleReturnType(returnType || expressionType)) {
+            let expression = statement.expression;
+            while (ts.isAsExpression(expression) || ts.isTypeAssertion(expression)) {
+                // strip casts
+                expression = expression.expression;
+            }
+
             // Parent function is a TupleReturn function
-            if (ts.isArrayLiteralExpression(statement.expression)) {
+            if (ts.isArrayLiteralExpression(expression)) {
                 // If return expression is an array literal, leave out brackets.
-                results = statement.expression.elements.map(e => context.transformExpression(e));
-            } else if (!isTupleReturnCall(context, statement.expression) && isArrayType(context, expressionType)) {
+                results = expression.elements.map(e => context.transformExpression(e));
+            } else if (!isTupleReturnCall(context, expression) && isArrayType(context, expressionType)) {
                 // If return expression is an array-type and not another TupleReturn call, unpack it
-                results = [
-                    createUnpackCall(context, context.transformExpression(statement.expression), statement.expression),
-                ];
+                results = [createUnpackCall(context, context.transformExpression(expression), expression)];
             } else {
                 results = [context.transformExpression(statement.expression)];
             }

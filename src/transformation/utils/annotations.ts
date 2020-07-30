@@ -118,6 +118,10 @@ export function isTupleReturnCall(context: TransformationContext, node: ts.Node)
             return true;
         }
 
+        if (isTupleReturnType(signature.getReturnType()) && !isLuaIteratorType(context, node)) {
+            return true;
+        }
+
         // Only check function type for directive if it is declared as an interface or type alias
         const declaration = signature.getDeclaration();
         const isInterfaceOrAlias =
@@ -162,6 +166,10 @@ export function isInTupleReturnFunction(context: TransformationContext, node: ts
     }
 
     return getTypeAnnotations(functionType).has(AnnotationKind.TupleReturn);
+}
+
+export function isTupleReturnType(type: ts.Type): boolean {
+    return getTypeAnnotations(type).has(AnnotationKind.TupleReturn);
 }
 
 export function isLuaIteratorType(context: TransformationContext, node: ts.Node): boolean {

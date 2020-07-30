@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isInTupleReturnFunction, isTupleReturnCall, isVarargType } from "../utils/annotations";
+import { isInTupleReturnFunction, isTupleReturnCall, isVarargType, isTupleReturnType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
@@ -196,7 +196,9 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 
     const isTupleReturn = isTupleReturnCall(context, node);
     const isTupleReturnForward =
-        node.parent && ts.isReturnStatement(node.parent) && isInTupleReturnFunction(context, node);
+        node.parent &&
+        ts.isReturnStatement(node.parent) &&
+        (isInTupleReturnFunction(context, node) || isTupleReturnType(context.checker.getTypeAtLocation(node)));
     const isInSpread = node.parent && ts.isSpreadElement(node.parent);
     const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
     const wrapResult =

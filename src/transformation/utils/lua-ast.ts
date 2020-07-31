@@ -7,7 +7,6 @@ import { createExportedIdentifier, getIdentifierExportScope } from "./export";
 import { peekScope, ScopeType, Scope } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
-import { isArray } from "util";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
 export function unwrapVisitorResult<T extends lua.Node>(result: OneToManyVisitorResult<T>): T[] {

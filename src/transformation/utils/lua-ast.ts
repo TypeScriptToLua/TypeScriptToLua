@@ -4,10 +4,10 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { peekScope, ScopeType } from "./scope";
-import { isFunctionType } from "./typescript";
+import { peekScope, ScopeType, Scope } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
+import { isArray } from "util";
 
 export type OneToManyVisitorResult<T extends lua.Node> = T | T[] | undefined;
 export function unwrapVisitorResult<T extends lua.Node>(result: OneToManyVisitorResult<T>): T[] {
@@ -129,6 +129,19 @@ export function createHoistableVariableDeclarationStatement(
     return declaration;
 }
 
+function hasMultipleReferences(scope: Scope, identifiers: lua.Identifier | lua.Identifier[]) {
+    const scopeSymbols = scope.referencedSymbols;
+    if (!scopeSymbols) {
+        return false;
+    }
+
+    const referenceLists = isArray(identifiers)
+        ? identifiers.map(i => i.symbolId && scopeSymbols.get(i.symbolId))
+        : [identifiers.symbolId && scopeSymbols.get(identifiers.symbolId)];
+
+    return referenceLists.some(symbolRefs => symbolRefs && symbolRefs.length > 1);
+}
+
 export function createLocalOrExportedOrGlobalDeclaration(
     context: TransformationContext,
     lhs: lua.Identifier | lua.Identifier[],
@@ -163,15 +176,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            const isPossibleWrappedFunction =
-                !isFunctionDeclaration &&
-                tsOriginal &&
-                ts.isVariableDeclaration(tsOriginal) &&
-                tsOriginal.initializer &&
-                isFunctionType(context, context.checker.getTypeAtLocation(tsOriginal.initializer));
-
-            if (isPossibleWrappedFunction || scope.type === ScopeType.Switch) {
-                // Split declaration and assignment for wrapped function types to allow recursion
+            if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
+                // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
                 assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
             } else {

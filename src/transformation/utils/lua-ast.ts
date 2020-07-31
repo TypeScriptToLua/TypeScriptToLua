@@ -135,9 +135,7 @@ function hasMultipleReferences(scope: Scope, identifiers: lua.Identifier | lua.I
         return false;
     }
 
-    const referenceLists = isArray(identifiers)
-        ? identifiers.map(i => i.symbolId && scopeSymbols.get(i.symbolId))
-        : [identifiers.symbolId && scopeSymbols.get(identifiers.symbolId)];
+    const referenceLists = castArray(identifiers).map(i => i.symbolId && scopeSymbols.get(i.symbolId));
 
     return referenceLists.some(symbolRefs => symbolRefs && symbolRefs.length > 1);
 }

@@ -323,3 +323,39 @@ test.each([
         return { r, o, a };
     `.expectToMatchJsResult();
 });
+
+test("local variable declaration referencing self indirectly", () => {
+    util.testFunction`
+        let cb: () => void;
+
+        function foo(newCb: () => void) {
+            cb = newCb;
+            return "foo";
+        }
+
+        let bar = foo(() => {
+            bar = "bar";
+        });
+
+        cb();
+        return bar;
+    `.expectToMatchJsResult();
+});
+
+test("local multiple variable declaration referencing self indirectly", () => {
+    util.testFunction`
+        let cb: () => void;
+
+        function foo(newCb: () => void) {
+            cb = newCb;
+            return ["a", "foo", "c"];
+        }
+
+        let [a, bar, c] = foo(() => {
+            bar = "bar";
+        });
+
+        cb();
+        return bar;
+    `.expectToMatchJsResult();
+});

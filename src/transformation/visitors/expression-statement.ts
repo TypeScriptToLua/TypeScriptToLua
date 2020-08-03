@@ -5,14 +5,8 @@ import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformDeleteExpressionStatement } from "./delete";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
-import { transformMultiHelperDestructuringAssignmentStatement } from "./helpers/multi";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
-    const multiResult = transformMultiHelperDestructuringAssignmentStatement(context, node);
-    if (multiResult) {
-        return multiResult;
-    }
-
     const luaTableResult = transformLuaTableExpressionStatement(context, node);
     if (luaTableResult) {
         return luaTableResult;

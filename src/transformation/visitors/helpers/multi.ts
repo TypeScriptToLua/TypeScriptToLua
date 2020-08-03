@@ -18,9 +18,8 @@ import {
     unsupportedMultiHelperFunctionPosition,
 } from "../../../transformation/utils/diagnostics";
 
-const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean => {
-    return helpers.getHelperFileKind(context, declaration.getSourceFile()) === helpers.HelperKind.Multi;
-};
+const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean =>
+    helpers.getHelperFileKind(context, declaration.getSourceFile()) === helpers.HelperKind.Multi;
 
 function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);

@@ -1,5 +1,9 @@
 /** @noSelf */
 declare namespace string {
+    function byte(s: string, i?: number): number | undefined;
+    /** @tupleReturn */
+    function byte(s: string, i?: number, j?: number): number[];
+
     /** @tupleReturn */
     function gsub(
         source: string,

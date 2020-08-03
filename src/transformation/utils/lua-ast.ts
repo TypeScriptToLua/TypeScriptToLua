@@ -4,8 +4,7 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { peekScope, ScopeType } from "./scope";
-import { isFunctionType } from "./typescript";
+import { peekScope, ScopeType, Scope } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
 
@@ -22,24 +21,45 @@ export function createExportsIdentifier(): lua.Identifier {
     return lua.createIdentifier("____exports");
 }
 
-export function createExpressionPlusOne(expression: lua.Expression): lua.Expression {
-    if (lua.isNumericLiteral(expression)) {
-        const newNode = lua.cloneNode(expression);
-        newNode.value += 1;
+export function addToNumericExpression(expression: lua.Expression, change: number): lua.Expression {
+    if (change === 0) return expression;
+
+    const literalValue = getNumberLiteralValue(expression);
+    if (literalValue !== undefined) {
+        const newNode = lua.createNumericLiteral(literalValue + change);
+        lua.setNodePosition(newNode, expression);
         return newNode;
     }
 
     if (lua.isBinaryExpression(expression)) {
         if (
-            expression.operator === lua.SyntaxKind.SubtractionOperator &&
             lua.isNumericLiteral(expression.right) &&
-            expression.right.value === 1
+            ((expression.operator === lua.SyntaxKind.SubtractionOperator && expression.right.value === change) ||
+                (expression.operator === lua.SyntaxKind.AdditionOperator && expression.right.value === -change))
         ) {
             return expression.left;
         }
     }
 
-    return lua.createBinaryExpression(expression, lua.createNumericLiteral(1), lua.SyntaxKind.AdditionOperator);
+    return change > 0
+        ? lua.createBinaryExpression(expression, lua.createNumericLiteral(change), lua.SyntaxKind.AdditionOperator)
+        : lua.createBinaryExpression(expression, lua.createNumericLiteral(-change), lua.SyntaxKind.SubtractionOperator);
+}
+
+export function getNumberLiteralValue(expression?: lua.Expression) {
+    if (!expression) return undefined;
+
+    if (lua.isNumericLiteral(expression)) return expression.value;
+
+    if (
+        lua.isUnaryExpression(expression) &&
+        expression.operator === lua.SyntaxKind.NegationOperator &&
+        lua.isNumericLiteral(expression.operand)
+    ) {
+        return -expression.operand.value;
+    }
+
+    return undefined;
 }
 
 export function createImmediatelyInvokedFunctionExpression(
@@ -108,6 +128,17 @@ export function createHoistableVariableDeclarationStatement(
     return declaration;
 }
 
+function hasMultipleReferences(scope: Scope, identifiers: lua.Identifier | lua.Identifier[]) {
+    const scopeSymbols = scope.referencedSymbols;
+    if (!scopeSymbols) {
+        return false;
+    }
+
+    const referenceLists = castArray(identifiers).map(i => i.symbolId && scopeSymbols.get(i.symbolId));
+
+    return referenceLists.some(symbolRefs => symbolRefs && symbolRefs.length > 1);
+}
+
 export function createLocalOrExportedOrGlobalDeclaration(
     context: TransformationContext,
     lhs: lua.Identifier | lua.Identifier[],
@@ -142,15 +173,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            const isPossibleWrappedFunction =
-                !isFunctionDeclaration &&
-                tsOriginal &&
-                ts.isVariableDeclaration(tsOriginal) &&
-                tsOriginal.initializer &&
-                isFunctionType(context, context.checker.getTypeAtLocation(tsOriginal.initializer));
-
-            if (isPossibleWrappedFunction || scope.type === ScopeType.Switch) {
-                // Split declaration and assignment for wrapped function types to allow recursion
+            if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
+                // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
                 assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
             } else {
@@ -197,3 +221,11 @@ export function createLocalOrExportedOrGlobalDeclaration(
         return [];
     }
 }
+
+export const createNaN = (tsOriginal?: ts.Node) =>
+    lua.createBinaryExpression(
+        lua.createNumericLiteral(0),
+        lua.createNumericLiteral(0),
+        lua.SyntaxKind.DivisionOperator,
+        tsOriginal
+    );

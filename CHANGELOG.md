@@ -1,10 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.35.0
 
-- `Function.length` is supported now
-
+- In preparation for some new features, some public APIs have been changed:
+  - High-level APIs that read input files from the file system (`transpileFiles` and `transpileProject`) now write transpiled files by default. This behavior can be changed by providing a `writeFile` callback, similarly to TypeScript's `program.emit`.
+  - `transpile` and `emitTranspiledFiles` functions have been replaced with the `Transpiler` class. See [documentation](https://typescripttolua.github.io/docs/api/overview#low-level-api) for usage examples.
+- Fixed `declarationDir` option not being respected.
+- `Function.length` is supported now.
+- String iteration is now supported.
+- Exposed `parseConfigFileWithSystem` to parse _tsconfig.json_ files as part of the tstl API.
 - Fixed `string.replace` incorrectly escaping some `replaceValue` characters (`().+-*?[^$`)
+- Fixed several other string operations behaving differently from JS (mostly regarding indices out of bounds and NaN arguments).
+- Fixed a bug where the length argument of `String.prototype.substr` was evaluated twice.
+- Fixed some missing dependencies in LuaLib classes (Map, Set, WeakMap, WeakSet)
 
 ## 0.34.0
 

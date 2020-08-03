@@ -1,19 +1,27 @@
+import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import * as path from "path";
+import { parseConfigFileWithSystem } from "../../src/cli/tsconfig";
+import { normalizeSlashes } from "../../src/utils";
 
-interface BuildVirtualProjectResult {
-    diagnostics: ts.Diagnostic[];
-    emitResult: tstl.OutputFile[];
-    emittedFiles: string[];
-}
-
-export function buildVirtualProject(rootNames: string[], options: tstl.CompilerOptions): BuildVirtualProjectResult {
+export function transpileFilesResult(rootNames: string[], options: tstl.CompilerOptions) {
     options.skipLibCheck = true;
     options.types = [];
 
-    const { diagnostics, emitResult } = tstl.transpileFiles(rootNames, options);
-    const emittedFiles = emitResult.map(result => path.relative(__dirname, result.name).replace(/\\/g, "/")).sort();
+    const emittedFiles: ts.OutputFile[] = [];
+    const { diagnostics } = tstl.transpileFiles(rootNames, options, (fileName, text, writeByteOrderMark) => {
+        const name = normalizeSlashes(path.relative(__dirname, fileName));
+        emittedFiles.push({ name, text, writeByteOrderMark });
+    });
 
-    return { diagnostics, emitResult, emittedFiles };
+    return { diagnostics, emittedFiles };
+}
+
+export function transpileProjectResult(configFileName: string) {
+    const parseResult = parseConfigFileWithSystem(configFileName);
+    if (parseResult.errors.length > 0) {
+        return { diagnostics: parseResult.errors, emittedFiles: [] };
+    }
+
+    return transpileFilesResult(parseResult.fileNames, parseResult.options);
 }

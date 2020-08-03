@@ -19,16 +19,13 @@ test.each<[string, any]>([
         .expectToEqual(result);
 });
 
-test.each<[string, number[]]>([
-    ["$multi", [unsupportedMultiHelperFunctionPosition.code]],
-    ["$multi()", [unsupportedMultiHelperFunctionPosition.code]],
-    ["({ $multi });", [unsupportedMultiHelperFunctionPosition.code]],
-    ["[] = $multi()", [unsupportedMultiHelperFunctionPosition.code]],
-    ["const [] = $multi();", [unsupportedMultiHelperFunctionPosition.code]],
-])("invalid $multi call (%s)", (statement, diagnostics) => {
-    util.testModule`
-        ${statement}
-    `
-        .setOptions(multiProjectOptions)
-        .expectDiagnosticsToMatchSnapshot(diagnostics);
-});
+test.each(["$multi", "$multi()", "({ $multi });", "[] = $multi()", "const [] = $multi();"])(
+    "unsupported $multi call (%s)",
+    statement => {
+        util.testFunction`
+            ${statement}
+        `
+            .setOptions(multiProjectOptions)
+            .expectDiagnosticsToMatchSnapshot([unsupportedMultiHelperFunctionPosition.code]);
+    }
+);

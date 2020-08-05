@@ -1,5 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`invalid $multi call ($multi()): code 1`] = `"____(_G)"`;
+
+exports[`invalid $multi call ($multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi() function cannot be used here."`;
+
+exports[`invalid $multi call ($multi): code 1`] = `"local ____ = ____"`;
+
+exports[`invalid $multi call ($multi): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi() function cannot be used here."`;
+
+exports[`invalid $multi call (([a] = $multi(1)) => {}): code 1`] = `
+"local function ____(____, ____bindingPattern0)
+    if ____bindingPattern0 == nil then
+        ____bindingPattern0 = ____(_G, 1)
+    end
+    local a = ____bindingPattern0[1]
+end"
+`;
+
+exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi() function cannot be used here."`;
+
+exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = nil"`;
+
+exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi() function cannot be used here."`;
+
+exports[`invalid $multi call ([] = $multi()): code 1`] = `""`;
+
+exports[`invalid $multi call ([] = $multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: There must be one or more elements specified here."`;
+
+exports[`invalid $multi call (const [] = $multi();): code 1`] = `""`;
+
+exports[`invalid $multi call (const [] = $multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: There must be one or more elements specified here."`;
+
+exports[`invalid $multi call (const [a = 0] = $multi()): code 1`] = `""`;
+
+exports[`invalid $multi call (const [a = 0] = $multi()): diagnostics 1`] = `"main.ts(2,16): error TSTL: This array binding pattern cannot have initializers."`;
+
+exports[`invalid $multi call (const {} = $multi();): code 1`] = `""`;
+
+exports[`invalid $multi call (const {} = $multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: Expected an array destructuring pattern."`;
+
+exports[`invalid $multi call (const a = $multi();): code 1`] = `""`;
+
+exports[`invalid $multi call (const a = $multi();): diagnostics 1`] = `"main.ts(2,15): error TSTL: Expected an array destructuring pattern."`;
+
 exports[`unsupported $multi call ($multi()): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -7,8 +50,6 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
-
-exports[`unsupported $multi call ($multi()): diagnostics 1`] = `"main.ts(2,13): error TSTL: The $multi() function can only be used in a return statement."`;
 
 exports[`unsupported $multi call ($multi): code 1`] = `
 "local ____exports = {}
@@ -18,8 +59,6 @@ end
 return ____exports"
 `;
 
-exports[`unsupported $multi call ($multi): diagnostics 1`] = `"main.ts(2,13): error TSTL: The $multi() function can only be used in a return statement."`;
-
 exports[`unsupported $multi call (({ $multi });): code 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -27,29 +66,3 @@ function ____exports.__main(self)
 end
 return ____exports"
 `;
-
-exports[`unsupported $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi() function can only be used in a return statement."`;
-
-exports[`unsupported $multi call ([] = $multi()): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-     = table.unpack(
-        ____(nil)
-    )
-end
-return ____exports"
-`;
-
-exports[`unsupported $multi call ([] = $multi()): diagnostics 1`] = `"main.ts(2,18): error TSTL: The $multi() function can only be used in a return statement."`;
-
-exports[`unsupported $multi call (const [] = $multi();): code 1`] = `
-"local ____exports = {}
-function ____exports.__main(self)
-    local ____ = table.unpack(
-        ____(nil)
-    )
-end
-return ____exports"
-`;
-
-exports[`unsupported $multi call (const [] = $multi();): diagnostics 1`] = `"main.ts(2,24): error TSTL: The $multi() function can only be used in a return statement."`;

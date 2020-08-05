@@ -10,6 +10,7 @@ import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../u
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
+import { transformMultiHelperVariableDeclaration } from "./helpers/multi";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -217,6 +218,11 @@ export function transformVariableDeclaration(
     context: TransformationContext,
     statement: ts.VariableDeclaration
 ): lua.Statement[] {
+    const result = transformMultiHelperVariableDeclaration(context, statement);
+    if (result) {
+        return result;
+    }
+
     if (statement.initializer && statement.type) {
         const initializerType = context.checker.getTypeAtLocation(statement.initializer);
         const varType = context.checker.getTypeFromTypeNode(statement.type);

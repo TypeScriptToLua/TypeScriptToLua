@@ -1,7 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import * as helpers from "../../utils/helpers";
-import { isNonNull } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { transformAssignmentLeftHandSideExpression } from "../binary-expression/assignments";
 import { transformIdentifier } from "../identifier";
@@ -166,17 +165,19 @@ export function findMultiHelperAssignmentViolations(
     context: TransformationContext,
     node: ts.ObjectLiteralExpression
 ): ts.Node[] {
-    return node.properties
-        .filter(ts.isShorthandPropertyAssignment)
-        .map(element => {
-            const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
-            if (valueSymbol) {
-                const declaration = valueSymbol.valueDeclaration;
-                if (declaration && isMultiFunctionDeclaration(declaration)) {
-                    context.diagnostics.push(invalidMultiFunctionUse(element));
-                    return element;
-                }
+    const result: ts.Node[] = [];
+
+    for (const element of node.properties) {
+        if (!ts.isShorthandPropertyAssignment(element)) continue;
+        const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
+        if (valueSymbol) {
+            const declaration = valueSymbol.valueDeclaration;
+            if (declaration && isMultiFunctionDeclaration(declaration)) {
+                context.diagnostics.push(invalidMultiFunctionUse(element));
+                result.push(element);
             }
-        })
-        .filter(isNonNull);
+        }
+    }
+
+    return result;
 }

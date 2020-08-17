@@ -11,7 +11,7 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
-import { isMultiReturnCall } from "./helpers/multi";
+import { returnsMultiType } from "./helpers/multi";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -252,7 +252,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
 export const transformSpreadElement: FunctionVisitor<ts.SpreadElement> = (node, context) => {
     const innerExpression = context.transformExpression(node.expression);
     if (isTupleReturnCall(context, node.expression)) return innerExpression;
-    if (isMultiReturnCall(context, node.expression)) return innerExpression;
+    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) return innerExpression;
 
     if (ts.isIdentifier(node.expression) && isVarargType(context, node.expression)) {
         return lua.createDotsLiteral(node);

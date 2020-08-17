@@ -8,10 +8,10 @@ import { createExportedIdentifier, getSymbolExportScope } from "../utils/export"
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
-import { isMultiHelperNode } from "./helpers/multi";
+import { isMultiFunctionNode } from "./helpers/multi";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
-    if (isMultiHelperNode(context, identifier)) {
+    if (isMultiFunctionNode(context, identifier)) {
         context.diagnostics.push(invalidMultiFunctionUse(identifier));
         return lua.createAnonymousIdentifier(identifier);
     }

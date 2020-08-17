@@ -3,7 +3,7 @@ import * as path from "path";
 
 export enum HelperKind {
     MultiFunction = "MultiFunction",
-    MultiReturnFunction = "MultiReturnFunction",
+    MultiType = "MultiType",
 }
 
 function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
@@ -12,15 +12,17 @@ function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
     return helperDirectory === sourceFileDirectory;
 }
 
-export function getHelperFileKind(declaration: ts.Declaration): HelperKind | undefined {
+export function getHelperKind(declaration: ts.Declaration): HelperKind | undefined {
     const sourceFile = declaration.getSourceFile();
     if (isSourceFileFromHelpers(sourceFile)) {
-        const baseFileName = path.basename(sourceFile.fileName).replace(/(\.d)?\.ts$/g, "");
-        switch (baseFileName) {
-            case "multi":
-                return HelperKind.MultiReturnFunction;
-            default:
-                throw new Error("Unknown helper");
+        if (ts.isFunctionDeclaration(declaration) && declaration?.name?.text === "$multi") {
+            return HelperKind.MultiFunction;
         }
+
+        if (ts.isTypeAliasDeclaration(declaration) && declaration.name.text === "MultiReturn") {
+            return HelperKind.MultiType;
+        }
+
+        throw new Error("Unknown helper kind");
     }
 }

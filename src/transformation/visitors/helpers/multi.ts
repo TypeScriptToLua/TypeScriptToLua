@@ -18,26 +18,25 @@ import {
     invalidMultiFunctionUse,
 } from "../../../transformation/utils/diagnostics";
 
-const isMultiHelperDeclaration = (declaration: ts.Declaration): boolean =>
-    helpers.getHelperFileKind(declaration) === helpers.HelperKind.MultiFunction;
+const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
+    helpers.getHelperKind(declaration) === helpers.HelperKind.MultiFunction;
 
-function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
+const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
+    helpers.getHelperKind(declaration) === helpers.HelperKind.MultiType;
+
+function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
 
-export function isMultiReturnCall(context: TransformationContext, node: ts.Node): node is ts.CallExpression {
-    if (!ts.isCallExpression(node)) {
-        return false;
-    }
-
+export function returnsMultiType(context: TransformationContext, node: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(node);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
 }
 
-export function isMultiHelperNode(context: TransformationContext, node: ts.Node): boolean {
+export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
+    return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
 
 export function transformMultiHelperReturnStatement(
@@ -46,17 +45,17 @@ export function transformMultiHelperReturnStatement(
 ): lua.Statement | undefined {
     if (!statement.expression) return;
     if (!ts.isCallExpression(statement.expression)) return;
-    if (!isMultiHelperCallSignature(context, statement.expression)) return;
+    if (!isMultiFunction(context, statement.expression)) return;
 
     const expressions = transformArguments(context, statement.expression.arguments);
     return lua.createReturnStatement(expressions, statement);
 }
 
-function transformMultiHelperCallArguments(
+function transformMultiFunctionArguments(
     context: TransformationContext,
     expression: ts.CallExpression
 ): lua.Expression[] | lua.Expression {
-    if (!isMultiHelperCallSignature(context, expression)) {
+    if (!isMultiFunction(context, expression)) {
         return context.transformExpression(expression);
     }
 
@@ -72,7 +71,7 @@ export function transformMultiHelperVariableDeclaration(
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
     if (!declaration.initializer) return;
-    if (!isMultiReturnCall(context, declaration.initializer)) return;
+    if (!ts.isCallExpression(declaration.initializer) || !returnsMultiType(context, declaration.initializer)) return;
 
     if (!ts.isArrayBindingPattern(declaration.name)) {
         context.diagnostics.push(invalidMultiReturnToNonArrayBindingPattern(declaration.name));
@@ -100,7 +99,7 @@ export function transformMultiHelperVariableDeclaration(
         }
     }
 
-    const rightExpressions = transformMultiHelperCallArguments(context, declaration.initializer);
+    const rightExpressions = transformMultiFunctionArguments(context, declaration.initializer);
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
 
@@ -110,7 +109,8 @@ export function transformMultiHelperDestructuringAssignmentStatement(
 ): lua.Statement[] | undefined {
     if (!ts.isBinaryExpression(statement.expression)) return;
     if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
-    if (!isMultiReturnCall(context, statement.expression.right)) return;
+    if (!ts.isCallExpression(statement.expression.right)) return;
+    if (!returnsMultiType(context, statement.expression.right)) return;
 
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
         context.diagnostics.push(invalidMultiReturnToNonArrayLiteral(statement.expression.left));
@@ -134,7 +134,7 @@ export function transformMultiHelperDestructuringAssignmentStatement(
 
     const leftIdentifiers = statement.expression.left.elements.map(transformLeft);
 
-    const rightExpressions = transformMultiHelperCallArguments(context, statement.expression.right);
+    const rightExpressions = transformMultiFunctionArguments(context, statement.expression.right);
 
     const trailingStatements = statement.expression.left.elements.flatMap(expression => {
         const symbol = context.checker.getSymbolAtLocation(expression);
@@ -158,7 +158,7 @@ export function findMultiHelperAssignmentViolations(
             const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
             if (valueSymbol) {
                 const declaration = valueSymbol.valueDeclaration;
-                if (declaration && isMultiHelperDeclaration(declaration)) {
+                if (declaration && isMultiFunctionDeclaration(declaration)) {
                     context.diagnostics.push(invalidMultiFunctionUse(element));
                     return element;
                 }

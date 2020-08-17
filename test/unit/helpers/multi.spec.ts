@@ -80,6 +80,18 @@ test.each<[string, number[]]>([
         .expectDiagnosticsToMatchSnapshot(diagnostics);
 });
 
+test("function to spread multi type result from multi type function", () => {
+    util.testFunction`
+        ${multiFunction}
+        function m() {
+            return $multi(...multi(true));
+        }
+        return m();
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(true);
+});
+
 test("$multi helper call with destructuring assignment side effects", () => {
     util.testModule`
         ${multiFunction}

@@ -127,8 +127,6 @@ export const unsupportedVarDeclaration = createDiagnosticFactory(
     "`var` declarations are not supported. Use `let` or `const` instead."
 );
 
-export const unknownHelperKind = createDiagnosticFactory((kind: string) => `Unknown helper kind "${kind}".`);
-
 export const invalidMultiFunctionUse = createDiagnosticFactory(
     "The $multi function must be called in return statements."
 );

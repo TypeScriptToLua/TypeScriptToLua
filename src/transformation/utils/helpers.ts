@@ -1,10 +1,9 @@
 import * as ts from "typescript";
 import * as path from "path";
-import { TransformationContext } from "../context";
-import { unknownHelperKind } from "./diagnostics";
 
 export enum HelperKind {
-    Multi = "multi",
+    MultiFunction = "MultiFunction",
+    MultiReturnFunction = "MultiReturnFunction",
 }
 
 function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
@@ -13,14 +12,15 @@ function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
     return helperDirectory === sourceFileDirectory;
 }
 
-export function getHelperFileKind(context: TransformationContext, sourceFile: ts.SourceFile): HelperKind | undefined {
+export function getHelperFileKind(declaration: ts.Declaration): HelperKind | undefined {
+    const sourceFile = declaration.getSourceFile();
     if (isSourceFileFromHelpers(sourceFile)) {
         const baseFileName = path.basename(sourceFile.fileName).replace(/(\.d)?\.ts$/g, "");
         switch (baseFileName) {
             case "multi":
-                return HelperKind.Multi;
+                return HelperKind.MultiReturnFunction;
             default:
-                context.diagnostics.push(unknownHelperKind(sourceFile, baseFileName));
+                throw new Error("Unknown helper");
         }
     }
 }

@@ -18,12 +18,12 @@ import {
     invalidMultiFunctionUse,
 } from "../../../transformation/utils/diagnostics";
 
-const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean =>
-    helpers.getHelperFileKind(context, declaration.getSourceFile()) === helpers.HelperKind.Multi;
+const isMultiHelperDeclaration = (declaration: ts.Declaration): boolean =>
+    helpers.getHelperFileKind(declaration) === helpers.HelperKind.MultiFunction;
 
 function isMultiHelperCallSignature(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 export function isMultiReturnCall(context: TransformationContext, node: ts.Node): node is ts.CallExpression {
@@ -32,12 +32,12 @@ export function isMultiReturnCall(context: TransformationContext, node: ts.Node)
     }
 
     const signature = context.checker.getResolvedSignature(node);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
+    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 export function isMultiHelperNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
-    return type.symbol?.declarations?.some(isMultiHelperDeclaration(context)) ?? false;
+    return type.symbol?.declarations?.some(isMultiHelperDeclaration) ?? false;
 }
 
 export function transformMultiHelperReturnStatement(
@@ -158,7 +158,7 @@ export function findMultiHelperAssignmentViolations(
             const valueSymbol = context.checker.getShorthandAssignmentValueSymbol(element);
             if (valueSymbol) {
                 const declaration = valueSymbol.valueDeclaration;
-                if (declaration && isMultiHelperDeclaration(context)(declaration)) {
+                if (declaration && isMultiHelperDeclaration(declaration)) {
                     context.diagnostics.push(invalidMultiFunctionUse(element));
                     return element;
                 }

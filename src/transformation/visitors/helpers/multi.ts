@@ -9,11 +9,11 @@ import { transformArguments } from "../call";
 import { getDependenciesOfSymbol, createExportedIdentifier } from "../../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../../utils/lua-ast";
 import {
-    invalidMultiReturnArrayBindingPatternElementInitializer,
-    invalidMultiReturnArrayLiteralElementInitializer,
-    invalidMultiReturnToEmptyPatternOrArrayLiteral,
-    invalidMultiReturnToNonArrayBindingPattern,
-    invalidMultiReturnToNonArrayLiteral,
+    invalidMultiTypeArrayBindingPatternElementInitializer,
+    invalidMultiTypeArrayLiteralElementInitializer,
+    invalidMultiTypeToEmptyPatternOrArrayLiteral,
+    invalidMultiTypeToNonArrayBindingPattern,
+    invalidMultiTypeToNonArrayLiteral,
     unsupportedMultiFunctionAssignment,
     invalidMultiFunctionUse,
 } from "../../../transformation/utils/diagnostics";
@@ -71,15 +71,26 @@ export function transformMultiHelperVariableDeclaration(
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
     if (!declaration.initializer) return;
-    if (!ts.isCallExpression(declaration.initializer) || !returnsMultiType(context, declaration.initializer)) return;
+    if (!ts.isCallExpression(declaration.initializer)) return;
+    if (!returnsMultiType(context, declaration.initializer)) return;
 
     if (!ts.isArrayBindingPattern(declaration.name)) {
-        context.diagnostics.push(invalidMultiReturnToNonArrayBindingPattern(declaration.name));
+        context.diagnostics.push(invalidMultiTypeToNonArrayBindingPattern(declaration.name));
         return [];
     }
 
     if (declaration.name.elements.length < 1) {
-        context.diagnostics.push(invalidMultiReturnToEmptyPatternOrArrayLiteral(declaration.name));
+        context.diagnostics.push(invalidMultiTypeToEmptyPatternOrArrayLiteral(declaration.name));
+        return [];
+    }
+
+    if (declaration.name.elements.some(e => ts.isBindingElement(e) && e.initializer)) {
+        context.diagnostics.push(invalidMultiTypeArrayBindingPatternElementInitializer(declaration.name));
+        return [];
+    }
+
+    if (isMultiFunction(context, declaration.initializer)) {
+        context.diagnostics.push(invalidMultiFunctionUse(declaration.initializer));
         return [];
     }
 
@@ -87,9 +98,7 @@ export function transformMultiHelperVariableDeclaration(
 
     for (const element of declaration.name.elements) {
         if (ts.isBindingElement(element)) {
-            if (element.initializer) {
-                context.diagnostics.push(invalidMultiReturnArrayBindingPatternElementInitializer(element));
-            } else if (ts.isIdentifier(element.name)) {
+            if (ts.isIdentifier(element.name)) {
                 leftIdentifiers.push(transformIdentifier(context, element.name));
             } else {
                 context.diagnostics.push(unsupportedMultiFunctionAssignment(element));
@@ -113,17 +122,22 @@ export function transformMultiHelperDestructuringAssignmentStatement(
     if (!returnsMultiType(context, statement.expression.right)) return;
 
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
-        context.diagnostics.push(invalidMultiReturnToNonArrayLiteral(statement.expression.left));
+        context.diagnostics.push(invalidMultiTypeToNonArrayLiteral(statement.expression.left));
         return [];
     }
 
     if (statement.expression.left.elements.some(ts.isBinaryExpression)) {
-        context.diagnostics.push(invalidMultiReturnArrayLiteralElementInitializer(statement.expression.left));
+        context.diagnostics.push(invalidMultiTypeArrayLiteralElementInitializer(statement.expression.left));
         return [];
     }
 
     if (statement.expression.left.elements.length < 1) {
-        context.diagnostics.push(invalidMultiReturnToEmptyPatternOrArrayLiteral(statement.expression.left));
+        context.diagnostics.push(invalidMultiTypeToEmptyPatternOrArrayLiteral(statement.expression.left));
+        return [];
+    }
+
+    if (isMultiFunction(context, statement.expression.right)) {
+        context.diagnostics.push(invalidMultiFunctionUse(statement.expression.right));
         return [];
     }
 

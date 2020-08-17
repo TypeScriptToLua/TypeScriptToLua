@@ -131,21 +131,21 @@ export const invalidMultiFunctionUse = createDiagnosticFactory(
     "The $multi function must be called in return statements."
 );
 
-export const invalidMultiReturnToNonArrayBindingPattern = createDiagnosticFactory(
+export const invalidMultiTypeToNonArrayBindingPattern = createDiagnosticFactory(
     "Expected an array destructuring pattern."
 );
 
-export const invalidMultiReturnToNonArrayLiteral = createDiagnosticFactory("Expected an array literal.");
+export const invalidMultiTypeToNonArrayLiteral = createDiagnosticFactory("Expected an array literal.");
 
-export const invalidMultiReturnToEmptyPatternOrArrayLiteral = createDiagnosticFactory(
+export const invalidMultiTypeToEmptyPatternOrArrayLiteral = createDiagnosticFactory(
     "There must be one or more elements specified here."
 );
 
-export const invalidMultiReturnArrayBindingPatternElementInitializer = createDiagnosticFactory(
+export const invalidMultiTypeArrayBindingPatternElementInitializer = createDiagnosticFactory(
     "This array binding pattern cannot have initializers."
 );
 
-export const invalidMultiReturnArrayLiteralElementInitializer = createDiagnosticFactory(
+export const invalidMultiTypeArrayLiteralElementInitializer = createDiagnosticFactory(
     "This array literal pattern cannot have initializers."
 );
 

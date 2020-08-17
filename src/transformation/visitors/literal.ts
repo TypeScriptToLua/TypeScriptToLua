@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { unsupportedAccessorInObjectLiteral, unsupportedMultiHelperFunctionPosition } from "../utils/diagnostics";
+import { unsupportedAccessorInObjectLiteral, invalidMultiFunctionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "../utils/safe-names";
@@ -65,7 +65,7 @@ const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = ex
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
     const violations = findMultiHelperAssignmentViolations(context, expression);
     if (violations.length > 0) {
-        context.diagnostics.push(...violations.map(e => unsupportedMultiHelperFunctionPosition(e)));
+        context.diagnostics.push(...violations.map(e => invalidMultiFunctionUse(e)));
         return lua.createNilLiteral(expression);
     }
 

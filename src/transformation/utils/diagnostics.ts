@@ -129,8 +129,8 @@ export const unsupportedVarDeclaration = createDiagnosticFactory(
 
 export const unknownHelperKind = createDiagnosticFactory((kind: string) => `Unknown helper kind "${kind}".`);
 
-export const unsupportedMultiHelperFunctionPosition = createDiagnosticFactory(
-    "The $multi() function cannot be used here."
+export const invalidMultiFunctionUse = createDiagnosticFactory(
+    "The $multi function must be called in return statements."
 );
 
 export const invalidMultiReturnToNonArrayBindingPattern = createDiagnosticFactory(

@@ -15,7 +15,7 @@ import {
     invalidMultiReturnToNonArrayBindingPattern,
     invalidMultiReturnToNonArrayLiteral,
     unsupportedMultiFunctionAssignment,
-    unsupportedMultiHelperFunctionPosition,
+    invalidMultiFunctionUse,
 } from "../../../transformation/utils/diagnostics";
 
 const isMultiHelperDeclaration = (context: TransformationContext) => (declaration: ts.Declaration): boolean =>
@@ -159,7 +159,7 @@ export function findMultiHelperAssignmentViolations(
             if (valueSymbol) {
                 const declaration = valueSymbol.valueDeclaration;
                 if (declaration && isMultiHelperDeclaration(context)(declaration)) {
-                    context.diagnostics.push(unsupportedMultiHelperFunctionPosition(element));
+                    context.diagnostics.push(invalidMultiFunctionUse(element));
                     return element;
                 }
             }

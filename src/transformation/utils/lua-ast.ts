@@ -4,8 +4,7 @@ import * as lua from "../../LuaAST";
 import { assert, castArray } from "../../utils";
 import { TransformationContext } from "../context";
 import { createExportedIdentifier, getIdentifierExportScope } from "./export";
-import { peekScope, ScopeType } from "./scope";
-import { isFunctionType } from "./typescript";
+import { peekScope, ScopeType, Scope } from "./scope";
 import { transformLuaLibFunction } from "./lualib";
 import { LuaLibFeature } from "../../LuaLib";
 
@@ -129,6 +128,17 @@ export function createHoistableVariableDeclarationStatement(
     return declaration;
 }
 
+function hasMultipleReferences(scope: Scope, identifiers: lua.Identifier | lua.Identifier[]) {
+    const scopeSymbols = scope.referencedSymbols;
+    if (!scopeSymbols) {
+        return false;
+    }
+
+    const referenceLists = castArray(identifiers).map(i => i.symbolId && scopeSymbols.get(i.symbolId));
+
+    return referenceLists.some(symbolRefs => symbolRefs && symbolRefs.length > 1);
+}
+
 export function createLocalOrExportedOrGlobalDeclaration(
     context: TransformationContext,
     lhs: lua.Identifier | lua.Identifier[],
@@ -163,15 +173,8 @@ export function createLocalOrExportedOrGlobalDeclaration(
         const isTopLevelVariable = scope.type === ScopeType.File;
 
         if (context.isModule || !isTopLevelVariable) {
-            const isPossibleWrappedFunction =
-                !isFunctionDeclaration &&
-                tsOriginal &&
-                ts.isVariableDeclaration(tsOriginal) &&
-                tsOriginal.initializer &&
-                isFunctionType(context, context.checker.getTypeAtLocation(tsOriginal.initializer));
-
-            if (isPossibleWrappedFunction || scope.type === ScopeType.Switch) {
-                // Split declaration and assignment for wrapped function types to allow recursion
+            if (scope.type === ScopeType.Switch || (!isFunctionDeclaration && hasMultipleReferences(scope, lhs))) {
+                // Split declaration and assignment of identifiers that reference themselves in their declaration
                 declaration = lua.createVariableDeclarationStatement(lhs, undefined, tsOriginal);
                 assignment = lua.createAssignmentStatement(lhs, rhs, tsOriginal);
             } else {

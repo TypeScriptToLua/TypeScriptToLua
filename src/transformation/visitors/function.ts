@@ -191,8 +191,8 @@ export function transformFunctionToExpression(
         // TODO: Avoid mutating .parent
         const returnExpression = ts.createReturn(node.body);
         body = ts.createBlock([returnExpression]);
-        const parent = node.body ? node.body.parent : body;
-        Object.assign(returnExpression, { parent });
+        Object.assign(body, { parent: body });
+        if (node.body) Object.assign(body, { parent: node.body.parent });
     }
 
     const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);

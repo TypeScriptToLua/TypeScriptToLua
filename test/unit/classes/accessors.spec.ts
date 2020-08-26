@@ -125,37 +125,6 @@ test("set accessor in base class", () => {
     `.expectToMatchJsResult();
 });
 
-test("set accessor override", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "foo";
-            foo = "foo";
-        }
-        class Bar extends Foo {
-            set foo(val: string) { this._foo = val; }
-        }
-        const b = new Bar();
-        b.foo = "bar"
-        return b._foo;
-    `.expectToMatchJsResult();
-});
-
-test("set accessor overridden", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "baz";
-            set foo(val: string) { this._foo = val; }
-        }
-        class Bar extends Foo {
-            foo = "foo"; // triggers base class setter
-        }
-        const b = new Bar();
-        const fooOriginal = b._foo;
-        b.foo = "bar"
-        return fooOriginal + b._foo;
-    `.expectToMatchJsResult();
-});
-
 test("set accessor override accessor", () => {
     util.testFunction`
         class Foo {

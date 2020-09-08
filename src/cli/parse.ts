@@ -41,6 +41,11 @@ export const optionDeclarations: CommandLineOption[] = [
         choices: Object.values(LuaLibImportKind),
     },
     {
+        name: "luaLibBundleSeparate",
+        description: "Output lualib_bundle.lua as a separate file instead of with the rest of the bundled program.",
+        type: "boolean",
+    },
+    {
         name: "luaTarget",
         aliases: ["lt"],
         description: "Specify Lua target version.",

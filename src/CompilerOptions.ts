@@ -29,6 +29,7 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     luaBundle?: string;
     luaBundleEntry?: string;
     luaTarget?: LuaTarget;
+    luaLibBundleSeparate?: boolean;
     luaLibImport?: LuaLibImportKind;
     sourceMapTraceback?: boolean;
     luaPlugins?: LuaPluginImport[];
@@ -53,6 +54,9 @@ export enum LuaTarget {
 
 export const isBundleEnabled = (options: CompilerOptions) =>
     options.luaBundle !== undefined && options.luaBundleEntry !== undefined;
+
+export const isLualibBundleSeparate = (options: CompilerOptions) =>
+    isBundleEnabled(options) && options.luaLibBundleSeparate;
 
 export function validateOptions(options: CompilerOptions): ts.Diagnostic[] {
     const diagnostics: ts.Diagnostic[] = [];

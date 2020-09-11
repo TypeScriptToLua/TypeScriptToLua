@@ -15,6 +15,7 @@ import {
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
 import { transformIdentifier } from "./identifier";
+import { transformExpressionBodyToReturnStatement } from "./return";
 import { transformBindingPattern } from "./variable-declaration";
 
 function transformParameterDefaultValueDeclaration(
@@ -52,7 +53,12 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
     return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
 }
 
-export function transformFunctionBodyStatements(context: TransformationContext, body: ts.Block): lua.Statement[] {
+export function transformFunctionBodyStatements(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
+    if (!ts.isBlock(body)) {
+        const returnStatement = transformExpressionBodyToReturnStatement(context, body);
+        return [returnStatement];
+    }
+
     const bodyStatements = performHoisting(context, context.transformStatements(body.statements));
     return bodyStatements;
 }
@@ -107,7 +113,7 @@ export function transformFunctionBodyHeader(
 export function transformFunctionBody(
     context: TransformationContext,
     parameters: ts.NodeArray<ts.ParameterDeclaration>,
-    body: ts.Block,
+    body: ts.ConciseBody,
     spreadIdentifier?: lua.Identifier
 ): [lua.Statement[], Scope] {
     const scope = pushScope(context, ScopeType.Function);
@@ -184,21 +190,13 @@ export function transformFunctionToExpression(
         flags |= lua.FunctionExpressionFlags.Declaration;
     }
 
-    let body: ts.Block;
-    if (ts.isBlock(node.body)) {
-        body = node.body;
-    } else {
-        // TODO: Avoid mutating .parent
-        const returnExpression = ts.createReturn(node.body);
-        body = ts.createBlock([returnExpression]);
-        // @ts-ignore
-        body.parent = body;
-        // @ts-ignore
-        if (node.body) body.parent = node.body.parent;
-    }
-
     const [paramNames, dotsLiteral, spreadIdentifier] = transformParameters(context, node.parameters, functionContext);
-    const [transformedBody, functionScope] = transformFunctionBody(context, node.parameters, body, spreadIdentifier);
+    const [transformedBody, functionScope] = transformFunctionBody(
+        context,
+        node.parameters,
+        node.body,
+        spreadIdentifier
+    );
     const functionExpression = lua.createFunctionExpression(
         lua.createBlock(transformedBody),
         paramNames,

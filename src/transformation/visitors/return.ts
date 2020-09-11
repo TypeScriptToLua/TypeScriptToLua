@@ -7,11 +7,15 @@ import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
 
-function transformExpressionToTupleExpressions(
+function transformExpressionsInReturn(
     context: TransformationContext,
     node: ts.Expression,
     insideTryCatch: boolean
 ): lua.Expression[] {
+    if (!isInTupleReturnFunction(context, node)) {
+        return [context.transformExpression(node)];
+    }
+
     let results: lua.Expression[];
     const expressionType = context.checker.getTypeAtLocation(node);
 
@@ -38,12 +42,8 @@ export function transformExpressionBodyToReturnStatement(
     context: TransformationContext,
     node: ts.Expression
 ): lua.Statement {
-    if (isInTupleReturnFunction(context, node)) {
-        const results = transformExpressionToTupleExpressions(context, node, false);
-        return lua.createReturnStatement(results, node);
-    }
-
-    return lua.createReturnStatement([context.transformExpression(node)]);
+    const expressions = transformExpressionsInReturn(context, node, false);
+    return lua.createReturnStatement(expressions, node);
 }
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
@@ -68,11 +68,7 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
             validateAssignment(context, statement, expressionType, returnType);
         }
 
-        if (isInTupleReturnFunction(context, statement)) {
-            results = transformExpressionToTupleExpressions(context, statement.expression, insideTryCatch);
-        } else {
-            results = [context.transformExpression(statement.expression)];
-        }
+        results = transformExpressionsInReturn(context, statement.expression, insideTryCatch);
     } else {
         // Empty return
         results = [];

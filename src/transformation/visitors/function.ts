@@ -53,7 +53,7 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
     return references.some(r => !r.parent || !ts.isSpreadElement(r.parent) || !isVarargType(context, r));
 }
 
-export function transformFunctionBodyStatements(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
+export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
         const returnStatement = transformExpressionBodyToReturnStatement(context, body);
         return [returnStatement];
@@ -117,7 +117,7 @@ export function transformFunctionBody(
     spreadIdentifier?: lua.Identifier
 ): [lua.Statement[], Scope] {
     const scope = pushScope(context, ScopeType.Function);
-    const bodyStatements = transformFunctionBodyStatements(context, body);
+    const bodyStatements = transformFunctionBodyContent(context, body);
     const headerStatements = transformFunctionBodyHeader(context, scope, parameters, spreadIdentifier);
     popScope(context);
     return [[...headerStatements, ...bodyStatements], scope];

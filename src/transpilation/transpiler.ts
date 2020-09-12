@@ -3,7 +3,7 @@ import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
-import { cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
+import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
 import { replaceResolveMacroInSource, replaceResolveMacroSourceNodes, ResolveMacroReplacer } from "./macro";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
@@ -79,13 +79,13 @@ class Transpilation {
 
         if (isBundleEnabled(this.options)) {
             const [bundleDiagnostics, bundleFile] = getBundleResult(this.program, this.emitHost, this.files, file =>
-                this.toRequireParameter(this.toOutputStructure(file.fileName))
+                this.toRequireParameter(this.toGeneratedFileName(file.fileName))
             );
             this.diagnostics.push(...bundleDiagnostics);
             return [bundleFile];
         } else {
             return this.files.map(file => {
-                const pathInOutDir = this.toAbsoluteOutputPath(this.toOutputStructure(file.fileName));
+                const pathInOutDir = this.toAbsoluteOutputPath(this.toGeneratedFileName(file.fileName));
                 const outputPath = normalizeSlashes(trimExtension(pathInOutDir) + ".lua");
                 return { ...file, outputPath };
             });
@@ -115,7 +115,7 @@ class Transpilation {
                 // TODO: Load source map files
             });
 
-            return this.toRequireParameter(this.toOutputStructure(resolvedPath));
+            return this.toRequireParameter(this.toGeneratedFileName(resolvedPath));
         };
 
         if (file.sourceMapNode) {
@@ -160,20 +160,14 @@ class Transpilation {
             throw new Error(`"${resolved}" is builtin Node.js module.`);
         }
 
-        this.toOutputStructure(resolved);
-
         return resolved;
     }
 
-    protected toOutputStructure(fileName: string) {
+    protected toGeneratedFileName(fileName: string) {
         const result = path.relative(this.rootDir, trimExtension(fileName));
-
-        if (result.startsWith("..") || path.isAbsolute(result)) {
-            // TODO: Walk up to find package.json and put it to node_modules/name_version_hash/
-            throw new Error(`Cannot resolve "${fileName}" within rootDir`);
-        }
-
-        return result.replace(/\./g, "__");
+        // TODO: handle files on other drives
+        assert(!path.isAbsolute(result), `Invalid path: ${result}`);
+        return result.replace(/\.\.\//g, "_/").replace(/\./g, "__");
     }
 
     protected toRequireParameter(fileName: string) {

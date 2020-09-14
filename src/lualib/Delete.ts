@@ -4,7 +4,7 @@ function __TS__Delete(this: void, target: any, key: any): boolean {
         const descriptor = descriptors[key];
         if (descriptor) {
             if (!descriptor.configurable) {
-                throw `Cannot delete property ${key} of ${target}.`;
+                return false;
             }
 
             descriptors[key] = undefined;

@@ -209,12 +209,27 @@ describe("delete", () => {
         `.expectToMatchJsResult();
     });
 
-    test("returns true when deletion is successful", () => {
+    test("returns true when deletion attempt was allowed", () => {
         util.testFunction`
             const array = [1, 2, 3, 4];
             const success = delete array[2];
             return { success, a: array[0], b: array[1], c: array[2], d: array[3] };
         `.expectToMatchJsResult();
+    });
+
+    test("returns false when deletion attempt was disallowed", () => {
+        util.testFunction`
+            const array = [1, 2, 3, 4];
+            Object.defineProperty(array, 3, { configurable: false });
+            const success = delete array[2];
+            return { success, a: array[0], b: array[1], c: array[2], d: array[3] };
+        `.expectToEqual({
+            success: false,
+            a: 1,
+            b: 2,
+            c: 3,
+            d: 4,
+        });
     });
 });
 

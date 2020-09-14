@@ -1,6 +1,6 @@
 import * as util from "../util";
 
-const trueFalseUndefTests = [["true"], ["false"], ["undefined"]];
+const trueFalseUndefTests = [[true], [false], [undefined]] as const;
 
 describe("Object.defineProperty", () => {
     test.each(trueFalseUndefTests)("writable (%p)", value => {
@@ -16,9 +16,9 @@ describe("Object.defineProperty", () => {
         util.testFunction`
             const foo = { bar: true };
             Object.defineProperty(foo, "bar", { configurable: ${value} });
-            try { delete foo.bar } catch {}
+            delete foo.bar;
             return foo.bar;
-        `.expectToMatchJsResult();
+        `.expectToEqual(value === true ? undefined : true);
     });
 
     test("defines a new property", () => {

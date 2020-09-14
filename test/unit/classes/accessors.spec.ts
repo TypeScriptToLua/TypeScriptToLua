@@ -23,34 +23,6 @@ test("get accessor in base class", () => {
     `.expectToMatchJsResult();
 });
 
-test.skip("get accessor override", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "foo";
-            foo = "foo";
-        }
-        class Bar extends Foo {
-            get foo() { return this._foo + "bar"; }
-        }
-        const b = new Bar();
-        return b.foo;
-    `.expectToMatchJsResult();
-});
-
-test.skip("get accessor overridden", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "foo";
-            get foo() { return this._foo; }
-        }
-        class Bar extends Foo {
-            foo = "bar";
-        }
-        const b = new Bar();
-        return b.foo;
-    `.expectToMatchJsResult();
-});
-
 test("get accessor override accessor", () => {
     util.testFunction`
         class Foo {
@@ -122,37 +94,6 @@ test("set accessor in base class", () => {
         const b = new Bar();
         b.foo = "bar"
         return b._foo;
-    `.expectToMatchJsResult();
-});
-
-test("set accessor override", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "foo";
-            foo = "foo";
-        }
-        class Bar extends Foo {
-            set foo(val: string) { this._foo = val; }
-        }
-        const b = new Bar();
-        b.foo = "bar"
-        return b._foo;
-    `.expectToMatchJsResult();
-});
-
-test("set accessor overridden", () => {
-    util.testFunction`
-        class Foo {
-            _foo = "baz";
-            set foo(val: string) { this._foo = val; }
-        }
-        class Bar extends Foo {
-            foo = "foo"; // triggers base class setter
-        }
-        const b = new Bar();
-        const fooOriginal = b._foo;
-        b.foo = "bar"
-        return fooOriginal + b._foo;
     `.expectToMatchJsResult();
 });
 
@@ -245,19 +186,6 @@ test("static get accessor override", () => {
         }
         class Bar extends Foo {
             static get foo() { return this._foo + "bar"; }
-        }
-        return Bar.foo;
-    `.expectToMatchJsResult();
-});
-
-test.skip("static get accessor overridden", () => {
-    util.testFunction`
-        class Foo {
-            static _foo = "foo";
-            static get foo() { return this._foo; }
-        }
-        class Bar extends Foo {
-            static foo = "bar";
         }
         return Bar.foo;
     `.expectToMatchJsResult();

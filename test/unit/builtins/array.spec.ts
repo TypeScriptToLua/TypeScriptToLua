@@ -220,16 +220,17 @@ describe("delete", () => {
     test("returns false when deletion attempt was disallowed", () => {
         util.testFunction`
             const array = [1, 2, 3, 4];
-            Object.defineProperty(array, 3, { configurable: false });
-            const success = delete array[2];
+            Object.defineProperty(array, 2, { configurable: false });
+
+            let success;
+            try {
+                success = delete array[2];
+            } catch {
+                success = false;
+            }
+
             return { success, a: array[0], b: array[1], c: array[2], d: array[3] };
-        `.expectToEqual({
-            success: false,
-            a: 1,
-            b: 2,
-            c: 3,
-            d: 4,
-        });
+        `.expectToMatchJsResult();
     });
 });
 

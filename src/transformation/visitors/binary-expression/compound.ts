@@ -48,7 +48,7 @@ type CompoundAssignmentToken =
     | ts.SyntaxKind.GreaterThanGreaterThanToken
     | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
 
-const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken> = {
+const compoundToAssignmentTokens: Partial<Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken>> = {
     [ts.SyntaxKind.BarEqualsToken]: ts.SyntaxKind.BarToken,
     [ts.SyntaxKind.PlusEqualsToken]: ts.SyntaxKind.PlusToken,
     [ts.SyntaxKind.CaretEqualsToken]: ts.SyntaxKind.CaretToken,
@@ -66,8 +66,9 @@ const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, Compound
 export const isCompoundAssignmentToken = (token: ts.BinaryOperator): token is ts.CompoundAssignmentOperator =>
     token in compoundToAssignmentTokens;
 
-export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperator): CompoundAssignmentToken =>
-    compoundToAssignmentTokens[token];
+export const unwrapCompoundAssignmentToken = (
+    token: ts.CompoundAssignmentOperator
+): CompoundAssignmentToken | undefined => compoundToAssignmentTokens[token];
 
 export function transformCompoundAssignmentExpression(
     context: TransformationContext,

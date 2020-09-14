@@ -3,7 +3,7 @@ import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { popScope, pushScope, ScopeType } from "../../../utils/scope";
-import { transformFunctionBodyHeader, transformFunctionBodyStatements, transformParameters } from "../../function";
+import { transformFunctionBodyHeader, transformFunctionBodyContent, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
 
@@ -29,7 +29,7 @@ export function transformConstructorDeclaration(
 
     // Transform body
     const scope = pushScope(context, ScopeType.Function);
-    const body = transformFunctionBodyStatements(context, statement.body);
+    const body = transformFunctionBodyContent(context, statement.body);
 
     const [params, dotsLiteral, restParamName] = transformParameters(
         context,

@@ -16,9 +16,9 @@ describe("Object.defineProperty", () => {
         util.testFunction`
             const foo = { bar: true };
             Object.defineProperty(foo, "bar", { configurable: ${value} });
-            delete foo.bar;
+            try { delete foo.bar } catch {};
             return foo.bar;
-        `.expectToEqual(value === true ? undefined : true);
+        `.expectToMatchJsResult();
     });
 
     test("defines a new property", () => {

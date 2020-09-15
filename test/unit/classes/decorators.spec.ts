@@ -156,7 +156,7 @@ test.each([
         }
 
         const targetKind = decoratorTarget === Foo.prototype ? "prototype" : "class";
-        return [targetKind, decoratorTargetKey];
+        return { targetKind, decoratorTargetKey };
     `.expectToMatchJsResult();
 });
 

@@ -226,7 +226,7 @@ describe("delete", () => {
             try {
                 success = delete array[2];
             } catch {
-                success = false;
+                success = "error";
             }
 
             return { success, a: array[0], b: array[1], c: array[2], d: array[3] };

@@ -7,8 +7,13 @@ describe("Object.defineProperty", () => {
         util.testFunction`
             const foo = { bar: true };
             Object.defineProperty(foo, "bar", { writable: ${value} });
-            try { foo.bar = false } catch {}
-            return foo.bar;
+            let error = false;
+            try {
+                foo.bar = false;
+            } catch {
+                error = true;
+            }
+            return { foobar: foo.bar, error };
         `.expectToMatchJsResult();
     });
 

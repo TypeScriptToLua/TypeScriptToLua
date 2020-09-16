@@ -56,7 +56,7 @@ export function createMethodDecoratingExpression(
 
     const parameterDecorators = node.parameters
         .flatMap((parameter, index) =>
-            parameter?.decorators?.map(decorator =>
+            parameter.decorators?.map(decorator =>
                 transformLuaLibFunction(
                     context,
                     LuaLibFeature.DecorateParam,
@@ -68,7 +68,7 @@ export function createMethodDecoratingExpression(
         )
         .filter(isNonNull);
 
-    const methodDecorators = node?.decorators?.map(d => transformDecoratorExpression(context, d)) ?? [];
+    const methodDecorators = node.decorators?.map(d => transformDecoratorExpression(context, d)) ?? [];
 
     if (methodDecorators.length > 0 || parameterDecorators.length > 0) {
         const decorateMethod = createDecoratingExpression(

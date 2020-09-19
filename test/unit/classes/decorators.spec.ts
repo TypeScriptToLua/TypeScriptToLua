@@ -183,3 +183,29 @@ test.each([["method(@decorator a) {}"], ["static method(@decorator a) {}"]])(
         `.expectToMatchJsResult();
     }
 );
+
+describe("Decorators /w descriptors", () => {
+    test.each([
+        ["return { writable: true }", "return { configurable: true }"],
+        ["desc.writable = true", "return { configurable: true }"],
+    ])("Combine decorators (%p + %p)", (decorateA, decorateB) => {
+        util.testFunction`
+            const A = (target, key, desc): any => { ${decorateA} };
+            const B = (target, key, desc): any => { ${decorateB} };
+            class Foo { @A @B static method() {} }
+            const { value, ...rest } = Object.getOwnPropertyDescriptor(Foo, "method");
+            return rest;
+        `.expectToMatchJsResult();
+    });
+
+    test.each(["return { value: true }", "desc.value = true"])(
+        "Use decorator to override method value",
+        overrideStatement => {
+            util.testFunction`
+                const decorator = (target, key, desc): any => { ${overrideStatement} };
+                class Foo { @decorator static method() {} }
+                return Foo.method;
+            `.expectToMatchJsResult();
+        }
+    );
+});

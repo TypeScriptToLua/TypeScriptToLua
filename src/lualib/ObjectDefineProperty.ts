@@ -13,21 +13,15 @@ function __TS__ObjectDefineProperty(this: void, target: any, key: any, desc: Pro
 
         descriptor = desc;
     } else {
-        if (value !== undefined) {
-            descriptor = {
-                configurable: desc.configurable !== undefined ? desc.configurable : true,
-                enumerable: desc.enumerable !== undefined ? desc.enumerable : true,
-                writable: desc.writable !== undefined ? desc.writable : true,
-                value: desc.value !== undefined ? desc.value : value,
-            };
-        } else {
-            descriptor = {
-                configurable: desc.configurable !== undefined ? desc.configurable : false,
-                enumerable: desc.enumerable !== undefined ? desc.enumerable : false,
-                writable: desc.writable !== undefined ? desc.writable : false,
-                value: desc.value !== undefined ? desc.value : value,
-            };
-        }
+        const valueExists = value !== undefined;
+        descriptor = {
+            set: desc.set,
+            get: desc.get,
+            configurable: desc.configurable !== undefined ? desc.configurable : valueExists,
+            enumerable: desc.enumerable !== undefined ? desc.enumerable : valueExists,
+            writable: desc.writable !== undefined ? desc.writable : valueExists,
+            value: desc.value !== undefined ? desc.value : value,
+        };
     }
 
     __TS__SetDescriptor(target, luaKey, descriptor);

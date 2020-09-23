@@ -122,10 +122,10 @@ describe(".hasOwnProperty()", () => {
     });
 });
 
-const trueFalseUndefTests = [[true], [false], [undefined]] as const;
+const trueFalseTests = [[true], [false]] as const;
 
 describe("Object.defineProperty", () => {
-    test.each(trueFalseUndefTests)("writable (%p)", value => {
+    test.each(trueFalseTests)("writable (%p)", value => {
         util.testFunction`
             const foo = { bar: true };
             Object.defineProperty(foo, "bar", { writable: ${value} });
@@ -139,7 +139,7 @@ describe("Object.defineProperty", () => {
         `.expectToMatchJsResult();
     });
 
-    test.each(trueFalseUndefTests)("configurable (%p)", value => {
+    test.each(trueFalseTests)("configurable (%p)", value => {
         util.testFunction`
             const foo = { bar: true };
             Object.defineProperty(foo, "bar", { configurable: ${value} });
@@ -188,6 +188,26 @@ describe("Object.defineProperty", () => {
             }
 
             return { prop: foo.bar, err };
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("Object.getOwnPropertyDescriptor", () => {
+    test("descriptor is exactly the same as the last one set", () => {
+        util.testFunction`
+            const foo = { bar: true };
+            Object.defineProperty(foo, "bar", {});
+            return Object.getOwnPropertyDescriptor(foo, "bar");
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("Object.getOwnPropertyDescriptors", () => {
+    test("all descriptors match", () => {
+        util.testFunction`
+            const foo = { bar: true };
+            Object.defineProperty(foo, "bar", {});
+            return Object.getOwnPropertyDescriptors(foo);
         `.expectToMatchJsResult();
     });
 });

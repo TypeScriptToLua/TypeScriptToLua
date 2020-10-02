@@ -6,6 +6,7 @@ import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast"
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";
+import { unsupportedNodeKind } from "../../utils/diagnostics";
 
 // If expression is property/element access with possible effects from being evaluated, returns separated object and index expressions.
 export function parseAccessExpressionWithEvaluationEffects(
@@ -180,13 +181,86 @@ export function transformCompoundAssignmentStatement(
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
         const accessExpression = lua.createTableIndexExpression(obj, index);
+
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            return [
+                objAndIndexDeclaration,
+                ...transformSetterSkippingCompoundAssignment(context, accessExpression, operator, rhs, node),
+            ];
+        }
+
         const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         return [objAndIndexDeclaration, assignStatement];
     } else {
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            const luaLhs = context.transformExpression(lhs) as lua.AssignmentLeftHandSideExpression;
+            return transformSetterSkippingCompoundAssignment(context, luaLhs, operator, rhs, node);
+        }
+
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
         return transformAssignment(context, lhs, operatorExpression);
+    }
+}
+
+/* These setter-skipping operators will not execute the setter if result does not change.
+ * x.y ||= z does NOT call the x.y setter if x.y is already true.
+ * x.y &&= z does NOT call the x.y setter if x.y is already false.
+ * x.y ??= z does NOT call the x.y setter if x.y is already not nullish.
+ */
+type SetterSkippingCompoundAssignmentOperator =
+    | ts.SyntaxKind.AmpersandAmpersandToken
+    | ts.SyntaxKind.BarBarToken
+    | ts.SyntaxKind.QuestionQuestionToken;
+
+function isSetterSkippingCompoundAssignmentOperator(
+    operator: ts.BinaryOperator
+): operator is SetterSkippingCompoundAssignmentOperator {
+    return (
+        operator === ts.SyntaxKind.AmpersandAmpersandToken ||
+        operator === ts.SyntaxKind.BarBarToken ||
+        operator === ts.SyntaxKind.QuestionQuestionToken
+    );
+}
+
+function transformSetterSkippingCompoundAssignment(
+    context: TransformationContext,
+    lhs: lua.AssignmentLeftHandSideExpression,
+    operator: SetterSkippingCompoundAssignmentOperator,
+    rhs: ts.Expression,
+    node: ts.Node
+): lua.Statement[] {
+    if (operator === ts.SyntaxKind.AmpersandAmpersandToken) {
+        return [
+            lua.createIfStatement(
+                lhs,
+                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
+                undefined,
+                node
+            ),
+        ];
+    } else if (operator === ts.SyntaxKind.BarBarToken) {
+        return [
+            lua.createIfStatement(
+                lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator),
+                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
+                undefined,
+                node
+            ),
+        ];
+    } else if (operator === ts.SyntaxKind.QuestionQuestionToken) {
+        return [
+            lua.createIfStatement(
+                lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
+                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
+                undefined,
+                node
+            ),
+        ];
+    } else {
+        context.diagnostics.push(unsupportedNodeKind(node, operator));
+        return [];
     }
 }

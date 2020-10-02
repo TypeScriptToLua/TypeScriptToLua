@@ -404,3 +404,56 @@ test("nullish coalescing compound assignment side effect not evaluated", () => {
         return [x, y];
     `.expectToMatchJsResult();
 });
+
+test.each([
+    { operator: "||=", initialValue: true },
+    { operator: "&&=", initialValue: false },
+    { operator: "??=", initialValue: false },
+])("compound assignment incorrectly causes setter to be called", ({ operator, initialValue }) => {
+    /*
+        In JS if the rhs does not affect the resulting value, the setter is NOT called:
+        * x.y ||= z is translated to x.y || (x.y = z).
+        * x.y &&= z is translated to x.y && (x.y = z).
+        * x.y ||= z is translated to x.y !== undefined && (x.y = z).
+        
+        Test if setter in Lua is called same nr of times as in JS.
+    */
+    util.testModule`
+        export let setterCalled = 0;
+
+        class MyClass {
+        
+            get prop(): any {
+                return ${initialValue};
+            }
+            
+            set prop(value: any) {
+                setterCalled++;
+            }
+        }
+        
+        const inst = new MyClass();
+        inst.prop ${operator} 8;        
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { operator: "||=", initialValue: false },
+    { operator: "&&=", initialValue: true },
+    { operator: "??=", initialValue: undefined },
+])("compound assignment side effects", ({ operator, initialValue }) => {
+    // Test if when assigning to something with potential side effects, they are only evaluated once.
+    util.testFunction`
+        const obj: { prop: any} = { prop: ${initialValue} };
+
+        let objGot = 0;
+        function getObj() {
+            objGot++;
+            return obj;
+        }
+        
+        getObj().prop ${operator} 4;
+
+        return [obj, objGot];
+    `.expectToMatchJsResult();
+});

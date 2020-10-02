@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
-import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf, unsupportedNodeKind } from "../../utils/diagnostics";
+import { extensionInvalidInstanceOf, luaTableInvalidInstanceOf } from "../../utils/diagnostics";
 import { createImmediatelyInvokedFunctionExpression, wrapInToStringForConcat } from "../../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isStandardLibraryType, isStringType, typeCanSatisfy } from "../../utils/typescript";
@@ -15,6 +15,7 @@ import {
     transformCompoundAssignmentStatement,
     unwrapCompoundAssignmentToken,
 } from "./compound";
+import { assert } from "../../../utils";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -45,11 +46,16 @@ export function transformBinaryOperation(
     context: TransformationContext,
     left: lua.Expression,
     right: lua.Expression,
-    operator: BitOperator | SimpleOperator,
+    operator: BitOperator | SimpleOperator | ts.SyntaxKind.QuestionQuestionToken,
     node: ts.Node
 ): lua.Expression {
     if (isBitOperator(operator)) {
         return transformBinaryBitOperation(context, node, left, right, operator);
+    }
+
+    if (operator === ts.SyntaxKind.QuestionQuestionToken) {
+        assert(ts.isBinaryExpression(node));
+        return transformNullishCoalescingExpression(context, node);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];
@@ -78,11 +84,6 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
 
     if (isCompoundAssignmentToken(operator)) {
         const token = unwrapCompoundAssignmentToken(operator);
-        if (!token) {
-            context.diagnostics.push(unsupportedNodeKind(node, operator));
-            return lua.createNilLiteral(node);
-        }
-
         return transformCompoundAssignmentExpression(context, node, node.left, node.right, token, false);
     }
 
@@ -157,11 +158,6 @@ export function transformBinaryExpressionStatement(
     if (isCompoundAssignmentToken(operator)) {
         // +=, -=, etc...
         const token = unwrapCompoundAssignmentToken(operator);
-        if (!token) {
-            context.diagnostics.push(unsupportedNodeKind(node, operator));
-            return;
-        }
-
         return transformCompoundAssignmentStatement(context, expression, expression.left, expression.right, token);
     } else if (operator === ts.SyntaxKind.EqualsToken) {
         return transformAssignmentStatement(context, expression as ts.AssignmentExpression<ts.EqualsToken>);

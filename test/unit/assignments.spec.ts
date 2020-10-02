@@ -121,6 +121,9 @@ test.each([
     "x ^= y",
     "x <<= y",
     "x >>>= y",
+    "x &&= y",
+    "x ||= y",
+    "x ??= y",
 ])("Operator assignment statements (%p)", statement => {
     util.testFunction`
         let x = 3;
@@ -357,5 +360,47 @@ test("local multiple variable declaration referencing self indirectly", () => {
 
         cb();
         return bar;
+    `.expectToMatchJsResult();
+});
+
+describe.each(["x &&= y", "x ||= y"])("boolean compound assignment (%p)", assignment => {
+    const booleanCases = [
+        [false, false],
+        [false, true],
+        [true, false],
+        [true, true],
+    ];
+    test.each(booleanCases)("matches JS", (x, y) => {
+        util.testFunction`
+            let x = ${x};
+            let y = ${y};
+            ${assignment};
+            return x;
+        `.expectToMatchJsResult();
+    });
+});
+
+test.each([undefined, 3])("nullish coalescing compound assignment", initialValue => {
+    util.testFunction`
+        let x: number = ${util.formatCode(initialValue)};
+        x ??= 5;
+        return x;
+    `.expectToMatchJsResult();
+});
+
+test("nullish coalescing compound assignment lhs false", () => {
+    util.testFunction`
+        let x = false;
+        x ??= true;
+        return x;
+    `.expectToMatchJsResult();
+});
+
+test("nullish coalescing compound assignment side effect not evaluated", () => {
+    util.testFunction`
+        let x = 3;
+        let y = 10;
+        x ??= (y += 5);
+        return [x, y];
     `.expectToMatchJsResult();
 });

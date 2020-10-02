@@ -46,9 +46,12 @@ type CompoundAssignmentToken =
     | ts.SyntaxKind.AsteriskAsteriskToken
     | ts.SyntaxKind.LessThanLessThanToken
     | ts.SyntaxKind.GreaterThanGreaterThanToken
-    | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+    | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken
+    | ts.SyntaxKind.BarBarToken
+    | ts.SyntaxKind.AmpersandAmpersandToken
+    | ts.SyntaxKind.QuestionQuestionToken;
 
-const compoundToAssignmentTokens: Partial<Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken>> = {
+const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken> = {
     [ts.SyntaxKind.BarEqualsToken]: ts.SyntaxKind.BarToken,
     [ts.SyntaxKind.PlusEqualsToken]: ts.SyntaxKind.PlusToken,
     [ts.SyntaxKind.CaretEqualsToken]: ts.SyntaxKind.CaretToken,
@@ -61,14 +64,16 @@ const compoundToAssignmentTokens: Partial<Record<ts.CompoundAssignmentOperator, 
     [ts.SyntaxKind.LessThanLessThanEqualsToken]: ts.SyntaxKind.LessThanLessThanToken,
     [ts.SyntaxKind.GreaterThanGreaterThanEqualsToken]: ts.SyntaxKind.GreaterThanGreaterThanToken,
     [ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken]: ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken,
+    [ts.SyntaxKind.BarBarEqualsToken]: ts.SyntaxKind.BarBarToken,
+    [ts.SyntaxKind.AmpersandAmpersandEqualsToken]: ts.SyntaxKind.AmpersandAmpersandToken,
+    [ts.SyntaxKind.QuestionQuestionEqualsToken]: ts.SyntaxKind.QuestionQuestionToken,
 };
 
 export const isCompoundAssignmentToken = (token: ts.BinaryOperator): token is ts.CompoundAssignmentOperator =>
     token in compoundToAssignmentTokens;
 
-export const unwrapCompoundAssignmentToken = (
-    token: ts.CompoundAssignmentOperator
-): CompoundAssignmentToken | undefined => compoundToAssignmentTokens[token];
+export const unwrapCompoundAssignmentToken = (token: ts.CompoundAssignmentOperator): CompoundAssignmentToken =>
+    compoundToAssignmentTokens[token];
 
 export function transformCompoundAssignmentExpression(
     context: TransformationContext,

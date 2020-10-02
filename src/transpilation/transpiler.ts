@@ -1,5 +1,6 @@
+import { ResolverFactory } from "enhanced-resolve";
+import * as fs from "fs";
 import * as path from "path";
-import * as resolve from "resolve";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
@@ -52,9 +53,6 @@ export class Transpiler {
         return emitPlan;
     }
 }
-
-// TODO: JIT -> jit?
-type PackageLuaField = string | Record<LuaTarget, string>;
 
 class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
@@ -130,37 +128,17 @@ class Transpilation {
         this.files.push(file);
     }
 
+    protected resolver = ResolverFactory.createResolver({
+        extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
+        conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
+        fileSystem: this.emitHost.fileSystem ?? fs,
+        useSyncFileSystemCalls: true,
+    });
+
     protected resolveRequest(request: string, issuer: string) {
-        const resolved = resolve.sync(request, {
-            basedir: path.dirname(issuer),
-            extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
-            packageFilter: (pkg, pkgFile) => {
-                delete pkg.main;
-
-                const lua: PackageLuaField = pkg.lua;
-                if (lua !== undefined) {
-                    if (typeof lua === "string") {
-                        pkg.main = lua;
-                    } else if (typeof lua === "object") {
-                        const luaTarget = this.options.luaTarget ?? LuaTarget.Universal;
-                        pkg.main = lua[luaTarget];
-                        if (pkg.main === undefined) {
-                            throw new Error(`${pkgFile} not supports Lua ${luaTarget} target.`);
-                        }
-                    } else {
-                        throw new Error(`${pkgFile} has invalid "lua" field value.`);
-                    }
-                }
-
-                return pkg;
-            },
-        });
-
-        if (resolve.isCore(resolved)) {
-            throw new Error(`"${resolved}" is builtin Node.js module.`);
-        }
-
-        return resolved;
+        const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
+        assert(typeof result === "string");
+        return result;
     }
 
     protected toGeneratedFileName(fileName: string) {

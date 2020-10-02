@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as resolve from "resolve";
 import { SourceNode } from "source-map";
@@ -7,7 +8,9 @@ import * as cliDiagnostics from "../cli/diagnostics";
 import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
 
-export type EmitHost = Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile">;
+export interface EmitHost extends Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile"> {
+    fileSystem?: typeof fs;
+}
 
 interface BaseFile {
     code: string;

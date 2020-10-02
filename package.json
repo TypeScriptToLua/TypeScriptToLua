@@ -36,6 +36,7 @@
         "node": ">=12.13.0"
     },
     "dependencies": {
+        "enhanced-resolve": "^5.2.0",
         "resolve": "^1.15.1",
         "source-map": "^0.7.3",
         "typescript": "^3.9.2"

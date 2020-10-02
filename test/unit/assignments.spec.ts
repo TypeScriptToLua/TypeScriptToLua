@@ -409,7 +409,7 @@ test.each([
     { operator: "||=", initialValue: true },
     { operator: "&&=", initialValue: false },
     { operator: "??=", initialValue: false },
-])("compound assignment incorrectly causes setter to be called", ({ operator, initialValue }) => {
+])("compound assignment short-circuits and does not call setter", ({ operator, initialValue }) => {
     /*
         In JS if the rhs does not affect the resulting value, the setter is NOT called:
         * x.y ||= z is translated to x.y || (x.y = z).
@@ -422,22 +422,58 @@ test.each([
         export let setterCalled = 0;
 
         class MyClass {
-        
+
             get prop(): any {
                 return ${initialValue};
             }
-            
+
             set prop(value: any) {
                 setterCalled++;
             }
         }
-        
+
         const inst = new MyClass();
-        inst.prop ${operator} 8;        
+        inst.prop ${operator} 8;
     `.expectToMatchJsResult();
 });
 
 test.each([
+    { operator: "||=", initialValue: true },
+    { operator: "&&=", initialValue: false },
+    { operator: "??=", initialValue: false },
+])("compound assignment short-circuits and does not call setter as expression", ({ operator, initialValue }) => {
+    /*
+        In JS if the rhs does not affect the resulting value, the setter is NOT called:
+        * x.y ||= z is translated to x.y || (x.y = z).
+        * x.y &&= z is translated to x.y && (x.y = z).
+        * x.y ||= z is translated to x.y !== undefined && (x.y = z).
+        
+        Test if setter in Lua is called same nr of times as in JS.
+    */
+    util.testModule`
+        export let setterCalled = 0;
+
+        class MyClass {
+
+            get prop(): any {
+                return ${initialValue};
+            }
+
+            set prop(value: any) {
+                setterCalled++;
+            }
+        }
+
+        const inst = new MyClass();
+        export const result = (inst.prop ${operator} 8);
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { operator: "+=", initialValue: 3 },
+    { operator: "-=", initialValue: 10 },
+    { operator: "*=", initialValue: 4 },
+    { operator: "/=", initialValue: 20 },
     { operator: "||=", initialValue: false },
     { operator: "&&=", initialValue: true },
     { operator: "??=", initialValue: undefined },
@@ -451,7 +487,7 @@ test.each([
             objGot++;
             return obj;
         }
-        
+
         getObj().prop ${operator} 4;
 
         return [obj, objGot];

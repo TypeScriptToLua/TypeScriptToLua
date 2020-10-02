@@ -1,12 +1,11 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast } from "../../../utils";
+import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast";
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
 import { transformBinaryOperation } from "../binary-expression";
 import { transformAssignment } from "./assignments";
-import { unsupportedNodeKind } from "../../utils/diagnostics";
 
 // If expression is property/element access with possible effects from being evaluated, returns separated object and index expressions.
 export function parseAccessExpressionWithEvaluationEffects(
@@ -145,6 +144,15 @@ export function transformCompoundAssignmentExpression(
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
         const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
+
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            return createImmediatelyInvokedFunctionExpression(
+                [tmpDeclaration, ...transformSetterSkippingCompoundAssignment(context, tmpIdentifier, operator, rhs)],
+                tmpIdentifier,
+                expression
+            );
+        }
+
         return createImmediatelyInvokedFunctionExpression(
             [tmpDeclaration, ...assignStatements],
             tmpIdentifier,
@@ -230,37 +238,28 @@ function transformSetterSkippingCompoundAssignment(
     lhs: lua.AssignmentLeftHandSideExpression,
     operator: SetterSkippingCompoundAssignmentOperator,
     rhs: ts.Expression,
-    node: ts.Node
+    node?: ts.Node
 ): lua.Statement[] {
+    // These assignments have the form 'if x then y = z', figure out what condition x is first.
+    let condition: lua.Expression;
+
     if (operator === ts.SyntaxKind.AmpersandAmpersandToken) {
-        return [
-            lua.createIfStatement(
-                lhs,
-                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
-                undefined,
-                node
-            ),
-        ];
+        condition = lhs;
     } else if (operator === ts.SyntaxKind.BarBarToken) {
-        return [
-            lua.createIfStatement(
-                lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator),
-                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
-                undefined,
-                node
-            ),
-        ];
+        condition = lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator);
     } else if (operator === ts.SyntaxKind.QuestionQuestionToken) {
-        return [
-            lua.createIfStatement(
-                lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator),
-                lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
-                undefined,
-                node
-            ),
-        ];
+        condition = lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator);
     } else {
-        context.diagnostics.push(unsupportedNodeKind(node, operator));
-        return [];
+        assertNever(operator);
     }
+
+    // if condition then lhs = rhs end
+    return [
+        lua.createIfStatement(
+            condition,
+            lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
+            undefined,
+            node
+        ),
+    ];
 }

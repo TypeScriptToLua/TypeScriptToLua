@@ -16,6 +16,9 @@ export const union = <T>(...values: Array<Iterable<T>>): T[] => [...new Set(...v
 export const intersection = <T>(first: readonly T[], ...rest: Array<readonly T[]>): T[] =>
     union(first).filter(x => rest.every(r => r.includes(x)));
 
+export const invertObject = <K extends keyof any, V extends keyof any>(record: Record<K, V>): Record<V, K> =>
+    Object.fromEntries(Object.entries(record).map(([key, value]) => [value, key]));
+
 type DiagnosticFactory = (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">;
 export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) =>
     Object.assign(

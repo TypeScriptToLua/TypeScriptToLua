@@ -218,10 +218,7 @@ export function transformCompoundAssignmentStatement(
  * x.y &&= z does NOT call the x.y setter if x.y is already false.
  * x.y ??= z does NOT call the x.y setter if x.y is already not nullish.
  */
-type SetterSkippingCompoundAssignmentOperator =
-    | ts.SyntaxKind.AmpersandAmpersandToken
-    | ts.SyntaxKind.BarBarToken
-    | ts.SyntaxKind.QuestionQuestionToken;
+type SetterSkippingCompoundAssignmentOperator = ts.LogicalOperator | ts.SyntaxKind.QuestionQuestionToken;
 
 function isSetterSkippingCompoundAssignmentOperator(
     operator: ts.BinaryOperator

@@ -30,5 +30,8 @@ export function transformGlobalCall(
                 node,
                 ...numberParameters
             );
+        case "parseInt":
+        case "parseFloat":
+            return lua.createCallExpression(lua.createIdentifier("tonumber"), parameters);
     }
 }

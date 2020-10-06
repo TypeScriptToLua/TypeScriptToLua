@@ -80,34 +80,39 @@ test("numbers overflowing the float limit become math.huge", () => {
 });
 
 describe.each(["parseInt", "parseFloat"])("parse numbers with %s", parseFunction => {
-    test.each(["3", "3.0", "9", "42", "239810241", "-20391"])("parses %s", numberString => {
+    const numberStrings = ["3", "3.0", "9", "42", "239810241", "-20391", "3.1415", "2.7182", "-34910.3"];
+
+    test.each(numberStrings)("parses (%s)", numberString => {
         util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
     });
 
-    test("empty string parses to undefined", () => {
-        // Note: JS returns NaN here
-        util.testExpression`${parseFunction}("")`.expectToEqual(undefined);
+    test("empty string", () => {
+        util.testExpression`${parseFunction}("")`.expectToMatchJsResult();
     });
 
-    test("invalid string parses to undefined", () => {
-        // Note: JS returns NaN here
-        util.testExpression`${parseFunction}("bla")`.expectToEqual(undefined);
+    test("invalid string", () => {
+        util.testExpression`${parseFunction}("bla")`.expectToMatchJsResult();
     });
-});
 
-test.each(["3.1415", "2.7182", "-34910.3"])("parseFloat floatingpoint numbers", numberString => {
-    util.testExpression`parseFloat("${numberString}")`.expectToMatchJsResult();
-});
-
-test("parseInt does not round", () => {
-    // Note: Difference to the original JS implementation.
-    util.testExpression`parseInt("35.6")`.expectToEqual(35.6);
+    test.each(["1px", "2300m", "3,4", "452adkfl"])("trailing text (%s)", numberString => {
+        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+    });
 });
 
 test.each([
     { numberString: "36", base: 8 },
+    { numberString: "-36", base: 8 },
     { numberString: "100010101101", base: 2 },
+    { numberString: "-100010101101", base: 2 },
     { numberString: "3F", base: 16 },
 ])("parseInt with base (%p)", ({ numberString, base }) => {
+    util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
+});
+
+test.each([
+    { numberString: "36px", base: 8 },
+    { numberString: "10001010110231", base: 2 },
+    { numberString: "3Fcolor", base: 16 },
+])("parseInt with base and trailing text (%p)", ({ numberString, base }) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
 });

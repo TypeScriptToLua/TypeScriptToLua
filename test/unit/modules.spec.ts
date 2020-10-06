@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as util from "../../util";
+import * as util from "../util";
 
 describe("module import/export elision", () => {
     const moduleDeclaration = `
@@ -66,130 +66,87 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
 );
 
 test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                export { default } from "./module";
-            `,
-            "module.ts": `
+    util.testModule`
+        export { default } from "./module";
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const value = true;
                 ${exportStatement};
-            `,
-        },
-        "default"
-    );
-
-    expect(result).toBe(true);
+            `
+        )
+        .expectToEqual({ default: true });
 });
 
 test("Default Import and Export Expression", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport from "./module";
-                export const value = defaultExport;
-            `,
-            "module.ts": `
-                export default 1 + 2 + 3;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+    util.testModule`
+        import defaultExport from "./module";
+        export const value = defaultExport;
+    `
+        .addExtraFile("module.ts", "export default 1 + 2 + 3;")
+        .expectToEqual({ value: 6 });
 });
 
 test("Import and Export Assignment", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import * as m from "./module";
-                export const value = m;
-            `,
-            "module.ts": `
-                export = true;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+    util.testModule`
+        import * as m from "./module";
+        export const value = m;
+    `
+        .addExtraFile("module.ts", "export = true;")
+        .expectToEqual({ value: true });
 });
 
 test("Mixed Exports, Default and Named Imports", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport, { a, b, c } from "./module";
-                export const value = defaultExport + b + c;
-            `,
-            "module.ts": `
+    util.testModule`
+        import defaultExport, { a, b, c } from "./module";
+        export const value = defaultExport + b + c;
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const a = 1;
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+            `
+        )
+        .expectToEqual({ value: 6 });
 });
 
 test("Mixed Exports, Default and Namespace Import", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport, * as ns from "./module";
-                export const value = defaultExport + ns.b + ns.c;
-            `,
-            "module.ts": `
+    util.testModule`
+        import defaultExport, * as ns from "./module";
+        export const value = defaultExport + ns.b + ns.c;
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const a = 1;
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+            `
+        )
+        .expectToEqual({ value: 6 });
 });
 
 test("Export Default Function", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport from "./module";
-                export const value = defaultExport();
-            `,
-            "module.ts": `
-                export default function() {
-                    return true;
-                }
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+    util.testModule`
+        import defaultExport from "./module";
+        export const value = defaultExport();
+    `
+        .addExtraFile("module.ts", "export default function() { return true; }")
+        .expectToEqual({ value: true });
 });
 
 test("Export Equals", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import * as module from "./module";
-                export const value = module;
-            `,
-            "module.ts": `
-                export = true;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+    util.testModule`
+        import * as module from "./module";
+        export const value = module;
+    `
+        .addExtraFile("module.ts", "export = true;")
+        .expectToEqual({ value: true });
 });
 
 const reassignmentTestCases = [

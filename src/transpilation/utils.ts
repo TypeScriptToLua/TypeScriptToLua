@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import { FileSystem } from "enhanced-resolve";
 import * as path from "path";
 import * as resolve from "resolve";
 import { SourceNode } from "source-map";
@@ -9,7 +9,7 @@ import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
 
 export interface EmitHost extends Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile"> {
-    fileSystem?: typeof fs;
+    resolutionFileSystem?: FileSystem;
 }
 
 interface BaseFile {

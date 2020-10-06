@@ -43,15 +43,19 @@ const libCache: { [key: string]: ts.SourceFile } = {};
 
 /** @internal */
 export function createVirtualProgram(input: Record<string, string>, options: CompilerOptions = {}): ts.Program {
+    function notImplemented(): never {
+        throw new Error("Not implemented");
+    }
+
     const compilerHost: ts.CompilerHost = {
-        fileExists: () => true,
+        useCaseSensitiveFileNames: () => false,
         getCanonicalFileName: fileName => fileName,
         getCurrentDirectory: () => "",
+        fileExists: fileName => fileName.startsWith("lib.") || fileName in input,
+        readFile: notImplemented,
+        writeFile: notImplemented,
         getDefaultLibFileName: ts.getDefaultLibFileName,
-        readFile: () => "",
         getNewLine: () => "\n",
-        useCaseSensitiveFileNames: () => false,
-        writeFile() {},
 
         getSourceFile(fileName) {
             if (fileName in input) {

@@ -72,7 +72,7 @@ export function getProgramTranspileResult(
         if (!options.noEmit && !options.emitDeclarationOnly) {
             const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
             const sourceRootDir = program.getCommonSourceDirectory();
-            const fileName = path.resolve(sourceRootDir, sourceFile.fileName);
+            const fileName = path.join(sourceRootDir, sourceFile.fileName);
             transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
         }
     };

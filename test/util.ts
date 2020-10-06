@@ -3,6 +3,7 @@ import * as nativeAssert from "assert";
 import { lauxlib, lua, lualib, to_jsstring, to_luastring } from "fengari";
 import * as fs from "fs";
 import { stringify } from "javascript-stringify";
+import { Volume } from "memfs";
 import * as path from "path";
 import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
@@ -176,6 +177,13 @@ export abstract class TestBuilder {
         return this;
     }
 
+    private nativeFileSystem = false;
+    public useNativeFileSystem() {
+        expect(this.hasProgram).toBe(false);
+        this.nativeFileSystem = true;
+        return this;
+    }
+
     private options: tstl.CompilerOptions = {
         luaTarget: tstl.LuaTarget.Lua53,
         noHeader: true,
@@ -207,6 +215,17 @@ export abstract class TestBuilder {
         return this;
     }
 
+    protected getSourceFiles() {
+        return { ...this.extraFiles, [this.mainFileName]: this.getTsCode() };
+    }
+
+    private extraRawFiles: Record<string, string> = {};
+    public addRawFile(fileName: string, content: string): this {
+        expect(this.hasProgram).toBe(false);
+        this.extraRawFiles[fileName] = content;
+        return this;
+    }
+
     private customTransformers?: ts.CustomTransformers;
     public setCustomTransformers(customTransformers?: ts.CustomTransformers): this {
         expect(this.hasProgram).toBe(false);
@@ -224,14 +243,26 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
-        return tstl.createVirtualProgram({ ...this.extraFiles, [this.mainFileName]: this.getTsCode() }, this.options);
+        return tstl.createVirtualProgram(this.getSourceFiles(), this.options);
     }
 
     @memoize
     public getLuaResult(): tstl.TranspileVirtualProjectResult {
-        const program = this.getProgram();
         const collector = createEmitOutputCollector();
-        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler().emit({
+        const program = this.getProgram();
+
+        const emitHost: tstl.EmitHost = { ...ts.sys };
+        if (!this.nativeFileSystem) {
+            const virtualFS = Volume.fromJSON({ ...this.extraRawFiles, ...this.getSourceFiles() }, "/");
+            emitHost.resolutionFileSystem = virtualFS;
+            emitHost.getCurrentDirectory = () => "/";
+            emitHost.readFile = (fileName, encoding = "utf8") =>
+                fileName.endsWith("lualib_bundle.lua")
+                    ? ts.sys.readFile(fileName, encoding)
+                    : (virtualFS.readFileSync(fileName, encoding) as string);
+        }
+
+        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,

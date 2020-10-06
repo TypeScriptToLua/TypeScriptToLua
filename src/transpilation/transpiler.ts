@@ -6,6 +6,7 @@ import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions"
 import { getLuaLibBundle } from "../LuaLib";
 import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { getBundleResult } from "./bundle";
+import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { replaceResolveMacroInSource, replaceResolveMacroSourceNodes, ResolveMacroReplacer } from "./macro";
 import { getProgramTranspileResult, TranspileOptions } from "./transpile";
 import { EmitFile, EmitHost, ProcessedFile } from "./utils";
@@ -92,18 +93,15 @@ class Transpilation {
 
     private handleProcessedFile(file: ProcessedFile) {
         const replacer: ResolveMacroReplacer = (request: string) => {
+            let basedir = path.dirname(file.fileName);
+            if (basedir === ".") basedir = this.emitHost.getCurrentDirectory();
             let resolvedPath: string;
             try {
-                resolvedPath = this.resolveRequest(request, file.fileName);
+                const result = this.resolver.resolveSync({}, basedir, request);
+                assert(typeof result === "string");
+                resolvedPath = result;
             } catch (error) {
-                this.diagnostics.push({
-                    category: ts.DiagnosticCategory.Error,
-                    code: -1,
-                    file: ts.createSourceFile(file.fileName, "", ts.ScriptTarget.ES3),
-                    start: undefined,
-                    length: undefined,
-                    messageText: error.message,
-                });
+                this.diagnostics.push(createResolutionErrorDiagnostic(error.message, request, file.fileName));
                 return { error: error.message };
             }
 
@@ -131,15 +129,9 @@ class Transpilation {
     protected resolver = ResolverFactory.createResolver({
         extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
         conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
-        fileSystem: this.emitHost.fileSystem ?? fs,
+        fileSystem: this.emitHost.resolutionFileSystem ?? fs,
         useSyncFileSystemCalls: true,
     });
-
-    protected resolveRequest(request: string, issuer: string) {
-        const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
-        assert(typeof result === "string");
-        return result;
-    }
 
     protected toGeneratedFileName(fileName: string) {
         const result = path.relative(this.rootDir, trimExtension(fileName));

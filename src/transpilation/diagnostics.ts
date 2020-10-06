@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { escapeString } from "../LuaPrinter";
 import { createSerialDiagnosticFactory } from "../utils";
 
 const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
@@ -40,4 +41,17 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
 
 export const unresolvableRequirePath = createDiagnosticFactory(
     (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
+);
+
+const sourceFileStub = ts.createSourceFile("", "", ts.ScriptTarget.ES3);
+export const createResolutionErrorDiagnostic = createSerialDiagnosticFactory(
+    (messageText: string, request: string, fileName: string) => {
+        const text = `__TS__Resolve(${escapeString(request)})`;
+        return {
+            messageText,
+            file: { ...sourceFileStub, fileName, text },
+            start: 0,
+            length: text.length,
+        };
+    }
 );

@@ -97,6 +97,14 @@ describe.each(["parseInt", "parseFloat"])("parse numbers with %s", parseFunction
     test.each(["1px", "2300m", "3,4", "452adkfl"])("trailing text (%s)", numberString => {
         util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
     });
+
+    test.each([" 3", "          4", "   -231", "    1px"])("leading whitespace (%s)", numberString => {
+        util.testExpression`${parseFunction}("${numberString}")`.expectToMatchJsResult();
+    });
+});
+
+test.each(["Infinity", "-Infinity", "   -Infinity"])("parseFloat handles Infinity", numberString => {
+    util.testExpression`parseFloat("${numberString}")`.expectToMatchJsResult();
 });
 
 test.each([
@@ -107,6 +115,14 @@ test.each([
     { numberString: "3F", base: 16 },
 ])("parseInt with base (%p)", ({ numberString, base }) => {
     util.testExpression`parseInt("${numberString}", ${base})`.expectToMatchJsResult();
+});
+
+test.each(["0x4A", "-0x42", "0X42", "    0x391", "  -0x8F"])("parseInt detects hexadecimal", numberString => {
+    util.testExpression`parseInt("${numberString}")`.expectToMatchJsResult();
+});
+
+test.each([1, 37, -100])("parseInt with invalid base (%p)", base => {
+    util.testExpression`parseInt("11111", ${base})`.expectToMatchJsResult();
 });
 
 test.each([

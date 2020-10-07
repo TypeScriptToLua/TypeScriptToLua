@@ -1,28 +1,38 @@
-const __TS__parseInt_patterns = {
-    2: "^-?[01]*",
-    3: "^-?[012]*",
-    4: "^-?[0123]*",
-    5: "^-?[01234]*",
-    6: "^-?[012345]*",
-    7: "^-?[0123456]*",
-    8: "^-?[01234567]*",
-    9: "^-?[012345678]*",
-    10: "^-?[0123456789]*",
-    11: "^-?[0123456789aA]*",
-    12: "^-?[0123456789aAbB]*",
-    13: "^-?[0123456789aAbBcC]*",
-    14: "^-?[0123456789aAbBcCdD]*",
-    15: "^-?[0123456789aAbBcCdDeE]*",
-    16: "^-?[0123456789aAbBcCdDeEfF]*",
-};
+const __TS__parseInt_base_pattern = "0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTvVwWxXyYzZ";
 
 function __TS__ParseInt(this: void, numberString: string, base?: number): number {
-    const number = tonumber(string.match(numberString, __TS__parseInt_patterns[base ?? 10]), base);
+    // Check which base to use if none specified
+    if (base === undefined) {
+        base = 10;
+        const hexMatch = string.match(numberString, "^%s*-?0[xX]");
+        if (hexMatch) {
+            base = 16;
+            numberString = string.match(hexMatch, "-")
+                ? "-" + numberString.substr(hexMatch.length)
+                : numberString.substr(hexMatch.length);
+        }
+    }
+
+    // Check if base is in bounds
+    if (base < 2 || base > 36) {
+        return NaN;
+    }
+
+    // Calculate string match pattern to use
+    const allowedDigits =
+        base <= 10
+            ? __TS__parseInt_base_pattern.substring(0, base)
+            : __TS__parseInt_base_pattern.substr(0, 10 + 2 * (base - 10));
+    const pattern = `^%s*(-?[${allowedDigits}]*)`;
+
+    // Try to parse with Lua tonumber
+    const number = tonumber(string.match(numberString, pattern), base);
 
     if (number === undefined) {
         return NaN;
     }
 
+    // Lua uses a different floor convention for negative numbers than JS
     if (number >= 0) {
         return math.floor(number);
     } else {

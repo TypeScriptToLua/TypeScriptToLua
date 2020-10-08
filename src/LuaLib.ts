@@ -49,6 +49,8 @@ export enum LuaLibFeature {
     ObjectKeys = "ObjectKeys",
     ObjectRest = "ObjectRest",
     ObjectValues = "ObjectValues",
+    ParseFloat = "ParseFloat",
+    ParseInt = "ParseInt",
     Set = "Set",
     WeakMap = "WeakMap",
     WeakSet = "WeakSet",

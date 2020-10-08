@@ -8,4 +8,7 @@ declare namespace math {
     function atan(y: number, x?: number): number;
 
     function atan2(y: number, x: number): number;
+
+    function ceil(x: number): number;
+    function floor(x: number): number;
 }

@@ -30,5 +30,9 @@ export function transformGlobalCall(
                 node,
                 ...numberParameters
             );
+        case "parseFloat":
+            return transformLuaLibFunction(context, LuaLibFeature.ParseFloat, node, ...parameters);
+        case "parseInt":
+            return transformLuaLibFunction(context, LuaLibFeature.ParseInt, node, ...parameters);
     }
 }

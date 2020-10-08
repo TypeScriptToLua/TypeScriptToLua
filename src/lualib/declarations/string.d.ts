@@ -13,4 +13,5 @@ declare namespace string {
     ): [string, number];
     function sub(s: string, i: number, j?: number): string;
     function format(formatstring: string, ...args: any[]): string;
+    function match(string: string, pattern: string): string;
 }

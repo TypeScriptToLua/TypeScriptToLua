@@ -19,6 +19,7 @@ interface BaseFile {
 }
 
 export interface ProcessedFile extends BaseFile {
+    /** Absolute source file path. */
     fileName: string;
     luaAst?: lua.Block;
     /** @internal */

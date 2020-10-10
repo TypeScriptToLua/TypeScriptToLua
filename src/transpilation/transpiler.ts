@@ -60,11 +60,20 @@ class Transpilation {
     private seenFiles = new Set<string>();
     private files: ProcessedFile[] = [];
 
-    constructor(private emitHost: EmitHost, private program: ts.Program) {}
-
     private options = this.program.getCompilerOptions() as CompilerOptions;
-    private rootDir = this.program.getCommonSourceDirectory();
-    private outDir = this.options.outDir ?? this.rootDir;
+    private rootDir: string;
+    private outDir: string;
+
+    constructor(private emitHost: EmitHost, private program: ts.Program) {
+        const { rootDir } = program.getCompilerOptions();
+        this.rootDir =
+            // getCommonSourceDirectory ignores provided rootDir when TS6059 is emitted
+            rootDir == null
+                ? program.getCommonSourceDirectory()
+                : ts.getNormalizedAbsolutePath(rootDir, emitHost.getCurrentDirectory());
+
+        this.outDir = this.options.outDir ?? this.rootDir;
+    }
 
     public emit(transpiledFiles: ProcessedFile[]): EmitFile[] {
         transpiledFiles.forEach(file => this.seenFiles.add(file.fileName));
@@ -93,11 +102,9 @@ class Transpilation {
 
     private handleProcessedFile(file: ProcessedFile) {
         const replacer: ResolveMacroReplacer = (request: string) => {
-            let basedir = path.dirname(file.fileName);
-            if (basedir === ".") basedir = this.emitHost.getCurrentDirectory();
             let resolvedPath: string;
             try {
-                const result = this.resolver.resolveSync({}, basedir, request);
+                const result = this.resolver.resolveSync({}, path.dirname(file.fileName), request);
                 assert(typeof result === "string");
                 resolvedPath = result;
             } catch (error) {

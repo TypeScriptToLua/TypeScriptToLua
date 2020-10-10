@@ -3,6 +3,7 @@ export {};
 declare module "typescript" {
     function createDiagnosticReporter(system: System, pretty?: boolean): DiagnosticReporter;
     function createWatchStatusReporter(system: System, pretty?: boolean): WatchStatusReporter;
+    function getNormalizedAbsolutePath(fileName: string, currentDirectory: string): string;
 
     interface System {
         setBlocking?(): void;

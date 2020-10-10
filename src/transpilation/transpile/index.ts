@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import { CompilerOptions, validateOptions } from "../../CompilerOptions";
 import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
-import { isNonNull } from "../../utils";
+import { assert, isNonNull } from "../../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 import { EmitHost, ProcessedFile } from "../utils";
@@ -71,8 +71,17 @@ export function getProgramTranspileResult(
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
             const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
-            const sourceRootDir = program.getCommonSourceDirectory();
-            const fileName = path.join(sourceRootDir, sourceFile.fileName);
+
+            let fileName: string;
+            if (path.isAbsolute(sourceFile.fileName)) {
+                fileName = sourceFile.fileName;
+            } else {
+                const currentDirectory = emitHost.getCurrentDirectory();
+                // Having no absolute path in path.resolve would make it fallback to real cwd
+                assert(path.isAbsolute(currentDirectory), `Invalid path: ${currentDirectory}`);
+                fileName = path.resolve(currentDirectory, sourceFile.fileName);
+            }
+
             transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
         }
     };

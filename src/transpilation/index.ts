@@ -47,19 +47,23 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
         throw new Error("Not implemented");
     }
 
+    const getFileFromInput = (fileName: string) =>
+        input[fileName] ?? (fileName.startsWith("/") ? input[fileName.slice(1)] : undefined);
+
     const compilerHost: ts.CompilerHost = {
         useCaseSensitiveFileNames: () => false,
         getCanonicalFileName: fileName => fileName,
-        getCurrentDirectory: () => "",
-        fileExists: fileName => fileName.startsWith("lib.") || fileName in input,
+        getCurrentDirectory: () => "/",
+        fileExists: fileName => fileName.startsWith("lib.") || getFileFromInput(fileName) !== undefined,
         readFile: notImplemented,
         writeFile: notImplemented,
         getDefaultLibFileName: ts.getDefaultLibFileName,
         getNewLine: () => "\n",
 
         getSourceFile(fileName) {
-            if (fileName in input) {
-                return ts.createSourceFile(fileName, input[fileName], ts.ScriptTarget.Latest, false);
+            const fileFromInput = getFileFromInput(fileName);
+            if (fileFromInput !== undefined) {
+                return ts.createSourceFile(fileName, fileFromInput, ts.ScriptTarget.Latest, false);
             }
 
             if (fileName.startsWith("lib.")) {

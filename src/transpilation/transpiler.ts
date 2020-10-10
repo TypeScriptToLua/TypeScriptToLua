@@ -5,11 +5,11 @@ import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
-import { getBundleResult } from "./bundle";
+import { getBundleChunk } from "./bundle";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
-import { replaceResolveMacroInSource, replaceResolveMacroSourceNodes, ResolveMacroReplacer } from "./macro";
-import { getProgramTranspileResult, TranspileOptions } from "./transpile";
-import { EmitFile, EmitHost, ProcessedFile } from "./utils";
+import { replaceResolveMacroInSource, replaceResolveMacroSourceNodes, MacroDependencyResolver } from "./macro";
+import { emitProgramModules, TranspileOptions } from "./transpile";
+import { Chunk, EmitHost, Module } from "./utils";
 
 export interface TranspilerOptions {
     emitHost?: EmitHost;
@@ -32,8 +32,8 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.emitHost.writeFile } = emitOptions;
-        const { diagnostics, transpiledFiles } = getProgramTranspileResult(this.emitHost, writeFile, emitOptions);
-        const emitPlan = this.getEmitPlan(program, diagnostics, transpiledFiles);
+        const { diagnostics, modules } = emitProgramModules(this.emitHost, writeFile, emitOptions);
+        const emitPlan = this.getEmitPlan(program, diagnostics, modules);
 
         const options = program.getCompilerOptions();
         const emitBOM = options.emitBOM ?? false;
@@ -47,7 +47,7 @@ export class Transpiler {
         return { diagnostics, emitSkipped: emitPlan.length === 0 };
     }
 
-    private getEmitPlan(program: ts.Program, diagnostics: ts.Diagnostic[], transpiledFiles: ProcessedFile[]) {
+    private getEmitPlan(program: ts.Program, diagnostics: ts.Diagnostic[], transpiledFiles: Module[]) {
         const transpilation = new Transpilation(this.emitHost, program);
         const emitPlan = transpilation.emit(transpiledFiles);
         diagnostics.push(...transpilation.diagnostics);
@@ -58,7 +58,7 @@ export class Transpiler {
 class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
     private seenFiles = new Set<string>();
-    private files: ProcessedFile[] = [];
+    private modules: Module[] = [];
 
     private options = this.program.getCompilerOptions() as CompilerOptions;
     private rootDir: string;
@@ -75,39 +75,39 @@ class Transpilation {
         this.outDir = this.options.outDir ?? this.rootDir;
     }
 
-    public emit(transpiledFiles: ProcessedFile[]): EmitFile[] {
-        transpiledFiles.forEach(file => this.seenFiles.add(file.fileName));
-        transpiledFiles.forEach(file => this.handleProcessedFile(file));
+    public emit(programModules: Module[]): Chunk[] {
+        programModules.forEach(file => this.seenFiles.add(file.fileName));
+        programModules.forEach(file => this.addModule(file));
 
-        const lualibRequired = this.files.some(f => f.code.includes('require("lualib_bundle")'));
+        const lualibRequired = this.modules.some(f => f.code.includes('require("lualib_bundle")'));
         if (lualibRequired) {
             const fileName = normalizeSlashes(path.resolve(this.rootDir, "lualib_bundle.lua"));
-            this.files.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
+            this.modules.unshift({ fileName, code: getLuaLibBundle(this.emitHost) });
         }
 
         if (isBundleEnabled(this.options)) {
-            const [bundleDiagnostics, bundleFile] = getBundleResult(this.program, this.emitHost, this.files, file =>
+            const [bundleDiagnostics, bundleChunk] = getBundleChunk(this.program, this.emitHost, this.modules, file =>
                 this.createModuleId(file.fileName)
             );
             this.diagnostics.push(...bundleDiagnostics);
-            return [bundleFile];
+            return [bundleChunk];
         } else {
-            return this.files.map(file => ({
+            return this.modules.map(file => ({
                 ...file,
                 outputPath: this.moduleIdToOutputPath(this.createModuleId(file.fileName)),
             }));
         }
     }
 
-    private handleProcessedFile(file: ProcessedFile) {
-        const replacer: ResolveMacroReplacer = (request: string) => {
+    private addModule(module: Module) {
+        const dependencyResolver: MacroDependencyResolver = (request: string) => {
             let resolvedPath: string;
             try {
-                const result = this.resolver.resolveSync({}, path.dirname(file.fileName), request);
+                const result = this.resolver.resolveSync({}, path.dirname(module.fileName), request);
                 assert(typeof result === "string");
                 resolvedPath = result;
             } catch (error) {
-                this.diagnostics.push(createResolutionErrorDiagnostic(error.message, request, file.fileName));
+                this.diagnostics.push(createResolutionErrorDiagnostic(error.message, request, module.fileName));
                 return { error: error.message };
             }
 
@@ -117,11 +117,11 @@ class Transpilation {
                     resolvedPath.endsWith(".json")
                 ) {
                     const message = `Resolved source file '${resolvedPath}' is not a part of the project.`;
-                    this.diagnostics.push(createResolutionErrorDiagnostic(message, request, file.fileName));
+                    this.diagnostics.push(createResolutionErrorDiagnostic(message, request, module.fileName));
                     return { error: message };
                 } else {
                     this.seenFiles.add(resolvedPath);
-                    this.handleProcessedFile({
+                    this.addModule({
                         fileName: resolvedPath,
                         code: cast(this.emitHost.readFile(resolvedPath), isNonNull),
                         // TODO: Load source map files
@@ -132,16 +132,16 @@ class Transpilation {
             return this.createModuleId(resolvedPath);
         };
 
-        if (file.sourceMapNode) {
-            replaceResolveMacroSourceNodes(file.sourceMapNode, replacer);
-            const { code, map } = file.sourceMapNode.toStringWithSourceMap();
-            file.code = code;
-            file.sourceMap = JSON.stringify(map.toJSON());
+        if (module.sourceMapNode) {
+            replaceResolveMacroSourceNodes(module.sourceMapNode, dependencyResolver);
+            const { code, map } = module.sourceMapNode.toStringWithSourceMap();
+            module.code = code;
+            module.sourceMap = JSON.stringify(map.toJSON());
         } else {
-            file.code = replaceResolveMacroInSource(file.code, replacer);
+            module.code = replaceResolveMacroInSource(module.code, dependencyResolver);
         }
 
-        this.files.push(file);
+        this.modules.push(module);
     }
 
     private readonly scriptExtensions = [".ts", ".tsx", ".js", ".jsx"];

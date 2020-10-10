@@ -5,7 +5,7 @@ import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
 import { escapeString } from "../LuaPrinter";
 import { assert, normalizeSlashes } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { EmitFile, EmitHost, ProcessedFile } from "./utils";
+import { Chunk, EmitHost, getConfigDirectory, Module } from "./utils";
 
 // Override `require` to read from ____modules table.
 const requireOverride = `
@@ -29,41 +29,37 @@ local function require(file)
 end
 `;
 
-export function getBundleResult(
+export function getBundleChunk(
     program: ts.Program,
     emitHost: EmitHost,
-    files: ProcessedFile[],
-    createModuleId: (file: ProcessedFile) => string
-): [ts.Diagnostic[], EmitFile] {
+    modules: Module[],
+    createModuleId: (file: Module) => string
+): [ts.Diagnostic[], Chunk] {
     const diagnostics: ts.Diagnostic[] = [];
 
     const options = program.getCompilerOptions() as CompilerOptions;
     assert(isBundleEnabled(options));
-    const bundleFile = options.luaBundle;
-    const entryModule = options.luaBundleEntry;
-    const projectRootDir = options.configFilePath
-        ? path.dirname(options.configFilePath)
-        : emitHost.getCurrentDirectory();
-    const outputPath = normalizeSlashes(path.resolve(projectRootDir, bundleFile));
+    const projectDirectory = getConfigDirectory(options, emitHost);
+    const outputPath = normalizeSlashes(path.resolve(projectDirectory, options.luaBundle));
 
     // Resolve project settings relative to project file.
-    const resolvedEntryModule = path.resolve(projectRootDir, entryModule);
-    const entryFile = files.find(f => f.fileName === resolvedEntryModule);
-    if (entryFile === undefined) {
-        diagnostics.push(couldNotFindBundleEntryPoint(entryModule));
+    const entryFileName = normalizeSlashes(path.resolve(projectDirectory, options.luaBundleEntry));
+    const entryModule = modules.find(m => m.fileName === entryFileName);
+    if (entryModule === undefined) {
+        diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
         return [diagnostics, { outputPath, code: "" }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries = files.map(f => moduleSourceNode(f, escapeString(createModuleId(f))));
+    const moduleTableEntries = modules.map(f => moduleSourceNode(f, escapeString(createModuleId(f))));
 
     // Create ____modules table containing all entries from moduleTableEntries
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${escapeString(createModuleId(entryFile))})\n`;
+    const bootstrap = `return require(${escapeString(createModuleId(entryModule))})\n`;
 
-    const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
+    const bundleNode = joinSourceChunks([requireOverride, moduleTable, bootstrap]);
     const { code, map } = bundleNode.toStringWithSourceMap();
 
     return [
@@ -72,12 +68,12 @@ export function getBundleResult(
             outputPath,
             code,
             sourceMap: map.toString(),
-            sourceFiles: files.flatMap(x => x.sourceFiles ?? []),
+            sourceFiles: modules.flatMap(x => x.sourceFiles ?? []),
         },
     ];
 }
 
-function moduleSourceNode({ code, sourceMapNode }: ProcessedFile, modulePath: string): SourceNode {
+function moduleSourceNode({ code, sourceMapNode }: Module, modulePath: string): SourceNode {
     return joinSourceChunks([`[${modulePath}] = function()\n`, sourceMapNode ?? code, "\nend,\n"]);
 }
 

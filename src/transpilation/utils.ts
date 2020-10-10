@@ -18,7 +18,7 @@ interface BaseFile {
     sourceFiles?: ts.SourceFile[];
 }
 
-export interface ProcessedFile extends BaseFile {
+export interface Module extends BaseFile {
     /** Absolute source file path. */
     fileName: string;
     luaAst?: lua.Block;
@@ -26,12 +26,13 @@ export interface ProcessedFile extends BaseFile {
     sourceMapNode?: SourceNode;
 }
 
-export interface EmitFile extends BaseFile {
+export interface Chunk extends BaseFile {
     outputPath: string;
 }
 
-export const getConfigDirectory = (options: ts.CompilerOptions) =>
-    options.configFilePath ? path.dirname(options.configFilePath) : process.cwd();
+// TODO: Require emit host
+export const getConfigDirectory = (options: ts.CompilerOptions, emitHost?: EmitHost) =>
+    options.configFilePath ? path.dirname(options.configFilePath) : emitHost?.getCurrentDirectory() ?? process.cwd();
 
 export function resolvePlugin(
     kind: string,

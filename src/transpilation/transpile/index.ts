@@ -4,9 +4,9 @@ import { CompilerOptions, validateOptions } from "../../CompilerOptions";
 import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
+import { EmitHost, Module } from "../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
-import { EmitHost, ProcessedFile } from "../utils";
 
 export { Plugin };
 
@@ -19,10 +19,10 @@ export interface TranspileOptions {
 
 export interface TranspileResult {
     diagnostics: ts.Diagnostic[];
-    transpiledFiles: ProcessedFile[];
+    modules: Module[];
 }
 
-export function getProgramTranspileResult(
+export function emitProgramModules(
     emitHost: EmitHost,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
@@ -30,7 +30,7 @@ export function getProgramTranspileResult(
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const diagnostics = validateOptions(options);
-    let transpiledFiles: ProcessedFile[] = [];
+    let modules: Module[] = [];
 
     if (options.noEmitOnError) {
         const preEmitDiagnostics = [
@@ -54,7 +54,7 @@ export function getProgramTranspileResult(
         }
 
         if (preEmitDiagnostics.length > 0) {
-            return { diagnostics: preEmitDiagnostics, transpiledFiles };
+            return { diagnostics: preEmitDiagnostics, modules };
         }
     }
 
@@ -82,7 +82,7 @@ export function getProgramTranspileResult(
                 fileName = path.resolve(currentDirectory, sourceFile.fileName);
             }
 
-            transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
+            modules.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
         }
     };
 
@@ -121,8 +121,8 @@ export function getProgramTranspileResult(
     options.noEmit = oldNoEmit;
 
     if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
-        transpiledFiles = [];
+        modules = [];
     }
 
-    return { diagnostics, transpiledFiles };
+    return { diagnostics, modules };
 }

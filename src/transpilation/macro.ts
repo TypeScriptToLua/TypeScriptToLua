@@ -1,9 +1,9 @@
 import { SourceNode } from "source-map";
 import { escapeString, unescapeLuaString } from "../LuaPrinter";
 
-export type ResolveMacroReplacer = (request: string) => string | { error: string };
+export type MacroDependencyResolver = (request: string) => string | { error: string };
 
-export function replaceResolveMacroSourceNodes(rootNode: SourceNode, replacer: ResolveMacroReplacer) {
+export function replaceResolveMacroSourceNodes(rootNode: SourceNode, replacer: MacroDependencyResolver) {
     function walkSourceNode(node: SourceNode, parent: SourceNode) {
         for (const child of node.children) {
             if ((child as any) === "__TS__Resolve") {
@@ -17,7 +17,7 @@ export function replaceResolveMacroSourceNodes(rootNode: SourceNode, replacer: R
     walkSourceNode(rootNode, rootNode);
 }
 
-export function replaceResolveMacroInSource(source: string, replacer: ResolveMacroReplacer) {
+export function replaceResolveMacroInSource(source: string, replacer: MacroDependencyResolver) {
     return source.replace(/__TS__Resolve\((".*?")\)/, (_, match) => {
         const request = unescapeLuaString(match);
         const replacement = replacer(request);

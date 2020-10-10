@@ -39,10 +39,6 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
         "It is recommended to use 'luaLibImport: \"require\"'.",
 }));
 
-export const unresolvableRequirePath = createDiagnosticFactory(
-    (path: string) => `Cannot create require path. Module '${path}' does not exist within --rootDir.`
-);
-
 const sourceFileStub = ts.createSourceFile("", "", ts.ScriptTarget.ES3);
 export const createResolutionErrorDiagnostic = createSerialDiagnosticFactory(
     (messageText: string, request: string, fileName: string) => {

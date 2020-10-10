@@ -112,11 +112,23 @@ class Transpilation {
                 return { error: error.message };
             }
 
-            this.handleProcessedFile({
-                fileName: resolvedPath,
-                code: cast(this.emitHost.readFile(resolvedPath), isNonNull),
-                // TODO: Load source map files
-            });
+            if (!this.seenFiles.has(resolvedPath)) {
+                if (
+                    this.scriptExtensions.some(extension => resolvedPath.endsWith(extension)) ||
+                    resolvedPath.endsWith(".json")
+                ) {
+                    const message = `Resolved source file '${resolvedPath}' is not a part of the project.`;
+                    this.diagnostics.push(createResolutionErrorDiagnostic(message, request, file.fileName));
+                    return { error: message };
+                } else {
+                    this.seenFiles.add(resolvedPath);
+                    this.handleProcessedFile({
+                        fileName: resolvedPath,
+                        code: cast(this.emitHost.readFile(resolvedPath), isNonNull),
+                        // TODO: Load source map files
+                    });
+                }
+            }
 
             return this.toRequireParameter(this.toGeneratedFileName(resolvedPath));
         };
@@ -133,8 +145,9 @@ class Transpilation {
         this.files.push(file);
     }
 
+    private readonly scriptExtensions = [".ts", ".tsx", ".js", ".jsx"];
     protected resolver = ResolverFactory.createResolver({
-        extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
+        extensions: [".lua", ...this.scriptExtensions],
         conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
         fileSystem: this.emitHost.resolutionFileSystem ?? fs,
         useSyncFileSystemCalls: true,

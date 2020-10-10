@@ -33,7 +33,7 @@ export function getBundleResult(
     program: ts.Program,
     emitHost: EmitHost,
     files: ProcessedFile[],
-    getRequirePath: (file: ProcessedFile) => string
+    createModuleId: (file: ProcessedFile) => string
 ): [ts.Diagnostic[], EmitFile] {
     const diagnostics: ts.Diagnostic[] = [];
 
@@ -55,13 +55,13 @@ export function getBundleResult(
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries = files.map(f => moduleSourceNode(f, escapeString(getRequirePath(f))));
+    const moduleTableEntries = files.map(f => moduleSourceNode(f, escapeString(createModuleId(f))));
 
     // Create ____modules table containing all entries from moduleTableEntries
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const entryPoint = `return require(${escapeString(getRequirePath(entryFile))})\n`;
+    const entryPoint = `return require(${escapeString(createModuleId(entryFile))})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, entryPoint]);
     const { code, map } = bundleNode.toStringWithSourceMap();

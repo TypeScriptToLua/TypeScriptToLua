@@ -87,16 +87,15 @@ class Transpilation {
 
         if (isBundleEnabled(this.options)) {
             const [bundleDiagnostics, bundleFile] = getBundleResult(this.program, this.emitHost, this.files, file =>
-                this.toRequireParameter(this.toGeneratedFileName(file.fileName))
+                this.createModuleId(file.fileName)
             );
             this.diagnostics.push(...bundleDiagnostics);
             return [bundleFile];
         } else {
-            return this.files.map(file => {
-                const pathInOutDir = this.toAbsoluteOutputPath(this.toGeneratedFileName(file.fileName));
-                const outputPath = normalizeSlashes(trimExtension(pathInOutDir) + ".lua");
-                return { ...file, outputPath };
-            });
+            return this.files.map(file => ({
+                ...file,
+                outputPath: this.moduleIdToOutputPath(this.createModuleId(file.fileName)),
+            }));
         }
     }
 
@@ -130,7 +129,7 @@ class Transpilation {
                 }
             }
 
-            return this.toRequireParameter(this.toGeneratedFileName(resolvedPath));
+            return this.createModuleId(resolvedPath);
         };
 
         if (file.sourceMapNode) {
@@ -153,18 +152,17 @@ class Transpilation {
         useSyncFileSystemCalls: true,
     });
 
-    protected toGeneratedFileName(fileName: string) {
+    protected createModuleId(fileName: string) {
         const result = path.relative(this.rootDir, trimExtension(fileName));
         // TODO: handle files on other drives
         assert(!path.isAbsolute(result), `Invalid path: ${result}`);
-        return result.replace(/\.\.\//g, "_/").replace(/\./g, "__");
+        return result
+            .replace(/\.\.[/\\]/g, "_/")
+            .replace(/\./g, "__")
+            .replace(/[/\\]/g, ".");
     }
 
-    protected toRequireParameter(fileName: string) {
-        return fileName.replace(/[/\\]/g, ".");
-    }
-
-    protected toAbsoluteOutputPath(fileName: string) {
-        return path.resolve(this.outDir, `${fileName}.lua`);
+    protected moduleIdToOutputPath(moduleId: string) {
+        return normalizeSlashes(path.resolve(this.outDir, `${moduleId.replace(/\./g, "/")}.lua`));
     }
 }

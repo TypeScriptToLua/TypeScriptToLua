@@ -10,6 +10,7 @@ import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
+import { createVirtualProgram } from "../src/transpilation/utils";
 
 export * from "./legacy-utils";
 
@@ -243,7 +244,7 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
-        return tstl.createVirtualProgram(this.getSourceFiles(), this.options);
+        return createVirtualProgram(this.getSourceFiles(), this.options);
     }
 
     @memoize

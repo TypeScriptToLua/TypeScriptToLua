@@ -6,7 +6,7 @@ import { escapeString } from "../LuaPrinter";
 import { assert, normalizeSlashes } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
 import { Module } from "./module";
-import { Transpilation } from "./transpiler";
+import { Transpilation } from "./transpilation";
 import { getConfigDirectory } from "./utils";
 
 export interface Chunk {

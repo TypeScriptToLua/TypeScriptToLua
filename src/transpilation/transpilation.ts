@@ -12,7 +12,7 @@ import { Transpiler, TranspilerHost } from "./transpiler";
 
 export class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
-    private modules: Module[] = [];
+    public modules: Module[] = [];
 
     public options = this.program.getCompilerOptions() as CompilerOptions;
     public rootDir: string;
@@ -42,9 +42,8 @@ export class Transpilation {
         });
     }
 
-    public emit(programModules: Module[]): Chunk[] {
-        programModules.forEach(module => this.modules.push(module));
-        programModules.forEach(module => this.buildModule(module));
+    public emit(): Chunk[] {
+        this.modules.forEach(module => this.buildModule(module));
 
         const lualibRequired = this.modules.some(m => m.code.toString().includes('require("lualib_bundle")'));
         if (lualibRequired) {

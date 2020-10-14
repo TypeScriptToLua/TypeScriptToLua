@@ -1,7 +1,6 @@
-import * as ts from "typescript";
-import { CompilerOptions } from "../../CompilerOptions";
 import { Printer } from "../../LuaPrinter";
 import { Visitors } from "../../transformation/context";
+import { Transpilation } from "../transpilation";
 import { getConfigDirectory, resolvePlugin } from "../utils";
 
 export interface Plugin {
@@ -20,22 +19,21 @@ export interface Plugin {
     printer?: Printer;
 }
 
-export function getPlugins(program: ts.Program, diagnostics: ts.Diagnostic[], customPlugins: Plugin[]): Plugin[] {
+export function getPlugins(transpilation: Transpilation, customPlugins: Plugin[]): Plugin[] {
     const pluginsFromOptions: Plugin[] = [];
-    const options = program.getCompilerOptions() as CompilerOptions;
 
-    for (const [index, pluginOption] of (options.luaPlugins ?? []).entries()) {
+    for (const [index, pluginOption] of (transpilation.options.luaPlugins ?? []).entries()) {
         const optionName = `tstl.luaPlugins[${index}]`;
 
         const { error: resolveError, result: factory } = resolvePlugin(
             "plugin",
             `${optionName}.name`,
-            getConfigDirectory(options),
+            getConfigDirectory(transpilation.options),
             pluginOption.name,
             pluginOption.import
         );
 
-        if (resolveError) diagnostics.push(resolveError);
+        if (resolveError) transpilation.diagnostics.push(resolveError);
         if (factory === undefined) continue;
 
         const plugin = typeof factory === "function" ? factory(pluginOption) : factory;

@@ -28,20 +28,24 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.host.writeFile } = emitOptions;
-        const transpilation = new Transpilation(this, program);
-        const { diagnostics, modules } = emitProgramModules(this.host, writeFile, emitOptions);
-        const emitPlan = transpilation.emit(modules);
-        diagnostics.push(...transpilation.diagnostics);
-
         const options = program.getCompilerOptions();
+
+        const transpilation = new Transpilation(this, program);
+        emitProgramModules(transpilation, writeFile, emitOptions);
+        if (options.noEmit || (options.noEmitOnError && transpilation.diagnostics.length > 0)) {
+            return { diagnostics: transpilation.diagnostics, emitSkipped: true };
+        }
+
+        const chunks = transpilation.emit();
+
         const emitBOM = options.emitBOM ?? false;
-        for (const { outputPath, code, sourceMap, sourceFiles } of emitPlan) {
+        for (const { outputPath, code, sourceMap, sourceFiles } of chunks) {
             writeFile(outputPath, code, emitBOM, undefined, sourceFiles);
             if (options.sourceMap && sourceMap !== undefined) {
                 writeFile(outputPath + ".map", sourceMap, emitBOM, undefined, sourceFiles);
             }
         }
 
-        return { diagnostics, emitSkipped: emitPlan.length === 0 };
+        return { diagnostics: transpilation.diagnostics, emitSkipped: chunks.length === 0 };
     }
 }

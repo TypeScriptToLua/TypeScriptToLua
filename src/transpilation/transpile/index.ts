@@ -4,8 +4,7 @@ import { CompilerOptions, validateOptions } from "../../CompilerOptions";
 import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
-import { Module } from "../module";
-import { TranspilerHost } from "../transpiler";
+import { Transpilation } from "../transpilation";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 
@@ -19,21 +18,16 @@ export interface TranspileOptions {
 }
 
 export function emitProgramModules(
-    host: TranspilerHost,
+    transpilation: Transpilation,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
 ) {
     const options = program.getCompilerOptions() as CompilerOptions;
 
-    const diagnostics = validateOptions(options);
-    let modules: Module[] = [];
+    transpilation.diagnostics.push(...validateOptions(options));
 
     if (options.noEmitOnError) {
-        const preEmitDiagnostics = [
-            ...diagnostics,
-            ...program.getOptionsDiagnostics(),
-            ...program.getGlobalDiagnostics(),
-        ];
+        const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
 
         if (targetSourceFiles) {
             for (const sourceFile of targetSourceFiles) {
@@ -50,11 +44,12 @@ export function emitProgramModules(
         }
 
         if (preEmitDiagnostics.length > 0) {
-            return { diagnostics: preEmitDiagnostics, modules };
+            transpilation.diagnostics.push(...preEmitDiagnostics);
+            return;
         }
     }
 
-    const plugins = getPlugins(program, diagnostics, customPlugins);
+    const plugins = getPlugins(transpilation, customPlugins);
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
@@ -64,21 +59,21 @@ export function emitProgramModules(
             visitorMap
         );
 
-        diagnostics.push(...transformDiagnostics);
+        transpilation.diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const printResult = printer(program, host, sourceFile.fileName, luaAst, luaLibFeatures);
+            const printResult = printer(program, transpilation.host, sourceFile.fileName, luaAst, luaLibFeatures);
 
             let fileName: string;
             if (path.isAbsolute(sourceFile.fileName)) {
                 fileName = sourceFile.fileName;
             } else {
-                const currentDirectory = host.getCurrentDirectory();
+                const currentDirectory = transpilation.host.getCurrentDirectory();
                 // Having no absolute path in path.resolve would make it fallback to real cwd
                 assert(path.isAbsolute(currentDirectory), `Invalid path: ${currentDirectory}`);
                 fileName = path.resolve(currentDirectory, sourceFile.fileName);
             }
 
-            modules.push({
+            transpilation.modules.push({
                 sourceFiles: [sourceFile],
                 request: fileName,
                 isBuilt: false,
@@ -87,7 +82,7 @@ export function emitProgramModules(
         }
     };
 
-    const transformers = getTransformers(program, diagnostics, customTransformers, processSourceFile);
+    const transformers = getTransformers(transpilation, customTransformers, processSourceFile);
 
     const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
         sourceFile.flags & ts.NodeFlags.JsonFile &&
@@ -109,21 +104,17 @@ export function emitProgramModules(
             if (isEmittableJsonFile(file)) {
                 processSourceFile(file);
             } else {
-                diagnostics.push(...program.emit(file, writeFile, undefined, false, transformers).diagnostics);
+                const { diagnostics } = program.emit(file, writeFile, undefined, false, transformers);
+                transpilation.diagnostics.push(...diagnostics);
             }
         }
     } else {
-        diagnostics.push(...program.emit(undefined, writeFile, undefined, false, transformers).diagnostics);
+        const { diagnostics } = program.emit(undefined, writeFile, undefined, false, transformers);
+        transpilation.diagnostics.push(...diagnostics);
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
         program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);
     }
 
     options.noEmit = oldNoEmit;
-
-    if (options.noEmit || (options.noEmitOnError && diagnostics.length > 0)) {
-        modules = [];
-    }
-
-    return { diagnostics, modules };
 }

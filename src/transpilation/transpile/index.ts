@@ -5,22 +5,18 @@ import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
 import { Transpilation } from "../transpilation";
-import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
-
-export { Plugin };
 
 export interface TranspileOptions {
     program: ts.Program;
     sourceFiles?: ts.SourceFile[];
     customTransformers?: ts.CustomTransformers;
-    plugins?: Plugin[];
 }
 
 export function emitProgramModules(
     transpilation: Transpilation,
     writeFileResult: ts.WriteFileCallback,
-    { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
+    { program, sourceFiles: targetSourceFiles, customTransformers = {} }: TranspileOptions
 ) {
     const options = program.getCompilerOptions() as CompilerOptions;
 
@@ -49,9 +45,8 @@ export function emitProgramModules(
         }
     }
 
-    const plugins = getPlugins(transpilation, customPlugins);
-    const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
-    const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
+    const visitorMap = createVisitorMap(transpilation.plugins.map(p => p.visitors).filter(isNonNull));
+    const printer = createPrinter(transpilation.plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
             program,

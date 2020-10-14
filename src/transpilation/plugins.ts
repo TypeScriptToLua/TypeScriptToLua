@@ -1,7 +1,7 @@
-import { Printer } from "../../LuaPrinter";
-import { Visitors } from "../../transformation/context";
-import { Transpilation } from "../transpilation";
-import { getConfigDirectory, resolvePlugin } from "../utils";
+import { Printer } from "../LuaPrinter";
+import { Visitors } from "../transformation/context";
+import { Transpilation } from "./transpilation";
+import { getConfigDirectory, resolvePlugin } from "./utils";
 
 export interface Plugin {
     /**

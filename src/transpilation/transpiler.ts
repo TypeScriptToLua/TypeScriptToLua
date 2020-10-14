@@ -1,5 +1,6 @@
 import { FileSystem } from "enhanced-resolve";
 import * as ts from "typescript";
+import { Plugin } from "./plugins";
 import { Transpilation } from "./transpilation";
 import { emitProgramModules, TranspileOptions } from "./transpile";
 
@@ -13,6 +14,7 @@ export interface TranspilerOptions {
 
 export interface EmitOptions extends TranspileOptions {
     writeFile?: ts.WriteFileCallback;
+    plugins?: Plugin[];
 }
 
 export interface EmitResult {
@@ -30,7 +32,7 @@ export class Transpiler {
         const { program, writeFile = this.host.writeFile } = emitOptions;
         const options = program.getCompilerOptions();
 
-        const transpilation = new Transpilation(this, program);
+        const transpilation = new Transpilation(this, program, emitOptions.plugins ?? []);
         emitProgramModules(transpilation, writeFile, emitOptions);
         if (options.noEmit || (options.noEmitOnError && transpilation.diagnostics.length > 0)) {
             return { diagnostics: transpilation.diagnostics, emitSkipped: true };

@@ -8,6 +8,7 @@ import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../uti
 import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
+import { getPlugins, Plugin } from "./plugins";
 import { Transpiler, TranspilerHost } from "./transpiler";
 
 export class Transpilation {
@@ -21,16 +22,16 @@ export class Transpilation {
 
     private readonly implicitScriptExtensions = [".ts", ".tsx", ".js", ".jsx"] as const;
     protected resolver: Resolver;
+    public plugins: Plugin[];
 
-    constructor(public transpiler: Transpiler, public program: ts.Program) {
+    constructor(public transpiler: Transpiler, public program: ts.Program, extraPlugins: Plugin[]) {
         this.host = transpiler.host;
 
-        const { rootDir } = program.getCompilerOptions();
         this.rootDir =
             // getCommonSourceDirectory ignores provided rootDir when TS6059 is emitted
-            rootDir == null
+            this.options.rootDir == null
                 ? program.getCommonSourceDirectory()
-                : ts.getNormalizedAbsolutePath(rootDir, this.host.getCurrentDirectory());
+                : ts.getNormalizedAbsolutePath(this.options.rootDir, this.host.getCurrentDirectory());
 
         this.outDir = this.options.outDir ?? this.rootDir;
 
@@ -40,6 +41,8 @@ export class Transpilation {
             fileSystem: this.host.resolutionFileSystem ?? fs,
             useSyncFileSystemCalls: true,
         });
+
+        this.plugins = getPlugins(this, extraPlugins);
     }
 
     public emit(): Chunk[] {

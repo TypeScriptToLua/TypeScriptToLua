@@ -5,7 +5,24 @@ import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
 import { escapeString } from "../LuaPrinter";
 import { assert, normalizeSlashes } from "../utils";
 import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { Chunk, EmitHost, getConfigDirectory, Module } from "./utils";
+import { Module } from "./module";
+import { Transpilation } from "./transpiler";
+import { getConfigDirectory } from "./utils";
+
+export interface Chunk {
+    outputPath: string;
+    code: string;
+    sourceMap?: string;
+    sourceFiles?: ts.SourceFile[];
+}
+
+export function modulesToChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
+    return modules.map(module => {
+        const moduleId = transpilation.getModuleId(module);
+        const outputPath = normalizeSlashes(path.resolve(transpilation.outDir, `${moduleId.replace(/\./g, "/")}.lua`));
+        return { outputPath, code: module.code, sourceMap: module.sourceMap, sourceFiles: module.sourceFiles };
+    });
+}
 
 // Override `require` to read from ____modules table.
 const requireOverride = `
@@ -29,41 +46,33 @@ local function require(file)
 end
 `;
 
-export function getBundleChunk(
-    program: ts.Program,
-    emitHost: EmitHost,
-    modules: Module[],
-    createModuleId: (file: Module) => string
-): [ts.Diagnostic[], Chunk] {
-    const diagnostics: ts.Diagnostic[] = [];
-
-    const options = program.getCompilerOptions() as CompilerOptions;
+export function modulesToBundleChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
+    const options = transpilation.program.getCompilerOptions() as CompilerOptions;
     assert(isBundleEnabled(options));
-    const projectDirectory = getConfigDirectory(options, emitHost);
+    const projectDirectory = getConfigDirectory(options, transpilation.emitHost);
     const outputPath = normalizeSlashes(path.resolve(projectDirectory, options.luaBundle));
 
     // Resolve project settings relative to project file.
     const entryFileName = normalizeSlashes(path.resolve(projectDirectory, options.luaBundleEntry));
-    const entryModule = modules.find(m => m.fileName === entryFileName);
+    const entryModule = modules.find(m => m.request === entryFileName);
     if (entryModule === undefined) {
-        diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
-        return [diagnostics, { outputPath, code: "" }];
+        transpilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
+        return [{ outputPath, code: "" }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries = modules.map(f => moduleSourceNode(f, escapeString(createModuleId(f))));
+    const moduleTableEntries = modules.map(m => moduleSourceNode(m, escapeString(transpilation.getModuleId(m))));
 
     // Create ____modules table containing all entries from moduleTableEntries
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const bootstrap = `return require(${escapeString(createModuleId(entryModule))})\n`;
+    const bootstrap = `return require(${escapeString(transpilation.getModuleId(entryModule))})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, bootstrap]);
     const { code, map } = bundleNode.toStringWithSourceMap();
 
     return [
-        diagnostics,
         {
             outputPath,
             code,
@@ -73,8 +82,8 @@ export function getBundleChunk(
     ];
 }
 
-function moduleSourceNode({ code, sourceMapNode }: Module, modulePath: string): SourceNode {
-    return joinSourceChunks([`[${modulePath}] = function()\n`, sourceMapNode ?? code, "\nend,\n"]);
+function moduleSourceNode(module: Module, modulePath: string): SourceNode {
+    return joinSourceChunks([`[${modulePath}] = function()\n`, module.sourceMapNode ?? module.code, "\nend,\n"]);
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {

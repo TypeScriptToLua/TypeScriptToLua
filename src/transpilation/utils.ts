@@ -2,34 +2,14 @@ import { FileSystem } from "enhanced-resolve";
 import * as fs from "fs";
 import * as path from "path";
 import * as resolve from "resolve";
-import { SourceNode } from "source-map";
 import * as ts from "typescript";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../cli/diagnostics";
 import { CompilerOptions } from "../CompilerOptions";
-import * as lua from "../LuaAST";
 import * as diagnosticFactories from "./diagnostics";
 
 export interface EmitHost extends Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile"> {
     resolutionFileSystem?: FileSystem;
-}
-
-interface BaseFile {
-    code: string;
-    sourceMap?: string;
-    sourceFiles?: ts.SourceFile[];
-}
-
-export interface Module extends BaseFile {
-    /** Absolute source file path. */
-    fileName: string;
-    luaAst?: lua.Block;
-    /** @internal */
-    sourceMapNode?: SourceNode;
-}
-
-export interface Chunk extends BaseFile {
-    outputPath: string;
 }
 
 // TODO: Require emit host

@@ -4,7 +4,8 @@ import { CompilerOptions, validateOptions } from "../../CompilerOptions";
 import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
-import { EmitHost, Module } from "../utils";
+import { Module } from "../module";
+import { EmitHost } from "../utils";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 
@@ -17,16 +18,11 @@ export interface TranspileOptions {
     plugins?: Plugin[];
 }
 
-export interface TranspileResult {
-    diagnostics: ts.Diagnostic[];
-    modules: Module[];
-}
-
 export function emitProgramModules(
     emitHost: EmitHost,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
-): TranspileResult {
+) {
     const options = program.getCompilerOptions() as CompilerOptions;
 
     const diagnostics = validateOptions(options);
@@ -82,7 +78,12 @@ export function emitProgramModules(
                 fileName = path.resolve(currentDirectory, sourceFile.fileName);
             }
 
-            modules.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
+            modules.push({
+                sourceFiles: [sourceFile],
+                request: fileName,
+                isBuilt: false,
+                ...printResult,
+            });
         }
     };
 

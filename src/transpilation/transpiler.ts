@@ -1,10 +1,14 @@
+import { FileSystem } from "enhanced-resolve";
 import * as ts from "typescript";
 import { Transpilation } from "./transpilation";
 import { emitProgramModules, TranspileOptions } from "./transpile";
-import { EmitHost } from "./utils";
+
+export interface TranspilerHost extends Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile"> {
+    resolutionFileSystem?: FileSystem;
+}
 
 export interface TranspilerOptions {
-    emitHost?: EmitHost;
+    host?: TranspilerHost;
 }
 
 export interface EmitOptions extends TranspileOptions {
@@ -17,15 +21,15 @@ export interface EmitResult {
 }
 
 export class Transpiler {
-    public emitHost: EmitHost;
-    constructor({ emitHost = ts.sys }: TranspilerOptions = {}) {
-        this.emitHost = emitHost;
+    public host: TranspilerHost;
+    constructor({ host = ts.sys }: TranspilerOptions = {}) {
+        this.host = host;
     }
 
     public emit(emitOptions: EmitOptions): EmitResult {
-        const { program, writeFile = this.emitHost.writeFile } = emitOptions;
+        const { program, writeFile = this.host.writeFile } = emitOptions;
         const transpilation = new Transpilation(this, program);
-        const { diagnostics, modules } = emitProgramModules(this.emitHost, writeFile, emitOptions);
+        const { diagnostics, modules } = emitProgramModules(this.host, writeFile, emitOptions);
         const emitPlan = transpilation.emit(modules);
         diagnostics.push(...transpilation.diagnostics);
 

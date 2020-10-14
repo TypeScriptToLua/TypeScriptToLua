@@ -49,7 +49,7 @@ end
 export function modulesToBundleChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
     const options = transpilation.program.getCompilerOptions() as CompilerOptions;
     assert(isBundleEnabled(options));
-    const projectDirectory = getConfigDirectory(options, transpilation.emitHost);
+    const projectDirectory = getConfigDirectory(options, transpilation.host);
     const outputPath = normalizeSlashes(path.resolve(projectDirectory, options.luaBundle));
 
     // Resolve project settings relative to project file.

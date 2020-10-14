@@ -1,4 +1,3 @@
-import { FileSystem } from "enhanced-resolve";
 import * as fs from "fs";
 import * as path from "path";
 import * as resolve from "resolve";
@@ -7,14 +6,11 @@ import * as ts from "typescript";
 import * as cliDiagnostics from "../cli/diagnostics";
 import { CompilerOptions } from "../CompilerOptions";
 import * as diagnosticFactories from "./diagnostics";
-
-export interface EmitHost extends Pick<ts.System, "getCurrentDirectory" | "readFile" | "writeFile"> {
-    resolutionFileSystem?: FileSystem;
-}
+import { TranspilerHost } from "./transpiler";
 
 // TODO: Require emit host
-export const getConfigDirectory = (options: ts.CompilerOptions, emitHost?: EmitHost) =>
-    options.configFilePath ? path.dirname(options.configFilePath) : emitHost?.getCurrentDirectory() ?? process.cwd();
+export const getConfigDirectory = (options: ts.CompilerOptions, host?: TranspilerHost) =>
+    options.configFilePath ? path.dirname(options.configFilePath) : host?.getCurrentDirectory() ?? process.cwd();
 
 export function resolvePlugin(
     kind: string,

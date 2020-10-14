@@ -1,8 +1,8 @@
 import * as tstl from "../../../src";
 
 const plugin: tstl.Plugin = {
-    printer(program, emitHost, fileName, ...args) {
-        const result = new tstl.LuaPrinter(emitHost, program, fileName).print(...args);
+    printer(program, host, fileName, ...args) {
+        const result = new tstl.LuaPrinter(host, program, fileName).print(...args);
         result.code = `-- Plugin\n${result.code}`;
         return result;
     },

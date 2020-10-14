@@ -252,18 +252,18 @@ export abstract class TestBuilder {
         const collector = createEmitOutputCollector();
         const program = this.getProgram();
 
-        const emitHost: tstl.EmitHost = { ...ts.sys };
+        const host: tstl.TranspilerHost = { ...ts.sys };
         if (!this.nativeFileSystem) {
             const virtualFS = Volume.fromJSON({ ...this.extraRawFiles, ...this.getSourceFiles() }, "/");
-            emitHost.resolutionFileSystem = virtualFS;
-            emitHost.getCurrentDirectory = () => "/";
-            emitHost.readFile = (fileName, encoding = "utf8") =>
+            host.resolutionFileSystem = virtualFS;
+            host.getCurrentDirectory = () => "/";
+            host.readFile = (fileName, encoding = "utf8") =>
                 fileName.endsWith("lualib_bundle.lua")
                     ? ts.sys.readFile(fileName, encoding)
                     : (virtualFS.readFileSync(fileName, encoding) as string);
         }
 
-        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ emitHost }).emit({
+        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ host }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,

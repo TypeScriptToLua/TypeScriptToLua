@@ -8,8 +8,7 @@ import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../uti
 import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
-import { Transpiler } from "./transpiler";
-import { EmitHost } from "./utils";
+import { Transpiler, TranspilerHost } from "./transpiler";
 
 export class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
@@ -18,27 +17,27 @@ export class Transpilation {
     public options = this.program.getCompilerOptions() as CompilerOptions;
     public rootDir: string;
     public outDir: string;
-    public emitHost: EmitHost;
+    public host: TranspilerHost;
 
     private readonly implicitScriptExtensions = [".ts", ".tsx", ".js", ".jsx"] as const;
     protected resolver: Resolver;
 
     constructor(public transpiler: Transpiler, public program: ts.Program) {
-        this.emitHost = transpiler.emitHost;
+        this.host = transpiler.host;
 
         const { rootDir } = program.getCompilerOptions();
         this.rootDir =
             // getCommonSourceDirectory ignores provided rootDir when TS6059 is emitted
             rootDir == null
                 ? program.getCommonSourceDirectory()
-                : ts.getNormalizedAbsolutePath(rootDir, this.emitHost.getCurrentDirectory());
+                : ts.getNormalizedAbsolutePath(rootDir, this.host.getCurrentDirectory());
 
         this.outDir = this.options.outDir ?? this.rootDir;
 
         this.resolver = ResolverFactory.createResolver({
             extensions: [".lua", ...this.implicitScriptExtensions],
             conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
-            fileSystem: this.emitHost.resolutionFileSystem ?? fs,
+            fileSystem: this.host.resolutionFileSystem ?? fs,
             useSyncFileSystemCalls: true,
         });
     }
@@ -50,7 +49,7 @@ export class Transpilation {
         const lualibRequired = this.modules.some(m => m.code.toString().includes('require("lualib_bundle")'));
         if (lualibRequired) {
             const fileName = normalizeSlashes(path.resolve(this.rootDir, "lualib_bundle.lua"));
-            this.modules.unshift({ request: fileName, code: getLuaLibBundle(this.emitHost), isBuilt: true });
+            this.modules.unshift({ request: fileName, code: getLuaLibBundle(this.host), isBuilt: true });
         }
 
         return this.mapModulesToChunks(this.modules);
@@ -86,7 +85,7 @@ export class Transpilation {
             // TODO: Load source map files
             module = {
                 request: resolvedPath,
-                code: cast(this.emitHost.readFile(resolvedPath), isNonNull),
+                code: cast(this.host.readFile(resolvedPath), isNonNull),
                 isBuilt: false,
             };
 

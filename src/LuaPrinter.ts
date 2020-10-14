@@ -5,7 +5,7 @@ import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
-import { EmitHost } from "./transpilation";
+import { TranspilerHost } from "./transpilation";
 import { assert, intersperse, invertObject, normalizeSlashes, trimExtension } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
@@ -87,7 +87,7 @@ type SourceChunk = string | SourceNode;
 
 export type Printer = (
     program: ts.Program,
-    emitHost: EmitHost,
+    host: TranspilerHost,
     fileName: string,
     block: lua.Block,
     luaLibFeatures: Set<LuaLibFeature>
@@ -101,7 +101,7 @@ export interface PrintResult {
 
 export function createPrinter(printers: Printer[]): Printer {
     if (printers.length === 0) {
-        return (program, emitHost, fileName, ...args) => new LuaPrinter(emitHost, program, fileName).print(...args);
+        return (program, host, fileName, ...args) => new LuaPrinter(host, program, fileName).print(...args);
     } else if (printers.length === 1) {
         return printers[0];
     } else {
@@ -142,7 +142,7 @@ export class LuaPrinter {
     private sourceFile: string;
     private options: CompilerOptions;
 
-    constructor(private emitHost: EmitHost, program: ts.Program, fileName: string) {
+    constructor(private host: TranspilerHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
 
         if (this.options.outDir) {
@@ -234,7 +234,7 @@ export class LuaPrinter {
         } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
-            header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
+            header += loadLuaLibFeatures(luaLibFeatures, this.host);
         }
 
         if (this.options.sourceMapTraceback) {

@@ -5,7 +5,7 @@ import { createPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
 import { Module } from "../module";
-import { EmitHost } from "../utils";
+import { TranspilerHost } from "../transpiler";
 import { getPlugins, Plugin } from "./plugins";
 import { getTransformers } from "./transformers";
 
@@ -19,7 +19,7 @@ export interface TranspileOptions {
 }
 
 export function emitProgramModules(
-    emitHost: EmitHost,
+    host: TranspilerHost,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {}, plugins: customPlugins = [] }: TranspileOptions
 ) {
@@ -66,13 +66,13 @@ export function emitProgramModules(
 
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
+            const printResult = printer(program, host, sourceFile.fileName, luaAst, luaLibFeatures);
 
             let fileName: string;
             if (path.isAbsolute(sourceFile.fileName)) {
                 fileName = sourceFile.fileName;
             } else {
-                const currentDirectory = emitHost.getCurrentDirectory();
+                const currentDirectory = host.getCurrentDirectory();
                 // Having no absolute path in path.resolve would make it fallback to real cwd
                 assert(path.isAbsolute(currentDirectory), `Invalid path: ${currentDirectory}`);
                 fileName = path.resolve(currentDirectory, sourceFile.fileName);

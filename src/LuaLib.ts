@@ -1,5 +1,5 @@
 import * as path from "path";
-import { EmitHost } from "./transpilation";
+import { TranspilerHost } from "./transpilation";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -93,7 +93,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 
-export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: EmitHost): string {
+export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, host: TranspilerHost): string {
     let result = "";
 
     const loadedFeatures = new Set<LuaLibFeature>();
@@ -108,7 +108,7 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
         }
 
         const featurePath = path.resolve(__dirname, `../dist/lualib/${feature}.lua`);
-        const luaLibFeature = emitHost.readFile(featurePath);
+        const luaLibFeature = host.readFile(featurePath);
         if (luaLibFeature !== undefined) {
             result += luaLibFeature + "\n";
         } else {
@@ -124,10 +124,10 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, emitHost: 
 }
 
 let luaLibBundleContent: string;
-export function getLuaLibBundle(emitHost: EmitHost): string {
+export function getLuaLibBundle(host: TranspilerHost): string {
     if (luaLibBundleContent === undefined) {
         const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua");
-        const result = emitHost.readFile(lualibPath);
+        const result = host.readFile(lualibPath);
         if (result !== undefined) {
             luaLibBundleContent = result;
         } else {

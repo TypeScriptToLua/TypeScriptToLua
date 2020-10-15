@@ -1,0 +1,7 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getModuleId 1`] = `
+"local ____exports = {}
+require(\\"5d05566c99dac259f6ff5742a268d405157a0d7c\\")
+return ____exports"
+`;

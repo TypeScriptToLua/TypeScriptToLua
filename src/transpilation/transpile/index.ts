@@ -1,9 +1,10 @@
 import * as path from "path";
 import * as ts from "typescript";
 import { CompilerOptions, validateOptions } from "../../CompilerOptions";
-import { createPrinter } from "../../LuaPrinter";
+import { LuaPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation";
 import { assert, isNonNull } from "../../utils";
+import { applySinglePlugin } from "../plugins";
 import { Transpilation } from "../transpilation";
 import { getTransformers } from "./transformers";
 
@@ -46,7 +47,10 @@ export function emitProgramModules(
     }
 
     const visitorMap = createVisitorMap(transpilation.plugins.map(p => p.visitors).filter(isNonNull));
-    const printer = createPrinter(transpilation.plugins.map(p => p.printer).filter(isNonNull));
+    const printer =
+        applySinglePlugin(transpilation.plugins, "printer") ??
+        ((program, host, fileName, ...args) => new LuaPrinter(host, program, fileName).print(...args));
+
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
             program,

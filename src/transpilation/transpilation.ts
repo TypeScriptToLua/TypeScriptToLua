@@ -8,7 +8,7 @@ import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../uti
 import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
-import { getPlugins, Plugin } from "./plugins";
+import { applyBailPlugin, applySinglePlugin, getPlugins, Plugin } from "./plugins";
 import { Transpiler, TranspilerHost } from "./transpiler";
 
 export class Transpilation {
@@ -35,14 +35,15 @@ export class Transpilation {
 
         this.outDir = this.options.outDir ?? this.rootDir;
 
+        this.plugins = getPlugins(this, extraPlugins);
+
         this.resolver = ResolverFactory.createResolver({
             extensions: [".lua", ...this.implicitScriptExtensions],
             conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
             fileSystem: this.host.resolutionFileSystem ?? fs,
             useSyncFileSystemCalls: true,
+            plugins: this.plugins.flatMap(p => p.getResolvePlugins?.(this) ?? []),
         });
-
-        this.plugins = getPlugins(this, extraPlugins);
     }
 
     public emit(): Chunk[] {
@@ -99,6 +100,9 @@ export class Transpilation {
     }
 
     public getModuleId(module: Module) {
+        const pluginResult = applyBailPlugin(this.plugins, p => p.getModuleId?.(module, this));
+        if (pluginResult !== undefined) return pluginResult;
+
         const result = path.relative(this.rootDir, trimExtension(module.request));
         // TODO: handle files on other drives
         assert(!path.isAbsolute(result), `Invalid path: ${result}`);
@@ -109,6 +113,9 @@ export class Transpilation {
     }
 
     private mapModulesToChunks(modules: Module[]): Chunk[] {
-        return isBundleEnabled(this.options) ? modulesToBundleChunks(this, modules) : modulesToChunks(this, modules);
+        return (
+            applySinglePlugin(this.plugins, "mapModulesToChunks")?.(modules, this) ??
+            (isBundleEnabled(this.options) ? modulesToBundleChunks(this, modules) : modulesToChunks(this, modules))
+        );
     }
 }

@@ -22,3 +22,26 @@ test("visitor using super", () => {
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "visitor-super.ts") }] })
         .expectToEqual("bar");
 });
+
+test("getModuleId", () => {
+    util.testModule`
+        export { value } from "./foo";
+    `
+        .addExtraFile("foo.ts", "export const value = true;")
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "getModuleId.ts") }] })
+        .expectToEqual({ value: true })
+        .expectLuaToMatchSnapshot();
+});
+
+test("getResolvePlugins", () => {
+    util.testModule`
+        export { value } from "foo";
+    `
+        .addExtraFile("bar.ts", "export const value = true;")
+        .setOptions({
+            luaPlugins: [{ name: path.join(__dirname, "getResolvePlugins.ts") }],
+            baseUrl: ".",
+            paths: { foo: ["bar"] },
+        })
+        .expectToEqual({ value: true });
+});

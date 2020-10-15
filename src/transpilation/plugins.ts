@@ -1,5 +1,8 @@
+import { Plugin as ResolvePlugin } from "enhanced-resolve";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
+import { Chunk } from "./chunk";
+import { Module } from "./module";
 import { Transpilation } from "./transpilation";
 import { getConfigDirectory, resolvePlugin } from "./utils";
 
@@ -17,6 +20,23 @@ export interface Plugin {
      * At most one custom printer can be provided across all plugins.
      */
     printer?: Printer;
+
+    /**
+     * Provide extra [enhanced-resolve](https://github.com/webpack/enhanced-resolve) plugins,
+     * used for `.lua` module resolution.
+     */
+    getResolvePlugins?(transpilation: Transpilation): ResolvePlugin[];
+
+    /**
+     * Transform modules into chunks.
+     */
+    mapModulesToChunks?(modules: Module[], transpilation: Transpilation): Chunk[];
+
+    /**
+     * Produce a unique identifier for a module, which would be used as `require` call parameter,
+     * and may be used for chunk naming.
+     */
+    getModuleId?(module: Module, transpilation: Transpilation): string | undefined;
 }
 
 export function getPlugins(transpilation: Transpilation, customPlugins: Plugin[]): Plugin[] {
@@ -41,4 +61,22 @@ export function getPlugins(transpilation: Transpilation, customPlugins: Plugin[]
     }
 
     return [...customPlugins, ...pluginsFromOptions];
+}
+
+export function applyBailPlugin<T>(plugins: Plugin[], callback: (plugin: Plugin) => T | undefined): T | undefined {
+    for (const plugin of plugins) {
+        const result = callback(plugin);
+        if (result !== undefined) {
+            return result;
+        }
+    }
+}
+
+export function applySinglePlugin<P extends keyof Plugin>(plugins: Plugin[], property: P): Plugin[P] | undefined {
+    const results = plugins.filter(p => p[property] !== undefined);
+    if (results.length === 1) {
+        return results[0][property];
+    } else if (results.length > 1) {
+        throw new Error(`Only one plugin can specify '${property}'`);
+    }
 }

@@ -99,16 +99,6 @@ export interface PrintResult {
     sourceMapNode: SourceNode;
 }
 
-export function createPrinter(printers: Printer[]): Printer {
-    if (printers.length === 0) {
-        return (program, host, fileName, ...args) => new LuaPrinter(host, program, fileName).print(...args);
-    } else if (printers.length === 1) {
-        return printers[0];
-    } else {
-        throw new Error("Only one plugin can specify 'printer'");
-    }
-}
-
 export class LuaPrinter {
     private static operatorMap: Record<lua.Operator, string> = {
         [lua.SyntaxKind.AdditionOperator]: "+",

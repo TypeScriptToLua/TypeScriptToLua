@@ -5,9 +5,7 @@ import { escapeString, unescapeLuaString } from "../LuaPrinter";
 export interface Module {
     request: string;
     isBuilt: boolean;
-    code: string;
-    sourceMap?: string;
-    sourceMapNode?: SourceNode;
+    source: SourceNode;
     sourceFiles?: ts.SourceFile[];
 }
 
@@ -16,37 +14,29 @@ export type ModuleDependencyResolver = (request: string) => string | { error: st
 export function buildModule(module: Module, dependencyResolver: ModuleDependencyResolver) {
     if (module.isBuilt) return;
     module.isBuilt = true;
-
-    if (module.sourceMapNode) {
-        replaceResolveMacroSourceNodes(module.sourceMapNode, dependencyResolver);
-        const { code, map } = module.sourceMapNode.toStringWithSourceMap();
-        module.code = code;
-        module.sourceMap = JSON.stringify(map.toJSON());
-    } else {
-        module.code = replaceResolveMacroInSource(module.code, dependencyResolver);
-    }
+    replaceResolveRequests(module.source, dependencyResolver);
 }
 
-function replaceResolveMacroSourceNodes(rootNode: SourceNode, replacer: ModuleDependencyResolver) {
+function replaceResolveRequests(rootNode: SourceNode, dependencyResolver: ModuleDependencyResolver) {
+    function replaceInString(source: string) {
+        return source.replace(/__TS__Resolve\((".*?")\)/g, (_, match) => {
+            const request = unescapeLuaString(match);
+            const replacement = dependencyResolver(request);
+            return typeof replacement === "string"
+                ? escapeString(replacement)
+                : `--[[ ${request} ]] error(${escapeString(replacement.error)})`;
+        });
+    }
+
     function walkSourceNode(node: SourceNode, parent: SourceNode) {
-        for (const child of node.children) {
-            if ((child as any) === "__TS__Resolve") {
-                parent.children = [replaceResolveMacroInSource(parent.toString(), replacer) as any];
-            } else if (typeof child === "object") {
+        for (const child of node.children as Array<SourceNode | string>) {
+            if (typeof child === "object") {
                 walkSourceNode(child, node);
+            } else if (child.includes("__TS__Resolve")) {
+                parent.children = [replaceInString(parent.toString()) as any];
             }
         }
     }
 
     walkSourceNode(rootNode, rootNode);
-}
-
-function replaceResolveMacroInSource(source: string, replacer: ModuleDependencyResolver) {
-    return source.replace(/__TS__Resolve\((".*?")\)/, (_, match) => {
-        const request = unescapeLuaString(match);
-        const replacement = replacer(request);
-        return typeof replacement === "string"
-            ? escapeString(replacement)
-            : `--[[ ${request} ]] error(${escapeString(replacement.error)})`;
-    });
 }

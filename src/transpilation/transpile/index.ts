@@ -60,24 +60,19 @@ export function emitProgramModules(
 
         transpilation.diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const printResult = printer(program, transpilation.host, sourceFile.fileName, luaAst, luaLibFeatures);
+            const source = printer(program, transpilation.host, sourceFile.fileName, luaAst, luaLibFeatures);
 
-            let fileName: string;
+            let request: string;
             if (path.isAbsolute(sourceFile.fileName)) {
-                fileName = sourceFile.fileName;
+                request = sourceFile.fileName;
             } else {
                 const currentDirectory = transpilation.host.getCurrentDirectory();
                 // Having no absolute path in path.resolve would make it fallback to real cwd
                 assert(path.isAbsolute(currentDirectory), `Invalid path: ${currentDirectory}`);
-                fileName = path.resolve(currentDirectory, sourceFile.fileName);
+                request = path.resolve(currentDirectory, sourceFile.fileName);
             }
 
-            transpilation.modules.push({
-                sourceFiles: [sourceFile],
-                request: fileName,
-                isBuilt: false,
-                ...printResult,
-            });
+            transpilation.modules.push({ request, isBuilt: false, source, sourceFiles: [sourceFile] });
         }
     };
 

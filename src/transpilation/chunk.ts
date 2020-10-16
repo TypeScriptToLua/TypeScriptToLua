@@ -11,8 +11,7 @@ import { getConfigDirectory } from "./utils";
 
 export interface Chunk {
     outputPath: string;
-    code: string;
-    sourceMap?: string;
+    source: SourceNode;
     sourceFiles?: ts.SourceFile[];
 }
 
@@ -20,7 +19,7 @@ export function modulesToChunks(transpilation: Transpilation, modules: Module[])
     return modules.map(module => {
         const moduleId = transpilation.getModuleId(module);
         const outputPath = normalizeSlashes(path.resolve(transpilation.outDir, `${moduleId.replace(/\./g, "/")}.lua`));
-        return { outputPath, code: module.code, sourceMap: module.sourceMap, sourceFiles: module.sourceFiles };
+        return { outputPath, source: module.source, sourceFiles: module.sourceFiles };
     });
 }
 
@@ -57,11 +56,11 @@ export function modulesToBundleChunks(transpilation: Transpilation, modules: Mod
     const entryModule = modules.find(m => m.request === entryFileName);
     if (entryModule === undefined) {
         transpilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
-        return [{ outputPath, code: "" }];
+        return [{ outputPath, source: new SourceNode() }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries = modules.map(m => moduleSourceNode(m, escapeString(transpilation.getModuleId(m))));
+    const moduleTableEntries = modules.map(m => moduleSourceNode(m, transpilation.getModuleId(m)));
 
     // Create ____modules table containing all entries from moduleTableEntries
     const moduleTable = createModuleTableNode(moduleTableEntries);
@@ -70,20 +69,12 @@ export function modulesToBundleChunks(transpilation: Transpilation, modules: Mod
     const bootstrap = `return require(${escapeString(transpilation.getModuleId(entryModule))})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, bootstrap]);
-    const { code, map } = bundleNode.toStringWithSourceMap();
-
-    return [
-        {
-            outputPath,
-            code,
-            sourceMap: map.toString(),
-            sourceFiles: modules.flatMap(x => x.sourceFiles ?? []),
-        },
-    ];
+    const sourceFiles = modules.flatMap(x => x.sourceFiles ?? []);
+    return [{ outputPath, source: bundleNode, sourceFiles }];
 }
 
-function moduleSourceNode(module: Module, modulePath: string): SourceNode {
-    return joinSourceChunks([`[${modulePath}] = function()\n`, module.sourceMapNode ?? module.code, "\nend,\n"]);
+function moduleSourceNode(module: Module, moduleId: string): SourceNode {
+    return joinSourceChunks([`[${escapeString(moduleId)}] = function()\n`, module.source, "\nend,\n"]);
 }
 
 function createModuleTableNode(fileChunks: SourceChunk[]): SourceNode {

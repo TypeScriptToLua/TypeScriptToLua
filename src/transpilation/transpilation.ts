@@ -1,6 +1,7 @@
 import { Resolver, ResolverFactory } from "enhanced-resolve";
 import * as fs from "fs";
 import * as path from "path";
+import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
@@ -48,10 +49,14 @@ export class Transpilation {
     public emit(): Chunk[] {
         this.modules.forEach(module => this.buildModule(module));
 
-        const lualibRequired = this.modules.some(m => m.code.toString().includes('require("lualib_bundle")'));
+        const lualibRequired = this.modules.some(m => m.source.toString().includes('require("lualib_bundle")'));
         if (lualibRequired) {
             const fileName = normalizeSlashes(path.resolve(this.rootDir, "lualib_bundle.lua"));
-            this.modules.unshift({ request: fileName, code: getLuaLibBundle(this.host), isBuilt: true });
+            this.modules.unshift({
+                request: fileName,
+                isBuilt: true,
+                source: new SourceNode(null, null, null, getLuaLibBundle(this.host)),
+            });
         }
 
         return this.mapModulesToChunks(this.modules);
@@ -82,10 +87,11 @@ export class Transpilation {
             }
 
             // TODO: Load source map files
+            const code = cast(this.host.readFile(resolvedPath), isNonNull);
             module = {
                 request: resolvedPath,
-                code: cast(this.host.readFile(resolvedPath), isNonNull),
                 isBuilt: false,
+                source: new SourceNode(null, null, null, code),
             };
 
             this.modules.push(module);

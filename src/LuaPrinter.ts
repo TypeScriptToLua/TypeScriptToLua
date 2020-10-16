@@ -1,12 +1,12 @@
 import * as path from "path";
-import { Mapping, SourceMapGenerator, SourceNode } from "source-map";
+import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { TranspilerHost } from "./transpilation";
-import { assert, intersperse, invertObject, normalizeSlashes, trimExtension } from "./utils";
+import { assert, intersperse, invertObject, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -91,13 +91,7 @@ export type Printer = (
     fileName: string,
     block: lua.Block,
     luaLibFeatures: Set<LuaLibFeature>
-) => PrintResult;
-
-export interface PrintResult {
-    code: string;
-    sourceMap: string;
-    sourceMapNode: SourceNode;
-}
+) => SourceNode;
 
 export class LuaPrinter {
     private static operatorMap: Record<lua.Operator, string> = {
@@ -129,7 +123,7 @@ export class LuaPrinter {
     };
 
     private currentIndent = "";
-    private sourceFile: string;
+    private fileName: string;
     private options: CompilerOptions;
 
     constructor(private host: TranspilerHost, program: ts.Program, fileName: string) {
@@ -139,79 +133,29 @@ export class LuaPrinter {
             const relativeFileName = path.relative(program.getCommonSourceDirectory(), fileName);
             if (this.options.sourceRoot) {
                 // When sourceRoot is specified, just use relative path inside rootDir
-                this.sourceFile = relativeFileName;
+                this.fileName = relativeFileName;
             } else {
                 // Calculate relative path from rootDir to outDir
                 const outputPath = path.resolve(this.options.outDir, relativeFileName);
-                this.sourceFile = path.relative(path.dirname(outputPath), fileName);
+                this.fileName = path.relative(path.dirname(outputPath), fileName);
             }
             // We want forward slashes, even in windows
-            this.sourceFile = normalizeSlashes(this.sourceFile);
+            this.fileName = normalizeSlashes(this.fileName);
         } else {
-            this.sourceFile = path.basename(fileName); // File will be in same dir as source
+            this.fileName = path.basename(fileName); // File will be in same dir as source
         }
     }
 
-    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): PrintResult {
-        // Add traceback lualib if sourcemap traceback option is enabled
-        if (this.options.sourceMapTraceback) {
-            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
-        }
-
-        const sourceRoot = this.options.sourceRoot
-            ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
-              this.options.sourceRoot.replace(/[\\/]+$/, "") + "/"
-            : "";
-        const rootSourceNode = this.printImplementation(block, luaLibFeatures);
-        const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
-
-        let code = rootSourceNode.toString();
-
-        if (this.options.inlineSourceMap) {
-            code += "\n" + this.printInlineSourceMap(sourceMap);
-        }
-
-        if (this.options.sourceMapTraceback) {
-            const stackTraceOverride = this.printStackTraceOverride(rootSourceNode);
-            code = code.replace("{#SourceMapTraceback}", stackTraceOverride);
-        }
-
-        return { code, sourceMap: sourceMap.toString(), sourceMapNode: rootSourceNode };
-    }
-
-    private printInlineSourceMap(sourceMap: SourceMapGenerator): string {
-        const map = sourceMap.toString();
-        const base64Map = Buffer.from(map).toString("base64");
-
-        return `--# sourceMappingURL=data:application/json;base64,${base64Map}\n`;
-    }
-
-    private printStackTraceOverride(rootNode: SourceNode): string {
-        let currentLine = 1;
-        const map: Record<number, number> = {};
-        rootNode.walk((chunk, mappedPosition) => {
-            if (mappedPosition.line !== undefined && mappedPosition.line > 0) {
-                if (map[currentLine] === undefined) {
-                    map[currentLine] = mappedPosition.line;
-                } else {
-                    map[currentLine] = Math.min(map[currentLine], mappedPosition.line);
-                }
-            }
-
-            currentLine += chunk.split("\n").length - 1;
-        });
-
-        const mapItems = Object.entries(map).map(([line, original]) => `["${line}"] = ${original}`);
-        const mapString = "{" + mapItems.join(",") + "}";
-
-        return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
-    }
-
-    private printImplementation(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): SourceNode {
+    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): SourceNode {
         let header = "";
 
         if (!this.options.noHeader) {
             header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
+        }
+
+        // Add traceback lualib if sourcemap traceback option is enabled
+        if (this.options.sourceMapTraceback) {
+            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
@@ -252,12 +196,12 @@ export class LuaPrinter {
         const { line, column } = lua.getOriginalPos(node);
 
         return line !== undefined && column !== undefined
-            ? new SourceNode(line + 1, column, this.sourceFile, chunks, name)
-            : new SourceNode(null, null, this.sourceFile, chunks, name);
+            ? new SourceNode(line + 1, column, this.fileName, chunks, name)
+            : new SourceNode(null, null, this.fileName, chunks, name);
     }
 
     protected concatNodes(...chunks: SourceChunk[]): SourceNode {
-        return new SourceNode(null, null, this.sourceFile, chunks);
+        return new SourceNode(null, null, this.fileName, chunks);
     }
 
     protected printBlock(block: lua.Block): SourceNode {
@@ -743,7 +687,7 @@ export class LuaPrinter {
     }
 
     public printOperator(kind: lua.Operator): SourceNode {
-        return new SourceNode(null, null, this.sourceFile, LuaPrinter.operatorMap[kind]);
+        return new SourceNode(null, null, this.fileName, LuaPrinter.operatorMap[kind]);
     }
 
     protected joinChunksWithComma(chunks: SourceChunk[]): SourceChunk[] {
@@ -767,68 +711,5 @@ export class LuaPrinter {
         }
 
         return chunks;
-    }
-
-    // The key difference between this and SourceNode.toStringWithSourceMap() is that SourceNodes with null line/column
-    // will not generate 'empty' mappings in the source map that point to nothing in the original TS.
-    private buildSourceMap(sourceRoot: string, rootSourceNode: SourceNode): SourceMapGenerator {
-        const map = new SourceMapGenerator({
-            file: trimExtension(this.sourceFile) + ".lua",
-            sourceRoot,
-        });
-
-        let generatedLine = 1;
-        let generatedColumn = 0;
-        let currentMapping: Mapping | undefined;
-
-        const isNewMapping = (sourceNode: SourceNode) => {
-            if (sourceNode.line === null) {
-                return false;
-            }
-            if (currentMapping === undefined) {
-                return true;
-            }
-            if (
-                currentMapping.generated.line === generatedLine &&
-                currentMapping.generated.column === generatedColumn &&
-                currentMapping.name === sourceNode.name
-            ) {
-                return false;
-            }
-            return (
-                currentMapping.original.line !== sourceNode.line ||
-                currentMapping.original.column !== sourceNode.column ||
-                currentMapping.name !== sourceNode.name
-            );
-        };
-
-        const build = (sourceNode: SourceNode) => {
-            if (isNewMapping(sourceNode)) {
-                currentMapping = {
-                    source: sourceNode.source,
-                    original: { line: sourceNode.line, column: sourceNode.column },
-                    generated: { line: generatedLine, column: generatedColumn },
-                    name: sourceNode.name,
-                };
-                map.addMapping(currentMapping);
-            }
-
-            for (const chunk of sourceNode.children) {
-                if (typeof chunk === "string") {
-                    const lines = (chunk as string).split("\n");
-                    if (lines.length > 1) {
-                        generatedLine += lines.length - 1;
-                        generatedColumn = 0;
-                        currentMapping = undefined; // Mappings end at newlines
-                    }
-                    generatedColumn += lines[lines.length - 1].length;
-                } else {
-                    build(chunk);
-                }
-            }
-        };
-        build(rootSourceNode);
-
-        return map;
     }
 }

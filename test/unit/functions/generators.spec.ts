@@ -51,6 +51,61 @@ test("for..of", () => {
     `.expectToMatchJsResult();
 });
 
+describe("yield*", () => {
+    test("generator", () => {
+        util.testFunction`
+            function* subGenerator() {
+                yield 1;
+                yield 2;
+                yield 3;
+            }
+
+            function* generator() {
+                yield 0;
+                return yield* subGenerator();
+            }
+
+            const it = generator();
+            return [it.next(), it.next(), it.next(), it.next(), it.next()];
+        `
+            .debug()
+            .expectToMatchJsResult();
+    });
+
+    test("array", () => {
+        util.testFunction`
+            function* generator() {
+                return yield* [1, 2, 3];
+            }
+
+            const it = generator();
+            return [it.next(), it.next(), it.next(), it.next()];
+        `.expectToMatchJsResult();
+    });
+
+    test("string", () => {
+        util.testFunction`
+            function* generator() {
+                return yield* "abc";
+            }
+
+            const it = generator();
+            return [it.next(), it.next(), it.next(), it.next()];
+        `.expectToMatchJsResult();
+    });
+
+    test("iterable", () => {
+        util.testFunction`
+            function* generator() {
+                return yield* new Set([1, 2, 3]);
+            }
+
+            const it = generator();
+            return [it.next(), it.next(), it.next(), it.next()];
+        `.expectToMatchJsResult();
+    });
+});
+
 test("function expression", () => {
     util.testFunction`
         const generator = function*() {

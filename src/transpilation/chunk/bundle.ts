@@ -1,27 +1,12 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
-import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled } from "../CompilerOptions";
-import { escapeString } from "../LuaPrinter";
-import { assert, normalizeSlashes } from "../utils";
-import { couldNotFindBundleEntryPoint } from "./diagnostics";
-import { Module } from "./module";
-import { Transpilation } from "./transpilation";
-import { getConfigDirectory } from "./utils";
-
-export interface Chunk {
-    outputPath: string;
-    source: SourceNode;
-    sourceFiles?: ts.SourceFile[];
-}
-
-export function modulesToChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
-    return modules.map(module => {
-        const moduleId = transpilation.getModuleId(module);
-        const outputPath = normalizeSlashes(path.resolve(transpilation.outDir, `${moduleId.replace(/\./g, "/")}.lua`));
-        return { outputPath, source: module.source, sourceFiles: module.sourceFiles };
-    });
-}
+import { Chunk } from ".";
+import { CompilerOptions, isBundleEnabled } from "../../CompilerOptions";
+import { escapeString } from "../../LuaPrinter";
+import { assert, normalizeSlashes } from "../../utils";
+import { couldNotFindBundleEntryPoint } from "../diagnostics";
+import { Module } from "../module";
+import { Transpilation } from "../transpilation";
 
 // Override `require` to read from ____modules table.
 const requireOverride = `
@@ -48,11 +33,10 @@ end
 export function modulesToBundleChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
     const options = transpilation.program.getCompilerOptions() as CompilerOptions;
     assert(isBundleEnabled(options));
-    const projectDirectory = getConfigDirectory(options, transpilation.host);
-    const outputPath = normalizeSlashes(path.resolve(projectDirectory, options.luaBundle));
 
-    // Resolve project settings relative to project file.
-    const entryFileName = normalizeSlashes(path.resolve(projectDirectory, options.luaBundleEntry));
+    const outputPath = normalizeSlashes(path.resolve(transpilation.projectDir, options.luaBundle));
+    const entryFileName = normalizeSlashes(path.resolve(transpilation.projectDir, options.luaBundleEntry));
+
     const entryModule = modules.find(m => m.request === entryFileName);
     if (entryModule === undefined) {
         transpilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));

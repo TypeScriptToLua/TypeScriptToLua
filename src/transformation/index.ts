@@ -1,6 +1,5 @@
 import * as ts from "typescript";
 import * as lua from "../LuaAST";
-import { LuaLibFeature } from "../LuaLib";
 import { getOrUpdate } from "../utils";
 import { ObjectVisitor, TransformationContext, VisitorMap, Visitors } from "./context";
 import { getUsedLuaLibFeatures } from "./utils/lualib";
@@ -29,17 +28,7 @@ export function createVisitorMap(customVisitors: Visitors[]): VisitorMap {
     return visitorMap;
 }
 
-export interface TransformSourceFileResult {
-    luaAst: lua.Block;
-    luaLibFeatures: Set<LuaLibFeature>;
-    diagnostics: ts.Diagnostic[];
-}
-
-export function transformSourceFile(
-    program: ts.Program,
-    sourceFile: ts.SourceFile,
-    visitorMap: VisitorMap
-): TransformSourceFileResult {
+export function transformSourceFile(program: ts.Program, sourceFile: ts.SourceFile, visitorMap: VisitorMap) {
     const context = new TransformationContext(program, sourceFile, visitorMap);
     const [luaAst] = context.transformNode(sourceFile) as [lua.Block];
 

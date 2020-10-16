@@ -1,7 +1,7 @@
 import { FileSystem } from "enhanced-resolve";
 import * as ts from "typescript";
+import { printChunk } from "./chunk";
 import { Plugin } from "./plugins";
-import { printChunk } from "./print-chunk";
 import { Transpilation } from "./transpilation";
 import { emitProgramModules, TranspileOptions } from "./transpile";
 

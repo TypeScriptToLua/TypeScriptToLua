@@ -1,9 +1,8 @@
 import * as ts from "typescript";
-import { parseConfigFileWithSystem } from "../cli/tsconfig";
-import { CompilerOptions } from "../CompilerOptions";
-import { createEmitOutputCollector, TranspiledFile } from "./output-collector";
-import { EmitResult, Transpiler } from "./transpiler";
-import { createVirtualProgram } from "./utils";
+import { parseConfigFileWithSystem } from "../../cli/tsconfig";
+import { CompilerOptions } from "../../CompilerOptions";
+import { EmitResult, Transpiler } from "../transpiler";
+import { createEmitOutputCollector, createVirtualProgram, TranspiledFile } from "./utils";
 
 export { TranspiledFile };
 

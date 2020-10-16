@@ -16,13 +16,14 @@ export class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
     public modules: Module[] = [];
 
+    public host: TranspilerHost;
     public options = this.program.getCompilerOptions() as CompilerOptions;
     public rootDir: string;
     public outDir: string;
-    public host: TranspilerHost;
+    public projectDir: string;
 
-    protected resolver: Resolver;
     public plugins: Plugin[];
+    protected resolver: Resolver;
 
     constructor(public transpiler: Transpiler, public program: ts.Program, extraPlugins: Plugin[]) {
         this.host = transpiler.host;
@@ -34,6 +35,11 @@ export class Transpilation {
                 : ts.getNormalizedAbsolutePath(this.options.rootDir, this.host.getCurrentDirectory());
 
         this.outDir = this.options.outDir ?? this.rootDir;
+
+        this.projectDir =
+            this.options.configFilePath !== undefined
+                ? path.dirname(this.options.configFilePath)
+                : this.host.getCurrentDirectory();
 
         this.plugins = getPlugins(this, extraPlugins);
 

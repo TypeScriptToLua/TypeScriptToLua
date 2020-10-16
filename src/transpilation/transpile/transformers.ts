@@ -4,7 +4,7 @@ import * as cliDiagnostics from "../../cli/diagnostics";
 import { CompilerOptions, TransformerImport } from "../../CompilerOptions";
 import * as diagnosticFactories from "../diagnostics";
 import { Transpilation } from "../transpilation";
-import { getConfigDirectory, resolvePlugin } from "../utils";
+import { resolveConfigImport } from "../utils";
 
 export function getTransformers(
     transpilation: Transpilation,
@@ -65,10 +65,10 @@ function loadTransformersFromOptions(transpilation: Transpilation): ts.CustomTra
         if (!("transform" in transformerImport)) continue;
         const optionName = `compilerOptions.plugins[${index}]`;
 
-        const { error: resolveError, result: factory } = resolvePlugin(
+        const { error: resolveError, result: factory } = resolveConfigImport(
             "transformer",
             `${optionName}.transform`,
-            getConfigDirectory(transpilation.options),
+            transpilation.projectDir,
             transformerImport.transform,
             transformerImport.import
         );

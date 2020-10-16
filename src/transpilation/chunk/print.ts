@@ -1,7 +1,7 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode, StartOfSourceMap } from "source-map";
-import { CompilerOptions } from "../CompilerOptions";
-import { Chunk } from "./chunk";
+import { Chunk } from ".";
+import { CompilerOptions } from "../../CompilerOptions";
 
 export function printChunk(chunk: Chunk, options: CompilerOptions) {
     const sourceRoot = options.sourceRoot

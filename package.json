@@ -62,5 +62,13 @@
         "prettier": "^2.0.5",
         "ts-jest": "^26.0.0",
         "ts-node": "^8.6.2"
+    },
+    "peerDependencies": {
+        "ts-node": "*"
+    },
+    "peerDependenciesMeta": {
+        "ts-node": {
+            "optional": true
+        }
     }
 }

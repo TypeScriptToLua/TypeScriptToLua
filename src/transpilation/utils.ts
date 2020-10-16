@@ -26,9 +26,7 @@ export function resolveConfigImport(
     const hasNoRequireHook = require.extensions[".ts"] === undefined;
     if (hasNoRequireHook && (resolved.endsWith(".ts") || resolved.endsWith(".tsx"))) {
         try {
-            const tsNodePath = resolve.sync("ts-node", { basedir });
-            const tsNode: typeof import("ts-node") = require(tsNodePath);
-            tsNode.register({ transpileOnly: true });
+            require("ts-node/register/transpile-only");
         } catch (err) {
             if (err.code !== "MODULE_NOT_FOUND") throw err;
             return { error: diagnosticFactories.toLoadItShouldBeTranspiled(kind, query) };

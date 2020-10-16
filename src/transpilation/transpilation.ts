@@ -20,7 +20,6 @@ export class Transpilation {
     public outDir: string;
     public host: TranspilerHost;
 
-    private readonly implicitScriptExtensions = [".ts", ".tsx", ".js", ".jsx"] as const;
     protected resolver: Resolver;
     public plugins: Plugin[];
 
@@ -38,7 +37,7 @@ export class Transpilation {
         this.plugins = getPlugins(this, extraPlugins);
 
         this.resolver = ResolverFactory.createResolver({
-            extensions: [".lua", ...this.implicitScriptExtensions],
+            extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
             conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
             fileSystem: this.host.resolutionFileSystem ?? fs,
             useSyncFileSystemCalls: true,
@@ -78,10 +77,7 @@ export class Transpilation {
 
         let module = this.modules.find(m => m.request === resolvedPath);
         if (!module) {
-            if (
-                this.implicitScriptExtensions.some(extension => resolvedPath.endsWith(extension)) ||
-                resolvedPath.endsWith(".json")
-            ) {
+            if (!resolvedPath.endsWith(".lua")) {
                 throw new Error(`Resolved source file '${resolvedPath}' is not a part of the project.`);
             }
 

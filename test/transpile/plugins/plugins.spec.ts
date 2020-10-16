@@ -24,7 +24,7 @@ test("visitor using super", () => {
 });
 
 test("getModuleId", () => {
-    util.testModule`
+    util.testBundle`
         export { value } from "./foo";
     `
         .addExtraFile("foo.ts", "export const value = true;")
@@ -34,7 +34,7 @@ test("getModuleId", () => {
 });
 
 test("getResolvePlugins", () => {
-    util.testModule`
+    util.testBundle`
         export { value } from "foo";
     `
         .addExtraFile("bar.ts", "export const value = true;")

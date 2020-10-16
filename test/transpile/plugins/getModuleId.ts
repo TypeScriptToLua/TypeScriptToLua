@@ -5,7 +5,7 @@ import * as tstl from "../../../src";
 const plugin: tstl.Plugin = {
     getModuleId: (module, transpilation) =>
         createHash("sha1")
-            .update(module.code)
+            .update(module.source.toString())
             .update(path.relative(transpilation.rootDir, module.request))
             .digest("hex"),
 };

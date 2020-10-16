@@ -1,7 +1,42 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`getModuleId 1`] = `
-"local ____exports = {}
-require(\\"5d05566c99dac259f6ff5742a268d405157a0d7c\\")
-return ____exports"
+"
+local ____modules = {}
+local ____moduleCache = {}
+local ____originalRequire = require
+local function require(file)
+    if ____moduleCache[file] then
+        return ____moduleCache[file]
+    end
+    if ____modules[file] then
+        ____moduleCache[file] = ____modules[file]()
+        return ____moduleCache[file]
+    else
+        if ____originalRequire then
+            return ____originalRequire(file)
+        else
+            error(\\"module '\\" .. file .. \\"' not found\\")
+        end
+    end
+end
+____modules = {
+[\\"5d05566c99dac259f6ff5742a268d405157a0d7c\\"] = function()
+local ____exports = {}
+____exports.value = true
+return ____exports
+
+end,
+[\\"9124a2db32045398a4f097c567d1fe6fcb7ab900\\"] = function()
+local ____exports = {}
+do
+    local ____foo = require(\\"5d05566c99dac259f6ff5742a268d405157a0d7c\\")
+    local value = ____foo.value
+    ____exports.value = value
+end
+return ____exports
+
+end,
+}
+return require(\\"9124a2db32045398a4f097c567d1fe6fcb7ab900\\")"
 `;

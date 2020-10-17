@@ -54,19 +54,21 @@ describe("module import/export elision", () => {
 test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌͼƛಠ", "_̀ः٠‿"])(
     "Import module names with invalid lua identifier characters (%p)",
     name => {
-        util.testModule`
+        util.testBundle`
             import { foo } from "./${name}";
             export { foo };
         `
-            .disableSemanticCheck()
-            .setLuaHeader('setmetatable(package.loaded, { __index = function() return { foo = "bar" } end })')
-            .setReturnExport("foo")
-            .expectToEqual("bar");
+            .addExtraFile(`${name}.ts`, "export const foo = true;")
+            .expectToEqual({ foo: true })
+            .tap(builder => {
+                const identifier = builder.getMainLuaCodeChunk().match(/local (.+) = require\(/)?.[1];
+                expect(identifier).toMatchSnapshot("local identifier");
+            });
     }
 );
 
 test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
-    util.testModule`
+    util.testBundle`
         export { default } from "./module";
     `
         .addExtraFile(
@@ -80,7 +82,7 @@ test.each(["export default value;", "export { value as default };"])("Export Def
 });
 
 test("Default Import and Export Expression", () => {
-    util.testModule`
+    util.testBundle`
         import defaultExport from "./module";
         export const value = defaultExport;
     `
@@ -89,16 +91,17 @@ test("Default Import and Export Expression", () => {
 });
 
 test("Import and Export Assignment", () => {
-    util.testModule`
-        import * as m from "./module";
+    util.testBundle`
+        import m = require("./module");
         export const value = m;
     `
+        .setOptions({ module: ts.ModuleKind.CommonJS })
         .addExtraFile("module.ts", "export = true;")
         .expectToEqual({ value: true });
 });
 
 test("Mixed Exports, Default and Named Imports", () => {
-    util.testModule`
+    util.testBundle`
         import defaultExport, { a, b, c } from "./module";
         export const value = defaultExport + b + c;
     `
@@ -115,7 +118,7 @@ test("Mixed Exports, Default and Named Imports", () => {
 });
 
 test("Mixed Exports, Default and Namespace Import", () => {
-    util.testModule`
+    util.testBundle`
         import defaultExport, * as ns from "./module";
         export const value = defaultExport + ns.b + ns.c;
     `
@@ -132,20 +135,11 @@ test("Mixed Exports, Default and Namespace Import", () => {
 });
 
 test("Export Default Function", () => {
-    util.testModule`
+    util.testBundle`
         import defaultExport from "./module";
         export const value = defaultExport();
     `
         .addExtraFile("module.ts", "export default function() { return true; }")
-        .expectToEqual({ value: true });
-});
-
-test("Export Equals", () => {
-    util.testModule`
-        import * as module from "./module";
-        export const value = module;
-    `
-        .addExtraFile("module.ts", "export = true;")
         .expectToEqual({ value: true });
 });
 

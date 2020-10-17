@@ -154,26 +154,6 @@ local ____ = TestClass
 return ____exports"
 `;
 
-exports[`Transformation (modulesImportNamedSpecialChars) 1`] = `
-"local ____exports = {}
-local ____kebab_2Dmodule = require(\\"kebab-module\\")
-local TestClass1 = ____kebab_2Dmodule.TestClass1
-local ____dollar_24module = require(\\"dollar$module\\")
-local TestClass2 = ____dollar_24module.TestClass2
-local ____singlequote_27module = require(\\"singlequote'module\\")
-local TestClass3 = ____singlequote_27module.TestClass3
-local ____hash_23module = require(\\"hash#module\\")
-local TestClass4 = ____hash_23module.TestClass4
-local ____space_20module = require(\\"space module\\")
-local TestClass5 = ____space_20module.TestClass5
-local ____ = TestClass1
-local ____ = TestClass2
-local ____ = TestClass3
-local ____ = TestClass4
-local ____ = TestClass5
-return ____exports"
-`;
-
 exports[`Transformation (modulesImportRenamed) 1`] = `
 "local ____exports = {}
 local ____test = require(\\"test\\")

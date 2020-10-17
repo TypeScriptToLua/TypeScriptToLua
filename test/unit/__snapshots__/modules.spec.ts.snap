@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Import module names with invalid lua identifier characters ("_̀ः٠‿"): local identifier 1`] = `"______300_903_660_203F"`;
+
+exports[`Import module names with invalid lua identifier characters ("dollar$"): local identifier 1`] = `"____dollar_24"`;
+
+exports[`Import module names with invalid lua identifier characters ("hash#"): local identifier 1`] = `"____hash_23"`;
+
+exports[`Import module names with invalid lua identifier characters ("ke-bab"): local identifier 1`] = `"____ke_2Dbab"`;
+
+exports[`Import module names with invalid lua identifier characters ("s p a c e"): local identifier 1`] = `"____s_20p_20a_20c_20e"`;
+
+exports[`Import module names with invalid lua identifier characters ("singlequote'"): local identifier 1`] = `"____singlequote_27"`;
+
+exports[`Import module names with invalid lua identifier characters ("ɥɣɎɌͼƛಠ"): local identifier 1`] = `"_____265_263_24E_24C_37C_19B_CA0"`;

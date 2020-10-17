@@ -87,7 +87,8 @@ export class Transpilation {
         try {
             const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
             assert(typeof result === "string", `Invalid resolution result: ${result}`);
-            resolvedPath = result;
+            // https://github.com/webpack/enhanced-resolve#escaping
+            resolvedPath = result.replace(/\0#/g, "#");
         } catch (error) {
             if (!isResolveError(error)) throw error;
             return { error: error.message };

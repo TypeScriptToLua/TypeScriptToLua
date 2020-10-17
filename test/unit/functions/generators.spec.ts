@@ -67,9 +67,7 @@ describe("yield*", () => {
 
             const it = generator();
             return [it.next(), it.next(), it.next(), it.next(), it.next()];
-        `
-            .debug()
-            .expectToMatchJsResult();
+        `.expectToMatchJsResult();
     });
 
     test("array", () => {

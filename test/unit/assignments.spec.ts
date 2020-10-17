@@ -121,6 +121,9 @@ test.each([
     "x ^= y",
     "x <<= y",
     "x >>>= y",
+    "x &&= y",
+    "x ||= y",
+    "x ??= y",
 ])("Operator assignment statements (%p)", statement => {
     util.testFunction`
         let x = 3;
@@ -321,5 +324,172 @@ test.each([
         function i() { return 0; }
         const r = ${expression};
         return { r, o, a };
+    `.expectToMatchJsResult();
+});
+
+test("local variable declaration referencing self indirectly", () => {
+    util.testFunction`
+        let cb: () => void;
+
+        function foo(newCb: () => void) {
+            cb = newCb;
+            return "foo";
+        }
+
+        let bar = foo(() => {
+            bar = "bar";
+        });
+
+        cb();
+        return bar;
+    `.expectToMatchJsResult();
+});
+
+test("local multiple variable declaration referencing self indirectly", () => {
+    util.testFunction`
+        let cb: () => void;
+
+        function foo(newCb: () => void) {
+            cb = newCb;
+            return ["a", "foo", "c"];
+        }
+
+        let [a, bar, c] = foo(() => {
+            bar = "bar";
+        });
+
+        cb();
+        return bar;
+    `.expectToMatchJsResult();
+});
+
+describe.each(["x &&= y", "x ||= y"])("boolean compound assignment (%p)", assignment => {
+    const booleanCases = [
+        [false, false],
+        [false, true],
+        [true, false],
+        [true, true],
+    ];
+    test.each(booleanCases)("matches JS", (x, y) => {
+        util.testFunction`
+            let x = ${x};
+            let y = ${y};
+            ${assignment};
+            return x;
+        `.expectToMatchJsResult();
+    });
+});
+
+test.each([undefined, 3])("nullish coalescing compound assignment", initialValue => {
+    util.testFunction`
+        let x: number = ${util.formatCode(initialValue)};
+        x ??= 5;
+        return x;
+    `.expectToMatchJsResult();
+});
+
+test("nullish coalescing compound assignment lhs false", () => {
+    util.testFunction`
+        let x = false;
+        x ??= true;
+        return x;
+    `.expectToMatchJsResult();
+});
+
+test("nullish coalescing compound assignment side effect not evaluated", () => {
+    util.testFunction`
+        let x = 3;
+        let y = 10;
+        x ??= (y += 5);
+        return [x, y];
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { operator: "||=", initialValue: true },
+    { operator: "&&=", initialValue: false },
+    { operator: "??=", initialValue: false },
+])("compound assignment short-circuits and does not call setter", ({ operator, initialValue }) => {
+    /*
+        In JS if the rhs does not affect the resulting value, the setter is NOT called:
+        * x.y ||= z is translated to x.y || (x.y = z).
+        * x.y &&= z is translated to x.y && (x.y = z).
+        * x.y ||= z is translated to x.y !== undefined && (x.y = z).
+        
+        Test if setter in Lua is called same nr of times as in JS.
+    */
+    util.testModule`
+        export let setterCalled = 0;
+
+        class MyClass {
+
+            get prop(): any {
+                return ${initialValue};
+            }
+
+            set prop(value: any) {
+                setterCalled++;
+            }
+        }
+
+        const inst = new MyClass();
+        inst.prop ${operator} 8;
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { operator: "||=", initialValue: true },
+    { operator: "&&=", initialValue: false },
+    { operator: "??=", initialValue: false },
+])("compound assignment short-circuits and does not call setter as expression", ({ operator, initialValue }) => {
+    /*
+        In JS if the rhs does not affect the resulting value, the setter is NOT called:
+        * x.y ||= z is translated to x.y || (x.y = z).
+        * x.y &&= z is translated to x.y && (x.y = z).
+        * x.y ||= z is translated to x.y !== undefined && (x.y = z).
+        
+        Test if setter in Lua is called same nr of times as in JS.
+    */
+    util.testModule`
+        export let setterCalled = 0;
+
+        class MyClass {
+
+            get prop(): any {
+                return ${initialValue};
+            }
+
+            set prop(value: any) {
+                setterCalled++;
+            }
+        }
+
+        const inst = new MyClass();
+        export const result = (inst.prop ${operator} 8);
+    `.expectToMatchJsResult();
+});
+
+test.each([
+    { operator: "+=", initialValue: 3 },
+    { operator: "-=", initialValue: 10 },
+    { operator: "*=", initialValue: 4 },
+    { operator: "/=", initialValue: 20 },
+    { operator: "||=", initialValue: false },
+    { operator: "&&=", initialValue: true },
+    { operator: "??=", initialValue: undefined },
+])("compound assignment side effects", ({ operator, initialValue }) => {
+    // Test if when assigning to something with potential side effects, they are only evaluated once.
+    util.testFunction`
+        const obj: { prop: any} = { prop: ${initialValue} };
+
+        let objGot = 0;
+        function getObj() {
+            objGot++;
+            return obj;
+        }
+
+        getObj().prop ${operator} 4;
+
+        return [obj, objGot];
     `.expectToMatchJsResult();
 });

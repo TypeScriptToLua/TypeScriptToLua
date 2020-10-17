@@ -72,7 +72,7 @@ export class Transpilation {
     }
 
     private resolveRequestToModule(issuer: string, request: string) {
-        if (request === "<internal>/lualib/lualib_bundle") {
+        if (request === "<internal>/lualib_bundle") {
             let module = this.modules.find(m => m.request === request);
             if (!module) {
                 const source = new SourceNode(null, null, null, getLuaLibBundle(this.host));

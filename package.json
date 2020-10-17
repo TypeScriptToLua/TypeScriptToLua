@@ -55,6 +55,7 @@
         "javascript-stringify": "^2.0.1",
         "jest": "^26.0.1",
         "jest-circus": "^25.1.0",
+        "jest-watch-typeahead": "^0.6.1",
         "lua-types": "^2.8.0",
         "memfs": "^3.2.0",
         "prettier": "^2.0.5",

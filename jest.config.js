@@ -10,6 +10,7 @@ module.exports = {
         "!<rootDir>/src/tstl.ts",
     ],
     watchPathIgnorePatterns: ["cli/watch/[^/]+$", "src/lualib"],
+    watchPlugins: ["jest-watch-typeahead/filename", "jest-watch-typeahead/testname"],
 
     setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],
     testEnvironment: "node",

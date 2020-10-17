@@ -257,7 +257,7 @@ export abstract class TestBuilder {
             host.resolutionFileSystem = virtualFS;
             host.getCurrentDirectory = () => "/";
             host.readFile = (fileName, encoding = "utf8") =>
-                fileName.endsWith("lualib_bundle.lua")
+                fileName.includes("/lualib/")
                     ? ts.sys.readFile(fileName, encoding)
                     : (virtualFS.readFileSync(fileName, encoding) as string);
         }

@@ -5,7 +5,7 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
-import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
+import { assert, cast, isNonNull, trimExtension } from "../utils";
 import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
@@ -55,17 +55,6 @@ export class Transpilation {
 
     public emit(): Chunk[] {
         this.modules.forEach(module => this.buildModule(module));
-
-        const lualibRequired = this.modules.some(m => m.source.toString().includes('require("lualib_bundle")'));
-        if (lualibRequired) {
-            const fileName = normalizeSlashes(path.resolve(this.rootDir, "lualib_bundle.lua"));
-            this.modules.unshift({
-                request: fileName,
-                isBuilt: true,
-                source: new SourceNode(null, null, null, getLuaLibBundle(this.host)),
-            });
-        }
-
         return this.mapModulesToChunks(this.modules);
     }
 
@@ -83,6 +72,17 @@ export class Transpilation {
     }
 
     private resolveRequestToModule(issuer: string, request: string) {
+        if (request === "<internal>/lualib/lualib_bundle") {
+            let module = this.modules.find(m => m.request === request);
+            if (!module) {
+                const source = new SourceNode(null, null, null, getLuaLibBundle(this.host));
+                module = { request, isBuilt: true, source };
+                this.modules.push(module);
+            }
+
+            return module;
+        }
+
         let resolvedPath: string;
         try {
             const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
@@ -103,11 +103,8 @@ export class Transpilation {
 
             // TODO: Load source map files
             const code = cast(this.host.readFile(resolvedPath), isNonNull);
-            module = {
-                request: resolvedPath,
-                isBuilt: false,
-                source: new SourceNode(null, null, null, code),
-            };
+            const source = new SourceNode(null, null, null, code);
+            module = { request: resolvedPath, isBuilt: false, source };
 
             this.modules.push(module);
             this.buildModule(module);
@@ -119,6 +116,10 @@ export class Transpilation {
     public getModuleId(module: Module) {
         const pluginResult = applyBailPlugin(this.plugins, p => p.getModuleId?.(module, this));
         if (pluginResult !== undefined) return pluginResult;
+
+        if (module.request.startsWith("<internal>/")) {
+            return module.request.replace("<internal>/", "");
+        }
 
         const result = path.relative(this.rootDir, trimExtension(module.request));
         // TODO: handle files on other drives

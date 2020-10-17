@@ -164,7 +164,7 @@ export class LuaPrinter {
             (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
         ) {
             // Require lualib bundle
-            header += 'require("lualib_bundle");\n';
+            header += 'require(__TS__Resolve("<internal>/lualib/lualib_bundle"));\n';
         } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";

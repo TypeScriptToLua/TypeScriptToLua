@@ -195,7 +195,7 @@ describe("Object.defineProperty", () => {
 describe("Object.getOwnPropertyDescriptor", () => {
     test("descriptor is exactly the same as the last one set", () => {
         util.testFunction`
-            const foo = { bar: true };
+            const foo = {};
             Object.defineProperty(foo, "bar", {});
             return Object.getOwnPropertyDescriptor(foo, "bar");
         `.expectToMatchJsResult();

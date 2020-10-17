@@ -128,61 +128,36 @@ test("Exported class decorator", () => {
 });
 
 test.each([
-    ["method() {}"],
-    ["property;"],
-    ["propertyWithInitializer = () => {};"],
-    ["['evaluated property'];"],
-    ["get getter() { return 5 }"],
-    ["set setter(value) {}"],
-    ["static method() {}"],
-    ["static property;"],
-    ["static propertyWithInitializer = () => {}"],
-    ["static get getter() { return 5 }"],
-    ["static set setter(value) {}"],
-    ["static ['evaluated property'];"],
-])("Decorate class member (%p)", memberStatement => {
+    ["@decorator method() {}"],
+    ["@decorator property;"],
+    ["@decorator propertyWithInitializer = () => {};"],
+    ["@decorator ['evaluated property'];"],
+    ["@decorator get getter() { return 5 }"],
+    ["@decorator set setter(value) {}"],
+    ["@decorator static method() {}"],
+    ["@decorator static property;"],
+    ["@decorator static propertyWithInitializer = () => {}"],
+    ["@decorator static get getter() { return 5 }"],
+    ["@decorator static set setter(value) {}"],
+    ["@decorator static ['evaluated property'];"],
+    ["method(@decorator a) {}"],
+    ["static method(@decorator a) {}"],
+])("Decorate class member (%p)", classMember => {
     util.testFunction`
-        let decoratorTarget: any | undefined;
-        let decoratorTargetKey: string | undefined;
+        let decoratorParameters: any;
 
-        const decorator = (target, key) => {
-            decoratorTarget = target;
-            decoratorTargetKey = key;
+        const decorator = (target, key, index?) => {
+            const targetKind = target === Foo ? "Foo" : target === Foo.prototype ? "Foo.prototype" : "unknown";
+            decoratorParameters = { targetKind, key, index: typeof index };
         };
 
         class Foo {
-            @decorator
-            ${memberStatement}
+            ${classMember}
         }
 
-        const targetKind = decoratorTarget === Foo ? "Foo" : decoratorTarget === Foo.prototype ? "Foo.prototype" : "unknown";
-        return { targetKind, decoratorTargetKey };
+        return decoratorParameters;
     `.expectToMatchJsResult();
 });
-
-test.each([["method(@decorator a) {}"], ["static method(@decorator a) {}"]])(
-    "Decorate method parameter (%p)",
-    methodStatement => {
-        util.testFunction`
-            let decoratorTarget;
-            let decoratorTargetKey;
-            let decoratorTargetKeyIndex;
-
-            const decorator = (target, key, index) => {
-                decoratorTarget = target;
-                decoratorTargetKey = key;
-                decoratorTargetKeyIndex = index;
-            };
-
-            class Foo {
-                ${methodStatement}
-            }
-
-            const targetKind = decoratorTarget === Foo ? "Foo" : decoratorTarget === Foo.prototype ? "Foo.prototype" : "unknown";
-            return [targetKind, decoratorTargetKey, decoratorTargetKeyIndex];
-        `.expectToMatchJsResult();
-    }
-);
 
 describe("Decorators /w descriptors", () => {
     test.each([

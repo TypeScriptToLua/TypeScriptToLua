@@ -32,7 +32,7 @@ export function createDecoratingExpression(
             kind === ts.SyntaxKind.MethodDeclaration ||
             kind === ts.SyntaxKind.GetAccessor ||
             kind === ts.SyntaxKind.SetAccessor;
-        trailingExpressions.push(lua.createBooleanLiteral(isMethodOrAccessor));
+        trailingExpressions.push(isMethodOrAccessor ? lua.createBooleanLiteral(true) : lua.createNilLiteral());
     }
 
     return transformLuaLibFunction(context, LuaLibFeature.Decorate, undefined, ...trailingExpressions);

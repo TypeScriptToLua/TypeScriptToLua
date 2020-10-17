@@ -3,7 +3,7 @@ import * as path from "path";
 import * as tstl from "../../src";
 import * as util from "../util";
 
-const fixturesPath = path.join(__dirname, "./transformation");
+const fixturesPath = path.join(__dirname, "__fixtures__");
 const fixtures = fs
     .readdirSync(fixturesPath)
     .filter(f => path.extname(f) === ".ts")

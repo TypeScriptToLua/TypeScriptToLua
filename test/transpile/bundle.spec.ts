@@ -1,12 +1,8 @@
-import * as path from "path";
 import * as util from "../util";
-import { transpileProjectResult } from "./run";
-
-const projectDir = path.join(__dirname, "bundle");
-const inputProject = path.join(projectDir, "tsconfig.json");
+import { resolveFixture, transpileProjectResult } from "./run";
 
 test("should transpile into one file", () => {
-    const { diagnostics, emittedFiles } = transpileProjectResult(inputProject);
+    const { diagnostics, emittedFiles } = transpileProjectResult(resolveFixture("bundle/tsconfig.json"));
 
     expect(diagnostics).not.toHaveDiagnostics();
     expect(emittedFiles).toHaveLength(1);

@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import * as path from "path";
-import * as tstl from "../../../src";
+import * as tstl from "../../../../src";
 
 const plugin: tstl.Plugin = {
     getModuleId: (module, transpilation) =>

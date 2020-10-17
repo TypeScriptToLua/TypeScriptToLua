@@ -1,6 +1,6 @@
 // @ts-expect-error Could not find a declaration file for module 'enhanced-resolve/lib/AliasPlugin'.
 import * as AliasPlugin from "enhanced-resolve/lib/AliasPlugin";
-import * as tstl from "../../../src";
+import * as tstl from "../../../../src";
 
 const plugin: tstl.Plugin = {
     getResolvePlugins: () => [

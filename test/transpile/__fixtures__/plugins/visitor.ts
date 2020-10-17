@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as tstl from "../../../src";
+import * as tstl from "../../../../src";
 
 const plugin: tstl.Plugin = {
     visitors: {

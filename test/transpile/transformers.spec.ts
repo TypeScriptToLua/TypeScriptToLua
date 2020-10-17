@@ -1,11 +1,13 @@
-import * as path from "path";
-import * as util from "../../util";
+import * as util from "../util";
+import { resolveFixture } from "./run";
+
+const transformersFixture = resolveFixture("transformers.ts");
 
 test("ignore language service plugins", () => {
     util.testFunction`
         return false;
     `
-        .setOptions({ plugins: [{ name: path.join(__dirname, "types.ts") }] })
+        .setOptions({ plugins: [{ name: transformersFixture }] })
         .expectToEqual(false);
 });
 
@@ -13,13 +15,13 @@ test("default type", () => {
     util.testFunction`
         return false;
     `
-        .setOptions({ plugins: [{ transform: path.join(__dirname, "fixtures.ts"), import: "program", value: true }] })
+        .setOptions({ plugins: [{ transform: transformersFixture, import: "program", value: true }] })
         .expectToEqual(true);
 });
 
 test("transformer resolution error", () => {
     util.testModule``
-        .setOptions({ plugins: [{ transform: path.join(__dirname, "error.ts") }] })
+        .setOptions({ plugins: [{ transform: resolveFixture("transformers/error.ts") }] })
         .expectToHaveDiagnostics();
 });
 
@@ -28,9 +30,7 @@ describe("factory types", () => {
         util.testFunction`
             return false;
         `
-            .setOptions({
-                plugins: [{ transform: path.join(__dirname, "fixtures.ts"), type, import: type, value: true }],
-            })
+            .setOptions({ plugins: [{ transform: transformersFixture, type, import: type, value: true }] })
             .expectToEqual(true);
     });
 });

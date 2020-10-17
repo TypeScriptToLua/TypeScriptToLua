@@ -1,8 +1,7 @@
-import * as path from "path";
-import { transpileProjectResult } from "./run";
+import { resolveFixture, transpileProjectResult } from "./run";
 
 test("should transpile", () => {
-    const { diagnostics, emittedFiles } = transpileProjectResult(path.join(__dirname, "project", "tsconfig.json"));
+    const { diagnostics, emittedFiles } = transpileProjectResult(resolveFixture("project/tsconfig.json"));
     expect(diagnostics).not.toHaveDiagnostics();
     expect(emittedFiles).toMatchSnapshot();
 });

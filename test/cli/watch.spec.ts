@@ -1,6 +1,5 @@
 import * as fs from "fs-extra";
-import * as path from "path";
-import { forkCli } from "./run";
+import { forkCli, resolveFixture } from "./run";
 
 let testsCleanup: Array<() => void> = [];
 afterEach(() => {
@@ -26,7 +25,7 @@ function forkWatchProcess(args: string[]): void {
     testsCleanup.push(() => child.kill());
 }
 
-const watchedFile = path.join(__dirname, "./watch/watch.ts");
+const watchedFile = resolveFixture("watch/watch.ts");
 const watchedFileOut = watchedFile.replace(".ts", ".lua");
 
 afterEach(() => fs.removeSync(watchedFileOut));
@@ -48,17 +47,17 @@ async function compileChangeAndCompare(filePath: string, content: string): Promi
 }
 
 test("should watch single file", async () => {
-    forkWatchProcess([path.join(__dirname, "./watch/watch.ts")]);
+    forkWatchProcess([resolveFixture("watch/watch.ts")]);
     await compileChangeAndCompare(watchedFile, "const value = 1;");
 });
 
 test("should watch project", async () => {
-    forkWatchProcess(["--project", path.join(__dirname, "./watch")]);
+    forkWatchProcess(["--project", resolveFixture("watch")]);
     await compileChangeAndCompare(watchedFile, "const value = 1;");
 });
 
 test("should watch config file", async () => {
-    const configFilePath = path.join(__dirname, "./watch/tsconfig.json");
+    const configFilePath = resolveFixture("watch/tsconfig.json");
     forkWatchProcess(["--project", configFilePath]);
     await compileChangeAndCompare(configFilePath, '{ "tstl": { "luaTarget": "5.3" } }');
 });

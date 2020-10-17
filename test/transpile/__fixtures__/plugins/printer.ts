@@ -1,5 +1,5 @@
 import { SourceNode } from "source-map";
-import * as tstl from "../../../src";
+import * as tstl from "../../../../src";
 
 const plugin: tstl.Plugin = {
     printer(program, host, fileName, ...args) {

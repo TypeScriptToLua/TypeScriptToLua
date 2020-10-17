@@ -3,8 +3,9 @@ import * as path from "path";
 
 jest.setTimeout(20000);
 
-const cliPath = path.join(__dirname, "../../src/tstl.ts");
+export const resolveFixture = (name: string) => path.resolve(__dirname, "__fixtures__", name);
 
+const cliPath = path.join(__dirname, "../../src/tstl.ts");
 const defaultArgs = ["--skipLibCheck", "--types", "node"];
 export function forkCli(args: string[]): ChildProcess {
     return fork(cliPath, [...defaultArgs, ...args], {

@@ -4,13 +4,15 @@ import * as tstl from "../../src";
 import { parseConfigFileWithSystem } from "../../src/cli/tsconfig";
 import { normalizeSlashes } from "../../src/utils";
 
+export const resolveFixture = (name: string) => path.resolve(__dirname, "__fixtures__", name);
+
 export function transpileFilesResult(rootNames: string[], options: tstl.CompilerOptions) {
     options.skipLibCheck = true;
     options.types = [];
 
     const emittedFiles: ts.OutputFile[] = [];
     const { diagnostics } = tstl.transpileFiles(rootNames, options, (fileName, text, writeByteOrderMark) => {
-        const name = normalizeSlashes(path.relative(__dirname, fileName));
+        const name = normalizeSlashes(path.relative(resolveFixture(""), fileName));
         emittedFiles.push({ name, text, writeByteOrderMark });
     });
 

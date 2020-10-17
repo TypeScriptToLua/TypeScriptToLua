@@ -9,7 +9,7 @@ module.exports = {
         // https://github.com/facebook/jest/issues/5274
         "!<rootDir>/src/tstl.ts",
     ],
-    watchPathIgnorePatterns: ["cli/watch/[^/]+$", "src/lualib"],
+    watchPathIgnorePatterns: ["cli/__fixtures__", "src/lualib"],
     watchPlugins: ["jest-watch-typeahead/filename", "jest-watch-typeahead/testname"],
 
     setupFilesAfterEnv: ["<rootDir>/test/setup.ts"],

@@ -7,12 +7,5 @@
         "paths": { "*": ["types/*"] }
     },
     "include": [".", "../src"],
-    "exclude": [
-        "translation/transformation",
-        "cli/errors",
-        "cli/watch",
-        "transpile/directories",
-        "transpile/outFile",
-        "../src/lualib"
-    ]
+    "exclude": ["translation/__fixtures__", "cli/__fixtures__", "transpile/__fixtures__/directories", "../src/lualib"]
 }

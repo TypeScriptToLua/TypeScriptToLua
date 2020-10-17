@@ -1,7 +1,11 @@
 import * as assert from "assert";
 import * as ts from "typescript";
 import * as tstl from "../../../src";
-import { visitAndReplace } from "./utils";
+
+function visitAndReplace<T extends ts.Node>(context: ts.TransformationContext, node: T, visitor: ts.Visitor): T {
+    const visit: ts.Visitor = node => visitor(node) ?? ts.visitEachChild(node, visit, context);
+    return ts.visitNode(node, visit);
+}
 
 export const program = (program: ts.Program, options: { value: any }): ts.TransformerFactory<ts.SourceFile> =>
     checker(program.getTypeChecker(), options);

@@ -1,7 +1,6 @@
-import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../../src";
-import { transpileFilesResult } from "./run";
+import { resolveFixture, transpileFilesResult } from "./run";
 
 interface DirectoryTestCase {
     name: string;
@@ -15,7 +14,7 @@ test.each<DirectoryTestCase>([
     { name: "basic", options: { rootDir: "src", outDir: "out" } },
     { name: "baseurl", options: { baseUrl: "./src/lib", rootDir: ".", outDir: "./out" } },
 ])("should be able to resolve (%p)", ({ name, options: compilerOptions }) => {
-    const projectPath = path.join(__dirname, "directories", name);
+    const projectPath = resolveFixture(`directories/${name}`);
     jest.spyOn(process, "cwd").mockReturnValue(projectPath);
 
     const config = {

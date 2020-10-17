@@ -9,9 +9,9 @@ import * as diagnosticFactories from "./diagnostics";
 export const isResolveError = (error: unknown): error is Error & { details: string } =>
     error instanceof Error && "details" in error;
 
-const resolveImport = createResolve.sync({ extensions: [".js", ".ts", ".tsx"] });
+const resolveConfigImport = createResolve.sync({ extensions: [".js", ".ts", ".tsx"] });
 
-export function resolveConfigImport(
+export function loadConfigImport(
     kind: string,
     optionName: string,
     basedir: string,
@@ -24,7 +24,7 @@ export function resolveConfigImport(
 
     let resolved: string;
     try {
-        const result = resolveImport({}, basedir, query);
+        const result = resolveConfigImport({}, basedir, query);
         assert(typeof result === "string");
         resolved = result;
     } catch (error) {

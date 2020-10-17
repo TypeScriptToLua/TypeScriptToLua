@@ -4,7 +4,7 @@ import { Visitors } from "../transformation/context";
 import { Chunk } from "./chunk";
 import { Module } from "./module";
 import { Transpilation } from "./transpilation";
-import { resolveConfigImport } from "./utils";
+import { loadConfigImport } from "./utils";
 
 export interface Plugin {
     /**
@@ -45,7 +45,7 @@ export function getPlugins(transpilation: Transpilation, customPlugins: Plugin[]
     for (const [index, pluginOption] of (transpilation.options.luaPlugins ?? []).entries()) {
         const optionName = `tstl.luaPlugins[${index}]`;
 
-        const { error: resolveError, result: factory } = resolveConfigImport(
+        const { error: resolveError, result: factory } = loadConfigImport(
             "plugin",
             `${optionName}.name`,
             transpilation.projectDir,

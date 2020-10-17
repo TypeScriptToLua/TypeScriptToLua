@@ -70,11 +70,12 @@ export class Transpilation {
     }
 
     private buildModule(module: Module) {
-        buildModule(module, request => {
+        buildModule(module, (request, position) => {
             const result = this.resolveRequestToModule(module.request, request);
             if ("error" in result) {
-                this.diagnostics.push(result.error);
-                return { error: ts.flattenDiagnosticMessageText(result.error.messageText, "\n") };
+                const diagnostic = createResolutionErrorDiagnostic(result.error, module, position);
+                this.diagnostics.push(diagnostic);
+                return result;
             }
 
             return this.getModuleId(result);
@@ -89,14 +90,14 @@ export class Transpilation {
             resolvedPath = result;
         } catch (error) {
             if (!isResolveError(error)) throw error;
-            return { error: createResolutionErrorDiagnostic(error.message, request, issuer) };
+            return { error: error.message };
         }
 
         let module = this.modules.find(m => m.request === resolvedPath);
         if (!module) {
             if (!resolvedPath.endsWith(".lua")) {
                 const messageText = `Resolved source file '${resolvedPath}' is not a part of the project.`;
-                return { error: createResolutionErrorDiagnostic(messageText, request, issuer) };
+                return { error: messageText };
             }
 
             // TODO: Load source map files

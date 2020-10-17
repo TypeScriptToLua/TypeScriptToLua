@@ -1,6 +1,6 @@
 import * as ts from "typescript";
-import { escapeString } from "../LuaPrinter";
 import { createSerialDiagnosticFactory } from "../utils";
+import { Module } from "./module";
 
 const createDiagnosticFactory = <TArgs extends any[]>(getMessage: (...args: TArgs) => string) =>
     createSerialDiagnosticFactory((...args: TArgs) => ({ messageText: getMessage(...args) }));
@@ -41,13 +41,10 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
 
 const sourceFileStub = ts.createSourceFile("", "", ts.ScriptTarget.ES3);
 export const createResolutionErrorDiagnostic = createSerialDiagnosticFactory(
-    (messageText: string, request: string, fileName: string) => {
-        const text = `__TS__Resolve(${escapeString(request)})`;
-        return {
-            messageText,
-            file: { ...sourceFileStub, fileName, text },
-            start: 0,
-            length: text.length,
-        };
-    }
+    (messageText: string, module: Module, position: ts.ReadonlyTextRange) => ({
+        messageText,
+        file: { ...sourceFileStub, fileName: module.request, text: module.source.toString() },
+        start: position.pos,
+        length: position.end - position.pos,
+    })
 );

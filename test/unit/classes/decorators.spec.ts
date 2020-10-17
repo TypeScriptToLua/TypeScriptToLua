@@ -155,7 +155,7 @@ test.each([
             ${memberStatement}
         }
 
-        const targetKind = decoratorTarget === Foo.prototype ? "prototype" : "class";
+        const targetKind = decoratorTarget === Foo ? "Foo" : decoratorTarget === Foo.prototype ? "Foo.prototype" : "unknown";
         return { targetKind, decoratorTargetKey };
     `.expectToMatchJsResult();
 });
@@ -178,7 +178,7 @@ test.each([["method(@decorator a) {}"], ["static method(@decorator a) {}"]])(
                 ${methodStatement}
             }
 
-            const targetKind = decoratorTarget === Foo.prototype ? "prototype" : "class";
+            const targetKind = decoratorTarget === Foo ? "Foo" : decoratorTarget === Foo.prototype ? "Foo.prototype" : "unknown";
             return [targetKind, decoratorTargetKey, decoratorTargetKeyIndex];
         `.expectToMatchJsResult();
     }

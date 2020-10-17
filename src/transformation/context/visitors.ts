@@ -143,7 +143,7 @@ export type VisitorResult<T extends ts.Node> = T extends ExpressionLikeNode
     : T extends StatementLikeNode
     ? OneToManyVisitorResult<lua.Statement>
     : T extends ts.SourceFile
-    ? lua.Block
+    ? lua.File
     : OneToManyVisitorResult<lua.Node>;
 
 export type Visitor<T extends ts.Node> = FunctionVisitor<T> | ObjectVisitor<T>;

@@ -60,18 +60,14 @@ export function getProgramTranspileResult(
     const visitorMap = createVisitorMap(plugins.map(p => p.visitors).filter(isNonNull));
     const printer = createPrinter(plugins.map(p => p.printer).filter(isNonNull));
     const processSourceFile = (sourceFile: ts.SourceFile) => {
-        const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
-            program,
-            sourceFile,
-            visitorMap
-        );
+        const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
 
         diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const printResult = printer(program, emitHost, sourceFile.fileName, luaAst, luaLibFeatures);
+            const printResult = printer(program, emitHost, sourceFile.fileName, file);
             const sourceRootDir = program.getCommonSourceDirectory();
             const fileName = path.resolve(sourceRootDir, sourceFile.fileName);
-            transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst, ...printResult });
+            transpiledFiles.push({ sourceFiles: [sourceFile], fileName, luaAst: file, ...printResult });
         }
     };
 

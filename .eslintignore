@@ -1,6 +1,4 @@
 /dist
-/test/translation/transformation
-/test/cli/errors
-/test/cli/watch
-/test/transpile/directories
-/test/transpile/outFile
+/test/translation/__fixtures__
+/test/cli/__fixtures__
+/test/transpile/__fixtures__/directories

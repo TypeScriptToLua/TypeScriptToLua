@@ -1,10 +1,154 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`doesn't resolve paths out of root dir: code 1`] = `
-"local ____exports = {}
-local module = require(\\"../module\\")
-local ____ = module
-return ____exports"
+exports[`current directory index: modules 1`] = `
+"[\\"index\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"index\\")
+return ____exports
+
+end,"
 `;
 
-exports[`doesn't resolve paths out of root dir: diagnostics 1`] = `"src/main.ts(2,33): error TSTL: Cannot create require path. Module '../module' does not exist within --rootDir."`;
+exports[`entry point in nested directory: modules 1`] = `
+"[\\"module\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"module\\")
+return ____exports
+
+end,"
+`;
+
+exports[`file in a sibling directory: modules 1`] = `
+"[\\"foo.bar\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"foo.bar\\")
+return ____exports
+
+end,"
+`;
+
+exports[`not transpiled script file error: diagnostics 1`] = `"/main.ts(2,22): error TSTL: Resolved source file '/module.ts' is not a part of the project."`;
+
+exports[`not transpiled script file error: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+local ____ = require(--[[ ./module ]] error(\\"Resolved source file '/module.ts' is not a part of the project.\\"))
+____exports.value = ____.value
+return ____exports
+
+end,"
+`;
+
+exports[`package resolution package with dependencies: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+do
+    local ____lib = require(\\"node_modules.lib.index\\")
+    local value = ____lib.value
+    ____exports.value = value
+end
+return ____exports
+
+end,
+[\\"node_modules.lib.index\\"] = function()
+return require(\\"node_modules.lib2.index\\")
+end,
+[\\"node_modules.lib2.index\\"] = function()
+return { value = true }
+end,"
+`;
+
+exports[`package resolution package.json with exports: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+do
+    local ____lib = require(\\"node_modules.lib.dist.index\\")
+    local value = ____lib.value
+    ____exports.value = value
+end
+return ____exports
+
+end,
+[\\"node_modules.lib.dist.index\\"] = function()
+return { value = true }
+end,"
+`;
+
+exports[`package resolution package.json with versioned exports: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+do
+    local ____lib = require(\\"node_modules.lib.dist.5__3\\")
+    local value = ____lib.value
+    ____exports.value = value
+end
+return ____exports
+
+end,
+[\\"node_modules.lib.dist.5__3\\"] = function()
+return { value = \\"5.3\\" }
+end,"
+`;
+
+exports[`package resolution without package.json: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+do
+    local ____lib = require(\\"node_modules.lib.index\\")
+    local value = ____lib.value
+    ____exports.value = value
+end
+return ____exports
+
+end,
+[\\"node_modules.lib.index\\"] = function()
+return { value = true }
+end,"
+`;
+
+exports[`resolution out of rootDir .ts file: diagnostics 1`] = `"src/main.ts(2,35): error TS6059: File 'module.ts' is not under 'rootDir' 'src'. 'rootDir' is expected to contain all source files."`;
+
+exports[`rootDir inference: modules 1`] = `
+"[\\"module\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"module\\")
+return ____exports
+
+end,"
+`;
+
+exports[`sibling directory index: modules 1`] = `
+"[\\"foo.index\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"foo.index\\")
+return ____exports
+
+end,"
+`;
+
+exports[`sibling file: modules 1`] = `
+"[\\"foo\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"foo\\")
+return ____exports
+
+end,"
+`;

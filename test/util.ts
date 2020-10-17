@@ -243,7 +243,10 @@ export abstract class TestBuilder {
     @memoize
     public getProgram(): ts.Program {
         this.hasProgram = true;
-        return createVirtualProgram(this.getSourceFiles(), this.options);
+        const program = createVirtualProgram(this.getSourceFiles(), this.options);
+        // https://github.com/microsoft/TypeScript/issues/41020
+        program.getCommonSourceDirectory();
+        return program;
     }
 
     @memoize
@@ -429,6 +432,12 @@ class BundleTestBuilder extends AccessorTestBuilder {
     constructor(_tsCode: string) {
         super(_tsCode);
         this.setOptions({ luaBundle: "main.lua", luaBundleEntry: this.mainFileName });
+    }
+
+    public setMainFileName(mainFileName: string) {
+        super.setMainFileName(mainFileName);
+        this.setOptions({ luaBundleEntry: mainFileName });
+        return this;
     }
 
     public setEntryPoint(fileName: string): this {

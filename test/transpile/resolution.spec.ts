@@ -1,6 +1,5 @@
-import * as ts from "typescript";
-import { unresolvableRequirePath } from "../../../src/transformation/utils/diagnostics";
-import * as util from "../../util";
+import { createResolutionErrorDiagnostic } from "../../src/transpilation/diagnostics";
+import * as util from "../util";
 
 const requireRegex = /require\("(.*?)"\)/;
 const expectToRequire = (expected: string): util.TapCallback => builder => {
@@ -8,80 +7,166 @@ const expectToRequire = (expected: string): util.TapCallback => builder => {
     expect(requiredPath).toBe(expected);
 };
 
-test.each([
-    {
-        filePath: "main.ts",
-        usedPath: "./folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: "." },
-    },
-    {
-        filePath: "main.ts",
-        usedPath: "./folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: "./" },
-    },
-    {
-        filePath: "src/main.ts",
-        usedPath: "./folder/Module",
-        expected: "src.folder.Module",
-        options: { rootDir: "." },
-    },
-    {
-        filePath: "main.ts",
-        usedPath: "folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: ".", baseUrl: "." },
-    },
-    {
-        filePath: "main.ts",
-        usedPath: "folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: "./", baseUrl: "." },
-    },
-    {
-        filePath: "src/main.ts",
-        usedPath: "./folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: "src" },
-    },
-    {
-        filePath: "src/main.ts",
-        usedPath: "./folder/Module",
-        expected: "folder.Module",
-        options: { rootDir: "./src" },
-    },
-    {
-        filePath: "src/dir/main.ts",
-        usedPath: "../Module",
-        expected: "Module",
-        options: { rootDir: "./src" },
-    },
-    {
-        filePath: "src/dir/dir/main.ts",
-        usedPath: "../../dir/Module",
-        expected: "dir.Module",
-        options: { rootDir: "./src" },
-    },
-])("resolve paths with baseUrl or rootDir (%p)", ({ filePath, usedPath, expected, options }) => {
-    util.testModule`
-        import * as module from "${usedPath}";
-        module;
+const expectModuleTableToMatchSnapshot: util.TapCallback = builder => {
+    builder.expectToHaveNoDiagnostics();
+    const moduleTable = builder.getMainLuaCodeChunk().match(/(?<=\n)____modules = {\n(.+)\n}\nreturn [^\n]+$/s)?.[1];
+    expect(moduleTable).not.toBeUndefined();
+    expect(moduleTable).toMatchSnapshot("modules");
+};
+
+test("sibling file", () => {
+    util.testBundle`
+        import "./foo";
     `
-        .setMainFileName(filePath)
-        .setOptions(options)
-        .tap(expectToRequire(expected));
+        .addExtraFile("foo.ts", "")
+        .tap(expectModuleTableToMatchSnapshot);
 });
 
-test("doesn't resolve paths out of root dir", () => {
-    util.testModule`
-        import * as module from "../module";
-        module;
+test("file in a sibling directory", () => {
+    util.testBundle`
+        import "./foo/bar.ts";
+    `
+        .addExtraFile("foo/bar.ts", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+test("sibling directory index", () => {
+    util.testBundle`
+        import "./foo";
+    `
+        .addExtraFile("foo/index.ts", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+test("current directory index", () => {
+    util.testBundle`
+        import ".";
+    `
+        .addExtraFile("index.ts", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+test("rootDir inference", () => {
+    util.testBundle`
+        import "./module";
     `
         .setMainFileName("src/main.ts")
-        .setOptions({ rootDir: "./src" })
-        .disableSemanticCheck()
-        .expectDiagnosticsToMatchSnapshot([unresolvableRequirePath.code]);
+        .addExtraFile("src/module.ts", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+test("entry point in nested directory", () => {
+    util.testBundle`
+        import "./module";
+    `
+        .setMainFileName("src/main.ts")
+        .addExtraFile("src/module.ts", "")
+        .setOptions({ rootDir: "src" })
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+describe("resolution out of rootDir", () => {
+    test(".lua file", () => {
+        util.testBundle`
+            export { value } from "../module";
+        `
+            .setOptions({ rootDir: "src" })
+            .setMainFileName("src/main.ts")
+            .addExtraFile("module.d.ts", "export declare const value: boolean;")
+            .addRawFile("module.lua", "return { value = true }")
+
+            .tap(expectToRequire("_.module"))
+            .expectToEqual({ value: true });
+    });
+
+    test(".ts file", () => {
+        util.testBundle`
+            export { value } from "../module";
+        `
+            .setOptions({ rootDir: "src" })
+            .setMainFileName("src/main.ts")
+            .addExtraFile("module.ts", "export const value = true;")
+
+            .tap(expectToRequire("_.module"))
+            .expectDiagnosticsToMatchSnapshot([6059], true)
+            .expectToEqual({ value: true });
+    });
+});
+
+describe("package resolution", () => {
+    test("without package.json", () => {
+        util.testBundle`
+            export { value } from 'lib';
+        `
+            .addExtraFile("node_modules/lib/index.d.ts", "export const value: boolean;")
+            .addRawFile("node_modules/lib/index.lua", "return { value = true }")
+            .tap(expectModuleTableToMatchSnapshot)
+            .expectToEqual({ value: true });
+    });
+
+    test("package.json with exports", () => {
+        util.testBundle`
+            export { value } from 'lib';
+        `
+            .addExtraFile("node_modules/lib/index.d.ts", "export const value: boolean;")
+            .addRawFile("node_modules/lib/dist/index.lua", "return { value = true }")
+            .addRawFile("node_modules/lib/package.json", JSON.stringify({ exports: { lua: "./dist/index.lua" } }))
+            .tap(expectModuleTableToMatchSnapshot)
+            .expectToEqual({ value: true });
+    });
+
+    // https://github.com/webpack/enhanced-resolve/issues/256
+    test.skip("package.json with directory exports", () => {
+        util.testBundle`
+            export { value } from 'lib/foo';
+        `
+            .addExtraFile("node_modules/lib/index.d.ts", 'declare module "lib/foo" { export const value: boolean; }')
+            .addRawFile("node_modules/lib/dist/foo.lua", "return { value = true }")
+            .addRawFile("node_modules/lib/package.json", JSON.stringify({ exports: { "./": { lua: "./dist/" } } }))
+            .tap(expectModuleTableToMatchSnapshot)
+            .expectToEqual({ value: true });
+    });
+
+    test("package.json with versioned exports", () => {
+        util.testBundle`
+            export { value } from 'lib';
+        `
+            .addExtraFile("node_modules/lib/index.d.ts", "export const value: boolean;")
+            .addRawFile("node_modules/lib/dist/5.3.lua", 'return { value = "5.3" }')
+            .addRawFile("node_modules/lib/dist/jit.lua", 'return { value = "jit" }')
+            .addRawFile(
+                "node_modules/lib/package.json",
+                JSON.stringify({ exports: { "lua:5.3": "./dist/5.3.lua", "lua:jit": "./dist/jit.lua" } })
+            )
+            .tap(expectModuleTableToMatchSnapshot)
+            .expectToEqual({ value: "5.3" });
+    });
+
+    test("package with dependencies", () => {
+        util.testBundle`
+            export { value } from 'lib';
+        `
+            .addExtraFile("node_modules/lib/index.d.ts", "export const value: boolean;")
+            .addRawFile("node_modules/lib/index.lua", 'return require(__TS__Resolve("lib2"))')
+            .addRawFile("node_modules/lib2/index.lua", "return { value = true }")
+            .tap(expectModuleTableToMatchSnapshot)
+            .expectToEqual({ value: true });
+    });
+
+    test.todo("symlink");
+});
+
+test("not transpiled script file error", () => {
+    util.testBundle`
+        declare function require(this: void, path: string): any;
+        declare function __TS__Resolve(this: void, request: string): string;
+
+        export const { value } = require(__TS__Resolve("./module"));
+    `
+        .addRawFile("module.ts", "export const value = true;")
+        .expectDiagnosticsToMatchSnapshot([createResolutionErrorDiagnostic.code], true)
+        .tap(expectModuleTableToMatchSnapshot)
+        .expectToEqual(new util.ExecutionError("Resolved source file '/module.ts' is not a part of the project."));
 });
 
 test.each([
@@ -91,7 +176,6 @@ test.each([
             declare module "fake" {}
         `,
         mainCode: 'import "fake";',
-        expectedPath: "fake",
     },
     {
         declarationStatement: `
@@ -99,7 +183,6 @@ test.each([
             declare module "fake" {}
         `,
         mainCode: 'import * as fake from "fake"; fake;',
-        expectedPath: "fake",
     },
     {
         declarationStatement: `
@@ -109,7 +192,6 @@ test.each([
             }
         `,
         mainCode: 'import { x } from "fake"; x;',
-        expectedPath: "fake",
     },
     {
         declarationStatement: `
@@ -123,20 +205,10 @@ test.each([
             }
         `,
         mainCode: 'import { y } from "fake"; y;',
-        expectedPath: "fake",
     },
-])("noResolution prevents any module path resolution behavior", ({ declarationStatement, mainCode, expectedPath }) => {
+])("@noResolution annotation (%p)", ({ declarationStatement, mainCode }) => {
     util.testModule(mainCode)
         .setMainFileName("src/main.ts")
         .addExtraFile("module.d.ts", declarationStatement)
-        .tap(expectToRequire(expectedPath));
-});
-
-test("import = require", () => {
-    util.testModule`
-        import foo = require("./foo/bar");
-        foo;
-    `
-        .setOptions({ module: ts.ModuleKind.CommonJS })
-        .tap(expectToRequire("foo.bar"));
+        .tap(expectToRequire("fake"));
 });

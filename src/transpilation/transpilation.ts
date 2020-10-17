@@ -11,6 +11,7 @@ import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
 import { applyBailPlugin, applySinglePlugin, getPlugins, Plugin } from "./plugins";
 import { Transpiler, TranspilerHost } from "./transpiler";
+import { isResolveError } from "./utils";
 
 export class Transpilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
@@ -70,26 +71,32 @@ export class Transpilation {
 
     private buildModule(module: Module) {
         buildModule(module, request => {
-            let resolvedModule: Module;
-            try {
-                resolvedModule = this.resolveRequestToModule(module.request, request);
-            } catch (error) {
-                this.diagnostics.push(createResolutionErrorDiagnostic(error.message, request, module.request));
-                return { error: error.message };
+            const result = this.resolveRequestToModule(module.request, request);
+            if ("error" in result) {
+                this.diagnostics.push(result.error);
+                return { error: ts.flattenDiagnosticMessageText(result.error.messageText, "\n") };
             }
 
-            return this.getModuleId(resolvedModule);
+            return this.getModuleId(result);
         });
     }
 
     private resolveRequestToModule(issuer: string, request: string) {
-        const resolvedPath = this.resolver.resolveSync({}, path.dirname(issuer), request);
-        assert(typeof resolvedPath === "string", `Invalid resolution result: ${resolvedPath}`);
+        let resolvedPath: string;
+        try {
+            const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
+            assert(typeof result === "string", `Invalid resolution result: ${result}`);
+            resolvedPath = result;
+        } catch (error) {
+            if (!isResolveError(error)) throw error;
+            return { error: createResolutionErrorDiagnostic(error.message, request, issuer) };
+        }
 
         let module = this.modules.find(m => m.request === resolvedPath);
         if (!module) {
             if (!resolvedPath.endsWith(".lua")) {
-                throw new Error(`Resolved source file '${resolvedPath}' is not a part of the project.`);
+                const messageText = `Resolved source file '${resolvedPath}' is not a part of the project.`;
+                return { error: createResolutionErrorDiagnostic(messageText, request, issuer) };
             }
 
             // TODO: Load source map files

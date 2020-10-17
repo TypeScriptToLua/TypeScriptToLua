@@ -1,8 +1,15 @@
-import * as resolve from "resolve";
+import { create as createResolve } from "enhanced-resolve";
 import * as ts from "typescript";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../cli/diagnostics";
+import { assert } from "../utils";
 import * as diagnosticFactories from "./diagnostics";
+
+// https://github.com/webpack/enhanced-resolve/blob/0001f80dacf033ac4a0e690b2766e0965c458266/lib/Resolver.js#L280-L288
+export const isResolveError = (error: unknown): error is Error & { details: string } =>
+    error instanceof Error && "details" in error;
+
+const resolveImport = createResolve.sync({ extensions: [".js", ".ts", ".tsx"] });
 
 export function resolveConfigImport(
     kind: string,
@@ -17,9 +24,11 @@ export function resolveConfigImport(
 
     let resolved: string;
     try {
-        resolved = resolve.sync(query, { basedir, extensions: [".js", ".ts", ".tsx"] });
-    } catch (err) {
-        if (err.code !== "MODULE_NOT_FOUND") throw err;
+        const result = resolveImport({}, basedir, query);
+        assert(typeof result === "string");
+        resolved = result;
+    } catch (error) {
+        if (!isResolveError(error)) throw error;
         return { error: diagnosticFactories.couldNotResolveFrom(kind, query, basedir) };
     }
 

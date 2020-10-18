@@ -5,9 +5,11 @@
 // because we don't create the AST from text
 
 import * as ts from "typescript";
+import { LuaLibFeature } from "./transformation/utils/lualib";
 import { castArray } from "./utils";
 
 export enum SyntaxKind {
+    File,
     Block,
 
     // Statements
@@ -184,6 +186,30 @@ function getSourcePosition(sourceNode: ts.Node): TextRange | undefined {
 
 export function getOriginalPos(node: Node): TextRange {
     return { line: node.line, column: node.column };
+}
+
+export interface File extends Node {
+    kind: SyntaxKind.File;
+    statements: Statement[];
+    luaLibFeatures: Set<LuaLibFeature>;
+    trivia: string;
+}
+
+export function isFile(node: Node): node is File {
+    return node.kind === SyntaxKind.File;
+}
+
+export function createFile(
+    statements: Statement[],
+    luaLibFeatures: Set<LuaLibFeature>,
+    trivia: string,
+    tsOriginal?: ts.Node
+): File {
+    const file = createNode(SyntaxKind.File, tsOriginal) as File;
+    file.statements = statements;
+    file.luaLibFeatures = luaLibFeatures;
+    file.trivia = trivia;
+    return file;
 }
 
 export interface Block extends Node {

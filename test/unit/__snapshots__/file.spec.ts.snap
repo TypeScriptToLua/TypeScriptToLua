@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`shebang CRLF 1`] = `
+"#!/usr/bin/env lua
+foo = true"
+`;
+
+exports[`shebang LF 1`] = `
+"#!/usr/bin/env lua
+foo = true"
+`;

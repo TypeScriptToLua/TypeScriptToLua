@@ -6,7 +6,7 @@ import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
 import { EmitHost } from "./transpilation";
-import { intersperse, trimExtension, normalizeSlashes } from "./utils";
+import { intersperse, normalizeSlashes, trimExtension } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
 // https://www.ecma-international.org/ecma-262/10.0/index.html#table-34
@@ -71,13 +71,7 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
 type SourceChunk = string | SourceNode;
 
-export type Printer = (
-    program: ts.Program,
-    emitHost: EmitHost,
-    fileName: string,
-    block: lua.Block,
-    luaLibFeatures: Set<LuaLibFeature>
-) => PrintResult;
+export type Printer = (program: ts.Program, emitHost: EmitHost, fileName: string, file: lua.File) => PrintResult;
 
 export interface PrintResult {
     code: string;
@@ -87,7 +81,7 @@ export interface PrintResult {
 
 export function createPrinter(printers: Printer[]): Printer {
     if (printers.length === 0) {
-        return (program, emitHost, fileName, ...args) => new LuaPrinter(emitHost, program, fileName).print(...args);
+        return (program, emitHost, fileName, file) => new LuaPrinter(emitHost, program, fileName).print(file);
     } else if (printers.length === 1) {
         return printers[0];
     } else {
@@ -148,17 +142,17 @@ export class LuaPrinter {
         }
     }
 
-    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): PrintResult {
+    public print(file: lua.File): PrintResult {
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
-            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
+            file.luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
         const sourceRoot = this.options.sourceRoot
             ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
               this.options.sourceRoot.replace(/[\\/]+$/, "") + "/"
             : "";
-        const rootSourceNode = this.printImplementation(block, luaLibFeatures);
+        const rootSourceNode = this.printFile(file);
         const sourceMap = this.buildSourceMap(sourceRoot, rootSourceNode);
 
         let code = rootSourceNode.toString();
@@ -203,8 +197,8 @@ export class LuaPrinter {
         return `__TS__SourceMapTraceBack(debug.getinfo(1).short_src, ${mapString});`;
     }
 
-    private printImplementation(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): SourceNode {
-        let header = "";
+    private printFile(file: lua.File): SourceNode {
+        let header = file.trivia;
 
         if (!this.options.noHeader) {
             header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";
@@ -213,23 +207,21 @@ export class LuaPrinter {
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (
             luaLibImport === LuaLibImportKind.Always ||
-            (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
+            (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0)
         ) {
             // Require lualib bundle
             header += 'require("lualib_bundle");\n';
-        } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
+        } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
-            header += loadLuaLibFeatures(luaLibFeatures, this.emitHost);
+            header += loadLuaLibFeatures(file.luaLibFeatures, this.emitHost);
         }
 
         if (this.options.sourceMapTraceback) {
             header += "{#SourceMapTraceback}\n";
         }
 
-        const fileBlockNode = this.printBlock(block);
-
-        return this.concatNodes(header, fileBlockNode);
+        return this.concatNodes(header, ...this.printStatementArray(file.statements));
     }
 
     protected pushIndent(): void {

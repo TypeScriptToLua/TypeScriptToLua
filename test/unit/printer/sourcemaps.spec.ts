@@ -51,25 +51,23 @@ test.each([
     },
     {
         code: `
-            // @ts-ignore
-            import { Foo } from "foo";
+            import { Foo } from "./module";
             Foo;
         `,
 
         assertPatterns: [
-            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: 'require("module")', typeScriptPattern: '"./module"' },
             { luaPattern: "Foo", typeScriptPattern: "Foo" },
         ],
     },
     {
         code: `
-            // @ts-ignore
-            import * as Foo from "foo";
+            import * as Foo from "./module";
             Foo;
         `,
 
         assertPatterns: [
-            { luaPattern: 'require("foo")', typeScriptPattern: '"foo"' },
+            { luaPattern: 'require("module")', typeScriptPattern: '"./module"' },
             { luaPattern: "Foo", typeScriptPattern: "Foo" },
         ],
     },
@@ -144,7 +142,11 @@ test.each([
         ],
     },
 ])("Source map has correct mapping (%p)", async ({ code, assertPatterns }) => {
-    const file = util.testModule(code).expectToHaveNoDiagnostics().getMainLuaFileResult();
+    const file = util
+        .testModule(code)
+        .addExtraFile("module.ts", "export const Foo = true;")
+        .expectToHaveNoDiagnostics()
+        .getMainLuaFileResult();
 
     const consumer = await new SourceMapConsumer(file.luaSourceMap);
     for (const { luaPattern, typeScriptPattern } of assertPatterns) {

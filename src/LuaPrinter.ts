@@ -175,9 +175,11 @@ export class LuaPrinter {
             header += "{#SourceMapTraceback}\n";
         }
 
+        // Hack: __TS__Resolve macro resolution destroys mappings of macro's node grand-parent
+        const headerNode = new SourceNode(null, null, null, new SourceNode(null, null, null, header));
         const fileBlockNode = this.printBlock(block);
 
-        return this.concatNodes(header, fileBlockNode);
+        return this.concatNodes(headerNode, fileBlockNode);
     }
 
     protected pushIndent(): void {

@@ -2,10 +2,11 @@ import * as ts from "typescript";
 import * as lua from "../../../../LuaAST";
 import { AllAccessorDeclarations, TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
-import { importLuaLibFeature, LuaLibFeature } from "../../../utils/lualib";
+import { transformLuaLibFunction, LuaLibFeature } from "../../../utils/lualib";
 import { transformFunctionBody, transformParameters } from "../../function";
 import { transformPropertyName } from "../../literal";
 import { getExtendedType, isStaticNode } from "../utils";
+import { createPrototypeName } from "./constructor";
 
 function transformAccessor(context: TransformationContext, node: ts.AccessorDeclaration): lua.FunctionExpression {
     const [params, dot, restParam] = transformParameters(context, node.parameters, createSelfIdentifier());
@@ -31,19 +32,12 @@ export function transformAccessorDeclarations(
         descriptor.fields.push(lua.createTableFieldExpression(setterFunction, lua.createStringLiteral("set")));
     }
 
-    importLuaLibFeature(context, LuaLibFeature.Descriptors);
-    const call = isStaticNode(firstAccessor)
-        ? lua.createCallExpression(lua.createIdentifier("__TS__ObjectDefineProperty"), [
-              lua.cloneIdentifier(className),
-              propertyName,
-              descriptor,
-          ])
-        : lua.createCallExpression(lua.createIdentifier("__TS__SetDescriptor"), [
-              lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
-              propertyName,
-              descriptor,
-          ]);
-
+    const isStatic = isStaticNode(firstAccessor);
+    const target = isStatic ? lua.cloneIdentifier(className) : createPrototypeName(className);
+    const feature = isStatic ? LuaLibFeature.ObjectDefineProperty : LuaLibFeature.SetDescriptor;
+    const parameters: lua.Expression[] = [target, propertyName, descriptor];
+    if (!isStatic) parameters.push(lua.createBooleanLiteral(true));
+    const call = transformLuaLibFunction(context, feature, undefined, ...parameters);
     return lua.createExpressionStatement(call);
 }
 

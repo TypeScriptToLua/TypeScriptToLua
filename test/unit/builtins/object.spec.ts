@@ -121,3 +121,93 @@ describe(".hasOwnProperty()", () => {
         `.expectToMatchJsResult();
     });
 });
+
+const trueFalseTests = [[true], [false]] as const;
+
+describe("Object.defineProperty", () => {
+    test.each(trueFalseTests)("writable (%p)", value => {
+        util.testFunction`
+            const foo = { bar: true };
+            Object.defineProperty(foo, "bar", { writable: ${value} });
+            let error = false;
+            try {
+                foo.bar = false;
+            } catch {
+                error = true;
+            }
+            return { foobar: foo.bar, error };
+        `.expectToMatchJsResult();
+    });
+
+    test.each(trueFalseTests)("configurable (%p)", value => {
+        util.testFunction`
+            const foo = { bar: true };
+            Object.defineProperty(foo, "bar", { configurable: ${value} });
+            try { delete foo.bar } catch {};
+            return foo.bar;
+        `.expectToMatchJsResult();
+    });
+
+    test("defines a new property", () => {
+        util.testFunction`
+            const foo: any = {};
+            Object.defineProperty(foo, "bar", { value: true });
+            return foo.bar;
+        `.expectToMatchJsResult();
+    });
+
+    test("overwrites an existing property", () => {
+        util.testFunction`
+            const foo = { bar: false };
+            Object.defineProperty(foo, "bar", { value: true });
+            return foo.bar;
+        `.expectToMatchJsResult();
+    });
+
+    test("default descriptor", () => {
+        util.testFunction`
+            const foo = {};
+            Object.defineProperty(foo, "bar", {});
+            return Object.getOwnPropertyDescriptor(foo, "bar");
+        `.expectToMatchJsResult();
+    });
+
+    test.each([
+        ["{ value: true, get: () => true }"],
+        ["{ value: true, set: value => {} }"],
+        ["{ writable: true, get: () => true }"],
+    ])("invalid descriptor (%p)", props => {
+        util.testFunction`
+            const foo: any = {};
+            let err = false;
+
+            try {
+                Object.defineProperty(foo, "bar", ${props});
+            } catch {
+                err = true;
+            }
+
+            return { prop: foo.bar, err };
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("Object.getOwnPropertyDescriptor", () => {
+    test("descriptor is exactly the same as the last one set", () => {
+        util.testFunction`
+            const foo = {};
+            Object.defineProperty(foo, "bar", {});
+            return Object.getOwnPropertyDescriptor(foo, "bar");
+        `.expectToMatchJsResult();
+    });
+});
+
+describe("Object.getOwnPropertyDescriptors", () => {
+    test("all descriptors match", () => {
+        util.testFunction`
+            const foo = { bar: true };
+            Object.defineProperty(foo, "bar", {});
+            return Object.getOwnPropertyDescriptors(foo);
+        `.expectToMatchJsResult();
+    });
+});

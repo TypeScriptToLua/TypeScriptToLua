@@ -4,6 +4,26 @@ import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformPropertyName } from "../../literal";
 import { isGetAccessorOverride } from "./accessors";
+import { createDecoratingExpression, transformDecoratorExpression } from "../decorators";
+import { transformMemberExpressionOwnerName } from "./method";
+
+export function createPropertyDecoratingExpression(
+    context: TransformationContext,
+    node: ts.PropertyDeclaration | ts.AccessorDeclaration,
+    className: lua.Identifier,
+    noPrototype: boolean
+): lua.Expression | undefined {
+    if (!node.decorators) return;
+    const propertyName = transformPropertyName(context, node.name);
+    const propertyOwnerTable = transformMemberExpressionOwnerName(node, className, noPrototype);
+    return createDecoratingExpression(
+        context,
+        node.kind,
+        node.decorators.map(d => transformDecoratorExpression(context, d)),
+        propertyOwnerTable,
+        propertyName
+    );
+}
 
 export function transformClassInstanceFields(
     context: TransformationContext,
@@ -48,4 +68,16 @@ export function transformClassInstanceFields(
     }
 
     return statements;
+}
+
+export function transformStaticPropertyDeclaration(
+    context: TransformationContext,
+    field: ts.PropertyDeclaration,
+    className: lua.Identifier
+): lua.AssignmentStatement | undefined {
+    if (!field.initializer) return;
+    const fieldName = transformPropertyName(context, field.name);
+    const value = context.transformExpression(field.initializer);
+    const classField = lua.createTableIndexExpression(lua.cloneIdentifier(className), fieldName);
+    return lua.createAssignmentStatement(classField, value);
 }

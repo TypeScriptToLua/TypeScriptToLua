@@ -141,7 +141,7 @@ export class LuaPrinter {
     }
 
     public print(file: lua.File): SourceNode {
-        let header = "";
+        let header = file.trivia;
 
         if (!this.options.noHeader) {
             header += "--[[ Generated with https://github.com/TypeScriptToLua/TypeScriptToLua ]]\n";

@@ -26,7 +26,7 @@ function forkWatchProcess(args: string[]): void {
 }
 
 const watchedFile = resolveFixture("watch/watch.ts");
-const watchedFileOut = watchedFile.replace(".ts", ".lua");
+const watchedFileOut = resolveFixture("watch/watch.lua");
 
 afterEach(() => fs.removeSync(watchedFileOut));
 

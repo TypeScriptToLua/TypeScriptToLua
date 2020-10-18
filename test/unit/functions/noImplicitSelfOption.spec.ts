@@ -32,8 +32,8 @@ test("generates declaration files with @noSelfInFile", () => {
     util.assert(fooDeclaration !== undefined);
 
     util.testModule`
-        import { bar } from "./foo.d";
-        const test: (this: void) => void = bar;
+        import type { bar } from "./foo";
+        const test: (this: void) => void = undefined as typeof bar;
     `
         .addExtraFile("foo.d.ts", fooDeclaration)
         .expectToHaveNoDiagnostics();

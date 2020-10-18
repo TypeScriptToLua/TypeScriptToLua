@@ -455,18 +455,13 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (require)", () => {
-        const code = `
-            const require = "foobar";
-            export { foo } from "someModule";
-            export const result = require;`;
-
-        const lua = `
-            package.loaded.someModule = {foo = "bar"}
-            return (function()
-                ${util.transpileString(code, undefined, true)}
-            end)().result`;
-
-        expect(util.executeLua(lua)).toBe("foobar");
+        util.testBundle`
+            const require = true;
+            import "./module";
+            export const result = require;
+        `
+            .addExtraFile("module.ts", "")
+            .expectToEqual({ result: true });
     });
 
     test("variable (tostring)", () => {
@@ -575,19 +570,14 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         expect(util.transpileAndExecute(code)).toBe("foobar|string");
     });
 
-    test.each(["type", "type as type"])("imported variable (%p)", importName => {
-        const luaHeader = `
-                package.loaded.someModule = {type = "foobar"}`;
-
-        const code = `
-            import {${importName}} from "someModule";
-            export const result = typeof 7 + "|" + type;
-        `;
-
-        const lua = util.transpileString(code);
-        const result = util.executeLua(`${luaHeader} return (function() ${lua} end)().result`);
-
-        expect(result).toBe("number|foobar");
+    test.each(["type", "type as type"])("imported variable (%p)", importSpecifier => {
+        util.testBundle`
+            import { ${importSpecifier} } from "./module";
+            typeof 0;
+            export const result = type;
+        `
+            .addExtraFile("module.ts", "export const type = true;")
+            .expectToEqual({ result: true });
     });
 
     test.each([
@@ -605,16 +595,12 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test.each(["type", "type as type"])("re-exported variable with lua keyword as name (%p)", importName => {
-        const code = `
-                export { ${importName} } from "someModule"`;
-
-        const lua = `
-                package.loaded.someModule = {type = "foobar"}
-                return (function()
-                    ${util.transpileString(code)}
-                end)().type`;
-
-        expect(util.executeLua(lua)).toBe("foobar");
+        util.testBundle`
+            export { ${importName} } from "./module";
+            typeof 0;
+        `
+            .addExtraFile("module.ts", "export const type = true")
+            .expectToEqual({ type: true });
     });
 
     test("class", () => {

@@ -1,9 +1,8 @@
 import * as fs from "fs";
-import * as path from "path";
-import { runCli } from "./run";
+import { resolveFixture, runCli } from "./run";
 
-const srcFilePath = path.resolve(__dirname, "errors", "error.ts");
-const outFilePath = path.resolve(__dirname, "errors", "error.lua");
+const srcFilePath = resolveFixture("errors/error.ts");
+const outFilePath = resolveFixture("errors/error.lua");
 const errorMessage = "Unable to convert function with no 'this' parameter to function with 'this'.";
 
 afterEach(() => {

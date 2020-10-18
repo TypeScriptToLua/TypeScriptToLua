@@ -3,6 +3,7 @@ import * as lua from "../../LuaAST";
 import { assert } from "../../utils";
 import { FunctionVisitor } from "../context";
 import { createExportsIdentifier } from "../utils/lua-ast";
+import { getUsedLuaLibFeatures } from "../utils/lualib";
 import { performHoisting, popScope, pushScope, ScopeType } from "../utils/scope";
 import { hasExportEquals } from "../utils/typescript";
 
@@ -39,5 +40,6 @@ export const transformSourceFileNode: FunctionVisitor<ts.SourceFile> = (node, co
         }
     }
 
-    return lua.createBlock(statements, node);
+    const trivia = node.getFullText().match(/^#!.*\r?\n/)?.[0] ?? "";
+    return lua.createFile(statements, getUsedLuaLibFeatures(context), trivia, node);
 };

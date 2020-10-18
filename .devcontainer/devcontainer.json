@@ -1,0 +1,14 @@
+{
+    "name": "TypeScriptToLua",
+    "image": "mcr.microsoft.com/vscode/devcontainers/javascript-node:14",
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+        "ark120202.vscode-typescript-to-lua",
+        "dbaeumer.vscode-eslint",
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode"
+    ],
+    "postCreateCommand": "npm ci"
+}

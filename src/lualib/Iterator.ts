@@ -26,15 +26,15 @@ function __TS__IteratorStringStep(this: string, index: number): [number, string]
 /** @tupleReturn */
 function __TS__Iterator<T>(
     this: void,
-    iterable: Iterable<T> | GeneratorIterator | readonly T[]
+    iterable: string | GeneratorIterator | Iterable<T> | readonly T[]
 ): [(...args: any[]) => [any, any] | [], ...any[]] {
-    if ("____coroutine" in iterable) {
+    if (typeof iterable === "string") {
+        return [__TS__IteratorStringStep, iterable, 0];
+    } else if ("____coroutine" in iterable) {
         return [__TS__IteratorGeneratorStep, iterable];
     } else if (iterable[Symbol.iterator]) {
         const iterator = iterable[Symbol.iterator]();
         return [__TS__IteratorIteratorStep, iterator];
-    } else if (typeof iterable === "string") {
-        return [__TS__IteratorStringStep, iterable, 0];
     } else {
         return ipairs(iterable as readonly T[]) as any;
     }

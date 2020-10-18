@@ -19,7 +19,7 @@ function ____descriptorIndex(this: any, key: string): void {
                     return descriptor.get.call(this);
                 }
 
-                return;
+                return descriptor.value;
             }
         }
 
@@ -36,8 +36,13 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
             if (descriptor) {
                 if (descriptor.set) {
                     descriptor.set.call(this, value);
-                }
+                } else {
+                    if (descriptor.writable === false) {
+                        throw `Cannot assign to read only property '${key}' of object '${this}'`;
+                    }
 
+                    descriptor.value = value;
+                }
                 return;
             }
         }
@@ -49,27 +54,19 @@ function ____descriptorNewindex(this: any, key: string, value: any): void {
 }
 
 // It's also used directly in class transform to add descriptors to the prototype
-function __TS__SetDescriptor(this: void, metatable: Metatable, prop: string, descriptor: PropertyDescriptor): void {
-    if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
-    metatable._descriptors[prop] = descriptor;
-
-    if (descriptor.get) metatable.__index = ____descriptorIndex;
-    if (descriptor.set) metatable.__newindex = ____descriptorNewindex;
-}
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
-function __TS__ObjectDefineProperty<T extends object>(
-    this: void,
-    object: T,
-    prop: string,
-    descriptor: PropertyDescriptor
-): T {
-    let metatable = getmetatable(object);
+function __TS__SetDescriptor(this: void, target: any, key: any, desc: PropertyDescriptor, isPrototype = false): void {
+    let metatable = isPrototype ? target : getmetatable(target);
     if (!metatable) {
         metatable = {};
-        setmetatable(object, metatable);
+        setmetatable(target, metatable);
     }
 
-    __TS__SetDescriptor(metatable, prop, descriptor);
-    return object;
+    const value = rawget(target, key);
+    if (value !== undefined) rawset(target, key, undefined);
+
+    if (!rawget(metatable, "_descriptors")) metatable._descriptors = {};
+    const descriptor = __TS__CloneDescriptor(desc);
+    metatable._descriptors[key] = descriptor;
+    metatable.__index = ____descriptorIndex;
+    metatable.__newindex = ____descriptorNewindex;
 }

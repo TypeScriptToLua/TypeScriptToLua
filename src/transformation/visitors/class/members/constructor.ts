@@ -7,11 +7,12 @@ import { transformFunctionBodyHeader, transformFunctionBodyContent, transformPar
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
 
+export function createPrototypeName(className: lua.Identifier): lua.TableIndexExpression {
+    return lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype"));
+}
+
 export function createConstructorName(className: lua.Identifier): lua.TableIndexExpression {
-    return lua.createTableIndexExpression(
-        lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
-        lua.createStringLiteral("____constructor")
-    );
+    return lua.createTableIndexExpression(createPrototypeName(className), lua.createStringLiteral("____constructor"));
 }
 
 export function transformConstructorDeclaration(

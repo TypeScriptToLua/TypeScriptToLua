@@ -279,9 +279,13 @@ export const transformFunctionDeclaration: FunctionVisitor<ts.FunctionDeclaratio
     return createLocalOrExportedOrGlobalDeclaration(context, name, functionExpression, node);
 };
 
-export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) =>
-    lua.createCallExpression(
-        lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
-        expression.expression ? [context.transformExpression(expression.expression)] : [],
-        expression
-    );
+export const transformYieldExpression: FunctionVisitor<ts.YieldExpression> = (expression, context) => {
+    const parameters = expression.expression ? [context.transformExpression(expression.expression)] : [];
+    return expression.asteriskToken
+        ? transformLuaLibFunction(context, LuaLibFeature.DelegatedYield, expression, ...parameters)
+        : lua.createCallExpression(
+              lua.createTableIndexExpression(lua.createIdentifier("coroutine"), lua.createStringLiteral("yield")),
+              parameters,
+              expression
+          );
+};

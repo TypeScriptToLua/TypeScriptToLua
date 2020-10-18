@@ -49,18 +49,14 @@ export function emitProgramModules(
     const visitorMap = createVisitorMap(transpilation.plugins.map(p => p.visitors).filter(isNonNull));
     const printer =
         applySinglePlugin(transpilation.plugins, "printer") ??
-        ((program, host, fileName, ...args) => new LuaPrinter(host, program, fileName).print(...args));
+        ((program, host, fileName, file) => new LuaPrinter(host, program, fileName).print(file));
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
-        const { luaAst, luaLibFeatures, diagnostics: transformDiagnostics } = transformSourceFile(
-            program,
-            sourceFile,
-            visitorMap
-        );
+        const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
 
         transpilation.diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const source = printer(program, transpilation.host, sourceFile.fileName, luaAst, luaLibFeatures);
+            const source = printer(program, transpilation.host, sourceFile.fileName, file);
 
             let request: string;
             if (path.isAbsolute(sourceFile.fileName)) {

@@ -85,13 +85,7 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
 type SourceChunk = string | SourceNode;
 
-export type Printer = (
-    program: ts.Program,
-    host: TranspilerHost,
-    fileName: string,
-    block: lua.Block,
-    luaLibFeatures: Set<LuaLibFeature>
-) => SourceNode;
+export type Printer = (program: ts.Program, host: TranspilerHost, fileName: string, file: lua.File) => SourceNode;
 
 export class LuaPrinter {
     private static operatorMap: Record<lua.Operator, string> = {
@@ -146,7 +140,7 @@ export class LuaPrinter {
         }
     }
 
-    public print(block: lua.Block, luaLibFeatures: Set<LuaLibFeature>): SourceNode {
+    public print(file: lua.File): SourceNode {
         let header = "";
 
         if (!this.options.noHeader) {
@@ -155,20 +149,20 @@ export class LuaPrinter {
 
         // Add traceback lualib if sourcemap traceback option is enabled
         if (this.options.sourceMapTraceback) {
-            luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
+            file.luaLibFeatures.add(LuaLibFeature.SourceMapTraceBack);
         }
 
         const luaLibImport = this.options.luaLibImport ?? LuaLibImportKind.Require;
         if (
             luaLibImport === LuaLibImportKind.Always ||
-            (luaLibImport === LuaLibImportKind.Require && luaLibFeatures.size > 0)
+            (luaLibImport === LuaLibImportKind.Require && file.luaLibFeatures.size > 0)
         ) {
             // Require lualib bundle
             header += 'require(__TS__Resolve("<internal>/lualib_bundle"));\n';
-        } else if (luaLibImport === LuaLibImportKind.Inline && luaLibFeatures.size > 0) {
+        } else if (luaLibImport === LuaLibImportKind.Inline && file.luaLibFeatures.size > 0) {
             // Inline lualib features
             header += "-- Lua Library inline imports\n";
-            header += loadLuaLibFeatures(luaLibFeatures, this.host);
+            header += loadLuaLibFeatures(file.luaLibFeatures, this.host);
         }
 
         if (this.options.sourceMapTraceback) {
@@ -177,9 +171,8 @@ export class LuaPrinter {
 
         // Hack: __TS__Resolve macro resolution destroys mappings of macro's node grand-parent
         const headerNode = new SourceNode(null, null, null, new SourceNode(null, null, null, header));
-        const fileBlockNode = this.printBlock(block);
 
-        return this.concatNodes(headerNode, fileBlockNode);
+        return this.concatNodes(headerNode, ...this.printStatementArray(file.statements));
     }
 
     protected pushIndent(): void {

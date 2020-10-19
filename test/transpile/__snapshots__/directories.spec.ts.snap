@@ -1,33 +1,33 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 1`] = `
+exports[`should be able to resolve ({"outDir": "out", "rootDir": "src"}) 1`] = `
 Array [
-  "directories/basic/src/lib/file.lua",
-  "directories/basic/src/lualib_bundle.lua",
-  "directories/basic/src/main.lua",
+  "directories/out/lib/file.lua",
+  "directories/out/lualib_bundle.lua",
+  "directories/out/main.lua",
 ]
 `;
 
-exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 2`] = `
+exports[`should be able to resolve ({"outDir": "out"}) 1`] = `
 Array [
-  "directories/basic/out/lib/file.lua",
-  "directories/basic/out/lualib_bundle.lua",
-  "directories/basic/out/main.lua",
+  "directories/out/lib/file.lua",
+  "directories/out/lualib_bundle.lua",
+  "directories/out/main.lua",
 ]
 `;
 
-exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 3`] = `
+exports[`should be able to resolve ({"rootDir": "src"}) 1`] = `
 Array [
-  "directories/basic/src/lib/file.lua",
-  "directories/basic/src/lualib_bundle.lua",
-  "directories/basic/src/main.lua",
+  "directories/src/lib/file.lua",
+  "directories/src/lualib_bundle.lua",
+  "directories/src/main.lua",
 ]
 `;
 
-exports[`should be able to resolve ({"name": "basic", "options": [Object]}) 4`] = `
+exports[`should be able to resolve ({}) 1`] = `
 Array [
-  "directories/basic/out/lib/file.lua",
-  "directories/basic/out/lualib_bundle.lua",
-  "directories/basic/out/main.lua",
+  "directories/src/lib/file.lua",
+  "directories/src/lualib_bundle.lua",
+  "directories/src/main.lua",
 ]
 `;

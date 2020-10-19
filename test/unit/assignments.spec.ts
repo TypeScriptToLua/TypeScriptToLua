@@ -1,23 +1,32 @@
 import { unsupportedVarDeclaration } from "../../src/transformation/utils/diagnostics";
 import * as util from "../util";
 
-test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
-    util.testModule`
-        {
-            ${declarationKind} foo = true;
-        }
-        // @ts-ignore
-        return "foo" in globalThis;
-    `.expectToEqual(false);
-});
+describe("global scoping", () => {
+    test.each(["const", "let"])("top-level %s declaration in module is not global", declarationKind => {
+        util.testModule`
+            ${declarationKind} foo = true
+            export const result = "foo" in globalThis;
+        `.expectToMatchJsResult();
+    });
 
-test.each(["const", "let"])("top-level %s declaration is global", declarationKind => {
-    util.testBundle`
-        import './a';
-        export const result = foo;
-    `
-        .addExtraFile("a.ts", `${declarationKind} foo = true;`)
-        .expectToEqual({ result: true });
+    test.each(["const", "let"])("top-level %s declaration in script is global", declarationKind => {
+        util.testBundle`
+            import './script';
+            export const result = foo;
+        `
+            .addExtraFile("script.ts", `${declarationKind} foo = true;`)
+            .expectToEqual({ result: true });
+    });
+
+    test.each(["const", "let"])("%s declaration not top-level is not global", declarationKind => {
+        util.testModule`
+            {
+                ${declarationKind} foo = true;
+            }
+            // @ts-ignore
+            return "foo" in globalThis;
+        `.expectToEqual(false);
+    });
 });
 
 describe("var is disallowed", () => {
@@ -415,7 +424,7 @@ test.each([
         * x.y ||= z is translated to x.y || (x.y = z).
         * x.y &&= z is translated to x.y && (x.y = z).
         * x.y ||= z is translated to x.y !== undefined && (x.y = z).
-        
+
         Test if setter in Lua is called same nr of times as in JS.
     */
     util.testModule`
@@ -447,7 +456,7 @@ test.each([
         * x.y ||= z is translated to x.y || (x.y = z).
         * x.y &&= z is translated to x.y && (x.y = z).
         * x.y ||= z is translated to x.y !== undefined && (x.y = z).
-        
+
         Test if setter in Lua is called same nr of times as in JS.
     */
     util.testModule`

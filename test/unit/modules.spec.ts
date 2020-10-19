@@ -1,11 +1,17 @@
 import * as ts from "typescript";
 import * as util from "../util";
 
+test("export const value", () => {
+    util.testModule`
+        export const value = true;
+    `.expectToMatchJsResult();
+});
+
 describe("export default", () => {
     test("literal", () => {
         util.testModule`
             export default true;
-        `.expectToEqual({ default: true });
+        `.expectToMatchJsResult();
     });
 
     test("class", () => {
@@ -30,63 +36,77 @@ describe("export default", () => {
     });
 });
 
-test("export { value as default }", () => {
-    util.testBundle`
-        const value = true;
-        export { value as default };
-    `.expectToEqual({ default: true });
+describe("export { ... }", () => {
+    test("export { value }", () => {
+        util.testModule`
+            const value = true;
+            export { value };
+        `.expectToMatchJsResult();
+    });
+
+    test("export { value as result }", () => {
+        util.testModule`
+            const value = true;
+            export { value as result };
+        `.expectToMatchJsResult();
+    });
+
+    test("export { value as default }", () => {
+        util.testModule`
+            const value = true;
+            export { value as default };
+        `.expectToMatchJsResult();
+    });
 });
 
-test("export { default } from '...'", () => {
-    util.testBundle`
-        export { default } from "./module";
-    `
-        .addExtraFile("module.ts", "export default true;")
-        .expectToEqual({ default: true });
-});
+describe("export ... from", () => {
+    test("export { value } from '...'", () => {
+        util.testBundle`
+            export { value } from "./module";
+        `
+            .addExtraFile("module.ts", "export const value = true;")
+            .expectToEqual({ value: true });
+    });
 
-test("import = and export =", () => {
-    util.testBundle`
-        import m = require("./module");
-        export const value = m;
-    `
-        .setOptions({ module: ts.ModuleKind.CommonJS })
-        .addExtraFile("module.ts", "export = true;")
-        .expectToEqual({ value: true });
-});
+    test("export { value as result } from '...'", () => {
+        util.testBundle`
+            export { value as result } from "./module";
+        `
+            .addExtraFile("module.ts", "export const value = true;")
+            .expectToEqual({ result: true });
+    });
 
-test("Mixed Exports, Default and Named Imports", () => {
-    util.testBundle`
-        import defaultExport, { a, b, c } from "./module";
-        export const value = defaultExport + b + c;
-    `
-        .addExtraFile(
-            "module.ts",
-            `
-                export const a = 1;
-                export const b = 2;
-                export const c = 3;
-                export default a;
-            `
-        )
-        .expectToEqual({ value: 6 });
-});
+    test("export { value as result1, value as result2 } from '...'", () => {
+        util.testBundle`
+            export { value as result1, value as result2 } from "./module";
+        `
+            .addExtraFile("module.ts", "export const value = true;")
+            .expectToEqual({ result1: true, result2: true });
+    });
 
-test("Mixed Exports, Default and Namespace Import", () => {
-    util.testBundle`
-        import defaultExport, * as ns from "./module";
-        export const value = defaultExport + ns.b + ns.c;
-    `
-        .addExtraFile(
-            "module.ts",
-            `
-                export const a = 1;
-                export const b = 2;
-                export const c = 3;
-                export default a;
-            `
-        )
-        .expectToEqual({ value: 6 });
+    test("export { default } from '...'", () => {
+        util.testBundle`
+            export { default } from "./module";
+        `
+            .addExtraFile("module.ts", "export default true;")
+            .expectToEqual({ default: true });
+    });
+
+    test("export * from '...'", () => {
+        util.testBundle`
+            export * from "./module";
+        `
+            .addExtraFile(
+                "module.ts",
+                `
+                    export const a = "a";
+                    export const b = "b";
+                    export default "default";
+                `
+            )
+            // TODO: Doesn't match JS
+            .expectToEqual({ a: "a", b: "b", default: "default" });
+    });
 });
 
 describe("export live bindings", () => {
@@ -163,45 +183,143 @@ describe("export live bindings", () => {
     });
 });
 
+describe("import ...", () => {
+    test("import { value }", () => {
+        util.testBundle`
+            import { value } from "./module";
+            export const result = value;
+        `
+            .addExtraFile("module.ts", "export const value = true;")
+            .expectToEqual({ result: true });
+    });
+
+    test("import { value as x }", () => {
+        util.testBundle`
+            import { value as x } from "./module";
+            export const result = x;
+        `
+            .addExtraFile("module.ts", "export const value = true;")
+            .expectToEqual({ result: true });
+    });
+
+    test("import * as ns", () => {
+        util.testBundle`
+            import * as ns from "./module";
+            export { ns }
+        `
+            .addExtraFile(
+                "module.ts",
+                `
+                    export const a = "a";
+                    export const b = "b";
+                    export default "default";
+                `
+            )
+            .expectToEqual({ ns: { a: "a", b: "b", default: "default" } });
+    });
+
+    test("import defaultValue", () => {
+        util.testBundle`
+            import defaultValue from "./module";
+            export const result = defaultValue;
+        `
+            .addExtraFile("module.ts", "export default true;")
+            .expectToEqual({ result: true });
+    });
+
+    test('import "..."', () => {
+        util.testBundle`
+            import { state } from "./state";
+            import "./module";
+            export const result = state.loaded;
+        `
+            .addExtraFile(
+                "module.ts",
+                `
+                    import { state } from "./state";
+                    state.loaded = true;
+                `
+            )
+            .addExtraFile("state.ts", "export const state = { loaded: false };")
+            .expectToEqual({ result: true });
+    });
+});
+
+test("export =", () => {
+    util.testModule`
+        export = true;
+    `
+        .setOptions({ module: ts.ModuleKind.CommonJS })
+        .expectToMatchJsResult();
+});
+
+test("import =", () => {
+    util.testBundle`
+        import module = require("./module");
+        export const result = module;
+    `
+        .addRawFile("module.lua", "return true")
+        .addExtraFile("module.d.ts", "export = true;")
+        .setOptions({ module: ts.ModuleKind.CommonJS })
+        .expectToEqual({ result: true });
+});
+
 describe("import and export elision", () => {
     const moduleDeclaration = `
-        declare module "module" {
-            export type Type = string;
-            export declare const value: string;
-        }
+        export type Type = string;
+        export const value: string;
+        export default value;
     `;
 
     const expectToElideImport: util.TapCallback = builder => {
-        builder.addExtraFile("module.d.ts", moduleDeclaration).setOptions({ module: ts.ModuleKind.CommonJS });
-        expect(builder.getLuaExecutionResult()).not.toBeInstanceOf(util.ExecutionError);
+        builder.addExtraFile("module.d.ts", moduleDeclaration).expectToHaveNoDiagnostics().expectNoExecutionError();
     };
 
     test("should elide named type imports", () => {
         util.testModule`
-            import { Type } from "module";
+            import { Type } from "./module";
             const foo: Type = "bar";
         `.tap(expectToElideImport);
     });
 
     test("should elide named value imports used only as a type", () => {
         util.testModule`
-            import { value } from "module";
+            import { value } from "./module";
             const foo: typeof value = "bar";
         `.tap(expectToElideImport);
     });
 
+    test("should elide unused default imports", () => {
+        util.testModule`
+            import defaultValue from "./module";
+        `.tap(expectToElideImport);
+    });
+
+    test("should elide mixed imports", () => {
+        util.testBundle`
+            import defaultValue, { value } from "./module";
+            export const result = defaultValue;
+        `
+            .addExtraFile("module.d.ts", moduleDeclaration)
+            .addRawFile("module.lua", "return { default = true }")
+            .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("a = "))
+            .expectToEqual({ result: true });
+    });
+
     test("should elide namespace imports with unused values", () => {
         util.testModule`
-            import * as module from "module";
+            import * as module from "./module";
             const foo: module.Type = "bar";
         `.tap(expectToElideImport);
     });
 
     test("should elide `import =` declarations", () => {
         util.testModule`
-            import module = require("module");
+            import module = require("./module");
             const foo: module.Type = "bar";
-        `.tap(expectToElideImport);
+        `
+            .setOptions({ module: ts.ModuleKind.CommonJS })
+            .tap(expectToElideImport);
     });
 
     test("should elide type exports", () => {

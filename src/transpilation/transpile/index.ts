@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { CompilerOptions, validateOptions } from "../../CompilerOptions";
 import { LuaPrinter } from "../../LuaPrinter";
-import { createVisitorMap, transformSourceFile } from "../../transformation";
+import { createVisitorMap, transformSourceFile } from "../../transformation/transform";
 import { isNonNull } from "../../utils";
 import { applySinglePlugin } from "../plugins";
 import { Transpilation } from "../transpilation";

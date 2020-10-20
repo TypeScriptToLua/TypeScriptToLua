@@ -5,7 +5,7 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
-import { assert, cast, isNonNull, trimExtension } from "../utils";
+import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
@@ -39,7 +39,7 @@ export class Transpilation {
 
         this.projectDir =
             this.options.configFilePath !== undefined
-                ? path.dirname(this.options.configFilePath)
+                ? ts.getDirectoryPath(this.options.configFilePath)
                 : this.host.getCurrentDirectory();
 
         this.plugins = getPlugins(this, extraPlugins);
@@ -85,10 +85,10 @@ export class Transpilation {
 
         let resolvedPath: string;
         try {
-            const result = this.resolver.resolveSync({}, path.dirname(issuer), request);
+            const result = this.resolver.resolveSync({}, ts.getDirectoryPath(issuer), request);
             assert(typeof result === "string", `Invalid resolution result: ${result}`);
             // https://github.com/webpack/enhanced-resolve#escaping
-            resolvedPath = result.replace(/\0#/g, "#");
+            resolvedPath = normalizeSlashes(result.replace(/\0#/g, "#"));
         } catch (error) {
             if (!isResolveError(error)) throw error;
             return { error: error.message };

@@ -1,9 +1,9 @@
-import * as path from "path";
 import { SourceNode } from "source-map";
+import * as ts from "typescript";
 import { Chunk } from ".";
 import { CompilerOptions, isBundleEnabled } from "../../CompilerOptions";
 import { escapeString } from "../../LuaPrinter";
-import { assert, normalizeSlashes } from "../../utils";
+import { assert } from "../../utils";
 import { couldNotFindBundleEntryPoint } from "../diagnostics";
 import { Module } from "../module";
 import { Transpilation } from "../transpilation";
@@ -34,8 +34,8 @@ export function modulesToBundleChunks(transpilation: Transpilation, modules: Mod
     const options = transpilation.program.getCompilerOptions() as CompilerOptions;
     assert(isBundleEnabled(options));
 
-    const outputPath = normalizeSlashes(path.resolve(transpilation.projectDir, options.luaBundle));
-    const entryFileName = normalizeSlashes(path.resolve(transpilation.projectDir, options.luaBundleEntry));
+    const outputPath = ts.getNormalizedAbsolutePath(options.luaBundle, transpilation.projectDir);
+    const entryFileName = ts.getNormalizedAbsolutePath(options.luaBundleEntry, transpilation.projectDir);
 
     const entryModule = modules.find(m => m.request === entryFileName);
     if (entryModule === undefined) {

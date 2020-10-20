@@ -5,8 +5,8 @@ import { normalizeSlashes } from "../../utils";
 import { Module } from "../module";
 import { Transpilation } from "../transpilation";
 
+export * from "./assets";
 export * from "./bundle";
-export * from "./print";
 
 export interface Chunk {
     outputPath: string;

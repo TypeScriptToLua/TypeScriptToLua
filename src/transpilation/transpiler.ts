@@ -1,6 +1,5 @@
 import { FileSystem } from "enhanced-resolve";
 import * as ts from "typescript";
-import { printChunk } from "./chunk";
 import { Plugin } from "./plugins";
 import { Transpilation } from "./transpilation";
 import { emitProgramModules, TranspileOptions } from "./transpile";
@@ -39,17 +38,8 @@ export class Transpiler {
             return { diagnostics: transpilation.diagnostics, emitSkipped: true };
         }
 
-        const chunks = transpilation.emit();
+        transpilation.emit(writeFile);
 
-        const emitBOM = options.emitBOM ?? false;
-        for (const chunk of chunks) {
-            const { code, sourceMap } = printChunk(chunk, options);
-            writeFile(chunk.outputPath, code, emitBOM, undefined, chunk.sourceFiles);
-            if (sourceMap !== undefined) {
-                writeFile(chunk.outputPath + ".map", sourceMap, emitBOM, undefined, chunk.sourceFiles);
-            }
-        }
-
-        return { diagnostics: transpilation.diagnostics, emitSkipped: chunks.length === 0 };
+        return { diagnostics: transpilation.diagnostics, emitSkipped: false };
     }
 }

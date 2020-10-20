@@ -3,7 +3,7 @@ import { Mapping, SourceMapGenerator, SourceNode, StartOfSourceMap } from "sourc
 import { Chunk } from ".";
 import { CompilerOptions } from "../../CompilerOptions";
 
-export function printChunk(chunk: Chunk, options: CompilerOptions) {
+export function chunkToAssets(chunk: Chunk, options: CompilerOptions) {
     const sourceRoot = options.sourceRoot
         ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
           options.sourceRoot.replace(/[\\/]+$/, "") + "/"

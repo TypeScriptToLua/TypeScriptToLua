@@ -6,7 +6,7 @@ import * as ts from "typescript";
 import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
-import { Chunk, modulesToBundleChunks, modulesToChunks } from "./chunk";
+import { Chunk, chunkToAssets, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
 import { applyBailPlugin, applySinglePlugin, getPlugins, Plugin } from "./plugins";
@@ -53,9 +53,19 @@ export class Transpilation {
         });
     }
 
-    public emit(): Chunk[] {
+    public emit(writeFile: ts.WriteFileCallback) {
         this.modules.forEach(module => this.buildModule(module));
-        return this.mapModulesToChunks(this.modules);
+
+        const chunks = this.mapModulesToChunks(this.modules);
+
+        const emitBOM = this.options.emitBOM ?? false;
+        for (const chunk of chunks) {
+            const { code, sourceMap } = chunkToAssets(chunk, this.options);
+            writeFile(chunk.outputPath, code, emitBOM, undefined, chunk.sourceFiles);
+            if (sourceMap !== undefined) {
+                writeFile(chunk.outputPath + ".map", sourceMap, emitBOM, undefined, chunk.sourceFiles);
+            }
+        }
     }
 
     private buildModule(module: Module) {

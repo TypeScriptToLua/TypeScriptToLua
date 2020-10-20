@@ -1,3 +1,4 @@
+import * as tstl from "../../src";
 import { createResolutionErrorDiagnostic } from "../../src/transpilation/diagnostics";
 import * as util from "../util";
 
@@ -211,4 +212,18 @@ test.each([
         .setMainFileName("src/main.ts")
         .addExtraFile("module.d.ts", declarationStatement)
         .tap(expectToRequire("fake"));
+});
+
+describe('mode: "lib"', () => {
+    test("doesn't fail on unresolvable requests", () => {
+        util.testBundle`
+            import "./module";
+        `
+            .addExtraFile("module.d.ts", "export const foo = true;")
+            .setOptions({ mode: tstl.TranspilerMode.Lib })
+            .expectToHaveNoDiagnostics()
+            .tap(expectModuleTableToMatchSnapshot);
+    });
+
+    test.todo('gets resolved with mode: "app" from different compilation');
 });

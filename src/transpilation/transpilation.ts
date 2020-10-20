@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
+import { CompilerOptions, isBundleEnabled, LuaTarget, TranspilerMode } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { Chunk, chunkToAssets, modulesToBundleChunks, modulesToChunks } from "./chunk";
@@ -69,6 +69,8 @@ export class Transpilation {
     }
 
     private buildModule(module: Module) {
+        if (this.options.mode === TranspilerMode.Lib) return;
+
         buildModule(module, (request, position) => {
             const result = this.resolveRequestToModule(module.request, request);
             if ("error" in result) {

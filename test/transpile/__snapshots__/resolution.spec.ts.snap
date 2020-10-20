@@ -36,6 +36,15 @@ return ____exports
 end,"
 `;
 
+exports[`mode: "lib" doesn't fail on unresolvable requests: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+require(__TS__Resolve(\\"./module\\"))
+return ____exports
+
+end,"
+`;
+
 exports[`not transpiled script file error: diagnostics 1`] = `"/main.ts(2,22): error TSTL: Resolved source file '/module.ts' is not a part of the project."`;
 
 exports[`not transpiled script file error: modules 1`] = `

@@ -24,6 +24,7 @@ export interface LuaPluginImport {
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
+    mode?: TranspilerMode;
     noImplicitSelf?: boolean;
     noHeader?: boolean;
     luaBundle?: string;
@@ -35,6 +36,11 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     plugins?: Array<ts.PluginImport | TransformerImport>;
     [option: string]: any;
 };
+
+export enum TranspilerMode {
+    App = "app",
+    Lib = "lib",
+}
 
 export enum LuaLibImportKind {
     None = "none",

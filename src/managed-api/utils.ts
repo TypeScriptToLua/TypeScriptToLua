@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
-import { CompilerOptions } from "../../CompilerOptions";
-import { intersection, union } from "../../utils";
+import { CompilerOptions } from "../CompilerOptions";
+import { intersection, union } from "../utils";
 
 const libCache = new Map<string, ts.SourceFile>();
 export function createVirtualProgram(input: Record<string, string>, options: CompilerOptions = {}): ts.Program {

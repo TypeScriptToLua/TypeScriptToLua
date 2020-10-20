@@ -9,7 +9,7 @@ import * as prettyFormat from "pretty-format";
 import * as ts from "typescript";
 import * as vm from "vm";
 import * as tstl from "../src";
-import { createEmitOutputCollector, createVirtualProgram } from "../src/transpilation/managed-api/utils";
+import { createEmitOutputCollector, createVirtualProgram } from "../src/managed-api/utils";
 
 export * from "./legacy-utils";
 

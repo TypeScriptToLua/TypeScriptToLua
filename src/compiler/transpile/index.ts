@@ -3,8 +3,8 @@ import { validateOptions } from "../../CompilerOptions";
 import { LuaPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation/transform";
 import { isNonNull } from "../../utils";
+import { Compilation } from "../compilation";
 import { applySinglePlugin } from "../plugins";
-import { Transpilation } from "../transpilation";
 import { getTransformers } from "./transformers";
 
 export interface TranspileOptions {
@@ -14,12 +14,12 @@ export interface TranspileOptions {
 }
 
 export function emitProgramModules(
-    transpilation: Transpilation,
+    compilation: Compilation,
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {} }: TranspileOptions
 ) {
-    const { options } = transpilation;
-    transpilation.diagnostics.push(...validateOptions(options));
+    const { options } = compilation;
+    compilation.diagnostics.push(...validateOptions(options));
 
     if (options.noEmitOnError) {
         const preEmitDiagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics()];
@@ -39,28 +39,28 @@ export function emitProgramModules(
         }
 
         if (preEmitDiagnostics.length > 0) {
-            transpilation.diagnostics.push(...preEmitDiagnostics);
+            compilation.diagnostics.push(...preEmitDiagnostics);
             return;
         }
     }
 
-    const visitorMap = createVisitorMap(transpilation.plugins.map(p => p.visitors).filter(isNonNull));
+    const visitorMap = createVisitorMap(compilation.plugins.map(p => p.visitors).filter(isNonNull));
     const printer =
-        applySinglePlugin(transpilation.plugins, "printer") ??
+        applySinglePlugin(compilation.plugins, "printer") ??
         ((program, host, fileName, file) => new LuaPrinter(host, program, fileName).print(file));
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {
         const { file, diagnostics: transformDiagnostics } = transformSourceFile(program, sourceFile, visitorMap);
 
-        transpilation.diagnostics.push(...transformDiagnostics);
+        compilation.diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
-            const source = printer(program, transpilation.host, sourceFile.fileName, file);
-            const request = ts.getNormalizedAbsolutePath(sourceFile.fileName, transpilation.projectDir);
-            transpilation.modules.push({ request, isBuilt: false, source, sourceFiles: [sourceFile] });
+            const source = printer(program, compilation.host, sourceFile.fileName, file);
+            const request = ts.getNormalizedAbsolutePath(sourceFile.fileName, compilation.projectDir);
+            compilation.modules.push({ request, isBuilt: false, source, sourceFiles: [sourceFile] });
         }
     };
 
-    const transformers = getTransformers(transpilation, customTransformers, processSourceFile);
+    const transformers = getTransformers(compilation, customTransformers, processSourceFile);
 
     const isEmittableJsonFile = (sourceFile: ts.SourceFile) =>
         sourceFile.flags & ts.NodeFlags.JsonFile &&
@@ -83,12 +83,12 @@ export function emitProgramModules(
                 processSourceFile(file);
             } else {
                 const { diagnostics } = program.emit(file, writeFile, undefined, false, transformers);
-                transpilation.diagnostics.push(...diagnostics);
+                compilation.diagnostics.push(...diagnostics);
             }
         }
     } else {
         const { diagnostics } = program.emit(undefined, writeFile, undefined, false, transformers);
-        transpilation.diagnostics.push(...diagnostics);
+        compilation.diagnostics.push(...diagnostics);
 
         // JSON files don't get through transformers and aren't written when outDir is the same as rootDir
         program.getSourceFiles().filter(isEmittableJsonFile).forEach(processSourceFile);

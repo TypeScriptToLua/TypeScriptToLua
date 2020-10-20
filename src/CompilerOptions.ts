@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import * as diagnosticFactories from "./transpilation/diagnostics";
+import * as diagnosticFactories from "./compiler/diagnostics";
 
 type KnownKeys<T> = { [K in keyof T]: string extends K ? never : number extends K ? never : K } extends {
     [K in keyof T]: infer U;
@@ -24,7 +24,7 @@ export interface LuaPluginImport {
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
-    mode?: TranspilerMode;
+    mode?: CompilerMode;
     noImplicitSelf?: boolean;
     noHeader?: boolean;
     luaBundle?: string;
@@ -37,7 +37,7 @@ export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {
     [option: string]: any;
 };
 
-export enum TranspilerMode {
+export enum CompilerMode {
     App = "app",
     Lib = "lib",
 }

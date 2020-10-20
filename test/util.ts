@@ -254,7 +254,7 @@ export abstract class TestBuilder {
         const collector = createEmitOutputCollector();
         const program = this.getProgram();
 
-        const host: tstl.TranspilerHost = { ...ts.sys };
+        const host: tstl.CompilerHost = { ...ts.sys };
         if (!this.nativeFileSystem) {
             const virtualFS = Volume.fromJSON({ ...this.extraRawFiles, ...this.getSourceFiles() }, "/");
             host.resolutionFileSystem = virtualFS;
@@ -265,7 +265,7 @@ export abstract class TestBuilder {
                     : (virtualFS.readFileSync(fileName, encoding) as string);
         }
 
-        const { diagnostics: transpileDiagnostics } = new tstl.Transpiler({ host }).emit({
+        const { diagnostics: transpileDiagnostics } = new tstl.Compiler({ host }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,

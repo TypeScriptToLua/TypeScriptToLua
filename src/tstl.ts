@@ -102,8 +102,7 @@ function performCompilation(
         configFileParsingDiagnostics,
     });
 
-    const { diagnostics: transpileDiagnostics, emitSkipped } = new tstl.Transpiler().emit({ program });
-
+    const { diagnostics: transpileDiagnostics, emitSkipped } = new tstl.Compiler().emit({ program });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,
@@ -155,7 +154,7 @@ function updateWatchCompilationHost(
     let hadErrorLastTime = true;
     const updateConfigFile = createConfigFileUpdater(optionsToExtend);
 
-    const transpiler = new tstl.Transpiler();
+    const compiler = new tstl.Compiler();
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
         const options: tstl.CompilerOptions = builderProgram.getCompilerOptions();
@@ -176,7 +175,7 @@ function updateWatchCompilationHost(
             }
         }
 
-        const { diagnostics: emitDiagnostics } = transpiler.emit({ program, sourceFiles });
+        const { diagnostics: emitDiagnostics } = compiler.emit({ program, sourceFiles });
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...configFileParsingDiagnostics,

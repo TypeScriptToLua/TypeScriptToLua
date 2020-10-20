@@ -1,7 +1,7 @@
 import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "../cli/tsconfig";
+import { Compiler, EmitResult } from "../compiler";
 import { CompilerOptions } from "../CompilerOptions";
-import { EmitResult, Transpiler } from "../transpilation";
 import { createEmitOutputCollector, createVirtualProgram, TranspiledFile } from "./utils";
 
 export { TranspiledFile };
@@ -12,7 +12,8 @@ export function transpileFiles(
     writeFile?: ts.WriteFileCallback
 ): EmitResult {
     const program = ts.createProgram(rootNames, options);
-    const { diagnostics: transpileDiagnostics, emitSkipped } = new Transpiler().emit({ program, writeFile });
+
+    const { diagnostics: transpileDiagnostics, emitSkipped } = new Compiler().emit({ program, writeFile });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,
@@ -45,7 +46,8 @@ export function transpileVirtualProject(
 ): TranspileVirtualProjectResult {
     const program = createVirtualProgram(files, options);
     const collector = createEmitOutputCollector();
-    const { diagnostics: transpileDiagnostics } = new Transpiler().emit({ program, writeFile: collector.writeFile });
+
+    const { diagnostics: transpileDiagnostics } = new Compiler().emit({ program, writeFile: collector.writeFile });
     const diagnostics = ts.sortAndDeduplicateDiagnostics([
         ...ts.getPreEmitDiagnostics(program),
         ...transpileDiagnostics,

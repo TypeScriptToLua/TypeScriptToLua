@@ -2,8 +2,8 @@ import { Plugin as ResolvePlugin } from "enhanced-resolve";
 import { Printer } from "../LuaPrinter";
 import { Visitors } from "../transformation/context";
 import { Chunk } from "./chunk";
+import { Compilation } from "./compilation";
 import { Module } from "./module";
-import { Transpilation } from "./transpilation";
 import { loadConfigImport } from "./utils";
 
 export interface Plugin {
@@ -25,35 +25,35 @@ export interface Plugin {
      * Provide extra [enhanced-resolve](https://github.com/webpack/enhanced-resolve) plugins,
      * used for `.lua` module resolution.
      */
-    getResolvePlugins?(transpilation: Transpilation): ResolvePlugin[];
+    getResolvePlugins?(compilation: Compilation): ResolvePlugin[];
 
     /**
      * Transform modules into chunks.
      */
-    mapModulesToChunks?(modules: Module[], transpilation: Transpilation): Chunk[];
+    mapModulesToChunks?(modules: Module[], compilation: Compilation): Chunk[];
 
     /**
      * Produce a unique identifier for a module, which would be used as `require` call parameter,
      * and may be used for chunk naming.
      */
-    getModuleId?(module: Module, transpilation: Transpilation): string | undefined;
+    getModuleId?(module: Module, compilation: Compilation): string | undefined;
 }
 
-export function getPlugins(transpilation: Transpilation, customPlugins: Plugin[]): Plugin[] {
+export function getPlugins(compilation: Compilation, customPlugins: Plugin[]): Plugin[] {
     const pluginsFromOptions: Plugin[] = [];
 
-    for (const [index, pluginOption] of (transpilation.options.luaPlugins ?? []).entries()) {
+    for (const [index, pluginOption] of (compilation.options.luaPlugins ?? []).entries()) {
         const optionName = `tstl.luaPlugins[${index}]`;
 
         const { error: resolveError, result: factory } = loadConfigImport(
             "plugin",
             `${optionName}.name`,
-            transpilation.projectDir,
+            compilation.projectDir,
             pluginOption.name,
             pluginOption.import
         );
 
-        if (resolveError) transpilation.diagnostics.push(resolveError);
+        if (resolveError) compilation.diagnostics.push(resolveError);
         if (factory === undefined) continue;
 
         const plugin = typeof factory === "function" ? factory(pluginOption) : factory;

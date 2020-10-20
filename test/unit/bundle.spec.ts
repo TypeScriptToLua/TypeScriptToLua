@@ -1,5 +1,5 @@
 import { LuaLibImportKind } from "../../src";
-import * as diagnosticFactories from "../../src/transpilation/diagnostics";
+import * as diagnosticFactories from "../../src/compiler/diagnostics";
 import * as util from "../util";
 
 test("import module -> main", () => {

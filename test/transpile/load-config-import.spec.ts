@@ -1,4 +1,4 @@
-import { loadConfigImport } from "../../src/transpilation/utils";
+import { loadConfigImport } from "../../src/compiler/utils";
 import { resolveFixture } from "./run";
 
 test("resolve relative module paths", () => {

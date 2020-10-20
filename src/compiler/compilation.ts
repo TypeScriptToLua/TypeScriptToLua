@@ -3,21 +3,21 @@ import * as fs from "fs";
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
-import { CompilerOptions, isBundleEnabled, LuaTarget, TranspilerMode } from "../CompilerOptions";
+import { CompilerMode, CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
 import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
 import { Chunk, chunkToAssets, modulesToBundleChunks, modulesToChunks } from "./chunk";
+import { Compiler, CompilerHost } from "./compiler";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
 import { applyBailPlugin, applySinglePlugin, getPlugins, Plugin } from "./plugins";
-import { Transpiler, TranspilerHost } from "./transpiler";
 import { isResolveError } from "./utils";
 
-export class Transpilation {
+export class Compilation {
     public readonly diagnostics: ts.Diagnostic[] = [];
     public modules: Module[] = [];
 
-    public host: TranspilerHost;
+    public host: CompilerHost;
     public options: CompilerOptions = this.program.getCompilerOptions();
     public rootDir: string;
     public outDir: string;
@@ -26,8 +26,8 @@ export class Transpilation {
     public plugins: Plugin[];
     protected resolver: Resolver;
 
-    constructor(public transpiler: Transpiler, public program: ts.Program, extraPlugins: Plugin[]) {
-        this.host = transpiler.host;
+    constructor(public compiler: Compiler, public program: ts.Program, extraPlugins: Plugin[]) {
+        this.host = compiler.host;
 
         this.rootDir =
             // getCommonSourceDirectory ignores provided rootDir when TS6059 is emitted
@@ -69,7 +69,7 @@ export class Transpilation {
     }
 
     private buildModule(module: Module) {
-        if (this.options.mode === TranspilerMode.Lib) return;
+        if (this.options.mode === CompilerMode.Lib) return;
 
         buildModule(module, (request, position) => {
             const result = this.resolveRequestToModule(module.request, request);

@@ -4,9 +4,9 @@ import { Chunk } from ".";
 import { isBundleEnabled } from "../../CompilerOptions";
 import { escapeString } from "../../LuaPrinter";
 import { assert } from "../../utils";
+import { Compilation } from "../compilation";
 import { couldNotFindBundleEntryPoint } from "../diagnostics";
 import { Module } from "../module";
-import { Transpilation } from "../transpilation";
 
 // Override `require` to read from ____modules table.
 const requireOverride = `
@@ -30,27 +30,27 @@ local function require(file)
 end
 `;
 
-export function modulesToBundleChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
-    const { options } = transpilation;
+export function modulesToBundleChunks(compilation: Compilation, modules: Module[]): Chunk[] {
+    const { options } = compilation;
     assert(isBundleEnabled(options));
 
-    const outputPath = ts.getNormalizedAbsolutePath(options.luaBundle, transpilation.projectDir);
-    const entryFileName = ts.getNormalizedAbsolutePath(options.luaBundleEntry, transpilation.projectDir);
+    const outputPath = ts.getNormalizedAbsolutePath(options.luaBundle, compilation.projectDir);
+    const entryFileName = ts.getNormalizedAbsolutePath(options.luaBundleEntry, compilation.projectDir);
 
     const entryModule = modules.find(m => m.request === entryFileName);
     if (entryModule === undefined) {
-        transpilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
+        compilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
         return [{ outputPath, source: new SourceNode() }];
     }
 
     // For each file: ["<module path>"] = function() <lua content> end,
-    const moduleTableEntries = modules.map(m => moduleSourceNode(m, transpilation.getModuleId(m)));
+    const moduleTableEntries = modules.map(m => moduleSourceNode(m, compilation.getModuleId(m)));
 
     // Create ____modules table containing all entries from moduleTableEntries
     const moduleTable = createModuleTableNode(moduleTableEntries);
 
     // return require("<entry module path>")
-    const bootstrap = `return require(${escapeString(transpilation.getModuleId(entryModule))})\n`;
+    const bootstrap = `return require(${escapeString(compilation.getModuleId(entryModule))})\n`;
 
     const bundleNode = joinSourceChunks([requireOverride, moduleTable, bootstrap]);
     const sourceFiles = modules.flatMap(x => x.sourceFiles ?? []);

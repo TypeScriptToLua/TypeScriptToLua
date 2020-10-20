@@ -113,7 +113,7 @@ export const transformModuleDeclaration: FunctionVisitor<ts.ModuleDeclaration> =
     }
 
     // Set current namespace for nested NS
-    // Keep previous namespace to reset after block transpilation
+    // Keep previous namespace to reset after block transformation
     currentNamespaces.set(context, node);
 
     // Transform moduleblock to block and visit it

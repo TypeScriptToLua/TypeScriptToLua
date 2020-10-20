@@ -1,11 +1,11 @@
 import * as path from "path";
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
+import { CompilerHost } from "./compiler";
 import { CompilerOptions, LuaLibImportKind } from "./CompilerOptions";
 import * as lua from "./LuaAST";
 import { loadLuaLibFeatures, LuaLibFeature } from "./LuaLib";
 import { isValidLuaIdentifier } from "./transformation/utils/safe-names";
-import { TranspilerHost } from "./transpilation";
 import { assert, intersperse, invertObject, normalizeSlashes } from "./utils";
 
 // https://www.lua.org/pil/2.4.html
@@ -85,7 +85,7 @@ function isSimpleExpression(expression: lua.Expression): boolean {
 
 type SourceChunk = string | SourceNode;
 
-export type Printer = (program: ts.Program, host: TranspilerHost, fileName: string, file: lua.File) => SourceNode;
+export type Printer = (program: ts.Program, host: CompilerHost, fileName: string, file: lua.File) => SourceNode;
 
 export class LuaPrinter {
     private static operatorMap: Record<lua.Operator, string> = {
@@ -120,7 +120,7 @@ export class LuaPrinter {
     private fileName: string;
     private options: CompilerOptions;
 
-    constructor(private host: TranspilerHost, program: ts.Program, fileName: string) {
+    constructor(private host: CompilerHost, program: ts.Program, fileName: string) {
         this.options = program.getCompilerOptions();
 
         if (this.options.outDir) {

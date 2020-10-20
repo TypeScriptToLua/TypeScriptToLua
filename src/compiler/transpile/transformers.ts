@@ -2,12 +2,12 @@ import * as ts from "typescript";
 // TODO: Don't depend on CLI?
 import * as cliDiagnostics from "../../cli/diagnostics";
 import { CompilerOptions, TransformerImport } from "../../CompilerOptions";
+import { Compilation } from "../compilation";
 import * as diagnosticFactories from "../diagnostics";
-import { Transpilation } from "../transpilation";
 import { loadConfigImport } from "../utils";
 
 export function getTransformers(
-    transpilation: Transpilation,
+    compilation: Compilation,
     customTransformers: ts.CustomTransformers,
     onSourceFile: (sourceFile: ts.SourceFile) => void
 ): ts.CustomTransformers {
@@ -16,14 +16,14 @@ export function getTransformers(
         return ts.createSourceFile(sourceFile.fileName, "", ts.ScriptTarget.ESNext);
     };
 
-    const transformersFromOptions = loadTransformersFromOptions(transpilation);
+    const transformersFromOptions = loadTransformersFromOptions(compilation);
 
     const afterDeclarations = [
         ...(transformersFromOptions.afterDeclarations ?? []),
         ...(customTransformers.afterDeclarations ?? []),
     ];
 
-    if (transpilation.options.noImplicitSelf) {
+    if (compilation.options.noImplicitSelf) {
         afterDeclarations.unshift(noImplicitSelfTransformer);
     }
 
@@ -52,37 +52,37 @@ export const noImplicitSelfTransformer: ts.TransformerFactory<ts.SourceFile | ts
         : transformSourceFile(node);
 };
 
-function loadTransformersFromOptions(transpilation: Transpilation): ts.CustomTransformers {
+function loadTransformersFromOptions(compilation: Compilation): ts.CustomTransformers {
     const customTransformers: Required<ts.CustomTransformers> = {
         before: [],
         after: [],
         afterDeclarations: [],
     };
 
-    if (!transpilation.options.plugins) return customTransformers;
+    if (!compilation.options.plugins) return customTransformers;
 
-    for (const [index, transformerImport] of transpilation.options.plugins.entries()) {
+    for (const [index, transformerImport] of compilation.options.plugins.entries()) {
         if (!("transform" in transformerImport)) continue;
         const optionName = `compilerOptions.plugins[${index}]`;
 
         const { error: resolveError, result: factory } = loadConfigImport(
             "transformer",
             `${optionName}.transform`,
-            transpilation.projectDir,
+            compilation.projectDir,
             transformerImport.transform,
             transformerImport.import
         );
 
-        if (resolveError) transpilation.diagnostics.push(resolveError);
+        if (resolveError) compilation.diagnostics.push(resolveError);
         if (factory === undefined) continue;
 
         const { error: loadError, transformer } = loadTransformer(
             optionName,
-            transpilation.program,
+            compilation.program,
             factory,
             transformerImport
         );
-        if (loadError) transpilation.diagnostics.push(loadError);
+        if (loadError) compilation.diagnostics.push(loadError);
         if (transformer === undefined) continue;
 
         if (transformer.before) {

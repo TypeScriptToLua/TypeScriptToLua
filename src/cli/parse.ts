@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { CompilerOptions, LuaLibImportKind, LuaTarget, TranspilerMode } from "../CompilerOptions";
+import { CompilerMode, CompilerOptions, LuaLibImportKind, LuaTarget } from "../CompilerOptions";
 import * as cliDiagnostics from "./diagnostics";
 
 export interface ParsedCommandLine extends ts.ParsedCommandLine {
@@ -29,7 +29,7 @@ export const optionDeclarations: CommandLineOption[] = [
         description:
             'In "lib" mode, imported modules are emitted without being resolved. Visit https://typescripttolua.github.io/docs/TODO for more details.',
         type: "enum",
-        choices: Object.values(TranspilerMode),
+        choices: Object.values(CompilerMode),
     },
     {
         name: "luaBundle",

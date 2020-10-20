@@ -1,5 +1,5 @@
 import * as tstl from "../../src";
-import { createResolutionErrorDiagnostic } from "../../src/transpilation/diagnostics";
+import { createResolutionErrorDiagnostic } from "../../src/compiler/diagnostics";
 import * as util from "../util";
 
 const requireRegex = /require\("(.*?)"\)/;
@@ -220,7 +220,7 @@ describe('mode: "lib"', () => {
             import "./module";
         `
             .addExtraFile("module.d.ts", "export const foo = true;")
-            .setOptions({ mode: tstl.TranspilerMode.Lib })
+            .setOptions({ mode: tstl.CompilerMode.Lib })
             .expectToHaveNoDiagnostics()
             .tap(expectModuleTableToMatchSnapshot);
     });

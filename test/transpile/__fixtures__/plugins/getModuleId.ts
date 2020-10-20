@@ -3,10 +3,10 @@ import * as path from "path";
 import * as tstl from "../../../../src";
 
 const plugin: tstl.Plugin = {
-    getModuleId: (module, transpilation) =>
+    getModuleId: (module, compilation) =>
         createHash("sha1")
             .update(module.source.toString())
-            .update(path.relative(transpilation.rootDir, module.request))
+            .update(path.relative(compilation.rootDir, module.request))
             .digest("hex"),
 };
 

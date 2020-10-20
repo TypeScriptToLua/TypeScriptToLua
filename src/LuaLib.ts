@@ -1,5 +1,5 @@
 import * as path from "path";
-import { TranspilerHost } from "./transpilation";
+import { CompilerHost } from "./compiler";
 
 export enum LuaLibFeature {
     ArrayConcat = "ArrayConcat",
@@ -105,7 +105,7 @@ const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
     SymbolRegistry: [LuaLibFeature.Symbol],
 };
 
-export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, host: TranspilerHost): string {
+export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, host: CompilerHost): string {
     let result = "";
 
     const loadedFeatures = new Set<LuaLibFeature>();
@@ -136,7 +136,7 @@ export function loadLuaLibFeatures(features: Iterable<LuaLibFeature>, host: Tran
 }
 
 let luaLibBundleContent: string;
-export function getLuaLibBundle(host: TranspilerHost): string {
+export function getLuaLibBundle(host: CompilerHost): string {
     if (luaLibBundleContent === undefined) {
         const lualibPath = path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua");
         const result = host.readFile(lualibPath);

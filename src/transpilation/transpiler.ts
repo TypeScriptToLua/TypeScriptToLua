@@ -31,9 +31,9 @@ export class Transpiler {
 
     public emit(emitOptions: EmitOptions): EmitResult {
         const { program, writeFile = this.host.writeFile } = emitOptions;
-        const options = program.getCompilerOptions();
-
         const transpilation = new Transpilation(this, program, emitOptions.plugins ?? []);
+        const { options } = transpilation;
+
         emitProgramModules(transpilation, writeFile, emitOptions);
         if (options.noEmit || (options.noEmitOnError && transpilation.diagnostics.length > 0)) {
             return { diagnostics: transpilation.diagnostics, emitSkipped: true };

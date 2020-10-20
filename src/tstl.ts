@@ -158,7 +158,7 @@ function updateWatchCompilationHost(
     const transpiler = new tstl.Transpiler();
     host.afterProgramCreate = builderProgram => {
         const program = builderProgram.getProgram();
-        const options = builderProgram.getCompilerOptions() as tstl.CompilerOptions;
+        const options: tstl.CompilerOptions = builderProgram.getCompilerOptions();
         const configFileParsingDiagnostics: ts.Diagnostic[] = updateConfigFile(options);
 
         let sourceFiles: ts.SourceFile[] | undefined;

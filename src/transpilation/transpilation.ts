@@ -18,7 +18,7 @@ export class Transpilation {
     public modules: Module[] = [];
 
     public host: TranspilerHost;
-    public options = this.program.getCompilerOptions() as CompilerOptions;
+    public options: CompilerOptions = this.program.getCompilerOptions();
     public rootDir: string;
     public outDir: string;
     public projectDir: string;

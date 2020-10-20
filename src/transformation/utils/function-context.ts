@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import { CompilerOptions } from "../../CompilerOptions";
 import { TransformationContext } from "../context";
 import { AnnotationKind, getFileAnnotations, getNodeAnnotations } from "./annotations";
 import { findFirstNodeAbove, getAllCallSignatures, inferAssignedType } from "./typescript";
@@ -35,7 +34,7 @@ function getExplicitThisParameter(signatureDeclaration: ts.SignatureDeclaration)
 }
 
 export function getDeclarationContextType(
-    { program }: TransformationContext,
+    { program, options }: TransformationContext,
     signatureDeclaration: ts.SignatureDeclaration
 ): ContextType {
     const thisParameter = getExplicitThisParameter(signatureDeclaration);
@@ -78,7 +77,6 @@ export function getDeclarationContextType(
     }
 
     // When using --noImplicitSelf and the signature is defined in a file targeted by the program apply the @noSelf rule.
-    const options = program.getCompilerOptions() as CompilerOptions;
     if (options.noImplicitSelf && program.getRootFileNames().includes(signatureDeclaration.getSourceFile().fileName)) {
         return ContextType.Void;
     }

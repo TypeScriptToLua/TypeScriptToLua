@@ -1,7 +1,7 @@
 import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { Chunk } from ".";
-import { CompilerOptions, isBundleEnabled } from "../../CompilerOptions";
+import { isBundleEnabled } from "../../CompilerOptions";
 import { escapeString } from "../../LuaPrinter";
 import { assert } from "../../utils";
 import { couldNotFindBundleEntryPoint } from "../diagnostics";
@@ -31,7 +31,7 @@ end
 `;
 
 export function modulesToBundleChunks(transpilation: Transpilation, modules: Module[]): Chunk[] {
-    const options = transpilation.program.getCompilerOptions() as CompilerOptions;
+    const { options } = transpilation;
     assert(isBundleEnabled(options));
 
     const outputPath = ts.getNormalizedAbsolutePath(options.luaBundle, transpilation.projectDir);

@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import { CompilerOptions, validateOptions } from "../../CompilerOptions";
+import { validateOptions } from "../../CompilerOptions";
 import { LuaPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation/transform";
 import { isNonNull } from "../../utils";
@@ -18,8 +18,7 @@ export function emitProgramModules(
     writeFileResult: ts.WriteFileCallback,
     { program, sourceFiles: targetSourceFiles, customTransformers = {} }: TranspileOptions
 ) {
-    const options = program.getCompilerOptions() as CompilerOptions;
-
+    const { options } = transpilation;
     transpilation.diagnostics.push(...validateOptions(options));
 
     if (options.noEmitOnError) {

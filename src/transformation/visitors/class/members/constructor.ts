@@ -3,7 +3,7 @@ import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { popScope, pushScope, ScopeType } from "../../../utils/scope";
-import { transformFunctionBodyHeader, transformFunctionBodyContent, transformParameters } from "../../function";
+import { transformFunctionBodyContent, transformFunctionBodyHeader, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
 
@@ -43,7 +43,7 @@ export function transformConstructorDeclaration(
     // Check for field declarations in constructor
     const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
 
-    const classInstanceFields = transformClassInstanceFields(context, classDeclaration, instanceFields);
+    const classInstanceFields = transformClassInstanceFields(context, instanceFields);
 
     // If there are field initializers and the first statement is a super call,
     // move super call between default assignments and initializers

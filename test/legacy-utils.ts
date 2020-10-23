@@ -3,19 +3,20 @@ import * as fs from "fs";
 import * as path from "path";
 import * as ts from "typescript";
 import * as tstl from "../src";
+import { assert } from "./util";
 
 export function transpileString(
     str: string | { [filename: string]: string },
     options: tstl.CompilerOptions = {},
     ignoreDiagnostics = true
 ): string {
-    const { diagnostics, file } = transpileStringResult(str, options);
-    expect(file.lua).toBeDefined();
+    const { diagnostics, lua } = transpileStringResult(str, options);
+    assert(lua !== undefined);
 
     const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
     expect(errors).not.toHaveDiagnostics();
 
-    return file.lua!.trim();
+    return lua.trim();
 }
 
 function transpileStringsAsProject(input: Record<string, string>, options: tstl.CompilerOptions = {}) {
@@ -33,7 +34,7 @@ function transpileStringsAsProject(input: Record<string, string>, options: tstl.
 function transpileStringResult(
     input: string | Record<string, string>,
     options: tstl.CompilerOptions = {}
-): Required<tstl.TranspileStringResult> {
+): tstl.TranspileStringResult {
     const { diagnostics, transpiledFiles } = transpileStringsAsProject(
         typeof input === "string" ? { "main.ts": input } : input,
         options
@@ -44,7 +45,7 @@ function transpileStringResult(
         throw new Error('Program should have a file named "main"');
     }
 
-    return { diagnostics, file };
+    return { ...file, diagnostics };
 }
 
 const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");

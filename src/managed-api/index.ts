@@ -2,6 +2,7 @@ import * as ts from "typescript";
 import { parseConfigFileWithSystem } from "../cli/tsconfig";
 import { Compiler, EmitResult } from "../compiler";
 import { CompilerOptions } from "../CompilerOptions";
+import { assert } from "../utils";
 import { createEmitOutputCollector, createVirtualProgram, TranspiledFile } from "./utils";
 
 export { TranspiledFile };
@@ -56,15 +57,13 @@ export function transpileVirtualProject(
     return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
 }
 
-export interface TranspileStringResult {
+export interface TranspileStringResult extends TranspiledFile {
     diagnostics: ts.Diagnostic[];
-    file?: TranspiledFile;
 }
 
 export function transpileString(main: string, options: CompilerOptions = {}): TranspileStringResult {
     const { diagnostics, transpiledFiles } = transpileVirtualProject({ "main.ts": main }, options);
-    return {
-        diagnostics,
-        file: transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === "main.ts")),
-    };
+    const file = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === "main.ts"));
+    assert(file !== undefined);
+    return { ...file, diagnostics };
 }

@@ -14,11 +14,8 @@ export function transpileFiles(
 ): EmitResult {
     const program = ts.createProgram(rootNames, options);
 
-    const { diagnostics: transpileDiagnostics, emitSkipped } = new Compiler().emit({ program, writeFile });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([
-        ...ts.getPreEmitDiagnostics(program),
-        ...transpileDiagnostics,
-    ]);
+    const { diagnostics: emitDiagnostics, emitSkipped } = new Compiler().emit({ program, writeFile });
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([...ts.getPreEmitDiagnostics(program), ...emitDiagnostics]);
 
     return { diagnostics: [...diagnostics], emitSkipped };
 }
@@ -48,11 +45,8 @@ export function transpileVirtualProject(
     const program = createVirtualProgram(files, options);
     const collector = createEmitOutputCollector();
 
-    const { diagnostics: transpileDiagnostics } = new Compiler().emit({ program, writeFile: collector.writeFile });
-    const diagnostics = ts.sortAndDeduplicateDiagnostics([
-        ...ts.getPreEmitDiagnostics(program),
-        ...transpileDiagnostics,
-    ]);
+    const { diagnostics: emitDiagnostics } = new Compiler().emit({ program, writeFile: collector.writeFile });
+    const diagnostics = ts.sortAndDeduplicateDiagnostics([...ts.getPreEmitDiagnostics(program), ...emitDiagnostics]);
 
     return { diagnostics: [...diagnostics], transpiledFiles: collector.files };
 }

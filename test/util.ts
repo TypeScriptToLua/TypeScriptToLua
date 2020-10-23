@@ -265,7 +265,7 @@ export abstract class TestBuilder {
                     : (virtualFS.readFileSync(fileName, encoding) as string);
         }
 
-        const { diagnostics: transpileDiagnostics } = new tstl.Compiler({ host }).emit({
+        const { diagnostics: emitDiagnostics } = new tstl.Compiler({ host }).emit({
             program,
             customTransformers: this.customTransformers,
             writeFile: collector.writeFile,
@@ -273,7 +273,7 @@ export abstract class TestBuilder {
 
         const diagnostics = ts.sortAndDeduplicateDiagnostics([
             ...ts.getPreEmitDiagnostics(program),
-            ...transpileDiagnostics,
+            ...emitDiagnostics,
         ]);
 
         return { diagnostics: [...diagnostics], transpiledFiles: collector.files };

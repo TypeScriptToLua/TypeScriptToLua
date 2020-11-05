@@ -114,5 +114,5 @@ jobs:
           script: |
             const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
             return create_benchmark_check({github, context, core});
-      - name: Print benchmark results
+      - name: Benchmark results
         run: echo "${{steps.script-combine-results.outputs.result}}" | glow -s dark -w 120 -

@@ -8,7 +8,7 @@ module.exports = ({ github, context, core }) => {
     const benchmarkInfoJIT = JSON.parse(fs.readFileSync(benchmarkResultPathJIT));
 
     // Remove Comparison info to save some bytes
-    const benchmarkInfoForVizLua = {old: benchmarkInfoLua.old, new: benchmarkInfoLua.new};
+    const benchmarkInfoForVizLua = { old: benchmarkInfoLua.old, new: benchmarkInfoLua.new };
     const buffer = Buffer.from(JSON.stringify(benchmarkInfoForVizLua));
 
     const zlib = require("zlib");

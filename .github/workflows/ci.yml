@@ -109,5 +109,5 @@ jobs:
           benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
           benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
           script: |
-            const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/create_benchmark_check.js`);
+            const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
             create_benchmark_check({github, context});

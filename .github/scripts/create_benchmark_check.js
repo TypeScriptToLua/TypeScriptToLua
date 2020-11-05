@@ -1,4 +1,4 @@
-module.exports = ({ github, context }) => {
+module.exports = ({ github, context, core }) => {
     const benchmarkInfoLua = JSON.parse(core.getInput("benchmark-info-lua", { required: true }));
     const benchmarkInfoJIT = JSON.parse(core.getInput("benchmark-info-jit", { required: true }));
 

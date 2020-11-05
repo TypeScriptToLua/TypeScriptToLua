@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Lua Install
         run: sudo apt-get install lua5.3 luajit
+      - name: Glow Install
+        run: brew install glow
       # Checkout master & commit
       - name: Checkout master
         uses: actions/checkout@v2
@@ -93,21 +95,24 @@ jobs:
         working-directory: commit/benchmark
       - name: Run benchmark Lua 5.3 commit
         id: benchmark-lua-commit
-        run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_commit_53.json ../data/benchmark_master_53.json`
+        run: lua5.3 -- run.lua ../data/benchmark_master_vs_commit_53.json ../data/benchmark_master_53.json
         working-directory: commit/benchmark/dist
       - name: Build benchmark LuaJIT commit
         run: node ../dist/tstl.js -p tsconfig.jit.json
         working-directory: commit/benchmark
       - name: Run benchmark LuaJIT commit
         id: benchmark-jit-commit
-        run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
+        run: luajit -- run.lua ../data/benchmark_master_vs_commit_jit.json ../data/benchmark_master_jit.json
         working-directory: commit/benchmark/dist
-      - name: Create benchmark check
+      - name: Combine benchmark results
+        id: script-combine-results
         uses: actions/github-script@v3
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
-          benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
+          benchmark-result-path-lua: commit/benchmark/data/benchmark_master_vs_commit_53.json
+          benchmark-result-path-jit: commit/benchmark/data/benchmark_master_vs_commit_jit.json
+          result-encoding: string
           script: |
             const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
             create_benchmark_check({github, context});
+      - name: Print benchmark results
+        run: echo "${{steps.script-combine-results.outputs.result}}" | glow -

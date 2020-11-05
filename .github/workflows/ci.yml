@@ -103,40 +103,11 @@ jobs:
         run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
         working-directory: commit/benchmark/dist
       - name: Create benchmark check
-        uses: actions/github-script@0.9.0
+        uses: actions/github-script@v3
         with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
           benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
           benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
           script: |
-            const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
-            const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
-
-            const zlib = require('zlib');
-            const buffer = Buffer.from(core.getInput('benchmark-info-lua', { required: true }));
-            const compressed = zlib.deflateSync(buffer);
-
-            const summary = `[Open visualizer](https://typescripttolua.github.io/benchviz?d=${compressed.toString('base64')})\n`
-              + `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
-
-            const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
-
-            const pull_request = context.payload.pull_request;
-            if (!pull_request || pull_request.head.repo.url === pull_request.base.repo.url) {
-              // This only works if not in a fork.
-              github.checks.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: "Benchmark results",
-                head_sha: context.sha,
-                status: "completed",
-                conclusion: "neutral",
-                output: {
-                  title: "Benchmark results",
-                  summary: summary,
-                  text: text
-                }
-              });
-            } else {
-              console.log(summary);
-              console.log(text);
-            }
+            const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/create_benchmark_check.js`);
+            create_benchmark_check({github, context});

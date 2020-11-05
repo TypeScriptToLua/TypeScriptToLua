@@ -7,8 +7,11 @@ module.exports = ({ github, context, core }) => {
     const benchmarkResultPathJIT = core.getInput("benchmark-result-path-jit", { required: true });
     const benchmarkInfoJIT = JSON.parse(fs.readFileSync(benchmarkResultPathJIT));
 
+    // Remove Comparison info to save some bytes
+    const benchmarkInfoForVizLua = {old: benchmarkInfoLua.old, new: benchmarkInfoLua.new};
+    const buffer = Buffer.from(JSON.stringify(benchmarkInfoForVizLua));
+
     const zlib = require("zlib");
-    const buffer = Buffer.from(core.getInput("benchmark-info-lua", { required: true }));
     const compressed = zlib.deflateSync(buffer);
 
     const summary =

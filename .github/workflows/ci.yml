@@ -112,7 +112,7 @@ jobs:
           benchmark-result-path-jit: commit/benchmark/data/benchmark_master_vs_commit_jit.json
           result-encoding: string
           script: |
-            const create_benchmark_check = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
-            return create_benchmark_check({github, context, core});
+            const createBenchmarkCheck = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
+            return createBenchmarkCheck({ github, context, core });
       - name: Benchmark results
         run: echo "${{steps.script-combine-results.outputs.result}}" | glow -s dark -w 120 -

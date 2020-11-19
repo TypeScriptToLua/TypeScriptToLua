@@ -4,7 +4,7 @@ import { LuaPrinter } from "../../LuaPrinter";
 import { createVisitorMap, transformSourceFile } from "../../transformation/transform";
 import { isNonNull } from "../../utils";
 import { Compilation } from "../compilation";
-import { applySinglePlugin } from "../plugins";
+import { getUniquePluginProperty } from "../plugins";
 import { getTransformers } from "./transformers";
 
 export interface TranspileOptions {
@@ -46,7 +46,7 @@ export function emitProgramModules(
 
     const visitorMap = createVisitorMap(compilation.plugins.map(p => p.visitors).filter(isNonNull));
     const printer =
-        applySinglePlugin(compilation.plugins, "printer") ??
+        getUniquePluginProperty(compilation.plugins, "printer") ??
         ((program, host, fileName, file) => new LuaPrinter(host, program, fileName).print(file));
 
     const processSourceFile = (sourceFile: ts.SourceFile) => {

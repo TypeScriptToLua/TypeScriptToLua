@@ -1,6 +1,6 @@
-import * as ts from "typescript";
 import * as nativeAssert from "assert";
 import * as path from "path";
+import * as ts from "typescript";
 
 export function castArray<T>(value: T | T[]): T[];
 export function castArray<T>(value: T | readonly T[]): readonly T[];
@@ -18,6 +18,15 @@ export const intersection = <T>(first: readonly T[], ...rest: Array<readonly T[]
 
 export const invertObject = <K extends keyof any, V extends keyof any>(record: Record<K, V>): Record<V, K> =>
     Object.fromEntries(Object.entries(record).map(([key, value]) => [value, key]));
+
+export function mapAndFind<T, U>(elements: T[], callback: (plugin: T) => U | undefined): U | undefined {
+    for (const element of elements) {
+        const result = callback(element);
+        if (result !== undefined) {
+            return result;
+        }
+    }
+}
 
 type DiagnosticFactory = (...args: any) => Partial<ts.Diagnostic> & Pick<ts.Diagnostic, "messageText">;
 export const createDiagnosticFactoryWithCode = <T extends DiagnosticFactory>(code: number, create: T) =>

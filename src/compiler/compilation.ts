@@ -5,12 +5,12 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { CompilerMode, CompilerOptions, isBundleEnabled, LuaTarget } from "../CompilerOptions";
 import { getLuaLibBundle } from "../LuaLib";
-import { assert, cast, isNonNull, normalizeSlashes, trimExtension } from "../utils";
+import { assert, cast, isNonNull, mapAndFind, normalizeSlashes, trimExtension } from "../utils";
 import { Chunk, chunkToAssets, modulesToBundleChunks, modulesToChunks } from "./chunk";
 import { Compiler, CompilerHost } from "./compiler";
 import { createResolutionErrorDiagnostic } from "./diagnostics";
 import { buildModule, Module } from "./module";
-import { applyBailPlugin, applySinglePlugin, getPlugins, Plugin } from "./plugins";
+import { getPlugins, getUniquePluginProperty, Plugin } from "./plugins";
 import { isResolveError } from "./utils";
 
 export class Compilation {
@@ -157,7 +157,7 @@ export class Compilation {
     }
 
     public getModuleId(module: Module) {
-        const pluginResult = applyBailPlugin(this.plugins, p => p.getModuleId?.(module, this));
+        const pluginResult = mapAndFind(this.plugins, p => p.getModuleId?.(module, this));
         if (pluginResult !== undefined) return pluginResult;
 
         if (module.fileName.startsWith("<internal>/")) {
@@ -175,7 +175,7 @@ export class Compilation {
 
     private mapModulesToChunks(modules: Module[]): Chunk[] {
         return (
-            applySinglePlugin(this.plugins, "mapModulesToChunks")?.(modules, this) ??
+            getUniquePluginProperty(this.plugins, "mapModulesToChunks")?.(modules, this) ??
             (isBundleEnabled(this.options) ? modulesToBundleChunks(this, modules) : modulesToChunks(this, modules))
         );
     }

@@ -63,20 +63,11 @@ export function getPlugins(compilation: Compilation, customPlugins: Plugin[]): P
     return [...customPlugins, ...pluginsFromOptions];
 }
 
-export function applyBailPlugin<T>(plugins: Plugin[], callback: (plugin: Plugin) => T | undefined): T | undefined {
-    for (const plugin of plugins) {
-        const result = callback(plugin);
-        if (result !== undefined) {
-            return result;
-        }
-    }
-}
-
-export function applySinglePlugin<P extends keyof Plugin>(plugins: Plugin[], property: P): Plugin[P] | undefined {
-    const results = plugins.filter(p => p[property] !== undefined);
-    if (results.length === 1) {
-        return results[0][property];
-    } else if (results.length > 1) {
+export function getUniquePluginProperty<P extends keyof Plugin>(plugins: Plugin[], property: P): Plugin[P] | undefined {
+    const applicablePlugins = plugins.filter(p => p[property] !== undefined);
+    if (applicablePlugins.length === 1) {
+        return applicablePlugins[0][property];
+    } else if (applicablePlugins.length > 1) {
         throw new Error(`Only one plugin can specify '${property}'`);
     }
 }

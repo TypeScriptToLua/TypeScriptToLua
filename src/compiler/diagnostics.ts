@@ -39,12 +39,13 @@ export const usingLuaBundleWithInlineMightGenerateDuplicateCode = createSerialDi
         "It is recommended to use 'luaLibImport: \"require\"'.",
 }));
 
-const sourceFileStub = ts.createSourceFile("", "", ts.ScriptTarget.ES3);
+const endOfFileToken = ts.factory.createToken(ts.SyntaxKind.EndOfFileToken);
 export const createResolutionErrorDiagnostic = createSerialDiagnosticFactory(
-    (messageText: string, module: Module, position: ts.ReadonlyTextRange) => ({
-        messageText,
-        file: { ...sourceFileStub, fileName: module.fileName, text: module.source.toString() },
-        start: position.pos,
-        length: position.end - position.pos,
-    })
+    (messageText: string, module: Module, position: ts.ReadonlyTextRange) => {
+        const file = ts.factory.createSourceFile([], endOfFileToken, ts.NodeFlags.None);
+        file.fileName = module.fileName;
+        file.text = module.source.toString();
+
+        return { messageText, file, start: position.pos, length: position.end - position.pos };
+    }
 );

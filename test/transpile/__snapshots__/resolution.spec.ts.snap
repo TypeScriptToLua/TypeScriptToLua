@@ -124,6 +124,30 @@ return { value = true }
 end,"
 `;
 
+exports[`prioritize .lua files over external .ts: modules 1`] = `
+"[\\"main\\"] = function()
+local ____exports = {}
+require(\\"foo\\")
+return ____exports
+
+end,
+[\\"foo\\"] = function()
+
+end,"
+`;
+
+exports[`prioritize internal .ts files over .lua: modules 1`] = `
+"[\\"foo\\"] = function()
+
+end,
+[\\"main\\"] = function()
+local ____exports = {}
+require(\\"foo\\")
+return ____exports
+
+end,"
+`;
+
 exports[`resolution out of rootDir .ts file: diagnostics 1`] = `"src/main.ts(2,35): error TS6059: File 'module.ts' is not under 'rootDir' 'src'. 'rootDir' is expected to contain all source files."`;
 
 exports[`rootDir inference: modules 1`] = `

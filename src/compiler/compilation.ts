@@ -24,7 +24,8 @@ export class Compilation {
     public projectDir: string;
 
     public plugins: Plugin[];
-    protected resolver: Resolver;
+    protected tsResolver: Resolver;
+    protected luaResolver: Resolver;
 
     constructor(public compiler: Compiler, public program: ts.Program, extraPlugins: Plugin[]) {
         this.host = compiler.host;
@@ -44,16 +45,23 @@ export class Compilation {
 
         this.plugins = getPlugins(this, extraPlugins);
 
-        this.resolver = ResolverFactory.createResolver({
-            extensions: [".lua", ".ts", ".tsx", ".js", ".jsx"],
-            conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
-            fileSystem: this.host.resolutionFileSystem ?? fs,
-            useSyncFileSystemCalls: true,
-            plugins: this.plugins.flatMap(p => p.getResolvePlugins?.(this) ?? []),
-        });
+        const createResolver = (extensions: string[]) =>
+            ResolverFactory.createResolver({
+                extensions,
+                conditionNames: ["lua", `lua:${this.options.luaTarget ?? LuaTarget.Universal}`],
+                fileSystem: this.host.resolutionFileSystem ?? fs,
+                useSyncFileSystemCalls: true,
+                plugins: this.plugins.flatMap(p => p.getResolvePlugins?.(this) ?? []),
+            });
+
+        // We want to prioritize .ts files from current program, but .lua files otherwise
+        // TODO: It's not very efficient, maybe it could be solved with a plugin?
+        this.tsResolver = createResolver([".ts", ".tsx", ".js", ".jsx"]);
+        this.luaResolver = createResolver([".lua"]);
     }
 
     public emit(writeFile: ts.WriteFileCallback) {
+        this.modules.forEach(module => this.compiler.addModuleToCache(module));
         this.modules.forEach(module => this.buildModule(module));
 
         const chunks = this.mapModulesToChunks(this.modules);
@@ -95,18 +103,40 @@ export class Compilation {
             return module;
         }
 
-        let resolvedPath: string;
-        try {
-            const result = this.resolver.resolveSync({}, ts.getDirectoryPath(issuer), request);
+        function resolveUsingResolver(resolver: Resolver) {
+            const result = resolver.resolveSync({}, ts.getDirectoryPath(issuer), request);
             assert(typeof result === "string", `Invalid resolution result: ${result}`);
             // https://github.com/webpack/enhanced-resolve#escaping
-            resolvedPath = normalizeSlashes(result.replace(/\0#/g, "#"));
-        } catch (error) {
-            if (!isResolveError(error)) throw error;
-            return { error: error.message };
+            return normalizeSlashes(result.replace(/\0#/g, "#"));
         }
 
-        let module = this.modules.find(m => m.fileName === resolvedPath);
+        let resolvedPath: string | undefined;
+        let resolvedTsPath: string | undefined;
+
+        try {
+            resolvedTsPath = resolveUsingResolver(this.tsResolver);
+            if (this.compiler.findModuleInCache(resolvedTsPath)) {
+                resolvedPath = resolvedTsPath;
+            }
+        } catch (error) {
+            if (!isResolveError(error)) throw error;
+        }
+
+        if (resolvedPath === undefined) {
+            try {
+                resolvedPath = resolveUsingResolver(this.luaResolver);
+            } catch (error) {
+                if (!isResolveError(error)) throw error;
+
+                if (resolvedTsPath !== undefined) {
+                    resolvedPath = resolvedTsPath;
+                } else {
+                    return { error: error.message };
+                }
+            }
+        }
+
+        let module = this.compiler.findModuleInCache(resolvedPath);
         if (!module) {
             if (!resolvedPath.endsWith(".lua")) {
                 const messageText = `Resolved source file '${resolvedPath}' is not a part of the project.`;
@@ -119,6 +149,7 @@ export class Compilation {
             module = { fileName: resolvedPath, isBuilt: false, source };
 
             this.modules.push(module);
+            this.compiler.addModuleToCache(module);
             this.buildModule(module);
         }
 

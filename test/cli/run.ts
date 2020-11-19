@@ -14,19 +14,21 @@ export function forkCli(args: string[]): ChildProcess {
     });
 }
 
-export interface CliResult {
+export interface CliOutput {
     exitCode: number;
     output: string;
 }
 
-export async function runCli(args: string[]): Promise<CliResult> {
-    const child = forkCli(args);
-
+export async function collectCliOutput(child: ChildProcess) {
     let output = "";
     child.stdout!.on("data", (data: Buffer) => (output += data.toString()));
     child.stderr!.on("data", (data: Buffer) => (output += data.toString()));
 
-    return new Promise(resolve => {
+    return new Promise<CliOutput>(resolve => {
         child.on("close", exitCode => resolve({ exitCode, output }));
     });
+}
+
+export async function runCli(args: string[]) {
+    return collectCliOutput(forkCli(args));
 }

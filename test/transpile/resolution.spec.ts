@@ -66,6 +66,24 @@ test("entry point in nested directory", () => {
         .tap(expectModuleTableToMatchSnapshot);
 });
 
+test("prioritize internal .ts files over .lua", () => {
+    util.testBundle`
+        import "./foo";
+    `
+        .addExtraFile("foo.ts", "")
+        .addRawFile("foo.lua", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
+test("prioritize .lua files over external .ts", () => {
+    util.testBundle`
+        import "./foo";
+    `
+        .addRawFile("foo.ts", "")
+        .addRawFile("foo.lua", "")
+        .tap(expectModuleTableToMatchSnapshot);
+});
+
 describe("resolution out of rootDir", () => {
     test(".lua file", () => {
         util.testBundle`

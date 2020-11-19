@@ -3,7 +3,7 @@ import * as ts from "typescript";
 import { escapeString, unescapeLuaString } from "../LuaPrinter";
 
 export interface Module {
-    request: string;
+    fileName: string;
     isBuilt: boolean;
     source: SourceNode;
     sourceFiles?: ts.SourceFile[];

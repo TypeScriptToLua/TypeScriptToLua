@@ -54,9 +54,9 @@ export function emitProgramModules(
 
         compilation.diagnostics.push(...transformDiagnostics);
         if (!options.noEmit && !options.emitDeclarationOnly) {
+            const fileName = ts.getNormalizedAbsolutePath(sourceFile.fileName, compilation.projectDir);
             const source = printer(program, compilation.host, sourceFile.fileName, file);
-            const request = ts.getNormalizedAbsolutePath(sourceFile.fileName, compilation.projectDir);
-            compilation.modules.push({ request, isBuilt: false, source, sourceFiles: [sourceFile] });
+            compilation.modules.push({ fileName, isBuilt: false, source, sourceFiles: [sourceFile] });
         }
     };
 

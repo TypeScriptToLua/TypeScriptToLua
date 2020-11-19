@@ -72,7 +72,7 @@ export class Compilation {
         if (this.options.mode === CompilerMode.Lib) return;
 
         buildModule(module, (request, position) => {
-            const result = this.resolveRequestToModule(module.request, request);
+            const result = this.resolveRequestToModule(module.fileName, request);
             if ("error" in result) {
                 const diagnostic = createResolutionErrorDiagnostic(result.error, module, position);
                 this.diagnostics.push(diagnostic);
@@ -85,10 +85,10 @@ export class Compilation {
 
     private resolveRequestToModule(issuer: string, request: string) {
         if (request === "<internal>/lualib_bundle") {
-            let module = this.modules.find(m => m.request === request);
+            let module = this.modules.find(m => m.fileName === request);
             if (!module) {
                 const source = new SourceNode(null, null, null, getLuaLibBundle(this.host));
-                module = { request, isBuilt: true, source };
+                module = { fileName: request, isBuilt: true, source };
                 this.modules.push(module);
             }
 
@@ -106,7 +106,7 @@ export class Compilation {
             return { error: error.message };
         }
 
-        let module = this.modules.find(m => m.request === resolvedPath);
+        let module = this.modules.find(m => m.fileName === resolvedPath);
         if (!module) {
             if (!resolvedPath.endsWith(".lua")) {
                 const messageText = `Resolved source file '${resolvedPath}' is not a part of the project.`;
@@ -116,7 +116,7 @@ export class Compilation {
             // TODO: Load source map files
             const code = cast(this.host.readFile(resolvedPath), isNonNull);
             const source = new SourceNode(null, null, null, code);
-            module = { request: resolvedPath, isBuilt: false, source };
+            module = { fileName: resolvedPath, isBuilt: false, source };
 
             this.modules.push(module);
             this.buildModule(module);
@@ -129,11 +129,11 @@ export class Compilation {
         const pluginResult = applyBailPlugin(this.plugins, p => p.getModuleId?.(module, this));
         if (pluginResult !== undefined) return pluginResult;
 
-        if (module.request.startsWith("<internal>/")) {
-            return module.request.replace("<internal>/", "");
+        if (module.fileName.startsWith("<internal>/")) {
+            return module.fileName.replace("<internal>/", "");
         }
 
-        const result = path.relative(this.rootDir, trimExtension(module.request));
+        const result = path.relative(this.rootDir, trimExtension(module.fileName));
         // TODO: handle files on other drives
         assert(!path.isAbsolute(result), `Invalid path: ${result}`);
         return result

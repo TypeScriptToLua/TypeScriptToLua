@@ -43,7 +43,7 @@ const sourceFileStub = ts.createSourceFile("", "", ts.ScriptTarget.ES3);
 export const createResolutionErrorDiagnostic = createSerialDiagnosticFactory(
     (messageText: string, module: Module, position: ts.ReadonlyTextRange) => ({
         messageText,
-        file: { ...sourceFileStub, fileName: module.request, text: module.source.toString() },
+        file: { ...sourceFileStub, fileName: module.fileName, text: module.source.toString() },
         start: position.pos,
         length: position.end - position.pos,
     })

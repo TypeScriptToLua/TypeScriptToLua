@@ -37,7 +37,7 @@ export function modulesToBundleChunks(compilation: Compilation, modules: Module[
     const outputPath = ts.getNormalizedAbsolutePath(options.luaBundle, compilation.projectDir);
     const entryFileName = ts.getNormalizedAbsolutePath(options.luaBundleEntry, compilation.projectDir);
 
-    const entryModule = modules.find(m => m.request === entryFileName);
+    const entryModule = modules.find(m => m.fileName === entryFileName);
     if (entryModule === undefined) {
         compilation.diagnostics.push(couldNotFindBundleEntryPoint(options.luaBundleEntry));
         return [{ outputPath, source: new SourceNode() }];

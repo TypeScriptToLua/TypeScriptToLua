@@ -45,3 +45,11 @@ test("getResolvePlugins", () => {
         })
         .expectToEqual({ value: true });
 });
+
+test("passing arguments", () => {
+    util.testFunction`
+        return {};
+    `
+        .setOptions({ luaPlugins: [{ name: resolveFixture("plugins/arguments.ts"), option: true }] })
+        .expectToEqual({ name: resolveFixture("plugins/arguments.ts"), option: true });
+});

@@ -3,7 +3,6 @@ import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { transformPropertyName } from "../../literal";
-import { isGetAccessorOverride } from "./accessors";
 import { createDecoratingExpression, transformDecoratorExpression } from "../decorators";
 import { transformMemberExpressionOwnerName } from "./method";
 
@@ -27,7 +26,6 @@ export function createPropertyDecoratingExpression(
 
 export function transformClassInstanceFields(
     context: TransformationContext,
-    classDeclaration: ts.ClassLikeDeclaration,
     instanceFields: ts.PropertyDeclaration[]
 ): lua.Statement[] {
     const statements: lua.Statement[] = [];
@@ -45,26 +43,6 @@ export function transformClassInstanceFields(
         const assignClassField = lua.createAssignmentStatement(selfIndex, value, f);
 
         statements.push(assignClassField);
-    }
-
-    // TODO: Remove when `useDefineForClassFields` would be `true` by default
-
-    const getOverrides = classDeclaration.members.filter((m): m is ts.GetAccessorDeclaration =>
-        isGetAccessorOverride(context, m, classDeclaration)
-    );
-
-    for (const getter of getOverrides) {
-        const getterName = transformPropertyName(context, getter.name);
-
-        const resetGetter = lua.createExpressionStatement(
-            lua.createCallExpression(lua.createIdentifier("rawset"), [
-                createSelfIdentifier(),
-                getterName,
-                lua.createNilLiteral(),
-            ]),
-            classDeclaration.members.find(ts.isConstructorDeclaration) ?? classDeclaration
-        );
-        statements.push(resetGetter);
     }
 
     return statements;

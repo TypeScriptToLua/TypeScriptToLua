@@ -27,11 +27,8 @@ function benchmark(): void {
         oldBenchmarkResults = json.decode(oldBenchmarkData) as BenchmarkResult[];
     }
 
-    // Compare results
-    const comparisonInfo = compareBenchmarks(oldBenchmarkResults, newBenchmarkResults);
-
     // Output comparison info
-    outputBenchmarkData(comparisonInfo, newBenchmarkResults);
+    outputBenchmarkData(oldBenchmarkResults, newBenchmarkResults);
 }
 benchmark();
 
@@ -44,12 +41,14 @@ function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkR
     return { summary: memoryComparisonInfo.summary, text: memoryComparisonInfo.text };
 }
 
-function outputBenchmarkData(comparisonInfo: { summary: string; text: string }, newResults: BenchmarkResult[]): void {
+function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {
     if (!arg[2]) {
         // Output to stdout as json by default, this is used by the CI to retrieve the info
-        print(json.encode(comparisonInfo));
+        print(json.encode({ old: oldResults, new: newResults }));
     } else {
         // Output to file as markdown if arg[2] is set, this is useful for local development
+        // Compare results
+        const comparisonInfo = compareBenchmarks(oldResults, newResults);
         const markdownDataFile = io.open(arg[2], "w+")[0]!;
         markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
     }

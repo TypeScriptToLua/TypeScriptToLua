@@ -21,6 +21,7 @@ export interface TransformerImport {
 export interface LuaPluginImport {
     name: string;
     import?: string;
+    [option: string]: any;
 }
 
 export type CompilerOptions = OmitIndexSignature<ts.CompilerOptions> & {

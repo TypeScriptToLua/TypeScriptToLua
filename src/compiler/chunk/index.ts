@@ -8,6 +8,10 @@ import { Module } from "../module";
 export * from "./assets";
 export * from "./bundle";
 
+/**
+ * A chunk of Lua code to be emitted.
+ * Usually composed of one or multiple `Module` instances.
+ */
 export interface Chunk {
     outputPath: string;
     source: SourceNode;

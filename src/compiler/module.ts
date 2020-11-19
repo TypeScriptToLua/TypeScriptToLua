@@ -2,6 +2,10 @@ import { SourceNode } from "source-map";
 import * as ts from "typescript";
 import { escapeString, unescapeLuaString } from "../LuaPrinter";
 
+/**
+ * Source code of a single input Lua file.
+ * May be constructed from transpiled `.ts` source files, or from real `.lua` files.
+ */
 export interface Module {
     fileName: string;
     isBuilt: boolean;

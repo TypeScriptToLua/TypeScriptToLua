@@ -124,7 +124,7 @@ export class Compilation {
                 if (!isResolveError(error)) throw error;
 
                 if (resolvedTsPath !== undefined) {
-                    resolvedPath = resolvedTsPath;
+                    return { error: `Resolved source file '${resolvedTsPath}' is not a part of the project.` };
                 } else {
                     return { error: error.message };
                 }
@@ -133,11 +133,6 @@ export class Compilation {
 
         let module = this.compiler.findModuleInCache(resolvedPath);
         if (!module) {
-            if (!resolvedPath.endsWith(".lua")) {
-                const messageText = `Resolved source file '${resolvedPath}' is not a part of the project.`;
-                return { error: messageText };
-            }
-
             // TODO: Load source map files
             const code = cast(this.host.readFile(resolvedPath), isNonNull);
             const source = new SourceNode(null, null, null, code);

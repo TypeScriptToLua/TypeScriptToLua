@@ -40,3 +40,5 @@ end,
 }
 return require(\\"9124a2db32045398a4f097c567d1fe6fcb7ab900\\")"
 `;
+
+exports[`printer 1`] = `"-- Plugin"`;

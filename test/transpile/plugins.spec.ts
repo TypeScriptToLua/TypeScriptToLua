@@ -4,7 +4,7 @@ import { resolveFixture } from "./run";
 test("printer", () => {
     util.testModule``
         .setOptions({ luaPlugins: [{ name: resolveFixture("plugins/printer.ts") }] })
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).toMatch("Plugin"));
+        .expectLuaToMatchSnapshot();
 });
 
 test("visitor", () => {

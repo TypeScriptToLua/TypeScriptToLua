@@ -6,7 +6,7 @@ const plugin: tstl.Plugin = {
     getModuleId: (module, compilation) =>
         createHash("sha1")
             .update(module.source.toString())
-            .update(path.relative(compilation.rootDir, module.request))
+            .update(path.relative(compilation.rootDir, module.fileName))
             .digest("hex"),
 };
 

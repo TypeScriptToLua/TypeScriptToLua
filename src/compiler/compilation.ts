@@ -64,14 +64,9 @@ export class Compilation {
         this.modules.forEach(module => this.compiler.addModuleToCache(module));
         this.modules.forEach(module => this.buildModule(module));
 
-        const chunks = this.mapModulesToChunks(this.modules);
-
-        const emitBOM = this.options.emitBOM ?? false;
-        for (const chunk of chunks) {
-            const { code, sourceMap } = chunkToAssets(chunk, this.options);
-            writeFile(chunk.outputPath, code, emitBOM, undefined, chunk.sourceFiles);
-            if (sourceMap !== undefined) {
-                writeFile(chunk.outputPath + ".map", sourceMap, emitBOM, undefined, chunk.sourceFiles);
+        for (const chunk of this.mapModulesToChunks(this.modules)) {
+            for (const asset of chunkToAssets(chunk, this.options)) {
+                writeFile(asset.name, asset.text, asset.writeByteOrderMark, undefined, chunk.sourceFiles);
             }
         }
     }

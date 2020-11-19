@@ -1,9 +1,11 @@
 import * as path from "path";
 import { Mapping, SourceMapGenerator, SourceNode, StartOfSourceMap } from "source-map";
+import * as ts from "typescript";
 import { Chunk } from ".";
 import { CompilerOptions } from "../../CompilerOptions";
 
 export function chunkToAssets(chunk: Chunk, options: CompilerOptions) {
+    const writeByteOrderMark = options.emitBOM ?? false;
     const sourceRoot = options.sourceRoot
         ? // According to spec, sourceRoot is simply prepended to the source name, so the slash should be included
           options.sourceRoot.replace(/[\\/]+$/, "") + "/"
@@ -22,7 +24,13 @@ export function chunkToAssets(chunk: Chunk, options: CompilerOptions) {
         code = code.replace("{#SourceMapTraceback}", printStackTraceOverride(chunk.source));
     }
 
-    return { code, sourceMap };
+    const assets: ts.OutputFile[] = [];
+    assets.push({ name: chunk.outputPath, text: code, writeByteOrderMark });
+    if (sourceMap !== undefined) {
+        assets.push({ name: chunk.outputPath + ".map", text: sourceMap, writeByteOrderMark });
+    }
+
+    return assets;
 }
 
 function printInlineSourceMap(sourceMap: SourceMapGenerator): string {

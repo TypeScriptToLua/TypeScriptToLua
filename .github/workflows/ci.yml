@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Lua Install
         run: sudo apt-get install lua5.3 luajit
+      - name: Glow Install
+        run: brew install glow
       # Checkout master & commit
       - name: Checkout master
         uses: actions/checkout@v2
@@ -93,50 +95,24 @@ jobs:
         working-directory: commit/benchmark
       - name: Run benchmark Lua 5.3 commit
         id: benchmark-lua-commit
-        run: echo ::set-output name=info::`lua5.3 -- run.lua ../data/benchmark_commit_53.json ../data/benchmark_master_53.json`
+        run: lua5.3 -- run.lua ../data/benchmark_master_vs_commit_53.json ../data/benchmark_master_53.json
         working-directory: commit/benchmark/dist
       - name: Build benchmark LuaJIT commit
         run: node ../dist/tstl.js -p tsconfig.jit.json
         working-directory: commit/benchmark
       - name: Run benchmark LuaJIT commit
         id: benchmark-jit-commit
-        run: echo ::set-output name=info::`luajit -- run.lua ../data/benchmark_commit_jit.json ../data/benchmark_master_jit.json`
+        run: luajit -- run.lua ../data/benchmark_master_vs_commit_jit.json ../data/benchmark_master_jit.json
         working-directory: commit/benchmark/dist
-      - name: Create benchmark check
-        uses: actions/github-script@0.9.0
+      - name: Combine benchmark results
+        id: script-combine-results
+        uses: actions/github-script@v3
         with:
-          benchmark-info-lua: ${{steps.benchmark-lua-commit.outputs.info}}
-          benchmark-info-jit: ${{steps.benchmark-jit-commit.outputs.info}}
+          benchmark-result-path-lua: commit/benchmark/data/benchmark_master_vs_commit_53.json
+          benchmark-result-path-jit: commit/benchmark/data/benchmark_master_vs_commit_jit.json
+          result-encoding: string
           script: |
-            const benchmarkInfoLua = JSON.parse(core.getInput('benchmark-info-lua', { required: true }));
-            const benchmarkInfoJIT = JSON.parse(core.getInput('benchmark-info-jit', { required: true }));
-
-            const zlib = require('zlib');
-            const buffer = Buffer.from(core.getInput('benchmark-info-lua', { required: true }));
-            const compressed = zlib.deflateSync(buffer);
-
-            const summary = `[Open visualizer](https://typescripttolua.github.io/benchviz?d=${compressed.toString('base64')})\n`
-              + `### Lua5.3\n${benchmarkInfoLua.summary}\n### LuaJIT\n${benchmarkInfoJIT.summary}`;
-
-            const text = `### Lua5.3\n${benchmarkInfoLua.text}\n### LuaJIT\n${benchmarkInfoJIT.text}`;
-
-            const pull_request = context.payload.pull_request;
-            if (!pull_request || pull_request.head.repo.url === pull_request.base.repo.url) {
-              // This only works if not in a fork.
-              github.checks.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: "Benchmark results",
-                head_sha: context.sha,
-                status: "completed",
-                conclusion: "neutral",
-                output: {
-                  title: "Benchmark results",
-                  summary: summary,
-                  text: text
-                }
-              });
-            } else {
-              console.log(summary);
-              console.log(text);
-            }
+            const createBenchmarkCheck = require(`${process.env.GITHUB_WORKSPACE}/commit/.github/scripts/create_benchmark_check.js`);
+            return createBenchmarkCheck({ github, context, core });
+      - name: Benchmark results
+        run: echo "${{steps.script-combine-results.outputs.result}}" | glow -s dark -w 120 -

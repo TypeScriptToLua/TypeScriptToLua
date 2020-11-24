@@ -275,3 +275,17 @@ test("export default function with future reference", () => {
         .setReturnExport("result")
         .expectToMatchJsResult();
 });
+
+test("export all does not include default", () => {
+    util.testBundle`
+        export * from "./module";
+    `
+        .addExtraFile(
+            "module.ts",
+            `
+                export default true;
+                export const foo = "bar";
+            `
+        )
+        .expectToEqual({ foo: "bar" });
+});

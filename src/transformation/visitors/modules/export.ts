@@ -51,9 +51,19 @@ function transformExportAllFrom(context: TransformationContext, node: ts.ExportD
     const forKey = lua.createIdentifier("____exportKey");
     const forValue = lua.createIdentifier("____exportValue");
 
-    const body = lua.createBlock([
-        lua.createAssignmentStatement(lua.createTableIndexExpression(createExportsIdentifier(), forKey), forValue),
+    const ifBody = lua.createBlock([
+        lua.createAssignmentStatement(
+            lua.createTableIndexExpression(createExportsIdentifier(), lua.cloneIdentifier(forKey)),
+            forValue
+        ),
     ]);
+
+    const ifStatement = lua.createIfStatement(
+        lua.createBinaryExpression(forKey, lua.createStringLiteral("default"), lua.SyntaxKind.InequalityOperator),
+        ifBody
+    );
+
+    const body = lua.createBlock([ifStatement]);
 
     const pairsIdentifier = lua.createIdentifier("pairs");
     const forIn = lua.createForInStatement(

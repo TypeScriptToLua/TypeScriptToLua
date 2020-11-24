@@ -8,6 +8,7 @@ import {
     createExportedIdentifier,
 } from "../../utils/export";
 import { createExportsIdentifier } from "../../utils/lua-ast";
+import { createSafeName } from "../../utils/safe-names";
 import { ScopeType } from "../../utils/scope";
 import { transformScopeBlock } from "../block";
 import { transformIdentifier } from "../identifier";
@@ -36,7 +37,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
     }
 };
 
-function transformExportAllFrom(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
+function transformExportAll(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
     assert(node.moduleSpecifier);
 
     if (!context.resolver.moduleExportsSomeValue(node.moduleSpecifier)) {
@@ -46,34 +47,62 @@ function transformExportAllFrom(context: TransformationContext, node: ts.ExportD
     const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
     const tempModuleIdentifier = lua.createIdentifier("____export");
 
+    const result: lua.Statement[] = [];
+
     const declaration = lua.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+    result.push(declaration);
+
+    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
+        const namespaceIdentifier = lua.createIdentifier(createSafeName(node.exportClause.name.text));
+        const namespaceDeclaration = lua.createVariableDeclarationStatement(
+            namespaceIdentifier,
+            lua.createTableExpression()
+        );
+        result.push(namespaceDeclaration);
+    }
 
     const forKey = lua.createIdentifier("____exportKey");
     const forValue = lua.createIdentifier("____exportValue");
 
-    const ifBody = lua.createBlock([
-        lua.createAssignmentStatement(
-            lua.createTableIndexExpression(createExportsIdentifier(), lua.cloneIdentifier(forKey)),
-            forValue
-        ),
-    ]);
+    const left =
+        node.exportClause && ts.isNamespaceExport(node.exportClause)
+            ? lua.createIdentifier(createSafeName(node.exportClause.name.text))
+            : createExportsIdentifier();
+
+    const leftAssignment = lua.createAssignmentStatement(
+        lua.createTableIndexExpression(lua.cloneIdentifier(left), lua.cloneIdentifier(forKey)),
+        forValue
+    );
+
+    const ifBody = lua.createBlock([leftAssignment]);
 
     const ifStatement = lua.createIfStatement(
         lua.createBinaryExpression(forKey, lua.createStringLiteral("default"), lua.SyntaxKind.InequalityOperator),
         ifBody
     );
 
-    const body = lua.createBlock([ifStatement]);
-
     const pairsIdentifier = lua.createIdentifier("pairs");
     const forIn = lua.createForInStatement(
-        body,
+        lua.createBlock([ifStatement]),
         [lua.cloneIdentifier(forKey), lua.cloneIdentifier(forValue)],
         [lua.createCallExpression(pairsIdentifier, [lua.cloneIdentifier(tempModuleIdentifier)])]
     );
 
+    result.push(forIn);
+
+    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
+        const assignToExports = lua.createAssignmentStatement(
+            lua.createTableIndexExpression(
+                createExportsIdentifier(),
+                lua.createStringLiteral(node.exportClause.name.text)
+            ),
+            lua.createIdentifier(createSafeName(node.exportClause.name.text))
+        );
+        result.push(assignToExports);
+    }
+
     // Wrap this in a DoStatement to prevent polluting the scope.
-    return lua.createDoStatement([declaration, forIn], node);
+    return lua.createDoStatement(result, node);
 }
 
 const isDefaultExportSpecifier = (node: ts.ExportSpecifier) =>
@@ -137,7 +166,7 @@ export const getExported = (context: TransformationContext, exportSpecifiers: ts
 export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
     if (!node.exportClause) {
         // export * from "...";
-        return transformExportAllFrom(context, node);
+        return transformExportAll(context, node);
     }
 
     if (!context.resolver.isValueAliasDeclaration(node)) {
@@ -146,7 +175,7 @@ export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> =
 
     if (ts.isNamespaceExport(node.exportClause)) {
         // export * as ns from "...";
-        throw new Error("NamespaceExport is not supported");
+        return transformExportAll(context, node);
     }
 
     const exportSpecifiers = getExported(context, node.exportClause);

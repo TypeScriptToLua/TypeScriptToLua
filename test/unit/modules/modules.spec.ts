@@ -296,3 +296,11 @@ test("namespace export does not include default", () => {
         .addExtraFile("module.ts", moduleFile)
         .expectToEqual({ result: { foo: "bar" } });
 });
+
+test("namespace export with unsafe Lua name", () => {
+    util.testBundle`
+        export * as $$$ from "./module";
+    `
+        .addExtraFile("module.ts", moduleFile)
+        .expectToEqual({ $$$: { foo: "bar" } });
+});

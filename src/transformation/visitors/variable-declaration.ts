@@ -36,14 +36,13 @@ export function transformBindingPattern(
     propertyAccessStack: ts.PropertyName[] = []
 ): lua.Statement[] {
     const result: lua.Statement[] = [];
-    const isObjectBindingPattern = ts.isObjectBindingPattern(pattern);
 
     for (const [index, element] of pattern.elements.entries()) {
         if (ts.isOmittedExpression(element)) continue;
 
         if (ts.isArrayBindingPattern(element.name) || ts.isObjectBindingPattern(element.name)) {
             // nested binding pattern
-            const propertyName = isObjectBindingPattern
+            const propertyName = ts.isObjectBindingPattern(pattern)
                 ? element.propertyName
                 : ts.createNumericLiteral(String(index + 1));
 
@@ -73,16 +72,29 @@ export function transformBindingPattern(
                 continue;
             }
 
-            if (isObjectBindingPattern) {
-                const elements = pattern.elements as ts.NodeArray<ts.BindingElement>;
-                const usedProperties = elements.map(e =>
-                    lua.createTableFieldExpression(
-                        lua.createBooleanLiteral(true),
-                        lua.createStringLiteral(
-                            ((e.propertyName ?? e.name) as ts.Identifier).text,
-                            e.propertyName ?? e.name
-                        )
-                    )
+            if (ts.isObjectBindingPattern(pattern)) {
+                const excludedProperties: ts.Identifier[] = [];
+
+                for (const element of pattern.elements) {
+                    // const { ...x } = ...;
+                    //         ~~~~
+                    if (element.dotDotDotToken) continue;
+
+                    // const { x } = ...;
+                    //         ~
+                    if (ts.isIdentifier(element.name) && !element.propertyName) {
+                        excludedProperties.push(element.name);
+                    }
+
+                    // const { x: ... } = ...;
+                    //         ~~~~~~
+                    if (element.propertyName && element.name && ts.isIdentifier(element.propertyName)) {
+                        excludedProperties.push(element.propertyName);
+                    }
+                }
+
+                const excludedPropertiesTable = excludedProperties.map(e =>
+                    lua.createTableFieldExpression(lua.createBooleanLiteral(true), lua.createStringLiteral(e.text, e))
                 );
 
                 expression = transformLuaLibFunction(
@@ -90,7 +102,7 @@ export function transformBindingPattern(
                     LuaLibFeature.ObjectRest,
                     undefined,
                     tableExpression,
-                    lua.createTableExpression(usedProperties)
+                    lua.createTableExpression(excludedPropertiesTable)
                 );
             } else {
                 expression = transformLuaLibFunction(
@@ -104,7 +116,7 @@ export function transformBindingPattern(
         } else {
             expression = lua.createTableIndexExpression(
                 tableExpression,
-                isObjectBindingPattern ? propertyName : lua.createNumericLiteral(index + 1)
+                ts.isObjectBindingPattern(pattern) ? propertyName : lua.createNumericLiteral(index + 1)
             );
         }
 

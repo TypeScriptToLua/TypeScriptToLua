@@ -8,7 +8,6 @@ import {
     createExportedIdentifier,
 } from "../../utils/export";
 import { createExportsIdentifier } from "../../utils/lua-ast";
-import { createSafeName } from "../../utils/safe-names";
 import { ScopeType } from "../../utils/scope";
 import { transformScopeBlock } from "../block";
 import { transformIdentifier } from "../identifier";
@@ -45,42 +44,53 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
     }
 
     const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
-    const tempModuleIdentifier = lua.createIdentifier("____export");
 
+    // export * as ns from "...";
+    // exports.ns = require(...)
+    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
+        const assignToExports = lua.createAssignmentStatement(
+            lua.createTableIndexExpression(
+                createExportsIdentifier(),
+                lua.createStringLiteral(node.exportClause.name.text)
+            ),
+            moduleRequire
+        );
+        return assignToExports;
+    }
+
+    // export * from "...";
+    // exports all values EXCEPT "default" from "..."
     const result: lua.Statement[] = [];
 
+    // local ____export = require(...)
+    const tempModuleIdentifier = lua.createIdentifier("____export");
     const declaration = lua.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
     result.push(declaration);
 
-    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
-        const namespaceIdentifier = lua.createIdentifier(createSafeName(node.exportClause.name.text));
-        const namespaceDeclaration = lua.createVariableDeclarationStatement(
-            namespaceIdentifier,
-            lua.createTableExpression()
-        );
-        result.push(namespaceDeclaration);
-    }
-
+    // ____exports[____exportKey] = ____exportValue
     const forKey = lua.createIdentifier("____exportKey");
     const forValue = lua.createIdentifier("____exportValue");
-
-    const left =
-        node.exportClause && ts.isNamespaceExport(node.exportClause)
-            ? lua.createIdentifier(createSafeName(node.exportClause.name.text))
-            : createExportsIdentifier();
-
     const leftAssignment = lua.createAssignmentStatement(
-        lua.createTableIndexExpression(lua.cloneIdentifier(left), lua.cloneIdentifier(forKey)),
+        lua.createTableIndexExpression(createExportsIdentifier(), forKey),
         forValue
     );
 
+    // if key ~= "default" then
+    //  -- export the value, do not export "default" values
+    // end
     const ifBody = lua.createBlock([leftAssignment]);
-
     const ifStatement = lua.createIfStatement(
-        lua.createBinaryExpression(forKey, lua.createStringLiteral("default"), lua.SyntaxKind.InequalityOperator),
+        lua.createBinaryExpression(
+            lua.cloneIdentifier(forKey),
+            lua.createStringLiteral("default"),
+            lua.SyntaxKind.InequalityOperator
+        ),
         ifBody
     );
 
+    // for ____exportKey, ____exportValue in ____export do
+    //  -- export ____exportValue, unless ____exportKey is "default"
+    // end
     const pairsIdentifier = lua.createIdentifier("pairs");
     const forIn = lua.createForInStatement(
         lua.createBlock([ifStatement]),
@@ -89,17 +99,6 @@ function transformExportAll(context: TransformationContext, node: ts.ExportDecla
     );
 
     result.push(forIn);
-
-    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
-        const assignToExports = lua.createAssignmentStatement(
-            lua.createTableIndexExpression(
-                createExportsIdentifier(),
-                lua.createStringLiteral(node.exportClause.name.text)
-            ),
-            lua.createIdentifier(createSafeName(node.exportClause.name.text))
-        );
-        result.push(assignToExports);
-    }
 
     // Wrap this in a DoStatement to prevent polluting the scope.
     return lua.createDoStatement(result, node);

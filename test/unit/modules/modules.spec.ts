@@ -294,7 +294,7 @@ test("namespace export does not include default", () => {
         export * as result from "./module";
     `
         .addExtraFile("module.ts", moduleFile)
-        .expectToEqual({ result: { foo: "bar" } });
+        .expectToEqual({ result: { default: true, foo: "bar" } });
 });
 
 test("namespace export with unsafe Lua name", () => {
@@ -302,5 +302,5 @@ test("namespace export with unsafe Lua name", () => {
         export * as $$$ from "./module";
     `
         .addExtraFile("module.ts", moduleFile)
-        .expectToEqual({ $$$: { foo: "bar" } });
+        .expectToEqual({ $$$: { default: true, foo: "bar" } });
 });

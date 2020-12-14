@@ -36,7 +36,7 @@ export const transformExportAssignment: FunctionVisitor<ts.ExportAssignment> = (
     }
 };
 
-function transformExportAllFrom(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
+function transformExportAll(context: TransformationContext, node: ts.ExportDeclaration): lua.Statement | undefined {
     assert(node.moduleSpecifier);
 
     if (!context.resolver.moduleExportsSomeValue(node.moduleSpecifier)) {
@@ -44,26 +44,64 @@ function transformExportAllFrom(context: TransformationContext, node: ts.ExportD
     }
 
     const moduleRequire = createModuleRequire(context, node.moduleSpecifier);
+
+    // export * as ns from "...";
+    // exports.ns = require(...)
+    if (node.exportClause && ts.isNamespaceExport(node.exportClause)) {
+        const assignToExports = lua.createAssignmentStatement(
+            lua.createTableIndexExpression(
+                createExportsIdentifier(),
+                lua.createStringLiteral(node.exportClause.name.text)
+            ),
+            moduleRequire
+        );
+        return assignToExports;
+    }
+
+    // export * from "...";
+    // exports all values EXCEPT "default" from "..."
+    const result: lua.Statement[] = [];
+
+    // local ____export = require(...)
     const tempModuleIdentifier = lua.createIdentifier("____export");
-
     const declaration = lua.createVariableDeclarationStatement(tempModuleIdentifier, moduleRequire);
+    result.push(declaration);
 
+    // ____exports[____exportKey] = ____exportValue
     const forKey = lua.createIdentifier("____exportKey");
     const forValue = lua.createIdentifier("____exportValue");
+    const leftAssignment = lua.createAssignmentStatement(
+        lua.createTableIndexExpression(createExportsIdentifier(), forKey),
+        forValue
+    );
 
-    const body = lua.createBlock([
-        lua.createAssignmentStatement(lua.createTableIndexExpression(createExportsIdentifier(), forKey), forValue),
-    ]);
+    // if key ~= "default" then
+    //  -- export the value, do not export "default" values
+    // end
+    const ifBody = lua.createBlock([leftAssignment]);
+    const ifStatement = lua.createIfStatement(
+        lua.createBinaryExpression(
+            lua.cloneIdentifier(forKey),
+            lua.createStringLiteral("default"),
+            lua.SyntaxKind.InequalityOperator
+        ),
+        ifBody
+    );
 
+    // for ____exportKey, ____exportValue in ____export do
+    //  -- export ____exportValue, unless ____exportKey is "default"
+    // end
     const pairsIdentifier = lua.createIdentifier("pairs");
     const forIn = lua.createForInStatement(
-        body,
+        lua.createBlock([ifStatement]),
         [lua.cloneIdentifier(forKey), lua.cloneIdentifier(forValue)],
         [lua.createCallExpression(pairsIdentifier, [lua.cloneIdentifier(tempModuleIdentifier)])]
     );
 
+    result.push(forIn);
+
     // Wrap this in a DoStatement to prevent polluting the scope.
-    return lua.createDoStatement([declaration, forIn], node);
+    return lua.createDoStatement(result, node);
 }
 
 const isDefaultExportSpecifier = (node: ts.ExportSpecifier) =>
@@ -127,7 +165,7 @@ export const getExported = (context: TransformationContext, exportSpecifiers: ts
 export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> = (node, context) => {
     if (!node.exportClause) {
         // export * from "...";
-        return transformExportAllFrom(context, node);
+        return transformExportAll(context, node);
     }
 
     if (!context.resolver.isValueAliasDeclaration(node)) {
@@ -136,7 +174,7 @@ export const transformExportDeclaration: FunctionVisitor<ts.ExportDeclaration> =
 
     if (ts.isNamespaceExport(node.exportClause)) {
         // export * as ns from "...";
-        throw new Error("NamespaceExport is not supported");
+        return transformExportAll(context, node);
     }
 
     const exportSpecifiers = getExported(context, node.exportClause);

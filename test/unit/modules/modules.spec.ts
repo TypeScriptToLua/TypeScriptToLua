@@ -275,3 +275,32 @@ test("export default function with future reference", () => {
         .setReturnExport("result")
         .expectToMatchJsResult();
 });
+
+const moduleFile = `
+export default true;
+export const foo = "bar";
+`;
+
+test("export all does not include default", () => {
+    util.testBundle`
+        export * from "./module";
+    `
+        .addExtraFile("module.ts", moduleFile)
+        .expectToEqual({ foo: "bar" });
+});
+
+test("namespace export does not include default", () => {
+    util.testBundle`
+        export * as result from "./module";
+    `
+        .addExtraFile("module.ts", moduleFile)
+        .expectToEqual({ result: { default: true, foo: "bar" } });
+});
+
+test("namespace export with unsafe Lua name", () => {
+    util.testBundle`
+        export * as $$$ from "./module";
+    `
+        .addExtraFile("module.ts", moduleFile)
+        .expectToEqual({ $$$: { default: true, foo: "bar" } });
+});

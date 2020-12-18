@@ -6,6 +6,7 @@ export enum AnnotationKind {
     Extension = "extension",
     MetaExtension = "metaExtension",
     CustomConstructor = "customConstructor",
+    LuaName = "luaName",
     CompileMembersOnly = "compileMembersOnly",
     NoResolution = "noResolution",
     PureAbstract = "pureAbstract",

@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { isForRangeType } from "../utils/annotations";
+import { getLuaName, isForRangeType } from "../utils/annotations";
 import { invalidForRangeCall } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
@@ -19,7 +19,8 @@ export function transformIdentifier(context: TransformationContext, identifier: 
         }
     }
 
-    const text = hasUnsafeIdentifierName(context, identifier) ? createSafeName(identifier.text) : identifier.text;
+    const luaName = getLuaName(context, identifier);
+    const text = hasUnsafeIdentifierName(context, identifier, true, luaName) ? createSafeName(luaName) : luaName;
 
     const symbolId = getIdentifierSymbolId(context, identifier);
     return lua.createIdentifier(text, identifier, symbolId, identifier.text);

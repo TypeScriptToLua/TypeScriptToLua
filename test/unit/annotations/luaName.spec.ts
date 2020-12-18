@@ -9,7 +9,7 @@ test("LuaName.FunctionCall", () => {
     `;
 
     const tsHeader = `
-        /** @luaName bar */
+        /** @noSelf @luaName bar */
         declare function foo(str: string): string
     `;
 

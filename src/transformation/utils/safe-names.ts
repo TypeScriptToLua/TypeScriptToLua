@@ -70,32 +70,42 @@ function checkName(context: TransformationContext, name: string, node: ts.Node):
 export function hasUnsafeSymbolName(
     context: TransformationContext,
     symbol: ts.Symbol,
-    tsOriginal: ts.Identifier
+    tsOriginal: ts.Identifier,
+    luaName = symbol.name
 ): boolean {
     const isAmbient = symbol.declarations && symbol.declarations.some(d => isAmbientNode(d));
 
     // Catch ambient declarations of identifiers with bad names
-    if (isAmbient && checkName(context, symbol.name, tsOriginal)) {
+    if (isAmbient && checkName(context, luaName, tsOriginal)) {
         return true;
     }
 
     // only unsafe when non-ambient and not exported
-    return isUnsafeName(symbol.name) && !isAmbient && !isSymbolExported(context, symbol);
+    return isUnsafeName(luaName) && !isAmbient && !isSymbolExported(context, symbol);
 }
 
 export function hasUnsafeIdentifierName(
     context: TransformationContext,
     identifier: ts.Identifier,
-    checkSymbol = true
+    checkSymbol = true,
+    luaName?: string
 ): boolean {
     if (checkSymbol) {
         const symbol = context.checker.getSymbolAtLocation(identifier);
         if (symbol) {
-            return hasUnsafeSymbolName(context, symbol, identifier);
+            if (luaName === undefined) {
+                luaName = symbol.name
+            }
+
+            return hasUnsafeSymbolName(context, symbol, identifier, luaName);
         }
     }
 
-    return checkName(context, identifier.text, identifier);
+    if (luaName === undefined) {
+        luaName = identifier.text
+    }
+
+    return checkName(context, luaName, identifier);
 }
 
 const fixInvalidLuaIdentifier = (name: string) =>

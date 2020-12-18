@@ -1,5 +1,6 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../context";
+import { annotationInvalidArgumentCount } from "./diagnostics";
 import { findFirstNodeAbove, inferAssignedType } from "./typescript";
 
 export enum AnnotationKind {
@@ -178,4 +179,27 @@ export function isVarargType(context: TransformationContext, node: ts.Node): boo
 export function isForRangeType(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
     return getTypeAnnotations(type).has(AnnotationKind.ForRange);
+}
+
+export function getLuaName(context: TransformationContext, identifier: ts.Identifier): string {
+    const type = context.checker.getTypeAtLocation(identifier);
+    const annotations = getTypeAnnotations(type);
+    const luaNameAnnotation = annotations.get(AnnotationKind.LuaName);
+
+    if (luaNameAnnotation) {
+        if (luaNameAnnotation.args.length === 1) {
+            return luaNameAnnotation.args[0];
+        } else {
+            context.diagnostics.push(
+                annotationInvalidArgumentCount(
+                    identifier,
+                    AnnotationKind.LuaName,
+                    luaNameAnnotation.args.length,
+                    1
+                )
+            );
+        }
+    }
+
+    return identifier.text
 }

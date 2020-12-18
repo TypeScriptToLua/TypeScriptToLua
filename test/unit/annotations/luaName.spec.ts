@@ -65,7 +65,7 @@ test("LuaName.Variable", () => {
 
     const tsHeader = `
         /** @luaName foo */
-        declare const bar;
+        declare const bar: string;
     `;
 
     const result = util.transpileAndExecute("return bar;", undefined, luaHeader, tsHeader);

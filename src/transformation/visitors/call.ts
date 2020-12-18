@@ -122,7 +122,7 @@ export function transformContextualCallExpression(
         const luaNameAnnotation = annotations.get(AnnotationKind.LuaName);
 
         if (luaNameAnnotation) {
-            if (luaNameAnnotation.args.length == 1) {
+            if (luaNameAnnotation.args.length === 1) {
                 luaName = luaNameAnnotation.args[0]
             } else {
                 context.diagnostics.push(

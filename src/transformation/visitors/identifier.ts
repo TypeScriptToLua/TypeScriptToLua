@@ -31,10 +31,11 @@ export const transformIdentifierExpression: FunctionVisitor<ts.Identifier> = (no
     if (symbol) {
         const exportScope = getSymbolExportScope(context, symbol);
         if (exportScope) {
-            const name = symbol.name;
-            const text = hasUnsafeIdentifierName(context, node) ? createSafeName(name) : name;
+            const originalName = symbol.name;
+            const luaName = getLuaName(context, node);
+            const text = hasUnsafeIdentifierName(context, node, true, luaName) ? createSafeName(luaName) : luaName;
             const symbolId = getIdentifierSymbolId(context, node);
-            const identifier = lua.createIdentifier(text, node, symbolId, name);
+            const identifier = lua.createIdentifier(text, node, symbolId, originalName);
             return createExportedIdentifier(context, identifier, exportScope);
         }
     }

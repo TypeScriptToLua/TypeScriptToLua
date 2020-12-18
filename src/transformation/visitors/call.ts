@@ -123,7 +123,7 @@ export function transformContextualCallExpression(
 
         if (luaNameAnnotation) {
             if (luaNameAnnotation.args.length === 1) {
-                luaName = luaNameAnnotation.args[0]
+                luaName = luaNameAnnotation.args[0];
             } else {
                 context.diagnostics.push(
                     annotationInvalidArgumentCount(

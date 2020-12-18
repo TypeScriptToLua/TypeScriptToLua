@@ -2,9 +2,8 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { transformBuiltinCallExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
-import { AnnotationKind, getTypeAnnotations, isInTupleReturnFunction, isTupleReturnCall, isVarargType } from "../utils/annotations";
+import { getLuaName, isInTupleReturnFunction, isTupleReturnCall, isVarargType } from "../utils/annotations";
 import { validateAssignment } from "../utils/assignment-validation";
-import { annotationInvalidArgumentCount } from "../utils/diagnostics";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { createImmediatelyInvokedFunctionExpression, createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
@@ -115,30 +114,9 @@ export function transformContextualCallExpression(
         // table:name()
         const table = context.transformExpression(left.expression);
 
-        let luaName = left.name.text;
-
-        const type = context.checker.getTypeAtLocation(left);
-        const annotations = getTypeAnnotations(type);
-        const luaNameAnnotation = annotations.get(AnnotationKind.LuaName);
-
-        if (luaNameAnnotation) {
-            if (luaNameAnnotation.args.length === 1) {
-                luaName = luaNameAnnotation.args[0];
-            } else {
-                context.diagnostics.push(
-                    annotationInvalidArgumentCount(
-                        left,
-                        AnnotationKind.LuaName,
-                        luaNameAnnotation.args.length,
-                        1
-                    )
-                );
-            }
-        }
-
         return lua.createMethodCallExpression(
             table,
-            lua.createIdentifier(luaName, left.name),
+            lua.createIdentifier(getLuaName(context, left.name), left.name),
             transformedArguments,
             node
         );

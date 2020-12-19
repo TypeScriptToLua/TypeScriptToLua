@@ -62,17 +62,27 @@ test.each(["func`noSelfParameter`", "obj.func`noSelfParameter`", "obj[`func`]`no
 );
 
 test.each([
-    ["'any string'", "string"],
-    ["'string type'", "'string literal type'"],
-    ["'string intersection'", "string & { x: number }"],
-])("tagged template literal omit tostring for string types (%p)", (input, type) => {
+    ["string", false],
+    ["'string literal type'", false],
+    ["string & unknown", false],
+    ["number", true],
+    ["string | any", true],
+])("template span expect tostring for type (%p) - %p", (type, expectToString) => {
     util.testFunction`
         function func(msg: ${type}) {
-            return \`func \${msg}\`;
+            return \`\${msg}\`;
         }
 
-        return func(${input} as ${type});
+        // @ts-ignore
+        return func("");
     `
-        .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("tostring"))
+        .tap(builder => {
+            const chunk = builder.getMainLuaCodeChunk();
+            if (expectToString) {
+                expect(chunk).toContain("tostring");
+            } else {
+                expect(chunk).not.toContain("tostring");
+            }
+        })
         .expectToMatchJsResult();
 });

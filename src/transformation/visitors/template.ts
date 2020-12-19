@@ -3,6 +3,7 @@ import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { ContextType, getDeclarationContextType } from "../utils/function-context";
 import { wrapInToStringForConcat } from "../utils/lua-ast";
+import { isStringType } from "../utils/typescript/types";
 import { transformArguments, transformContextualCallExpression } from "./call";
 
 // TODO: Source positions
@@ -25,7 +26,12 @@ export const transformTemplateExpression: FunctionVisitor<ts.TemplateExpression>
 
     for (const span of node.templateSpans) {
         const expression = context.transformExpression(span.expression);
-        parts.push(wrapInToStringForConcat(expression));
+        const spanType = context.checker.getTypeAtLocation(span.expression);
+        if (isStringType(context, spanType)) {
+            parts.push(expression);
+        } else {
+            parts.push(wrapInToStringForConcat(expression));
+        }
 
         const text = span.literal.text;
         if (text.length > 0) {

@@ -61,28 +61,25 @@ test.each(["func`noSelfParameter`", "obj.func`noSelfParameter`", "obj[`func`]`no
     }
 );
 
-test.each([
-    ["string", false],
-    ["'string literal type'", false],
-    ["string & unknown", false],
-    ["number", true],
-    ["string | any", true],
-])("template span expect tostring for type (%p) - %p", (type, expectToString) => {
+test.each(["number", "string | any"])("template span expect tostring for non string type (%p)", type => {
     util.testFunction`
-        function func(msg: ${type}) {
-            return \`\${msg}\`;
-        }
-
         // @ts-ignore
-        return func("");
+        const msg = "" as ${type};
+        return \`\${msg}\`;
     `
-        .tap(builder => {
-            const chunk = builder.getMainLuaCodeChunk();
-            if (expectToString) {
-                expect(chunk).toContain("tostring");
-            } else {
-                expect(chunk).not.toContain("tostring");
-            }
-        })
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("tostring"))
         .expectToMatchJsResult();
 });
+
+test.each(["string", "'string literal type'", "string & unknown"])(
+    "template span expect no tostring for string-like type (%p)",
+    type => {
+        util.testFunction`
+            // @ts-ignore
+            const msg = "" as ${type};
+            return \`\${msg}\`;
+        `
+            .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("tostring"))
+            .expectToMatchJsResult();
+    }
+);

@@ -1,4 +1,8 @@
-import { extensionCannotConstruct, metaExtensionMissingExtends } from "../../../src/transformation/utils/diagnostics";
+import {
+    annotationDeprecated,
+    extensionCannotConstruct,
+    metaExtensionMissingExtends,
+} from "../../../src/transformation/utils/diagnostics";
 import * as util from "../../util";
 
 test("MetaExtension", () => {
@@ -19,7 +23,8 @@ test("MetaExtension", () => {
         'return debug.getregistry()["_LOADED"].test();',
         undefined,
         undefined,
-        tsHeader
+        tsHeader,
+        true
     );
 
     expect(result).toBe(5);
@@ -33,7 +38,7 @@ test("IncorrectUsage", () => {
                 return 5;
             }
         }
-    `.expectDiagnosticsToMatchSnapshot([metaExtensionMissingExtends.code]);
+    `.expectDiagnosticsToMatchSnapshot([metaExtensionMissingExtends.code, annotationDeprecated.code]);
 });
 
 test("DontAllowInstantiation", () => {
@@ -42,5 +47,5 @@ test("DontAllowInstantiation", () => {
         /** @metaExtension */
         class Ext extends _LOADED {}
         const e = new Ext();
-    `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code, extensionCannotConstruct.code]);
 });

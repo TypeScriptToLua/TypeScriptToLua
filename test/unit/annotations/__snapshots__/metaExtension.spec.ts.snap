@@ -6,7 +6,10 @@ local __meta___LOADED = debug.getregistry()._LOADED
 e = __TS__New(Ext)"
 `;
 
-exports[`DontAllowInstantiation: diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;
+exports[`DontAllowInstantiation: diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`IncorrectUsage: code 1`] = `
 "function LoadedExt.test(self)
@@ -14,4 +17,7 @@ exports[`IncorrectUsage: code 1`] = `
 end"
 `;
 
-exports[`IncorrectUsage: diagnostics 1`] = `"main.ts(3,9): error TSTL: '@metaExtension' annotation requires the extension of the metatable class."`;
+exports[`IncorrectUsage: diagnostics 1`] = `
+"main.ts(3,9): error TSTL: '@metaExtension' annotation requires the extension of the metatable class.
+main.ts(3,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile."
+`;

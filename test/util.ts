@@ -298,7 +298,9 @@ export abstract class TestBuilder {
 
     private getLuaDiagnostics(): ts.Diagnostic[] {
         const { diagnostics } = this.getLuaResult();
-        return diagnostics.filter(d => this.semanticCheck || d.source === "typescript-to-lua");
+        return diagnostics.filter(
+            d => (this.semanticCheck || d.source === "typescript-to-lua") && !this.ignoredDiagnostics.includes(d.code)
+        );
     }
 
     // Actions
@@ -311,6 +313,12 @@ export abstract class TestBuilder {
     }
 
     private diagnosticsChecked = false;
+    private ignoredDiagnostics: number[] = [];
+
+    public ignoreDiagnostics(ignored: number[]): this {
+        this.ignoredDiagnostics.push(...ignored);
+        return this;
+    }
 
     public expectToHaveDiagnostics(expected?: number[]): this {
         if (this.diagnosticsChecked) return this;

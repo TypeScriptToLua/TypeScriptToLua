@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`extension deprecation: code 1`] = `""`;
+
+exports[`extension deprecation: code 2`] = `"local __meta__A = debug.getregistry().A"`;
+
+exports[`extension deprecation: diagnostics 1`] = `"main.ts(4,9): warning TSTL: '@extension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile."`;
+
+exports[`extension deprecation: diagnostics 2`] = `"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile."`;
+
+exports[`phantom deprecation: code 1`] = `
+"function nsMember(self)
+end"
+`;
+
+exports[`phantom deprecation: diagnostics 1`] = `"main.ts(3,9): warning TSTL: '@phantom' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile."`;
+
+exports[`pureAbstract deprecation: code 1`] = `
+"require(\\"lualib_bundle\\");
+ClassB = __TS__Class()
+ClassB.name = \\"ClassB\\"
+function ClassB.prototype.____constructor(self)
+end"
+`;
+
+exports[`pureAbstract deprecation: diagnostics 1`] = `"main.ts(4,22): warning TSTL: '@pureAbstract' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile."`;

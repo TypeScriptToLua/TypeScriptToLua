@@ -5,7 +5,10 @@ exports[`Class construct extension ("extension"): code 1`] = `
 b = __TS__New(B)"
 `;
 
-exports[`Class construct extension ("extension"): diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;
+exports[`Class construct extension ("extension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@extension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`Class construct extension ("metaExtension"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -13,7 +16,10 @@ local __meta__A = debug.getregistry().A
 b = __TS__New(B)"
 `;
 
-exports[`Class construct extension ("metaExtension"): diagnostics 1`] = `"main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."`;
+exports[`Class construct extension ("metaExtension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`Class extends extension ("extension"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -22,7 +28,10 @@ C.name = \\"C\\"
 __TS__ClassExtends(C, B)"
 `;
 
-exports[`Class extends extension ("extension"): diagnostics 1`] = `"main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."`;
+exports[`Class extends extension ("extension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@extension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`Class extends extension ("metaExtension"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -32,14 +41,20 @@ C.name = \\"C\\"
 __TS__ClassExtends(C, B)"
 `;
 
-exports[`Class extends extension ("metaExtension"): diagnostics 1`] = `"main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."`;
+exports[`Class extends extension ("metaExtension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`instanceof extension ("extension"): code 1`] = `
 "require(\\"lualib_bundle\\");
 result = __TS__InstanceOf(foo, B)"
 `;
 
-exports[`instanceof extension ("extension"): diagnostics 1`] = `"main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."`;
+exports[`instanceof extension ("extension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@extension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."
+`;
 
 exports[`instanceof extension ("metaExtension"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -47,4 +62,7 @@ local __meta__A = debug.getregistry().A
 result = __TS__InstanceOf(foo, B)"
 `;
 
-exports[`instanceof extension ("metaExtension"): diagnostics 1`] = `"main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."`;
+exports[`instanceof extension ("metaExtension"): diagnostics 1`] = `
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile.
+main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."
+`;

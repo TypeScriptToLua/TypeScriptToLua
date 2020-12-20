@@ -1,6 +1,7 @@
 import * as ts from "typescript";
 import { TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
+import { annotationDeprecated } from "../../utils/diagnostics";
 
 export function isStaticNode(node: ts.Node): boolean {
     return (node.modifiers ?? []).some(m => m.kind === ts.SyntaxKind.StaticKeyword);
@@ -21,6 +22,10 @@ export function getExtendedNode(
     const annotations = getTypeAnnotations(superType);
     if (!annotations.has(AnnotationKind.PureAbstract)) {
         return extendsClause.types[0];
+    }
+
+    if (annotations.has(AnnotationKind.PureAbstract)) {
+        context.diagnostics.push(annotationDeprecated(extendsClause, AnnotationKind.PureAbstract));
     }
 }
 

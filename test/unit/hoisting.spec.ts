@@ -254,3 +254,14 @@ test("Hoisting Shorthand Property", () => {
         return foo();`;
     expect(util.transpileAndExecute(code)).toBe("foobar");
 });
+
+// https://github.com/TypeScriptToLua/TypeScriptToLua/issues/944
+test("Hoisting variable without initializer", () => {
+    util.testFunction`
+        function foo() {
+            return x;
+        }
+        let x: number;
+        return foo();
+    `.expectToMatchJsResult();
+});

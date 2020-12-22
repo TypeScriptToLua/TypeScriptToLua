@@ -17,7 +17,7 @@ b = __TS__New(B)"
 `;
 
 exports[`Class construct extension ("metaExtension"): diagnostics 1`] = `
-"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaExtension for more information.
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information.
 main.ts(5,19): error TSTL: Cannot construct classes with '@extension' or '@metaExtension' annotation."
 `;
 
@@ -42,7 +42,7 @@ __TS__ClassExtends(C, B)"
 `;
 
 exports[`Class extends extension ("metaExtension"): diagnostics 1`] = `
-"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaExtension for more information.
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information.
 main.ts(5,9): error TSTL: Cannot extend classes with '@extension' or '@metaExtension' annotation."
 `;
 
@@ -63,6 +63,6 @@ result = __TS__InstanceOf(foo, B)"
 `;
 
 exports[`instanceof extension ("metaExtension"): diagnostics 1`] = `
-"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaExtension for more information.
+"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information.
 main.ts(6,24): error TSTL: Cannot use instanceof on classes with '@extension' or '@metaExtension' annotation."
 `;

@@ -3,15 +3,16 @@ import * as lua from "../../../../LuaAST";
 import { TransformationContext } from "../../../context";
 import { createSelfIdentifier } from "../../../utils/lua-ast";
 import { popScope, pushScope, ScopeType } from "../../../utils/scope";
-import { transformFunctionBodyHeader, transformFunctionBodyStatements, transformParameters } from "../../function";
+import { transformFunctionBodyContent, transformFunctionBodyHeader, transformParameters } from "../../function";
 import { transformIdentifier } from "../../identifier";
 import { transformClassInstanceFields } from "./fields";
 
+export function createPrototypeName(className: lua.Identifier): lua.TableIndexExpression {
+    return lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype"));
+}
+
 export function createConstructorName(className: lua.Identifier): lua.TableIndexExpression {
-    return lua.createTableIndexExpression(
-        lua.createTableIndexExpression(lua.cloneIdentifier(className), lua.createStringLiteral("prototype")),
-        lua.createStringLiteral("____constructor")
-    );
+    return lua.createTableIndexExpression(createPrototypeName(className), lua.createStringLiteral("____constructor"));
 }
 
 export function transformConstructorDeclaration(
@@ -28,7 +29,7 @@ export function transformConstructorDeclaration(
 
     // Transform body
     const scope = pushScope(context, ScopeType.Function);
-    const body = transformFunctionBodyStatements(context, statement.body);
+    const body = transformFunctionBodyContent(context, statement.body);
 
     const [params, dotsLiteral, restParamName] = transformParameters(
         context,
@@ -42,7 +43,7 @@ export function transformConstructorDeclaration(
     // Check for field declarations in constructor
     const constructorFieldsDeclarations = statement.parameters.filter(p => p.modifiers !== undefined);
 
-    const classInstanceFields = transformClassInstanceFields(context, classDeclaration, instanceFields);
+    const classInstanceFields = transformClassInstanceFields(context, instanceFields);
 
     // If there are field initializers and the first statement is a super call,
     // move super call between default assignments and initializers

@@ -2,7 +2,6 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { FunctionVisitor } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
-import { transformDeleteExpressionStatement } from "./delete";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
 import { transformMultiDestructuringAssignmentStatement } from "./language-extensions/multi";
@@ -26,11 +25,6 @@ export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatemen
     const binaryExpressionResult = transformBinaryExpressionStatement(context, node);
     if (binaryExpressionResult) {
         return binaryExpressionResult;
-    }
-
-    const deleteExpressionResult = transformDeleteExpressionStatement(context, node);
-    if (deleteExpressionResult) {
-        return deleteExpressionResult;
     }
 
     const expression = ts.isExpressionStatement(node) ? node.expression : node;

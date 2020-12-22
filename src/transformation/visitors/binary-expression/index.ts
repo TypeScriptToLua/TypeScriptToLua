@@ -15,6 +15,7 @@ import {
     transformCompoundAssignmentStatement,
     unwrapCompoundAssignmentToken,
 } from "./compound";
+import { assert } from "../../../utils";
 
 type SimpleOperator =
     | ts.AdditiveOperatorOrHigher
@@ -45,11 +46,16 @@ export function transformBinaryOperation(
     context: TransformationContext,
     left: lua.Expression,
     right: lua.Expression,
-    operator: BitOperator | SimpleOperator,
+    operator: BitOperator | SimpleOperator | ts.SyntaxKind.QuestionQuestionToken,
     node: ts.Node
 ): lua.Expression {
     if (isBitOperator(operator)) {
         return transformBinaryBitOperation(context, node, left, right, operator);
+    }
+
+    if (operator === ts.SyntaxKind.QuestionQuestionToken) {
+        assert(ts.isBinaryExpression(node));
+        return transformNullishCoalescingExpression(context, node);
     }
 
     let luaOperator = simpleOperatorsToLua[operator];
@@ -77,14 +83,8 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
     }
 
     if (isCompoundAssignmentToken(operator)) {
-        return transformCompoundAssignmentExpression(
-            context,
-            node,
-            node.left,
-            node.right,
-            unwrapCompoundAssignmentToken(operator),
-            false
-        );
+        const token = unwrapCompoundAssignmentToken(operator);
+        return transformCompoundAssignmentExpression(context, node, node.left, node.right, token, false);
     }
 
     switch (operator) {
@@ -132,10 +132,6 @@ export const transformBinaryExpression: FunctionVisitor<ts.BinaryExpression> = (
             );
         }
 
-        case ts.SyntaxKind.QuestionQuestionToken: {
-            return transformNullishCoalescingExpression(context, node);
-        }
-
         default:
             return transformBinaryOperation(
                 context,
@@ -157,13 +153,8 @@ export function transformBinaryExpressionStatement(
 
     if (isCompoundAssignmentToken(operator)) {
         // +=, -=, etc...
-        return transformCompoundAssignmentStatement(
-            context,
-            expression,
-            expression.left,
-            expression.right,
-            unwrapCompoundAssignmentToken(operator)
-        );
+        const token = unwrapCompoundAssignmentToken(operator);
+        return transformCompoundAssignmentStatement(context, expression, expression.left, expression.right, token);
     } else if (operator === ts.SyntaxKind.EqualsToken) {
         return transformAssignmentStatement(context, expression as ts.AssignmentExpression<ts.EqualsToken>);
     } else if (operator === ts.SyntaxKind.CommaToken) {

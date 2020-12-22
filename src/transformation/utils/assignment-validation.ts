@@ -34,8 +34,8 @@ export function validateAssignment(
 
     validateFunctionAssignment(context, node, fromType, toType, toName);
 
-    const fromTypeNode = context.checker.typeToTypeNode(fromType);
-    const toTypeNode = context.checker.typeToTypeNode(toType);
+    const fromTypeNode = context.checker.typeToTypeNode(fromType, undefined, undefined);
+    const toTypeNode = context.checker.typeToTypeNode(toType, undefined, undefined);
     if (!fromTypeNode || !toTypeNode) {
         return;
     }

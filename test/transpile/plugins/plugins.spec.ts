@@ -22,3 +22,11 @@ test("visitor using super", () => {
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "visitor-super.ts") }] })
         .expectToEqual("bar");
 });
+
+test("passing arguments", () => {
+    util.testFunction`
+        return {};
+    `
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "arguments.ts"), option: true }] })
+        .expectToEqual({ name: path.join(__dirname, "arguments.ts"), option: true });
+});

@@ -27,11 +27,8 @@ function benchmark(): void {
         oldBenchmarkResults = json.decode(oldBenchmarkData) as BenchmarkResult[];
     }
 
-    // Compare results
-    const comparisonInfo = compareBenchmarks(oldBenchmarkResults, newBenchmarkResults);
-
     // Output comparison info
-    outputBenchmarkData(comparisonInfo, newBenchmarkResults);
+    outputBenchmarkData(oldBenchmarkResults, newBenchmarkResults);
 }
 benchmark();
 
@@ -44,18 +41,24 @@ function compareBenchmarks(oldResults: BenchmarkResult[], newResults: BenchmarkR
     return { summary: memoryComparisonInfo.summary, text: memoryComparisonInfo.text };
 }
 
-function outputBenchmarkData(comparisonInfo: { summary: string; text: string }, newResults: BenchmarkResult[]): void {
-    if (!arg[2]) {
-        // Output to stdout as json by default, this is used by the CI to retrieve the info
-        print(json.encode(comparisonInfo));
-    } else {
-        // Output to file as markdown if arg[2] is set, this is useful for local development
-        const markdownDataFile = io.open(arg[2], "w+")[0]!;
-        markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
-    }
+function outputBenchmarkData(oldResults: BenchmarkResult[], newResults: BenchmarkResult[]): void {
     // Output benchmark results to json
     if (arg[0]) {
-        const jsonDataFile = io.open(arg[0], "w+")[0]!;
-        jsonDataFile.write(json.encode(newResults));
+        if (arg[1]) {
+            // if baseline is provide output full comparison info
+            const comparisonInfo = compareBenchmarks(oldResults, newResults);
+            const jsonDataFile = io.open(arg[0], "w+")[0]!;
+            jsonDataFile.write(json.encode({ old: oldResults, new: newResults, comparison: comparisonInfo }));
+        } else {
+            const jsonDataFile = io.open(arg[0], "w+")[0]!;
+            jsonDataFile.write(json.encode(newResults));
+        }
+    }
+    if (arg[2]) {
+        // Output to file as markdown if arg[2] is set, this is useful for local development
+        // Compare results
+        const comparisonInfo = compareBenchmarks(oldResults, newResults);
+        const markdownDataFile = io.open(arg[2], "w+")[0]!;
+        markdownDataFile.write(comparisonInfo.summary + comparisonInfo.text);
     }
 }

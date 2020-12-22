@@ -64,7 +64,9 @@ ____exports.uwv = xyz
 do
     local ____export = require(\\"xyz\\")
     for ____exportKey, ____exportValue in pairs(____export) do
-        ____exports[____exportKey] = ____exportValue
+        if ____exportKey ~= \\"default\\" then
+            ____exports[____exportKey] = ____exportValue
+        end
     end
 end
 do

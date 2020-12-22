@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.36.0
+
+- Upgraded to TypeScript 4.0.
+- Added support for `parseInt` and `parseFloat`.
+- Added support for `yield*` [for generator functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/yield*).
+- Added support for [method, property and accessor decorators](https://www.typescriptlang.org/docs/handbook/decorators.html).
+- Shebangs at the top of a .ts file will now be preserved.
+- Fixed an issue causing declarations referencing their own identifier to cause a nil reference error.
+
 ## 0.35.0
 
 - In preparation for some new features, some public APIs have been changed:

@@ -60,3 +60,26 @@ test.each(["func`noSelfParameter`", "obj.func`noSelfParameter`", "obj[`func`]`no
         `.expectToMatchJsResult();
     }
 );
+
+test.each(["number", "string | any"])("template span expect tostring for non string type (%p)", type => {
+    util.testFunction`
+        // @ts-ignore
+        const msg = "" as ${type};
+        return \`\${msg}\`;
+    `
+        .tap(builder => expect(builder.getMainLuaCodeChunk()).toContain("tostring"))
+        .expectToMatchJsResult();
+});
+
+test.each(["string", "'string literal type'", "string & unknown"])(
+    "template span expect no tostring for string-like type (%p)",
+    type => {
+        util.testFunction`
+            // @ts-ignore
+            const msg = "" as ${type};
+            return \`\${msg}\`;
+        `
+            .tap(builder => expect(builder.getMainLuaCodeChunk()).not.toContain("tostring"))
+            .expectToMatchJsResult();
+    }
+);

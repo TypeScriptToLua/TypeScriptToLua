@@ -12,6 +12,8 @@ const testCases = [
     { binding: "{ ...rest }", value: {} },
     { binding: "{ x, ...rest }", value: { x: "x" } },
     { binding: "{ x, ...rest }", value: { x: "x", y: "y", z: "z" } },
+    { binding: "{ x, ...y }", value: { x: "x", y: "y", z: "z" } },
+    { binding: "{ x: y, ...z }", value: { x: "x", y: "y", z: "z" } },
 
     { binding: "[]", value: [] },
     { binding: "[x, y]", value: ["x", "y"] },

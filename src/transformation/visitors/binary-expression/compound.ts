@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import { cast } from "../../../utils";
+import { cast, assertNever } from "../../../utils";
 import { TransformationContext } from "../../context";
 import { createImmediatelyInvokedFunctionExpression } from "../../utils/lua-ast";
 import { isArrayType, isExpressionWithEvaluationEffect } from "../../utils/typescript";
@@ -46,7 +46,10 @@ type CompoundAssignmentToken =
     | ts.SyntaxKind.AsteriskAsteriskToken
     | ts.SyntaxKind.LessThanLessThanToken
     | ts.SyntaxKind.GreaterThanGreaterThanToken
-    | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken;
+    | ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken
+    | ts.SyntaxKind.BarBarToken
+    | ts.SyntaxKind.AmpersandAmpersandToken
+    | ts.SyntaxKind.QuestionQuestionToken;
 
 const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, CompoundAssignmentToken> = {
     [ts.SyntaxKind.BarEqualsToken]: ts.SyntaxKind.BarToken,
@@ -61,6 +64,9 @@ const compoundToAssignmentTokens: Record<ts.CompoundAssignmentOperator, Compound
     [ts.SyntaxKind.LessThanLessThanEqualsToken]: ts.SyntaxKind.LessThanLessThanToken,
     [ts.SyntaxKind.GreaterThanGreaterThanEqualsToken]: ts.SyntaxKind.GreaterThanGreaterThanToken,
     [ts.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken]: ts.SyntaxKind.GreaterThanGreaterThanGreaterThanToken,
+    [ts.SyntaxKind.BarBarEqualsToken]: ts.SyntaxKind.BarBarToken,
+    [ts.SyntaxKind.AmpersandAmpersandEqualsToken]: ts.SyntaxKind.AmpersandAmpersandToken,
+    [ts.SyntaxKind.QuestionQuestionEqualsToken]: ts.SyntaxKind.QuestionQuestionToken,
 };
 
 export const isCompoundAssignmentToken = (token: ts.BinaryOperator): token is ts.CompoundAssignmentOperator =>
@@ -138,6 +144,15 @@ export function transformCompoundAssignmentExpression(
         const operatorExpression = transformBinaryOperation(context, left, right, operator, expression);
         const tmpDeclaration = lua.createVariableDeclarationStatement(tmpIdentifier, operatorExpression);
         const assignStatements = transformAssignment(context, lhs, tmpIdentifier);
+
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            return createImmediatelyInvokedFunctionExpression(
+                [tmpDeclaration, ...transformSetterSkippingCompoundAssignment(context, tmpIdentifier, operator, rhs)],
+                tmpIdentifier,
+                expression
+            );
+        }
+
         return createImmediatelyInvokedFunctionExpression(
             [tmpDeclaration, ...assignStatements],
             tmpIdentifier,
@@ -174,13 +189,74 @@ export function transformCompoundAssignmentStatement(
             [context.transformExpression(objExpression), context.transformExpression(indexExpression)]
         );
         const accessExpression = lua.createTableIndexExpression(obj, index);
+
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            return [
+                objAndIndexDeclaration,
+                ...transformSetterSkippingCompoundAssignment(context, accessExpression, operator, rhs, node),
+            ];
+        }
+
         const operatorExpression = transformBinaryOperation(context, accessExpression, right, operator, node);
         const assignStatement = lua.createAssignmentStatement(accessExpression, operatorExpression);
         return [objAndIndexDeclaration, assignStatement];
     } else {
+        if (isSetterSkippingCompoundAssignmentOperator(operator)) {
+            const luaLhs = context.transformExpression(lhs) as lua.AssignmentLeftHandSideExpression;
+            return transformSetterSkippingCompoundAssignment(context, luaLhs, operator, rhs, node);
+        }
+
         // Simple statements
         // ${left} = ${left} ${replacementOperator} ${right}
         const operatorExpression = transformBinaryOperation(context, left, right, operator, node);
         return transformAssignment(context, lhs, operatorExpression);
     }
+}
+
+/* These setter-skipping operators will not execute the setter if result does not change.
+ * x.y ||= z does NOT call the x.y setter if x.y is already true.
+ * x.y &&= z does NOT call the x.y setter if x.y is already false.
+ * x.y ??= z does NOT call the x.y setter if x.y is already not nullish.
+ */
+type SetterSkippingCompoundAssignmentOperator = ts.LogicalOperator | ts.SyntaxKind.QuestionQuestionToken;
+
+function isSetterSkippingCompoundAssignmentOperator(
+    operator: ts.BinaryOperator
+): operator is SetterSkippingCompoundAssignmentOperator {
+    return (
+        operator === ts.SyntaxKind.AmpersandAmpersandToken ||
+        operator === ts.SyntaxKind.BarBarToken ||
+        operator === ts.SyntaxKind.QuestionQuestionToken
+    );
+}
+
+function transformSetterSkippingCompoundAssignment(
+    context: TransformationContext,
+    lhs: lua.AssignmentLeftHandSideExpression,
+    operator: SetterSkippingCompoundAssignmentOperator,
+    rhs: ts.Expression,
+    node?: ts.Node
+): lua.Statement[] {
+    // These assignments have the form 'if x then y = z', figure out what condition x is first.
+    let condition: lua.Expression;
+
+    if (operator === ts.SyntaxKind.AmpersandAmpersandToken) {
+        condition = lhs;
+    } else if (operator === ts.SyntaxKind.BarBarToken) {
+        condition = lua.createUnaryExpression(lhs, lua.SyntaxKind.NotOperator);
+    } else if (operator === ts.SyntaxKind.QuestionQuestionToken) {
+        condition = lua.createBinaryExpression(lhs, lua.createNilLiteral(), lua.SyntaxKind.EqualityOperator);
+    } else {
+        assertNever(operator);
+    }
+
+    // if condition then lhs = rhs end
+    return [
+        lua.createIfStatement(
+            condition,
+            lua.createBlock([lua.createAssignmentStatement(lhs, context.transformExpression(rhs))]),
+            undefined,
+            node
+        ),
+    ];
 }

@@ -8,7 +8,7 @@ import { createExportedIdentifier, getSymbolExportScope } from "../utils/export"
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
-import { isMultiFunctionNode } from "./helpers/multi";
+import { isMultiFunctionNode } from "./language-extensions/multi";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiFunctionNode(context, identifier)) {

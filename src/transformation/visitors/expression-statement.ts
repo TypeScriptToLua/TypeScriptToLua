@@ -5,7 +5,7 @@ import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformDeleteExpressionStatement } from "./delete";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
-import { transformMultiHelperDestructuringAssignmentStatement } from "./helpers/multi";
+import { transformMultiHelperDestructuringAssignmentStatement } from "./language-extensions/multi";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
     const multiResult = transformMultiHelperDestructuringAssignmentStatement(context, node);

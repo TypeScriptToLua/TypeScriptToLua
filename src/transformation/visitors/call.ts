@@ -11,7 +11,7 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
-import { returnsMultiType } from "./helpers/multi";
+import { returnsMultiType } from "./language-extensions/multi";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 

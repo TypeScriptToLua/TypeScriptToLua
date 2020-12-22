@@ -1,6 +1,6 @@
 import * as ts from "typescript";
 import * as lua from "../../../LuaAST";
-import * as helpers from "../../utils/helpers";
+import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
 import { transformAssignmentLeftHandSideExpression } from "../binary-expression/assignments";
 import { transformIdentifier } from "../identifier";
@@ -15,13 +15,13 @@ import {
     invalidMultiTypeToNonArrayLiteral,
     unsupportedMultiFunctionAssignment,
     invalidMultiFunctionUse,
-} from "../../../transformation/utils/diagnostics";
+} from "../../utils/diagnostics";
 
 const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
-    helpers.getHelperKind(declaration) === helpers.HelperKind.MultiFunction;
+    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiFunction;
 
 const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
-    helpers.getHelperKind(declaration) === helpers.HelperKind.MultiType;
+    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiType;
 
 function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);

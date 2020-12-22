@@ -66,7 +66,7 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
                 filePath = path.join(typeScriptDir, fileName);
             }
 
-            if (fileName.includes("helpers")) {
+            if (fileName.includes("language-extensions")) {
                 const dtsName = fileName.replace(/(\.d)?(\.ts)$/, ".d.ts");
                 filePath = path.resolve(dtsName);
             }

@@ -6,7 +6,7 @@ import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
-import { transformMultiHelperReturnStatement } from "./helpers/multi";
+import { transformMultiHelperReturnStatement } from "./language-extensions/multi";
 
 export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (statement, context) => {
     // Bubble up explicit return flag and check if we're inside a try/catch block

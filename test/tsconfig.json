@@ -14,6 +14,6 @@
         "transpile/directories",
         "transpile/outFile",
         "../src/lualib",
-        "../helpers"
+        "../language-extensions"
     ]
 }

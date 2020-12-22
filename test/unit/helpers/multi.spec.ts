@@ -8,7 +8,7 @@ import {
 } from "../../../src/transformation/utils/diagnostics";
 
 const multiProjectOptions: tstl.CompilerOptions = {
-    types: [path.resolve(__dirname, "../../../helpers")],
+    types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 
 test.each<[string, any]>([

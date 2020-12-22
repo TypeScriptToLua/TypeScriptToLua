@@ -10,7 +10,7 @@ import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { flattenSpreadExpressions } from "./call";
-import { findMultiHelperAssignmentViolations } from "./helpers/multi";
+import { findMultiHelperAssignmentViolations } from "./language-extensions/multi";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {

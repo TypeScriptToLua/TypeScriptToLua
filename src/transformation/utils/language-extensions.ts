@@ -1,28 +1,28 @@
 import * as ts from "typescript";
 import * as path from "path";
 
-export enum HelperKind {
+export enum ExtensionKind {
     MultiFunction = "MultiFunction",
     MultiType = "MultiType",
 }
 
-function isSourceFileFromHelpers(sourceFile: ts.SourceFile): boolean {
-    const helperDirectory = path.resolve(__dirname, "../../../helpers");
+function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
+    const helperDirectory = path.resolve(__dirname, "../../../language-extensions");
     const sourceFileDirectory = path.dirname(path.normalize(sourceFile.fileName));
     return helperDirectory === sourceFileDirectory;
 }
 
-export function getHelperKind(declaration: ts.Declaration): HelperKind | undefined {
+export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | undefined {
     const sourceFile = declaration.getSourceFile();
-    if (isSourceFileFromHelpers(sourceFile)) {
+    if (isSourceFileFromLanguageExtensions(sourceFile)) {
         if (ts.isFunctionDeclaration(declaration) && declaration?.name?.text === "$multi") {
-            return HelperKind.MultiFunction;
+            return ExtensionKind.MultiFunction;
         }
 
         if (ts.isTypeAliasDeclaration(declaration) && declaration.name.text === "MultiReturn") {
-            return HelperKind.MultiType;
+            return ExtensionKind.MultiType;
         }
 
-        throw new Error("Unknown helper kind");
+        throw new Error("Unknown extension kind");
     }
 }

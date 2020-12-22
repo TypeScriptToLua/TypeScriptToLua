@@ -16,6 +16,7 @@ import {
     unsupportedMultiFunctionAssignment,
     invalidMultiFunctionUse,
 } from "../../utils/diagnostics";
+import { assert } from "../../../utils";
 
 const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
     extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiFunction;
@@ -23,7 +24,7 @@ const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
 const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
     extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiType;
 
-function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
+export function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
@@ -41,9 +42,8 @@ export function isMultiFunctionNode(context: TransformationContext, node: ts.Nod
 export function transformMultiCallExpressionToReturnStatement(
     context: TransformationContext,
     expression: ts.Expression
-): lua.Statement | undefined {
-    if (!ts.isCallExpression(expression)) return;
-    if (!isMultiFunction(context, expression)) return;
+): lua.Statement {
+    assert(ts.isCallExpression(expression));
 
     const expressions = transformArguments(context, expression.arguments);
     return lua.createReturnStatement(expressions, expression);
@@ -52,8 +52,8 @@ export function transformMultiCallExpressionToReturnStatement(
 export function transformMultiReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
-): lua.Statement | undefined {
-    if (!statement.expression) return;
+): lua.Statement {
+    assert(statement.expression);
 
     return transformMultiCallExpressionToReturnStatement(context, statement.expression);
 }
@@ -76,10 +76,9 @@ function transformMultiFunctionArguments(
 export function transformMultiVariableDeclaration(
     context: TransformationContext,
     declaration: ts.VariableDeclaration
-): lua.Statement[] | undefined {
-    if (!declaration.initializer) return;
-    if (!ts.isCallExpression(declaration.initializer)) return;
-    if (!returnsMultiType(context, declaration.initializer)) return;
+): lua.Statement[] {
+    assert(declaration.initializer);
+    assert(ts.isCallExpression(declaration.initializer));
 
     if (!ts.isArrayBindingPattern(declaration.name)) {
         context.diagnostics.push(invalidMultiTypeToNonArrayBindingPattern(declaration.name));
@@ -123,10 +122,8 @@ export function transformMultiDestructuringAssignmentStatement(
     context: TransformationContext,
     statement: ts.ExpressionStatement
 ): lua.Statement[] | undefined {
-    if (!ts.isBinaryExpression(statement.expression)) return;
-    if (statement.expression.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return;
-    if (!ts.isCallExpression(statement.expression.right)) return;
-    if (!returnsMultiType(context, statement.expression.right)) return;
+    assert(ts.isBinaryExpression(statement.expression));
+    assert(ts.isCallExpression(statement.expression.right));
 
     if (!ts.isArrayLiteralExpression(statement.expression.left)) {
         context.diagnostics.push(invalidMultiTypeToNonArrayLiteral(statement.expression.left));

@@ -38,7 +38,7 @@ export function isMultiFunctionNode(context: TransformationContext, node: ts.Nod
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
 
-export function transformMultiHelperReturnStatement(
+export function transformMultiReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
 ): lua.Statement | undefined {
@@ -65,7 +65,7 @@ function transformMultiFunctionArguments(
     return expression.arguments.map(e => context.transformExpression(e));
 }
 
-export function transformMultiHelperVariableDeclaration(
+export function transformMultiVariableDeclaration(
     context: TransformationContext,
     declaration: ts.VariableDeclaration
 ): lua.Statement[] | undefined {
@@ -111,7 +111,7 @@ export function transformMultiHelperVariableDeclaration(
     return createLocalOrExportedOrGlobalDeclaration(context, leftIdentifiers, rightExpressions, declaration);
 }
 
-export function transformMultiHelperDestructuringAssignmentStatement(
+export function transformMultiDestructuringAssignmentStatement(
     context: TransformationContext,
     statement: ts.ExpressionStatement
 ): lua.Statement[] | undefined {
@@ -161,7 +161,7 @@ export function transformMultiHelperDestructuringAssignmentStatement(
     return [lua.createAssignmentStatement(leftIdentifiers, rightExpressions, statement), ...trailingStatements];
 }
 
-export function findMultiHelperAssignmentViolations(
+export function findMultiAssignmentViolations(
     context: TransformationContext,
     node: ts.ObjectLiteralExpression
 ): ts.Node[] {

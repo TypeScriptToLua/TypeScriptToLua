@@ -92,7 +92,7 @@ test("function to spread multi type result from multi type function", () => {
         .expectToEqual(true);
 });
 
-test("$multi helper call with destructuring assignment side effects", () => {
+test("$multi call with destructuring assignment side effects", () => {
     util.testModule`
         ${multiFunction}
         let a;

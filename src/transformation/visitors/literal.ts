@@ -10,7 +10,7 @@ import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { flattenSpreadExpressions } from "./call";
-import { findMultiHelperAssignmentViolations } from "./language-extensions/multi";
+import { findMultiAssignmentViolations } from "./language-extensions/multi";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -63,7 +63,7 @@ const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = ex
 };
 
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
-    const violations = findMultiHelperAssignmentViolations(context, expression);
+    const violations = findMultiAssignmentViolations(context, expression);
     if (violations.length > 0) {
         context.diagnostics.push(...violations.map(e => invalidMultiFunctionUse(e)));
         return lua.createNilLiteral(expression);

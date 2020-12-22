@@ -7,9 +7,9 @@ export enum ExtensionKind {
 }
 
 function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
-    const helperDirectory = path.resolve(__dirname, "../../../language-extensions");
+    const extensionDirectory = path.resolve(__dirname, "../../../language-extensions");
     const sourceFileDirectory = path.dirname(path.normalize(sourceFile.fileName));
-    return helperDirectory === sourceFileDirectory;
+    return extensionDirectory === sourceFileDirectory;
 }
 
 export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | undefined {

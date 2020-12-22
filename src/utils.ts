@@ -5,7 +5,6 @@ import * as path from "path";
 export function castArray<T>(value: T | T[]): T[];
 export function castArray<T>(value: T | readonly T[]): readonly T[];
 export function castArray<T>(value: T | readonly T[]): readonly T[] {
-    // @ts-ignore
     return Array.isArray(value) ? value : [value];
 }
 

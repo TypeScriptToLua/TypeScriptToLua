@@ -1,4 +1,5 @@
 import {
+    annotationDeprecated,
     extensionCannotConstruct,
     extensionCannotExtend,
     extensionInvalidInstanceOf,
@@ -11,7 +12,7 @@ test.each(["extension", "metaExtension"])("Class extends extension (%p)", extens
         /** @${extensionType} **/
         class B extends A {}
         class C extends B {}
-    `.expectDiagnosticsToMatchSnapshot([extensionCannotExtend.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code, extensionCannotExtend.code]);
 });
 
 test.each(["extension", "metaExtension"])("Class construct extension (%p)", extensionType => {
@@ -20,7 +21,7 @@ test.each(["extension", "metaExtension"])("Class construct extension (%p)", exte
         /** @${extensionType} **/
         class B extends A {}
         const b = new B();
-    `.expectDiagnosticsToMatchSnapshot([extensionCannotConstruct.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code, extensionCannotConstruct.code]);
 });
 
 test.each(["extension", "metaExtension"])("instanceof extension (%p)", extensionType => {
@@ -30,5 +31,5 @@ test.each(["extension", "metaExtension"])("instanceof extension (%p)", extension
         class B extends A {}
         declare const foo: any;
         const result = foo instanceof B;
-    `.expectDiagnosticsToMatchSnapshot([extensionInvalidInstanceOf.code]);
+    `.expectDiagnosticsToMatchSnapshot([annotationDeprecated.code, extensionInvalidInstanceOf.code]);
 });

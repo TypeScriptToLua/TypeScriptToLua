@@ -13,7 +13,9 @@ export function transpileString(
     const { diagnostics, file } = transpileStringResult(str, options);
     expect(file.lua).toBeDefined();
 
-    const errors = diagnostics.filter(d => !ignoreDiagnostics || d.source === "typescript-to-lua");
+    const errors = diagnostics.filter(
+        d => (!ignoreDiagnostics || d.source === "typescript-to-lua") && d.category === ts.DiagnosticCategory.Error
+    );
     expect(errors).not.toHaveDiagnostics();
 
     return file.lua!.trim();
@@ -86,14 +88,15 @@ export function transpileAndExecute(
     tsStr: string,
     compilerOptions?: tstl.CompilerOptions,
     luaHeader?: string,
-    tsHeader?: string
+    tsHeader?: string,
+    ignoreDiagnostics = false
 ): any {
     const wrappedTsString = `${tsHeader ?? ""}
         declare function JSONStringify(this: void, p: any): string;
         function __runTest(this: void): any {${tsStr}}`;
 
     const lua = `${luaHeader ?? ""}
-        ${transpileString(wrappedTsString, compilerOptions, false)}
+        ${transpileString(wrappedTsString, compilerOptions, ignoreDiagnostics)}
         return __runTest();`;
 
     return executeLua(lua);

@@ -4,6 +4,7 @@ import { getOrUpdate } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations } from "../../utils/annotations";
 import {
+    annotationDeprecated,
     extensionAndMetaExtensionConflict,
     extensionCannotExport,
     extensionCannotExtend,
@@ -93,6 +94,13 @@ function transformClassLikeDeclaration(
     const extensionDirective = annotations.get(AnnotationKind.Extension);
     const isExtension = extensionDirective !== undefined;
     const isMetaExtension = annotations.has(AnnotationKind.MetaExtension);
+
+    if (isExtension) {
+        context.diagnostics.push(annotationDeprecated(classDeclaration, AnnotationKind.Extension));
+    }
+    if (isMetaExtension) {
+        context.diagnostics.push(annotationDeprecated(classDeclaration, AnnotationKind.MetaExtension));
+    }
 
     if (isExtension && isMetaExtension) {
         context.diagnostics.push(extensionAndMetaExtensionConflict(classDeclaration));

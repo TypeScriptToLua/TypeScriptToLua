@@ -38,16 +38,24 @@ export function isMultiFunctionNode(context: TransformationContext, node: ts.Nod
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
 
+export function transformMultiCallExpressionToReturnStatement(
+    context: TransformationContext,
+    expression: ts.Expression
+): lua.Statement | undefined {
+    if (!ts.isCallExpression(expression)) return;
+    if (!isMultiFunction(context, expression)) return;
+
+    const expressions = transformArguments(context, expression.arguments);
+    return lua.createReturnStatement(expressions, expression);
+}
+
 export function transformMultiReturnStatement(
     context: TransformationContext,
     statement: ts.ReturnStatement
 ): lua.Statement | undefined {
     if (!statement.expression) return;
-    if (!ts.isCallExpression(statement.expression)) return;
-    if (!isMultiFunction(context, statement.expression)) return;
 
-    const expressions = transformArguments(context, statement.expression.arguments);
-    return lua.createReturnStatement(expressions, statement);
+    return transformMultiCallExpressionToReturnStatement(context, statement.expression);
 }
 
 function transformMultiFunctionArguments(

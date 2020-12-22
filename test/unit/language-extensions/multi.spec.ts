@@ -103,3 +103,13 @@ test("$multi call with destructuring assignment side effects", () => {
         .setReturnExport("a")
         .expectToEqual(1);
 });
+
+test("allow $multi call in ArrowFunction body", () => {
+    util.testFunction`
+        const call = () => $multi(1);
+        const [result] = call();
+        return result;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(1);
+});

@@ -128,7 +128,7 @@ export const unsupportedVarDeclaration = createDiagnosticFactory(
 );
 
 export const invalidMultiFunctionUse = createDiagnosticFactory(
-    "The $multi function must be called in return statements."
+    "The $multi function must be called in an expression that is returned."
 );
 
 export const invalidMultiTypeToNonArrayBindingPattern = createDiagnosticFactory(

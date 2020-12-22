@@ -2,11 +2,11 @@
 
 exports[`invalid $multi call ($multi()): code 1`] = `"____(_G)"`;
 
-exports[`invalid $multi call ($multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid $multi call ($multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid $multi call ($multi): code 1`] = `"local ____ = ____"`;
 
-exports[`invalid $multi call ($multi): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid $multi call ($multi): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid $multi call (([a] = $multi(1)) => {}): code 1`] = `
 "local function ____(____, ____bindingPattern0)
@@ -17,11 +17,11 @@ exports[`invalid $multi call (([a] = $multi(1)) => {}): code 1`] = `
 end"
 `;
 
-exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid $multi call (([a] = $multi(1)) => {}): diagnostics 1`] = `"main.ts(2,16): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid $multi call (({ $multi });): code 1`] = `"local ____ = nil"`;
 
-exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid $multi call (({ $multi });): diagnostics 1`] = `"main.ts(2,12): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid $multi call (const [a = 0] = $multi()): code 1`] = `""`;
 
@@ -45,7 +45,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (const [a] = $multi()): diagnostics 1`] = `"main.ts(7,21): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (const [a] = $multi()): diagnostics 1`] = `"main.ts(7,21): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (const [a] = $multi(1)): code 1`] = `
 "local ____exports = {}
@@ -57,7 +57,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (const [a] = $multi(1)): diagnostics 1`] = `"main.ts(7,21): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (const [a] = $multi(1)): diagnostics 1`] = `"main.ts(7,21): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (const _ = null, [a] = $multi(1)): code 1`] = `
 "local ____exports = {}
@@ -70,7 +70,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (const _ = null, [a] = $multi(1)): diagnostics 1`] = `"main.ts(7,31): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (const _ = null, [a] = $multi(1)): diagnostics 1`] = `"main.ts(7,31): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (const ar = [1]; const [a] = $multi(...ar)): code 1`] = `
 "local ____exports = {}
@@ -83,7 +83,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (const ar = [1]; const [a] = $multi(...ar)): diagnostics 1`] = `"main.ts(7,37): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (const ar = [1]; const [a] = $multi(...ar)): diagnostics 1`] = `"main.ts(7,37): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (let a; [a] = $multi()): code 1`] = `
 "local ____exports = {}
@@ -96,7 +96,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (let a; [a] = $multi()): diagnostics 1`] = `"main.ts(7,22): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (let a; [a] = $multi()): diagnostics 1`] = `"main.ts(7,22): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (let a; for ([a] = $multi(1, 2); false; 1) {}): code 1`] = `
 "local ____exports = {}
@@ -114,7 +114,7 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (let a; for ([a] = $multi(1, 2); false; 1) {}): diagnostics 1`] = `"main.ts(7,27): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (let a; for ([a] = $multi(1, 2); false; 1) {}): diagnostics 1`] = `"main.ts(7,27): error TSTL: The $multi function must be called in an expression that is returned."`;
 
 exports[`invalid direct $multi function use (let a; for (const [a] = $multi(1, 2); false; 1) {}): code 1`] = `
 "local ____exports = {}
@@ -132,4 +132,4 @@ ____exports.a = a
 return ____exports"
 `;
 
-exports[`invalid direct $multi function use (let a; for (const [a] = $multi(1, 2); false; 1) {}): diagnostics 1`] = `"main.ts(7,33): error TSTL: The $multi function must be called in return statements."`;
+exports[`invalid direct $multi function use (let a; for (const [a] = $multi(1, 2); false; 1) {}): diagnostics 1`] = `"main.ts(7,33): error TSTL: The $multi function must be called in an expression that is returned."`;

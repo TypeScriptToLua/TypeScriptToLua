@@ -11,6 +11,19 @@ const multiProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 
+test("multi example use case", () => {
+    util.testModule`
+        function multiReturn(): MultiReturn<[string, number]> {
+            return $multi("foo", 5);
+        }
+
+        const [a, b] = multiReturn();
+        export { a, b };
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual({ a: "foo", b: 5 });
+});
+
 test.each<[string, any]>([
     ["$multi()", undefined],
     ["$multi(true)", true],

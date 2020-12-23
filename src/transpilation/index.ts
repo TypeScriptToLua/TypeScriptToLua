@@ -59,14 +59,22 @@ export function createVirtualProgram(input: Record<string, string>, options: Com
                 return ts.createSourceFile(fileName, input[fileName], ts.ScriptTarget.Latest, false);
             }
 
+            let filePath: string | undefined;
+
             if (fileName.startsWith("lib.")) {
-                if (libCache[fileName]) return libCache[fileName];
                 const typeScriptDir = path.dirname(require.resolve("typescript"));
-                const filePath = path.join(typeScriptDir, fileName);
+                filePath = path.join(typeScriptDir, fileName);
+            }
+
+            if (fileName.includes("language-extensions")) {
+                const dtsName = fileName.replace(/(\.d)?(\.ts)$/, ".d.ts");
+                filePath = path.resolve(dtsName);
+            }
+
+            if (filePath !== undefined) {
+                if (libCache[fileName]) return libCache[fileName];
                 const content = fs.readFileSync(filePath, "utf8");
-
-                libCache[fileName] = ts.createSourceFile(fileName, content, ts.ScriptTarget.Latest, false);
-
+                libCache[fileName] = ts.createSourceFile(filePath, content, ts.ScriptTarget.Latest, false);
                 return libCache[fileName];
             }
         },

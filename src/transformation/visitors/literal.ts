@@ -2,7 +2,7 @@ import * as ts from "typescript";
 import * as lua from "../../LuaAST";
 import { assertNever } from "../../utils";
 import { FunctionVisitor, TransformationContext, Visitors } from "../context";
-import { unsupportedAccessorInObjectLiteral } from "../utils/diagnostics";
+import { unsupportedAccessorInObjectLiteral, invalidMultiFunctionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { createSafeName, hasUnsafeIdentifierName, hasUnsafeSymbolName } from "../utils/safe-names";
@@ -10,6 +10,7 @@ import { getSymbolIdOfSymbol, trackSymbolReference } from "../utils/symbols";
 import { isArrayType } from "../utils/typescript";
 import { transformFunctionLikeDeclaration } from "./function";
 import { flattenSpreadExpressions } from "./call";
+import { findMultiAssignmentViolations } from "./language-extensions/multi";
 
 // TODO: Move to object-literal.ts?
 export function transformPropertyName(context: TransformationContext, node: ts.PropertyName): lua.Expression {
@@ -62,6 +63,12 @@ const transformNumericLiteralExpression: FunctionVisitor<ts.NumericLiteral> = ex
 };
 
 const transformObjectLiteralExpression: FunctionVisitor<ts.ObjectLiteralExpression> = (expression, context) => {
+    const violations = findMultiAssignmentViolations(context, expression);
+    if (violations.length > 0) {
+        context.diagnostics.push(...violations.map(e => invalidMultiFunctionUse(e)));
+        return lua.createNilLiteral(expression);
+    }
+
     let properties: lua.TableFieldExpression[] = [];
     const tableExpressions: lua.Expression[] = [];
 

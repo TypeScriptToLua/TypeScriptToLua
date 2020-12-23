@@ -4,8 +4,18 @@ import { FunctionVisitor } from "../context";
 import { transformBinaryExpressionStatement } from "./binary-expression";
 import { transformLuaTableExpressionStatement } from "./lua-table";
 import { transformUnaryExpressionStatement } from "./unary-expression";
+import { returnsMultiType, transformMultiDestructuringAssignmentStatement } from "./language-extensions/multi";
 
 export const transformExpressionStatement: FunctionVisitor<ts.ExpressionStatement> = (node, context) => {
+    if (
+        ts.isBinaryExpression(node.expression) &&
+        node.expression.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isCallExpression(node.expression.right) &&
+        returnsMultiType(context, node.expression.right)
+    ) {
+        return transformMultiDestructuringAssignmentStatement(context, node);
+    }
+
     const luaTableResult = transformLuaTableExpressionStatement(context, node);
     if (luaTableResult) {
         return luaTableResult;

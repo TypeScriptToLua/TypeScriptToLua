@@ -13,7 +13,8 @@
     "files": [
         "dist/**/*.js",
         "dist/**/*.lua",
-        "dist/**/*.ts"
+        "dist/**/*.ts",
+        "language-extensions/**/*.ts"
     ],
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

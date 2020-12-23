@@ -6,6 +6,7 @@ import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
+import { isMultiFunction, transformMultiReturnStatement } from "./language-extensions/multi";
 
 function transformExpressionsInReturn(
     context: TransformationContext,
@@ -57,6 +58,14 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         }
 
         insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
+    }
+
+    if (
+        statement.expression &&
+        ts.isCallExpression(statement.expression) &&
+        isMultiFunction(context, statement.expression)
+    ) {
+        return transformMultiReturnStatement(context, statement);
     }
 
     let results: lua.Expression[];

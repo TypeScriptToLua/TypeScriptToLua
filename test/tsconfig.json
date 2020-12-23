@@ -13,6 +13,7 @@
         "cli/watch",
         "transpile/directories",
         "transpile/outFile",
-        "../src/lualib"
+        "../src/lualib",
+        "../language-extensions"
     ]
 }

@@ -3,13 +3,19 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { invalidForRangeCall } from "../utils/diagnostics";
+import { invalidForRangeCall, invalidMultiFunctionUse } from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
+import { isMultiFunctionNode } from "./language-extensions/multi";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
+    if (isMultiFunctionNode(context, identifier)) {
+        context.diagnostics.push(invalidMultiFunctionUse(identifier));
+        return lua.createAnonymousIdentifier(identifier);
+    }
+
     if (isForRangeType(context, identifier)) {
         const callExpression = findFirstNodeAbove(identifier, ts.isCallExpression);
         if (!callExpression || !callExpression.parent || !ts.isForOfStatement(callExpression.parent)) {

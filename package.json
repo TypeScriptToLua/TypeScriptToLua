@@ -3,6 +3,10 @@
     "version": "0.36.1",
     "description": "A generic TypeScript to Lua transpiler. Write your code in TypeScript and publish Lua!",
     "repository": "https://github.com/TypeScriptToLua/TypeScriptToLua",
+    "homepage": "https://typescripttolua.github.io/",
+    "bugs": {
+        "url": "https://github.com/TypeScriptToLua/TypeScriptToLua/issues"
+    },
     "license": "MIT",
     "keywords": [
         "typescript",

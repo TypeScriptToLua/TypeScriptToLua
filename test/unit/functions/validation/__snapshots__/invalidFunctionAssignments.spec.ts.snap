@@ -247,7 +247,7 @@ exports[`Invalid function argument ({"definition": "interface FuncPropInterface 
             const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };", "value": "funcPropInterface.funcProp"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function argument ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function argument ({"definition": "interface NoSelfMethodInterface { 
                 /** @noSelf */ 
@@ -639,7 +639,7 @@ exports[`Invalid function assignment ({"definition": "interface FuncPropInterfac
             const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };", "value": "funcPropInterface.funcProp"}): diagnostics 1`] = `"main.ts(5,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function assignment ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,18): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function assignment ({"definition": "interface NoSelfMethodInterface { 
                 /** @noSelf */ 
@@ -1031,7 +1031,7 @@ exports[`Invalid function generic argument ({"definition": "interface FuncPropIn
             const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };", "value": "funcPropInterface.funcProp"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function generic argument ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,27): error TSTL: Unable to convert function with a 'this' parameter to function 'fn' with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function generic argument ({"definition": "interface NoSelfMethodInterface { 
                 /** @noSelf */ 
@@ -1391,7 +1391,7 @@ exports[`Invalid function return ({"definition": "interface FuncPropInterface { 
             const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };", "value": "funcPropInterface.funcProp"}): diagnostics 1`] = `"main.ts(5,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function return ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(5,17): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function return ({"definition": "interface NoSelfMethodInterface { 
                 /** @noSelf */ 
@@ -1791,7 +1791,7 @@ exports[`Invalid function variable declaration ({"definition": "interface FuncPr
             const funcPropInterface: FuncPropInterface = { funcProp: function(this: any, s: string) { return s; } };", "value": "funcPropInterface.funcProp"}): diagnostics 1`] = `"main.ts(4,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function variable declaration ({"definition": "interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(4,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };", "value": "methodInterface.method"}): diagnostics 1`] = `"main.ts(4,59): error TSTL: Unable to convert function with a 'this' parameter to function with no 'this'. To fix, wrap in an arrow function, or declare with 'this: void'."`;
 
 exports[`Invalid function variable declaration ({"definition": "interface NoSelfMethodInterface { 
                 /** @noSelf */ 

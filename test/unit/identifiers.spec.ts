@@ -139,13 +139,13 @@ test.each(validTsInvalidLuaNames)("exported values with invalid lua identifier n
 });
 
 test("exported identifiers referenced in namespace (%p)", () => {
-    const code = `
+    util.testModule`
         export const foo = "foobar";
         namespace NS {
             export const bar = foo;
         }
-        export const baz = NS.bar;`;
-    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+        export const baz = NS.bar;
+    `.expectToMatchJsResult();
 });
 
 test("exported namespace identifiers referenced in different namespace (%p)", () => {
@@ -157,31 +157,31 @@ test("exported namespace identifiers referenced in different namespace (%p)", ()
             }
             export const baz = B.bar;
         }`;
-    expect(util.transpileAndExecute("return A.baz", undefined, undefined, tsHeader)).toBe("foobar");
+    util.testModule("return A.baz").setTsHeader(tsHeader).expectToMatchJsResult();
 });
 
 test("exported identifiers referenced in nested scope (%p)", () => {
-    const code = `
+    util.testModule`
         export const foo = "foobar";
         namespace A {
             export namespace B {
                 export const bar = foo;
             }
         }
-        export const baz = A.B.bar;`;
-    expect(util.transpileExecuteAndReturnExport(code, "baz")).toBe("foobar");
+        export const baz = A.B.bar;
+    `.expectToMatchJsResult();
 });
 
 test.each(validTsInvalidLuaNames)(
     "exported values with invalid lua identifier names referenced in different scope (%p)",
     name => {
-        const code = `
-        export const ${name} = "foobar";
-        namespace NS {
-            export const foo = ${name};
-        }
-        export const bar = NS.foo;`;
-        expect(util.transpileExecuteAndReturnExport(code, "bar")).toBe("foobar");
+        util.testModule`
+            export const ${name} = "foobar";
+            namespace NS {
+                export const foo = ${name};
+            }
+            export const bar = NS.foo;
+        `.expectToMatchJsResult();
     }
 );
 
@@ -223,103 +223,92 @@ test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua nam
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
-        const code = `
+        util.testFunction`
             const nil = "foobar";
-            return \`\${undefined}|\${nil}\``;
-
-        expect(util.transpileAndExecute(code)).toBe("nil|foobar");
+            return \`\${undefined}|\${nil}\`
+        `.expectToMatchJsResult();
     });
 
     test("variable (and)", () => {
-        const code = `
+        util.testFunction`
             const and = "foobar";
-            return true && and;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return true && and;
+        `.expectToMatchJsResult();
     });
 
     test("variable (elseif)", () => {
-        const code = `
+        util.testFunction`
             const elseif = "foobar";
             if (false) {
             } else if (elseif) {
                 return elseif;
-            }`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            }
+        `.expectToMatchJsResult();
     });
 
     test("variable (end)", () => {
-        const code = `
+        util.testFunction`
             const end = "foobar";
             {
                 return end;
-            }`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            }
+        `.expectToMatchJsResult();
     });
 
     test("variable (local)", () => {
-        const code = `
+        util.testFunction`
             const local = "foobar";
-            return local;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return local;
+        `.expectToMatchJsResult();
     });
 
     test("variable (not)", () => {
-        const code = `
+        util.testFunction`
             const not = "foobar";
-            return (!false) && not;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return (!false) && not;
+        `.expectToMatchJsResult();
     });
 
     test("variable (or)", () => {
-        const code = `
+        util.testFunction`
             const or = "foobar";
-            return false || or;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return false || or;
+        `.expectToMatchJsResult();
     });
 
     test("variable (repeat)", () => {
-        const code = `
+        util.testFunction`
             const repeat = "foobar";
             do {} while (false);
-            return repeat;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return repeat;
+        `.expectToMatchJsResult();
     });
 
     test("variable (then)", () => {
-        const code = `
+        util.testFunction`
             const then = "foobar";
             if (then) {
                 return then;
-            }`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            }
+        `.expectToMatchJsResult();
     });
 
     test("variable (until)", () => {
-        const code = `
+        util.testFunction`
             const until = "foobar";
             do {} while (false);
-            return until;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return until;
+        `.expectToMatchJsResult();
     });
 
     test("variable (goto)", () => {
-        const code = `
+        util.testFunction`
             const goto = "foobar";
             switch (goto) {
                 case goto:
                     return goto;
-            }`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            }
+        `.expectToMatchJsResult();
     });
 
     test("variable (print)", () => {
@@ -343,21 +332,21 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (type)", () => {
-        const code = `
+        util.testFunction`
             function type(this: void, a: unknown) {
                 return (typeof a) + "|foobar";
             }
-            return type(7);`;
-
-        expect(util.transpileAndExecute(code)).toBe("number|foobar");
+            return type(7);
+        `.expectToMatchJsResult();
     });
 
     test("variable (error)", () => {
-        const code = `
+        const executionResult = util.testFunction`
             const error = "foobar";
-            throw error;`;
+            throw error;
+        `.getLuaExecutionResult();
 
-        expect(() => util.transpileAndExecute(code)).toThrow(/^LUA ERROR: foobar$/);
+        expect(executionResult).toMatch(/^LUA ERROR: foobar$/);
     });
 
     test("variable (assert)", () => {
@@ -393,65 +382,58 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (string)", () => {
-        const code = `
+        util.testFunction`
             const string = "foobar";
-            return string[0];`;
-
-        expect(util.transpileAndExecute(code)).toBe("f");
+            return string[0];
+        `.expectToMatchJsResult();
     });
 
     test("variable (math)", () => {
-        const code = `
+        util.testFunction`
             const math = -17;
-            return Math.abs(math);`;
-
-        expect(util.transpileAndExecute(code)).toBe(17);
+            return Math.abs(math);
+        `.expectToMatchJsResult();
     });
 
     test("variable (table)", () => {
-        const code = `
+        util.testFunction`
             const table = ["foobar"];
-            return table.pop();`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return table.pop();
+        `.expectToMatchJsResult();
     });
 
     test("variable (coroutine)", () => {
-        const code = `
+        util.testFunction`
             const coroutine = "foobar";
             function *foo() { yield coroutine; }
-            return foo().next().value;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return foo().next().value;
+        `.expectToMatchJsResult();
     });
 
     test("variable (pairs)", () => {
-        const code = `
+        util.testFunction`
             const pairs = {foobar: "foobar"};
             let result = "";
             for (const key in pairs) {
                 result += key;
             }
-            return result;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return result;
+        `.expectToMatchJsResult();
     });
 
     test("variable (pcall)", () => {
-        const code = `
+        util.testFunction`
             const pcall = "foobar";
             try {} finally {}
-            return pcall;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+            return pcall;
+        `.expectToMatchJsResult();
     });
 
     test("variable (rawget)", () => {
-        const code = `
+        util.testFunction`
             const rawget = {foobar: "foobar"};
-            return rawget.hasOwnProperty("foobar");`;
-
-        expect(util.transpileAndExecute(code)).toBe(true);
+            return rawget.hasOwnProperty("foobar");
+        `.expectToMatchJsResult();
     });
 
     test("variable (require)", () => {
@@ -470,11 +452,10 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (tostring)", () => {
-        const code = `
+        util.testFunction`
             const tostring = 17;
-            return tostring.toString();`;
-
-        expect(util.transpileAndExecute(code)).toBe(17);
+            return tostring.toString();
+        `.expectToMatchJsResult();
     });
 
     test("variable (unpack)", () => {
@@ -491,88 +472,78 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (_G)", () => {
-        const code = `
+        util.testFunction`
             const _G = "bar";
             (globalThis as any).foo = "foo";
             return (globalThis as any).foo + _G;
-        `;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar");
+        `.expectToMatchJsResult();
     });
 
     test("function parameter", () => {
-        const code = `
+        util.testFunction`
             function foo(type: unknown) {
                 return \`\${typeof type}|\${type}\`;
             }
-            return foo("foobar");`;
-
-        expect(util.transpileAndExecute(code)).toBe("string|foobar");
+            return foo("foobar");
+        `.expectToMatchJsResult();
     });
 
     test("destructured property function parameter", () => {
-        const code = `
+        util.testFunction`
             function foo({type}: any) {
                 return \`\${typeof type}|\${type}\`;
             }
-            return foo({type: "foobar"});`;
-
-        expect(util.transpileAndExecute(code)).toBe("string|foobar");
+            return foo({type: "foobar"});
+        `.expectToMatchJsResult();
     });
 
     test("destructured array element function parameter", () => {
-        const code = `
+        util.testFunction`
             function foo([type]: any) {
                 return \`\${typeof type}|\${type}\`;
             }
-            return foo(["foobar"]);`;
-
-        expect(util.transpileAndExecute(code)).toBe("string|foobar");
+            return foo(["foobar"]);
+        `.expectToMatchJsResult();
     });
 
     test("property", () => {
-        const code = `
+        util.testFunction`
             const type = "foobar";
             const foo = { type: type };
-            return type + "|" + foo.type + "|" + typeof type;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar|foobar|string");
+            return type + "|" + foo.type + "|" + typeof type;
+        `.expectToMatchJsResult();
     });
 
     test("shorthand property", () => {
-        const code = `
+        util.testFunction`
             const type = "foobar";
             const foo = { type };
-            return type + "|" + foo.type + "|" + typeof type;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar|foobar|string");
+            return type + "|" + foo.type + "|" + typeof type;
+        `.expectToMatchJsResult();
     });
 
     test("destructured property", () => {
-        const code = `
+        util.testFunction`
             const foo = { type: "foobar" };
             const { type: type } = foo;
-            return type + "|" + foo.type + "|" + typeof type;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar|foobar|string");
+            return type + "|" + foo.type + "|" + typeof type;
+        `.expectToMatchJsResult();
     });
 
     test("destructured shorthand property", () => {
-        const code = `
+        util.testFunction`
             const foo = { type: "foobar" };
             const { type } = foo;
-            return type + "|" + foo.type + "|" + typeof type;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar|foobar|string");
+            return type + "|" + foo.type + "|" + typeof type;
+        `.expectToMatchJsResult();
     });
 
     test("destructured array element", () => {
-        const code = `
+        util.testFunction`
             const foo = ["foobar"];
             const [type] = foo;
-            return type + "|" + typeof type;`;
-
-        expect(util.transpileAndExecute(code)).toBe("foobar|string");
+            return type + "|" + typeof type;
+        `.expectToMatchJsResult();
     });
 
     test.each(["type", "type as type"])("imported variable (%p)", importName => {
@@ -590,18 +561,13 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         expect(result).toBe("number|foobar");
     });
 
-    test.each([
-        { returnExport: "type", expectResult: "foobar" },
-        { returnExport: "mytype", expectResult: "foobar" },
-        { returnExport: "result", expectResult: "string|foobar" },
-    ])("separately exported variable (%p)", ({ returnExport, expectResult }) => {
-        const code = `
+    test("separately exported variable (%p)", () => {
+        util.testModule`
             const type = "foobar";
             export { type }
             export { type as mytype }
-            export const result = typeof type + "|" + type;`;
-
-        expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
+            export const result = typeof type + "|" + type;
+        `.expectToMatchJsResult();
     });
 
     test.each(["type", "type as type"])("re-exported variable with lua keyword as name (%p)", importName => {
@@ -618,59 +584,49 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("class", () => {
-        const code = `
+        util.testFunction`
             class type {
                 method() { return typeof 0; }
                 static staticMethod() { return typeof "foo"; }
             }
             const t = new type();
-            return t.method() + "|" + type.staticMethod();`;
-
-        expect(util.transpileAndExecute(code)).toBe("number|string");
+            return t.method() + "|" + type.staticMethod();
+        `.expectToMatchJsResult();
     });
 
     test("subclass of class", () => {
-        const code = `
+        util.testFunction`
             class type {
                 method() { return typeof 0; }
                 static staticMethod() { return typeof "foo"; }
             }
             class Foo extends type {}
             const foo = new Foo();
-            return foo.method() + "|" + Foo.staticMethod();`;
-
-        expect(util.transpileAndExecute(code)).toBe("number|string");
+            return foo.method() + "|" + Foo.staticMethod();
+        `.expectToMatchJsResult();
     });
 
-    test.each([
-        { returnExport: "result", expectResult: "number|string" },
-        { returnExport: "type ~= nil", expectResult: true },
-    ])("exported class (%p)", ({ returnExport, expectResult }) => {
-        const code = `
+    test("exported class (%p)", () => {
+        util.testModule`
             export class type {
                 method() { return typeof 0; }
                 static staticMethod() { return typeof "foo"; }
             }
             const t = new type();
-            export const result = t.method() + "|" + type.staticMethod();`;
-
-        expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
+            export const result = t.method() + "|" + type.staticMethod();
+        `.expectToMatchJsResult();
     });
 
-    test.each([
-        { returnExport: "result", expectResult: "number|string" },
-        { returnExport: "type ~= nil", expectResult: true },
-    ])("subclass of exported class (%p)", ({ returnExport, expectResult }) => {
-        const code = `
+    test("subclass of exported class (%p)", () => {
+        util.testModule`
             export class type {
                 method() { return typeof 0; }
                 static staticMethod() { return typeof "foo"; }
             }
             class Foo extends type {}
             const foo = new Foo();
-            export const result = foo.method() + "|" + Foo.staticMethod();`;
-
-        expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
+            export const result = foo.method() + "|" + Foo.staticMethod();
+        `.expectToMatchJsResult();
     });
 
     test("namespace", () => {
@@ -682,20 +638,16 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
         const code = `
             return typeof type.foo + "|" + type.foo`;
 
-        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("string|foobar");
+        util.testFunction(code).setTsHeader(tsHeader).expectToMatchJsResult();
     });
 
-    test.each([
-        { returnExport: "result", expectResult: "string|foobar" },
-        { returnExport: "type ~= nil", expectResult: true },
-    ])("exported namespace (%p)", ({ returnExport, expectResult }) => {
-        const code = `
+    test("exported namespace (%p)", () => {
+        util.testModule`
             export namespace type {
                 export const foo = "foobar";
             }
-            export const result = typeof type.foo + "|" + type.foo;`;
-
-        expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
+            export const result = typeof type.foo + "|" + type.foo;
+        `.expectToMatchJsResult();
     });
 
     test("merged namespace", () => {
@@ -717,14 +669,11 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             const t = new type();
             return \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;`;
 
-        expect(util.transpileAndExecute(code, undefined, undefined, tsHeader)).toBe("number|boolean|string|foo|bar");
+        util.testFunction(code).setTsHeader(tsHeader).expectToMatchJsResult();
     });
 
-    test.each([
-        { returnExport: "result", expectResult: "number|boolean|string|foo|bar" },
-        { returnExport: "type ~= nil", expectResult: true },
-    ])("exported merged namespace (%p)", ({ returnExport, expectResult }) => {
-        const code = `
+    test("exported merged namespace (%p)", () => {
+        util.testModule`
             export class type {
                 method() { return typeof 0; }
                 static staticMethod() { return typeof true; }
@@ -739,25 +688,21 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             }
 
             const t = new type();
-            export const result = \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;`;
-
-        expect(util.transpileExecuteAndReturnExport(code, returnExport)).toBe(expectResult);
+            export const result = \`\${t.method()}|\${type.staticMethod()}|\${typeof type.foo}|\${type.foo}|\${type.bar}\`;
+        `.expectToMatchJsResult();
     });
 });
 
 test("declaration-only variable with lua keyword as name is not renamed", () => {
-    const code = `
-        declare function type(this: void, a: unknown): string;
-        type(7);`;
-
-    expect(util.transpileString(code, undefined, false)).toBe("type(7)");
+    util.testFunction("type(7)")
+        .setTsHeader("declare function type(this: void, a: unknown): string;")
+        .expectLuaToMatchSnapshot();
 });
 
 test("exported variable with lua keyword as name is not renamed", () => {
-    const code = `
-        export const print = "foobar";`;
-
-    expect(util.transpileExecuteAndReturnExport(code, "print")).toBe("foobar");
+    util.testModule`
+        export const print = "foobar";
+    `.expectToMatchJsResult();
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/846

@@ -87,7 +87,7 @@ export const selfTestFunctions: TestFunction[] = [
     {
         value: "methodInterface.method",
         definition: `interface MethodInterface { method(this: any, s: string): string; }
-            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } }`,
+            const methodInterface: MethodInterface = { method: function(this: any, s: string): string { return s; } };`,
     },
     {
         value: "anonMethodInterface.anonMethod",

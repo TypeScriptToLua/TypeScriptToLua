@@ -10,8 +10,6 @@ import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
-export * from "./legacy-utils";
-
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
 
@@ -142,9 +140,9 @@ export abstract class TestBuilder {
 
     // TODO: Use testModule in these cases?
     protected tsHeader = "";
-    public setTsHeader(tsHeader: string): this {
+    public setTsHeader(tsHeader: string | undefined): this {
         expect(this.hasProgram).toBe(false);
-        this.tsHeader = tsHeader;
+        this.tsHeader = tsHeader ?? "";
         return this;
     }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.37.0
+
+- **[Important]** Deprecated the @phantom, @extension, @metaExtension and @pureAbstract annotations. This is done because there are good alternatives in regular TypeScript, and this helps us simplify the transpiler. For now, using these annotations will result in a warning but they will still continue to function. A few months from now these annotations will no longer be supported, so upgrade if possible. See [Compiler Annotations](https://typescripttolua.github.io/docs/advanced/compiler-annotations) for more info.
+- Added the `MultiReturn<>` type and `$multi()` helper function as the first language extensions. This is to provide a type-safe alternative to the `@tupleReturn` annotation. For more information see [the new Language Extensions page](https://typescripttolua.github.io/docs/advanced/language-extensions) on the docs website.
+- Removed some class transformation code from the transpiler that was no longer used.
+- Fixed a bug causing object spread to malfunction in some cases ([#898](https://github.com/TypeScriptToLua/TypeScriptToLua/issues/898)).
+- Omitted `tostring` for parameters of template literals (`` `${}` ``) that are already known strings.
+- Fixed a bug causing incorrect Lua syntax to be generated in some cases ([#944](https://github.com/TypeScriptToLua/TypeScriptToLua/issues/944)).
+
 ## 0.36.0
 
 - Upgraded to TypeScript 4.0.

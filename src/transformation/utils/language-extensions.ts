@@ -1,5 +1,4 @@
 import * as ts from "typescript";
-import * as path from "path";
 
 export enum ExtensionKind {
     MultiFunction = "MultiFunction",
@@ -7,9 +6,7 @@ export enum ExtensionKind {
 }
 
 function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
-    const extensionDirectory = path.resolve(__dirname, "../../../language-extensions");
-    const sourceFileDirectory = path.dirname(path.normalize(sourceFile.fileName));
-    return extensionDirectory === sourceFileDirectory;
+    return sourceFile.fileName.match("typescript-to-lua/(dist/)?language-extensions/") !== undefined;
 }
 
 export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | undefined {

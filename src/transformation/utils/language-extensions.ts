@@ -6,7 +6,7 @@ export enum ExtensionKind {
 }
 
 function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
-    return sourceFile.fileName.match("typescript-to-lua/(dist/)?language-extensions/") !== undefined;
+    return sourceFile.fileName.match("typescript-to-lua/(dist/)?language-extensions/") !== null;
 }
 
 export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | undefined {

@@ -5,6 +5,7 @@ import {
     invalidMultiFunctionUse,
     invalidMultiTypeToNonArrayBindingPattern,
     invalidMultiTypeArrayBindingPatternElementInitializer,
+    invalidMultiReturnAccess,
 } from "../../../src/transformation/utils/diagnostics";
 
 const multiProjectOptions: tstl.CompilerOptions = {
@@ -125,4 +126,23 @@ test("allow $multi call in ArrowFunction body", () => {
     `
         .setOptions(multiProjectOptions)
         .expectToEqual(1);
+});
+
+test.each(["0", "i"])("allow MultiReturn numeric access", expression => {
+    util.testFunction`
+        ${multiFunction}
+        const i = 0;
+        return multi(1)[${expression}];
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(1);
+});
+
+test.each(["multi()['forEach']", "multi().forEach"])("disallow MultiReturn non-numeric access", expression => {
+    util.testFunction`
+        ${multiFunction}
+        return ${expression};
+    `
+        .setOptions(multiProjectOptions)
+        .expectDiagnosticsToMatchSnapshot([invalidMultiReturnAccess.code]);
 });

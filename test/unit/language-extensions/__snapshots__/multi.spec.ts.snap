@@ -1,5 +1,36 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`disallow MultiReturn non-numeric access: code 1`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function multi(self, ...)
+        local args = {...}
+        return table.unpack(args)
+    end
+    return select(
+        \\"forEach\\",
+        multi(nil)
+    )
+end
+return ____exports"
+`;
+
+exports[`disallow MultiReturn non-numeric access: code 2`] = `
+"local ____exports = {}
+function ____exports.__main(self)
+    local function multi(self, ...)
+        local args = {...}
+        return table.unpack(args)
+    end
+    return multi(nil).forEach
+end
+return ____exports"
+`;
+
+exports[`disallow MultiReturn non-numeric access: diagnostics 1`] = `"main.ts(7,16): error TSTL: The MultiReturn type can only be accessed via an element access expression of a numeric type."`;
+
+exports[`disallow MultiReturn non-numeric access: diagnostics 2`] = `"main.ts(7,16): error TSTL: The MultiReturn type can only be accessed via an element access expression of a numeric type."`;
+
 exports[`invalid $multi call ($multi()): code 1`] = `"____(_G)"`;
 
 exports[`invalid $multi call ($multi()): diagnostics 1`] = `"main.ts(2,9): error TSTL: The $multi function must be called in an expression that is returned."`;

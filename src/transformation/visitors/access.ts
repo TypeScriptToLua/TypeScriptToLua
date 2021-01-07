@@ -3,10 +3,12 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
+import { invalidMultiReturnAccess } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
+import { returnsMultiType } from "./language-extensions/multi";
 import { transformLuaTablePropertyAccessExpression, validateLuaTableElementAccessExpression } from "./lua-table";
 
 export function transformElementAccessArgument(
@@ -41,7 +43,20 @@ export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessE
         return transformLuaLibFunction(context, LuaLibFeature.StringAccess, node, table, index);
     }
 
-    return lua.createTableIndexExpression(table, transformElementAccessArgument(context, node), node);
+    const accessExpression = transformElementAccessArgument(context, node);
+
+    if (ts.isCallExpression(node.expression) && returnsMultiType(context, node.expression)) {
+        const accessType = context.checker.getTypeAtLocation(node.argumentExpression);
+        if (!isNumberType(context, accessType)) {
+            context.diagnostics.push(invalidMultiReturnAccess(node));
+        }
+
+        const selectIdentifier = lua.createIdentifier("select");
+        const selectCall = lua.createCallExpression(selectIdentifier, [accessExpression, table]);
+        return selectCall;
+    }
+
+    return lua.createTableIndexExpression(table, accessExpression, node);
 };
 
 export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAccessExpression> = (
@@ -61,6 +76,10 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     const builtinResult = transformBuiltinPropertyAccessExpression(context, expression);
     if (builtinResult) {
         return builtinResult;
+    }
+
+    if (ts.isCallExpression(expression.expression) && returnsMultiType(context, expression.expression)) {
+        context.diagnostics.push(invalidMultiReturnAccess(expression));
     }
 
     const property = expression.name.text;

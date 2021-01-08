@@ -204,34 +204,34 @@ test("Enum Hoisting", () => {
 });
 
 test("Import hoisting (named)", () => {
-    util.testBundle`
+    util.testModule`
         export const result = foo;
         import { foo } from "./module";
     `
         .addExtraFile("module.ts", "export const foo = true;")
-        .expectToEqual({ result: true });
+        .expectToMatchJsResult();
 });
 
 test("Import hoisting (namespace)", () => {
-    util.testBundle`
+    util.testModule`
         export const result = module.foo;
         import * as module from "./module";
     `
         .addExtraFile("module.ts", "export const foo = true;")
-        .expectToEqual({ result: true });
+        .expectToMatchJsResult();
 });
 
 test("Import hoisting (side-effect)", () => {
-    util.testBundle`
+    util.testModule`
         export const result = (globalThis as any).result;
         import "./module";
     `
         .addExtraFile("module.ts", "(globalThis as any).result = true; export {};")
-        .expectToEqual({ result: true });
+        .expectToMatchJsResult();
 });
 
 test("Import hoisted before function", () => {
-    util.testBundle`
+    util.testModule`
         export let result: any;
 
         baz();
@@ -242,17 +242,17 @@ test("Import hoisted before function", () => {
         import { foo } from "./module";
     `
         .addExtraFile("module.ts", "export const foo = true;")
-        .expectToEqual({ result: true });
+        .expectToMatchJsResult();
 });
 
 test("Hoisting Shorthand Property", () => {
-    const code = `
+    util.testFunction`
         function foo() {
             return { bar }.bar;
         }
         let bar = "foobar";
-        return foo();`;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+        return foo();
+    `.expectToMatchJsResult();
 });
 
 // https://github.com/TypeScriptToLua/TypeScriptToLua/issues/944

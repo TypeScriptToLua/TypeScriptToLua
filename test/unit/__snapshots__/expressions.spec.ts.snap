@@ -431,6 +431,12 @@ ____exports.__result = bit.bor(a, b)
 return ____exports"
 `;
 
+exports[`Null Expression 1`] = `
+"local ____exports = {}
+____exports.__result = nil
+return ____exports"
+`;
+
 exports[`Unary expressions basic ("!a") 1`] = `
 "local ____exports = {}
 function ____exports.__main(self)
@@ -520,6 +526,12 @@ local ____exports = {}
 function ____exports.__main(self)
     local a = __TS__Delete(tbl, \\"test\\")
 end
+return ____exports"
+`;
+
+exports[`Undefined Expression 1`] = `
+"local ____exports = {}
+____exports.__result = nil
 return ____exports"
 `;
 

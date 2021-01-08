@@ -51,7 +51,7 @@ test("re-throw (no catch var)", () => {
 });
 
 test("return from try", () => {
-    const code = `
+    util.testFunction`
         function foobar() {
             try {
                 return "foobar";
@@ -59,12 +59,11 @@ test("return from try", () => {
             }
         }
         return foobar();
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("return nil from try", () => {
-    const code = `
+    util.testFunction`
         let x = "unset";
         function foobar() {
             try {
@@ -75,12 +74,11 @@ test("return nil from try", () => {
         }
         foobar();
         return x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("unset");
+    `.expectToMatchJsResult();
 });
 
 test("tuple return from try", () => {
-    const code = `
+    const testBuilder = util.testFunction`
         /** @tupleReturn */
         function foobar() {
             try {
@@ -91,12 +89,12 @@ test("tuple return from try", () => {
         const [foo, bar] = foobar();
         return foo + bar;
     `;
-    expect(util.transpileString(code)).not.toMatch("unpack(foobar");
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
+    testBuilder.expectToMatchJsResult();
 });
 
 test("return from catch", () => {
-    const code = `
+    util.testFunction`
         function foobar() {
             try {
                 throw "foobar";
@@ -105,12 +103,11 @@ test("return from catch", () => {
             }
         }
         return foobar();
-    `;
-    expect(util.transpileAndExecute(code)).toMatch(/foobar catch$/);
+    `.expectToMatchJsResult();
 });
 
 test("return nil from catch", () => {
-    const code = `
+    util.testFunction`
         let x = "unset";
         function foobar() {
             try {
@@ -122,12 +119,11 @@ test("return nil from catch", () => {
         }
         foobar();
         return x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("unset");
+    `.expectToMatchJsResult();
 });
 
 test("tuple return from catch", () => {
-    const code = `
+    const testBuilder = util.testFunction`
         /** @tupleReturn */
         function foobar(): [string, string] {
             try {
@@ -139,12 +135,12 @@ test("tuple return from catch", () => {
         const [foo, bar] = foobar();
         return foo + bar;
     `;
-    expect(util.transpileString(code)).not.toMatch("unpack(foobar");
-    expect(util.transpileAndExecute(code)).toMatch(/foobar catch$/);
+    expect(testBuilder.getMainLuaCodeChunk()).not.toMatch("unpack(foobar");
+    testBuilder.expectToMatchJsResult();
 });
 
 test("return from nested try", () => {
-    const code = `
+    util.testFunction`
         function foobar() {
             try {
                 try {
@@ -155,12 +151,11 @@ test("return from nested try", () => {
             }
         }
         return foobar();
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("return from nested catch", () => {
-    const code = `
+    util.testFunction`
         function foobar() {
             try {
                 throw "foobar";
@@ -173,15 +168,11 @@ test("return from nested catch", () => {
             }
         }
         return foobar();
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toMatch("catch1");
-    expect(result).toMatch("catch2");
-    expect(result).toMatch("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("return from try->finally", () => {
-    const code = `
+    util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: unknown) {
             x = "evaluated";
@@ -196,12 +187,11 @@ test("return from try->finally", () => {
             }
         }
         return foobar() + " " + x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+    `.expectToMatchJsResult();
 });
 
 test("return from catch->finally", () => {
-    const code = `
+    util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: unknown) {
             x = "evaluated";
@@ -217,12 +207,11 @@ test("return from catch->finally", () => {
             }
         }
         return foobar() + " " + x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+    `.expectToMatchJsResult();
 });
 
 test("tuple return from try->finally", () => {
-    const code = `
+    util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: string) {
             x = "evaluated";
@@ -239,12 +228,11 @@ test("tuple return from try->finally", () => {
         }
         const [foo, bar] = foobar();
         return foo + bar + " " + x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+    `.expectToMatchJsResult();
 });
 
 test("tuple return from catch->finally", () => {
-    const code = `
+    util.testFunction`
         let x = "unevaluated";
         function evaluate(arg: string) {
             x = "evaluated";
@@ -262,12 +250,11 @@ test("tuple return from catch->finally", () => {
         }
         const [foo, bar] = foobar();
         return foo + bar + " " + x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("finally evaluated");
+    `.expectToMatchJsResult();
 });
 
 test("return from nested finally", () => {
-    const code = `
+    util.testFunction`
         let x = "";
         function foobar() {
             try {
@@ -282,8 +269,7 @@ test("return from nested finally", () => {
             }
         }
         return foobar() + " " + x;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("finally AB");
+    `.expectToMatchJsResult();
 });
 
 test.each([

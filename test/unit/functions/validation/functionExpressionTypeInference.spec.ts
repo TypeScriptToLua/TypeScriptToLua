@@ -36,7 +36,9 @@ test.each(["(this: void, s: string) => string", "(this: any, s: string) => strin
             func = undefinedFunc || (s => s);
             return func("foo");
         `;
-        util.testFunction(code).setTsHeader(header).expectToMatchJsResult();
+        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+        const luaResult = util.testFunction(code).setTsHeader(header).getLuaExecutionResult();
+        expect(luaResult).toBe("foo");
     }
 );
 

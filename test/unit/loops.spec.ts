@@ -481,7 +481,7 @@ describe("for...of empty destructuring", () => {
                 }
                 return i;
             `.getLuaExecutionResult();
-            // Cant use expectToMatchJsResult because above is not valid TS/JS
+            // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
             expect(luaResult).toBe(3);
         });
 
@@ -510,7 +510,7 @@ describe("for...of empty destructuring", () => {
                 }
                 return i;
             `.getLuaExecutionResult();
-            // Cant use expectToMatchJsResult because above is not valid TS/JS
+            // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
             expect(luaResult).toBe(3);
         });
     };

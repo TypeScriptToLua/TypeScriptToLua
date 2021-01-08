@@ -66,19 +66,12 @@ test("Function default parameter", () => {
 });
 
 test.each([{ inp: [] }, { inp: [5] }, { inp: [1, 2] }])("Function Default Values (%p)", ({ inp }) => {
-    // Default value is 3 for v1
-    const v1 = inp.length > 0 ? inp[0] : 3;
-    // Default value is 4 for v2
-    const v2 = inp.length > 1 ? inp[1] : 4;
-
     const callArgs = inp.join(",");
 
-    const result = util.transpileAndExecute(
+    util.testFunction(
         `let add = function(a: number = 3, b: number = 4) { return a+b; };
         return add(${callArgs});`
-    );
-
-    expect(result).toBe(v1 + v2);
+    ).expectToMatchJsResult();
 });
 
 test("Function default array binding parameter", () => {
@@ -476,10 +469,10 @@ test("missing declaration name", () => {
 });
 
 test("top-level function declaration is global", () => {
-    util.testBundle`
+    util.testModule`
         import './a';
         export const result = foo();
     `
         .addExtraFile("a.ts", 'function foo() { return "foo" }')
-        .expectToEqual({ result: "foo" });
+        .expectToMatchJsResult();
 });

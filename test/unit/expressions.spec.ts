@@ -30,12 +30,7 @@ test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1
 );
 
 test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", input => {
-    const tsHeader = "declare var obj: any;";
-    const tsSource = `return ${input}`;
-    const luaHeader = "obj = { existingKey = 1 }";
-    const result = util.transpileAndExecute(tsSource, undefined, luaHeader, tsHeader);
-
-    expect(result).toBe(eval(`let obj = { existingKey: 1 }; ${input}`));
+    util.testFunction(`let obj = { existingKey: 1 }; return ${input}`).expectToMatchJsResult();
 });
 
 test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions overridden operators (%p)", input => {
@@ -119,11 +114,11 @@ test("Binary Comma Statement in For Loop", () => {
 });
 
 test("Null Expression", () => {
-    expect(util.transpileString("null")).toBe("local ____ = nil");
+    util.testExpression("null").expectLuaToMatchSnapshot();
 });
 
 test("Undefined Expression", () => {
-    expect(util.transpileString("undefined")).toBe("local ____ = nil");
+    util.testExpression("undefined").expectLuaToMatchSnapshot();
 });
 
 test.each(["i++", "i--", "++i", "--i"])("Incrementor value (%p)", expression => {

@@ -94,7 +94,7 @@ test("namespace merging across files", () => {
         }
     `;
 
-    util.testBundle`
+    util.testModule`
         import './a';
         import './b';
 
@@ -102,7 +102,7 @@ test("namespace merging across files", () => {
     `
         .addExtraFile("a.ts", a)
         .addExtraFile("b.ts", b)
-        .expectToEqual({ result: { foo: "foo", bar: "bar" } });
+        .expectToMatchJsResult();
 });
 
 test("declared namespace function call", () => {

@@ -10,6 +10,9 @@ import * as vm from "vm";
 import * as tstl from "../src";
 import { createEmitOutputCollector } from "../src/transpilation/output-collector";
 
+const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
+const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
+
 // Using `test` directly makes eslint-plugin-jest consider this file as a test
 const defineTest = test;
 
@@ -37,76 +40,6 @@ export function testEachVersion<T extends TestBuilder>(
             }
         });
     }
-}
-
-function executeLua(code: string): any {
-    const L = lauxlib.luaL_newstate();
-    lualib.luaL_openlibs(L);
-    const status = lauxlib.luaL_dostring(L, to_luastring(code));
-
-    if (status === lua.LUA_OK) {
-        if (lua.lua_isstring(L, -1)) {
-            const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
-            return result === null ? undefined : result;
-        } else {
-            const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
-            throw new Error(`Unsupported Lua return type: ${returnType}`);
-        }
-    } else {
-        // Filter out control characters appearing on some systems
-        const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
-        const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
-        return new ExecutionError(message);
-    }
-}
-
-const minimalTestLib = fs.readFileSync(path.join(__dirname, "json.lua"), "utf8");
-const lualibContent = fs.readFileSync(path.resolve(__dirname, "../dist/lualib/lualib_bundle.lua"), "utf8");
-export function executeLuaModule(code: string): any {
-    const lualibImport = code.includes('require("lualib_bundle")')
-        ? `package.preload.lualib_bundle = function()\n${lualibContent}\nend`
-        : "";
-
-    return executeLua(`${minimalTestLib}\n${lualibImport}\nreturn JSONStringify((function()\n${code}\nend)())`);
-}
-
-function executeJsModule(code: string): any {
-    const exports = {};
-    const context = vm.createContext({ exports, module: { exports } });
-    context.global = context;
-    let result: unknown;
-    try {
-        result = vm.runInContext(code, context);
-    } catch (error) {
-        return new ExecutionError(error.message);
-    }
-
-    function transform(currentValue: any): any {
-        if (currentValue === null) {
-            return undefined;
-        }
-
-        if (Array.isArray(currentValue)) {
-            return currentValue.map(transform);
-        }
-
-        if (typeof currentValue === "object") {
-            for (const [key, value] of Object.entries(currentValue)) {
-                currentValue[key] = transform(value);
-                if (currentValue[key] === undefined) {
-                    delete currentValue[key];
-                }
-            }
-
-            if (Object.keys(currentValue).length === 0) {
-                return [];
-            }
-        }
-
-        return currentValue;
-    }
-
-    return transform(result);
 }
 
 const memoize: MethodDecorator = (_target, _propertyKey, descriptor) => {
@@ -160,7 +93,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    protected abstract getLuaCodeWithWrapper: (code: string) => string;
+    protected abstract getLuaCodeWithWrapper(code: string): string;
     public setLuaFactory(luaFactory: (code: string) => string): this {
         expect(this.hasProgram).toBe(false);
         this.getLuaCodeWithWrapper = luaFactory;
@@ -198,7 +131,7 @@ export abstract class TestBuilder {
         return this;
     }
 
-    private extraFiles: Record<string, string> = {};
+    protected extraFiles: Record<string, string> = {};
     public addExtraFile(fileName: string, code: string): this {
         expect(this.hasProgram).toBe(false);
         this.extraFiles[fileName] = code;
@@ -261,7 +194,7 @@ export abstract class TestBuilder {
 
     @memoize
     public getLuaExecutionResult(): any {
-        return executeLuaModule(this.getLuaCodeWithWrapper(this.getMainLuaCodeChunk()));
+        return this.executeLua();
     }
 
     @memoize
@@ -275,7 +208,7 @@ export abstract class TestBuilder {
     }
 
     @memoize
-    protected getMainJsCodeChunk(): string {
+    public getMainJsCodeChunk(): string {
         const { transpiledFiles } = this.getJsResult();
         const code = transpiledFiles.find(({ sourceFiles }) => sourceFiles.some(f => f.fileName === this.mainFileName))
             ?.js;
@@ -289,7 +222,7 @@ export abstract class TestBuilder {
 
     @memoize
     public getJsExecutionResult(): any {
-        return executeJsModule(this.getJsCodeWithWrapper());
+        return this.executeJs();
     }
 
     // Utilities
@@ -387,12 +320,142 @@ export abstract class TestBuilder {
         callback(this);
         return this;
     }
+
+    private executeLua(): any {
+        // Main file
+        const mainFile = this.getMainLuaCodeChunk();
+
+        const L = lauxlib.luaL_newstate();
+        lualib.luaL_openlibs(L);
+
+        // Load modules
+        // Json
+        lua.lua_getglobal(L, "package");
+        lua.lua_getfield(L, -1, "preload");
+        lauxlib.luaL_loadstring(L, to_luastring(minimalTestLib));
+        lua.lua_setfield(L, -2, "json");
+        // Lua lib
+        if (
+            this.options.luaLibImport === tstl.LuaLibImportKind.Require ||
+            mainFile.includes('require("lualib_bundle")')
+        ) {
+            lua.lua_getglobal(L, "package");
+            lua.lua_getfield(L, -1, "preload");
+            lauxlib.luaL_loadstring(L, to_luastring(lualibContent));
+            lua.lua_setfield(L, -2, "lualib_bundle");
+        }
+
+        // Extra files
+        const { transpiledFiles } = this.getLuaResult();
+
+        Object.keys(this.extraFiles).forEach(fileName => {
+            const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
+                sourceFiles.some(f => f.fileName === fileName)
+            );
+            if (transpiledExtraFile?.lua) {
+                lua.lua_getglobal(L, "package");
+                lua.lua_getfield(L, -1, "preload");
+                lauxlib.luaL_loadstring(L, to_luastring(transpiledExtraFile.lua));
+                lua.lua_setfield(L, -2, fileName.replace(".ts", ""));
+            }
+        });
+
+        // Execute Main
+        const wrappedMainCode = `
+            local JSON = require("json");
+            return JSON.stringify((function()
+                ${this.getLuaCodeWithWrapper(mainFile)}
+            end)());`;
+
+        const status = lauxlib.luaL_dostring(L, to_luastring(wrappedMainCode));
+
+        if (status === lua.LUA_OK) {
+            if (lua.lua_isstring(L, -1)) {
+                const result = eval(`(${lua.lua_tojsstring(L, -1)})`);
+                return result === null ? undefined : result;
+            } else {
+                const returnType = to_jsstring(lua.lua_typename(L, lua.lua_type(L, -1)));
+                throw new Error(`Unsupported Lua return type: ${returnType}`);
+            }
+        } else {
+            // Filter out control characters appearing on some systems
+            const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
+            const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+            return new ExecutionError(message);
+        }
+    }
+
+    private executeJs(): any {
+        const { transpiledFiles } = this.getJsResult();
+        // Custom require for extra files. Really basic, does not handle globals currently
+        // and probably a lot of other details.
+        // TODO Should be replace with vm.Module https://nodejs.org/api/vm.html#vm_class_vm_module
+        // once stable
+        const requireFromExtraFile = (fileName: string) => {
+            const moduleExports = {};
+            const moduleContext = vm.createContext({ exports: moduleExports, module: { exports: moduleExports } });
+            const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
+                sourceFiles.some(f => f.fileName === fileName.replace("./", "") + ".ts")
+            );
+
+            if (transpiledExtraFile?.js) {
+                vm.runInContext(transpiledExtraFile.js, moduleContext);
+            }
+
+            return moduleContext.module.exports;
+        };
+
+        const mainExports = {};
+        const mainContext = vm.createContext({
+            exports: mainExports,
+            module: { exports: mainExports },
+            require: requireFromExtraFile,
+        });
+        mainContext.global = mainContext;
+        let result: unknown;
+        try {
+            result = vm.runInContext(this.getJsCodeWithWrapper(), mainContext);
+        } catch (error) {
+            return new ExecutionError(error.message);
+        }
+
+        function removeUndefinedFields(obj: any): any {
+            if (obj === null) {
+                return undefined;
+            }
+
+            if (Array.isArray(obj)) {
+                return obj.map(removeUndefinedFields);
+            }
+
+            if (typeof obj === "object") {
+                const copy: any = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    if (obj[key] !== undefined) {
+                        copy[key] = removeUndefinedFields(value);
+                    }
+                }
+
+                if (Object.keys(copy).length === 0) {
+                    return [];
+                }
+
+                return copy;
+            }
+
+            return obj;
+        }
+
+        return removeUndefinedFields(result);
+    }
 }
 
 class AccessorTestBuilder extends TestBuilder {
     protected accessor = "";
 
-    protected getLuaCodeWithWrapper = (code: string) => `return (function()\n${code}\nend)()${this.accessor}`;
+    protected getLuaCodeWithWrapper(code: string) {
+        return `return (function()\n${code}\nend)()${this.accessor}`;
+    }
 
     @memoize
     protected getJsCodeWithWrapper(): string {
@@ -418,7 +481,6 @@ class ModuleTestBuilder extends AccessorTestBuilder {
         return this;
     }
 }
-
 class FunctionTestBuilder extends AccessorTestBuilder {
     protected accessor = ".__main()";
     public getTsCode(): string {

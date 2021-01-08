@@ -142,8 +142,4 @@ encode = function(val, stack)
   error("unexpected type '" .. t .. "'")
 end
 
-
--- TODO: Since it supports NaN and Infinity it is considered a superset of JSON, so it probably should be renamed
-function JSONStringify(val)
-  return ( encode(val) )
-end
+return {stringify = function(val) return ( encode(val) ) end}

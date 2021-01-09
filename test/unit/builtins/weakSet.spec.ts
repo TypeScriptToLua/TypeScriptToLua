@@ -63,6 +63,8 @@ test("weakSet has no set features (size)", () => {
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(
     "weakSet has no set features (%p)",
     call => {
-        expect(() => util.transpileAndExecute(`(new WeakSet() as any).${call}`)).toThrow();
+        const testBuilder = util.testFunction(`(new WeakSet() as any).${call}`);
+        const luaResult = testBuilder.getLuaExecutionResult();
+        expect(luaResult.message).toContain("attempt to call a nil value");
     }
 );

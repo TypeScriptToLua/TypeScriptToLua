@@ -15,5 +15,6 @@ test("should transpile into one file", () => {
     // Verify the name is as specified in tsconfig
     expect(name).toBe("bundle/bundle.lua");
     // Verify exported module by executing
-    expect(util.executeLuaModule(text)).toEqual({ myNumber: 3 });
+    // TODO this is a bit hacky
+    util.testModule("").setLuaHeader(text).expectToEqual({ myNumber: 3 });
 });

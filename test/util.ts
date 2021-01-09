@@ -276,9 +276,19 @@ export abstract class TestBuilder {
         return this;
     }
 
+    private expectNoJsExecutionError(): this {
+        const jsResult = this.getJsExecutionResult();
+        if (jsResult instanceof ExecutionError) {
+            throw jsResult;
+        }
+
+        return this;
+    }
+
     public expectToMatchJsResult(allowErrors = false): this {
         this.expectToHaveNoDiagnostics();
         if (!allowErrors) this.expectNoExecutionError();
+        if (!allowErrors) this.expectNoJsExecutionError();
 
         const luaResult = this.getLuaExecutionResult();
         const jsResult = this.getJsExecutionResult();
@@ -380,41 +390,47 @@ export abstract class TestBuilder {
         } else {
             // Filter out control characters appearing on some systems
             const luaStackString = lua.lua_tostring(L, -1).filter(c => c >= 20);
-            const message = to_jsstring(luaStackString).replace(/^\[string "--\.\.\."\]:\d+: /, "");
+            const message = to_jsstring(luaStackString).replace(/^\[string "(--)?\.\.\."\]:\d+: /, "");
             return new ExecutionError(message);
         }
     }
 
     private executeJs(): any {
         const { transpiledFiles } = this.getJsResult();
-        // Custom require for extra files. Really basic, does not handle globals currently
-        // and probably a lot of other details.
+        // Custom require for extra files. Really basic. Global support is hacky
         // TODO Should be replace with vm.Module https://nodejs.org/api/vm.html#vm_class_vm_module
         // once stable
-        const requireFromExtraFile = (fileName: string) => {
+        const globalContext: any = {};
+        const mainExports = {};
+        globalContext.exports = mainExports;
+        globalContext.module = { exports: mainExports };
+        globalContext.require = (fileName: string) => {
+            // create clean export object for "module"
             const moduleExports = {};
-            const moduleContext = vm.createContext({ exports: moduleExports, module: { exports: moduleExports } });
+            globalContext.exports = moduleExports;
+            globalContext.module = { exports: moduleExports };
             const transpiledExtraFile = transpiledFiles.find(({ sourceFiles }) =>
                 sourceFiles.some(f => f.fileName === fileName.replace("./", "") + ".ts")
             );
 
             if (transpiledExtraFile?.js) {
-                vm.runInContext(transpiledExtraFile.js, moduleContext);
+                vm.runInContext(transpiledExtraFile.js, globalContext);
             }
 
-            return moduleContext.module.exports;
+            // Have to return globalContext.module.exports
+            // becuase module.exports might no longer be equal to moduleExports (export assignment)
+            const result = globalContext.module.exports;
+            // Reset module/export
+            globalContext.exports = mainExports;
+            globalContext.module = { exports: mainExports };
+            return result;
         };
 
-        const mainExports = {};
-        const mainContext = vm.createContext({
-            exports: mainExports,
-            module: { exports: mainExports },
-            require: requireFromExtraFile,
-        });
-        mainContext.global = mainContext;
+        vm.createContext(globalContext);
+
         let result: unknown;
         try {
-            result = vm.runInContext(this.getJsCodeWithWrapper(), mainContext);
+            result = vm.runInContext(this.getJsCodeWithWrapper(), globalContext);
         } catch (error) {
             return new ExecutionError(error.message);
         }

@@ -59,13 +59,12 @@ test.each([tableLibClass, tableLibInterface])("LuaTables cannot have other membe
 
 test.each([tableLibClass])("LuaTable new", tableLib => {
     const content = tableLib + "tbl = new Table();";
-    expect(util.transpileString(content)).toEqual("tbl = {}");
+    expect(util.testFunction(content).getMainLuaCodeChunk()).toContain("tbl = {}");
 });
 
 test.each([tableLibClass])("LuaTable length", tableLib => {
     const content = tableLib + "tbl = new Table();\nreturn tbl.length;";
-    const lua = util.transpileString(content);
-    expect(util.executeLua(lua)).toEqual(0);
+    expect(util.testFunction(content).getLuaExecutionResult()).toBe(0);
 });
 
 test.each([tableLibClass, tableLibInterface])("Cannot set LuaTable length", tableLib => {
@@ -136,6 +135,6 @@ test.each([tableLibClass])("LuaTable functional tests", tableLib => {
         ["const t = new Table(); t.set(t.length + 1, true); t.set(t.length + 1, true); return t.length", 2],
         ['const k = "k"; const t = { data: new Table() }; t.data.set(k, 3); return t.data.get(k);', 3],
     ])("LuaTable test (%p)", (code, expectedReturnValue) => {
-        expect(util.transpileAndExecute(code, undefined, undefined, tableLib)).toBe(expectedReturnValue);
+        expect(util.testFunction(code).setTsHeader(tableLib).getLuaExecutionResult()).toBe(expectedReturnValue);
     });
 });

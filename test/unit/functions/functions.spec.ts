@@ -469,10 +469,11 @@ test("missing declaration name", () => {
 });
 
 test("top-level function declaration is global", () => {
+    // TODO cant be tested with expectToMatchJsResult because in JS that would not be global
     util.testModule`
         import './a';
         export const result = foo();
     `
         .addExtraFile("a.ts", 'function foo() { return "foo" }')
-        .expectToMatchJsResult();
+        .expectToEqual({ result: "foo" });
 });

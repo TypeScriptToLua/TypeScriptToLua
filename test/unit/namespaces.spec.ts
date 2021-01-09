@@ -11,14 +11,9 @@ test("legacy internal module syntax", () => {
 });
 
 test("global scoping", () => {
-    const result = util.transpileAndExecute(
-        "return a.foo();",
-        undefined,
-        undefined,
-        'namespace a { export function foo() { return "bar"; } }'
-    );
-
-    expect(result).toBe("bar");
+    util.testFunction("return a.foo();")
+        .setTsHeader('namespace a { export function foo() { return "bar"; } }')
+        .expectToMatchJsResult();
 });
 
 test("nested namespace", () => {

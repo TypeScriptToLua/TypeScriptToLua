@@ -75,7 +75,7 @@ test("Exported Namespace Function Hoisting", () => {
         .expectToMatchJsResult();
 });
 
-test.each(["let", "const"])("Hoisting in Non-Function Scope (%p)", (varType) => {
+test.each(["let", "const"])("Hoisting in Non-Function Scope (%p)", varType => {
     util.testFunction`
         function foo() {
             ${varType} bar = "bar";

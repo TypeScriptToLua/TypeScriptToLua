@@ -3,7 +3,7 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinPropertyAccessExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
-import { invalidMultiReturnAccess } from "../utils/diagnostics";
+import { invalidMultiReturnAccess, optionalChainingNotSupported } from "../utils/diagnostics";
 import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
@@ -63,6 +63,10 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     expression,
     context
 ) => {
+    if (ts.isOptionalChain(expression)) {
+        context.diagnostics.push(optionalChainingNotSupported(expression));
+    }
+
     const constEnumValue = tryGetConstEnumValue(context, expression);
     if (constEnumValue) {
         return constEnumValue;

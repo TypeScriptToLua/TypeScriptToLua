@@ -12,6 +12,7 @@ import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignmen
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
 import { returnsMultiType } from "./language-extensions/multi";
+import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
 
@@ -206,6 +207,10 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const builtinResult = transformBuiltinCallExpression(context, node);
     if (builtinResult) {
         return wrapResult ? wrapInTable(builtinResult) : builtinResult;
+    }
+
+    if (isOperatorMapping(context, node)) {
+        return transformOperatorMappingExpression(context, node);
     }
 
     if (ts.isPropertyAccessExpression(node.expression)) {

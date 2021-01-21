@@ -4,8 +4,8 @@ import * as path from "path";
 export enum ExtensionKind {
     MultiFunction = "MultiFunction",
     MultiType = "MultiType",
-    OperatorAddType = "OperatorAddType",
-    OperatorAddMethodType = "OperatorAddMethodType",
+    AddType = "AddType",
+    AddMethodType = "AddMethodType",
 }
 
 function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
@@ -21,14 +21,14 @@ export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | u
             return ExtensionKind.MultiFunction;
         }
 
-        if (ts.isTypeAliasDeclaration(declaration)) {
+        if (ts.isTypeAliasDeclaration(declaration) || ts.isInterfaceDeclaration(declaration)) {
             switch (declaration.name.text) {
                 case "MultiReturn":
                     return ExtensionKind.MultiType;
-                case "OperatorAdd":
-                    return ExtensionKind.OperatorAddType;
-                case "OperatorAddMethod":
-                    return ExtensionKind.OperatorAddMethodType;
+                case "LuaAdd":
+                    return ExtensionKind.AddType;
+                case "LuaAddMethod":
+                    return ExtensionKind.AddMethodType;
             }
         }
 

@@ -172,6 +172,10 @@ export const unsupportedMultiFunctionAssignment = createErrorDiagnosticFactory(
     "Omitted expressions and BindingElements are expected here."
 );
 
+export const invalidOperatorMappingUse = createErrorDiagnosticFactory(
+    "A mapped operator can only be used in a call expression."
+);
+
 export const annotationDeprecated = createWarningDiagnosticFactory(
     (kind: AnnotationKind) =>
         `'@${kind}' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. ` +

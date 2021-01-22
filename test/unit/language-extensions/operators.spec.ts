@@ -87,6 +87,55 @@ test.each(binaryOperatorTests)("binary operator mapping - method", (opType, a, b
         .expectToEqual(expectResult);
 });
 
+test("operator mapping overload - global function", () => {
+    util.testModule`
+		${operatorMapTestObject}
+		declare const op: LuaAdd<OpMap, OpMap, OpMap> & LuaAdd<OpMap, number, number>;
+		const a = new OpMap(4);
+		const b = new OpMap(7);
+		const resultA = op(a, b).value;
+		const resultB = op(a, 13);
+		export const result = resultA * 100 + resultB;
+	`
+        .setOptions(operatorsProjectOptions)
+        .setReturnExport("result")
+        .expectToEqual(1117);
+});
+
+test("operator mapping overload - static function", () => {
+    util.testModule`
+		${operatorMapTestObject}
+		declare namespace OpMap {
+			export const op: LuaAdd<OpMap, OpMap, OpMap> & LuaAdd<OpMap, number, number>;
+		}
+		const a = new OpMap(4);
+		const b = new OpMap(7);
+		const resultA = OpMap.op(a, b).value;
+		const resultB = OpMap.op(a, 13);
+		export const result = resultA * 100 + resultB;
+	`
+        .setOptions(operatorsProjectOptions)
+        .setReturnExport("result")
+        .expectToEqual(1117);
+});
+
+test("operator mapping overload - method", () => {
+    util.testModule`
+		${operatorMapTestObject}
+		declare interface OpMap {
+			op: LuaAddMethod<OpMap, OpMap> & LuaAddMethod<number, number>;
+		}
+		const a = new OpMap(4);
+		const b = new OpMap(7);
+		const resultA = a.op(b).value;
+		const resultB = a.op(13);
+		export const result = resultA * 100 + resultB;
+	`
+        .setOptions(operatorsProjectOptions)
+        .setReturnExport("result")
+        .expectToEqual(1117);
+});
+
 test("operator mapping - method element call", () => {
     util.testModule`
 		${operatorMapTestObject}

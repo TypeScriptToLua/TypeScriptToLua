@@ -6,13 +6,45 @@ import { assert } from "../../../utils";
 import { findFirstNodeAbove } from "../../utils/typescript";
 
 const binaryOperatorMappings = new Map<extensions.ExtensionKind, lua.BinaryOperator>([
-    [extensions.ExtensionKind.AddType, lua.SyntaxKind.AdditionOperator],
-    [extensions.ExtensionKind.AddMethodType, lua.SyntaxKind.AdditionOperator],
+    [extensions.ExtensionKind.AdditionOperatorType, lua.SyntaxKind.AdditionOperator],
+    [extensions.ExtensionKind.AdditionOperatorMethodType, lua.SyntaxKind.AdditionOperator],
+    [extensions.ExtensionKind.SubtractionOperatorType, lua.SyntaxKind.SubtractionOperator],
+    [extensions.ExtensionKind.SubtractionOperatorMethodType, lua.SyntaxKind.SubtractionOperator],
+    [extensions.ExtensionKind.MultiplicationOperatorType, lua.SyntaxKind.MultiplicationOperator],
+    [extensions.ExtensionKind.MultiplicationOperatorMethodType, lua.SyntaxKind.MultiplicationOperator],
+    [extensions.ExtensionKind.DivisionOperatorType, lua.SyntaxKind.DivisionOperator],
+    [extensions.ExtensionKind.DivisionOperatorMethodType, lua.SyntaxKind.DivisionOperator],
+    [extensions.ExtensionKind.ModuloOperatorType, lua.SyntaxKind.ModuloOperator],
+    [extensions.ExtensionKind.ModuloOperatorMethodType, lua.SyntaxKind.ModuloOperator],
+    [extensions.ExtensionKind.PowerOperatorType, lua.SyntaxKind.PowerOperator],
+    [extensions.ExtensionKind.PowerOperatorMethodType, lua.SyntaxKind.PowerOperator],
+    [extensions.ExtensionKind.FloorDivisionOperatorType, lua.SyntaxKind.FloorDivisionOperator],
+    [extensions.ExtensionKind.FloorDivisionOperatorMethodType, lua.SyntaxKind.FloorDivisionOperator],
+    [extensions.ExtensionKind.BitwiseAndOperatorType, lua.SyntaxKind.BitwiseAndOperator],
+    [extensions.ExtensionKind.BitwiseAndOperatorMethodType, lua.SyntaxKind.BitwiseAndOperator],
+    [extensions.ExtensionKind.BitwiseOrOperatorType, lua.SyntaxKind.BitwiseOrOperator],
+    [extensions.ExtensionKind.BitwiseOrOperatorMethodType, lua.SyntaxKind.BitwiseOrOperator],
+    [extensions.ExtensionKind.BitwiseExclusiveOrOperatorType, lua.SyntaxKind.BitwiseExclusiveOrOperator],
+    [extensions.ExtensionKind.BitwiseExclusiveOrOperatorMethodType, lua.SyntaxKind.BitwiseExclusiveOrOperator],
+    [extensions.ExtensionKind.BitwiseLeftShiftOperatorType, lua.SyntaxKind.BitwiseLeftShiftOperator],
+    [extensions.ExtensionKind.BitwiseLeftShiftOperatorMethodType, lua.SyntaxKind.BitwiseLeftShiftOperator],
+    [extensions.ExtensionKind.BitwiseRightShiftOperatorType, lua.SyntaxKind.BitwiseRightShiftOperator],
+    [extensions.ExtensionKind.BitwiseRightShiftOperatorMethodType, lua.SyntaxKind.BitwiseRightShiftOperator],
+    [extensions.ExtensionKind.ConcatOperatorType, lua.SyntaxKind.ConcatOperator],
+    [extensions.ExtensionKind.ConcatOperatorMethodType, lua.SyntaxKind.ConcatOperator],
+    [extensions.ExtensionKind.LessThanOperatorType, lua.SyntaxKind.LessThanOperator],
+    [extensions.ExtensionKind.LessThanOperatorMethodType, lua.SyntaxKind.LessThanOperator],
+    [extensions.ExtensionKind.GreaterThanOperatorType, lua.SyntaxKind.GreaterThanOperator],
+    [extensions.ExtensionKind.GreaterThanOperatorMethodType, lua.SyntaxKind.GreaterThanOperator],
 ]);
 
 const unaryOperatorMappings = new Map<extensions.ExtensionKind, lua.UnaryOperator>([
-    [extensions.ExtensionKind.LenType, lua.SyntaxKind.LengthOperator],
-    [extensions.ExtensionKind.LenMethodType, lua.SyntaxKind.LengthOperator],
+    [extensions.ExtensionKind.NegationOperatorType, lua.SyntaxKind.NegationOperator],
+    [extensions.ExtensionKind.NegationOperatorMethodType, lua.SyntaxKind.NegationOperator],
+    [extensions.ExtensionKind.BitwiseNotOperatorType, lua.SyntaxKind.BitwiseNotOperator],
+    [extensions.ExtensionKind.BitwiseNotOperatorMethodType, lua.SyntaxKind.BitwiseNotOperator],
+    [extensions.ExtensionKind.LengthOperatorType, lua.SyntaxKind.LengthOperator],
+    [extensions.ExtensionKind.LengthOperatorMethodType, lua.SyntaxKind.LengthOperator],
 ]);
 
 const operatorMapExtensions = new Map<extensions.ExtensionKind, lua.SyntaxKind>([

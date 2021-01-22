@@ -19,23 +19,3 @@ exports[`operator mapping - invalid use (const foo: unknown = op;): diagnostics 
 exports[`operator mapping - invalid use (declare function foo(op: LuaAdd<number, number, number>): void; foo(op);): code 1`] = `"foo(_G, op)"`;
 
 exports[`operator mapping - invalid use (declare function foo(op: LuaAdd<number, number, number>): void; foo(op);): diagnostics 1`] = `"main.ts(3,71): error TSTL: A mapped operator can only be used in a call expression."`;
-
-exports[`operator mapping - invalid use: code 1`] = `"foo = tostring(op)"`;
-
-exports[`operator mapping - invalid use: code 2`] = `"foo(_G, op)"`;
-
-exports[`operator mapping - invalid use: code 3`] = `"foo = op(_G, 1, 2)"`;
-
-exports[`operator mapping - invalid use: code 4`] = `"foo = {op}"`;
-
-exports[`operator mapping - invalid use: code 5`] = `"foo = {op}"`;
-
-exports[`operator mapping - invalid use: diagnostics 1`] = `"main.ts(3,18): error TSTL: A mapped operator can only be used in a call expression."`;
-
-exports[`operator mapping - invalid use: diagnostics 2`] = `"main.ts(3,71): error TSTL: A mapped operator can only be used in a call expression."`;
-
-exports[`operator mapping - invalid use: diagnostics 3`] = `"main.ts(3,16): error TSTL: A mapped operator can only be used in a call expression."`;
-
-exports[`operator mapping - invalid use: diagnostics 4`] = `"main.ts(3,16): error TSTL: A mapped operator can only be used in a call expression."`;
-
-exports[`operator mapping - invalid use: diagnostics 5`] = `"main.ts(3,16): error TSTL: A mapped operator can only be used in a call expression."`;

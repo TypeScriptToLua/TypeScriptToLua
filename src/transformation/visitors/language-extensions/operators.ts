@@ -10,7 +10,15 @@ const binaryOperatorMappings = new Map<extensions.ExtensionKind, lua.BinaryOpera
     [extensions.ExtensionKind.AddMethodType, lua.SyntaxKind.AdditionOperator],
 ]);
 
-const operatorMapExtensions = new Map<extensions.ExtensionKind, lua.SyntaxKind>(binaryOperatorMappings);
+const unaryOperatorMappings = new Map<extensions.ExtensionKind, lua.UnaryOperator>([
+    [extensions.ExtensionKind.LenType, lua.SyntaxKind.LengthOperator],
+    [extensions.ExtensionKind.LenMethodType, lua.SyntaxKind.LengthOperator],
+]);
+
+const operatorMapExtensions = new Map<extensions.ExtensionKind, lua.SyntaxKind>([
+    ...binaryOperatorMappings,
+    ...unaryOperatorMappings,
+]);
 
 function getTypeDeclaration(declaration: ts.Declaration) {
     return ts.isTypeAliasDeclaration(declaration)
@@ -69,8 +77,8 @@ export function transformOperatorMappingExpression(
     const extensionKind = getOperatorMapExtensionKindForCall(context, node);
     assert(extensionKind);
 
+    const args = node.arguments.slice();
     if (binaryOperatorMappings.has(extensionKind)) {
-        const args = node.arguments.slice();
         if (args.length === 1) {
             assert(ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression));
             args.unshift(node.expression.expression);
@@ -86,6 +94,17 @@ export function transformOperatorMappingExpression(
             luaOperator
         );
     } else {
-        throw new Error("TODO");
+        let arg: ts.Expression;
+        if (args.length === 0) {
+            assert(ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression));
+            arg = node.expression.expression;
+        } else {
+            assert(args.length === 1);
+            arg = args[0];
+        }
+
+        const luaOperator = unaryOperatorMappings.get(extensionKind);
+        assert(luaOperator);
+        return lua.createUnaryExpression(context.transformExpression(arg), luaOperator);
     }
 }

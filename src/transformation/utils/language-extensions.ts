@@ -6,6 +6,8 @@ export enum ExtensionKind {
     MultiType = "MultiType",
     AddType = "AddType",
     AddMethodType = "AddMethodType",
+    LenType = "LenType",
+    LenMethodType = "LenMethodType",
 }
 
 function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean {
@@ -29,6 +31,10 @@ export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | u
                     return ExtensionKind.AddType;
                 case "LuaAddMethod":
                     return ExtensionKind.AddMethodType;
+                case "LuaLen":
+                    return ExtensionKind.LenType;
+                case "LuaLenMethod":
+                    return ExtensionKind.LenMethodType;
             }
         }
 

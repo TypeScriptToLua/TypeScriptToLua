@@ -42,7 +42,7 @@ export enum ExtensionKind {
     LengthOperatorMethodType = "LengthOperatorMethodType",
 }
 
-const extensionKindForTypeName: { [name: string]: ExtensionKind } = {
+const typeNameToExtensionKind: { [name: string]: ExtensionKind } = {
     MultiReturn: ExtensionKind.MultiType,
     LuaAdd: ExtensionKind.AdditionOperatorType,
     LuaAddMethod: ExtensionKind.AdditionOperatorMethodType,
@@ -96,7 +96,7 @@ export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | u
         }
 
         if (ts.isTypeAliasDeclaration(declaration)) {
-            const extensionKind = extensionKindForTypeName[declaration.name.text];
+            const extensionKind = typeNameToExtensionKind[declaration.name.text];
             if (extensionKind) {
                 return extensionKind;
             }

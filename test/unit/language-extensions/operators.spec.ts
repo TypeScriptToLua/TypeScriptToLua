@@ -2,8 +2,11 @@ import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
 import { invalidOperatorMappingUse } from "../../../src/transformation/utils/diagnostics";
+import { LuaTarget } from "../../../src";
+import { unsupportedForTarget } from "../../../src/transformation/utils/diagnostics";
 
 const operatorsProjectOptions: tstl.CompilerOptions = {
+    luaTarget: LuaTarget.Lua53,
     types: [path.resolve(__dirname, "../../../language-extensions")],
 };
 
@@ -44,7 +47,7 @@ const operatorMapTestObject = `
 	}
 `;
 
-const binaryMathOperatorTests = [
+const binaryMathOperatorTests: Array<[string, number, number, number]> = [
     ["LuaAdd", 7, 4, 11],
     ["LuaSub", 7, 4, 3],
     ["LuaMul", 7, 4, 28],
@@ -57,7 +60,7 @@ const binaryMathOperatorTests = [
     ["LuaBxor", 6, 5, 3],
     ["LuaShl", 7, 2, 28],
     ["LuaShr", 7, 2, 1],
-] as const;
+];
 
 test.each(binaryMathOperatorTests)(
     "binary math operator mapping - global function",
@@ -107,6 +110,25 @@ test.each(binaryMathOperatorTests)("binary math operator mapping - method", (opT
         .setReturnExport("result")
         .expectToEqual(expectResult);
 });
+
+const luaTargetsPre53 = [LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.LuaJIT, LuaTarget.Universal];
+
+const operatorTypesPost53 = ["LuaIdiv", "LuaBand", "LuaBor", "LuaBxor", "LuaShl", "LuaShr"];
+
+test.each(luaTargetsPre53.flatMap(target => operatorTypesPost53.map(opType => [target, opType] as const)))(
+    "unsupported binary operator mapping (%s %s)",
+    (luaTarget, opType) => {
+        util.testModule`
+		declare interface OpTest { value: number; }
+		declare const op: ${opType}<OpTest, OpTest, OpTest>;
+		declare const a: OpTest;
+		declare const b: OpTest;
+		op(a, b);
+	`
+            .setOptions({ ...operatorsProjectOptions, luaTarget })
+            .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
+    }
+);
 
 const comparisonOperatorTests = [
     ["LuaLt", 7, 4, false],
@@ -207,11 +229,11 @@ test("concat operator mapping - method", () => {
         .expectToEqual("74");
 });
 
-const unaryOperatorTests = [
+const unaryOperatorTests: Array<[string, number, number]> = [
     ["LuaUnm", 13, -13],
     ["LuaBnot", 13, -14],
     ["LuaLen", 13, 13],
-] as const;
+];
 
 test.each(unaryOperatorTests)("unary operator mapping - global function", (opType, value, expectResult) => {
     util.testModule`
@@ -251,6 +273,17 @@ test.each(unaryOperatorTests)("unary operator mapping - method", (opType, value,
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
         .expectToEqual(expectResult);
+});
+
+test.each(luaTargetsPre53)("unsupported unary operator mapping (%s LuaBnot)", luaTarget => {
+    util.testModule`
+		declare interface OpTest { value: number; }
+		declare const op: LuaBnot<OpTest, OpTest>;
+		declare const a: OpTest;
+		op(a);
+	`
+        .setOptions({ ...operatorsProjectOptions, luaTarget })
+        .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
 });
 
 test("operator mapping overload - global function", () => {

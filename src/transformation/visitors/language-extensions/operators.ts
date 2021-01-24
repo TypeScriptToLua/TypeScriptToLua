@@ -4,6 +4,8 @@ import { TransformationContext } from "../../context";
 import * as extensions from "../../utils/language-extensions";
 import { assert } from "../../../utils";
 import { findFirstNodeAbove } from "../../utils/typescript";
+import { LuaTarget } from "../../../CompilerOptions";
+import { unsupportedForTarget } from "../../utils/diagnostics";
 
 const binaryOperatorMappings = new Map<extensions.ExtensionKind, lua.BinaryOperator>([
     [extensions.ExtensionKind.AdditionOperatorType, lua.SyntaxKind.AdditionOperator],
@@ -47,9 +49,24 @@ const unaryOperatorMappings = new Map<extensions.ExtensionKind, lua.UnaryOperato
     [extensions.ExtensionKind.LengthOperatorMethodType, lua.SyntaxKind.LengthOperator],
 ]);
 
-const operatorMapExtensions = new Map<extensions.ExtensionKind, lua.SyntaxKind>([
-    ...binaryOperatorMappings,
-    ...unaryOperatorMappings,
+const operatorMapExtensions = new Set<extensions.ExtensionKind>([
+    ...binaryOperatorMappings.keys(),
+    ...unaryOperatorMappings.keys(),
+]);
+
+const bitwiseOperatorMapExtensions = new Set<extensions.ExtensionKind>([
+    extensions.ExtensionKind.BitwiseAndOperatorType,
+    extensions.ExtensionKind.BitwiseAndOperatorMethodType,
+    extensions.ExtensionKind.BitwiseOrOperatorType,
+    extensions.ExtensionKind.BitwiseOrOperatorMethodType,
+    extensions.ExtensionKind.BitwiseExclusiveOrOperatorType,
+    extensions.ExtensionKind.BitwiseExclusiveOrOperatorMethodType,
+    extensions.ExtensionKind.BitwiseLeftShiftOperatorType,
+    extensions.ExtensionKind.BitwiseLeftShiftOperatorMethodType,
+    extensions.ExtensionKind.BitwiseRightShiftOperatorType,
+    extensions.ExtensionKind.BitwiseRightShiftOperatorMethodType,
+    extensions.ExtensionKind.BitwiseNotOperatorType,
+    extensions.ExtensionKind.BitwiseNotOperatorMethodType,
 ]);
 
 function getTypeDeclaration(declaration: ts.Declaration) {
@@ -108,6 +125,23 @@ export function transformOperatorMappingExpression(
 ): lua.Expression {
     const extensionKind = getOperatorMapExtensionKindForCall(context, node);
     assert(extensionKind);
+
+    const isBefore53 =
+        context.luaTarget === LuaTarget.Lua51 ||
+        context.luaTarget === LuaTarget.Lua52 ||
+        context.luaTarget === LuaTarget.LuaJIT ||
+        context.luaTarget === LuaTarget.Universal;
+    if (isBefore53) {
+        const luaTarget = context.luaTarget === LuaTarget.Universal ? LuaTarget.Lua51 : context.luaTarget;
+        if (bitwiseOperatorMapExtensions.has(extensionKind)) {
+            context.diagnostics.push(unsupportedForTarget(node, "Native bitwise operations", luaTarget));
+        } else if (
+            extensionKind === extensions.ExtensionKind.FloorDivisionOperatorType ||
+            extensionKind === extensions.ExtensionKind.FloorDivisionOperatorMethodType
+        ) {
+            context.diagnostics.push(unsupportedForTarget(node, "Floor division operator", luaTarget));
+        }
+    }
 
     const args = node.arguments.slice();
     if (binaryOperatorMappings.has(extensionKind)) {

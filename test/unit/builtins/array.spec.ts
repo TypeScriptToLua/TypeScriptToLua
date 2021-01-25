@@ -631,5 +631,5 @@ test("Array.isArray returns true for empty objects", () => {
     // being identical in Lua. We assume [] is more common than Array.isArray({}),
     // so it is more important to handle [] right, sacrificing the result for {}.
     // See discussion: https://github.com/TypeScriptToLua/TypeScriptToLua/pull/737
-    util.testExpression`Array.isArray([])`.expectToEqual(true);
+    util.testExpression`Array.isArray({})`.expectToEqual(true);
 });

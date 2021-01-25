@@ -1,3 +1,4 @@
+import { LuaLibImportKind } from "../../../src";
 import * as util from "../../util";
 
 test("Supported lua string function", () => {
@@ -191,6 +192,12 @@ test.each([
     { inp: "hello test", separator: "hello test" },
 ])("string.split (%p)", ({ inp, separator }) => {
     util.testExpressionTemplate`${inp}.split(${separator})`.expectToMatchJsResult();
+});
+
+test("string.split inline", () => {
+    util.testExpression`"a, b, c".split(",")`
+        .setOptions({ luaLibImport: LuaLibImportKind.Inline })
+        .expectToMatchJsResult();
 });
 
 test.each([

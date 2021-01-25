@@ -10,6 +10,7 @@ export enum LuaLibFeature {
     ArrayFindIndex = "ArrayFindIndex",
     ArrayIncludes = "ArrayIncludes",
     ArrayIndexOf = "ArrayIndexOf",
+    ArrayIsArray = "ArrayIsArray",
     ArrayJoin = "ArrayJoin",
     ArrayMap = "ArrayMap",
     ArrayPush = "ArrayPush",
@@ -86,8 +87,8 @@ export enum LuaLibFeature {
 }
 
 const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
-    ArrayFlat: [LuaLibFeature.ArrayConcat],
-    ArrayFlatMap: [LuaLibFeature.ArrayConcat],
+    ArrayFlat: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
+    ArrayFlatMap: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
     Decorate: [LuaLibFeature.CloneDescriptor],
     Delete: [LuaLibFeature.ObjectGetOwnPropertyDescriptors],
     Error: [LuaLibFeature.New, LuaLibFeature.Class],

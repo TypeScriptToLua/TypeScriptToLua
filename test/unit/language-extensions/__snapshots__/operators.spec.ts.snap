@@ -16,118 +16,118 @@ exports[`operator mapping - invalid use (const foo: unknown = op;): code 1`] = `
 
 exports[`operator mapping - invalid use (const foo: unknown = op;): diagnostics 1`] = `"main.ts(3,30): error TSTL: A mapped operator can only be used in a call expression."`;
 
-exports[`operator mapping - invalid use (declare function foo(op: LuaAdd<number, number, number>): void; foo(op);): code 1`] = `"foo(_G, op)"`;
+exports[`operator mapping - invalid use (declare function foo(op: LuaAddition<number, number, number>): void; foo(op);): code 1`] = `"foo(_G, op)"`;
 
-exports[`operator mapping - invalid use (declare function foo(op: LuaAdd<number, number, number>): void; foo(op);): diagnostics 1`] = `"main.ts(3,77): error TSTL: A mapped operator can only be used in a call expression."`;
+exports[`operator mapping - invalid use (declare function foo(op: LuaAddition<number, number, number>): void; foo(op);): diagnostics 1`] = `"main.ts(3,82): error TSTL: A mapped operator can only be used in a call expression."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBand): code 1`] = `"local ____ = a & b"`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseAnd): code 1`] = `"local ____ = left & right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBand): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseAnd): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBor): code 1`] = `"local ____ = a | b"`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseExclusiveOr): code 1`] = `"local ____ = left ~ right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseExclusiveOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBxor): code 1`] = `"local ____ = a ~ b"`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseLeftShift): code 1`] = `"local ____ = left << right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaBxor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseLeftShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaIdiv): code 1`] = `"local ____ = a // b"`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseOr): code 1`] = `"local ____ = left | right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaIdiv): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaShl): code 1`] = `"local ____ = a << b"`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseRightShift): code 1`] = `"local ____ = left >> right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaShl): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaBitwiseRightShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.1 LuaShr): code 1`] = `"local ____ = a >> b"`;
+exports[`unsupported binary operator mapping (5.1 LuaFloorDivision): code 1`] = `"local ____ = left // right"`;
 
-exports[`unsupported binary operator mapping (5.1 LuaShr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (5.1 LuaFloorDivision): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBand): code 1`] = `"local ____ = a & b"`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseAnd): code 1`] = `"local ____ = left & right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBand): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseAnd): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBor): code 1`] = `"local ____ = a | b"`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseExclusiveOr): code 1`] = `"local ____ = left ~ right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseExclusiveOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBxor): code 1`] = `"local ____ = a ~ b"`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseLeftShift): code 1`] = `"local ____ = left << right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaBxor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseLeftShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaIdiv): code 1`] = `"local ____ = a // b"`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseOr): code 1`] = `"local ____ = left | right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaIdiv): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaShl): code 1`] = `"local ____ = a << b"`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseRightShift): code 1`] = `"local ____ = left >> right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaShl): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaBitwiseRightShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (5.2 LuaShr): code 1`] = `"local ____ = a >> b"`;
+exports[`unsupported binary operator mapping (5.2 LuaFloorDivision): code 1`] = `"local ____ = left // right"`;
 
-exports[`unsupported binary operator mapping (5.2 LuaShr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported binary operator mapping (5.2 LuaFloorDivision): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported binary operator mapping (JIT LuaBand): code 1`] = `"local ____ = a & b"`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseAnd): code 1`] = `"local ____ = left & right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaBand): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseAnd): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (JIT LuaBor): code 1`] = `"local ____ = a | b"`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseExclusiveOr): code 1`] = `"local ____ = left ~ right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaBor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseExclusiveOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (JIT LuaBxor): code 1`] = `"local ____ = a ~ b"`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseLeftShift): code 1`] = `"local ____ = left << right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaBxor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseLeftShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (JIT LuaIdiv): code 1`] = `"local ____ = a // b"`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseOr): code 1`] = `"local ____ = left | right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaIdiv): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (JIT LuaShl): code 1`] = `"local ____ = a << b"`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseRightShift): code 1`] = `"local ____ = left >> right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaShl): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaBitwiseRightShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (JIT LuaShr): code 1`] = `"local ____ = a >> b"`;
+exports[`unsupported binary operator mapping (JIT LuaFloorDivision): code 1`] = `"local ____ = left // right"`;
 
-exports[`unsupported binary operator mapping (JIT LuaShr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported binary operator mapping (JIT LuaFloorDivision): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target LuaJIT."`;
 
-exports[`unsupported binary operator mapping (universal LuaBand): code 1`] = `"local ____ = a & b"`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseAnd): code 1`] = `"local ____ = left & right"`;
 
-exports[`unsupported binary operator mapping (universal LuaBand): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseAnd): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (universal LuaBor): code 1`] = `"local ____ = a | b"`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseExclusiveOr): code 1`] = `"local ____ = left ~ right"`;
 
-exports[`unsupported binary operator mapping (universal LuaBor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseExclusiveOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (universal LuaBxor): code 1`] = `"local ____ = a ~ b"`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseLeftShift): code 1`] = `"local ____ = left << right"`;
 
-exports[`unsupported binary operator mapping (universal LuaBxor): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseLeftShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (universal LuaIdiv): code 1`] = `"local ____ = a // b"`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseOr): code 1`] = `"local ____ = left | right"`;
 
-exports[`unsupported binary operator mapping (universal LuaIdiv): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseOr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (universal LuaShl): code 1`] = `"local ____ = a << b"`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseRightShift): code 1`] = `"local ____ = left >> right"`;
 
-exports[`unsupported binary operator mapping (universal LuaShl): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaBitwiseRightShift): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported binary operator mapping (universal LuaShr): code 1`] = `"local ____ = a >> b"`;
+exports[`unsupported binary operator mapping (universal LuaFloorDivision): code 1`] = `"local ____ = left // right"`;
 
-exports[`unsupported binary operator mapping (universal LuaShr): diagnostics 1`] = `"main.ts(6,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported binary operator mapping (universal LuaFloorDivision): diagnostics 1`] = `"main.ts(6,9): error TSTL: Floor division operator is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported unary operator mapping (5.1 LuaBnot): code 1`] = `"local ____ = ~a"`;
+exports[`unsupported unary operator mapping (5.1 LuaBitwiseNot): code 1`] = `"local ____ = ~operand"`;
 
-exports[`unsupported unary operator mapping (5.1 LuaBnot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported unary operator mapping (5.1 LuaBitwiseNot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
 
-exports[`unsupported unary operator mapping (5.2 LuaBnot): code 1`] = `"local ____ = ~a"`;
+exports[`unsupported unary operator mapping (5.2 LuaBitwiseNot): code 1`] = `"local ____ = ~operand"`;
 
-exports[`unsupported unary operator mapping (5.2 LuaBnot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
+exports[`unsupported unary operator mapping (5.2 LuaBitwiseNot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.2."`;
 
-exports[`unsupported unary operator mapping (JIT LuaBnot): code 1`] = `"local ____ = ~a"`;
+exports[`unsupported unary operator mapping (JIT LuaBitwiseNot): code 1`] = `"local ____ = ~operand"`;
 
-exports[`unsupported unary operator mapping (JIT LuaBnot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
+exports[`unsupported unary operator mapping (JIT LuaBitwiseNot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target LuaJIT."`;
 
-exports[`unsupported unary operator mapping (universal LuaBnot): code 1`] = `"local ____ = ~a"`;
+exports[`unsupported unary operator mapping (universal LuaBitwiseNot): code 1`] = `"local ____ = ~operand"`;
 
-exports[`unsupported unary operator mapping (universal LuaBnot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;
+exports[`unsupported unary operator mapping (universal LuaBitwiseNot): diagnostics 1`] = `"main.ts(5,9): error TSTL: Native bitwise operations is/are not supported for target Lua 5.1."`;

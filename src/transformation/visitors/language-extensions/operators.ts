@@ -145,11 +145,11 @@ export function transformOperatorMappingExpression(
 
     const args = node.arguments.slice();
     if (binaryOperatorMappings.has(extensionKind)) {
-        if (args.length === 1) {
-            assert(ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression));
+        if (
+            args.length === 1 &&
+            (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+        ) {
             args.unshift(node.expression.expression);
-        } else {
-            assert(args.length === 2);
         }
 
         const luaOperator = binaryOperatorMappings.get(extensionKind);
@@ -161,11 +161,12 @@ export function transformOperatorMappingExpression(
         );
     } else {
         let arg: ts.Expression;
-        if (args.length === 0) {
-            assert(ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression));
+        if (
+            args.length === 0 &&
+            (ts.isPropertyAccessExpression(node.expression) || ts.isElementAccessExpression(node.expression))
+        ) {
             arg = node.expression.expression;
         } else {
-            assert(args.length === 1);
             arg = args[0];
         }
 

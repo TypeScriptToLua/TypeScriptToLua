@@ -1,56 +1,404 @@
 declare function $multi<T extends any[]>(...values: T): MultiReturn<T>;
 declare type MultiReturn<T extends any[]> = T & { readonly " __multiBrand": unique symbol };
 
-declare type LuaAdd<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaAddBrand: unique symbol };
-declare type LuaAddMethod<T, TR> = ((b: T) => TR) & { readonly __luaAddMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left + right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaAddition<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaAdditionBrand: unique symbol;
+};
 
-declare type LuaSub<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaSubBrand: unique symbol };
-declare type LuaSubMethod<T, TR> = ((b: T) => TR) & { readonly __luaSubMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left + right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaAdditionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaAdditionMethodBrand: unique symbol;
+};
 
-declare type LuaMul<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaMulBrand: unique symbol };
-declare type LuaMulMethod<T, TR> = ((b: T) => TR) & { readonly __luaMulMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left - right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaSubtraction<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaSubtractionBrand: unique symbol;
+};
 
-declare type LuaDiv<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaDivBrand: unique symbol };
-declare type LuaDivMethod<T, TR> = ((b: T) => TR) & { readonly __luaDivMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left - right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaSubtractionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaSubtractionMethodBrand: unique symbol;
+};
 
-declare type LuaMod<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaModBrand: unique symbol };
-declare type LuaModMethod<T, TR> = ((b: T) => TR) & { readonly __luaModMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left * right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaMultiplication<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaMultiplicationBrand: unique symbol;
+};
 
-declare type LuaPow<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaPowBrand: unique symbol };
-declare type LuaPowMethod<T, TR> = ((b: T) => TR) & { readonly __luaPowMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left * right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaMultiplicationMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaMultiplicationMethodBrand: unique symbol;
+};
 
-declare type LuaIdiv<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaIdivBrand: unique symbol };
-declare type LuaIdivMethod<T, TR> = ((b: T) => TR) & { readonly __luaIdivMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left / right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaDivisionBrand: unique symbol;
+};
 
-declare type LuaBand<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaBandBrand: unique symbol };
-declare type LuaBandMethod<T, TR> = ((b: T) => TR) & { readonly __luaBandMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left / right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaDivisionMethodBrand: unique symbol;
+};
 
-declare type LuaBor<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaBorBrand: unique symbol };
-declare type LuaBorMethod<T, TR> = ((b: T) => TR) & { readonly __luaBorMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left % right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaModulo<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaModuloBrand: unique symbol;
+};
 
-declare type LuaBxor<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaBxorBrand: unique symbol };
-declare type LuaBxorMethod<T, TR> = ((b: T) => TR) & { readonly __luaBxorMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left % right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaModuloMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaModuloMethodBrand: unique symbol;
+};
 
-declare type LuaShl<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaShlBrand: unique symbol };
-declare type LuaShlMethod<T, TR> = ((b: T) => TR) & { readonly __luaShlMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left ^ right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaPower<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaPowerBrand: unique symbol;
+};
 
-declare type LuaShr<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaShrBrand: unique symbol };
-declare type LuaShrMethod<T, TR> = ((b: T) => TR) & { readonly __luaShrMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left ^ right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaPowerMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaPowerMethodBrand: unique symbol;
+};
 
-declare type LuaConcat<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaConcatBrand: unique symbol };
-declare type LuaConcatMethod<T, TR> = ((b: T) => TR) & { readonly __luaConcatMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left // right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaFloorDivision<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaFloorDivisionBrand: unique symbol;
+};
 
-declare type LuaLt<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaLtBrand: unique symbol };
-declare type LuaLtMethod<T, TR> = ((b: T) => TR) & { readonly __luaLtMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left // right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaFloorDivisionMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaFloorDivisionMethodBrand: unique symbol;
+};
 
-declare type LuaGt<TA, TB, TR> = ((a: TA, b: TB) => TR) & { readonly __luaGtBrand: unique symbol };
-declare type LuaGtMethod<T, TR> = ((b: T) => TR) & { readonly __luaGtMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left & right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseAnd<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseAndBrand: unique symbol;
+};
 
-declare type LuaUnm<T, TR> = ((obj: T) => TR) & { readonly __luaUnmBrand: unique symbol };
-declare type LuaUnmMethod<TR> = (() => TR) & { readonly __luaUnmMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left & right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseAndMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseAndMethodBrand: unique symbol;
+};
 
-declare type LuaBnot<T, TR> = ((obj: T) => TR) & { readonly __luaBnotBrand: unique symbol };
-declare type LuaBnotMethod<TR> = (() => TR) & { readonly __luaBnotMethodBrand: unique symbol };
+/**
+ * Calls to functions with this type are translated to `left | right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseOrBrand: unique symbol;
+};
 
-declare type LuaLen<T, TR> = ((obj: T) => TR) & { readonly __luaLenBrand: unique symbol };
-declare type LuaLenMethod<TR> = (() => TR) & { readonly __luaLenMethodBrand: unique symbol };
+/**
+ * Calls to methods with this type are translated to `left | right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseOrMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left ~ right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseExclusiveOr<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseExclusiveOrBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left ~ right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseExclusiveOrMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseExclusiveOrMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left << right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseLeftShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseLeftShiftBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left << right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseLeftShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseLeftShiftMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left >> right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseRightShift<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaBitwiseRightShiftBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left >> right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseRightShiftMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaBitwiseRightShiftMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left .. right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaConcat<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaConcatBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left .. right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaConcatMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaConcatMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left < right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaLessThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaLessThanBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left < right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaLessThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaLessThanMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `left > right`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TLeft The type of the left-hand-side of the operation.
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaGreaterThan<TLeft, TRight, TReturn> = ((left: TLeft, right: TRight) => TReturn) & {
+    readonly __luaGreaterThanBrand: unique symbol;
+};
+
+/**
+ * Calls to methods with this type are translated to `left > right`, where `left` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TRight The type of the right-hand-side of the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaGreaterThanMethod<TRight, TReturn> = ((right: TRight) => TReturn) & {
+    readonly __luaGreaterThanMethodBrand: unique symbol;
+};
+
+/**
+ * Calls to functions with this type are translated to `-operand`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TOperand The type of the value in the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaNegation<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaNegationBrand: unique symbol;
+};
+
+/**
+ * Calls to method with this type are translated to `-operand`, where `operand` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaNegationMethod<TReturn> = (() => TReturn) & { readonly __luaNegationMethodBrand: unique symbol };
+
+/**
+ * Calls to functions with this type are translated to `~operand`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TOperand The type of the value in the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseNot<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaBitwiseNotBrand: unique symbol;
+};
+
+/**
+ * Calls to method with this type are translated to `~operand`, where `operand` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaBitwiseNotMethod<TReturn> = (() => TReturn) & { readonly __luaBitwiseNotMethodBrand: unique symbol };
+
+/**
+ * Calls to functions with this type are translated to `#operand`.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TOperand The type of the value in the operation.
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaLength<TOperand, TReturn> = ((operand: TOperand) => TReturn) & {
+    readonly __luaLengthBrand: unique symbol;
+};
+
+/**
+ * Calls to method with this type are translated to `#operand`, where `operand` is the object with the method.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param TReturn The resulting (return) type of the operation.
+ */
+declare type LuaLengthMethod<TReturn> = (() => TReturn) & { readonly __luaLengthMethodBrand: unique symbol };

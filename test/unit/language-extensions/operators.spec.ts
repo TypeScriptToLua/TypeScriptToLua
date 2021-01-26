@@ -47,30 +47,30 @@ const operatorMapTestObject = `
     }
 `;
 
-const binaryMathOperatorTests: Array<[string, number, number, number]> = [
-    ["LuaAdd", 7, 4, 11],
-    ["LuaSub", 7, 4, 3],
-    ["LuaMul", 7, 4, 28],
-    ["LuaDiv", 7, 4, 1.75],
-    ["LuaMod", 7, 4, 3],
-    ["LuaPow", 7, 4, 2401],
-    ["LuaIdiv", 7, 4, 1],
-    ["LuaBand", 6, 5, 4],
-    ["LuaBor", 6, 5, 7],
-    ["LuaBxor", 6, 5, 3],
-    ["LuaShl", 7, 2, 28],
-    ["LuaShr", 7, 2, 1],
+const binaryMathOperatorTests: Array<{ opType: string; left: number; right: number; expectResult: number }> = [
+    { opType: "LuaAddition", left: 7, right: 4, expectResult: 11 },
+    { opType: "LuaSubtraction", left: 7, right: 4, expectResult: 3 },
+    { opType: "LuaMultiplication", left: 7, right: 4, expectResult: 28 },
+    { opType: "LuaDivision", left: 7, right: 4, expectResult: 1.75 },
+    { opType: "LuaModulo", left: 7, right: 4, expectResult: 3 },
+    { opType: "LuaPower", left: 7, right: 4, expectResult: 2401 },
+    { opType: "LuaFloorDivision", left: 7, right: 4, expectResult: 1 },
+    { opType: "LuaBitwiseAnd", left: 6, right: 5, expectResult: 4 },
+    { opType: "LuaBitwiseOr", left: 6, right: 5, expectResult: 7 },
+    { opType: "LuaBitwiseExclusiveOr", left: 6, right: 5, expectResult: 3 },
+    { opType: "LuaBitwiseLeftShift", left: 7, right: 2, expectResult: 28 },
+    { opType: "LuaBitwiseRightShift", left: 7, right: 2, expectResult: 1 },
 ];
 
 test.each(binaryMathOperatorTests)(
-    "binary math operator mapping - global function",
-    (opType, valueA, valueB, expectResult) => {
+    "binary math operator mapping - global function (%s)",
+    ({ opType, left, right, expectResult }) => {
         util.testModule`
         ${operatorMapTestObject}
         declare const op: ${opType}<OpTest, OpTest, OpTest>;
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = op(a, b).value;
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = op(left, right).value;
     `
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
@@ -79,16 +79,16 @@ test.each(binaryMathOperatorTests)(
 );
 
 test.each(binaryMathOperatorTests)(
-    "binary math operator mapping - static function",
-    (opType, valueA, valueB, expectResult) => {
+    "binary math operator mapping - static function (%s)",
+    ({ opType, left, right, expectResult }) => {
         util.testModule`
         ${operatorMapTestObject}
         declare namespace OpTest {
             export const op: ${opType}<OpTest, OpTest, OpTest>;
         }
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = OpTest.op(a, b).value;
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = OpTest.op(left, right).value;
     `
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
@@ -96,24 +96,34 @@ test.each(binaryMathOperatorTests)(
     }
 );
 
-test.each(binaryMathOperatorTests)("binary math operator mapping - method", (opType, valueA, valueB, expectResult) => {
-    util.testModule`
+test.each(binaryMathOperatorTests)(
+    "binary math operator mapping - method (%s)",
+    ({ opType, left, right, expectResult }) => {
+        util.testModule`
         ${operatorMapTestObject}
         declare interface OpTest {
             op: ${opType}Method<OpTest, OpTest>;
         }
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = a.op(b).value;
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = left.op(right).value;
     `
-        .setOptions(operatorsProjectOptions)
-        .setReturnExport("result")
-        .expectToEqual(expectResult);
-});
+            .setOptions(operatorsProjectOptions)
+            .setReturnExport("result")
+            .expectToEqual(expectResult);
+    }
+);
 
 const luaTargetsPre53 = [LuaTarget.Lua51, LuaTarget.Lua52, LuaTarget.LuaJIT, LuaTarget.Universal];
 
-const operatorTypesPost53 = ["LuaIdiv", "LuaBand", "LuaBor", "LuaBxor", "LuaShl", "LuaShr"];
+const operatorTypesPost53 = [
+    "LuaFloorDivision",
+    "LuaBitwiseAnd",
+    "LuaBitwiseOr",
+    "LuaBitwiseExclusiveOr",
+    "LuaBitwiseLeftShift",
+    "LuaBitwiseRightShift",
+];
 
 test.each(luaTargetsPre53.flatMap(target => operatorTypesPost53.map(opType => [target, opType] as const)))(
     "unsupported binary operator mapping (%s %s)",
@@ -121,31 +131,31 @@ test.each(luaTargetsPre53.flatMap(target => operatorTypesPost53.map(opType => [t
         util.testModule`
         declare interface OpTest { value: number; }
         declare const op: ${opType}<OpTest, OpTest, OpTest>;
-        declare const a: OpTest;
-        declare const b: OpTest;
-        op(a, b);
+        declare const left: OpTest;
+        declare const right: OpTest;
+        op(left, right);
     `
             .setOptions({ ...operatorsProjectOptions, luaTarget })
             .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
     }
 );
 
-const comparisonOperatorTests = [
-    ["LuaLt", 7, 4, false],
-    ["LuaLt", 4, 7, true],
-    ["LuaGt", 7, 4, true],
-    ["LuaGt", 4, 7, false],
-] as const;
+const comparisonOperatorTests: Array<{ opType: string; left: number; right: number; expectResult: boolean }> = [
+    { opType: "LuaLessThan", left: 7, right: 4, expectResult: false },
+    { opType: "LuaLessThan", left: 4, right: 7, expectResult: true },
+    { opType: "LuaGreaterThan", left: 7, right: 4, expectResult: true },
+    { opType: "LuaGreaterThan", left: 4, right: 7, expectResult: false },
+];
 
 test.each(comparisonOperatorTests)(
-    "comparison operator mapping - global function",
-    (opType, valueA, valueB, expectResult) => {
+    "comparison operator mapping - global function (%s)",
+    ({ opType, left, right, expectResult }) => {
         util.testModule`
         ${operatorMapTestObject}
         declare const op: ${opType}<OpTest, OpTest, boolean>;
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = op(a, b);
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = op(left, right);
     `
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
@@ -154,16 +164,16 @@ test.each(comparisonOperatorTests)(
 );
 
 test.each(comparisonOperatorTests)(
-    "comparison operator mapping - static function",
-    (opType, valueA, valueB, expectResult) => {
+    "comparison operator mapping - static function (%s)",
+    ({ opType, left, right, expectResult }) => {
         util.testModule`
         ${operatorMapTestObject}
         declare namespace OpTest {
             export const op: ${opType}<OpTest, OpTest, boolean>;
         }
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = OpTest.op(a, b);
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = OpTest.op(left, right);
     `
             .setOptions(operatorsProjectOptions)
             .setReturnExport("result")
@@ -171,28 +181,31 @@ test.each(comparisonOperatorTests)(
     }
 );
 
-test.each(comparisonOperatorTests)("comparison operator mapping - method", (opType, valueA, valueB, expectResult) => {
-    util.testModule`
+test.each(comparisonOperatorTests)(
+    "comparison operator mapping - method (%s)",
+    ({ opType, left, right, expectResult }) => {
+        util.testModule`
         ${operatorMapTestObject}
         declare interface OpTest {
             op: ${opType}Method<OpTest, boolean>;
         }
-        const a = new OpTest(${valueA});
-        const b = new OpTest(${valueB});
-        export const result = a.op(b);
+        const left = new OpTest(${left});
+        const right = new OpTest(${right});
+        export const result = left.op(right);
     `
-        .setOptions(operatorsProjectOptions)
-        .setReturnExport("result")
-        .expectToEqual(expectResult);
-});
+            .setOptions(operatorsProjectOptions)
+            .setReturnExport("result")
+            .expectToEqual(expectResult);
+    }
+);
 
 test("concat operator mapping - global function", () => {
     util.testModule`
         ${operatorMapTestObject}
         declare const op: LuaConcat<OpTest, OpTest, string>;
-        const a = new OpTest(7);
-        const b = new OpTest(4);
-        export const result = op(a, b);
+        const left = new OpTest(7);
+        const right = new OpTest(4);
+        export const result = op(left, right);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
@@ -205,9 +218,9 @@ test("concat operator mapping - static function", () => {
         declare namespace OpTest {
             export const op: LuaConcat<OpTest, OpTest, string>;
         }
-        const a = new OpTest(7);
-        const b = new OpTest(4);
-        export const result = OpTest.op(a, b);
+        const left = new OpTest(7);
+        const right = new OpTest(4);
+        export const result = OpTest.op(left, right);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
@@ -220,67 +233,67 @@ test("concat operator mapping - method", () => {
         declare interface OpTest {
             op: LuaConcatMethod<OpTest, string>;
         }
-        const a = new OpTest(7);
-        const b = new OpTest(4);
-        export const result = a.op(b);
+        const left = new OpTest(7);
+        const right = new OpTest(4);
+        export const result = left.op(right);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
         .expectToEqual("74");
 });
 
-const unaryOperatorTests: Array<[string, number, number]> = [
-    ["LuaUnm", 13, -13],
-    ["LuaBnot", 13, -14],
-    ["LuaLen", 13, 13],
+const unaryOperatorTests: Array<{ opType: string; operand: number; expectResult: number }> = [
+    { opType: "LuaNegation", operand: 13, expectResult: -13 },
+    { opType: "LuaBitwiseNot", operand: 13, expectResult: -14 },
+    { opType: "LuaLength", operand: 13, expectResult: 13 },
 ];
 
-test.each(unaryOperatorTests)("unary operator mapping - global function", (opType, value, expectResult) => {
+test.each(unaryOperatorTests)("unary operator mapping - global function (%s)", ({ opType, operand, expectResult }) => {
     util.testModule`
         ${operatorMapTestObject}
         declare const op: ${opType}<OpTest, number>;
-        const a = new OpTest(${value});
-        export const result = op(a);
+        const operand = new OpTest(${operand});
+        export const result = op(operand);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
         .expectToEqual(expectResult);
 });
 
-test.each(unaryOperatorTests)("unary operator mapping - static function", (opType, value, expectResult) => {
+test.each(unaryOperatorTests)("unary operator mapping - static function (%s)", ({ opType, operand, expectResult }) => {
     util.testModule`
         ${operatorMapTestObject}
         declare namespace OpTest {
             export const op: ${opType}<OpTest, number>;
         }
-        const a = new OpTest(${value});
-        export const result = OpTest.op(a);
+        const operand = new OpTest(${operand});
+        export const result = OpTest.op(operand);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
         .expectToEqual(expectResult);
 });
 
-test.each(unaryOperatorTests)("unary operator mapping - method", (opType, value, expectResult) => {
+test.each(unaryOperatorTests)("unary operator mapping - method (%s)", ({ opType, operand, expectResult }) => {
     util.testModule`
         ${operatorMapTestObject}
         declare interface OpTest {
             op: ${opType}Method<number>;
         }
-        const a = new OpTest(${value});
-        export const result = a.op();
+        const operand = new OpTest(${operand});
+        export const result = operand.op();
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
         .expectToEqual(expectResult);
 });
 
-test.each(luaTargetsPre53)("unsupported unary operator mapping (%s LuaBnot)", luaTarget => {
+test.each(luaTargetsPre53)("unsupported unary operator mapping (%s LuaBitwiseNot)", luaTarget => {
     util.testModule`
         declare interface OpTest { value: number; }
-        declare const op: LuaBnot<OpTest, OpTest>;
-        declare const a: OpTest;
-        op(a);
+        declare const op: LuaBitwiseNot<OpTest, OpTest>;
+        declare const operand: OpTest;
+        op(operand);
     `
         .setOptions({ ...operatorsProjectOptions, luaTarget })
         .expectDiagnosticsToMatchSnapshot([unsupportedForTarget.code]);
@@ -289,60 +302,60 @@ test.each(luaTargetsPre53)("unsupported unary operator mapping (%s LuaBnot)", lu
 test("operator mapping overload - global function", () => {
     util.testModule`
         ${operatorMapTestObject}
-        declare const op: LuaAdd<OpTest, OpTest, OpTest> & LuaAdd<OpTest, number, number>;
-        const a = new OpTest(4);
-        const b = new OpTest(7);
-        const resultA = op(a, b).value;
-        const resultB = op(a, 13);
-        export const result = resultA * 100 + resultB;
+        declare const op: LuaAddition<OpTest, OpTest, OpTest> & LuaAddition<OpTest, number, number>;
+        const left = new OpTest(4);
+        const right = new OpTest(7);
+        const resultA = op(left, right).value;
+        const resultB = op(left, 13);
+        export const result = {resultA, resultB};
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
-        .expectToEqual(1117);
+        .expectToEqual({ resultA: 11, resultB: 17 });
 });
 
 test("operator mapping overload - static function", () => {
     util.testModule`
         ${operatorMapTestObject}
         declare namespace OpTest {
-            export const op: LuaAdd<OpTest, OpTest, OpTest> & LuaAdd<OpTest, number, number>;
+            export const op: LuaAddition<OpTest, OpTest, OpTest> & LuaAddition<OpTest, number, number>;
         }
-        const a = new OpTest(4);
-        const b = new OpTest(7);
-        const resultA = OpTest.op(a, b).value;
-        const resultB = OpTest.op(a, 13);
-        export const result = resultA * 100 + resultB;
+        const left = new OpTest(4);
+        const right = new OpTest(7);
+        const resultA = OpTest.op(left, right).value;
+        const resultB = OpTest.op(left, 13);
+        export const result = {resultA, resultB};
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
-        .expectToEqual(1117);
+        .expectToEqual({ resultA: 11, resultB: 17 });
 });
 
 test("operator mapping overload - method", () => {
     util.testModule`
         ${operatorMapTestObject}
         declare interface OpTest {
-            op: LuaAddMethod<OpTest, OpTest> & LuaAddMethod<number, number>;
+            op: LuaAdditionMethod<OpTest, OpTest> & LuaAdditionMethod<number, number>;
         }
-        const a = new OpTest(4);
-        const b = new OpTest(7);
-        const resultA = a.op(b).value;
-        const resultB = a.op(13);
-        export const result = resultA * 100 + resultB;
+        const left = new OpTest(4);
+        const right = new OpTest(7);
+        const resultA = left.op(right).value;
+        const resultB = left.op(13);
+        export const result = {resultA, resultB};
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
-        .expectToEqual(1117);
+        .expectToEqual({ resultA: 11, resultB: 17 });
 });
 
 test("operator mapping - method element call", () => {
     util.testModule`
         ${operatorMapTestObject}
         declare interface OpTest {
-            add: LuaAddMethod<number, number>;
+            add: LuaAdditionMethod<number, number>;
         }
-        const a = new OpTest(7);
-        export const result = a["add"](4);
+        const left = new OpTest(7);
+        export const result = left["add"](4);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
@@ -353,10 +366,10 @@ test("operator mapping - function element call", () => {
     util.testModule`
         ${operatorMapTestObject}
         declare namespace OpTest {
-            export const add: LuaAdd<OpTest, number, number>;
+            export const add: LuaAddition<OpTest, number, number>;
         }
-        const a = new OpTest(7);
-        export const result = OpTest["add"](a, 4);
+        const left = new OpTest(7);
+        export const result = OpTest["add"](left, 4);
     `
         .setOptions(operatorsProjectOptions)
         .setReturnExport("result")
@@ -366,12 +379,12 @@ test("operator mapping - function element call", () => {
 test.each([
     "const foo: unknown = op;",
     "const foo = `${op}`",
-    "declare function foo(op: LuaAdd<number, number, number>): void; foo(op);",
+    "declare function foo(op: LuaAddition<number, number, number>): void; foo(op);",
     "const foo = (op as any)(1, 2);",
     "const foo = [op];",
 ])("operator mapping - invalid use (%s)", invalidCode => {
     util.testModule`
-        declare const op: LuaAdd<number, number, number>;
+        declare const op: LuaAddition<number, number, number>;
         ${invalidCode}
     `
         .setOptions(operatorsProjectOptions)

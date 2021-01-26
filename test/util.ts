@@ -372,10 +372,10 @@ export abstract class TestBuilder {
 
         // Execute Main
         const wrappedMainCode = `
-            local JSON = require("json");
-            return JSON.stringify((function()
-                ${this.getLuaCodeWithWrapper(mainFile)}
-            end)());`;
+local JSON = require("json");
+return JSON.stringify((function()
+    ${this.getLuaCodeWithWrapper(mainFile)}
+end)());`;
 
         const status = lauxlib.luaL_dostring(L, to_luastring(wrappedMainCode));
 
@@ -398,7 +398,7 @@ export abstract class TestBuilder {
     private executeJs(): any {
         const { transpiledFiles } = this.getJsResult();
         // Custom require for extra files. Really basic. Global support is hacky
-        // TODO Should be replace with vm.Module https://nodejs.org/api/vm.html#vm_class_vm_module
+        // TODO Should be replaced with vm.Module https://nodejs.org/api/vm.html#vm_class_vm_module
         // once stable
         const globalContext: any = {};
         const mainExports = {};

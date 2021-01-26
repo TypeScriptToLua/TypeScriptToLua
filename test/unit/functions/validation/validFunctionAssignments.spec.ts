@@ -109,7 +109,7 @@ test.each([
         return takesFunction(${testFunction.value}, ${args.join(", ")});
     `
         .setTsHeader(testFunction.definition)
-        .expectToMatchJsResult();
+        .expectToEqual("foobar");
 });
 
 test.each(validTestFunctionAssignments)("Valid function return (%p)", (testFunction, functionType) => {

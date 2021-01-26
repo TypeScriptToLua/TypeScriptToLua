@@ -41,7 +41,7 @@ test("Exported Function Hoisting", () => {
         export function bar() { return "bar"; }
         export const baz = foo;
     `
-        .debug()
+        .setReturnExport("baz")
         .expectToMatchJsResult();
 });
 
@@ -187,30 +187,39 @@ test("Enum Hoisting", () => {
 });
 
 test("Import hoisting (named)", () => {
+    // TODO cant be tested with expectToEqualJSResult because of
+    // the scuffed module setup in TestBuilder.executeJs (module hoisting is not possible)
+    // should be updated once vm.module becomes stable
     util.testModule`
         export const result = foo;
         import { foo } from "./module";
     `
         .addExtraFile("module.ts", "export const foo = true;")
-        .expectToMatchJsResult();
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (namespace)", () => {
+    // TODO cant be tested with expectToEqualJSresult because of
+    // the scuffed module setup in TestBuilder.executeJs (module hoisting is not possible)
+    // should be updated once vm.module becomes stable
     util.testModule`
         export const result = m.foo;
         import * as m from "./module";
     `
         .addExtraFile("module.ts", "export const foo = true;")
-        .expectToMatchJsResult();
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisting (side-effect)", () => {
+    // TODO cant be tested with expectToEqualJSResult because of
+    // the scuffed module setup in TestBuilder.executeJs (module hoisting is not possible)
+    // should be updated once vm.module becomes stable
     util.testModule`
         export const result = (globalThis as any).result;
         import "./module";
     `
         .addExtraFile("module.ts", "(globalThis as any).result = true; export {};")
-        .expectToMatchJsResult();
+        .expectToEqual({ result: true });
 });
 
 test("Import hoisted before function", () => {

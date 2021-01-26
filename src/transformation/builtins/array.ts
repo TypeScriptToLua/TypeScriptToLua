@@ -6,6 +6,23 @@ import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { PropertyCallExpression, transformArguments } from "../visitors/call";
 import { isStringType, isNumberType } from "../utils/typescript";
 
+export function transformArrayConstructorCall(
+    context: TransformationContext,
+    node: PropertyCallExpression
+): lua.CallExpression | undefined {
+    const expression = node.expression;
+    const signature = context.checker.getResolvedSignature(node);
+    const params = transformArguments(context, node.arguments, signature);
+
+    const expressionName = expression.name.text;
+    switch (expressionName) {
+        case "isArray":
+            return transformLuaLibFunction(context, LuaLibFeature.ArrayIsArray, node, ...params);
+        default:
+            context.diagnostics.push(unsupportedProperty(expression.name, "Array", expressionName));
+    }
+}
+
 export function transformArrayPrototypeCall(
     context: TransformationContext,
     node: PropertyCallExpression

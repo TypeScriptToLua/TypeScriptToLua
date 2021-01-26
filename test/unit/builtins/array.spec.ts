@@ -618,3 +618,23 @@ test.each(genericChecks)("array constrained generic length (%p)", signature => {
         `;
     expect(util.transpileAndExecute(code)).toBe(3);
 });
+
+test.each(["[]", '"hello"', "42", "[1, 2, 3]", '{ a: "foo", b: "bar" }'])(
+    "Array.isArray matches JavaScript (%p)",
+    valueString => {
+        util.testExpression`Array.isArray(${valueString})`.expectToMatchJsResult();
+    }
+);
+
+test("Array.isArray returns true for empty objects", () => {
+    // Important edge case we cannot handle correctly due to [] and {}
+    // being identical in Lua. We assume [] is more common than Array.isArray({}),
+    // so it is more important to handle [] right, sacrificing the result for {}.
+    // See discussion: https://github.com/TypeScriptToLua/TypeScriptToLua/pull/737
+    util.testExpression`Array.isArray({})`.expectToEqual(true);
+});
+
+// Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/738
+test("array.prototype.concat issue #738", () => {
+    util.testExpression`([] as any[]).concat(13, 323, {x: 3}, [2, 3])`.expectToMatchJsResult();
+});

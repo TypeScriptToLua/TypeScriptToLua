@@ -4,9 +4,8 @@ function __TS__ArrayConcat(this: void, arr1: any[], ...args: any[]): any[] {
         out[out.length] = val;
     }
     for (const arg of args) {
-        // Hack because we don't have an isArray function
-        if (pcall(() => (arg as any[]).length) && type(arg) !== "string") {
-            const argAsArray = arg as any[];
+        if (Array.isArray(arg)) {
+            const argAsArray = arg;
             for (const val of argAsArray) {
                 out[out.length] = val;
             }

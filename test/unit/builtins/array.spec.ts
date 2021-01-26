@@ -633,3 +633,8 @@ test("Array.isArray returns true for empty objects", () => {
     // See discussion: https://github.com/TypeScriptToLua/TypeScriptToLua/pull/737
     util.testExpression`Array.isArray({})`.expectToEqual(true);
 });
+
+// Test fix for https://github.com/TypeScriptToLua/TypeScriptToLua/issues/738
+test("array.prototype.concat issue #738", () => {
+    util.testExpression`([] as any[]).concat(13, 323, {x: 3}, [2, 3])`.expectToMatchJsResult();
+});

@@ -87,6 +87,7 @@ export enum LuaLibFeature {
 }
 
 const luaLibDependencies: Partial<Record<LuaLibFeature, LuaLibFeature[]>> = {
+    ArrayConcat: [LuaLibFeature.ArrayIsArray],
     ArrayFlat: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
     ArrayFlatMap: [LuaLibFeature.ArrayConcat, LuaLibFeature.ArrayIsArray],
     Decorate: [LuaLibFeature.CloneDescriptor],

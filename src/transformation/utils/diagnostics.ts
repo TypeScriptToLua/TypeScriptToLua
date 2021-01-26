@@ -173,7 +173,7 @@ export const unsupportedMultiFunctionAssignment = createErrorDiagnosticFactory(
 );
 
 export const invalidOperatorMappingUse = createErrorDiagnosticFactory(
-    "A mapped operator can only be used in a call expression."
+    "This function must always be directly called and cannot be referred to."
 );
 
 export const annotationDeprecated = createWarningDiagnosticFactory(

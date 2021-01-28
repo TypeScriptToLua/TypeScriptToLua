@@ -14,4 +14,10 @@ declare namespace string {
     function sub(s: string, i: number, j?: number): string;
     function format(formatstring: string, ...args: any[]): string;
     function match(string: string, pattern: string): string;
+    function find(
+        string: string,
+        pattern: string,
+        start?: number,
+        plainflag?: boolean
+    ): MultiReturn<[number, number]> | undefined;
 }

@@ -240,6 +240,7 @@ test.each([
 test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
     { inp: "hello test", args: [""] },
     { inp: "hello test", args: ["hello"] },
+    { inp: "HELLO test", args: ["hello"] },
     { inp: "hello test", args: ["test"] },
     { inp: "hello test", args: ["test", 6] },
 ])("string.startsWith (%p)", ({ inp, args }) => {
@@ -249,10 +250,23 @@ test.each<{ inp: string; args: Parameters<string["startsWith"]> }>([
 test.each<{ inp: string; args: Parameters<string["endsWith"]> }>([
     { inp: "hello test", args: [""] },
     { inp: "hello test", args: ["test"] },
+    { inp: "hello TEST", args: ["test"] },
     { inp: "hello test", args: ["hello"] },
     { inp: "hello test", args: ["hello", 5] },
 ])("string.endsWith (%p)", ({ inp, args }) => {
     util.testExpression`"${inp}".endsWith(${util.formatCode(...args)})`.expectToMatchJsResult();
+});
+
+test.each<{ inp: string; args: Parameters<string["includes"]> }>([
+    { inp: "hello test", args: [""] },
+    { inp: "hello test", args: ["test"] },
+    { inp: "HELLO TEST", args: ["test"] },
+    { inp: "hello test", args: ["hello"] },
+    { inp: "HELLO TEST", args: ["hello"] },
+    { inp: "hello test", args: ["hello", 5] },
+    { inp: "hello test", args: ["test", 6] },
+])("string.includes (%p)", ({ inp, args }) => {
+    util.testExpression`"${inp}".includes(${util.formatCode(...args)})`.expectToMatchJsResult();
 });
 
 test.each([

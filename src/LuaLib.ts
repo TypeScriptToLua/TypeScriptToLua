@@ -69,6 +69,7 @@ export enum LuaLibFeature {
     StringCharCodeAt = "StringCharCodeAt",
     StringConcat = "StringConcat",
     StringEndsWith = "StringEndsWith",
+    StringIncludes = "StringIncludes",
     StringPadEnd = "StringPadEnd",
     StringPadStart = "StringPadStart",
     StringReplace = "StringReplace",

@@ -129,6 +129,8 @@ export function transformStringPrototypeCall(
             return transformLuaLibFunction(context, LuaLibFeature.StringStartsWith, node, caller, ...params);
         case "endsWith":
             return transformLuaLibFunction(context, LuaLibFeature.StringEndsWith, node, caller, ...params);
+        case "includes":
+            return transformLuaLibFunction(context, LuaLibFeature.StringIncludes, node, caller, ...params);
         case "repeat":
             const math = lua.createIdentifier("math");
             const floor = lua.createStringLiteral("floor");

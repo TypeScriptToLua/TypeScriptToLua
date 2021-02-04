@@ -224,12 +224,10 @@ test.each(validTsInvalidLuaNames)("exported decorated class with invalid lua nam
 
 describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     test("variable (nil)", () => {
-        const luaResult = util.testFunction`
+        util.testFunction`
             const nil = "foobar";
             return \`\${undefined}|\${nil}\`
-        `.getLuaExecutionResult();
-
-        expect(luaResult).toBe("nil|foobar");
+        `.expectToEqual("nil|foobar");
     });
 
     test("variable (and)", () => {
@@ -326,7 +324,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
 
         const compilerOptions = { lib: ["lib.es2015.d.ts", "lib.dom.d.ts"] };
 
-        const luaResult = util.testFunction`
+        util.testFunction`
             const print = "foobar";
             console.log(print);
             return result;
@@ -334,9 +332,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
             .setLuaHeader(luaHeader)
             .setTsHeader(tsHeader)
             .setOptions(compilerOptions)
-            .getLuaExecutionResult();
-
-        expect(luaResult).toBe("foobar");
+            .expectToEqual("foobar");
     });
 
     test("variable (type)", () => {
@@ -472,7 +468,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test("variable (unpack)", () => {
-        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+        // Can't use expectToMatchJsResult because above is not valid TS/JS
         const luaHeader = "unpack = table.unpack";
 
         const luaResult = util.testFunction`
@@ -562,7 +558,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test.each(["type", "type as type"])("imported variable (%p)", importName => {
-        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+        // Can't use expectToMatchJsResult because above is not valid TS/JS
         const luaHeader = 'package.loaded.someModule = {type = "foobar"}';
 
         const luaResult = util.testModule`
@@ -585,7 +581,7 @@ describe("lua keyword as identifier doesn't interfere with lua's value", () => {
     });
 
     test.each(["type", "type as type"])("re-exported variable with lua keyword as name (%p)", importName => {
-        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+        // Can't use expectToMatchJsResult because above is not valid TS/JS
 
         const luaHeader = 'package.loaded.someModule = {type = "foobar"}';
 

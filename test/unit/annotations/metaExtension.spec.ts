@@ -19,15 +19,15 @@ test("MetaExtension", () => {
         }
     `;
 
-    const luaResult = util.testModule`
+    // Can't use expectToMatchJsResult because above is not valid TS/JS
+    util.testModule`
        export default debug.getregistry()["_LOADED"].test();
     `
         .setTsHeader(tsHeader)
         .ignoreDiagnostics([annotationDeprecated.code])
-        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+        .setReturnExport("default")
+        .expectToEqual(5)
         .getLuaExecutionResult();
-
-    expect(luaResult.default).toBe(5);
 });
 
 test("IncorrectUsage", () => {

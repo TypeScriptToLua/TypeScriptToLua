@@ -19,7 +19,7 @@ test.each(validTestFunctionAssignments)("Valid function variable declaration (%p
         const fn: ${functionType} = ${testFunction.value};
         return fn("foobar");
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -29,7 +29,7 @@ test.each(validTestFunctionAssignments)("Valid function assignment (%p)", (testF
         fn = ${testFunction.value};
         return fn("foobar");
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -39,7 +39,7 @@ test.each(validTestFunctionCasts)("Valid function assignment with cast (%p)", (t
         fn = ${castedFunction};
         return fn("foobar");
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -50,7 +50,7 @@ test.each(validTestFunctionAssignments)("Valid function argument (%p)", (testFun
         }
         return takesFunction(${testFunction.value});
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -71,7 +71,7 @@ test.each(validTestFunctionCasts)("Valid function argument with cast (%p)", (tes
         }
         return takesFunction(${castedFunction});
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -93,7 +93,7 @@ test.each([
         }
         return takesFunction(${testFunction.value});
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -108,7 +108,7 @@ test.each([
         }
         return takesFunction(${testFunction.value}, ${args.join(", ")});
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToEqual("foobar");
 });
 
@@ -120,7 +120,7 @@ test.each(validTestFunctionAssignments)("Valid function return (%p)", (testFunct
         const fn = returnsFunction();
         return fn("foobar");
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 
@@ -132,7 +132,7 @@ test.each(validTestFunctionCasts)("Valid function return with cast (%p)", (testF
         const fn = returnsFunction();
         return fn("foobar");
     `
-        .setTsHeader(testFunction.definition)
+        .setTsHeader(testFunction.definition ?? "")
         .expectToMatchJsResult();
 });
 

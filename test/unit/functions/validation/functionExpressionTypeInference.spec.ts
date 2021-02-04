@@ -30,15 +30,14 @@ test("noSelfInFile works when first statement has other annotations", () => {
 test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(
     "Function expression type inference in binary operator (%p)",
     funcType => {
-        const header = `declare const undefinedFunc: ${funcType};`;
-        const code = `
+        const header = `let undefinedFunc: (${funcType}) | undefined;`;
+        util.testFunction`
             let func: ${funcType} = s => s;
             func = undefinedFunc || (s => s);
             return func("foo");
-        `;
-        // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
-        const luaResult = util.testFunction(code).setTsHeader(header).getLuaExecutionResult();
-        expect(luaResult).toBe("foo");
+        `
+            .setTsHeader(header)
+            .expectToMatchJsResult();
     }
 );
 

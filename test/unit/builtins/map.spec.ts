@@ -20,9 +20,9 @@ test("map iterable constructor map", () => {
 
 test("map clear", () => {
     const mapTS = 'let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();';
-    util.testFunction(mapTS + "return mymap.size;").expectToMatchJsResult();
+    util.testExpression("mymap.size;").setTsHeader(mapTS).expectToMatchJsResult();
 
-    util.testFunction(mapTS + 'return !mymap.has("a") && !mymap.has("b");').expectToMatchJsResult();
+    util.testExpression('!mymap.has("a") && !mymap.has("b");').setTsHeader(mapTS).expectToMatchJsResult();
 });
 
 test("map delete", () => {

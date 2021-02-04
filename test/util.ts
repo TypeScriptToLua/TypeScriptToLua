@@ -73,9 +73,9 @@ export abstract class TestBuilder {
 
     // TODO: Use testModule in these cases?
     protected tsHeader = "";
-    public setTsHeader(tsHeader: string | undefined): this {
+    public setTsHeader(tsHeader: string): this {
         expect(this.hasProgram).toBe(false);
-        this.tsHeader = tsHeader ?? "";
+        this.tsHeader = tsHeader;
         return this;
     }
 

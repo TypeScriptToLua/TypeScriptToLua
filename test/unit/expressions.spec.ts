@@ -30,7 +30,10 @@ test.each(["1==1", "1===1", "1!=1", "1!==1", "1>1", "1>=1", "1<1", "1<=1", "1&&1
 );
 
 test.each(["'key' in obj", "'existingKey' in obj", "0 in obj", "9 in obj"])("Binary expression in (%p)", input => {
-    util.testFunction(`let obj = { existingKey: 1 }; return ${input}`).expectToMatchJsResult();
+    util.testFunction`
+        let obj = { existingKey: 1 };
+        return ${input};
+    `.expectToMatchJsResult();
 });
 
 test.each(["a+=b", "a-=b", "a*=b", "a/=b", "a%=b", "a**=b"])("Binary expressions overridden operators (%p)", input => {

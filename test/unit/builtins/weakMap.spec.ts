@@ -91,7 +91,7 @@ test("weakMap set", () => {
 });
 
 test("weakMap has no map features (size)", () => {
-    util.testFunction("return (new WeakMap() as any).size").expectToMatchJsResult();
+    util.testExpression("(new WeakMap() as any).size").expectToMatchJsResult();
 });
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(

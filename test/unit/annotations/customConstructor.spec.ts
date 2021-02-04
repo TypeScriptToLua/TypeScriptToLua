@@ -19,13 +19,12 @@ test("CustomCreate", () => {
         }
     `;
 
-    // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
-    const luaResult = util.testModule`export default new Point2D(1, 2).x;`
+    // Can't use expectToMatchJsResult because above is not valid TS/JS
+    util.testModule`export default new Point2D(1, 2).x;`
         .setTsHeader(tsHeader)
         .setLuaHeader(luaHeader)
-        .getLuaExecutionResult();
-
-    expect(luaResult.default).toBe(1);
+        .setReturnExport("default")
+        .expectToEqual(1);
 });
 
 test("IncorrectUsage", () => {

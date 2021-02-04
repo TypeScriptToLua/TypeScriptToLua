@@ -223,7 +223,7 @@ test("Import hoisting (side-effect)", () => {
 });
 
 test("Import hoisted before function", () => {
-    // TODO Cant use expectToMatchJsResult because above is not valid TS/JS
+    // Can't use expectToMatchJsResult because above is not valid TS/JS
     util.testModule`
         export let result: any;
 

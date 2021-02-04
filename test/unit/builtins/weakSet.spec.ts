@@ -57,7 +57,7 @@ test("weakSet delete", () => {
 });
 
 test("weakSet has no set features (size)", () => {
-    util.testFunction("return (new WeakSet() as any).size").expectToMatchJsResult();
+    util.testExpression("(new WeakSet() as any).size").expectToMatchJsResult();
 });
 
 test.each(["clear()", "keys()", "values()", "entries()", "forEach(() => {})"])(

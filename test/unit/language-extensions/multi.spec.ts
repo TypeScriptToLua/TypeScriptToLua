@@ -14,7 +14,7 @@ const multiProjectOptions: tstl.CompilerOptions = {
 
 test("multi example use case", () => {
     util.testModule`
-        function multiReturn(): MultiReturn<[string, number]> {
+        function multiReturn(): LuaMultiReturn<[string, number]> {
             return $multi("foo", 5);
         }
 
@@ -128,7 +128,7 @@ test("allow $multi call in ArrowFunction body", () => {
         .expectToEqual(1);
 });
 
-test.each(["0", "i"])("allow MultiReturn numeric access", expression => {
+test.each(["0", "i"])("allow LuaMultiReturn numeric access", expression => {
     util.testFunction`
         ${multiFunction}
         const i = 0;
@@ -138,7 +138,7 @@ test.each(["0", "i"])("allow MultiReturn numeric access", expression => {
         .expectToEqual(1);
 });
 
-test.each(["multi()['forEach']", "multi().forEach"])("disallow MultiReturn non-numeric access", expression => {
+test.each(["multi()['forEach']", "multi().forEach"])("disallow LuaMultiReturn non-numeric access", expression => {
     util.testFunction`
         ${multiFunction}
         return ${expression};

@@ -165,7 +165,7 @@ export const invalidMultiTypeArrayLiteralElementInitializer = createErrorDiagnos
 );
 
 export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
-    "The MultiReturn type can only be accessed via an element access expression of a numeric type."
+    "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
 );
 
 export const unsupportedMultiFunctionAssignment = createErrorDiagnosticFactory(

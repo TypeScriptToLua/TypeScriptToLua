@@ -1,7 +1,10 @@
 import * as util from "../../util";
 
 test("map constructor", () => {
-    util.testFunction("let mymap = new Map(); return mymap.size;").expectToMatchJsResult();
+    util.testFunction`
+        let mymap = new Map();
+        return mymap.size;
+    `.expectToMatchJsResult();
 });
 
 test("map iterable constructor", () => {
@@ -20,9 +23,9 @@ test("map iterable constructor map", () => {
 
 test("map clear", () => {
     const mapTS = 'let mymap = new Map([["a", "c"],["b", "d"]]); mymap.clear();';
-    util.testExpression("mymap.size;").setTsHeader(mapTS).expectToMatchJsResult();
+    util.testExpression("mymap.size").setTsHeader(mapTS).expectToMatchJsResult();
 
-    util.testExpression('!mymap.has("a") && !mymap.has("b");').setTsHeader(mapTS).expectToMatchJsResult();
+    util.testExpression('!mymap.has("a") && !mymap.has("b")').setTsHeader(mapTS).expectToMatchJsResult();
 });
 
 test("map delete", () => {
@@ -61,19 +64,31 @@ test("map foreach keys", () => {
 });
 
 test("map get", () => {
-    util.testFunction('let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("a");').expectToMatchJsResult();
+    util.testFunction`
+        let mymap = new Map([["a", "c"],["b", "d"]]);
+        return mymap.get("a");
+    `.expectToMatchJsResult();
 });
 
 test("map get missing", () => {
-    util.testFunction('let mymap = new Map([["a", "c"],["b", "d"]]); return mymap.get("c");').expectToMatchJsResult();
+    util.testFunction`
+        let mymap = new Map([["a", "c"],["b", "d"]]);
+        return mymap.get("c");
+    `.expectToMatchJsResult();
 });
 
 test("map has", () => {
-    util.testFunction('let mymap = new Map([["a", "c"]]); return mymap.has("a");').expectToMatchJsResult();
+    util.testFunction`
+        let mymap = new Map([["a", "c"]]);
+        return mymap.has("a");
+    `.expectToMatchJsResult();
 });
 
 test("map has false", () => {
-    util.testFunction('let mymap = new Map(); return mymap.has("a");').expectToMatchJsResult();
+    util.testFunction`
+        let mymap = new Map();
+        return mymap.has("a");
+    `.expectToMatchJsResult();
 });
 
 test.each([

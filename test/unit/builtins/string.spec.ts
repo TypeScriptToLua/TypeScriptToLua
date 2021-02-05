@@ -165,7 +165,7 @@ test.each([
 ])("string.substr with expression (%p)", ({ inp, start, ignored, end }) => {
     const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
     util.testExpression`
-        "${inp}".substr(${paramStr});
+        "${inp}".substr(${paramStr})
     `.expectToMatchJsResult();
 });
 

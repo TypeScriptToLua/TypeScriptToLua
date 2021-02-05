@@ -26,8 +26,7 @@ test("MetaExtension", () => {
         .setTsHeader(tsHeader)
         .ignoreDiagnostics([annotationDeprecated.code])
         .setReturnExport("default")
-        .expectToEqual(5)
-        .getLuaExecutionResult();
+        .expectToEqual(5);
 });
 
 test("IncorrectUsage", () => {

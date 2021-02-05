@@ -6,6 +6,7 @@ import { createUnpackCall } from "../utils/lua-ast";
 import { findScope, ScopeType } from "../utils/scope";
 import { transformScopeBlock } from "./block";
 import { transformIdentifier } from "./identifier";
+import { isInMultiReturnFunction } from "./language-extensions/multi";
 
 export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statement, context) => {
     const [tryBlock, tryScope] = transformScopeBlock(context, statement.tryBlock, ScopeType.Try);
@@ -88,7 +89,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             returnValues.push(lua.createBooleanLiteral(true));
         }
 
-        if (isInTupleReturnFunction(context, statement)) {
+        if (isInTupleReturnFunction(context, statement) || isInMultiReturnFunction(statement)) {
             returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));
         } else {
             returnValues.push(lua.cloneIdentifier(returnValueIdentifier));

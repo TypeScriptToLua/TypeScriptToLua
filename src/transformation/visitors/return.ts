@@ -6,13 +6,26 @@ import { validateAssignment } from "../utils/assignment-validation";
 import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
-import { isMultiFunction, transformMultiReturnStatement } from "./language-extensions/multi";
+import { transformArguments } from "./call";
+import { returnsMultiType, multiReturnCallShouldBeWrapped, isMultiFunction } from "./language-extensions/multi";
 
 function transformExpressionsInReturn(
     context: TransformationContext,
     node: ts.Expression,
     insideTryCatch: boolean
 ): lua.Expression[] {
+    if (ts.isCallExpression(node)) {
+        // $multi(...)
+        if (isMultiFunction(context, node)) {
+            return transformArguments(context, node.arguments);
+        }
+
+        // Force-wrap multi-returns when returning inside try/catch
+        if (insideTryCatch && returnsMultiType(context, node) && !multiReturnCallShouldBeWrapped(context, node)) {
+            return [wrapInTable(context.transformExpression(node))];
+        }
+    }
+
     if (!isInTupleReturnFunction(context, node)) {
         return [context.transformExpression(node)];
     }
@@ -58,14 +71,6 @@ export const transformReturnStatement: FunctionVisitor<ts.ReturnStatement> = (st
         }
 
         insideTryCatch = insideTryCatch || scope.type === ScopeType.Try || scope.type === ScopeType.Catch;
-    }
-
-    if (
-        statement.expression &&
-        ts.isCallExpression(statement.expression) &&
-        isMultiFunction(context, statement.expression)
-    ) {
-        return transformMultiReturnStatement(context, statement);
     }
 
     let results: lua.Expression[];

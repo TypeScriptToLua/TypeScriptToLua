@@ -190,3 +190,67 @@ test.each([
         .setOptions(multiProjectOptions)
         .expectToEqual(result);
 });
+
+test("return $multi from try", () => {
+    util.testFunction`
+        function multiTest() {
+            try {
+                return $multi(1, 2);
+            } catch {
+            }
+        }
+        const [_, a] = multiTest();
+        return a;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(2);
+});
+
+test("return $multi from catch", () => {
+    util.testFunction`
+        function multiTest() {
+            try {
+                throw "error";
+            } catch {
+                return $multi(1, 2);
+            }
+        }
+        const [_, a] = multiTest();
+        return a;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(2);
+});
+
+test("return LuaMultiReturn from try", () => {
+    util.testFunction`
+        ${multiFunction}
+        function multiTest() {
+            try {
+                return multi(1, 2);
+            } catch {
+            }
+        }
+        const [_, a] = multiTest();
+        return a;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(2);
+});
+
+test("return LuaMultiReturn from catch", () => {
+    util.testFunction`
+        ${multiFunction}
+        function multiTest() {
+            try {
+                throw "error";
+            } catch {
+                return multi(1, 2);
+            }
+        }
+        const [_, a] = multiTest();
+        return a;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(2);
+});

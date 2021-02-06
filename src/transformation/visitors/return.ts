@@ -7,7 +7,13 @@ import { createUnpackCall, wrapInTable } from "../utils/lua-ast";
 import { ScopeType, walkScopesUp } from "../utils/scope";
 import { isArrayType } from "../utils/typescript";
 import { transformArguments } from "./call";
-import { returnsMultiType, multiReturnCallShouldBeWrapped, isMultiFunction } from "./language-extensions/multi";
+import {
+    returnsMultiType,
+    multiReturnCallShouldBeWrapped,
+    isMultiFunction,
+    isMultiReturnType,
+} from "./language-extensions/multi";
+import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
 
 function transformExpressionsInReturn(
     context: TransformationContext,
@@ -17,10 +23,20 @@ function transformExpressionsInReturn(
     if (ts.isCallExpression(node)) {
         // $multi(...)
         if (isMultiFunction(context, node)) {
-            return transformArguments(context, node.arguments);
+            // Don't allow $multi to be implicitly cast to something other than LuaMultiReturn
+            const type = context.checker.getContextualType(node);
+            if (type && !isMultiReturnType(type)) {
+                context.diagnostics.push(invalidMultiFunctionReturnType(node));
+            }
+
+            let returnValues = transformArguments(context, node.arguments);
+            if (insideTryCatch) {
+                returnValues = [wrapInTable(...returnValues)]; // Wrap results when returning inside try/catch
+            }
+            return returnValues;
         }
 
-        // Force-wrap multi-returns when returning inside try/catch
+        // Force-wrap LuaMultiReturn when returning inside try/catch
         if (insideTryCatch && returnsMultiType(context, node) && !multiReturnCallShouldBeWrapped(context, node)) {
             return [wrapInTable(context.transformExpression(node))];
         }

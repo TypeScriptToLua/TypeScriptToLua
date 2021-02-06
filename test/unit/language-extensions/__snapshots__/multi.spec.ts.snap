@@ -83,6 +83,46 @@ exports[`invalid $multi call (const a = $multi();): code 1`] = `
 
 exports[`invalid $multi call (const a = $multi();): diagnostics 1`] = `"main.ts(2,19): error TSTL: The $multi function must be called in an expression that is returned."`;
 
+exports[`invalid $multi implicit cast: code 1`] = `
+"function badMulti(self)
+    return \\"foo\\", 42
+end"
+`;
+
+exports[`invalid $multi implicit cast: diagnostics 1`] = `"main.ts(3,20): error TSTL: The $multi function can only be used to return a LuaMultiReturn type."`;
+
+exports[`invalid direct $multi function use (const [a = 1] = $multi()): code 1`] = `
+"local ____exports = {}
+local function multi(self, ...)
+    local args = {...}
+    return table.unpack(args)
+end
+local a = ____(nil)
+if a == nil then
+    a = 1
+end
+____exports.a = a
+return ____exports"
+`;
+
+exports[`invalid direct $multi function use (const [a = 1] = $multi()): diagnostics 1`] = `"main.ts(7,25): error TSTL: The $multi function must be called in an expression that is returned."`;
+
+exports[`invalid direct $multi function use (const [a = 1] = $multi(2)): code 1`] = `
+"local ____exports = {}
+local function multi(self, ...)
+    local args = {...}
+    return table.unpack(args)
+end
+local a = ____(nil, 2)
+if a == nil then
+    a = 1
+end
+____exports.a = a
+return ____exports"
+`;
+
+exports[`invalid direct $multi function use (const [a = 1] = $multi(2)): diagnostics 1`] = `"main.ts(7,25): error TSTL: The $multi function must be called in an expression that is returned."`;
+
 exports[`invalid direct $multi function use (const [a] = $multi()): code 1`] = `
 "local ____exports = {}
 local function multi(self, ...)

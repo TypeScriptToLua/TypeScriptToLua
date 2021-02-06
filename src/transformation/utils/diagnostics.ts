@@ -146,6 +146,10 @@ export const invalidMultiFunctionUse = createErrorDiagnosticFactory(
     "The $multi function must be called in an expression that is returned."
 );
 
+export const invalidMultiFunctionReturnType = createErrorDiagnosticFactory(
+    "The $multi function can only be used to return a LuaMultiReturn type."
+);
+
 export const invalidMultiTypeToNonArrayLiteral = createErrorDiagnosticFactory("Expected an array literal.");
 
 export const invalidMultiTypeToEmptyPatternOrArrayLiteral = createErrorDiagnosticFactory(

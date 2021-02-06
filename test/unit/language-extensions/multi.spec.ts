@@ -1,7 +1,11 @@
 import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
-import { invalidMultiFunctionUse, invalidMultiReturnAccess } from "../../../src/transformation/utils/diagnostics";
+import {
+    invalidMultiFunctionUse,
+    invalidMultiReturnAccess,
+    invalidMultiFunctionReturnType,
+} from "../../../src/transformation/utils/diagnostics";
 
 const multiProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../language-extensions")],
@@ -42,6 +46,8 @@ const createCasesThatCall = (name: string): Array<[string, any]> => [
     [`let a; [a] = ${name}()`, undefined],
     [`const [a] = ${name}()`, undefined],
     [`const [a] = ${name}(1)`, 1],
+    [`const [a = 1] = ${name}()`, 1],
+    [`const [a = 1] = ${name}(2)`, 2],
     [`const ar = [1]; const [a] = ${name}(...ar)`, 1],
     [`const _ = null, [a] = ${name}(1)`, 1],
     [`let a; for (const [a] = ${name}(1, 2); false; 1) {}`, undefined],
@@ -123,6 +129,17 @@ test("allow $multi call in ArrowFunction body", () => {
         .expectToEqual(1);
 });
 
+test("forward $multi call in ArrowFunction body", () => {
+    util.testFunction`
+        const foo = () => $multi(1);
+        const call = () => foo();
+        const [result] = call();
+        return result;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(1);
+});
+
 test.each(["0", "i"])("allow LuaMultiReturn numeric access (%s)", expression => {
     util.testFunction`
         ${multiFunction}
@@ -140,4 +157,35 @@ test.each(["multi()['forEach']", "multi().forEach"])("disallow LuaMultiReturn no
     `
         .setOptions(multiProjectOptions)
         .expectDiagnosticsToMatchSnapshot([invalidMultiReturnAccess.code]);
+});
+
+test("invalid $multi implicit cast", () => {
+    util.testModule`
+        function badMulti(): [string, number] {
+            return $multi("foo", 42);
+        }
+    `
+        .setOptions(multiProjectOptions)
+        .expectDiagnosticsToMatchSnapshot([invalidMultiFunctionReturnType.code]);
+});
+
+test.each([
+    { flag: true, result: 4 },
+    { flag: false, result: 7 },
+])("overloaded $multi/non-$multi return", ({ flag, result }) => {
+    util.testFunction`
+        function multiOverload(flag: true): LuaMultiReturn<[string, number]>;
+        function multiOverload(flag: false): [string, number];
+        function multiOverload(flag: boolean) {
+            if (flag) {
+                return $multi("foo", 4);
+            } else {
+                return ["bar", 7];
+            }
+        }
+        const [x, y] = multiOverload(${flag});
+        return y;
+    `
+        .setOptions(multiProjectOptions)
+        .expectToEqual(result);
 });

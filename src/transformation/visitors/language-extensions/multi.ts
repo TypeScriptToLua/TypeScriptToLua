@@ -10,6 +10,14 @@ const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
 const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
     extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiType;
 
+export function isMultiReturnType(type: ts.Type): boolean {
+    return (
+        (type.symbol?.declarations?.some(isMultiTypeDeclaration) ||
+            type.aliasSymbol?.declarations?.some(isMultiTypeDeclaration)) ??
+        false
+    );
+}
+
 export function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
@@ -17,7 +25,8 @@ export function isMultiFunction(context: TransformationContext, expression: ts.C
 
 export function returnsMultiType(context: TransformationContext, node: ts.CallExpression): boolean {
     const signature = context.checker.getResolvedSignature(node);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
+    const type = signature?.getReturnType();
+    return type ? isMultiReturnType(type) : false;
 }
 
 export function isMultiReturnCall(context: TransformationContext, expression: ts.Expression) {
@@ -35,7 +44,8 @@ export function isInMultiReturnFunction(context: TransformationContext, node: ts
         return false;
     }
     const signature = context.checker.getSignatureFromDeclaration(declaration);
-    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
+    const type = signature?.getReturnType();
+    return type ? isMultiReturnType(type) : false;
 }
 
 export function multiReturnCallShouldBeWrapped(context: TransformationContext, node: ts.CallExpression) {

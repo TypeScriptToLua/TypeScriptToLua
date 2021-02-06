@@ -52,6 +52,7 @@ const createCasesThatCall = (name: string): Array<[string, any]> => [
     [`const _ = null, [a] = ${name}(1)`, 1],
     [`let a; for (const [a] = ${name}(1, 2); false; 1) {}`, undefined],
     [`let a; for ([a] = ${name}(1, 2); false; 1) {}`, 1],
+    [`let a; if ([a] = ${name}(1)) { ++a; }`, 2],
 ];
 
 test.each<[string, any]>(createCasesThatCall("$multi"))("invalid direct $multi function use (%s)", statement => {

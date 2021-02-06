@@ -239,3 +239,27 @@ return ____exports"
 `;
 
 exports[`invalid direct $multi function use (let a; for (const [a] = $multi(1, 2); false; 1) {}): diagnostics 1`] = `"main.ts(7,33): error TSTL: The $multi function must be called in an expression that is returned."`;
+
+exports[`invalid direct $multi function use (let a; if ([a] = $multi(1)) { ++a; }): code 1`] = `
+"local ____exports = {}
+local function multi(self, ...)
+    local args = {...}
+    return table.unpack(args)
+end
+local a
+if (function()
+    local ____ = {
+        ____(nil, 1)
+    }
+    a = ____[1]
+    ____exports.a = a
+    return ____
+end)() then
+    a = a + 1
+    ____exports.a = a
+end
+____exports.a = a
+return ____exports"
+`;
+
+exports[`invalid direct $multi function use (let a; if ([a] = $multi(1)) { ++a; }): diagnostics 1`] = `"main.ts(7,26): error TSTL: The $multi function must be called in an expression that is returned."`;

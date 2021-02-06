@@ -92,7 +92,7 @@ export function transformAssignmentExpression(
         const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
 
         let right = context.transformExpression(expression.right);
-        if (isTupleReturnCall(context, expression.right)) {
+        if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
             right = wrapInTable(right);
         }
 

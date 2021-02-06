@@ -198,18 +198,15 @@ test("for scope", () => {
 test.each([
     {
         inp: { test1: 0, test2: 1, test3: 2 },
-        expected: { test1: 1, test2: 2, test3: 3 },
     },
-])("forin[Object] (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let objTest = ${JSON.stringify(inp)};
+])("forin[Object] (%p)", ({ inp }) => {
+    util.testFunctionTemplate`
+        let objTest = ${inp};
         for (let key in objTest) {
             objTest[key] = objTest[key] + 1;
         }
-        return JSONStringify(objTest);`
-    );
-
-    expect(JSON.parse(result)).toEqual(expected);
+        return objTest;
+    `.expectToMatchJsResult();
 });
 
 test("forin[Array]", () => {
@@ -219,11 +216,9 @@ test("forin[Array]", () => {
     `.expectDiagnosticsToMatchSnapshot([forbiddenForIn.code]);
 });
 
-test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2, d: 0, e: 4 } }])(
-    "forin with continue (%p)",
-    ({ inp, expected }) => {
-        const result = util.transpileAndExecute(
-            `let obj = ${JSON.stringify(inp)};
+test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 } }])("forin with continue (%p)", ({ inp }) => {
+    util.testFunctionTemplate`
+            let obj = ${inp};
             for (let i in obj) {
                 if (obj[i] % 2 == 0) {
                     continue;
@@ -231,24 +226,19 @@ test.each([{ inp: { a: 0, b: 1, c: 2, d: 3, e: 4 }, expected: { a: 0, b: 0, c: 2
 
                 obj[i] = 0;
             }
-            return JSONStringify(obj);`
-        );
+            return obj;
+        `.expectToMatchJsResult();
+});
 
-        expect(result).toBe(JSON.stringify(expected));
-    }
-);
-
-test.each([{ inp: [0, 1, 2], expected: [1, 2, 3] }])("forof (%p)", ({ inp, expected }) => {
-    const result = util.transpileAndExecute(
-        `let objTest = ${JSON.stringify(inp)};
+test.each([{ inp: [0, 1, 2] }])("forof (%p)", ({ inp }) => {
+    util.testFunctionTemplate`
+        let objTest = ${inp};
         let arrResultTest = [];
         for (let value of objTest) {
             arrResultTest.push(value + 1)
         }
-        return JSONStringify(arrResultTest);`
-    );
-
-    expect(result).toBe(JSON.stringify(expected));
+        return arrResultTest;
+    `.expectToMatchJsResult();
 });
 
 test("Tuple loop", () => {
@@ -455,31 +445,29 @@ test.each(["", "abc", "a\0c"])("forof string (%p)", string => {
 describe("for...of empty destructuring", () => {
     const declareTests = (destructuringPrefix: string) => {
         test("array", () => {
-            const code = `
+            util.testFunction`
                 const arr = [["a"], ["b"], ["c"]];
                 let i = 0;
                 for (${destructuringPrefix}[] of arr) {
                     ++i;
                 }
                 return i;
-            `;
-            expect(util.transpileAndExecute(code)).toBe(3);
+            `.expectToMatchJsResult();
         });
 
         test("iterable", () => {
-            const code = `
+            util.testFunction`
                 const iter: Iterable<string[]> = [["a"], ["b"], ["c"]];
                 let i = 0;
                 for (${destructuringPrefix}[] of iter) {
                     ++i;
                 }
                 return i;
-            `;
-            expect(util.transpileAndExecute(code)).toBe(3);
+            `.expectToMatchJsResult();
         });
 
         test("luaIterator", () => {
-            const code = `
+            const luaResult = util.testFunction`
                 const arr = [["a"], ["b"], ["c"]];
                 /** @luaIterator */
                 interface Iter extends Iterable<string[]> {}
@@ -492,12 +480,13 @@ describe("for...of empty destructuring", () => {
                     ++i;
                 }
                 return i;
-            `;
-            expect(util.transpileAndExecute(code)).toBe(3);
+            `.getLuaExecutionResult();
+            // Can't use expectToMatchJsResult because above is not valid TS/JS
+            expect(luaResult).toBe(3);
         });
 
         test("luaIterator+tupleReturn", () => {
-            const code = `
+            const luaResult = util.testFunction`
                 const arr = [["a", "b"], ["c", "d"], ["e", "f"]];
                 /**
                  * @luaIterator
@@ -520,8 +509,9 @@ describe("for...of empty destructuring", () => {
                     ++i;
                 }
                 return i;
-            `;
-            expect(util.transpileAndExecute(code)).toBe(3);
+            `.getLuaExecutionResult();
+            // Can't use expectToMatchJsResult because above is not valid TS/JS
+            expect(luaResult).toBe(3);
         });
     };
 

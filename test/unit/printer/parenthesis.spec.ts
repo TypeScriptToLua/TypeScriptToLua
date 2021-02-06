@@ -1,7 +1,7 @@
 import * as util from "../../util";
 
 test("binary expression with 'as' type assertion wrapped in parenthesis", () => {
-    expect(util.transpileAndExecute("return 2 * (3 - 2 as number);")).toBe(2);
+    util.testFunction("return 2 * (3 - 2 as number);").expectToMatchJsResult();
 });
 
 test.each([
@@ -26,7 +26,7 @@ test.each([
         declare function z(this: void): unknown;
         ${expression}`;
 
-    const lua = util.transpileString(code, undefined, false);
+    const lua = util.testExpression(code).getMainLuaCodeChunk();
     expect(lua).not.toMatch(/\(.+\)/);
 });
 
@@ -50,15 +50,14 @@ test.each([
         declare let y: {};
         ${expression}`;
 
-    const lua = util.transpileString(code, undefined, false);
+    const lua = util.testExpression(code).getMainLuaCodeChunk();
     expect(lua).toMatch(/\(.+\)/);
 });
 
 test("not operator precedence (%p)", () => {
-    const code = `
+    util.testFunction`
         const a = true;
         const b = false;
-        return !a && b;`;
-
-    expect(util.transpileAndExecute(code)).toBe(false);
+        return !a && b;
+    `.expectToMatchJsResult();
 });

@@ -2,7 +2,7 @@ import * as util from "../../util";
 import { luaIteratorForbiddenUsage } from "../../../src/transformation/utils/diagnostics";
 
 test("forof lua iterator", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
@@ -13,13 +13,11 @@ test("forof lua iterator", () => {
         let result = "";
         for (let e of luaIter()) { result += e; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("abc");
+    `.expectToEqual("abc");
 });
 
 test("forof array lua iterator", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Array<string> {}
@@ -30,13 +28,11 @@ test("forof array lua iterator", () => {
         let result = "";
         for (let e of luaIter()) { result += e; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("abc");
+    `.expectToEqual("abc");
 });
 
 test("forof lua iterator with existing variable", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
@@ -48,13 +44,11 @@ test("forof lua iterator with existing variable", () => {
         let e: string;
         for (e of luaIter()) { result += e; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("abc");
+    `.expectToEqual("abc");
 });
 
 test("forof lua iterator destructuring", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<[string, string]> {}
@@ -65,13 +59,11 @@ test("forof lua iterator destructuring", () => {
         let result = "";
         for (let [a, b] of luaIter()) { result += a + b; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("0a1b2c");
+    `.expectToEqual("0a1b2c");
 });
 
 test("forof lua iterator destructuring with existing variables", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<[string, string]> {}
@@ -84,13 +76,11 @@ test("forof lua iterator destructuring with existing variables", () => {
         let b: string;
         for ([a, b] of luaIter()) { result += a + b; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("0a1b2c");
+    `.expectToEqual("0a1b2c");
 });
 
 test("forof lua iterator tuple-return", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /**
          * @luaIterator
@@ -106,13 +96,11 @@ test("forof lua iterator tuple-return", () => {
         let result = "";
         for (let [a, b] of luaIter()) { result += a + b; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("0a1b2c");
+    `.expectToEqual("0a1b2c");
 });
 
 test("forof lua iterator tuple-return with existing variables", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /**
          * @luaIterator
@@ -130,9 +118,7 @@ test("forof lua iterator tuple-return with existing variables", () => {
         let b: string;
         for ([a, b] of luaIter()) { result += a + b; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("0a1b2c");
+    `.expectToEqual("0a1b2c");
 });
 
 test("forof lua iterator tuple-return single variable", () => {
@@ -161,7 +147,7 @@ test("forof lua iterator tuple-return single existing variable", () => {
 });
 
 test("forof forwarded lua iterator", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /** @luaIterator */
         interface Iter extends Iterable<string> {}
@@ -177,13 +163,11 @@ test("forof forwarded lua iterator", () => {
         let result = "";
         for (let a of forward()) { result += a; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("abc");
+    `.expectToEqual("abc");
 });
 
 test("forof forwarded lua iterator with tupleReturn", () => {
-    const code = `
+    util.testFunction`
         const arr = ["a", "b", "c"];
         /**
          * @luaIterator
@@ -203,7 +187,5 @@ test("forof forwarded lua iterator with tupleReturn", () => {
         let result = "";
         for (let [a, b] of forward()) { result += a + b; }
         return result;
-    `;
-    const result = util.transpileAndExecute(code);
-    expect(result).toBe("0a1b2c");
+    `.expectToEqual("0a1b2c");
 });

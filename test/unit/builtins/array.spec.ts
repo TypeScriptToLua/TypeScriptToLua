@@ -594,29 +594,27 @@ const genericChecks = [
 ];
 
 test.each(genericChecks)("array constrained generic foreach (%p)", signature => {
-    const code = `
-            ${signature}: number {
-                let sum = 0;
-                array.forEach(item => {
-                    if (typeof item === "number") {
-                        sum += item;
-                    }
-                });
-                return sum;
-            }
-            return generic([1, 2, 3]);
-        `;
-    expect(util.transpileAndExecute(code)).toBe(6);
+    util.testFunction`
+        ${signature}: number {
+            let sum = 0;
+            array.forEach(item => {
+                if (typeof item === "number") {
+                    sum += item;
+                }
+            });
+            return sum;
+        }
+        return generic([1, 2, 3]);
+    `.expectToMatchJsResult();
 });
 
 test.each(genericChecks)("array constrained generic length (%p)", signature => {
-    const code = `
-            ${signature}: number {
-                return array.length;
-            }
-            return generic([1, 2, 3]);
-        `;
-    expect(util.transpileAndExecute(code)).toBe(3);
+    util.testFunction`
+        ${signature}: number {
+            return array.length;
+        }
+        return generic([1, 2, 3]);
+    `.expectToMatchJsResult();
 });
 
 test.each(["[]", '"hello"', "42", "[1, 2, 3]", '{ a: "foo", b: "bar" }'])(

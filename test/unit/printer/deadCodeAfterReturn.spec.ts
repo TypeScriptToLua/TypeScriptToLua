@@ -37,25 +37,25 @@ test("Method dead code after return", () => {
 });
 
 test("for dead code after return", () => {
-    const result = util.transpileAndExecute("for (let i = 0; i < 10; i++) { return 3; const b = 8; }");
-
-    expect(result).toBe(3);
+    util.testFunction`
+        for (let i = 0; i < 10; i++) { return 3; const b = 8; }
+    `.expectToMatchJsResult();
 });
 
 test("for..in dead code after return", () => {
-    const result = util.transpileAndExecute('for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }');
-
-    expect(result).toBe(3);
+    util.testFunction`
+        for (let a in {"a": 5, "b": 8}) { return 3; const b = 8; }
+    `.expectToMatchJsResult();
 });
 
 test("for..of dead code after return", () => {
-    const result = util.transpileAndExecute("for (let a of [1,2,4]) { return 3; const b = 8; }");
-
-    expect(result).toBe(3);
+    util.testFunction`
+        for (let a of [1,2,4]) { return 3; const b = 8; }
+    `.expectToMatchJsResult();
 });
 
 test("while dead code after return", () => {
-    const result = util.transpileAndExecute("while (true) { return 3; const b = 8; }");
-
-    expect(result).toBe(3);
+    util.testFunction`
+        while (true) { return 3; const b = 8; }
+    `.expectToMatchJsResult();
 });

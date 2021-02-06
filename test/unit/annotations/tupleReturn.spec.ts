@@ -405,39 +405,27 @@ test("TupleReturn method assignment", () => {
 });
 
 test("TupleReturn functional", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const [a, b] = abc();
         return b + a;
-    `;
-
-    const result = util.transpileAndExecute(code);
-
-    expect(result).toBe("a3");
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn single", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         const res = abc();
         return res.length
-    `;
-
-    const result = util.transpileAndExecute(code);
-
-    expect(result).toBe(2);
+    `.expectToMatchJsResult();
 });
 
 test("TupleReturn in expression", () => {
-    const code = `
+    util.testFunction`
         /** @tupleReturn */
         function abc(): [number, string] { return [3, "a"]; }
         return abc()[1] + abc()[0];
-    `;
-
-    const result = util.transpileAndExecute(code);
-
-    expect(result).toBe("a3");
+    `.expectToMatchJsResult();
 });

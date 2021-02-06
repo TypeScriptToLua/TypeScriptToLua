@@ -1,8 +1,8 @@
 import * as util from "../util";
 
 test("overload function1", () => {
-    const result = util.transpileAndExecute(
-        `function abc(def: number): string;
+    util.testFunction`
+        function abc(def: number): string;
         function abc(def: string): string;
         function abc(def: number | string): string {
             if (typeof def == "number") {
@@ -11,15 +11,13 @@ test("overload function1", () => {
                 return def;
             }
         }
-        return abc(3);`
-    );
-
-    expect(result).toBe("jkl9");
+        return abc(3);
+    `.expectToMatchJsResult();
 });
 
 test("overload function2", () => {
-    const result = util.transpileAndExecute(
-        `function abc(def: number): string;
+    util.testFunction`
+        function abc(def: number): string;
         function abc(def: string): string;
         function abc(def: number | string): string {
             if (typeof def == "number") {
@@ -28,15 +26,13 @@ test("overload function2", () => {
                 return def;
             }
         }
-        return abc("ghj");`
-    );
-
-    expect(result).toBe("ghj");
+        return abc("ghj");
+    `.expectToMatchJsResult();
 });
 
 test("overload method1", () => {
-    const result = util.transpileAndExecute(
-        `class myclass {
+    util.testFunction`
+        class myclass {
             static abc(def: number): string;
             static abc(def: string): string;
             static abc(def: number | string): string {
@@ -47,15 +43,13 @@ test("overload method1", () => {
                 }
             }
         }
-        return myclass.abc(3);`
-    );
-
-    expect(result).toBe("jkl9");
+        return myclass.abc(3);
+    `.expectToMatchJsResult();
 });
 
 test("overload method2", () => {
-    const result = util.transpileAndExecute(
-        `class myclass {
+    util.testFunction`
+        class myclass {
             static abc(def: number): string;
             static abc(def: string): string;
             static abc(def: number | string): string {
@@ -66,15 +60,13 @@ test("overload method2", () => {
                 }
             }
         }
-        return myclass.abc("ghj");`
-    );
-
-    expect(result).toBe("ghj");
+        return myclass.abc("ghj");
+    `.expectToMatchJsResult();
 });
 
 test("constructor1", () => {
-    const result = util.transpileAndExecute(
-        `class myclass {
+    util.testFunction`
+        class myclass {
             num: number;
             str: string;
 
@@ -89,15 +81,13 @@ test("constructor1", () => {
             }
         }
         const inst = new myclass(3);
-        return inst.num`
-    );
-
-    expect(result).toBe(3);
+        return inst.num;
+    `.expectToMatchJsResult();
 });
 
 test("constructor2", () => {
-    const result = util.transpileAndExecute(
-        `class myclass {
+    util.testFunction`
+        class myclass {
             num: number;
             str: string;
 
@@ -112,8 +102,6 @@ test("constructor2", () => {
             }
         }
         const inst = new myclass("ghj");
-        return inst.str`
-    );
-
-    expect(result).toBe("ghj");
+        return inst.str
+    `.expectToMatchJsResult();
 });

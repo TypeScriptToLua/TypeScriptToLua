@@ -19,15 +19,14 @@ test("MetaExtension", () => {
         }
     `;
 
-    const result = util.transpileAndExecute(
-        'return debug.getregistry()["_LOADED"].test();',
-        undefined,
-        undefined,
-        tsHeader,
-        true
-    );
-
-    expect(result).toBe(5);
+    // Can't use expectToMatchJsResult because above is not valid TS/JS
+    util.testModule`
+       export default debug.getregistry()["_LOADED"].test();
+    `
+        .setTsHeader(tsHeader)
+        .ignoreDiagnostics([annotationDeprecated.code])
+        .setReturnExport("default")
+        .expectToEqual(5);
 });
 
 test("IncorrectUsage", () => {

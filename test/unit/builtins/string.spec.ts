@@ -165,9 +165,9 @@ test.each([
     { inp: "hello test", start: 3, ignored: 0, end: 2 },
 ])("string.substr with expression (%p)", ({ inp, start, ignored, end }) => {
     const paramStr = `2 > 1 && ${start} || ${ignored}` + (end ? `, ${end}` : "");
-    const result = util.transpileAndExecute(`return "${inp}".substr(${paramStr})`);
-
-    expect(result).toBe(inp.substr(start, end));
+    util.testExpression`
+        "${inp}".substr(${paramStr})
+    `.expectToMatchJsResult();
 });
 
 test.each(["", "h", "hello"])("string.length (%p)", input => {
@@ -303,13 +303,12 @@ test.each([
     "function generic<T extends string>(string: T)",
     "type StringType = string; function generic<T extends StringType>(string: T)",
 ])("string constrained generic foreach (%p)", signature => {
-    const code = `
-            ${signature}: number {
-                return string.length;
-            }
-            return generic("string");
-        `;
-    expect(util.transpileAndExecute(code)).toBe(6);
+    util.testFunction`
+        ${signature}: number {
+            return string.length;
+        }
+        return generic("string");
+    `.expectToMatchJsResult();
 });
 
 const trimTestCases = [

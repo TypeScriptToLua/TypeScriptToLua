@@ -66,130 +66,106 @@ test.each(["ke-bab", "dollar$", "singlequote'", "hash#", "s p a c e", "ɥɣɎɌ�
 );
 
 test.each(["export default value;", "export { value as default };"])("Export Default From (%p)", exportStatement => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                export { default } from "./module";
-            `,
-            "module.ts": `
+    util.testModule`
+        export { default } from "./module";
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const value = true;
                 ${exportStatement};
-            `,
-        },
-        "default"
-    );
-
-    expect(result).toBe(true);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Default Import and Export Expression", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport from "./module";
-                export const value = defaultExport;
-            `,
-            "module.ts": `
+    util.testModule`
+        import defaultExport from "./module";
+        export const value = defaultExport;
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export default 1 + 2 + 3;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Import and Export Assignment", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import * as m from "./module";
-                export const value = m;
-            `,
-            "module.ts": `
+    util.testModule`
+        // @ts-ignore
+        import * as m from "./module";
+        export const value = m;
+    `
+        .setOptions({ module: ts.ModuleKind.CommonJS })
+        .addExtraFile(
+            "module.ts",
+            `
                 export = true;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Mixed Exports, Default and Named Imports", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport, { a, b, c } from "./module";
-                export const value = defaultExport + b + c;
-            `,
-            "module.ts": `
+    util.testModule`
+        import defaultExport, { a, b, c } from "./module";
+        export const value = defaultExport + b + c;
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const a = 1;
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Mixed Exports, Default and Namespace Import", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport, * as ns from "./module";
-                export const value = defaultExport + ns.b + ns.c;
-            `,
-            "module.ts": `
+    util.testModule`
+        import defaultExport, * as ns from "./module";
+        export const value = defaultExport + ns.b + ns.c;
+    `
+        .addExtraFile(
+            "module.ts",
+            `
                 export const a = 1;
                 export const b = 2;
                 export const c = 3;
                 export default a;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(6);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Export Default Function", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import defaultExport from "./module";
-                export const value = defaultExport();
-            `,
-            "module.ts": `
+    const mainCode = `
+        import defaultExport from "./module";
+        export const value = defaultExport();
+    `;
+    util.testModule(mainCode)
+        .addExtraFile(
+            "module.ts",
+            `
                 export default function() {
                     return true;
                 }
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+            `
+        )
+        .expectToMatchJsResult();
 });
 
 test("Export Equals", () => {
-    const [result] = util.transpileAndExecuteProjectReturningMainExport(
-        {
-            "main.ts": `
-                import * as module from "./module";
-                export const value = module;
-            `,
-            "module.ts": `
-                export = true;
-            `,
-        },
-        "value"
-    );
-
-    expect(result).toBe(true);
+    util.testModule`
+        export = true;
+    `
+        .setOptions({ module: ts.ModuleKind.CommonJS })
+        .expectToMatchJsResult();
 });
 
 const reassignmentTestCases = [
@@ -282,25 +258,26 @@ export const foo = "bar";
 `;
 
 test("export all does not include default", () => {
-    util.testBundle`
+    util.testModule`
         export * from "./module";
     `
+        .setOptions({ module: ts.ModuleKind.CommonJS })
         .addExtraFile("module.ts", moduleFile)
-        .expectToEqual({ foo: "bar" });
+        .expectToMatchJsResult();
 });
 
 test("namespace export does not include default", () => {
-    util.testBundle`
+    util.testModule`
         export * as result from "./module";
     `
         .addExtraFile("module.ts", moduleFile)
-        .expectToEqual({ result: { default: true, foo: "bar" } });
+        .expectToMatchJsResult();
 });
 
 test("namespace export with unsafe Lua name", () => {
-    util.testBundle`
+    util.testModule`
         export * as $$$ from "./module";
     `
         .addExtraFile("module.ts", moduleFile)
-        .expectToEqual({ $$$: { default: true, foo: "bar" } });
+        .expectToMatchJsResult();
 });

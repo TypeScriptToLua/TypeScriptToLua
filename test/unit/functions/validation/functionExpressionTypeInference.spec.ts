@@ -13,7 +13,7 @@ test.each(["noSelf", "noSelfInFile"])("noSelf function method argument (%p)", no
         const c = new NS.C();
         return c.method(foo);
     `;
-    expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
+    util.testFunction(code).setTsHeader(header).expectToMatchJsResult();
 });
 
 test("noSelfInFile works when first statement has other annotations", () => {
@@ -30,20 +30,21 @@ test("noSelfInFile works when first statement has other annotations", () => {
 test.each(["(this: void, s: string) => string", "(this: any, s: string) => string", "(s: string) => string"])(
     "Function expression type inference in binary operator (%p)",
     funcType => {
-        const header = `declare const undefinedFunc: ${funcType};`;
-        const code = `
-        let func: ${funcType} = s => s;
-        func = undefinedFunc || (s => s);
-        return func("foo");
-    `;
-        expect(util.transpileAndExecute(code, undefined, undefined, header)).toBe("foo");
+        const header = `let undefinedFunc: (${funcType}) | undefined;`;
+        util.testFunction`
+            let func: ${funcType} = s => s;
+            func = undefinedFunc || (s => s);
+            return func("foo");
+        `
+            .setTsHeader(header)
+            .expectToMatchJsResult();
     }
 );
 
 test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { return s; })"])(
     "Function expression type inference in class (%p)",
     funcExp => {
-        const code = `
+        util.testFunction`
             class Foo {
                 func: (this: void, s: string) => string = ${funcExp};
                 method: (s: string) => string = ${funcExp};
@@ -52,8 +53,7 @@ test.each(["s => s", "(s => s)", "function(s) { return s; }", "(function(s) { re
             }
             const foo = new Foo();
             return foo.func("a") + foo.method("b") + Foo.staticFunc("c") + Foo.staticMethod("d");
-        `;
-        expect(util.transpileAndExecute(code)).toBe("abcd");
+        `.expectToMatchJsResult();
     }
 );
 
@@ -67,23 +67,21 @@ test.each([
     { assignTo: "let foo: Foo; foo", funcExp: "function(s) { return s; }" },
     { assignTo: "let foo: Foo; foo", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in object literal (%p)", ({ assignTo, funcExp }) => {
-    const code = `
+    util.testFunction`
         interface Foo {
             func(this: void, s: string): string;
             method(this: this, s: string): string;
         }
         ${assignTo} = {func: ${funcExp}, method: ${funcExp}};
         return foo.method("foo") + foo.func("bar");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test("Function expression type inference in object literal assigned to narrower type", () => {
-    const code = `
+    util.testFunction`
         let foo: {} = {bar: s => s};
         return (foo as {bar: (a: any) => any}).bar("foobar");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -96,14 +94,13 @@ test.each([
     { assignTo: "let foo: Foo; foo", funcExp: "function(s) { return s; }" },
     { assignTo: "let foo: Foo; foo", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in object literal (generic key) (%p)", ({ assignTo, funcExp }) => {
-    const code = `
-            interface Foo {
-                [f: string]: (this: void, s: string) => string;
-            }
-            ${assignTo} = {func: ${funcExp}};
-            return foo.func("foo");
-        `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    util.testFunction`
+        interface Foo {
+            [f: string]: (this: void, s: string) => string;
+        }
+        ${assignTo} = {func: ${funcExp}};
+        return foo.func("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -204,7 +201,7 @@ test.each([
         funcExp: "(function(s) { return s; })",
     },
 ])("Function expression type inference in tuple (%p)", ({ assignTo, func, method, funcExp }) => {
-    const code = `
+    util.testFunction`
         interface Foo {
             method(s: string): string;
         }
@@ -217,8 +214,7 @@ test.each([
         ${assignTo} = [${funcExp}, ${funcExp}];
         const foo: Foo = {method: ${method}};
         return foo.method("foo") + ${func}("bar");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foobar");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -239,7 +235,7 @@ test.each([
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "function(s) { return s; }" },
     { assignTo: "let meth: Method; [meth]", method: "meth", funcExp: "(function(s) { return s; })" },
 ])("Function expression type inference in array (%p)", ({ assignTo, method, funcExp }) => {
-    const code = `
+    util.testFunction`
         interface Foo {
             method(s: string): string;
         }
@@ -249,8 +245,7 @@ test.each([
         ${assignTo} = [${funcExp}];
         const foo: Foo = {method: ${method}};
         return foo.method("foo");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -261,12 +256,11 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in union (%p)", ({ funcType, funcExp }) => {
-    const code = `
+    util.testFunction`
         type U = string | number | (${funcType});
         const u: U = ${funcExp};
         return (u as ${funcType})("foo");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -277,12 +271,11 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in union tuple (%p)", ({ funcType, funcExp }) => {
-    const code = `
+    util.testFunction`
         interface I { callback: ${funcType}; }
         let a: I[] | number = [{ callback: ${funcExp} }];
         return a[0].callback("foo");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -293,11 +286,10 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in as cast (%p)", ({ funcType, funcExp }) => {
-    const code = `
+    util.testFunction`
         const fn: ${funcType} = (${funcExp}) as (${funcType});
         return fn("foo");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -308,11 +300,10 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in type assertion (%p)", ({ funcType, funcExp }) => {
-    const code = `
+    util.testFunction`
         const fn: ${funcType} = <${funcType}>(${funcExp});
         return fn("foo");
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });
 
 test.each([
@@ -323,13 +314,12 @@ test.each([
     { funcType: "(this: any, s: string) => string", funcExp: "function(s) { return s; }" },
     { funcType: "(s: string) => string", funcExp: "function(s) { return s; }" },
 ])("Function expression type inference in constructor (%p)", ({ funcType, funcExp }) => {
-    const code = `
+    util.testFunction`
         class C {
             result: string;
             constructor(fn: ${funcType}) { this.result = fn("foo"); }
         }
         const c = new C(${funcExp});
         return c.result;
-    `;
-    expect(util.transpileAndExecute(code)).toBe("foo");
+    `.expectToMatchJsResult();
 });

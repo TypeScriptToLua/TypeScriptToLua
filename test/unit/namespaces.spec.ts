@@ -11,14 +11,9 @@ test("legacy internal module syntax", () => {
 });
 
 test("global scoping", () => {
-    const result = util.transpileAndExecute(
-        "return a.foo();",
-        undefined,
-        undefined,
-        'namespace a { export function foo() { return "bar"; } }'
-    );
-
-    expect(result).toBe("bar");
+    util.testFunction("return a.foo();")
+        .setTsHeader('namespace a { export function foo() { return "bar"; } }')
+        .expectToMatchJsResult();
 });
 
 test("nested namespace", () => {
@@ -94,7 +89,7 @@ test("namespace merging across files", () => {
         }
     `;
 
-    util.testBundle`
+    util.testModule`
         import './a';
         import './b';
 
@@ -102,7 +97,7 @@ test("namespace merging across files", () => {
     `
         .addExtraFile("a.ts", a)
         .addExtraFile("b.ts", b)
-        .expectToEqual({ result: { foo: "foo", bar: "bar" } });
+        .expectToMatchJsResult();
 });
 
 test("declared namespace function call", () => {

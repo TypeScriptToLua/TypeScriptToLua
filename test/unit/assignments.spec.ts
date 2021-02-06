@@ -12,7 +12,8 @@ test.each(["const", "let"])("%s declaration not top-level is not global", declar
 });
 
 test.each(["const", "let"])("top-level %s declaration is global", declarationKind => {
-    util.testBundle`
+    // Can't be tested with expectToMatchJsResult because in JS that would not be global
+    util.testModule`
         import './a';
         export const result = foo;
     `

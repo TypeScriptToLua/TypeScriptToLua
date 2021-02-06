@@ -19,9 +19,12 @@ test("CustomCreate", () => {
         }
     `;
 
-    const result = util.transpileAndExecute("return new Point2D(1, 2).x;", undefined, luaHeader, tsHeader);
-
-    expect(result).toBe(1);
+    // Can't use expectToMatchJsResult because above is not valid TS/JS
+    util.testModule`export default new Point2D(1, 2).x;`
+        .setTsHeader(tsHeader)
+        .setLuaHeader(luaHeader)
+        .setReturnExport("default")
+        .expectToEqual(1);
 });
 
 test("IncorrectUsage", () => {

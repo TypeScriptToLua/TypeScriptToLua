@@ -5,5 +5,6 @@ function __TS__StringIncludes(this: string, searchString: string, position?: num
     } else {
         position += 1;
     }
-    return string.find(this, searchString, position, true) !== undefined;
+    const [index] = string.find(this, searchString, position, true);
+    return index !== undefined;
 }

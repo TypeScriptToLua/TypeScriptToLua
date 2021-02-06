@@ -9,6 +9,7 @@ import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
+import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
 
 export function transformArrayBindingElement(
@@ -172,8 +173,8 @@ export function transformBindingVariableDeclaration(
             : lua.createAnonymousIdentifier();
 
     if (initializer) {
-        if (isTupleReturnCall(context, initializer)) {
-            // Don't unpack @tupleReturn annotated functions
+        if (isTupleReturnCall(context, initializer) || isMultiReturnCall(context, initializer)) {
+            // Don't unpack @tupleReturn or LuaMultiReturn functions
             statements.push(
                 ...createLocalOrExportedOrGlobalDeclaration(
                     context,

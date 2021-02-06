@@ -1,12 +1,7 @@
 import * as path from "path";
 import * as util from "../../util";
 import * as tstl from "../../../src";
-import {
-    invalidMultiFunctionUse,
-    invalidMultiTypeToNonArrayBindingPattern,
-    invalidMultiTypeArrayBindingPatternElementInitializer,
-    invalidMultiReturnAccess,
-} from "../../../src/transformation/utils/diagnostics";
+import { invalidMultiFunctionUse, invalidMultiReturnAccess } from "../../../src/transformation/utils/diagnostics";
 
 const multiProjectOptions: tstl.CompilerOptions = {
     types: [path.resolve(__dirname, "../../../language-extensions")],
@@ -82,10 +77,10 @@ test.each<[string, number[]]>([
     ["$multi", [invalidMultiFunctionUse.code]],
     ["$multi()", [invalidMultiFunctionUse.code]],
     ["({ $multi });", [invalidMultiFunctionUse.code]],
-    ["const a = $multi();", [invalidMultiTypeToNonArrayBindingPattern.code]],
-    ["const {} = $multi();", [invalidMultiTypeToNonArrayBindingPattern.code]],
+    ["const a = $multi();", [invalidMultiFunctionUse.code]],
+    ["const {} = $multi();", [invalidMultiFunctionUse.code]],
     ["([a] = $multi(1)) => {}", [invalidMultiFunctionUse.code]],
-    ["const [a = 0] = $multi()", [invalidMultiTypeArrayBindingPatternElementInitializer.code]],
+    ["const [a = 0] = $multi()", [invalidMultiFunctionUse.code]],
 ])("invalid $multi call (%s)", (statement, diagnostics) => {
     util.testModule`
         ${statement}
@@ -128,7 +123,7 @@ test("allow $multi call in ArrowFunction body", () => {
         .expectToEqual(1);
 });
 
-test.each(["0", "i"])("allow LuaMultiReturn numeric access", expression => {
+test.each(["0", "i"])("allow LuaMultiReturn numeric access (%s)", expression => {
     util.testFunction`
         ${multiFunction}
         const i = 0;

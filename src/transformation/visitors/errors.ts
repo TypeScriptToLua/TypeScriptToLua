@@ -89,7 +89,7 @@ export const transformTryStatement: FunctionVisitor<ts.TryStatement> = (statemen
             returnValues.push(lua.createBooleanLiteral(true));
         }
 
-        if (isInTupleReturnFunction(context, statement) || isInMultiReturnFunction(statement)) {
+        if (isInTupleReturnFunction(context, statement) || isInMultiReturnFunction(context, statement)) {
             returnValues.push(createUnpackCall(context, lua.cloneIdentifier(returnValueIdentifier)));
         } else {
             returnValues.push(lua.cloneIdentifier(returnValueIdentifier));

@@ -146,30 +146,14 @@ export const invalidMultiFunctionUse = createErrorDiagnosticFactory(
     "The $multi function must be called in an expression that is returned."
 );
 
-export const invalidMultiTypeToNonArrayBindingPattern = createErrorDiagnosticFactory(
-    "Expected an array destructuring pattern."
-);
-
 export const invalidMultiTypeToNonArrayLiteral = createErrorDiagnosticFactory("Expected an array literal.");
 
 export const invalidMultiTypeToEmptyPatternOrArrayLiteral = createErrorDiagnosticFactory(
     "There must be one or more elements specified here."
 );
 
-export const invalidMultiTypeArrayBindingPatternElementInitializer = createErrorDiagnosticFactory(
-    "This array binding pattern cannot have initializers."
-);
-
-export const invalidMultiTypeArrayLiteralElementInitializer = createErrorDiagnosticFactory(
-    "This array literal pattern cannot have initializers."
-);
-
 export const invalidMultiReturnAccess = createErrorDiagnosticFactory(
     "The LuaMultiReturn type can only be accessed via an element access expression of a numeric type."
-);
-
-export const unsupportedMultiFunctionAssignment = createErrorDiagnosticFactory(
-    "Omitted expressions and BindingElements are expected here."
 );
 
 export const invalidOperatorMappingUse = createErrorDiagnosticFactory(

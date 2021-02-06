@@ -1,9 +1,7 @@
 import * as ts from "typescript";
 import * as extensions from "../../utils/language-extensions";
 import { TransformationContext } from "../../context";
-import {
-    invalidMultiFunctionUse,
-} from "../../utils/diagnostics";
+import { invalidMultiFunctionUse } from "../../utils/diagnostics";
 import { findFirstNodeAbove } from "../../utils/typescript";
 
 const isMultiFunctionDeclaration = (declaration: ts.Declaration): boolean =>
@@ -22,14 +20,22 @@ export function returnsMultiType(context: TransformationContext, node: ts.CallEx
     return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
 }
 
+export function isMultiReturnCall(context: TransformationContext, expression: ts.Expression) {
+    return ts.isCallExpression(expression) && returnsMultiType(context, expression);
+}
+
 export function isMultiFunctionNode(context: TransformationContext, node: ts.Node): boolean {
     const type = context.checker.getTypeAtLocation(node);
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }
 
-export function isInMultiReturnFunction(node: ts.Node) {
-    const declaration = findFirstNodeAbove(node, ts.isFunctionDeclaration)
-    return declaration ? isMultiFunctionDeclaration(declaration) : false;
+export function isInMultiReturnFunction(context: TransformationContext, node: ts.Node) {
+    const declaration = findFirstNodeAbove(node, ts.isFunctionLike);
+    if (!declaration) {
+        return false;
+    }
+    const signature = context.checker.getSignatureFromDeclaration(declaration);
+    return signature?.getReturnType().aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
 }
 
 export function multiReturnCallShouldBeWrapped(context: TransformationContext, node: ts.CallExpression) {
@@ -43,7 +49,11 @@ export function multiReturnCallShouldBeWrapped(context: TransformationContext, n
     }
 
     // Variable assignment with destructuring
-    if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken && ts.isArrayLiteralExpression(node.parent.left)) {
+    if (
+        ts.isBinaryExpression(node.parent) &&
+        node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        ts.isArrayLiteralExpression(node.parent.left)
+    ) {
         return false;
     }
 
@@ -58,7 +68,15 @@ export function multiReturnCallShouldBeWrapped(context: TransformationContext, n
     }
 
     // Forwarded multi-return call
-    if (ts.isReturnStatement(node.parent) && isInMultiReturnFunction(node.parent)) {
+    if (
+        (ts.isReturnStatement(node.parent) || ts.isArrowFunction(node.parent)) && // Body-less arrow func
+        isInMultiReturnFunction(context, node)
+    ) {
+        return false;
+    }
+
+    // Element access expression 'foo()[0]' will be optimized using 'select'
+    if (ts.isElementAccessExpression(node.parent)) {
         return false;
     }
 

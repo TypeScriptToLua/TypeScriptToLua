@@ -10,7 +10,7 @@ import { transformArguments } from "./call";
 import {
     returnsMultiType,
     multiReturnCallShouldBeWrapped,
-    isMultiFunction,
+    isMultiFunctionCall,
     isMultiReturnType,
 } from "./language-extensions/multi";
 import { invalidMultiFunctionReturnType } from "../utils/diagnostics";
@@ -22,7 +22,7 @@ function transformExpressionsInReturn(
 ): lua.Expression[] {
     if (ts.isCallExpression(node)) {
         // $multi(...)
-        if (isMultiFunction(context, node)) {
+        if (isMultiFunctionCall(context, node)) {
             // Don't allow $multi to be implicitly cast to something other than LuaMultiReturn
             const type = context.checker.getContextualType(node);
             if (type && !isMultiReturnType(type)) {

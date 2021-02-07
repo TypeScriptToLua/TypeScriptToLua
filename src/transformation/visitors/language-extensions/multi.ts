@@ -14,7 +14,7 @@ export function isMultiReturnType(type: ts.Type): boolean {
     return type.aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
 }
 
-export function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {
+export function isMultiFunctionCall(context: TransformationContext, expression: ts.CallExpression): boolean {
     const type = context.checker.getTypeAtLocation(expression.expression);
     return type.symbol?.declarations?.some(isMultiFunctionDeclaration) ?? false;
 }

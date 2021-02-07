@@ -4,6 +4,7 @@ import * as path from "path";
 export enum ExtensionKind {
     MultiFunction = "MultiFunction",
     MultiType = "MultiType",
+    RangeFunction = "RangeFunction",
     AdditionOperatorType = "AdditionOperatorType",
     AdditionOperatorMethodType = "AdditionOperatorMethodType",
     SubtractionOperatorType = "SubtractionOperatorType",
@@ -41,6 +42,11 @@ export enum ExtensionKind {
     LengthOperatorType = "LengthOperatorType",
     LengthOperatorMethodType = "LengthOperatorMethodType",
 }
+
+const functionNameToExtensionKind: { [name: string]: ExtensionKind } = {
+    $multi: ExtensionKind.MultiFunction,
+    $range: ExtensionKind.RangeFunction,
+};
 
 const typeNameToExtensionKind: { [name: string]: ExtensionKind } = {
     MultiReturn: ExtensionKind.MultiType,
@@ -91,8 +97,11 @@ function isSourceFileFromLanguageExtensions(sourceFile: ts.SourceFile): boolean 
 export function getExtensionKind(declaration: ts.Declaration): ExtensionKind | undefined {
     const sourceFile = declaration.getSourceFile();
     if (isSourceFileFromLanguageExtensions(sourceFile)) {
-        if (ts.isFunctionDeclaration(declaration) && declaration?.name?.text === "$multi") {
-            return ExtensionKind.MultiFunction;
+        if (ts.isFunctionDeclaration(declaration) && declaration.name?.text) {
+            const extensionKind = functionNameToExtensionKind[declaration.name.text];
+            if (extensionKind) {
+                return extensionKind;
+            }
         }
 
         if (ts.isTypeAliasDeclaration(declaration)) {

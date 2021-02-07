@@ -8,6 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
+import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformArrayBindingElement } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformForInitializer, transformLoopBody } from "./utils";
 
@@ -149,7 +150,9 @@ function transformForOfIteratorStatement(
 export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {
     const body = lua.createBlock(transformLoopBody(context, node));
 
-    if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
+    if (ts.isCallExpression(node.expression) && isRangeFunction(context, node.expression)) {
+        return transformRangeStatement(context, node, body);
+    } else if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
         return transformForRangeStatement(context, node, body);
     } else if (isLuaIteratorType(context, node.expression)) {
         return transformForOfLuaIteratorStatement(context, node, body);

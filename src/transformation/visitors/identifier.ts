@@ -3,13 +3,19 @@ import * as lua from "../../LuaAST";
 import { transformBuiltinIdentifierExpression } from "../builtins";
 import { FunctionVisitor, TransformationContext } from "../context";
 import { isForRangeType } from "../utils/annotations";
-import { invalidForRangeCall, invalidMultiFunctionUse, invalidOperatorMappingUse } from "../utils/diagnostics";
+import {
+    invalidForRangeCall,
+    invalidMultiFunctionUse,
+    invalidOperatorMappingUse,
+    invalidRangeUse,
+} from "../utils/diagnostics";
 import { createExportedIdentifier, getSymbolExportScope } from "../utils/export";
 import { createSafeName, hasUnsafeIdentifierName } from "../utils/safe-names";
 import { getIdentifierSymbolId } from "../utils/symbols";
 import { findFirstNodeAbove } from "../utils/typescript";
 import { isMultiFunctionNode } from "./language-extensions/multi";
 import { isOperatorMapping } from "./language-extensions/operators";
+import { isRangeFunctionNode } from "./language-extensions/range";
 
 export function transformIdentifier(context: TransformationContext, identifier: ts.Identifier): lua.Identifier {
     if (isMultiFunctionNode(context, identifier)) {
@@ -19,6 +25,11 @@ export function transformIdentifier(context: TransformationContext, identifier: 
 
     if (isOperatorMapping(context, identifier)) {
         context.diagnostics.push(invalidOperatorMappingUse(identifier));
+    }
+
+    if (isRangeFunctionNode(context, identifier)) {
+        context.diagnostics.push(invalidRangeUse(identifier));
+        return lua.createAnonymousIdentifier(identifier);
     }
 
     if (isForRangeType(context, identifier)) {

@@ -86,6 +86,14 @@ export const invalidForRangeCall = createErrorDiagnosticFactory(
     (message: string) => `Invalid @forRange call: ${message}.`
 );
 
+export const invalidRangeUse = createErrorDiagnosticFactory(
+    "$range can only be used as a single expression in a for...of loop."
+);
+
+export const invalidRangeControlVariable = createErrorDiagnosticFactory(
+    "For loop using $range must declare a single control variable."
+);
+
 export const luaTableMustBeAmbient = createErrorDiagnosticFactory(
     "Classes with the '@luaTable' annotation must be ambient."
 );

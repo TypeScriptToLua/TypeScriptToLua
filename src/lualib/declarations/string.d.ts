@@ -19,5 +19,5 @@ declare namespace string {
         pattern: string,
         start?: number,
         plainflag?: boolean
-    ): LuaMultiReturn<[number, number]> | undefined;
+    ): LuaMultiReturn<[number, number] | [undefined]>;
 }

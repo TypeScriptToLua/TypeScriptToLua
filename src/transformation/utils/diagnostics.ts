@@ -86,9 +86,7 @@ export const invalidForRangeCall = createErrorDiagnosticFactory(
     (message: string) => `Invalid @forRange call: ${message}.`
 );
 
-export const invalidRangeUse = createErrorDiagnosticFactory(
-    "$range can only be used as a single expression in a for...of loop."
-);
+export const invalidRangeUse = createErrorDiagnosticFactory("$range can only be used in a for...of loop.");
 
 export const invalidRangeControlVariable = createErrorDiagnosticFactory(
     "For loop using $range must declare a single control variable."

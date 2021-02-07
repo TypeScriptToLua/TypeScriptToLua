@@ -2,7 +2,7 @@ declare function $multi<T extends any[]>(...values: T): MultiReturn<T>;
 declare type MultiReturn<T extends any[]> = T & { readonly " __multiBrand": unique symbol };
 
 /**
- * Creates a Lua-style numeric for loop when used in for...of. Not valid in any other context.
+ * Creates a Lua-style numeric for loop (for i=start,limit,step) when used in for...of. Not valid in any other context.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *
  * @param start The first number in the sequence to iterate over.

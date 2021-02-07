@@ -53,16 +53,16 @@ test("$range invalid control variable", () => {
 });
 
 test.each([
-    "for (const i in $range(1, 10, 2)) {}",
-    "const x = $range(1, 10);",
-    "const range = $range;",
-    "const y = [...$range(1, 10)];",
-    "for (const i of ($range(1, 10, 2))) {}",
-    "for (const i of $range(1, 10, 2) as number[]) {}",
-])("$range invalid use", statement => {
+    ["for (const i in $range(1, 10, 2)) {}", [invalidRangeUse.code]],
+    ["const x = $range(1, 10);", [invalidRangeUse.code]],
+    ["const range = $range;", [invalidRangeUse.code, invalidRangeUse.code]],
+    ["const y = [...$range(1, 10)];", [invalidRangeUse.code]],
+    ["for (const i of ($range(1, 10, 2))) {}", [invalidRangeUse.code]],
+    ["for (const i of $range(1, 10, 2) as number[]) {}", [invalidRangeUse.code]],
+])("$range invalid use (%p)", (statement, codes) => {
     util.testFunction`
 		${statement}
 	`
         .setOptions(rangeProjectOptions)
-        .expectDiagnosticsToMatchSnapshot([invalidRangeUse.code]);
+        .expectDiagnosticsToMatchSnapshot(codes);
 });

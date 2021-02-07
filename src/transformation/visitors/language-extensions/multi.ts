@@ -11,11 +11,7 @@ const isMultiTypeDeclaration = (declaration: ts.Declaration): boolean =>
     extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiType;
 
 export function isMultiReturnType(type: ts.Type): boolean {
-    return (
-        (type.symbol?.declarations?.some(isMultiTypeDeclaration) ||
-            type.aliasSymbol?.declarations?.some(isMultiTypeDeclaration)) ??
-        false
-    );
+    return type.aliasSymbol?.declarations?.some(isMultiTypeDeclaration) ?? false;
 }
 
 export function isMultiFunction(context: TransformationContext, expression: ts.CallExpression): boolean {

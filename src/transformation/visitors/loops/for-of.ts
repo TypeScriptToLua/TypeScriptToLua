@@ -3,7 +3,7 @@ import * as lua from "../../../LuaAST";
 import { assert, cast } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import { invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
+import { annotationDeprecated, invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
@@ -18,6 +18,8 @@ function transformForRangeStatement(
     block: lua.Block
 ): lua.Statement {
     assert(ts.isCallExpression(statement.expression));
+
+    context.diagnostics.push(annotationDeprecated(statement.expression, AnnotationKind.ForRange));
 
     const callArguments = statement.expression.arguments;
     if (callArguments.length !== 2 && callArguments.length !== 3) {

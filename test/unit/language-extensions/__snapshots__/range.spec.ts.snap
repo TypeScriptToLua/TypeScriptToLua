@@ -10,7 +10,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid control variable: diagnostics 1`] = `"main.ts(3,8): error TSTL: For loop using $range must declare a single control variable."`;
+exports[`$range invalid control variable: diagnostics 1`] = `"main.ts(3,14): error TSTL: For loop using $range must declare a single control variable."`;
 
 exports[`$range invalid use ("const range = $range;"): code 1`] = `
 "local ____exports = {}
@@ -20,7 +20,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("const range = $range;"): diagnostics 1`] = `"main.ts(2,17): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("const range = $range;"): diagnostics 1`] = `"main.ts(2,23): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("const x = $range(1, 10);"): code 1`] = `
 "local ____exports = {}
@@ -30,7 +30,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("const x = $range(1, 10);"): diagnostics 1`] = `"main.ts(2,13): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("const x = $range(1, 10);"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("const y = [...$range(1, 10)];"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -45,7 +45,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("const y = [...$range(1, 10)];"): diagnostics 1`] = `"main.ts(2,17): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("const y = [...$range(1, 10)];"): diagnostics 1`] = `"main.ts(2,23): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("for (const i in $range(1, 10, 2)) {}"): code 1`] = `
 "local ____exports = {}
@@ -58,7 +58,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("for (const i in $range(1, 10, 2)) {}"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("for (const i in $range(1, 10, 2)) {}"): diagnostics 1`] = `"main.ts(2,25): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("for (const i of $range(1, 10, 2) as number[]) {}"): code 1`] = `
 "local ____exports = {}
@@ -71,7 +71,7 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("for (const i of $range(1, 10, 2) as number[]) {}"): diagnostics 1`] = `"main.ts(2,19): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("for (const i of $range(1, 10, 2) as number[]) {}"): diagnostics 1`] = `"main.ts(2,25): error TSTL: $range can only be used in a for...of loop."`;
 
 exports[`$range invalid use ("for (const i of ($range(1, 10, 2))) {}"): code 1`] = `
 "require(\\"lualib_bundle\\");
@@ -85,4 +85,4 @@ end
 return ____exports"
 `;
 
-exports[`$range invalid use ("for (const i of ($range(1, 10, 2))) {}"): diagnostics 1`] = `"main.ts(2,20): error TSTL: $range can only be used in a for...of loop."`;
+exports[`$range invalid use ("for (const i of ($range(1, 10, 2))) {}"): diagnostics 1`] = `"main.ts(2,26): error TSTL: $range can only be used in a for...of loop."`;

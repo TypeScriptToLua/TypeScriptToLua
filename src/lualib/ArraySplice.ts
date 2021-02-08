@@ -66,7 +66,7 @@ function __TS__ArraySplice<T>(this: void, list: T[], ...args: Vararg<unknown[]>)
     }
 
     let j = actualStart;
-    for (const i of forRange(3, actualArgumentCount)) {
+    for (const i of $range(3, actualArgumentCount)) {
         list[j] = select(i, ...args) as T;
         j++;
     }

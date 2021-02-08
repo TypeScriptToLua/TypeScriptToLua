@@ -11,7 +11,7 @@ import { isValidLuaIdentifier } from "../utils/safe-names";
 import { isArrayType, isExpressionWithEvaluationEffect, isInDestructingAssignment } from "../utils/typescript";
 import { transformElementAccessArgument } from "./access";
 import { transformLuaTableCallExpression } from "./lua-table";
-import { multiReturnCallShouldBeWrapped, returnsMultiType } from "./language-extensions/multi";
+import { shouldMultiReturnCallBeWrapped, returnsMultiType } from "./language-extensions/multi";
 import { isOperatorMapping, transformOperatorMappingExpression } from "./language-extensions/operators";
 
 export type PropertyCallExpression = ts.CallExpression & { expression: ts.PropertyAccessExpression };
@@ -203,7 +203,7 @@ export const transformCallExpression: FunctionVisitor<ts.CallExpression> = (node
     const returnValueIsUsed = node.parent && !ts.isExpressionStatement(node.parent);
     const wrapTupleReturn =
         isTupleReturn && !isTupleReturnForward && !isInDestructingAssignment(node) && !isInSpread && returnValueIsUsed;
-    const wrapResult = wrapTupleReturn || multiReturnCallShouldBeWrapped(context, node);
+    const wrapResult = wrapTupleReturn || shouldMultiReturnCallBeWrapped(context, node);
 
     const builtinResult = transformBuiltinCallExpression(context, node);
     if (builtinResult) {

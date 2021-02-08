@@ -44,7 +44,7 @@ export function isInMultiReturnFunction(context: TransformationContext, node: ts
     return type ? isMultiReturnType(type) : false;
 }
 
-export function multiReturnCallShouldBeWrapped(context: TransformationContext, node: ts.CallExpression) {
+export function shouldMultiReturnCallBeWrapped(context: TransformationContext, node: ts.CallExpression) {
     if (!returnsMultiType(context, node)) {
         return false;
     }

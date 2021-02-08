@@ -9,7 +9,7 @@ import { isArrayType } from "../utils/typescript";
 import { transformArguments } from "./call";
 import {
     returnsMultiType,
-    multiReturnCallShouldBeWrapped,
+    shouldMultiReturnCallBeWrapped,
     isMultiFunctionCall,
     isMultiReturnType,
 } from "./language-extensions/multi";
@@ -37,7 +37,7 @@ function transformExpressionsInReturn(
         }
 
         // Force-wrap LuaMultiReturn when returning inside try/catch
-        if (insideTryCatch && returnsMultiType(context, node) && !multiReturnCallShouldBeWrapped(context, node)) {
+        if (insideTryCatch && returnsMultiType(context, node) && !shouldMultiReturnCallBeWrapped(context, node)) {
             return [wrapInTable(context.transformExpression(node))];
         }
     }

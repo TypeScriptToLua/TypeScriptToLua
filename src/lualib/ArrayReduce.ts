@@ -20,7 +20,7 @@ function __TS__ArrayReduce<T>(
         throw "Reduce of empty array with no initial value";
     }
 
-    for (const i of forRange(k, len - 1)) {
+    for (const i of $range(k, len - 1)) {
         accumulator = callbackFn(accumulator, arr[i], i, arr);
     }
 

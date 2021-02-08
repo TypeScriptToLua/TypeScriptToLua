@@ -3,11 +3,12 @@ import * as lua from "../../../LuaAST";
 import { assert, cast } from "../../../utils";
 import { FunctionVisitor, TransformationContext } from "../../context";
 import { AnnotationKind, getTypeAnnotations, isForRangeType, isLuaIteratorType } from "../../utils/annotations";
-import { invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
+import { annotationDeprecated, invalidForRangeCall, luaIteratorForbiddenUsage } from "../../utils/diagnostics";
 import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
+import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformArrayBindingElement } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformForInitializer, transformLoopBody } from "./utils";
 
@@ -17,6 +18,8 @@ function transformForRangeStatement(
     block: lua.Block
 ): lua.Statement {
     assert(ts.isCallExpression(statement.expression));
+
+    context.diagnostics.push(annotationDeprecated(statement.expression, AnnotationKind.ForRange));
 
     const callArguments = statement.expression.arguments;
     if (callArguments.length !== 2 && callArguments.length !== 3) {
@@ -149,7 +152,9 @@ function transformForOfIteratorStatement(
 export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node, context) => {
     const body = lua.createBlock(transformLoopBody(context, node));
 
-    if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
+    if (ts.isCallExpression(node.expression) && isRangeFunction(context, node.expression)) {
+        return transformRangeStatement(context, node, body);
+    } else if (ts.isCallExpression(node.expression) && isForRangeType(context, node.expression.expression)) {
         return transformForRangeStatement(context, node, body);
     } else if (isLuaIteratorType(context, node.expression)) {
         return transformForOfLuaIteratorStatement(context, node, body);

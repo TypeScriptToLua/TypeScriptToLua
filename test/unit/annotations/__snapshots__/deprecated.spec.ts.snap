@@ -8,6 +8,13 @@ exports[`extension deprecation: diagnostics 1`] = `"main.ts(4,9): warning TSTL: 
 
 exports[`extension deprecation: diagnostics 2`] = `"main.ts(4,9): warning TSTL: '@metaExtension' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#metaextension for more information."`;
 
+exports[`forRange deprecation: code 1`] = `
+"for i = 1, 10 do
+end"
+`;
+
+exports[`forRange deprecation: diagnostics 1`] = `"main.ts(4,25): warning TSTL: '@forRange' is deprecated and will be removed in a future update. Please update your code before upgrading to the next release, otherwise your project will no longer compile. See https://typescripttolua.github.io/docs/advanced/compiler-annotations#forrange for more information."`;
+
 exports[`phantom deprecation: code 1`] = `
 "function nsMember(self)
 end"

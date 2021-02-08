@@ -15,7 +15,6 @@ import {
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { peekScope, performHoisting, popScope, pushScope, Scope, ScopeType } from "../utils/scope";
 import { transformIdentifier } from "./identifier";
-import { isMultiFunction, transformMultiCallExpressionToReturnStatement } from "./language-extensions/multi";
 import { transformExpressionBodyToReturnStatement } from "./return";
 import { transformBindingPattern } from "./variable-declaration";
 
@@ -56,10 +55,6 @@ function isRestParameterReferenced(context: TransformationContext, identifier: l
 
 export function transformFunctionBodyContent(context: TransformationContext, body: ts.ConciseBody): lua.Statement[] {
     if (!ts.isBlock(body)) {
-        if (ts.isCallExpression(body) && isMultiFunction(context, body)) {
-            return [transformMultiCallExpressionToReturnStatement(context, body)];
-        }
-
         const returnStatement = transformExpressionBodyToReturnStatement(context, body);
         return [returnStatement];
     }

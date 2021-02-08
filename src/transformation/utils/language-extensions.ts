@@ -49,7 +49,7 @@ const functionNameToExtensionKind: { [name: string]: ExtensionKind } = {
 };
 
 const typeNameToExtensionKind: { [name: string]: ExtensionKind } = {
-    MultiReturn: ExtensionKind.MultiType,
+    LuaMultiReturn: ExtensionKind.MultiType,
     LuaAddition: ExtensionKind.AdditionOperatorType,
     LuaAdditionMethod: ExtensionKind.AdditionOperatorMethodType,
     LuaSubtraction: ExtensionKind.SubtractionOperatorType,

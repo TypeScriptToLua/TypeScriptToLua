@@ -1,5 +1,19 @@
-declare function $multi<T extends any[]>(...values: T): MultiReturn<T>;
-declare type MultiReturn<T extends any[]> = T & { readonly " __multiBrand": unique symbol };
+/**
+ * Returns multiple values from a function, by wrapping them in a LuaMultiReturn tuple.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param T A tuple type with each element type representing a return value's type.
+ * @param values Return values.
+ */
+declare function $multi<T extends any[]>(...values: T): LuaMultiReturn<T>;
+
+/**
+ * Represents multiple return values as a tuple.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param T A tuple type with each element type representing a return value's type.
+ */
+declare type LuaMultiReturn<T extends any[]> = T & { readonly __luaMultiReturnBrand: unique symbol };
 
 /**
  * Creates a Lua-style numeric for loop (for i=start,limit,step) when used in for...of. Not valid in any other context.

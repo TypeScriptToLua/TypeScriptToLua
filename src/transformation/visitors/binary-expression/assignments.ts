@@ -11,6 +11,7 @@ import { isArrayType, isDestructuringAssignment } from "../../utils/typescript";
 import { transformElementAccessArgument } from "../access";
 import { transformLuaTablePropertyAccessInAssignment } from "../lua-table";
 import { isArrayLength, transformDestructuringAssignment } from "./destructuring-assignments";
+import { isMultiReturnCall } from "../language-extensions/multi";
 
 export function transformAssignmentLeftHandSideExpression(
     context: TransformationContext,
@@ -91,7 +92,7 @@ export function transformAssignmentExpression(
         const rootIdentifier = lua.createAnonymousIdentifier(expression.left);
 
         let right = context.transformExpression(expression.right);
-        if (isTupleReturnCall(context, expression.right)) {
+        if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
             right = wrapInTable(right);
         }
 
@@ -184,7 +185,10 @@ export function transformAssignmentStatement(
             const rightType = context.checker.getTypeAtLocation(expression.right);
             let right = context.transformExpression(expression.right);
 
-            if (!isTupleReturnCall(context, expression.right) && isArrayType(context, rightType)) {
+            if (
+                !(isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) &&
+                isArrayType(context, rightType)
+            ) {
                 right = createUnpackCall(context, right, expression.right);
             }
 
@@ -194,7 +198,7 @@ export function transformAssignmentStatement(
         }
 
         let right = context.transformExpression(expression.right);
-        if (isTupleReturnCall(context, expression.right)) {
+        if (isTupleReturnCall(context, expression.right) || isMultiReturnCall(context, expression.right)) {
             right = wrapInTable(right);
         }
 

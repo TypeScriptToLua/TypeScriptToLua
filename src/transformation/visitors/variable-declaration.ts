@@ -9,8 +9,8 @@ import { addExportToIdentifier } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration, createUnpackCall } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { transformIdentifier } from "./identifier";
+import { isMultiReturnCall } from "./language-extensions/multi";
 import { transformPropertyName } from "./literal";
-import { returnsMultiType, transformMultiVariableDeclaration } from "./language-extensions/multi";
 
 export function transformArrayBindingElement(
     context: TransformationContext,
@@ -173,8 +173,8 @@ export function transformBindingVariableDeclaration(
             : lua.createAnonymousIdentifier();
 
     if (initializer) {
-        if (isTupleReturnCall(context, initializer)) {
-            // Don't unpack @tupleReturn annotated functions
+        if (isTupleReturnCall(context, initializer) || isMultiReturnCall(context, initializer)) {
+            // Don't unpack @tupleReturn or LuaMultiReturn functions
             statements.push(
                 ...createLocalOrExportedOrGlobalDeclaration(
                     context,
@@ -230,14 +230,6 @@ export function transformVariableDeclaration(
     context: TransformationContext,
     statement: ts.VariableDeclaration
 ): lua.Statement[] {
-    if (
-        statement.initializer &&
-        ts.isCallExpression(statement.initializer) &&
-        returnsMultiType(context, statement.initializer)
-    ) {
-        return transformMultiVariableDeclaration(context, statement);
-    }
-
     if (statement.initializer && statement.type) {
         const initializerType = context.checker.getTypeAtLocation(statement.initializer);
         const varType = context.checker.getTypeFromTypeNode(statement.type);

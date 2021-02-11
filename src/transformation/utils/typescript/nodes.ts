@@ -25,11 +25,14 @@ export function isInDestructingAssignment(node: ts.Node): boolean {
     );
 }
 
-export function getNodeSymbol(context: TransformationContext, node: ts.Node): ts.Symbol | undefined {
+/**
+ * Quite hacky, avoid unless absolutely necessary!
+ */
+export function getSymbolOfNode(context: TransformationContext, node: ts.Node): ts.Symbol | undefined {
     return (node as any).symbol ?? context.checker.getSymbolAtLocation(node);
 }
 
 export function isFirstDeclaration(context: TransformationContext, node: ts.Node) {
-    const symbol = getNodeSymbol(context, node);
+    const symbol = getSymbolOfNode(context, node);
     return symbol ? symbol.valueDeclaration === node : true;
 }

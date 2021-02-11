@@ -31,7 +31,11 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
 
     if (!membersOnly && isFirstDeclaration(context, node)) {
         const name = transformIdentifier(context, node.name);
-        const table = lua.createTableExpression();
+        const table = lua.createBinaryExpression(
+            lua.cloneIdentifier(name),
+            lua.createTableExpression(),
+            lua.SyntaxKind.OrOperator
+        );
         result.push(...createLocalOrExportedOrGlobalDeclaration(context, name, table, node));
     }
 

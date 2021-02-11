@@ -237,9 +237,12 @@ export abstract class TestBuilder {
     // Actions
 
     public debug(): this {
-        const luaCode = this.getMainLuaCodeChunk().replace(/^/gm, "  ");
+        const transpiledFiles = this.getLuaResult().transpiledFiles;
+        const luaCode = transpiledFiles.map(
+            f => `[${f.sourceFiles.map(sf => sf.fileName).join(",")}]:\n${f.lua?.replace(/^/gm, "  ")}`
+        );
         const value = prettyFormat(this.getLuaExecutionResult()).replace(/^/gm, "  ");
-        console.log(`Lua Code:\n${luaCode}\n\nValue:\n${value}`);
+        console.log(`Lua Code:\n${luaCode.join("\n")}\n\nValue:\n${value}`);
         return this;
     }
 

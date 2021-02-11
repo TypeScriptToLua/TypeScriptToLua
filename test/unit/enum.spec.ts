@@ -184,3 +184,22 @@ test("enum merging with overlap", () => {
         return ${serializeEnum("TestEnum")}
     `.expectToMatchJsResult();
 });
+
+test("enum merging multiple files", () => {
+    util.testModule`
+        import "./otherfile"
+        enum TestEnum {
+            A, B
+        }
+
+        export default ${serializeEnum("TestEnum")}
+    `
+        .addExtraFile(
+            "otherfile.ts",
+            `enum TestEnum {
+                C = 3,
+                D
+            }`
+        )
+        .expectToMatchJsResult();
+});

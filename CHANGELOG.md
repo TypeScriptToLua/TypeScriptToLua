@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.38.0
+
+- **[Breaking]** Renamed `MultiReturn` to `LuaMultiReturn` to be consistent with other language extensions all starting with Lua-.
+- Fixed various bugs and issues related to `LuaMultiReturn`, including its value not correctly being wrapped in some cases.
+- Added support for indexing `LuaMultiReturn` values without destructing.
+- Added language extensions to allow translation directly to (overwritten) Lua operators like `+`,`-`,`..`. For more information see [Operator Map Types](https://typescripttolua.github.io/docs/advanced/language-extensions#operator-map-types).
+- Added language extension `$range()`. This function can be used to create numeric lua loops, for example `for (const i of $range(1, 10)) {` translates to `for i=1,10 do`. For more information see [\$range Iterator Function](https://typescripttolua.github.io/docs/advanced/language-extensions#range-iterator-function).
+- Added support for `Array.isArray`, formalizing tstl's isArray convention (**note:** Due to `[]` and `{}` being the same in Lua, `{}` - without any keys - is considered an array too.)
+- Added support for `string.prototype.includes`.
+- Added support for enum merging.
+- Fixed missing lualib dependency in `string.prototype.split`.
+- Added a not-supported diagnostic for not-yet-implemented optional chaining (`a?.b`).
+- Moved remaining legacy tests to modern testing utils, removing the legacy testing code.
+
 ## 0.37.0
 
 - **[Important]** Deprecated the @phantom, @extension, @metaExtension and @pureAbstract annotations. This is done because there are good alternatives in regular TypeScript, and this helps us simplify the transpiler. For now, using these annotations will result in a warning but they will still continue to function. A few months from now these annotations will no longer be supported, so upgrade if possible. See [Compiler Annotations](https://typescripttolua.github.io/docs/advanced/compiler-annotations) for more info.

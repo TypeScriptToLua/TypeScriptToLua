@@ -4,6 +4,7 @@ import { FunctionVisitor, TransformationContext } from "../context";
 import { AnnotationKind, getTypeAnnotations } from "../utils/annotations";
 import { getSymbolExportScope } from "../utils/export";
 import { createLocalOrExportedOrGlobalDeclaration } from "../utils/lua-ast";
+import { isFirstDeclaration } from "../utils/typescript";
 import { transformIdentifier } from "./identifier";
 import { transformPropertyName } from "./literal";
 
@@ -28,7 +29,7 @@ export const transformEnumDeclaration: FunctionVisitor<ts.EnumDeclaration> = (no
     const membersOnly = getTypeAnnotations(type).has(AnnotationKind.CompileMembersOnly);
     const result: lua.Statement[] = [];
 
-    if (!membersOnly) {
+    if (!membersOnly && isFirstDeclaration(context, node)) {
         const name = transformIdentifier(context, node.name);
         const table = lua.createTableExpression();
         result.push(...createLocalOrExportedOrGlobalDeclaration(context, name, table, node));

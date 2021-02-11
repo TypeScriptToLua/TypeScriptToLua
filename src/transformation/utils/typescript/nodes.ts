@@ -1,4 +1,5 @@
 import * as ts from "typescript";
+import { TransformationContext } from "../../context";
 
 export function isAssignmentPattern(node: ts.Node): node is ts.AssignmentPattern {
     return ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node);
@@ -22,4 +23,13 @@ export function isInDestructingAssignment(node: ts.Node): boolean {
         ((ts.isVariableDeclaration(node.parent) && ts.isArrayBindingPattern(node.parent.name)) ||
             (ts.isBinaryExpression(node.parent) && ts.isArrayLiteralExpression(node.parent.left)))
     );
+}
+
+export function getNodeSymbol(context: TransformationContext, node: ts.Node): ts.Symbol | undefined {
+    return (node as any).symbol ?? context.checker.getSymbolAtLocation(node);
+}
+
+export function isFirstDeclaration(context: TransformationContext, node: ts.Node) {
+    const symbol = getNodeSymbol(context, node);
+    return symbol ? symbol.valueDeclaration === node : true;
 }

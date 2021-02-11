@@ -154,3 +154,33 @@ test("toString", () => {
         return foo(TestEnum.A);
     `.expectToMatchJsResult();
 });
+
+test("enum merging", () => {
+    util.testFunction`
+        enum TestEnum {
+            A, B
+        }
+
+        enum TestEnum {
+            C = 3,
+            D
+        }
+
+        return ${serializeEnum("TestEnum")}
+    `.expectToMatchJsResult();
+});
+
+test("enum merging with overlap", () => {
+    util.testFunction`
+        enum TestEnum {
+            A, B
+        }
+
+        enum TestEnum {
+            C = 1,
+            D
+        }
+
+        return ${serializeEnum("TestEnum")}
+    `.expectToMatchJsResult();
+});

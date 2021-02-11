@@ -8,6 +8,7 @@ import { addToNumericExpression } from "../utils/lua-ast";
 import { LuaLibFeature, transformLuaLibFunction } from "../utils/lualib";
 import { isArrayType, isNumberType, isStringType } from "../utils/typescript";
 import { tryGetConstEnumValue } from "./enum";
+import { validateIterableTypeUse } from "./language-extensions/iterable";
 import { returnsMultiType } from "./language-extensions/multi";
 import { transformLuaTablePropertyAccessExpression, validateLuaTableElementAccessExpression } from "./lua-table";
 
@@ -28,6 +29,7 @@ export function transformElementAccessArgument(
 
 export const transformElementAccessExpression: FunctionVisitor<ts.ElementAccessExpression> = (node, context) => {
     validateLuaTableElementAccessExpression(context, node);
+    validateIterableTypeUse(context, node);
 
     const constEnumValue = tryGetConstEnumValue(context, node);
     if (constEnumValue) {
@@ -63,6 +65,8 @@ export const transformPropertyAccessExpression: FunctionVisitor<ts.PropertyAcces
     expression,
     context
 ) => {
+    validateIterableTypeUse(context, expression);
+
     if (ts.isOptionalChain(expression)) {
         context.diagnostics.push(optionalChainingNotSupported(expression));
     }

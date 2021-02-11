@@ -26,6 +26,24 @@ declare type LuaMultiReturn<T extends any[]> = T & { readonly __luaMultiReturnBr
 declare function $range(start: number, limit: number, step?: number): Iterable<number>;
 
 /**
+ * Represents a Lua-style iteratable which iterates single values in a `for...in` loop (ex. `for x in iter() do`).
+ * This type can only be used in a `for...of` loop or a return statement.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param T The type of value returned each iteration.
+ */
+declare type LuaIterable<T> = Iterable<T> & { readonly __luaIterableBrand: unique symbol };
+
+/**
+ * Represents a Lua-style iteratable which iterates multiple values in a `for...in` loop (ex. `for x, y in iter() do`).
+ * This type can only be used in a `for...of` loop or a return statement. In a `for...of` loop it must be destructured.
+ * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
+ *
+ * @param T A tuple type indicating the types of values returned each iteration.
+ */
+declare type LuaMultiIterable<T extends any[]> = Iterable<T> & { readonly __luaMultiIterableBrand: unique symbol };
+
+/**
  * Calls to functions with this type are translated to `left + right`.
  * For more information see: https://typescripttolua.github.io/docs/advanced/language-extensions
  *

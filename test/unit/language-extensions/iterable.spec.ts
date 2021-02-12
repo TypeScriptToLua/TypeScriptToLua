@@ -12,50 +12,50 @@ const iterableProjectOptions: tstl.CompilerOptions = {
 
 const testIterable = `
 function testIterable(): LuaIterable<string> {
-	const strs = ["a", "b", "c"];
-	let i = 0;
-	function iterator() {
-		return strs[i++];
-	}
-	return iterator as any;
+    const strs = ["a", "b", "c"];
+    let i = 0;
+    function iterator() {
+        return strs[i++];
+    }
+    return iterator as any;
 }
 `;
 
 const testArrayIterable = `
 function testArrayIterable(): LuaIterable<string[]> {
-	const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-	let i = 0;
-	function iterator() {
-		return strs[i++];
-	}
-	return iterator as any;
+    const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+    let i = 0;
+    function iterator() {
+        return strs[i++];
+    }
+    return iterator as any;
 }
 `;
 
 const testMultiIterable = `
 function testMultiIterable(): LuaMultiIterable<[string, string]> {
-	const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
-	let i = 0;
-	function iterator() {
-		const j = i++;
-		if (strs[j]) {
-			return $multi(...strs[j]);
-		}
-	}
-	return iterator as any;
+    const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
+    let i = 0;
+    function iterator() {
+        const j = i++;
+        if (strs[j]) {
+            return $multi(...strs[j]);
+        }
+    }
+    return iterator as any;
 }
 `;
 
 const testIterableProperty = `
 class IterablePropertyTest {
-	public get testIterable(): LuaIterable<string> {
-		const strs = ["a", "b", "c"];
-		let i = 0;
-		function iterator() {
-			return strs[i++];
-		}
-		return iterator as any;
-	}
+    public get testIterable(): LuaIterable<string> {
+        const strs = ["a", "b", "c"];
+        let i = 0;
+        function iterator() {
+            return strs[i++];
+        }
+        return iterator as any;
+    }
 }
 const tester = new IterablePropertyTest();
 `;

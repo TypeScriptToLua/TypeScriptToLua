@@ -30,3 +30,12 @@ test("passing arguments", () => {
         .setOptions({ luaPlugins: [{ name: path.join(__dirname, "arguments.ts"), option: true }] })
         .expectToEqual({ name: path.join(__dirname, "arguments.ts"), option: true });
 });
+
+test("statement comments", () => {
+    util.testFunction`
+        let foo = "bar";
+        foo = "baz";
+    `
+        .setOptions({ luaPlugins: [{ name: path.join(__dirname, "add-comments.ts") }] })
+        .expectLuaToMatchSnapshot();
+});

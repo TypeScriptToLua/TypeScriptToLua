@@ -297,6 +297,28 @@ export class LuaPrinter {
     }
 
     public printStatement(statement: lua.Statement): SourceNode {
+        let resultNode = this.printStatementExcludingComments(statement);
+
+        if (statement.leadingComments) {
+            resultNode = this.concatNodes(
+                statement.leadingComments.map(c => this.indent(`--${c}`)).join("\n"),
+                "\n",
+                resultNode
+            );
+        }
+
+        if (statement.trailingComments) {
+            resultNode = this.concatNodes(
+                resultNode,
+                "\n",
+                statement.trailingComments.map(c => this.indent(`--${c}`)).join("\n")
+            );
+        }
+
+        return resultNode;
+    }
+
+    protected printStatementExcludingComments(statement: lua.Statement): SourceNode {
         switch (statement.kind) {
             case lua.SyntaxKind.DoStatement:
                 return this.printDoStatement(statement as lua.DoStatement);

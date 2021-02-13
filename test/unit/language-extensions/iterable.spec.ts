@@ -215,7 +215,7 @@ test.each(
         ${statement}
     `
         .setOptions(iterableProjectOptions)
-        .expectToHaveDiagnostics([invalidIterableUse.code]);
+        .expectDiagnosticsToMatchSnapshot([invalidIterableUse.code]);
 });
 
 test.each(["for (const s of testMultiIterable()) {}", "let s; for (s of testMultiIterable()) {}"])(
@@ -226,6 +226,6 @@ test.each(["for (const s of testMultiIterable()) {}", "let s; for (s of testMult
         ${statement}
     `
             .setOptions(iterableProjectOptions)
-            .expectToHaveDiagnostics([invalidMultiIterableWithoutDestructuring.code]);
+            .expectDiagnosticsToMatchSnapshot([invalidMultiIterableWithoutDestructuring.code]);
     }
 );

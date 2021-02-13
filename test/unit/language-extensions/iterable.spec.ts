@@ -33,7 +33,7 @@ function testArrayIterable(): LuaIterable<string[]> {
 `;
 
 const testMultiIterable = `
-function testMultiIterable(): LuaMultiIterable<[string, string]> {
+function testMultiIterable(): LuaIterable<LuaMultiReturn<[string, string]>> {
     const strs = [["a1", "a2"], ["b1", "b2"], ["c1", "c2"]];
     let i = 0;
     function iterator() {
@@ -116,7 +116,7 @@ test("LuaIterable array destructuring with external control variable", () => {
         .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
 });
 
-test.each(["const [x, y]", "let [x, y]"])("LuaMultiIterable basic use", initializer => {
+test.each(["const [x, y]", "let [x, y]"])("LuaIterable<LuaMultiReturn> basic use", initializer => {
     util.testFunction`
         ${testMultiIterable}
         const results: string[] = [];
@@ -130,7 +130,7 @@ test.each(["const [x, y]", "let [x, y]"])("LuaMultiIterable basic use", initiali
         .expectToEqual(["a1", "a2", "b1", "b2", "c1", "c2"]);
 });
 
-test("LuaMultiIterable with external control variables", () => {
+test("LuaIterable<LuaMultiReturn> with external control variables", () => {
     util.testFunction`
         ${testMultiIterable}
         const results: string[] = [];
@@ -181,7 +181,7 @@ test.each(
 });
 
 test.each(makeForwardTests("testMultiIterable()", testMultiIterable))(
-    "LuaMultiIterable return forward",
+    "LuaIterable<LuaMultiReturn> return forward",
     forwardFunction => {
         util.testFunction`
         ${forwardFunction}
@@ -219,7 +219,7 @@ test.each(
 });
 
 test.each(["for (const s of testMultiIterable()) {}", "let s; for (s of testMultiIterable()) {}"])(
-    "invalid LuaMultiIterable without destructuring (%p)",
+    "invalid LuaIterable<LuaMultiReturn> without destructuring (%p)",
     statement => {
         util.testFunction`
         ${testMultiIterable}

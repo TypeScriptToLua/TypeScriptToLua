@@ -119,11 +119,11 @@ export const luaIteratorForbiddenUsage = createErrorDiagnosticFactory(
 );
 
 export const invalidIterableUse = createErrorDiagnosticFactory(
-    "LuaIterable and LuaMultiIterable types can only be used in for...of loops or return statements."
+    "LuaIterable type can only be used in for...of loops or return statements."
 );
 
 export const invalidMultiIterableWithoutDestructuring = createErrorDiagnosticFactory(
-    "LuaMultiIterable return value type must be destructured."
+    "LuaIterable with a LuaMultiReturn return value type must be destructured."
 );
 
 export const unsupportedAccessorInObjectLiteral = createErrorDiagnosticFactory(

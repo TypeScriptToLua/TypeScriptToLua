@@ -6,34 +6,17 @@ import { getVariableDeclarationBinding, transformForInitializer } from "../loops
 import { transformArrayBindingElement } from "../variable-declaration";
 import { invalidIterableUse, invalidMultiIterableWithoutDestructuring } from "../../utils/diagnostics";
 import { cast } from "../../../utils";
+import { isMultiReturnType } from "./multi";
 
 const isIterableTypeDeclaration = (declaration: ts.Declaration): boolean =>
     extensions.getExtensionKind(declaration) === extensions.ExtensionKind.IterableType;
-
-const isMultiIterableTypeDeclaration = (declaration: ts.Declaration): boolean =>
-    extensions.getExtensionKind(declaration) === extensions.ExtensionKind.MultiIterableType;
 
 export function isIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
     const type = context.checker.getTypeAtLocation(expression);
     return type.aliasSymbol?.declarations?.some(isIterableTypeDeclaration) ?? false;
 }
 
-export function isMultiIterableExpression(context: TransformationContext, expression: ts.Expression): boolean {
-    const type = context.checker.getTypeAtLocation(expression);
-    return type.aliasSymbol?.declarations?.some(isMultiIterableTypeDeclaration) ?? false;
-}
-
-export function transformForOfIterableStatement(
-    context: TransformationContext,
-    statement: ts.ForOfStatement,
-    block: lua.Block
-): lua.Statement {
-    const luaIterator = context.transformExpression(statement.expression);
-    const identifier = transformForInitializer(context, statement.initializer, block);
-    return lua.createForInStatement(block, [identifier], [luaIterator], statement);
-}
-
-export function transformForOfMultiIterableStatement(
+function transformForOfMultiIterableStatement(
     context: TransformationContext,
     statement: ts.ForOfStatement,
     block: lua.Block
@@ -76,8 +59,23 @@ export function transformForOfMultiIterableStatement(
     return lua.createForInStatement(block, identifiers, [luaIterator], statement);
 }
 
+export function transformForOfIterableStatement(
+    context: TransformationContext,
+    statement: ts.ForOfStatement,
+    block: lua.Block
+): lua.Statement {
+    const type = context.checker.getTypeAtLocation(statement.expression);
+    if (type.aliasTypeArguments?.length === 1 && isMultiReturnType(type.aliasTypeArguments[0])) {
+        return transformForOfMultiIterableStatement(context, statement, block);
+    }
+
+    const luaIterator = context.transformExpression(statement.expression);
+    const identifier = transformForInitializer(context, statement.initializer, block);
+    return lua.createForInStatement(block, [identifier], [luaIterator], statement);
+}
+
 export function validateIterableTypeUse(context: TransformationContext, node: ts.Expression) {
-    if (!isIterableExpression(context, node) && !isMultiIterableExpression(context, node)) {
+    if (!isIterableExpression(context, node)) {
         return;
     }
     if (ts.isForOfStatement(node.parent)) {

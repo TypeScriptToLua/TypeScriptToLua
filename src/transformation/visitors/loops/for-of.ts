@@ -8,12 +8,7 @@ import { LuaLibFeature, transformLuaLibFunction } from "../../utils/lualib";
 import { isArrayType, isNumberType } from "../../utils/typescript";
 import { transformArguments } from "../call";
 import { transformIdentifier } from "../identifier";
-import {
-    isIterableExpression,
-    isMultiIterableExpression,
-    transformForOfIterableStatement,
-    transformForOfMultiIterableStatement,
-} from "../language-extensions/iterable";
+import { isIterableExpression, transformForOfIterableStatement } from "../language-extensions/iterable";
 import { isRangeFunction, transformRangeStatement } from "../language-extensions/range";
 import { transformArrayBindingElement } from "../variable-declaration";
 import { getVariableDeclarationBinding, transformForInitializer, transformLoopBody } from "./utils";
@@ -164,8 +159,6 @@ export const transformForOfStatement: FunctionVisitor<ts.ForOfStatement> = (node
         return transformForRangeStatement(context, node, body);
     } else if (isIterableExpression(context, node.expression)) {
         return transformForOfIterableStatement(context, node, body);
-    } else if (isMultiIterableExpression(context, node.expression)) {
-        return transformForOfMultiIterableStatement(context, node, body);
     } else if (isLuaIteratorType(context, node.expression)) {
         return transformForOfLuaIteratorStatement(context, node, body);
     } else if (isArrayType(context, context.checker.getTypeAtLocation(node.expression))) {

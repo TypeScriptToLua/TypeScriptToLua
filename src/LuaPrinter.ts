@@ -305,11 +305,9 @@ export class LuaPrinter {
                     return this.indent("--[[]]");
                 } else {
                     const [firstLine, ...restLines] = comment;
-                    this.pushIndent();
                     const commentLines = this.concatNodes(
                         ...restLines.map(c => this.concatNodes("\n", this.indent(c)))
                     );
-                    this.popIndent();
                     return this.concatNodes(this.indent("--[["), firstLine, commentLines, "]]");
                 }
             } else {
